@@ -24,23 +24,27 @@ Injected on the first `Agent` or `Workflow` call in a session.
   false positives.
 - Subagents name specific files in `git add`, never `-u`, `-A`, or `.`.
 
-## Price ratios
+## Model and effort
 
-The decision rules are in the root CLAUDE.md _Subagents_ section. Numbers behind
-them:
+The decision rules are in the root CLAUDE.md _Subagents_ section. Behind them:
 
 - Per token, Fable costs 5x Sonnet and Opus 2.5x. On Opus the gap is smaller, so
   inline wins more often.
 - A cached context token costs a fraction of a cold one, which is why a small
   inline edit beats a cold subagent.
+- The orchestrator pays for its own context on every later turn; a subagent's
+  context is paid once. That is why bulky output belongs in a subagent even on
+  the same tier.
 - A retry costs more than the tier you saved. When in doubt, go up a tier.
 - A skill's own model guidance wins over these rules.
-- Effort is settable only on Workflow `agent()`, not `Agent`.
+- Effort is settable on Workflow `agent()` and in a `.claude/agents/<name>.md`
+  frontmatter definition, not on `Agent`.
 
 ## Verifying the result
 
 - Subagents abandon multi-step tasks partway. Scope each dispatch to one file or
-  one commit, and inspect the diff and `git log` before marking it complete.
+  one commit, and inspect `git diff --stat` for scope, then the diff and
+  `git log`, before marking it complete.
 - A subagent's "pre-existing failure" baseline is the working tree AS
   DISPATCHED, including your uncommitted edits. Check whether your own change
   caused the failure before accepting that framing.

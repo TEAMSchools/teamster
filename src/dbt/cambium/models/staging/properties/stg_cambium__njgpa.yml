@@ -8,7 +8,7 @@ models:
       lives here; kipptaf unions the result as a passthrough.
     columns:
       # Columns carrying per-column data_tests sort to the top. Every test sets
-      # severity explicitly: consuming districts default data_tests to warn.
+      # severity explicitly.
       - name: studenttestuuid
         data_type: string
         description: >-
@@ -129,9 +129,6 @@ models:
       - name: aligned_subject
         data_type: string
         description: Equal to subject_area.
-      - name: illuminate_subject
-        data_type: string
-        description: "'Text Study' for ELA, else the subject as sent."
       - name: discipline
         data_type: string
         description: "'Math' for Mathematics, else 'ELA'."

@@ -5,7 +5,7 @@ class SFTPFile(BaseModel):
     source_file_name: str | None = None
 
 
-class NJGPA(SFTPFile):
+class DistrictSummativeRecordFile(SFTPFile):
     accountable_district_code: str | None = None
     accountable_district_name: str | None = None
     accountable_organizational_type: str | None = None
@@ -231,3 +231,17 @@ class NJGPA(SFTPFile):
     word_prediction: str | None = None
     word_to_word_dictionary_english_native_language: str | None = None
     writing_prompt_essay_type: str | None = None
+
+
+# Cambium ships one District Summative Record File layout per administration,
+# and NJGPA, NJSLA and NJSLA Science all arrive in it. Verified 2026-09-18
+# against the delivered Newark, Camden and Paterson files: 225 headers each,
+# identical to DistrictSummativeRecordFile above. Both records subclass it so
+# the column list lives in one place; the class names set the Avro record names,
+# which the IO manager writes into separate GCS prefixes per asset.
+class NJGPA(DistrictSummativeRecordFile):
+    pass
+
+
+class NJSLA(DistrictSummativeRecordFile):
+    pass

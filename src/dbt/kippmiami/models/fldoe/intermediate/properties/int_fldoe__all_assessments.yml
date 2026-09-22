@@ -6,8 +6,8 @@ models:
       canonical fields and assessment_name derived from the source relation.
       Resolves student_number by joining int_focus__students on
       florida_education_identifier. Adds standardized metadata columns
-      (results_type, district_state, illuminate_subject,
-      fast_aggregated_proficiency) for use in network-level reporting.
+      (results_type, district_state, fast_aggregated_proficiency) for use in
+      network-level reporting.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -103,12 +103,6 @@ models:
       - name: assessment_name
         data_type: string
         description: Full assessment name (e.g. FAST, FSA, EOC).
-      - name: illuminate_subject
-        data_type: string
-        description: >
-          Standardized subject label for Illuminate/reporting — ELA subjects map
-          to 'Text Study'; Algebra I, Algebra II, and Geometry map to
-          'Mathematics'; all others pass through unchanged.
       - name: fast_aggregated_proficiency
         data_type: string
         description: >

@@ -1,0 +1,289 @@
+views:
+  - name: student_attendance_enrollment_daily_view
+    description: >-
+      Student enrollment and attendance on one daily surface — one row per
+      student per calendar day they were enrolled. Enrollment decides which rows
+      exist and attendance is joined on top, so a day with no recorded
+      attendance is still a row. Contains direct student identifiers — see
+      access_policy for PII gating.
+
+      count_students is a distinct-student count over whatever slice is queried.
+      Leave the date open for ever-enrolled over a range; pin it to one date for
+      a point-in-time headcount as of that date. There is no anchor filter and
+      none is needed — break days carry a row, so a weekend or a holiday
+      resolves exactly like a school day. Filter is_in_session_day = true for
+      anything that should count school days only.
+
+      Filter attendance_date, not dates_date_day, for a single date or a date
+      range. The two return identical rows, but attendance_date compiles to a
+      predicate on the fact's own partitioning column and prunes the scan, while
+      dates_date_day compiles to a predicate on dim_dates and leaves the whole
+      29.6M-row fact to be read. Use the dates_* members for grouping and for
+      academic-year, month, or week-of questions, where they are the only path.
+
+      For ADA use the avg_daily_attendance measure rather than rebuilding the
+      ratio from raw dimensions — it scopes both sides to full membership days
+      with a recorded attendance value, and a hand-rolled SUM(attendance_value)
+      / SUM(membership_value) counts days that were never recorded. Never
+      average a per-row ratio either way. attendance_value (0.0 to 1.0) is the
+      fractional attendance contribution; membership_value (0.0 to 1.0) is the
+      school's claim on the student that day, split across schools if
+      dual-enrolled, and zero on every break day; present_weight equals
+      attendance_value but tardies count 0.67. attendance_category is the coarse
+      rollup (Present, Absent, Tardy, In-School Suspension, Out-of-School
+      Suspension) and is null when no attendance was recorded, which means
+      unknown rather than present; attendance_code is the raw SIS code.
+
+      This view answers day-level and point-in-time questions. Every measure on
+      it is day-weighted — a ratio of summed day counts, additive over any date
+      range you slice it by. That weighting is the dividing line with
+      student_attendance_enrollment_periods_view, whose measures are
+      student-weighted: they count students who crossed a threshold cumulatively
+      by period end, and cannot be rebuilt from these daily rows. So chronic
+      absence, ADA tier mix and truancy rates live on that view and not this
+      one, and every attendance-rate measure, ADA included, lives on this one
+      and not that one. A question that wants both — chronic absence and ADA by
+      region this month — is two queries, one per view. Do not substitute a tier
+      percentage for an attendance rate.
+
+      Every rate on this view divides by count_students, which counts students
+      with recorded attendance. No minimum-day floor applies -- one measured day
+      is enough -- but a student whose attendance was never recorded is outside
+      both the numerator and the denominator. Population and denominator are the
+      same number, so they cannot drift apart and an unmeasured student cannot
+      pull a rate down.
+
+    cubes:
+      - join_path: student_attendance_enrollment_daily
+        includes:
+          - count_students
+          - is_in_session_day
+          - avg_daily_attendance
+          - pct_tardy
+          - pct_ontime
+          - count_absent_days
+          - attendance_date
+          - attendance_code
+          - attendance_category
+          - attendance_value
+          - membership_value
+          - present_weight
+          - is_absent
+          - is_tardy
+          - is_ontime
+          - is_oss
+          - is_iss
+          - is_suspended
+          - is_truant
+          - n_membership_days_ytd
+          - n_present_days_ytd
+          - ada_tier
+          - is_chronically_absent
+          - count_chronically_absent
+          - pct_chronically_absent
+          - count_truants
+          - pct_truant
+
+      - join_path: student_attendance_enrollment_daily.dates
+        prefix: true
+        includes:
+          - academic_year
+          - academic_year_label
+          - date_day
+          - month_number
+          - month_name
+          - quarter_number
+          - school_week_start_date
+          - day_of_week_name
+          - is_weekday
+
+      - join_path: student_attendance_enrollment_daily.student_school_enrollments.locations
+        prefix: true
+        includes:
+          - location_name
+          - abbreviation
+          - region_key
+          - grade_band
+          - campus
+          - city
+
+      - join_path: student_attendance_enrollment_daily.student_school_enrollments.locations.regions
+        prefix: true
+        includes:
+          - region_name
+          - state
+
+      - join_path: student_attendance_enrollment_daily.student_school_enrollments
+        prefix: false
+        includes:
+          - student_enrollment_key
+          - grade_level
+          - graduation_year
+          - entry_date
+          - exit_date
+          - is_retained_year
+
+      - join_path: student_attendance_enrollment_daily.student_school_enrollments.student_homeroom_section.staff_homeroom_teacher
+        prefix: true
+        includes:
+          - full_name
+          - first_name
+          - last_name
+
+      - join_path: student_attendance_enrollment_daily.student_school_enrollments.student_enrollment_status
+        prefix: false
+        includes:
+          - is_ell
+          - is_iep
+          - iep_classification
+          - special_education_code
+          - special_education_name
+          - special_education_placement
+          - is_meal_eligible
+          - meal_eligibility
+
+      - join_path: student_attendance_enrollment_daily.student_school_enrollments.students
+        prefix: false
+        includes:
+          - student_key
+          - full_name
+          - birth_date
+          - lea_student_identifier
+          - state_student_identifier
+          - gender_identity
+          - race
+          - enrollment_status
+          - is_gifted
+
+      - join_path: student_attendance_enrollment_daily.terms
+        prefix: true
+        includes:
+          - semester
+          - term_name
+          - term_code
+          - term_type
+
+      - join_path: student_attendance_enrollment_daily.school_calendars
+        prefix: true
+        includes:
+          - is_in_session
+          - is_membership_day
+
+    meta:
+      folders:
+        - name: Attendance
+          members:
+            - attendance_code
+            - attendance_category
+            - attendance_value
+            - membership_value
+            - present_weight
+            - is_absent
+            - is_tardy
+            - is_ontime
+            - is_oss
+            - is_iss
+            - is_suspended
+            - is_truant
+        - name: Chronic Absence and Truancy
+          members:
+            - ada_tier
+            - is_chronically_absent
+            - n_membership_days_ytd
+            - n_present_days_ytd
+        - name: Date
+          members:
+            - dates_academic_year
+            - dates_academic_year_label
+            - attendance_date
+            - dates_date_day
+            - dates_month_number
+            - dates_month_name
+            - dates_quarter_number
+            - dates_day_of_week_name
+            - dates_is_weekday
+        - name: Term
+          members:
+            - terms_semester
+            - terms_term_name
+            - terms_term_code
+            - terms_term_type
+        - name: Location
+          members:
+            - locations_location_name
+            - locations_abbreviation
+            - locations_region_key
+            - locations_grade_band
+            - locations_campus
+            - locations_city
+            - regions_region_name
+            - regions_state
+        - name: Student
+          members:
+            - student_key
+            - full_name
+            - birth_date
+            - lea_student_identifier
+            - state_student_identifier
+            - gender_identity
+            - race
+            - enrollment_status
+            - is_gifted
+        - name: Status
+          members:
+            - is_ell
+            - is_iep
+            - iep_classification
+            - special_education_code
+            - special_education_name
+            - special_education_placement
+            - is_meal_eligible
+            - meal_eligibility
+        - name: Enrollment
+          members:
+            - student_enrollment_key
+            - grade_level
+            - graduation_year
+            - entry_date
+            - exit_date
+            - is_retained_year
+        - name: Teacher
+          members:
+            - staff_homeroom_teacher_full_name
+            - staff_homeroom_teacher_first_name
+            - staff_homeroom_teacher_last_name
+        - name: Calendar
+          members:
+            - school_calendars_is_in_session
+            - school_calendars_is_membership_day
+        - name: Filter
+          members:
+            - dates_school_week_start_date
+
+    access_policy:
+      # Row-level location scoping (was queryRewrite.studentRowFilters). A viewer
+      # holds exactly one student-<scope> group (buildGroups); none => no group =>
+      # default-deny. row_level uses this view's flat location member names (see
+      # the includes/folders below), not cube-qualified paths.
+      # Teacher fields (staff_homeroom_teacher_* names) ride the wildcard
+      # include — staff-directory-tier info, not student PII.
+      - group: student-region
+        member_level:
+          includes: "*"
+        row_level:
+          filters:
+            - member: locations_region_key
+              operator: equals
+              values: ["{ securityContext.region_key }"]
+      - group: student-school
+        member_level:
+          includes: "*"
+        row_level:
+          filters:
+            - member: locations_abbreviation
+              operator: equals
+              values: ["{ securityContext.location_abbreviation }"]
+      - group: student-network
+        member_level:
+          includes: "*"
+        # network: no row_level (sees all locations)

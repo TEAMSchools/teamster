@@ -1,0 +1,3217 @@
+---
+name: dibels-dashboard
+description: >-
+  Use for ANY DIBELS work -- reading, explaining, querying, modelling, goal
+  setting, Tableau views, or answering a question about the numbers. Not only
+  code changes: invoke it before answering anything about DIBELS, because the
+  reference document it points at carries decisions that are not recoverable
+  from the SQL. Triggers: the DIBELS dashboard or Literacy Dashboard, the Bright
+  Spots tracker (#4952), the PM/aimline migration (#3834), benchmark completion
+  tracking (#4902), aimline categories, foundation or benchmark or PM goal
+  setting, the Amplify DIBELS spreadsheet, or anything touching
+  int_amplify__all_assessments, int_amplify__pm_met_criteria,
+  int_amplify__pm_met_criteria_aimline, int_amplify__benchmark_student_summary,
+  int_students__dibels_participation_roster, rpt_tableau__dibels_dashboard,
+  rpt_gsheets__dibels_bm_goals_calculations,
+  rpt_gsheets__dibels_pm_goal_setting, stg_google_sheets__dibels_* or their
+  lineage.
+---
+
+# DIBELS Dashboard
+
+## Before you finish: update this skill and the reference document
+
+**Not optional, and not gated on the user asking.** Any session that changes a
+DIBELS model, discovers something about how the data behaves, or settles a
+question with academics updates BOTH:
+
+- `docs/models/dibels-dashboard-data-model.md` — the published reference. It is
+  in the mkdocs nav, so a wrong page here is a bug, not a stale note.
+- this skill, for anything a future session needs BEFORE it opens a file.
+
+The reason is specific to this domain. Most of what matters about DIBELS is not
+recoverable from the SQL: which choices are T&L's and must not be 'corrected',
+which are ours, what academics were asked and answered, and which apparent bugs
+are recorded intent. On 2026-09-15 a session called a documented T&L rule a bug
+and started changing it; the yml description is what stopped that. A session
+that leaves its findings only in a PR body has lost them.
+
+What to write down, beyond the change itself:
+
+- A rule that looks wrong but is deliberate — say whose decision it is, and that
+  it must not be corrected.
+- A value or label rename — the old name, the new one, and the date, because
+  academics will ask about a word they still use.
+- Anything measured — row counts, category distributions, coverage rates — with
+  the academic year, since the next reader cannot tell a real shift from a
+  method change without it.
+- A dead end: an MCP that cannot reach a source, a check that proves nothing.
+
+Put column and model semantics in the model's properties yml, workflow and
+reasoning here, and the narrative in the reference document. The repo's yml
+conventions still apply to descriptions.
+
+Covers the whole DIBELS dashboard suite. Documented below: the Bright Spots
+tracker / foundation goals retrofit (#4952) -- benchmark-goal work, not
+PM/aimline -- and the PM/aimline migration (#3834). As the other tracks land,
+give each its own `##` section here rather than starting a separate skill:
+
+- **Benchmark completion tracking (#4902)** -- not yet documented here.
+
+## Bright Spots tracker / foundation goals (#4952)
+
+Builds on the benchmark path, not PM/aimline -- the two tracks are unblocked and
+separate. Full spec: issue #4952.
+
+**Architecture, settled after three reversals mid-build:** Bright Spots is its
+own standalone report, `rpt_tableau__dibels_brightspots` -- NOT folded into the
+existing `rpt_tableau__dibels_dashboard`, and NOT split into a separate `int_`
+feeding a passthrough `rpt_`. An earlier pass tried fitting it into the existing
+dashboard model (school/region aggregates joined onto its student-grain rows,
+the way `n_admin_season_school_gl_at_above` already works there via
+`stg_google_sheets__dibels_bm_goals`); the next pass split the aggregate logic
+into its own `int_amplify__dibels_brightspot_status` with a thin `rpt_` wrapper
+selecting straight through it. That wrapper did zero transformation, which
+defeats the point of the intermediate/report split (the convention exists to
+buffer external consumers from internal schema evolution -- a bare passthrough
+buys nothing over just consuming the `int_` directly, and reads as accidental
+indirection to a reviewer). Landed on one model doing all the work, named `rpt_`
+since Tableau reads it directly. If a real second consumer or a real
+transformation shows up later, split it back out then -- not preemptively.
+
+Scoped to **Benchmark Composite only** -- this tracker does not use PM data at
+all.
+
+**Grain is academic_year / region / school / grade_level / period / population /
+goal_type / student_number -- student-level, not pre-aggregated.** An earlier
+pass grouped straight to the
+academic_year/region/grade_level/period/population/goal_type aggregate, which is
+wrong for Tableau: it locks the output to exactly those cuts, with no student
+row left to slice by teacher, advisory, or any demographic. Fixed by computing
+the same group stats (`n_all`, `n_attained`, `attained_rate`, `gap`,
+`brightspot_status`, `n_above_average_growth`, `pct_above_average_growth`) with
+**window functions** (`count(...) over (partition by ...)`) instead of
+`GROUP BY`, so every student keeps their own row (repeating the group's stats on
+each one) plus their own `is_attained` and `is_above_average_growth` flags for
+building custom cuts Tableau-side. A student can still appear more than once per
+period -- once per population they belong to (an IEP student gets both an All
+row and an IEP row).
+
+**Unpadded goals, not the existing padded ones.**
+`stg_google_sheets__dibels_bm_goals` (feeding the existing dashboard) is a
+**padded** manual-freeze snapshot. Bright Spots uses the retrofitted (unpadded)
+`stg_google_sheets__dibels_foundation_goals` directly -- a separate goal source,
+not a shared join. The dashboard never reads foundation_goals, which is why the
+yearly rollover needs two separate pastes rather than one -- see _Step 7_.
+
+**Enrollment source: `int_extracts__student_enrollments`, NOT `..._subjects`.**
+The `_subjects` variant is that same model cross-joined against a static 2-row
+list (`Reading`/`Math`) plus a few subject-crosswalk columns
+(`illuminate_subject_area`, `fast_subject`, `powerschool_credittype`, none of
+which this tracker uses) -- using it means fanning every student out 2x and then
+filtering straight back down with `iready_subject = 'Reading'`, which just lands
+back where the base model already was. `rpt_tableau__dibels_dashboard` does use
+`_subjects` (for the subject filter), which is why it looked like the default
+choice at first. **Two fields exist ONLY on `_subjects`, not the base model**:
+`nj_student_tier` and `mtss_enrollment` (both computed in `_subjects`'s own
+CTEs). Not used here -- if a future need brings them back, that's the trade to
+make explicitly, not a reason to default back to `_subjects` for everything.
+
+**Population membership, at the student level**: `All` always; `IEP` when
+`iep_status = 'Has IEP'` (string, confirmed via data -- NOT a boolean); `MLL`
+when `lep_status` (boolean, on `int_extracts__student_enrollments`). Fan a
+student's composite row out to 1-3 population rows via
+`cross join unnest(array_concat(['All'], if(iep_status = 'Has IEP', ['IEP'], []), if(lep_status, ['MLL'], [])))`
+-- avoids a 3-way `UNION ALL` and any subquery.
+
+**ELA teacher/course/section, joined exactly like
+`rpt_tableau__dibels_dashboard` does** -- `base_powerschool__course_enrollments`
+filtered to the `ELA Gr*` course-name list, `rn_course_number_year = 1`, not
+dropped, section not `%SC%`. This is separate from and in addition to `advisory`
+(a general homeroom/advisor field, not subject-specific) -- DIBELS is a reading
+assessment, so the relevant teacher is the ELA one, not the generic advisor.
+**PowerSchool-only**: null for Miami (Focus) students, same known gap the
+existing dashboard already has.
+
+**`foundation_measure_standard_level` (on `int_amplify__all_assessments`), not
+`aggregated_measure_standard_level`, is the field to aggregate on.** The latter
+is only a 2-way split (`At/Above` / `Below/Well Below`) used by the existing
+dashboard's padded columns -- too coarse for Bright Spots, which needs
+`Well Below` isolated from plain `Below` to match the Well Below goal type
+exactly. `foundation_measure_standard_level` already has the right 3-way split
+and was built for exactly this reconciliation (it's also what
+`rpt_gsheets__dibels_bm_goals_calculations` joins on).
+
+**Gap rounding — a real bug found by row-count sanity-checking, not guessed.**
+`gap` used to round to 2 decimal places, and rows would silently vanish: Newark
+AY2025 K EOY All At/Above had attained 81.72% vs a 77% goal, a gap of 4.72 --
+inside neither On Track (`0` to `4`) nor Bright Spot (`>= 5`). T&L's thresholds
+are written as whole numbers with no stated rule for a continuous value landing
+between two adjacent boundaries. Fixed by rounding `gap` to the nearest whole
+point before the tier join. Caught by comparing actual row counts against the
+expected combinatorics (grades x periods x populations x goal_types) rather than
+trusting a clean build -- the join was an `INNER JOIN`, so a row with no
+matching tier just disappears with no error.
+
+## Why this skill exists
+
+T&L's source doc gives goals as **ranges** ("62 - 66%") and, starting AY2025, as
+**two-or-more side-by-side population blocks** (All Students, Students with
+IEPs, and MLL, whose real goal values are still outstanding -- see _MLL
+population -- shipped with placeholder values_ below). The existing single-value
+staging table already required someone to collapse each range to one number by
+hand, applying a rule nobody wrote down. That rule is now written down (below)
+and encoded in a generator script instead of memory.
+
+## The min/max rule (verified, not guessed)
+
+Checked grade-by-grade against `stg_google_sheets__dibels_foundation_goals` for
+every Newark/Camden row across AY2024 and AY2025, zero exceptions:
+
+- **At/Above -> the LOW end** of the range
+- **Well Below -> the HIGH end** of the range
+- Holds identically for MOY and EOY. The rule is **goal_type-driven, not
+  period-driven** -- do not reintroduce a MOY-vs-EOY branch.
+
+## Named ranges: the recurring trap
+
+`sheet_range` in `sources-external.yml` points at a Google Sheets **named
+range**, not a tab title -- and a spreadsheet can carry several similarly-named
+ranges left over from prior schema versions. This cost real back-and-forth twice
+in one build:
+
+- The foundation goals spreadsheet has BOTH
+  `src_google_sheets__dibels_foundation_goals` (single underscore -> tab
+  "Foundation Goals V1", 8 cols, legacy) AND
+  `src_google_sheets__dibels__foundation_goals` (double underscore -> tab
+  "Foundation Goals", 12 cols, current). Pointing `sheet_range` at the wrong one
+  fails with a BigQuery type-conversion error that looks like a data problem
+  ("Could not convert value to integer") but is actually a wrong-range problem
+  -- the columns don't line up because it's reading a different tab entirely.
+- A named range can also be **row-bounded**.
+  `src_google_sheets__dibels__foundation_goals` was capped at 191 rows total; a
+  203-row paste silently truncated the tail (whichever region got pasted last)
+  with no error at all -- the build just quietly returned fewer rows. Always ask
+  for headroom past the current row count when a new named range is created, and
+  if a rebuilt row count is suspiciously short, check `count(*)` per region/year
+  before assuming a parsing bug.
+
+**Verify the real named range before writing `sheet_range`, every time**:
+
+```python
+ss = svc.spreadsheets().get(spreadsheetId="<id>").execute()
+titles = {s["properties"]["sheetId"]: s["properties"]["title"] for s in ss["sheets"]}
+for nr in ss.get("namedRanges", []):
+    print(nr["name"], "->", titles.get(nr["range"].get("sheetId")), nr["range"])
+```
+
+### Never edit `sources-external.yml` with a forward-scanning regex
+
+The file holds ~100 source blocks at identical indentation, and **not every one
+has a `columns:` block** -- several rely on BigQuery autodetect. So a pattern
+like "find this source name, then find the next `columns:`" walks straight past
+its own block into a later source and replaces the wrong list, with no error.
+That is exactly how `src_google_sheets__gpa_goals` lost its `org_level`,
+`schoolid`, `metric`, `threshold`, `direction` and `goal` columns during the
+bm_goals cutover -- they were overwritten with bm_goals' 43. Caught only by
+reading the diff afterwards.
+
+Edit one source by **bounding the block first**: find its
+`      - name: <source>` line, find the next line starting `      - name: src_`,
+and operate only between them. That is what the throwaway source-wiring script
+used for the bm_goals cutover did -- it moved `sheet_range`, replaced or
+inserted the `columns:` list, and asserted it had found exactly one
+`sheet_range` and at most one `columns:` inside the block.
+
+Then **audit every removed line** before trusting it:
+
+```bash
+git diff <the yml> | grep '^-' | grep -v '^---' | sort | uniq -c
+```
+
+For a `sheet_range` move plus a column widen, the only removals should be the
+old `sheet_range` line(s). Anything else is collateral.
+
+Two follow-on gotchas from the same cutover:
+
+- An all-blank column autodetects as **STRING**, and a trailing all-blank column
+  is **dropped entirely**. Migrating a widened sheet whose new columns are empty
+  (IEP/MLL placeholders) therefore fails a `select *` contract on type
+  mismatches and missing columns until the source declares `columns:`
+  explicitly. Declaring them is the fix, not casting downstream.
+- Re-stage after any range move:
+  `stage_external_sources --target dev --vars '{ext_full_refresh: true}'` for
+  local work, and the same with `--target staging` before pushing, or dbt Cloud
+  CI fails "table not found" on the `zz_stg_` external. The staging run needs
+  the user -- it drops and recreates a shared table.
+- **Stage last.** Any edit to a source's `columns:` invalidates an external that
+  is already staged, and `stage_external_sources` SKIPS an existing table unless
+  `ext_full_refresh: true`. So the order is: settle the declaration, stage dev,
+  stage staging, push. Staging mid-way costs a CI round -- it did here, twice:
+  first a contract mismatch where the source declared `float64` from the rpt_
+  model's `ceiling()` output while the consumer's contract said `int64` (counts
+  are integral, so `int64` was right), then the mirror image once the yml was
+  fixed but the staged external still carried the old type.
+
+## New staging schema: `stg_google_sheets__dibels_foundation_goals`
+
+Source: named range `src_google_sheets__dibels__foundation_goals` (double
+underscore), tab "Foundation Goals", spreadsheet
+`15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs`.
+
+Long grain: one row per academic_year / region / grade_level / period /
+population / goal_type. **Column order below is the actual sheet's header order
+-- do not reorder it to suit a script; fix the script instead** (this was gotten
+wrong once already: an earlier draft dropped `Grade_Range` and reordered columns
+to what seemed like a cleaner shape, which then didn't match the sheet the user
+actually built. The user builds the sheet; the tooling adapts to it, not the
+other way around).
+
+| column           | type        | notes                                                                                                                                                                                                                                                                             |
+| ---------------- | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Academic_Year    | int         | fall-start convention: AY2025 = SY25-26                                                                                                                                                                                                                                           |
+| Region           | string      |                                                                                                                                                                                                                                                                                   |
+| Grade_Range      | string      | cosmetic 3-way label -- `K-2` / `3-5` / `6-8`, a pure function of `Grade_Level` (no judgment call, so derived in the generator, not sheet-maintained). Kept alongside `Grade_Band` for continuity with the prior schema -- the two are NOT redundant, see below                   |
+| Grade_Band       | string      | `GK-5` / `G6-8` -- drives the tier lookup below. Written as a real column (not derived in SQL) because T&L can change grade groupings; default rule is `grade_level <= 5 -> GK-5`, but the value should be editable after generation, not re-derived every load                   |
+| Grade_Level      | int         | K = 0                                                                                                                                                                                                                                                                             |
+| Period           | string      | `MOY` / `EOY`                                                                                                                                                                                                                                                                     |
+| Population       | string      | `All` / `IEP` (MLL pending, see below) -- absent (skip row) for years/grades with no goal set, never fabricated                                                                                                                                                                   |
+| Grade_Goal_Type  | string      | `At/Above` / `Well Below`                                                                                                                                                                                                                                                         |
+| Grade_Goal_Low   | float       | raw low bound of the range                                                                                                                                                                                                                                                        |
+| Grade_Goal_High  | float       | raw high bound                                                                                                                                                                                                                                                                    |
+| Grade_Goal       | float       | derived via the min/max rule above                                                                                                                                                                                                                                                |
+| Grade_Range_Goal | float\|null | the K-2 band-aggregate goal, same min/max rule applied to the band row's range. Populated only for Grade_Level 0/1/2; null elsewhere. **Only the K-2 band carries this** -- there is no 3-5 or 6-8 band-aggregate row in the source tab, confirmed against both AY2024 and AY2025 |
+
+The K-2 band row itself is not emitted as its own row -- its four ranges
+collapse into `Grade_Range_Goal` and attach to the K/1/2 individual-grade rows
+for that region/period/population/goal_type, mirroring how the prior
+single-value schema already carried it.
+
+## MLL population -- shipped with placeholder values, real numbers still needed
+
+`MLL` is a live `Population` value in both
+`stg_google_sheets__dibels_foundation_goals` and
+`stg_google_sheets__dibels_brightspot_goals` (`accepted_values` tests updated,
+`rpt_tableau__dibels_brightspots` fans MLL students out correctly). **But the
+AY2025 MLL goal rows are fabricated** -- explicitly requested as a stopgap ("use
+fake numbers, half of IEP") to unblock a time-sensitive demo, not derived from
+any T&L source. `Grade_Goal_Low`/`Grade_Goal_High`/`Grade_Goal` for every MLL
+row are half the matching IEP row's values; everything else
+(region/grade/period/goal_type) is identical to that IEP row. Flagged in the
+sheet-source column description too.
+
+**Before this goes anywhere near a real stakeholder**: replace the MLL rows with
+T&L's actual numbers. Don't assume they'll match the halved values, or even that
+they'll be close -- IEP's real goals already turned out to genuinely differ from
+All's once (see the min/max rule section), so there's no reason to expect the
+fabricated MLL placeholders to land anywhere near reality.
+
+The Bright Spot tier _thresholds_ (`stg_google_sheets__dibels_brightspot_goals`)
+are confirmed population-agnostic and are NOT placeholders -- only the MLL _goal
+values_ are fake.
+
+`build_foundation_goals_rows.py` still hardcodes detection for exactly one extra
+population block labeled `IEP` -- it was never generalized to parse a real MLL
+block from a T&L source doc, because the MLL rows here were entered by hand
+(computed placeholders), not generated from a raw sheet paste. Fix this before
+there's an actual MLL source to run the generator against.
+
+## Tier lookup table: `stg_google_sheets__dibels_brightspot_goals`
+
+Source: named range `src_google_sheets__dibels__brightspot_goals`, tab "Bright
+Spots Goals", same spreadsheet as foundation_goals.
+
+`gap` is computed upstream as "points better than goal": `attained - goal` for
+At/Above, `goal - attained` for Well Below (sign-flipped so positive is always
+good). One shared boundary set then covers both goal types -- no `goal_type`
+column needed here.
+
+`Population` and `Academic_Year` are both included even though the boundary
+_values_ are identical across every population and both known years today.
+Confirmed from T&L's own Bright Spot Brainstorm doc: the "GK-5 Overall Goals"
+and "GK-5 Sped Goals" threshold rows are byte-identical. Included anyway because
+-- per the user, in these exact words -- "stakeholders change their opinions
+more often than you burn tokens": cheap to add now as real columns, expensive to
+retrofit as a schema change later if a population's boundaries ever do diverge.
+
+| column           | type        | notes                                                                                                                    |
+| ---------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Academic_Year    | int         | included for the same "T&L might diverge this" reasoning as everywhere else in this feature, not because it varies today |
+| Grade_Band       | string      | `GK-5` / `G6-8`                                                                                                          |
+| Period           | string      | `MOY` / `EOY`                                                                                                            |
+| Population       | string      | `All` / `IEP` / `MLL` -- currently identical boundary values across all three, kept as separate rows on purpose          |
+| Measured_Against | string      | which period's goal the gap was computed against -- `MOY` or `EOY`. Always `EOY` for the G6-8/MOY row                    |
+| Tier             | string      | `Bright Spot` / `On Track` / `In Range` / `Off Track`                                                                    |
+| Gap_Min          | float\|null | inclusive lower bound in percentage points; null = unbounded below                                                       |
+| Gap_Max          | float\|null | inclusive upper bound in percentage points; null = unbounded above                                                       |
+
+Full boundary table (repeat per population; 32 rows x 3 populations = 96 total
+as of this writing):
+
+| grade_band | period | measured_against | tier        | gap_min | gap_max |
+| ---------- | ------ | ---------------- | ----------- | ------- | ------- |
+| GK-5       | MOY    | MOY              | Bright Spot | 5       | —       |
+| GK-5       | MOY    | MOY              | On Track    | 0       | 4       |
+| GK-5       | MOY    | MOY              | In Range    | -5      | -1      |
+| GK-5       | MOY    | MOY              | Off Track   | —       | -6      |
+| GK-5       | EOY    | EOY              | Bright Spot | 5       | —       |
+| GK-5       | EOY    | EOY              | On Track    | 0       | 4       |
+| GK-5       | EOY    | EOY              | In Range    | -5      | -1      |
+| GK-5       | EOY    | EOY              | Off Track   | —       | -6      |
+| G6-8       | EOY    | EOY              | Bright Spot | 5       | —       |
+| G6-8       | EOY    | EOY              | On Track    | 0       | 4       |
+| G6-8       | EOY    | EOY              | In Range    | -5      | -1      |
+| G6-8       | EOY    | EOY              | Off Track   | —       | -6      |
+| G6-8       | MOY    | **EOY**          | Bright Spot | 0       | —       |
+| G6-8       | MOY    | **EOY**          | On Track    | -3      | -1      |
+| G6-8       | MOY    | **EOY**          | In Range    | -5      | -4      |
+| G6-8       | MOY    | **EOY**          | Off Track   | —       | -6      |
+
+G6-8 MOY is measured against the **EOY** goal (middle school skips MOY PM for
+test prep), not against a MOY goal -- see #4952 for why.
+
+## Growth fields on `int_amplify__all_assessments`
+
+T&L asked for "% of students that made above average growth" BOY-to-MOY and
+MOY-to-EOY. Two rounds of verification were needed before building anything --
+don't skip either check on a similar ask elsewhere in this dashboard.
+
+**Round 1 -- does growth data exist and reach this model at all?** Yes.
+`measure_semester_growth` / `measure_year_growth` (both `string`) survive the
+full lineage: `stg_amplify__mclass__{sftp,api}__benchmark_student_summary` ->
+union -> unpivot -> `int_amplify__all_assessments`. Confirmed grain against live
+prod data:
+
+- **BOY** row: both null (no prior period to grow from)
+- **MOY** row's `measure_semester_growth` = BOY-to-MOY growth
+- **EOY** row's `measure_semester_growth` = MOY-to-EOY growth
+- **EOY** row's `measure_year_growth` = BOY-to-EOY (full year) -- a THIRD
+  comparison nobody asked for here. Don't conflate it with MOY-to-EOY.
+
+Values are Amplify's 5-level categorical classification (`Well Below Average` /
+`Below Average` / `Average` / `Above Average` / `Well Above Average`), `'NA'` on
+PM rows (this concept is Benchmark-only). Sanity-checked against a real student
+(107119, Newark, AY2025): raw score climbs every period (expected -- the test
+scales with grade difficulty), but the **percentile** column is what growth
+actually tracks -- percentile flat/up between two periods reads `Average`+,
+percentile down reads `Below Average`-. Growth tracks relative national
+standing, not raw score.
+
+**Round 2 -- "% of students above average growth" is NOT the categorical field
+above.** T&L's actual ask is "above the average", i.e. compute a mean growth
+number across some population and flag students who beat it -- a population
+statistic, not Amplify's pre-baked norm-referenced bucket. That statistic does
+not exist anywhere in the source. Building it needs:
+
+- **A base metric**: `measure_percentile` delta between periods, or
+  `measure_standard_score` delta. `measure_percentile` (float64, a point-in-time
+  national-norm standing) DOES flow through to `int_amplify__all_assessments`,
+  but it's a status snapshot, not a growth number -- there is no raw growth
+  percentile / SGP field anywhere in the amplify source models, confirmed by
+  grepping for `growth.*percentile|percentile.*growth` across the whole package
+  (zero hits).
+- **A reference population**: average over grade+region? grade+school?
+  network-wide per grade? T&L's call, not something to guess -- put it to them
+  as an explicit multiple-choice question if it comes up, don't build against an
+  assumed default.
+
+**Shipped so far**: `is_above_average_growth` (boolean) on
+`int_amplify__all_assessments`, derived from the categorical field only --
+`true` when `measure_semester_growth` is `Above Average` or
+`Well Above Average`, `false` for
+`Average`/`Below Average`/`Well Below Average`, `null` on `BOY` rows and on `PM`
+rows (`measure_semester_growth` is always `'NA'` there, so the concept doesn't
+apply). This satisfies "flag against Amplify's own average" -- it does NOT
+satisfy "average across our own population", which is the unresolved Round 2
+question above.
+
+**BigQuery gotcha hit while adding it**: a bare `null` in one `UNION ALL` branch
+and a real `BOOL` expression in a sibling branch fails with
+`Column N in UNION ALL has incompatible types: BOOL, INT64` -- BigQuery infers a
+bare `null` as `INT64` by default. Fix:
+`cast(null as bool) as is_above_average_growth` in the branch that doesn't
+compute it.
+
+## Always hand over the WHOLE sheet, never a patch
+
+The Expected Assessments tabs run to thousands of rows -- V1 is 3,681, the
+by-levels range 3,588. **Never ask the user to find and replace a subset**: no
+"delete the 442 Benchmark rows where region is Miami and paste these", no
+"insert these 216 rows after the AY2025 block". Filtering a long sheet by hand
+to delete some rows and paste others is slow, unverifiable, and one mis-set
+filter away from destroying rows nobody notices are gone. It has already cost
+one near-miss this project, when a delete removed 12 `type = 'LIT'` Benchmark
+rows for the current year and only a BigQuery time-travel read got them back.
+
+So every script that modifies an existing tab **emits the full tab, corrected
+rows in place**, and the handover is "select all, paste over". That makes the
+operation idempotent, reviewable as a row count, and impossible to half-apply.
+The V1 `Month/Round` fix is the model: its throwaway script walked all 3,681
+rows in original order, rewrote only the `Month/Round` cell on Benchmark rows
+whose value disagreed with `reporting__terms`, passed every PM row and every
+already-correct row through untouched, and printed a per-key summary of what it
+changed so the diff was auditable before pasting.
+
+**The line is whether existing rows change, not how many rows there are.**
+
+| Kind of change                                | Handover                                                                          |
+| --------------------------------------------- | --------------------------------------------------------------------------------- |
+| Modifies or removes existing rows             | Whole tab, corrected in place. "Select all, paste over."                          |
+| Only adds rows for a new year, season or band | The new rows alone. Appending needs no filtering, so it carries none of the risk. |
+
+Where each script sits today, so a successor does not have to read them all:
+
+- Whole-tab, already compliant -- the one-shot sheet fixes (the V1 `Month/Round`
+  rewrite, the derived-column backfill, the `measure_standard_level` cohort
+  split). All were run once and deleted; the sections below record what each
+  did.
+- Append-only, correctly partial -- `generate_pm_expected_assessments_rows.py`,
+  `generate_nj_lit_plit_rows.py`, `generate_miami_lit_plit_rows.py`,
+  `roll_forward_expected_assessments_season.py`.
+
+If a new script needs to change rows that already exist, it belongs in the first
+group. Do not add one to the second group that also edits in place.
+
+The three `generate_*` scripts are year-agnostic: each takes `--academic-year`
+(labelled by the fall, so SY26-27 is `2026`) and a `--rounds` TSV transcribed
+from that year's T&L PM rounds doc. The TSV is not committed; transcribe it each
+year. Each script's module docstring documents its own `--rounds` columns with
+example rows.
+
+Corollaries:
+
+- Print what changed, grouped and counted --
+  `2024 Miami MOY January -> December (46 rows)`. A row count alone does not
+  prove the right cells moved.
+- Verify after the paste by rebuilding the `stg_` model and re-querying, not by
+  eyeballing the sheet. Google Sheets externals read live, but the `stg_` table
+  is frozen at its last build.
+- If a script cannot express the change as a whole-tab rewrite, that is a signal
+  the change is not well enough understood yet -- work it out before handing a
+  person a filter to apply.
+- The same applies to `reporting__terms`: hand over the complete replacement
+  rather than a delete-these-then-add-those instruction.
+
+## Procedure: generate goal rows from T&L's sheet
+
+### Step 1 -- get the sheet URL and confirm access
+
+Ask the user for the Google Sheet URL, **with `gid=` in it** so the tab is
+unambiguous -- a flat Drive read returns every tab concatenated with no tab
+names or cell addresses (see `.claude/context/claude_ai_Google_Drive.md`), so
+tab attribution has to come from the API, which needs the exact tab.
+
+Try the Sheets API first:
+
+```python
+import google.auth
+from googleapiclient.discovery import build
+
+creds, _ = google.auth.default(scopes=["https://www.googleapis.com/auth/spreadsheets.readonly"])
+svc = build("sheets", "v4", credentials=creds)
+svc.spreadsheets().get(spreadsheetId="<id>").execute()  # 403 -> not shared yet
+```
+
+On a 403: tell the user to share the sheet with
+`codespaces@teamster-332318.iam.gserviceaccount.com`, then retry. This is a
+**different identity** from both the Drive MCP (runs as the user) and the
+BigQuery MCP's service account -- being shared with one says nothing about the
+others.
+
+### Step 2 -- pull the tab's raw grid to a TSV
+
+Match the `gid` to a tab title via `spreadsheets().get()`'s
+`sheets[].properties`, then:
+
+```python
+res = svc.spreadsheets().values().get(spreadsheetId="<id>", range="<Tab Name>!A1:N40").execute()
+with open("ay<year>.tsv", "w") as f:
+    for row in res.get("values", []):
+        f.write("\t".join(row) + "\n")
+```
+
+One TSV per academic year. The generator auto-detects whether the tab has an IEP
+block (looks for "IEP" anywhere in the first row) -- see _MLL population --
+shipped with placeholder values_ above for why this detection needs generalizing
+before a real MLL source shows up.
+
+### Step 3 -- run the generator
+
+```bash
+uv run python .claude/skills/dibels-dashboard/scripts/build_foundation_goals_rows.py \
+    out.tsv 2024=ay2024.tsv 2025=ay2025.tsv
+```
+
+It reports rows-per-file and prints warnings for anything skipped -- an
+unrecognized grade token, or a range where the parsed low bound exceeds the high
+bound (a real example hit in AY2024 Newark K MOY At/Above: the source cell reads
+`"37 - 4"`, plainly a transcription typo -- the row is skipped rather than
+guessed at; flag it back to T&L rather than silently fixing it). Band-aggregate
+rows and blank cells are skipped silently and by design, not warned on.
+
+Do not paste anything until the warning list is empty or every warning is
+explained.
+
+### Step 4 -- user pastes into the real dbt-source sheet
+
+`out.tsv` has no header; rows append. Column order matches the schema table
+above.
+
+### Step 5 -- rebuild and verify in dev
+
+A Sheets external table's DDL is fixed at creation -- pasting new data into the
+sheet is NOT enough by itself when the column set changed (as opposed to a pure
+value edit into unchanged columns). Two commands, in order, every time:
+
+```bash
+DBT_PROFILES_DIR=.dbt uv run dbt run-operation stage_external_sources \
+  --args "select: google_sheets.<source_table_name>" \
+  --vars '{ext_full_refresh: true}' \
+  --target dev --project-dir src/dbt/kipptaf
+
+DBT_PROFILES_DIR=.dbt uv run dbt build --select <staging_model_name> \
+  --target dev --defer --state /workspaces/teamster/src/dbt/kipptaf/target/prod \
+  --project-dir src/dbt/kipptaf
+```
+
+Both are dev-schema / personal-copy operations, not classifier-blocked (see
+`src/dbt/CLAUDE.md`). `stage_external_sources` SKIPs an existing table without
+`ext_full_refresh: true` -- easy to miss, shows as a silent no-op rather than an
+error. Then query the rebuilt `zz_<user>_kipptaf_google_sheets.<model>` table
+directly to confirm row counts and spot-check values against what was pasted,
+per (academic_year, region, population) or whatever the grain is -- don't trust
+a green build alone as proof the data landed correctly.
+
+### Step 6 -- audit before trusting it
+
+Sparse IEP coverage is expected, not a bug: as of AY2025, IEP goals exist only
+for Newark and Camden grades K-5 -- none for grades 6-8, none for Paterson at
+all. A retrofit that shows `0` IEP rows for Paterson is correct. Cross-check row
+counts by `academic_year, population` against what the source tab actually
+contains before assuming a parsing bug.
+
+### Step 7 -- the SECOND paste: foundation goals do not reach the dashboard
+
+**Pasting foundation goals changes nothing the dashboard displays.** Tell the
+user this before they finish, because everything about the first paste looks
+complete: the external re-stages, the staging model builds green, row counts
+check out, and the benchmark goals on the dashboard stay exactly as they were.
+
+The loop runs through a human twice:
+
+```text
+stg_google_sheets__dibels_foundation_goals   <- first paste (Steps 4-6)
+  -> rpt_gsheets__dibels_bm_goals_calculations   (computes the goals)
+    -> PASTE INTO "BM Goals" TAB                 <- second paste, Step 7
+      -> src_google_sheets__dibels__bm_goals
+        -> stg_google_sheets__dibels_bm_goals
+          -> rpt_tableau__dibels_dashboard       (Benchmark branch, alias `g`)
+```
+
+The dashboard's Benchmark goal columns -- `admin_goal`,
+`admin_goal_grade_range`, `admin_goal_season`, and every
+`n_admin_season_{school,region}_gl_*` count -- come from
+`stg_google_sheets__dibels_bm_goals` alone. Nothing on the dashboard reads
+`stg_google_sheets__dibels_foundation_goals`. So until the second paste lands,
+the new year has Benchmark rows with null goals while the calculation model
+holds the answer nobody moved.
+
+Paste target: named range `src_google_sheets__dibels__bm_goals`, spreadsheet
+`15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs`. Source of the rows:
+`rpt_gsheets__dibels_bm_goals_calculations`, which carries the current year
+only. Unlike the foundation_goals paste, the column set does not change, so no
+`stage_external_sources` re-stage is needed -- a value-only paste.
+
+#### Generate only the regions prod is missing -- never regenerate one already there
+
+**The default is additive, per region.** Ask prod what it already holds,
+generate only the regions absent from it, and append. A region already in the
+tab is frozen and stays frozen.
+
+```sql
+select academic_year, region, count(*) as rows_
+from `teamster-332318`.kipptaf_google_sheets.stg_google_sheets__dibels_bm_goals
+where academic_year = <year>
+group by academic_year, region
+order by region
+```
+
+Anything listed there is done. Generate the complement, not the whole year.
+
+The reason is that **the paste is not idempotent.** Only the goal columns are
+stable -- they come from the frozen foundation goals sheet. The
+`n_admin_season_*` headcounts are computed from live assessment data, so the
+same region regenerated a week later returns different numbers as more students
+test. Regenerating a region that is already present therefore does not "refresh"
+it: it silently replaces figures that were already set and reported against with
+figures from a later moment, and nothing in the sheet or the warehouse records
+that it happened. Regions are goal-set at different times precisely because
+their testing windows close at different times, so each one's snapshot is
+supposed to be taken once, when that region's window closes.
+
+**The one exception is a defect in the calculation**, where the frozen numbers
+are wrong rather than merely old. Then replace the whole academic year rather
+than part of it, so every region's rows come from the same code at the same
+moment. That happened on 2026-09-15: all 74 AY2026 rows were regenerated after
+the `bl_wb` non-determinism fix, deliberately overriding the additive rule.
+Treat a full-year replace as the thing that needs justifying, not the default.
+
+`select * except(...)` has no bearing here -- the model emits the current year
+only, so "the whole year" and "everything the model returns" are the same set.
+
+Related caution, worth checking before assuming a region is simply missing:
+**Miami has benchmark goals in the tab but no foundation goals at all.**
+Foundation goals cover Camden, Newark and Paterson only, so Miami's benchmark
+numbers do not come from this lineage and cannot be produced by generating them
+here. A Miami row absent from the tab is not a row this procedure can add.
+
+**Verify by year, not by row count.** A populated prior year makes the totals
+look healthy:
+
+```sql
+select
+    academic_year,
+    count(*) as bm_rows,
+    countif(admin_goal is not null) as has_admin_goal,
+    countif(n_admin_season_school_gl_all is not null) as has_school_counts
+from `teamster-332318`.kipptaf_tableau.rpt_tableau__dibels_dashboard
+where assessment_type = 'Benchmark'
+group by academic_year
+order by academic_year
+```
+
+A year with `bm_rows` in the tens of thousands and `has_admin_goal` at `0` is
+the missing second paste. Measured 2026-09-14: AY2026 had 119,178 Benchmark rows
+at `0` goals while AY2024 and AY2025 were populated, and
+`rpt_gsheets__dibels_bm_goals_calculations` held 49 unpasted AY2026 rows. AY2023
+reads `0` legitimately -- it predates the goals sheet.
+
+## PM/aimline migration (#3834)
+
+Full spec: issue #3834. Two distinct kinds of work live under this track -- easy
+to conflate, so keep them separate:
+
+1. **Seasonal rollover of Benchmark rows already in the sheet** -- adding
+   MOY/EOY for a year that only has BOY. Pure mechanical duplication, covered
+   below.
+2. **Entering actual PM round rows for SY26-27** -- the new per-region PM
+   schedules. As of 2026-08-31, `stg_google_sheets__dibels_expected_assessments`
+   has zero `academic_year = 2026` PM rows, but it is NOT a new concept for this
+   sheet -- AY2024 and AY2025 both have a full working PM scaffold already (see
+   _Existing PM precedent_ below). SY26-27 entry is mechanically the same
+   process, blocked on: a cohort field the sheet doesn't have yet (see the
+   issue's "Scaffolds and sheets" checklist), and the round-numbering overflow
+   below for Miami. Not covered by the script in this section, which is
+   Benchmark-only.
+
+### Canonical annual rollover process
+
+- **Benchmark**: every region gets `BOY` / `MOY` / `EOY` rows in
+  `stg_google_sheets__dibels_expected_assessments`, dated to match that region's
+  `LIT1` / `LIT2` / `LIT3` term windows already in
+  `stg_google_sheets__reporting__terms`.
+- **PM**: PM rounds are matched by region and grade level from the PM round
+  document the Academics/T&L team delivers for the year -- not invented or
+  copied from a prior year's dates. The `LIT` round dates are the input the
+  calendar derives `PLIT` boundaries _between_, so with no round document there
+  is nothing to derive and no rows can be generated for that region.
+
+**The Academics team labels academic years by the SPRING.** "SY26" means
+SY25-26, which is `academic_year = 2025` in `reporting__terms`; the SY26-27
+rollover needs the doc labeled **SY27**. This burned a full cycle here: a Drive
+search turned up `1BWVR_ptVJ2MFp9D-r_9r4wtc84mlMihVSr8HmgJ9lz4` ("SY26 - KIPP NJ
+
+- DIBELS PM Rounds + Goals"), which was read as the current doc and, finding no
+  Miami in it, wrongly taken as proof no Miami rounds existed anywhere. It is
+  last year's document -- confirmed by data, not by title: its `8/20 - 9/12`
+  BOY, `10/27 - 10/31` PM #2 and `1/6 - 1/23` MOY match Newark AY2025 exactly,
+  while AY2026 runs `8/19 - 9/11`, `10/19 - 10/23`, `1/5 - 1/22`. **Date-check
+  any round doc against `reporting__terms` before trusting its title**, and
+  expect a title one year ahead of the `academic_year` it describes.
+
+Second lesson from the same mistake: a Drive search run through **ADC (the
+service account) sees only what has been shared with that identity**, not the
+user's Drive. An empty result is not evidence a document does not exist -- ask
+for it to be shared, the way the region calendar sheets were.
+
+- **K-2 vs 3-8, if the aimline model holds**: K-2 keeps the in-house PM goal
+  calculation, which requires `PLIT` rows (see _`reporting__terms` grade bands_
+  below). Grades 3-8 use Amplify's aimline-provided goal-setting calculation
+  directly and never need `PLIT` rows.
+
+The `PLIT` date calculation is no longer an open question -- see _`PLIT`
+boundary rule_ below, verified against real NJ **and** Miami data.
+
+### Sheet identity
+
+Same workbook as the Bright Spots tabs above: spreadsheet
+`15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs`.
+`stg_google_sheets__dibels_expected_assessments` reads named range
+`src_google_sheets__dibels__expected_assessments` (double underscore -- see _Two
+"Expected Assessments" tabs and named ranges exist in parallel_ below for the
+single-vs-double-underscore trap this table DOES have, post-cutover), tab
+"Expected Assessments", 18 declared columns (`sources-external.yml` around line
+98). Only `assessment_include`, `pm_goal_include`, `pm_goal_criteria` (the last
+three) are ever blank on **Benchmark** rows. **PM rows do populate the last
+two**: `pm_goal_include` carries `true`/`false`/blank per measure, and
+`pm_goal_criteria` carries `AND` for every row as of SY26-27 (see below) --
+don't assume all 18 columns behave like the Benchmark rows do. The named range
+is NOT row-bounded (no `startRowIndex`/`endRowIndex` in its definition), so
+appending past the current last row is safe -- no truncation risk like the
+foundation_goals range above.
+
+### Benchmark seasonal rollover -- the process, since it repeats every year
+
+**Within one academic year, a benchmark season's rows differ from another
+season's ONLY in `Admin_Season`, `Test_Code`, and `Month_Round`.** Every other
+column (`Region`, `Grade`, `Measure_Standard`, ...) is identical, because the
+same measures get tested every round. Confirmed empirically: AY2026 had exactly
+192 BOY rows (48 x 4 regions) and zero MOY/EOY when this was checked
+(2026-08-31) -- T&L had entered BOY and stopped there.
+
+Generate the missing seasons by copying the existing season's rows and swapping
+those three fields -- `scripts/roll_forward_expected_assessments_season.py` does
+this against the LIVE sheet (Sheets API, read-only ADC) rather than BigQuery, so
+the output matches the sheet's own literal formatting byte-for-byte (e.g.
+`Grade` as the string `"0"`, not an int):
+
+```bash
+uv run --with google-api-python-client --with google-auth python3 \
+    .claude/skills/dibels-dashboard/scripts/roll_forward_expected_assessments_season.py \
+    --spreadsheet-id 15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs \
+    --tab "Expected Assessments" \
+    --academic-year 2026 \
+    --source-season BOY --source-test-code LIT1 \
+    --target MOY:LIT2:January \
+    --target EOY:LIT3:May \
+    --out out.tsv
+```
+
+**`Month_Round` is the real month for THIS year's window, not a copy-pasted
+historical label.** Checked against `stg_google_sheets__reporting__terms` (the
+actual per-region term dates) and against AY2024/AY2025 precedent already in the
+sheet: MOY has consistently been `"January"` in recent years even though the
+older AY2023 rows say `"February"` -- the district's testing calendar moved
+earlier since then. **EOY is `"May"` for every region, including Miami**, even
+though Miami's actual EOY window (from `reporting__terms`) starts April 26 --
+the sheet has never split this into an "April" label; don't introduce one
+without T&L asking for it.
+
+**`Test_Code` mapping**: `LIT1` = BOY, `LIT2` = MOY, `LIT3` = EOY. Confirmed
+against `reporting__terms`, which uses the same three codes with real date
+ranges per region/year.
+
+**No re-staging needed after pasting.** Unlike the foundation_goals column-set
+changes above, a seasonal rollover only adds rows to columns that already exist
+-- rebuild the staging model in dev
+(`dbt build --select stg_google_sheets__dibels_expected_assessments --target dev --defer --state <prod manifest>`)
+and query the rebuilt table to confirm row counts; no
+`stage_external_sources --ext_full_refresh` step needed.
+
+### Existing PM precedent -- the template for item 2, verified against real rows
+
+`assessment_type = 'PM'` rows already exist for AY2024 (Camden, Newark only) and
+AY2025 (Camden, Newark, Paterson, Miami) -- this is not a new row shape, just a
+new year. Confirmed by pulling the actual rows, not just the label counts (an
+earlier pass here mischaracterized these as "a handful of ad hoc Miami rows" --
+wrong; they're the full K-8 scaffold for two entire prior years):
+
+- **`Admin_Season` on PM rows is the pm_period, not a season tag**: `BOY->MOY`
+  or `MOY->EOY`, matching `pm_period` on the aimline model. Never `BOY` / `MOY`
+  / `EOY` bare -- those are Benchmark-only.
+- **`round_number` is ONE continuous sequence per academic_year/region, spanning
+  both PM seasons** -- it does NOT reset to 1 at the `MOY->EOY` boundary.
+  Verified round ranges: AY2024 Camden/Newark 1-9 (4 rounds `BOY->MOY` + 5
+  `MOY->EOY`); AY2025 Camden/Newark/Paterson 1-8 (4+4); AY2025 Miami 1-6 (3+3).
+  **Fixed for double-digit rounds** (#3834): `round_number` used to derive from
+  `right(test_code, 1)`, which reached `LIT9` in AY2024 without issue
+  (single-digit), but would have silently mis-parsed `LIT10`/`LIT11` as `0`/`1`
+  -- exactly what Miami's 11-round SY26-27 schedule needs. Now
+  `safe_cast(regexp_extract(test_code, r'LIT(\d+)') as int)` in
+  `stg_google_sheets__dibels_expected_assessments.sql` -- extracts every digit
+  after `LIT` (or `PLIT`; the pattern matches the `LIT` substring wherever it
+  falls), not just the last one. Verified against every `test_code` value
+  actually in the sheet (LIT1-LIT9 today, all single-digit) plus literal
+  `LIT10`/`LIT11`/`PLIT1`/`PLIT8` test values via BigQuery -- unchanged for
+  every existing row, correct for the double-digit case once it appears.
+- **`Month_Round` per round already follows a real monthly progression**, not a
+  placeholder: AY2025 NJ regions ran September/October/November/December for
+  rounds 1-4, then February/March/March/April for rounds 5-8. AY2025 Miami ran
+  October/November/December (1-3) then February/March/April (4-6).
+- **`PM_Goal_Criteria` is `AND` for Camden/Newark/Paterson (grades 3+, matching
+  the issue's note that all K-8 rounds use AND this year) but is never populated
+  for Miami** -- confirm with T&L whether that's deliberate before copying the
+  NJ pattern for Miami's SY26-27 rows.
+- **No Paterson or Miami PM data exists for AY2024** -- both regions' PM
+  scaffold starts at AY2025. A rebuild that shows 0 AY2024 PM rows for either
+  region is correct, not a bug.
+
+### `reporting__terms` grade bands -- `PLIT` covers EVERY band, K-8
+
+`reporting__terms` PM rows can carry a `Grade Band` value (e.g. `0,1,2`) on top
+of the `LIT`/`PLIT` scheme above, letting each band get its own rows under the
+same round codes.
+
+**This section used to say `PLIT` was K-2-only. That was wrong, and it was wrong
+in the direction that silently produces no data.** The reasoning behind it was
+sound but its premise expired: `PLIT` feeds the in-house collective-average goal
+calculation (school-day counting for the daily-growth-rate math), and while 3-8
+was on aimline alone, 3-8 needed no `PLIT`. Academics now runs the internal
+method across K-8, so **every** band needs `PLIT` rows -- a band without them
+gets a null `pm_round_days` and drops out of the goal calculation with no error.
+The user's correction was blunt and worth remembering: _"yes, we need plit rows
+for 3-8 now for reporting terms."_
+
+When band rows were duplicated across bands for this, the copy had to carry
+`PLIT` as well as `LIT`. The one-shot script that did it originally hardcoded a
+`PLIT%` exclusion -- that exclusion became the wrong default, not an optional
+one.
+
+**Miami does not use the NJ bands.** Miami splits K / 1-3 / 4,5 / 6-8 per T&L's
+document, not K-2 / 3,4 / 5,6,7,8. Read the bands off the doc per region, every
+year -- and note that any override justification of the form "this band skips
+`PLIT`" is void now that every band gets it.
+
+`dim_terms.term_key` was widened to include `grade_band` (#3834) specifically
+because this scenario broke `unique_dim_terms_term_key` -- two rows sharing a
+`code` but differing only in `Grade Band` used to collide on the same key. No
+`code` prefix is needed for a new band anymore; the hash already disambiguates
+on `grade_band`.
+
+### Two Expected Assessments chains ship in parallel -- one per data model
+
+Academics runs **both** PM data models for SY26-27, so both chains are live
+production paths. This is not a primary-plus-fallback arrangement and neither
+one is a contingency -- do not "consolidate" them.
+
+|                          | Internal, K-8                                                        | Combo, K-2 internal + 3-8 aimline                           |
+| ------------------------ | -------------------------------------------------------------------- | ----------------------------------------------------------- |
+| Named range              | `src_google_sheets__dibels_expected_assessments` (single underscore) | `src_google_sheets__dibels__expected_assessments_by_levels` |
+| Tab                      | "Expected Assessments V1" (sheetId `1270280562`)                     | the by-levels range on the same spreadsheet                 |
+| Shape                    | 16 columns, PascalCase headers                                       | 18 columns, snake_case headers                              |
+| dbt source               | `src_google_sheets__dibels__expected_assessments`                    | `src_google_sheets__dibels__expected_assessments_by_levels` |
+| Staging model            | `stg_google_sheets__dibels_expected_assessments`                     | `stg_google_sheets__dibels__expected_assessments_by_levels` |
+| `assessment_type`        | derived from `admin_season` in staging SQL                           | sheet-authored                                              |
+| `measure_standard_level` | absent -- rows carry no cohort                                       | present -- `Below` / `Well Below`                           |
+| Generator flag           | `--single-rows`                                                      | (default)                                                   |
+
+**For the internal chain the source `name:` and its `sheet_range` disagree on
+underscores, and that is correct.** The dbt source is
+`src_google_sheets__dibels__expected_assessments` (double underscore) while its
+`sheet_range` points at the single-underscore named range. Do not "fix" either
+to match the other -- the source name is what downstream `source()` calls
+resolve, the range name is what the spreadsheet calls that region. Same
+single-vs-double-underscore trap as foundation_goals above, on the same
+spreadsheet (`15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs`).
+
+#3834 originally cut the internal chain over to the 18-column range and widened
+`stg_google_sheets__dibels_expected_assessments`'s contract to match. That was
+reverted once academics asked for both models: the internal chain went back to
+its prod shape, and the 18-column range got its own source and staging model
+instead of replacing the old one. So the V1 tab is NOT a frozen historical
+snapshot -- it is the internal model's live source.
+
+A future cutover that really does move a `sheet_range` still lands as one change
+(range move + `columns:` widen + contract update + derivation drop), per the
+_Named ranges: the recurring trap_ convention above -- a `sheet_range` move with
+a stale `columns:` list re-triggers the "New sheet column vs `select *`
+contract" failure mode from `src/dbt/CLAUDE.md`.
+
+### `measure_standard_level` cohort split (`Below` / `Well Below`)
+
+SY26-27 needs one Expected Assessments PM row per
+`(region, grade, round, measure)` **per cohort**, not one row shared across
+cohorts -- Well Below and Below students can be assigned different measures
+starting this year (see _Upcoming changes_ in the ref doc). For SY25-26
+(`academic_year = 2025`), which is used to validate the new model against real
+historical data, T&L's PM rounds doc shows every round testing Below and Well
+Below on the **identical** measures with no differentiation -- so the correct
+SY25-26 fix is purely mechanical: treat every existing PM row as the `Below`
+copy, and duplicate it into a second row identical in every column except
+`measure_standard_level`, set to `Well Below`. Benchmark rows are untouched --
+Benchmark tests all students regardless of cohort.
+
+This was done once with a throwaway script, and the resulting rows are in the
+sheet. It walked the whole "Expected Assessments" tab in original row order (not
+just the matched rows) so every other row -- other academic years, and every
+Benchmark row including 2025's and 2026's -- passed through unchanged in its
+original position. Verified against prod (V1) after running it: the `Below` and
+`Well Below` rows are an exact 1:1 match to V1's 2025 PM rows, and every
+non-2025-PM row matches V1 byte-for-byte, confirmed by multiset diff (zero
+extra, zero missing on all three checks), not just a row count.
+
+**This never invents a measure set -- it can only ever duplicate what a region's
+own rows already say.** The script has no code path that copies one region's
+measures onto another, so Miami's PM rows keep whatever measures Miami actually
+tests, distinct from NJ's (verified: Miami's grade 0/3/5 measure sets differ
+from Newark's at every grade checked). Do not "simplify" a future rewrite of
+this script by templating one region's measure list across all regions -- that
+would silently overwrite real regional differences.
+
+**This does NOT generalize past 2025 to a future year where cohorts genuinely
+test different measures.** If a future PM rounds doc ever specifies different
+measures per cohort within the same round, this mechanical duplication is the
+wrong tool -- that needs real per-cohort row entry, not a copy-with-one-field-
+changed script.
+
+### `assessment_type` -- derived on the internal chain, sheet-authored on the combo chain
+
+The two chains classify Benchmark vs PM differently, and that is deliberate:
+
+- **Internal chain** (`stg_google_sheets__dibels_expected_assessments`) derives
+  it: `if(admin_season in ('BOY', 'MOY', 'EOY'), 'Benchmark', 'PM')`. The
+  16-column V1 range has no such column, so the rule stays in SQL. **Leave that
+  `if(...)` line alone** -- an earlier revision of this skill told you to drop
+  it once `sheet_range` moved to the 18-column range; that move was reverted
+  when academics asked for both models.
+- **Combo chain** (`stg_google_sheets__dibels__expected_assessments_by_levels`)
+  reads it from the sheet, next to `subject_area`, so the classification is
+  explicit rather than inferred downstream by a rule only the SQL knows. That
+  staging model has no `assessment_type` derivation at all.
+
+Both produce the same values for the same rows -- the sheet column was
+backfilled with the exact rule the SQL applies.
+
+**Backfilled for every existing row, not just new ones** -- `assessment_type` is
+used across every academic year on this tab, not only SY26-27, so the one-shot
+backfill filled it for all ~3,588 rows (all years) using that same rule, so no
+row's classification changed silently. That same pass also carried the
+`month_round` fix below.
+
+### Benchmark `month_round` must match `reporting__terms`, not be copied forward
+
+`month_round` on Benchmark rows (`BOY`/`MOY`/`EOY`) had drifted from the
+region's actual calendar for years, undetected: it was written as one nominal
+label per season (`August`/`January`/`May`) applied network-wide, including to
+Miami, whose BOY and EOY windows land in different calendar months than the NJ
+regions. Confirmed against `reporting__terms`' actual `Start Date`s, both years
+checked: Miami's BOY starts in September (not August); Miami's EOY starts in
+April (not May); two 2023 NJ `MOY` rows were also wrong (`February`, should be
+`January`). Nobody had checked `month_round` against `reporting__terms` directly
+before this.
+
+**The rule going forward**: `month_round` = the calendar month of the matching
+`LIT1`/`LIT2`/`LIT3` (`BOY`/`MOY`/`EOY`) row's `Start Date` in
+`reporting__terms`, **per region**, not copied from last year's label and not
+shared across regions. This lookup was derived and every disagreeing Benchmark
+row corrected, for every academic year present, as part of the one-shot backfill
+pass above.
+
+**Gotcha that cost a wasted first pass**: before grade-band tagging existed
+(pre-2025), a PM round can share the exact same `LIT1`/`LIT2`/`LIT3` code as the
+real Benchmark row for that year, with no `Grade Band` value to distinguish them
+either (e.g. AY2024 Camden `LIT1` has one row named `BOY`, dated 2024-08-21, and
+another named `BOY->MOY`, dated 2024-09-30 -- same code, both grade-band-blank).
+Matching by code alone let a PM round's date silently overwrite the real
+Benchmark date when building the lookup. Only the `Name` column (exactly
+`BOY`/`MOY`/`EOY`, never `BOY->MOY` etc for a PM round) disambiguates them --
+caught by diffing the proposed correction against `reporting__terms` before
+trusting it, not by inspecting the matching logic in isolation. Any future
+script that builds a similar `reporting__terms` lookup by code needs the same
+`Name` check.
+
+### Calendar and school sources -- Miami is Focus-only from AY2026
+
+**Never read `stg_powerschool__calendar_day` for a DIBELS date calculation.**
+Use `int_students__calendar_day`, which serves PowerSchool for the NJ regions
+and Focus for Miami's Focus-covered years.
+
+The frozen PowerSchool archive still carries a **rolled-forward Miami calendar
+through 2027-06-29** — it queries fine and looks plausible, but against Focus's
+real AY2026 calendar it has 48 phantom in-session days: 23 in July 2026 (school
+is not in session in July), 7 on Aug 3-11 (before Focus's real Aug 12 start),
+and 18 on Jun 4-29 (after its real Jun 3 end). The Aug 3-11 block is the
+dangerous one — it sits exactly where `PLIT1`'s start anchor and round-1
+boundaries land, so Miami dates computed off the PowerSchool path come out wrong
+_plausibly_ rather than visibly.
+
+Verified before switching: the two sources are **day-for-day identical for
+Camden, Newark and Paterson in both SY25-26 and SY26-27**, and for Miami in
+SY25-26 (205 = 205, which also confirms the archive was frozen faithfully at
+cutover, so the SY25-26 Miami verification work stands). Only Miami AY2026
+diverges. `int_google_sheets__dibels_pm_expectations` and
+`generate_nj_lit_plit_rows.py` were both switched with zero output change: all
+44 SY26-27 `PLIT` rows regenerated byte-identical, and `pm_round_days` was
+unchanged across every region and academic year.
+
+**The schools side is NOT yet fixed, and the obvious swap makes it worse.** The
+model still resolves region as `stg_powerschool__schools.schoolcity` with
+`state_excludefromreporting = 0`, which yields only 2 reportable Miami rows.
+`int_students__schools` is the structural analogue (PowerSchool for non-Miami,
+Focus for Miami) and does give Miami 7 schools — but its Focus branch supplies
+neither column: `schoolcity` and `state_excludefromreporting` are **NULL for all
+7 Miami rows**, so a naive ref swap drops Miami entirely on both the
+`s.schoolcity = t.region` join and the reportability filter. Doing it properly
+means resolving region from `dim_regions` (join `dagster_code_location` to
+`_dbt_source_project`; its `name` values — Camden / Miami / Newark / Paterson —
+match `reporting__terms.region` exactly) and replacing the
+`state_excludefromreporting` gate with `location_key is not null`, since the
+Focus branch's inner join to `stg_google_sheets__people__locations` already
+drops the non-instructional schools. Tracked as remaining Miami work.
+
+### `PLIT` boundary rule -- verified, K-2 only, one open edge case
+
+How to pick a new `PLITn` row's `Start Date`/`End Date` was an open item for a
+long time (see the ref doc). Reverse-engineered and verified against real
+Camden/Newark/Paterson AY2025 `reporting__terms` data, using
+`int_students__calendar_day` (network-wide, SIS-neutral -- NOT
+`stg_powerschool__calendar_day`, which is PowerSchool-only and would silently
+exclude Miami since it's on Focus):
+
+- `PLITn.start` = the first **in-session** day strictly after round `n-1`'s
+  `End Date`
+- `PLITn.end` = the last **in-session** day strictly before round `n`'s
+  `Start Date`
+- `PLIT1.start` = the season's own Benchmark start date directly, NOT
+  calendar-derived (it's the very first day of the season, so there's no
+  "previous round" to compute from)
+
+Matched 7 real boundaries exactly across all three NJ regions before trusting it
+(`scripts/generate_nj_lit_plit_rows.py` implements it, and caught its own bug on
+the first run -- `PLIT1.start` needs the direct-copy exception above, not the
+day-after-previous-round math every other `PLITn` uses).
+
+**PD days are NOT excluded from this calculation, and shouldn't be added in.**
+Checked directly: `stg_powerschool__calendar_day` has a real `type = 'PD'` code
+and uses it correctly for SOME PD days (e.g. 2025-11-03, 2025-12-08 both code
+`insession = 0`, `type = 'PD'`) but NOT others that landed exactly on a `PLIT`
+boundary (2025-10-24, 2025-12-23, 2026-03-27 all code `insession = 1`,
+`type = 'IN'`, identical to a normal day, despite being real PD days per the
+human-maintained school calendar). This looked at first like a reason to build
+PD-day exclusion into the boundary calculation -- but checking the actual frozen
+`stg_google_sheets__dibels_pm_goals` values ruled that out: Camden round 2's
+frozen `PM_Round_Days` (18) exactly matches a naive PD-day-inclusive count, so
+the real historical process doesn't reliably exclude PD days either. Building
+that in now would be MORE correct than precedent, not consistent with it -- a
+deliberate choice to make explicitly if it's ever wanted, not something to sneak
+into a boundary-generating script.
+
+**One open edge case, not resolved**: crossing from `BOY->MOY` into `MOY->EOY`,
+real AY2025 data shows the new season's first `PLIT` starting ONE DAY BEFORE the
+old season's last round officially ends (Camden/Newark/Paterson `PLIT5` starts
+2025-12-22; `LIT4` ends 2025-12-23) -- confirmed both days are real in-session
+days, not a PD-day artifact, and confirmed via Google Sheets edit history that
+the dates were never changed after entry (so it's not a stale-snapshot
+explanation either). Genuinely unexplained. `PLIT` rows generated for the
+SY26-27 season boundary use the same clean rule as every other transition (day
+after the previous round ends) rather than replicating this unexplained 1-day
+overlap -- flag those specific rows if the real reason for last year's overlap
+ever surfaces.
+
+**Miami follows the same rule -- verified, and it makes NJ's overlap look like
+the anomaly.** Checked all six AY2025 Miami K-2 `PLIT` rows (grade band `0,1,2`,
+rounds 1-6) against Miami's real Focus calendar, restricted to the five ACTIVE
+schools (`int_focus__schools.max_syear is null` -- see _Calendar and school
+sources_ above; the two closed schools carry a wider untrimmed calendar that
+would corrupt the boundary math). Nine of the eleven checkable boundaries match
+exactly. Two do not, and neither is a rule difference:
+
+- **`PLIT3.end` diverges and is NOT resolved.** It reads `2025-11-12`; the rule
+  yields `2025-12-12`, leaving 22 in-session days in no window (5 days as
+  entered vs 27 by the rule). This was initially called a month-field
+  transposition -- that call was wrong to make. Miami administers state testing
+  three times a year and FAST PM2 lands early-to-mid December, almost exactly
+  the `2025-11-13` to `2025-12-14` hole, so a deliberate PM pause across a
+  testing window fits at least as well as a typo. Miami's `LIT` rounds are only
+  3 days each, so a 5-day `PLIT` is not anomalously short for them either. And
+  `reporting__terms` carries **no state-testing term type for Miami at all**
+  (only `LIT`, `RT`, `AR`, `SRE`), so no testing row there is not evidence none
+  existed. Do not "fix" this cell on the rule's authority.
+- **`PLIT6.end`** reads `2026-04-02`; the rule yields `2026-04-03`, which is
+  Good Friday. Same class of holiday-marking discrepancy already documented for
+  NJ above -- Focus codes the day in session, the human calendar doesn't.
+
+Critically, **Miami's season boundary is clean**: `PLIT4` starts `2025-12-18`,
+the day after `LIT3` ends `2025-12-17`, exactly as the rule predicts, with no
+1-day overlap. So the NJ `PLIT5` overlap above is a three-region NJ quirk, not
+network behavior -- which strengthens the decision to generate SY26-27 season
+boundaries with the clean rule.
+
+**`PLIT1.start` for Miami is neither the first in-session day nor the Benchmark
+start.** AY2025 `PLIT1` starts `2025-08-12` while active Miami's first
+in-session day is `2025-08-11` and its `BOY` Benchmark window is `2025-09-08` to
+`2025-09-26`. For NJ the two coincide (the region's `BOY` Benchmark opens on
+roughly the first day of school), so the "copy the Benchmark start" shortcut
+used for NJ does NOT transfer -- Miami's Benchmark sits a month into the year.
+Get `PLIT1.start` confirmed by T&L for Miami rather than deriving it.
+
+### A round can legitimately have NO `PLIT` window -- 10 rows against 11 rounds is not a bug
+
+SY26-27 Miami has 11 rounds but only 10 `PLIT` rows. That is correct. T&L
+extended PM #2 to run `10/26` through `11/06`, and PM #3 starts `11/09`, so no
+school days remain between them -- the derived `PLIT3` start (`11/09`) lands
+after its derived end (`11/06`). `generate_miami_lit_plit_rows.py` skips such a
+round and prints which one, rather than emitting an inverted range.
+
+**Do not "restore" the missing row.** The two ways to force one are both worse
+than omitting it: an inverted range counts zero days anyway, and a range
+overlapping `LIT2` double-counts those 5 days and inflates `pm_days`, which is
+the goal-math denominator.
+
+**No days are lost, they move.** `pm_round_days` maps `LITn` and `PLITn` to the
+same round, so the 5 days that used to sit in `PLIT3` now sit inside the
+extended `LIT2`. Measured before and after: round 2 went 14 to 19 days, round 3
+went 9 to 4, and the `BOY->MOY` season total held at 85. Because the season
+total is the denominator, no other round's proportion moved.
+
+**Nothing downstream filters on `PLIT`.** Verified with a case-sensitive
+word-boundary search across `src/dbt` and `src/cube`: zero explicit `PLIT`
+references. Expected Assessments never carries a `PLIT` test code either -- its
+PM rows use `LIT1` through `LIT11` only -- so the `test_code = code` join to
+`reporting__terms` never looks for one. `pm_rounds_agg` also attaches by
+`LEFT JOIN`, so a round with zero days keeps its row instead of vanishing. Had
+any model filtered `code like 'PLIT%'`, omitting the row would have silently
+dropped round 3 rather than reassigning its days.
+
+### `pm_goal_include` scaffolding -- internal-only, and aimline must FILTER it
+
+Confirmed with the user against real AY2025 data: a measure tested in SOME
+rounds of a season but not all still needs a row for EVERY round of that season
+-- the in-house collective-average goal calculation needs trajectory continuity
+across the whole season, even for rounds where that specific measure wasn't
+administered. `assessment_include` stays `null` on those rows (they're not
+excluded from the scaffold); `pm_goal_include` is `false` on the rounds where
+the measure wasn't tested that round, `null` (active) where it was.
+
+Verified example: Camden/Newark/Paterson grade 0 (K), `PSF`, `BOY->MOY`, AY2025
+-- rounds 1-3 have `assessment_include = null`, `pm_goal_include = null`; round
+4 (PSF not tested that round) still has a row, `assessment_include = null`,
+`pm_goal_include = false`.
+
+The scaffold belongs to the **internal method**, not to a grade band. Academics
+runs internal across K-8, so every internal grade is scaffolded. Through SY25-26
+it looked K-2-only because 3-8 was the only band on aimline.
+
+**Aimline needs no scaffold, but the by-levels sheet contains one -- so filter,
+don't assume.** This is a trap worth stating flatly, because it cost a bug: it
+is true that aimline has no trajectory to keep continuous, and therefore true
+that it has no _use_ for scaffold rows. It does NOT follow that aimline rows
+carry `pm_goal_include = null`. The SY25-26 by-levels rows were generated by
+duplicating the 16-column sheet's PM rows per cohort, so they carry the internal
+scaffold verbatim -- measured at 321 of 790 rows per cohort, roughly one in
+five. An aimline model that drops the column on the reasoning "it's structurally
+null here" emits every scaffold row as a real expectation. Write
+`and e.pm_goal_include is null` in the model's `where`; the column stays
+unprojected, which is what "no need for `pm_goal_include` on aimline" actually
+means.
+
+The same applies to `assessment_include`: the by-levels sheet carries the same
+201 soft-deleted AY2025 rows. Whichever model reads it must filter them.
+
+`pm_goal_criteria = 'AND'` for every row, every grade, this year -- T&L
+confirmed all K-8 rounds require meeting every tested standard, not a mix of
+AND/OR rounds. Don't build round-by-round OR logic for SY26-27 on the assumption
+it might vary; it doesn't this year.
+
+`scripts/generate_pm_expected_assessments_rows.py` implements both the K-2
+scaffolding and the 3-8 filtered generation, plus the `measure_standard_level`
+cohort split (`Both` -> `Below` + `Well Below` rows, `Well Below only` per the
+doc -> just the one) -- verified against the concrete PSF example above, a 3-8
+cohort-filtered spot check, and zero exact-duplicate rows, before handing off.
+Generated 878 rows for Newark/Paterson/Camden; verified byte-for-byte against
+the live sheet after pasting (one cosmetic mismatch caught and cleared: Sheets
+normalizes `false` to `FALSE` on paste -- not a data problem).
+
+### Explain a gap before reporting it
+
+Missing DIBELS data usually has a boring, checkable cause, and this model has
+the calendar that explains most of them. **Before presenting an absence as a
+finding, a limitation, or a constraint on someone's plan, spend the one query it
+takes to find out why.** Both of these were stated to the user as facts to work
+around, and both dissolved on a single lookup:
+
+- "Miami has no AY2026 BOY scores yet, so its calculations cannot be verified."
+  `reporting__terms` says Miami's BOY window is 9/8 to 9/25 and the date was
+  9/6. It had not opened. The other three regions opened in mid-August, which is
+  why only they had scores. Nothing to plan around -- it resolved that week.
+- "`grade_band` also holds `ES` and `MS`, so how should the CTE treat them?"
+  Those rows are AY2010-2022 and expected assessments starts at AY2023, so they
+  can never reach the model on the year join. The question was moot.
+
+The checks worth reaching for first, in order: is the window open yet
+(`reporting__terms` dates against `current_date`), is the year switched off
+(`assessment_include`), does the region run that measure at that grade at all
+(the T&L doc), and does the year even overlap the other side of the join.
+
+`rpt_gsheets__dibels_pm_goal_setting` returning zero rows is the same class of
+thing -- it filters `academic_year = current_academic_year`, so it is empty
+whenever the new year's PM calendar has not been entered. Empty is the expected
+state mid-rollover, not a defect.
+
+### A whole region missing: read Amplify's file before tracing any join
+
+When the calendar checks above pass and an entire region still has no scores,
+**the export itself is the first suspect, not the pipeline.** On 2026-09-15 I
+gave the user three wrong causes for Miami's empty AY2026 dashboard -- a missing
+union member, a crosswalk gap, then the `is_self_contained` exclusion -- before
+checking the top of the hierarchy, where the answer was sitting: Amplify's
+SY2026-2027 export contains no Miami schools at all. The account was renamed
+from `Kipp New Jersey And Miami` to `Kipp New Jersey` and their schools left it.
+
+Run this before anything else:
+
+```sql
+select
+    school_year,
+    district_name,
+    school_name,
+    count(*) as n_rows,
+    count(distinct student_primary_id_studentnumber) as n_students,
+    cast(max(sync_date) as string) as last_sync,
+from `teamster-332318`.kippnewark_amplify.benchmark_student_summary
+where school_year = '2026-2027'
+group by school_year, district_name, school_name
+order by school_name
+```
+
+That is the external over the landed file -- the top of the hierarchy, no
+dependencies. Swap the year to see the contrast with SY2025-2026.
+
+Four rules for this class of question:
+
+- **`kippmiami_amplify` is deliberately absent from the union.** Amplify exports
+  one network account and it lands in `kippnewark`'s bucket; region comes from
+  `int_people__location_crosswalk`. Do not "fix" the union.
+- **Amplify renames schools between years, and the rename is not the bug until
+  you prove it.** `Kipp Hatch Middle` became `Kipp Hatch Academy` and
+  `Kipp Sumner Elementary` became `Kipp Sumner Academy` for SY2026-2027; the
+  crosswalk absorbed both. A rename it misses produces a **null region**, not
+  missing rows -- so compare row counts layer by layer and check for null
+  regions before concluding anything. Identical counts across layers means
+  nothing is being dropped at the join.
+- **Confirm by student number, not by school name.** Matching the file's
+  `student_primary_id_studentnumber` against enrollment rules out a rename
+  entirely, because it never touches a name. That is the check that actually
+  closes the question.
+- **Reading the raw SFTP file is available and cheap.** Credentials come from
+  the pytest session fixture, so a throwaway `tests/**/test_zz_*.py` using
+  `SSH_RESOURCE_AMPLIFY.process_config_and_initialize()` plus
+  `setup_for_execution(build_init_resource_context())` can list the tree and
+  download a file. Do not report an export as empty without it when the question
+  is whether the vendor sent the data. Print aggregates only, never student
+  rows, and delete the test file afterwards.
+
+Two facts about the remote layout, current as of 2026-09-15: SY2025-2026 files
+live under `/25-26/BM` and `/25-26/PM` while SY2026-2027 files are at `/BM` and
+`/PM`, and every file is a daily cumulative snapshot (704 of them), so the asset
+takes the newest match by mtime.
+
+### Verifying a year that is not in prod yet -- go to the source
+
+When you need to check something about an academic year whose rows are not in
+prod (or not pasted into the sheet yet), **verify against the document the rows
+came from, not against rows you generated**. Your own generated output is a
+transcription; checking it against itself proves nothing about the source.
+
+The T&L PM rounds document is that source:
+<https://docs.google.com/document/d/12ZDlAJY_IgSS4yElBAFWouJ6_M8982j1Fb1B93-INjU>
+
+For **benchmark** goals -- the foundation goals paste, not PM rounds -- the
+academics source is a separate sheet:
+<https://docs.google.com/spreadsheets/d/1-fLmFQz94yAuotVYkzTxOxv6O129V3I2LDhdPY16HIc>
+
+Academics replace this each year, so re-read it rather than trusting the values
+recorded here, and update this link if they move it.
+
+**Reading it needs ADC from Python -- both MCP routes fail.** Do not spend time
+rediscovering this:
+
+- The **BigQuery MCP cannot read a Sheets external at all.** Its service account
+  carries no Drive scope, so `src_google_sheets__*` returns
+  `Permission denied while getting Drive credentials`. Sharing the file with
+  anyone changes nothing -- it is a missing OAuth scope, not a file permission.
+- The **Drive MCP reads it, then `check-output.sh` redacts the whole response**
+  as containing a high-entropy string, which any real spreadsheet has somewhere.
+  `read_file_content` and `get_file_metadata` both come back as
+  `[redacted: secret material]` with no content.
+
+What works is `scripts/read_sheet_tabs.py`, which requests
+`spreadsheets.readonly` and `drive.readonly` through ADC and writes each tab to
+a local TSV:
+
+```bash
+uv run --with google-api-python-client --with google-auth python \
+    .claude/skills/dibels-dashboard/scripts/read_sheet_tabs.py \
+    <spreadsheet_id> .claude/scratch dibels
+```
+
+The third argument filters tabs by substring, which matters on the academics
+workbook -- it carries 15+ tabs and only `DIBELS Goals` is the goal source. Then
+Read the TSVs.
+
+Two things that make it work, both easy to undo by accident. It prints only tab
+names and row/column counts, never cell values, so the output scanner has no
+payload to catch -- if you add a line that echoes sheet contents, the whole run
+gets redacted again. And keep the output directory free of UUIDs: passing a path
+containing the session id redacts the run, because the scanner reads the UUID
+itself as high-entropy.
+
+What the sheet decides:
+
+**Grades 6-8 are goal-set at EOY only.** Verified identical in AY2025 and
+AY2026: grades K-5 carry both MOY and EOY foundation goals, grades 6-8 carry EOY
+alone. This is academics' intent, not a truncated paste -- confirm the shape
+before reporting a gap.
+
+That shape collides with how `benchmark_goal_season` works.
+`int_amplify__all_assessments` sets it to the goal season a row is measured
+AGAINST, which is the NEXT one: a BOY row carries `MOY`, an MOY row carries
+`EOY`, an EOY row carries null. `rpt_gsheets__dibels_bm_goals_calculations`
+joins `a.benchmark_goal_season = f.period`, so a **BOY** row needs an **MOY**
+foundation goal. Grades 6-8 have none, the LEFT join misses, `grade_goal_type`
+comes back null, and `where c.grade_goal_type = 'At/Above'` drops the row. So
+grades 6-8 produce no BOY benchmark goals at all; they appear only once MOY
+testing lands, where their EOY goal does match.
+
+Consequence for the rollover: the first paste of a year covers **K-5 only**
+(measured 2026-09-14: 49 rows, BOY, grades 0-5, 16 schools). Do not read the
+missing grades as a broken foundation paste -- the 6-8 EOY values are present
+and populated; the model never consults them at BOY.
+
+**Reading the foundation goals columns.** Two columns decide which goal a row
+gets, and neither name says so on its own:
+
+- `period` is the administration the goal is FOR -- an `MOY` row is the goal for
+  the MOY administration, an `EOY` row the goal for EOY. It is not the date the
+  goal was set.
+- `grade_goal_type` selects WHICH foundation aggregate applies: `At/Above` or
+  `Well Below`. On the assessment side the counterpart is
+  `foundation_measure_standard_level`, the student's own composite bucket, and
+  `rpt_gsheets__dibels_bm_goals_calculations` joins the two so a student is
+  measured against the aggregate matching their level.
+
+`benchmark_goal_season` on the assessment side is the season a row is measured
+AGAINST, which is the next one (`BOY -> MOY`, `MOY -> EOY`, `EOY -> null`). The
+join is `a.benchmark_goal_season = f.period`, so a BOY row looks for the goal
+FOR MOY.
+
+**This is correct behaviour, not a bug.** The academics sheet sets MOY and EOY
+goals per grade, and grades 6-8 deliberately get EOY only -- K-2 and 3-5 carry
+both. K-2 is also the only band with `grade_range_goal` populated. Verified
+against AY2026: grades 0-5 have 6 MOY and 6 EOY rows each, grades 6-8 have 0 MOY
+and 6 EOY, and only grades 0-2 have non-null range goals.
+
+Because a BOY row is measured against the MOY goal, grades 6-8 have nothing to
+measure against at BOY, and a blank goal is the honest output. They pick up
+their goal once MOY testing lands, where `MOY -> EOY` matches their EOY row. So
+the first paste of a year covering K-5 only is expected; do not widen the join
+to reach the EOY goal early -- an EOY target is not a mid-year one, and
+academics chose not to set a mid-year target for these grades.
+
+**Do not use the AY2025 `bm_goals` tab as evidence against this.** It does
+contain grades 6-8 at `period = 'BOY'` carrying the foundation EOY goal, which
+looks like precedent for an EOY fallback. It is not: no version of
+`rpt_gsheets__dibels_bm_goals_calculations` ever produced those rows -- the join
+has been `a.benchmark_goal_season = f.period` since `aac3e5a86`, and
+`benchmark_goal_season` has always been the plain next-season map (`BOY -> MOY`,
+`MOY -> EOY`), never grade-aware. The tab is a manual-freeze snapshot, so those
+rows were hand-filled, and they carry errors that prove it: Paterson grade 6
+reads `0.53` against a foundation EOY of `0.30`, and grade 7 reads `0.34`
+against `0.33`, both of them Newark's value. This cost a full investigation
+cycle in September 2026; the tab is not a specification.
+
+Separately, **Miami has benchmark goals in that tab but no foundation goals at
+all.** Foundation goals cover Camden, Newark and Paterson only, so Miami's
+numbers come from outside this lineage.
+
+It is a Google Doc, not a Sheet, so
+`mcp__claude_ai_Google_Drive__read_file_content` returns the whole thing with
+its region headings intact (`# Newark & Paterson`, `# Camden`, `# Miami`) --
+provenance comes for free, unlike the multi-tab Sheet problem described in
+`.claude/context/claude_ai_Google_Drive.md`. It reads as the USER's identity, so
+it works even when the doc is not shared with the ADC service account.
+
+Worked example. Asked whether SY26-27 would repeat SY25-26's null
+`benchmark_goal` rows (Miami testing Word Reading at grades 4-5, above its 0-3
+goal range, and Reading Accuracy at grade 0, below its 1-8 range), checking the
+generated rows said no. Confirming against the doc is what made that answer
+trustworthy: Miami's SY26-27 set has no Word Reading at any grade, and Kinder
+gets PSF and NWF only. The single Word Reading combo in SY26-27 is Newark and
+Paterson's Kinder at rounds 7-8, which `dibels_goals_long` does cover.
+
+`stg_google_sheets__dibels_goals_long` carries no `academic_year` -- goals are
+year-agnostic, so its coverage table serves every year at once. A year "clears"
+by having its measure/grade/season combos land inside that one table.
+
+**That table is University of Oregon's, not ours, and it has not changed
+since 2020.** Verified against UO's own PDF, which states
+`Goals Updated: July 2020` and `Reformatted: October 2025`:
+<https://dibels.uoregon.edu/sites/default/files/2026-06/dibels-benchmark-goals-all-grades.pdf>
+Do not read the `2026-06` in that path as a new edition -- it is the CMS upload
+folder for the 2025 reformat, and the goal values are still 2020's. The PDF also
+confirms the coverage boundaries are the assessment's design rather than a
+transcription gap: Word Reading appears only in the Grades K-3 section with no
+Grades 4-8 table at all, ORF Accuracy leaves the three Kinder columns blank, and
+Maze leaves Kinder and First blank. `stg_google_sheets__dibels_goals_long`
+matches that exactly -- WRF 0-3, ORF-Accuracy 1-8, Maze 2-8 -- so treat the
+sheet as a faithful copy rather than something to extend. So a missing goal is
+never a KTAF data-entry gap to fill -- UO defines no goal where the measure is
+not designed to be administered at that grade (Word Reading is a K-3 measure;
+Reading Accuracy needs oral reading, so not kindergarten). A null
+`benchmark_goal` downstream therefore means **a measure was assigned outside its
+valid grade range** on the Expected Assessments sheet. Raise it with academics
+as a testing-assignment error; do not propose adding rows to the goals table,
+and do not treat the null as noise -- it makes the at-or-above-benchmark
+comparison unevaluable, which is exactly the test that separates On Track &
+Meeting Aimline from Meeting Aimline, Off Track.
+
+### Benchmark is not per data model -- it must be single-sourced
+
+`data_model` distinguishes the two **PM** methods. Benchmark has no such split:
+it tests every student against one set of expectations, so its rows carry
+`data_model = 'Benchmark'` and are emitted from **one** branch only.
+
+**Benchmark will never be by levels.** That is a standing rule from academics,
+not a description of today's data -- Benchmark has no Below / Well Below cohort
+because it is what assigns students to those cohorts in the first place. So the
+by-levels range holds PM rows only, and Benchmark belongs in the 16-column
+source. Do not add Benchmark rows to the by-levels tab, and do not "restore"
+them if a future paste drops them.
+
+The `if(assessment_type = 'Benchmark', 'Benchmark', <branch>)` sits on BOTH
+branches even though the aimline side can no longer fire it. That is the
+invariant expressed as code: if Benchmark ever does reappear in by-levels, the
+two rows collide on the grain and the uniqueness test fails, rather than
+silently doubling. Filtering Benchmark out of the aimline branch instead would
+drop it quietly, which is worse.
+
+Getting this wrong is silent. When the stack first landed, Benchmark rows were
+emitted from both branches at identical counts (576 and 576 for AY2026), and
+three things broke without any test or contract failing:
+
+- `rpt_tableau__dibels_dashboard`'s Benchmark branch inner-joins the gate on
+  `assessment_type = 'Benchmark'` with **no `data_model` predicate**, so every
+  Benchmark row doubled.
+- `int_students__dibels_participation_roster` computes
+  `count(*) over (partition by academic_year, region, grade, admin_season, round_number)`
+  as `expected_row_count`, counting both branches. Measured: prod runs 4-8
+  expected rows per group, the stacked version 8-16. That halves every
+  benchmark-completion percentage.
+- The grain test on the intermediate still passed, because `data_model` is part
+  of its key. A duplicate across branches is a legitimate row by that
+  definition.
+
+**The two branches' Benchmark rows are not interchangeable.** They agree on
+dates, criteria, rounds, credit type and subjects, and differ on exactly one
+column: `month_round`, on ~96 rows a year. The by-levels range carries the
+corrected values and V1 carries the stale network-wide labels, because the
+`month_round` fix was only ever run against the new tab. Miami AY2026 is the
+clearest case -- BOY starts 2026-09-08, and V1 says `August` while by-levels
+says `September`; EOY starts 2027-04-26, V1 says `May`, by-levels says `April`.
+
+So either source Benchmark from the by-levels branch, or fix V1's `month_round`
+first. Fixing V1 is preferable -- then the branches agree and the constraint
+disappears -- but note that neither one-shot fix would have targeted it: the
+Benchmark `month_round` fix indexed a 17-column layout, the derived-column
+backfill indexed 18, and V1 is 16. The rule is small enough to re-derive:
+`month_round` is the month of that Benchmark round's `Start Date` in
+`reporting__terms`, keyed on `(academic_year, region, admin_season)`.
+
+### The participation roster spans three expectation models
+
+`int_students__dibels_participation_roster` answers "was this student expected
+to test, and did they" -- and that question now has three different shapes. Its
+`expected_row_count` partition has to match the model, or students get penalised
+for rounds they were never in.
+
+| Model       | Expected-count grain                                                                                                                             |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Benchmark   | region / grade / season. Steady year over year.                                                                                                  |
+| Internal PM | region / grade / season / round. Below and Well Below are tracked **together** -- they are expected to test the same measures in the same round. |
+| Aimline PM  | region / grade / season / round / **`measure_standard_level`** / measure standard.                                                               |
+
+The aimline row is the one that changes behaviour, in principle: its expected
+set is per cohort, so if a round tests Well Below only, a Below student was
+never expected to test and counting them against a cohort-blind expected set
+marks them non-participating for a round they were correctly absent from. The
+cohort has to be in the partition **and** matched to the student's own level.
+
+**In today's data it changes nothing, and you should say so rather than quote a
+figure.** Measured on the live by-levels sheet: 790 AY2025
+`(region, grade, season, round, measure)` combinations, every one present for
+both cohorts -- zero cohort-only rows in either direction. The sheet was built
+by duplicating the 16-column PM rows per cohort, so it is symmetric by
+construction. Build the cohort into the grain anyway, so a future split needs no
+restructuring, but do not claim an asymmetry exists. If a prior version of this
+skill or a model description cites a Well-Below-only row count, it was not
+measured -- re-derive it before repeating it.
+
+Worth raising with academics: the by-levels sheet as it stands does not express
+the differentiated testing the aimline model was built to support.
+
+### The two chains share no model -- split at the source, not behind a flag
+
+| Chain                | Range                          | Gate                                                        | PM expectations                             |
+| -------------------- | ------------------------------ | ----------------------------------------------------------- | ------------------------------------------- |
+| Internal + Benchmark | 16-column Expected Assessments | `int_google_sheets__dibels_expected_assessments`            | `int_google_sheets__dibels_pm_expectations` |
+| Aimline              | 18-column by-levels            | `int_google_sheets__dibels__expected_assessments_by_levels` | none — the gate is the whole chain          |
+
+**Do not reach for a discriminator here.** It was tried: one gate unioning both
+ranges, tagged `data_model` (`internal` / `aimline` / `Benchmark`), in the grain
+and in the `min_pm_round` / `max_pm_round` partition. It was abandoned, and the
+reasons generalize:
+
+- The flag carried the exact hazard it was supposed to manage. Every consumer
+  inner-joins the gate as a membership test, so one that forgot to filter
+  `data_model` matched every score twice. Measured on
+  `rpt_gsheets__dibels_pm_goal_setting`: 1,650 rows against a real grain of 550.
+- It changed the internal gate's column set for no benefit to the internal
+  chain, which is the one with a prod contract and live consumers.
+- Benchmark had to be assigned to a branch anyway, and emitting it from both
+  doubled every dashboard Benchmark row and inflated participation expected
+  counts from 4-8 to 8-16. CI caught none of it.
+
+Splitting at the source removes the column and the hazard together, leaves the
+internal gate byte-identical to what its consumers expected, and made
+`rpt_gsheets__dibels_pm_goal_setting` a no-change model. The user's framing was
+_"i legit think we should just split things between internal and aimline"_ --
+and that applies to the gate, not only to the PM expectations below it.
+
+The aimline gate differs from the internal one in two ways beyond the source:
+`measure_standard_level` is in the grain **and** in the min/max round partition
+(a shared partition would give both cohorts the wider range once a round is
+expected of only one), and its terms unnest is a `cross join` rather than a
+`left join`, because every row in that source is a PM round and every PM terms
+row carries a band -- there is no null-band Benchmark row to preserve.
+
+The model also opens with a `terms` CTE that explodes `reporting__terms` on
+`grade_band` into one row per grade level, so a grade joins its own band's
+window. A Benchmark row has no band, so its `grade_level` is null and the join
+lets any grade match -- the grade is inherited from the expected-assessments
+side. Before this, the join had no grade predicate at all, which fanned AY2025
+PM out 3x (2,370 rows against 790 real ones) and let a grade pick up a band's
+dates that did not include it.
+
+### Do not hoist a downstream filter into the shared gate
+
+Tempting and wrong: `assessment_include is null` is repeated at four consumers
+(`int_students__dibels_participation_roster`, three sites in
+`int_amplify__all_assessments`, `rpt_tableau__dibels_dashboard`), so putting it
+once in `int_google_sheets__dibels_expected_assessments` looks like a cleanup.
+Two things break.
+
+1. **`min_pm_round` / `max_pm_round` change silently.** `WHERE` is evaluated
+   before window functions, so filtering in the same `SELECT` that computes them
+   makes the season's first and last round exclude cancelled rounds. Measured on
+   AY2025: 675 rows shifted on `min_pm_round`, 1,386 on `max_pm_round`. Whether
+   a cancelled round should still bound the season is a real question for
+   academics -- it is not a question to answer as a side effect of deduplicating
+   a filter.
+2. **`pm_expectations` stops matching prod.** It does not project
+   `assessment_include`, so its consumers cannot filter and prod's dashboard PM
+   branch has always included cancelled rounds. Dropping them upstream changes
+   PM participation counts network-wide.
+
+The gate's own properties yml already documents the contract -- _"Rows are
+switched off with `assessment_include` rather than filtered in SQL... downstream
+models express that as `assessment_include is null`"_ -- so a filter in the gate
+SQL contradicts the model's own description. Leave it to consumers. The aimline
+model is a consumer and applies it itself.
+
+### "It should match prod" means diff every column, not the row count
+
+When the user says a model should match prod, a row-count and key-set comparison
+is not enough -- and on a model whose prod copy is fanned out, the counts cannot
+match by construction anyway. Compare `distinct` full rows, then join on the key
+and `countif(p.col is distinct from d.col)` per column. On the internal
+`pm_expectations` port that check passed on `round_number`, `month_round`,
+`start_date`, `end_date`, `pm_round_days`, `pm_days`, `pm_goal_include` and
+`benchmark_goal`, and isolated the entire delta to two window columns -- which
+is what identified the cause in one query instead of a model-by-model hunt.
+
+**Which years and grades are live is a sheet decision, not a SQL one.**
+`assessment_include` is the off switch: null means live, non-null means
+excluded, and consumers express that as `assessment_include is null`. Do not add
+year filters to the model -- flip `assessment_include` instead. Currently off:
+all AY2024 PM rows on both tabs, and 99 AY2023 Benchmark rows (upper grades did
+not sit Benchmark that year).
+
+### The Benchmark half moved to `int_amplify__benchmark_student_summary`
+
+`int_amplify__all_assessments` used to compute benchmark composites, the
+aggregated level columns and `overall_probe_eligible` inline, then reuse them in
+its PM branch. With two PM methods, both needing the same eligibility, that had
+to move upstream. The new model holds the whole Benchmark half;
+`all_assessments` selects from it and adds four columns (`illuminate_subject`
+plus typed nulls for `probe_number`, `total_number_of_probes`, `score_change`).
+
+Three things about it are load-bearing:
+
+- **`rn_pm_eligibility` is how the PM branches get one row per administration.**
+  The model's own grain is one row per measure, so a PM round joined to it
+  without this filter fans out by the measure count (measured 9x and 7.6x on the
+  two methods before the fix). Both PM branches filter `rn_pm_eligibility = 1`.
+- **`assessment_grade_int` is in that partition, and must stay.** A student can
+  be assessed at two grades inside one benchmark window; each sitting is its own
+  administration with its own expectations, and the PM consumers join assessed
+  grade to enrolled grade. Leaving it out looks like tighter dedup and silently
+  drops the second sitting. Per the user: "we can have mid benchmark grade level
+  changes and there is nothing we can do about it."
+- **`overall_aimline_composite_level` uses the literal `'No data'`, never
+  null.** It inner-joins to `measure_standard_level` on the by-levels gate, and
+  null joins to nothing -- which would look identical to "not eligible" but for
+  the wrong reason. `'No data'` and `At/Above Benchmark` both match no by-levels
+  row, which is correct: neither is aimline-eligible. Do not "simplify" it back
+  to null.
+
+The `order by` in `rn_pm_eligibility` prefers the Composite row but does not
+require one. `row_number()` always assigns 1 within a partition, so a
+student-period with no Composite row still yields exactly one row -- 312 such
+student-periods in AY2025, all retained. If someone asks "does a student without
+a composite get dropped?", the answer is no, and that is the reason.
+
+### `region` on the aimline PM model must be the city form
+
+`int_people__location_crosswalk` has two region-ish columns and they are not
+interchangeable. `location_region` is the long-form legal entity name
+(`TEAM Academy Charter School`). Every DIBELS model joins on the city form --
+`Newark`, `Camden`, `Miami`, `Paterson` -- derived as:
+
+```sql
+initcap(regexp_extract(lc.location_dagster_code_location, r'kipp(\w+)')) as region,
+```
+
+Emitting `location_region` from
+`int_amplify__mclass__pm_student_summary_aimline` made the expectation-gate join
+never match. At the time the PM branches LEFT joined the scores, so it surfaced
+as 35,546 aimline rows in which every single row was untested, with no error
+anywhere. The branches inner-join now, so the same mistake would instead produce
+**zero aimline rows** -- louder, but still not an error. Either way, diagnose
+this class of bug by adding the join predicates cumulatively and watching where
+the row count collapses; a region join that resolves to the wrong name form
+fails silently in both shapes.
+
+### `UNION ALL` binds by position, and a same-typed misplacement is silent
+
+Two bugs of this shape in one session on `int_amplify__all_assessments`:
+
+- `score_change` (NUMERIC) at position 29 in one branch against `model_type`
+  (STRING) in the other. **Failed loudly** -- types disagreed.
+- `overall_probe_eligible` at position 32 in the PM branch against position 37
+  in the Benchmark branch. Both STRING, so BigQuery accepted it. It surfaced
+  only because `model_type` started returning `'Yes'` in query output.
+
+So a clean build is not evidence the branches line up. When editing either
+branch of a wide union, diff the two projected column lists by ordinal, not by
+eye. The repo convention of enumerating columns per branch (never `select *`) is
+the correctness fix here, not just the CV03 lint fix.
+
+### `all_assessments` carries scored rows only -- do not LEFT join the scores
+
+An intermediate version of both PM branches LEFT joined the score source so that
+"expected but not tested" became a row. **That was reverted, deliberately. Do
+not reintroduce it.** This model has only ever carried scored rows, and Not
+Tested is the participation roster's job.
+
+The roster already answers it without help: it reads the gate directly, counts
+the measures expected for a (year, region, grade, season, round) as
+`expected_row_count`, and compares that to `actual_row_count` from this model.
+The dashboard's PM branch does the same at measure granularity -- it drives off
+the gate's `expected_measure_standard` and LEFT joins this model, so an unscored
+measure still gets a named row there. Two places already manufacture the
+absence; a third only lets them disagree.
+
+Two things the LEFT-join version taught, both still worth knowing:
+
+- **Untested rows carried no measure identity.** `measure_standard`,
+  `measure_name` and `measure_name_code` all come off the score, so on an
+  untested row they were null and every such row for a round was byte-identical.
+  20,074 AY2025 rows collapsed to about 9,600 distinguishable ones. If anyone
+  proposes emitting absences from a model again, the expected value has to come
+  with them.
+- **A window partition key from a LEFT-joined side is nullable.** `max_score`
+  originally partitioned on `surrogate_key` and `measure_standard`, both from
+  the score side: every untested row for a round collapsed into one partition
+  and `rn_highest = 1` kept 8 rows out of 20,081. Any model that turns absences
+  into rows has this hazard -- check every `partition by` against which join
+  produced each column.
+
+`max_score` now partitions on
+`academic_year, student_number, model_type, round_number, expected_measure_standard`
+and orders by `measure_standard_score desc, client_date desc`. **`academic_year`
+is load-bearing**: round numbers restart every year, so without it a student's
+AY2026 round 1 competes with their AY2025 round 1 for the same measure and one
+real score is dropped. `model_type` keeps the two methods from ranking against
+each other.
+
+### A dedup step belongs to exactly one grain
+
+The highest-value lesson in this whole refactor. It sat in prod for years,
+produced no error, and understated real student outcomes.
+
+Prod's `assessments_scores` unioned all three branches -- mCLASS Benchmark, DDS
+Benchmark, PM -- into one CTE. A single `max_score` ranked the whole union and
+the final `SELECT` split it back apart by `assessment_type`. **One dedup step,
+two different kinds of row.**
+
+Its sort key was `measure_standard_level_int desc`, which is correct for
+Benchmark (the column holds 1-4; keep the highest level for the slot). The PM
+branch writes `null as measure_standard_level_int` -- PM has no level -- so on
+every PM row the sort had nothing to sort by and the pick among a student's
+probes was whatever BigQuery reached first. `partition by surrogate_key` had the
+same defect: it means the benchmark summary's key on one side, the PM model's
+key on the other.
+
+**Nobody chose a null sort key for PM.** They chose one for Benchmark, and PM
+was in the same CTE. That is the shape to watch for.
+
+It deduped PM at all only by accident:
+`int_amplify__mclass__pm_student_summary`'s surrogate key used to omit
+`probe_number` and `device_date`, so it collided across a student's probes --
+67,984 AY2025 rows against 33,917 distinct keys. **Fixed in #5305**: the key now
+covers student, school year, PM period, measure, probe, device date and
+assessment grade, and the model carries a severity-error natural-key test. The
+diagnostic lesson still stands: `count(distinct surrogate_key) < count(*)` on a
+model whose key you have not read is not proof of fan-out -- using it that way
+mis-read 1,352 genuine multi-probe rounds as gate duplication during this
+session.
+
+Measured on AY2025, every effect in one direction:
+
+| Effect                                             | Rows  |
+| -------------------------------------------------- | ----- |
+| Round-measure slots holding more than one probe    | 1,352 |
+| Reported score lower than the student's best       | 634   |
+| `met_measure_standard_goal` flipped not-met to met | 139   |
+| `met_admin_benchmark_goal` flipped not-met to met  | 85    |
+
+Average understatement 10.25 points. Every flip went not-met to met: students
+were told they missed a goal they had hit, and it propagated through
+`met_measure_name_code_goal` to the round-level met/not-met on the dashboard.
+
+**Separately, prod's PM completion gate never fires.** Every PM row in the prod
+participation roster is `completed_test_round = false` -- all 39,981 across
+`BOY->MOY` and `MOY->EOY`, not one `true`; only Benchmark seasons have true
+rows. So prod can never credit an `AND` round whatever the student scored, and
+its only 1s come through the null (OR) branch, which skips the gate. The
+refactored roster produces 15,078 true Internal PM rows, so the gate fires for
+the first time and PM attainment rises against prod. Corrected, not regressed --
+say so before anyone compares the two.
+
+**The rule: if a CTE unions grains and then ranks, one side's sort key is
+meaningless on the other and nothing fails.** Dedup before the union, or split
+the model. Extracting the Benchmark half is what gave PM its own `max_score`,
+which is what made a PM-meaningful sort key possible at all.
+
+Corollary for reviewers: when you see `order by <col> desc` in a window over a
+UNION, check that `<col>` is populated in every branch. A `null as <col>`
+literal in any branch is the tell.
+
+### Miami needs focus_student_number on the aimline PM model too -- FIXED
+
+**This was the unexplained 961-row gap between the two PM methods on AY2025. It
+was a bug, not a design difference, and it was total for Miami. Fixed by
+applying the macro in `int_amplify__mclass__pm_student_summary_aimline`. The
+table below is the before state, kept so the symptom stays recognisable if it
+regresses.**
+
+| Region   | Internal rows / students | Aimline rows / students |
+| -------- | ------------------------ | ----------------------- |
+| Camden   | 8,686 / 1,111            | 8,686 / 1,111           |
+| Newark   | 23,502 / 2,983           | 23,502 / 2,983          |
+| Paterson | 3,358 / 382              | 3,358 / 382             |
+| Miami    | 961 / 420                | **0 / 0**               |
+
+Three regions match exactly. Miami loses every row.
+
+**Cause.** `int_amplify__mclass__pm_student_summary` resolves the student id
+through the `focus_student_number` macro (`src/dbt/kipptaf/macros/utils.sql`),
+which adds 8,400,000,000 to a kippmiami id for `academic_year <= 2025`.
+`int_amplify__mclass__pm_student_summary_aimline` does not apply it, so it
+passes Amplify's raw 6-digit id straight through. Measured on AY2025: Miami ids
+are 10 digits and every one of the 5,503 internal rows starts `8400`, against 6
+digits on the aimline side. `int_amplify__benchmark_student_summary` keys on the
+network number, so every Miami PM row fails that join in the aimline branch.
+
+The tell is that the two sources look identical until you compare id SETS. Both
+carry 67,984 AY2025 rows, 7,861 students, 8 measures, and identical per-region
+row counts -- Miami 5,503 rows / 978 students on both sides. A full outer join
+on `student_primary_id` is what exposes it: 978 Miami students resolve as
+"internal only" and the same 978 as "aimline only". Compare sets, not counts.
+
+**The fix, and where it has to go.** `focus_student_number` is applied in the
+`enriched` CTE, taking `c.student_primary_id`, `c.academic_year` and
+`lc.location_dagster_code_location` -- the crosswalk column directly, not the
+`_dbt_source_project` alias derived in the same SELECT, since BigQuery has no
+lateral column aliases. It must NOT go in `combined` or earlier: the full outer
+join matches the two SFTP files on their shared raw id, so offsetting before
+that join breaks the merge. `c.* except (student_primary_id)` plus the re-add
+keeps the column name.
+
+After the fix all four regions match between methods (Miami 961 rows / 420
+students on both), the aimline model still holds 67,984 AY2025 rows with 67,984
+distinct surrogate keys, the full outer join still merges 1:1 (0 rows with no
+base side, 2,986 base rows with no aimline goal as before), all 5,503 Miami rows
+carry the offset, and Benchmark stays byte-identical to prod.
+
+**The macro is year-scoped -- keep the call anyway.** It offsets `year <= 2025`,
+so from AY2026 Miami's raw id already IS the network number and the two sides
+align without help. AY2026 cannot confirm that yet -- it has zero tested PM rows
+in either method, since no PM scores have landed. Re-check once SY26-27 scores
+arrive rather than assuming, and do not remove the macro call on the grounds
+that the current year does not need it -- it is what makes the historical years
+join.
+
+**Do not chase this through the gates or the eligibility rule.** Ruled out by
+measurement, in this order: expectations are identical (both methods 55,591
+expected measures on AY2025, same 24,594 roster rows); gate coverage at
+`(region, grade, admin_season)` is identical, zero rows on either side of a full
+outer join; the two eligibility predicates select the same 9,405 benchmark rows,
+because `overall_probe_eligible = 'Yes'` and
+`overall_aimline_composite_level in ('Below Benchmark', 'Well Below Benchmark')`
+are the same condition and the gate's `measure_standard_level` carries exactly
+those two values; and the score-side filter
+`enrollment_grade = assessment_grade and assessment_grade is not null` passes
+67,896 rows / 7,861 students in both sources. Swapping one variable at a time is
+what isolated it -- the internal gate and internal eligibility joined to the
+AIMLINE source reproduces the aimline numbers exactly (4,476 students, 35,546
+slots), which proves the gate is innocent.
+
+### Nobody sets the internal PM goals -- they are derived from the cohort
+
+**Do not describe the internal PM goal as something T&L chose.** Verified
+against `rpt_gsheets__dibels_pm_goal_setting`: it averages the BENCHMARK score
+per measure across students who were Below or Well Below Benchmark on the
+previous composite, and that average is the cohort's starting point. The
+distance from there to the padded grade-level target is the growth owed, split
+across rounds by school days.
+
+Confirmed numerically: recomputing `starting_words` from
+`int_amplify__all_assessments` matches the frozen AY2025 goals sheet on 183 of
+184 grade/region/season/measure combinations, average absolute difference 0.01
+words. The single mismatch is consistent with the eligible population shifting
+by one enrollment change since the freeze.
+
+**The ownership split, because it is easy to state backwards:**
+
+| Owner | Decides                                                                                    |
+| ----- | ------------------------------------------------------------------------------------------ |
+| T&L   | Which rounds exist, their dates, the measures each round tests, the cohort that tests them |
+| Us    | Every number -- starting point, growth owed, per-round running target                      |
+
+That is why transcribing T&L's PM Rounds doc is load-bearing work and the goal
+numbers are not: the schedule exists nowhere else, and the goals are computed.
+
+**Two things this explains.** The freeze exists because a cohort-derived goal
+moves as scores arrive and differs year to year, so a weaker cohort lowers its
+own bar -- pasting into `stg_google_sheets__dibels_pm_goals` fixes the year once
+set, and the goal-setting model reads `current_academic_year` only. And it is
+the real reason aimline is structurally different rather than
+differently-sourced: ours is one line per COHORT, Amplify's is one line per
+STUDENT off their own starting score. A student can be on pace against the
+cohort while off their own aimline. **Neither number is wrong and a gap between
+the two methods is not a reconciliation defect.**
+
+Two doc errors this corrected, in case they resurface: the reference page said
+the calculation averaged the **composite** score (it excludes Composite and
+averages each measure; the composite only gates eligibility), and it called the
+column `average_starting_words` (it is `starting_words`).
+
+### benchmark_goal is Amplify's published standard, and it can be missing
+
+`benchmark_goal` is not ours. It is Amplify's official DIBELS grade-level
+standard for a (grade, measure standard, admin), and it travels a long way:
+
+```text
+sheet: src_google_sheets__dibels__goals_long
+  -> grade_level_standard, per grade / measure_standard / admin_season
+stg_google_sheets__dibels_goals_long
+  -> adds matching_pm_season (MOY -> BOY->MOY, EOY -> MOY->EOY) and grade_level
+int_google_sheets__dibels_pm_expectations        (internal chain)
+  -> g.grade_level_standard as benchmark_goal
+rpt_gsheets__dibels_pm_goal_setting
+  -> e.benchmark_goal + 3        <- the padding is applied HERE, once
+frozen sheet -> stg_google_sheets__dibels_pm_goals
+int_amplify__pm_met_criteria
+  -> met_admin_benchmark_goal = score >= benchmark_goal
+```
+
+**The `matching_pm_season` mapping is the whole idea of "on pace" in three lines
+of staging.** A BOY->MOY round is measured against the **MOY** standard -- the
+NEXT benchmark's bar, not the one the student just sat. Do not "fix" a join that
+looks off by one season; that offset is the point.
+
+**The two chains reach `goals_long` through different column pairs, and they do
+agree.** `pm_expectations` joins `e.admin_season = g.matching_pm_season`; the
+by-levels gate joins `e.matching_bm_season = g.admin_season` -- one maps
+forward, the other back. Verified on AY2025: 378 (year, region, grade, measure,
+season) combinations compared, **zero** disagreements, and the 10 null cases
+coincide on both sides. Re-run that check if `matching_bm_season` on the
+by-levels sheet is ever hand-edited, because a disagreement would make the two
+methods pull different benchmark goals for the same student with nothing
+failing.
+
+**A null `benchmark_goal` is correct data, and it reads as failing.** Amplify
+publishes no standard for a measure at a grade where that measure is not given
+-- NWF is not a grade-4 measure, WRF is not a grade-4/5 measure, ORF Accuracy is
+not a Kinder measure. The blank in `goals_long` is right; the gate's LEFT join
+turns it into null; and **`if(score >= null, 1, 0)` returns 0, not null**, so a
+student reads as failing a bar that does not exist for them.
+
+Two populations, and only one matters. Measured on AY2025:
+
+| Rows                                  | Null goal     | Which                                              |
+| ------------------------------------- | ------------- | -------------------------------------------------- |
+| Scaffold (`pm_goal_include` non-null) | 28 of 284     | G4 NWF Letter Sounds + Decoding, Newark and Camden |
+| Live rounds, internal gate            | **15 of 452** | **Miami only** -- G0 ORF Accuracy, G4-5 WRF        |
+| Live rounds, by-levels gate           | **30 of 938** | the same 15, doubled across the two cohorts        |
+
+The scaffold rows are harmless -- consumers filter `pm_goal_include is null`
+anyway. The live rounds are the real exposure and they are **entirely Miami**,
+whose measure progression comes from its own tab in T&L's PM Rounds doc.
+
+Reach by surface:
+
+| Surface                        | Null `benchmark_goal` |
+| ------------------------------ | --------------------- |
+| Frozen goals sheet, AY2025     | 0 of 444              |
+| `int_amplify__pm_met_criteria` | 0 of 36,484           |
+| By-levels gate, AY2025         | 30 of 938             |
+| By-levels gate, AY2026         | 0 of 1,170            |
+
+So the internal method never sees one, while **the aimline sibling reads the
+by-levels gate directly and would**. Those students could never be classified On
+Track whatever they scored. AY2026 is clean, so testing this year would not
+surface it. **Handle a null `benchmark_goal` explicitly in the sibling** rather
+than letting `if()` collapse it to 0, and settle with T&L whether such a student
+is On Track, excluded, or a distinct state.
+
+### The internal PM evaluation is four questions, and only one is method-specific
+
+Useful when building or reviewing the aimline sibling, because it says exactly
+how much transfers.
+
+`int_amplify__pm_met_criteria` asks, per measure, in order:
+
+1. Did the score reach this round's running level? (`cumulative_growth_words`)
+2. Did every measure standard under the `measure_name_code` pass -- so met ORF
+   requires both Fluency and Accuracy?
+3. Did every skill the round tested pass? (`pm_goal_criteria`, `AND` = `min()`)
+4. Was the student tested on everything the round expected?
+   (`completed_test_round`)
+
+And separately, never feeding that rollup: `met_admin_benchmark_goal`, which
+asks "at grade level" rather than "on pace". Read it as _at grade level in this
+round_, not _has reached grade level_ -- it is recomputed per round and does not
+latch, so it drops back to 0 when a later score dips (AY2025: 595 student x
+measure x seasons met it in an earlier round and not in a later one). That is
+intended; the sibling's at-grade-level verdict is per round too.
+
+**Only question 1 is method-specific.** Amplify supplies `aimline_status`
+directly instead of us building a running target from school days. The skill
+pairing, the round rollup, the participation gate and the at-grade-level verdict
+are all method-agnostic -- which is why the aimline sibling is smaller than this
+model rather than a parallel copy of it.
+
+The meaning of question 1 does change, though, even where the mechanics do not:
+"on pace" stops meaning "keeping up with peers who started where you did" and
+starts meaning "keeping up with yourself."
+
+**T&L's four reporting categories are those two verdicts combined, with the
+at-grade-level one winning outright:**
+
+| Label                      | Rule                                              |
+| -------------------------- | ------------------------------------------------- |
+| On Track & Meeting Aimline | at grade level -- regardless of what on-pace says |
+| Meeting Aimline, Off-Track | on pace, not yet at grade level                   |
+| Below Aimline              | neither                                           |
+| Not Tested                 | the participation gate                            |
+
+That first row is a rider from T&L's own definition -- "if a student is meeting
+benchmark but not aimline, they should still be in this category" -- so it is a
+priority cascade, NOT a 2x2 intersection. Getting that wrong puts a
+benchmark-meeting student in Below Aimline.
+
+### Disabling a PM test: which column, and why the goals must be rebuilt
+
+**Tell the user this before touching anything.** Two different columns, for two
+different situations, and they behave differently in the goal chain.
+
+**One measure not tested in a round -> `pm_goal_include`.** It exists on BOTH
+Expected Assessments (either range) and the frozen
+`src_google_sheets__dibels__pm_goals` sheet, and the two must agree. Nothing
+keeps them in sync: `int_amplify__pm_met_criteria` drives from the frozen sheet
+and filters `g.pm_goal_include is null`, while the scores reaching it came
+through the gate's own filter. Disagree and a round is either evaluated when it
+was meant to be disabled or dropped when it was meant to count, with no error
+either way.
+
+**The whole round cancelled -> `assessment_include`.** This one is NOT on the
+goals sheet, and the goal chain cannot see it:
+`int_google_sheets__dibels_pm_expectations` does not project the column at all,
+so `rpt_gsheets__dibels_pm_goal_setting` still counts a cancelled round's school
+days into `pm_days` and still emits a goal row for it. Regenerating the sheet
+does not change that — it reproduces the same goals. Downstream consumers DO
+filter `assessment_include is null`, so the cancelled round vanishes from the
+dashboard and the roster while the trajectory stays scaled as though it had
+happened.
+
+So a cancelled round leaves the season's goals slightly too gradual, and fixing
+that is a decision, not a patch: it means teaching `pm_expectations` to project
+and filter the column, which changes whether a cancelled round bounds the
+season. Watch the trap when doing it — `WHERE` is evaluated before window
+functions, so filtering in the same `SELECT` that computes `min_pm_round` /
+`max_pm_round` silently redefines the season's first and last round (measured on
+AY2025: 675 rows shifted on `min`, 1,386 on `max`). That was reverted once
+already in this PR for exactly that reason. Raise it with academics rather than
+deciding it as a side effect.
+
+**Either way the goals sheet is rebuilt in full, never cell-edited.** Disabling
+a measure changes `min_pm_round` / `max_pm_round` for the season, which decides
+which round carries `starting_words` and which is pinned to
+`benchmark_goal_padded`; every round's share of the growth is proportional to
+its school days out of the season total. Removing one rescales every goal in
+that season, not just its own row.
+
+**A disable does NOT mean recalculating the goals.** Goals are frozen once per
+season and never recalculated or re-pasted -- that is the point of the freeze,
+and it holds even when a round is cancelled afterwards. The trajectory stays as
+frozen; the disabled round simply stops being evaluated. Do not offer a re-run.
+
+Procedure:
+
+1. Set the right column on Expected Assessments -- `pm_goal_include` for one
+   measure, `assessment_include` for the whole round -- on the internal range,
+   the by-levels range, or both, matching where the test actually runs.
+2. Verify the `pm_goal_include` values agree between Expected Assessments and
+   the frozen PM goals sheet, row for row. Nothing keeps them in sync, and a
+   mismatch silently changes which rounds are evaluated.
+3. For a cancelled round, say plainly that the frozen goals still include its
+   school days, and that changing that is the open academics question above.
+
+**If a goal VALUE has to change, that is Academics' edit, not our re-run.** They
+enter it directly on the Google Sheet behind
+`stg_google_sheets__dibels_pm_goals`. Regenerating the sheet from
+`rpt_gsheets__dibels_pm_goal_setting` to reach a corrected number is the wrong
+move: the model reads `current_academic_year` only and recomputes off whatever
+scores have since landed, so it would silently move every other goal in the year
+as well.
+
+### Run goal setting per region, and only for regions that have finished testing
+
+**Regions never finish benchmark testing on the same day.** `starting_words`
+averages benchmark scores, so a region whose window is still open gets goals set
+on a partial cohort -- and since goals are never recalculated, there is no
+second chance.
+
+**"Running goal setting" is a SELECT, not a dbt invocation.**
+`rpt_gsheets__dibels_pm_goal_setting` is a view Dagster already maintains in
+`kipptaf_extracts`, and it recomputes off whatever scores have landed at read
+time. What the person needs from you is a query they can run in BigQuery and
+copy out of, with the ready regions in the `WHERE`:
+
+```sql
+select *
+from `teamster-332318`.kipptaf_extracts.rpt_gsheets__dibels_pm_goal_setting
+where
+    academic_year = 2026                -- current year only; state it, do not assume
+    and admin_season = 'BOY->MOY'       -- the season the finished benchmark opens
+    and region in ('Newark', 'Camden')  -- only regions whose window has closed
+```
+
+Three filters, three safeguards. The season filter matters as much as the region
+one -- the freeze happens twice a year, and pasting both at once sets MOY->EOY
+goals off BOY scores. BOY finishing opens `BOY->MOY`; MOY finishing opens
+`MOY->EOY`.
+
+When someone asks for help setting goals, do not hand over that query first.
+Check the request date against `stg_google_sheets__reporting__terms` for that
+benchmark administration, put only the regions whose window has closed into the
+filter, and tell the person explicitly which regions are in it, which are not,
+and the date each remaining window ends.
+
+Then tell them to come back the day AFTER each remaining administration closes,
+and suggest they set themselves a calendar reminder for that date. Do not
+promise to remember it.
+
+**Prod's calculation is fanned out today, and the fix is on this branch.**
+Measured on prod: `int_google_sheets__dibels_pm_expectations` holds 17,102 rows
+against 1,835 distinct (9.3x) and `rpt_gsheets__dibels_pm_goal_setting` 2,700
+against 300 (9x), from the ungrade-predicated `reporting__terms` join. It is not
+only duplicate rows -- `cumulative_growth_words` is a running sum, so it
+accumulates the duplicates, and a paste taken from prod today would freeze
+nine-times-inflated targets. The already-pasted AY2024 and AY2025 rows are clean
+(855 rows, 855 distinct, no value above twice its `benchmark_goal`), so this has
+not reached the sheet. Do not let it: check rows-equal-distinct on the query
+output before anyone copies it.
+
+### Check the paste before anyone trusts it
+
+Four checks against `stg_google_sheets__dibels_pm_goals` after a rebuild. The
+failure modes are paste-shaped -- a fanned-out source, a shifted column, a
+partial selection -- and these catch all of them.
+
+1. Rows equal distinct rows on `academic_year`, `region`, `admin_season`,
+   `assessment_grade_int`, `measure_standard`, `round_number`.
+2. Each season's last round equals `benchmark_goal_padded`. The calculation pins
+   it there, so a deviation is a paste problem, not rounding.
+3. Every earlier round equals the running sum of `round_growth_words_goal`.
+4. `benchmark_goal` equals `goals_long.grade_level_standard`, and
+   `benchmark_goal_padded` that plus three -- confirms the row landed against
+   the right measure and grade, not just that the arithmetic is self-consistent.
+
+Known state as of this branch: AY2025 passes all four but for one row whose last
+round sits 11 words under target; AY2024 has 24 rows off on check 2 and 8 on
+check 3, which is hand arithmetic from before the automation rather than a
+defect. Show the AY2025 row to academics rather than fixing it -- the sheet
+records what the goals were.
+
+### Every field change runs this check sequence before you report it
+
+Standing instruction from the dashboard owner, 2026-09-19, after a week in which
+unverified model changes made the Tableau build harder than the data warranted.
+Run ALL of it after ANY column add, rename, drop or logic change in the DIBELS
+chain. Do not report a change as done on a subset.
+
+1. **Read back what changed.** `git diff --name-only`, then `git diff` on the
+   SQL. A scripted edit is not evidence it landed where intended.
+2. **Union-branch balance**, whenever `rpt_tableau__dibels_dashboard` is
+   touched:
+   `uv run python .claude/scratch/gr-diff-union-branches.py <abs path>`. All
+   three branches must report the same projection count and **0 mismatched
+   ordinals**. BigQuery binds UNION ALL by POSITION, so a column added or
+   removed on one branch needs the same on the other two.
+3. **Contract column count matches the SQL.**
+   `grep -c "^      - name: " <properties yml>` against the projection count
+   from step 2. A rename can silently leave a DUPLICATE entry when the new name
+   already exists in the yml; grep the new name and confirm it appears once.
+4. **Dev build, green.** From the main checkout:
+
+   ```bash
+   uv run dbt build --project-dir <worktree>/src/dbt/kipptaf \
+     --favor-state --defer --state /workspaces/teamster/src/dbt/kipptaf/target/prod \
+     --select <every changed model and its extract>
+   ```
+
+   `--favor-state` ALONE is not enough -- it does not shadow a stale personal
+   dev copy, and this chain has one (`int_amplify__mclass__pm_student_summary`
+   in at least one developer schema predates the `device_date` rename, failing
+   with `Name device_date not found inside p`). `--defer --state` is what fixes
+   it, and from a worktree the state path must be ABSOLUTE.
+
+5. **Dev values against prod.** Query `zz_<user>_kipptaf_tableau` and
+   `kipptaf_tableau` side by side, grouped by `model_type`, counting each
+   distinct value of the changed column including nulls. For a rename or a
+   refactor every cell must match exactly; for a logic change, the deltas must
+   be the ones you intended and no others.
+6. **Column presence.** `INFORMATION_SCHEMA.COLUMNS` on the dev relation -- the
+   new name present, the old name absent.
+7. **Lint.**
+   `/workspaces/teamster/.trunk/tools/trunk check --force --no-fix <changed files> </dev/null`,
+   with `trunk fmt` first if it reports formatting.
+8. **Update this skill and the reference document in the same turn**, not later.
+   Also flag any Tableau workbook exposure you could not verify -- the
+   datasource is embedded and VizQL returns 500 on those, so a dropped or
+   renamed column breaks a bound calc SILENTLY on the next extract refresh
+   rather than erroring. That check needs a human in Desktop.
+
+`dbt` and `trunk` output both trip the output scanner on high-entropy strings
+and come back fully redacted. Redirect to a file and pull specific patterns
+(`grep -oE "PASS=[0-9]+|ERROR=[0-9]+"`) rather than re-running to see it.
+
+### The aimline sibling, and the three traps in it
+
+`int_amplify__pm_met_criteria_aimline` mirrors the internal model stage for
+stage. Only the first stage differs: `met_measure_standard_goal` translates
+Amplify's `aimline_status` instead of comparing a score to a cohort target.
+Inputs are `int_amplify__all_assessments` (`model_type = 'Aimline'`, which
+carries `aimline_status`, `aimline_season_student_goal` and
+`met_measure_standard_goal` -- the translation lives there so every consumer
+reads one flag, under the SAME name the internal method uses), the by-levels
+gate for `pm_goal_criteria`, `benchmark_goal` and the previous EXPECTED round,
+and the roster's Aimline rows for completion. It is wired into
+`rpt_tableau__dibels_dashboard` as a third UNION branch, told apart by
+`model_type`.
+
+**Trap 1 -- the by-levels gate needs the cohort level.** It is split by
+`measure_standard_level`, and on an Aimline row `overall_probe_eligible` carries
+that level (Below Benchmark / Well Below Benchmark), not the `'Yes'` an Internal
+row carries. Join without it and every row doubles. The gate is unique on (year,
+region, grade, admin_season, round_number, expected_measure_standard,
+measure_standard_level) -- 2,108 of 2,108 -- so with it there is no fan-out.
+
+**Trap 2 -- `met_measure_standard_goal` is nullable on the Aimline branch on
+purpose.** Amplify publishes no status on a share of probes even where a goal is
+present, so the rollups treat null as unknown, not as a miss. Do not "fix" it
+to 0. (On the Internal branch the same column is never null on a sat row, which
+is why the two branches' status twins have different value counts.)
+`avg(...) = 1` would silently credit a code with an unpublished standard, which
+is why the code and round rollups use countif-plus-min/max instead of the
+internal model's avg.
+
+**Trap 3 -- the streak runs over EXPECTED rounds, not sat ones.** T&L define
+two-in-a-row as "two consecutive rounds that they were supposed to test on", so
+`previous_expected_round` is a `lag()` over the gate, and the model self-joins
+the student's row for that round. A measure the schedule tests in rounds 1 and 3
+only streaks across round 2 correctly; where the student was expected and
+absent, it falls back to their last recorded verdict. A plain `lag()` over
+scored rows gets both cases wrong in opposite directions. T&L dropped the
+three-in-a-row variant.
+
+**Decisions that are T&L's, not ours** -- do not "correct" them:
+
+- `benchmark_goal` is UNPADDED here, and padded on the internal method.
+  Academics keep the 3-word buffer for the internal trajectory and not for
+  aimline, so the two methods' `met_admin_benchmark_goal` are three words apart
+  by design -- 9,117 aimline rows meet the unpadded standard against 5,758 that
+  would meet the padded one. Never union or compare the two columns.
+  **Re-reviewed 2026-09-19 and KEPT.** The case for aligning them is good --
+  at-grade-level is the one question that does not depend on method -- but
+  changing either side moves a number T&L already read, so the split stands and
+  the name stays. Measured at the extract: of 35,496 rows scored on both
+  methods, 3,162 read met on Aimline and not on Internal, and ZERO the reverse.
+  One-directional is the signature of a uniformly higher bar; a non-zero reverse
+  count means something other than the pad has changed. Confirmed independently
+  -- `met_admin_benchmark_goal_unpadded` on Internal reproduces the Aimline
+  column cell for cell, 8,731 met and 26,751 not on each.
+- `met_admin_benchmark_goal_unpadded` exists on the INTERNAL branch and is
+  deliberately unused. It is the same comparison without the buffer, parked so a
+  future consumer wanting a cross-method at-grade-level figure needs no model
+  change. Null on Benchmark and Aimline rows, because aimline's is already
+  unpadded and a copy would be redundant. Binding it to a view raises Internal
+  attainment from 5,569 to 8,731 on AY2025 -- a T&L decision, not an engineering
+  one. Do not wire it up on your own initiative.
+- `Not Tested` overrides every other category, because they define it at the
+  round: not tested on one or more of the round's expected measures means Not
+  Tested for the whole round, including the measures they did sit.
+- `Meeting Aimline, On-Track` fires on the benchmark alone, per their rule that
+  a student meeting benchmark but not aimline still belongs there. The label
+  overstates what it checks; that is their wording.
+- `No Aimline Data, On-Track` and `No Aimline Data, Off-Track` are the fifth and
+  sixth categories their four omit. Academics chose to show the score and flag
+  the missing target rather than hide the row or call it Not Tested. The same
+  words, `No Aimline Data`, name the same condition on every other aimline
+  status column -- one spelling network-wide since 2026-09-19.
+- `aimline_status` is the source the verdict is translated FROM, and stops at
+  this model -- the extract does not publish it, because
+  `measure_standard_goal_status` already carries the same verdict in academics'
+  wording. Read it here when you need Amplify's literal At or Above / Below.
+- `aimline_value_by_date` IS the target `aimline_status` was computed against,
+  and publishes as the extract's `goal` on Aimline rows. Do not derive the
+  verdict from `aimline_season_student_goal` instead: that is the season-end
+  target and reproduces `aimline_status` on only five rows in six, where the
+  moving value reproduces it exactly. What the column measurably does, and the
+  one question still open about it, is under "The two aimline targets" below.
+
+Validated on AY2025 against PROD: 36,502 rows, exact grain, six tests pass, 5
+rows lost to the roster join (3 Newark students, in the yml). Measure documented
+counts against prod, never a dev build -- `--favor-state` does NOT defer a model
+that already exists in your dev schema, so a stale `zz_<user>_*` copy silently
+wins and the build looks authoritative. That is how nine figures in these docs
+were wrong for four days.
+
+### "% meeting aimline, overall and by measure" is three grains, and all three already exist
+
+Academics' phrasing hides three questions. Asked on 2026-09-15 what they meant,
+the answer was: did the student meet the aimline on this measure standard this
+round, on every expected standard under one measure name code, and on every
+expected standard in the round. Same AND-gate shape as the testing states.
+
+**Do not build anything for this.** All three are already columns:
+`met_measure_standard_goal`, `met_measure_name_code_goal`, and
+`met_pm_round_criteria` / `met_pm_round_overall_criteria` (the second variant
+also requires full participation). "% not meeting" is the inverse of the same
+flags -- it needs no new field either.
+
+Three things to say when this comes up:
+
+- **Take it from the verdict, not from `aimline_category`.** The category
+  applies T&L's benchmark-wins rule, so 696 AY2025 rows read
+  `Meeting Aimline, On-Track` while below the aimline. For an
+  intervention-targeting metric the label undercounts the problem set.
+- **Name the grain on every view.** AY2025 "% not meeting" runs 56.8% at measure
+  standard, 65.1% at name code, 72.9% at round, and 77.6% at round with the
+  participation gate -- all four defensible, so an unlabelled 57% and an
+  unlabelled 78% will both get quoted as the same metric.
+- **The gate is over EXPECTED standards, never all possible ones.** Reading
+  Accuracy has zero expected rows in rounds 5 to 8, so ORF from round 5 needs
+  Reading Fluency alone. Requiring both would fail every grade 3-8 student for
+  the back half of the year by definition.
+
+Two decisions belong to academics: whether grain 3 uses the participation gate
+(their wording says yes), and whether the no-verdict rows count as not met
+(12,695 of 44,865 at measure grain, so the choice moves each rate by 10 to 20
+points).
+
+### The met/not-met flags have labelled twins, and the workbook needs a change
+
+`int_amplify__pm_met_criteria` emits three `*_status` strings beside its flags:
+`pm_round_status` (`Met` / `Not Met` / `Round Incomplete`),
+`measure_standard_goal_status` (`Met` / `Not Met`) and
+`admin_benchmark_goal_status` (`Met Benchmark` / `Did Not Meet Benchmark`).
+`rpt_tableau__dibels_dashboard` passes all three through and coalesces the
+untested gap to `Not Tested`, so on a PM row they are never null and null now
+means one thing only -- a Benchmark row.
+
+**Bind views to the status strings, not to the numeric flags**, because the
+flags' null contract differs by method and the strings' does not.
+`met_measure_standard_goal` on the Internal branch is a plain `if`, so it is
+never null on a sat row; on the Aimline branch it is a `case` over
+`aimline_status` with no `else`, so 3,312 of 35,482 sat rows (9.3%) are null on
+AY2025. An `AVG()` of the flag therefore answers a different question per
+method. `measure_standard_goal_status` names every one of those states -- so
+count `COUNTD([Student Number])` over an explicit value instead.
+
+**Its vocabulary differs by method on purpose**, so do not write a calc that
+expects one value set across both:
+
+| Internal     |   Rows | Aimline           |   Rows |
+| ------------ | -----: | ----------------- | -----: |
+| `Met`        | 11,096 | `Meeting Aimline` | 13,886 |
+| `Not Met`    | 24,386 | `Below Aimline`   | 18,284 |
+| `Not Tested` |  9,383 | `Not Tested`      |  9,383 |
+| --           |     -- | `No Aimline Data` |  3,312 |
+
+The full vocabulary, settled 2026-09-19. Every column also carries `Not Tested`
+from the extract's coalesce.
+
+| Grain             | Internal                               | Aimline                                                              |
+| ----------------- | -------------------------------------- | -------------------------------------------------------------------- |
+| Measure standard  | Met / Not Met                          | Meeting Aimline / Below Aimline / No Aimline Data                    |
+| Measure name code | Met / Not Met                          | Meeting Aimline / Below Aimline / No Aimline Data                    |
+| Round             | Met / Not Met / Round Incomplete       | Meeting Aimline / Below Aimline / No Aimline Data / Round Incomplete |
+| Admin benchmark   | Met Benchmark / Did Not Meet Benchmark | identical to Internal                                                |
+
+Three rules behind it: aimline columns name what the verdict is measured
+against; the benchmark grain reads the same on both because the standard does
+not depend on method; and `No Aimline Data` is the one spelling for that
+condition at every grain (the round column said `No Aimline Status` until
+2026-09-19).
+
+So a view can switch between the three aimline grains with one colour legend. A
+view mixing an aimline grain with an internal one cannot -- only `Not Tested` is
+shared.
+
+Only `Not Tested` is shared, so a combined view needs its own colour legend.
+`admin_benchmark_goal_status` reads `Met Benchmark` / `Did Not Meet Benchmark`
+on both, because the benchmark standard is the one grain that does not depend on
+method. It is the only status column whose values match across the two.
+
+They exist because `met_pm_round_overall_criteria = 0` means both "did not meet"
+and "could not be evaluated". `Round Incomplete` keys on
+`met_pm_round_criteria`, NOT on the overall flag -- under `AND` a measure the
+student sat and failed settles the round however much is missing, so keying on
+the overall flag overstates it about fourfold. 375 rows of 35,524 on AY2025.
+
+**The workbook is the other half of this and is not done.** The Literacy
+Dashboard's `PM - Met Goal Selector` is a CASE returning one of the three
+numeric flags, coloured null / 0 / 1 as No Data / Not Met / Met. To surface the
+new state, point each branch at the matching `*_status` column so the calc
+returns strings and carries no logic:
+
+```text
+CASE [PM - Met Goal Parameter]
+WHEN 'Met Overall Goal'   THEN [PM Round Status]
+WHEN 'Met Standard Goal'  THEN [Measure Standard Goal Status]
+WHEN 'Met Benchmark Goal' THEN [Admin Benchmark Goal Status]
+END
+```
+
+**Also outstanding, and more urgent: every PM view must now filter
+`model_type`.** The dashboard has a third branch for the aimline method, so both
+methods emit rows for the same student and any unfiltered PM view double-counts.
+Nothing in the workbook filters it yet.
+
+Two things to watch on the selector itself. The existing No Data alias is on the
+NULL member, and PM rows are no longer null -- repoint it to `Not Tested`. And
+check whether any sheet aggregates the selector as a measure (an `AVG()`
+met-rate); converting it to a string breaks that sheet, so if one exists, add
+the string version as a second calc for Colour and leave the numeric one for
+measures. The workbook's datasource is embedded, and Tableau's VizQL Data
+Service returns 500 on embedded sources, so the MCP cannot read the calculated
+fields -- this has to be checked in Desktop.
+
+### Measure grain and measure-standard grain differ by 15 points on ORF
+
+Measured 2026-09-19 on AY2025. `NWF` and `ORF` each carry two measure standards;
+`PSF`, `WRF` and `Comprehension` carry one. So for those two codes "met the
+measure" and "met a standard of the measure" are different questions, and the
+answers are far apart.
+
+The two ORF standards -- Reading Fluency (words per minute) and Reading Accuracy
+(percent correct) -- disagree on **41% of Internal student-rounds** where both
+were scored (34% on Aimline). NWF's pair come off one probe and disagree on 8.7%
+/ 16.7%.
+
+Reported meeting rate, standard grain against code grain:
+
+| Method   | Code | At standard |   At code |
+| -------- | ---- | ----------: | --------: |
+| Internal | ORF  |       35.3% | **20.5%** |
+| Internal | NWF  |       28.4% |     24.1% |
+| Aimline  | ORF  |       43.0% |     28.8% |
+| Aimline  | NWF  |       43.3% |     34.9% |
+
+**The trap is labelling, not arithmetic.** The Region Overview - PM tab's column
+selector reads "Measure" but is bound to `expected_measure_standard`, so a
+reader picking ORF gets the standard-grain figure under a measure-grain label.
+Both numbers are correct answers to different questions; only one matches the
+question the label asks.
+
+A measure-labelled view binds `expected_measure_name_code` with
+`met_measure_name_code_goal` / `measure_name_code_goal_status`. A
+standard-labelled view keeps the `_standard_` pair. Do not mix a dimension from
+one grain with a flag from the other.
+
+### Where the model's wording departs from T&L's doc, on purpose
+
+T&L's canonical definitions live in the "Definitions Needed" table of "SY26 -
+KIPP NJ - DIBELS PM Rounds + Goals" (owner mtambawala). The model matches it
+everywhere except two places, both settled by the dashboard owner on 2026-09-19
+after reading the doc against the model. **Do not "correct" either one back to
+the doc.**
+
+- **`Meeting Aimline, On-Track`** -- the doc says "On Track and Meeting
+  Aimline". Kept as is so it reads as a pair with `Meeting Aimline, Off-Track`.
+  Same concept, better-matched siblings.
+- **`Not Tested` vs `Round Incomplete`** -- the doc defines Not Tested as "not
+  PM tested on ONE OR MORE measures", i.e. our Round Incomplete. Split
+  deliberately, for two reasons worth repeating to whoever asks: cohort-level
+  testing already makes "why is this student untested" hard to read, since BB
+  and WBB students sit different rounds; and Alisha Fairfax asked for
+  percent-tested-over-time, which needs fully tested / not started / incomplete
+  as separate states so schools can target the incomplete ones.
+
+The doc also records where `aimline_value_by_date` started: T&L's own words, "I
+don't know what this is. Decision: wait until we get definitions from KIPP
+Foundation before we do anything with this." That hold is DISCHARGED --
+Amplify's own report documentation defines the column, so it now publishes. Cite
+the definition, not the old decision, if someone reopens it.
+
+`On Track to Benchmark`, which appears in some of their screenshots but in no
+definitions table, comes from a separate wishlist line -- "Meeting Aimline,
+Below Benchmark Trajectory, could be a swap view". That is the origin of
+`aimline_trajectory_category`. It is a different ask, not drift, so do not
+retire that column as a duplicate without checking whether the swap view is
+still wanted.
+
+**Three pads exist, and the doc's "PADDING UPDATE (K-8)" block governs two of
+them -- not the PM one.** Read against the PM chain the block looks like a
+contradiction. It is not; it is about the benchmark-goal chain.
+
+| Pad    | Where                                       | Applies to                                  |
+| ------ | ------------------------------------------- | ------------------------------------------- |
+| `+3`   | `stg_google_sheets__dibels_pm_goals`        | `benchmark_goal_padded`, the PM bar         |
+| `+5`   | `rpt_gsheets__dibels_bm_goals_calculations` | expected at/above count, BOY ONLY           |
+| `x1.5` | `rpt_gsheets__dibels_bm_goals_calculations` | the expected-minus-actual gap, every season |
+
+That resolves the wording exactly. "Double padded" is the `+5` AND the `x1.5`
+together, which is BOY. "Single padding, keep the 1.5 pad" is dropping the `+5`
+and keeping the multiplier -- which is what `if(period = 'BOY', 5, 0)` already
+does. Implemented, seasonal, and matching the note.
+
+So the PM `+3` is correct as shipped and that block never referred to it.
+Confirmed by the owner 2026-09-19. Do not re-open it from the doc text, and do
+not read "double padded" as a PM instruction.
+
+### Slice on `expected_*`, never on a scores-side column
+
+The dashboard has two parallel dimension sets. `expected_*` comes from the
+enrollment spine crossed with the expectation gate and is populated on EVERY PM
+row; the scores-side columns come through the LEFT join and are null wherever no
+probe happened. AY2025, 89,730 PM rows: every scores-side column is null on
+exactly the same 18,766 (9,383 per method), every spine column on zero.
+
+Binding a view to the wrong one deletes the untested students from the
+denominator. Nothing errors, every percentage still sums to 100, and the rate
+goes UP. The symptom is a Not Tested slice disappearing after a field swap.
+
+Three pairs are easy to confuse -- close names, identical values wherever both
+exist, only one survives a non-test:
+
+| Safe                         | Drops untested      |
+| ---------------------------- | ------------------- |
+| `expected_test`              | `period`            |
+| `expected_measure_name_code` | `measure_name_code` |
+| `expected_grade_level_int`   | `assessment_grade`  |
+
+Also safe: `expected_round_number`, `expected_measure_name`,
+`expected_measure_standard`, `expected_month_round`, `expected_start_date` /
+`expected_end_date`, `region`, `school`, `student_number`, `grade_level_int`,
+`round_test_status`, `measure_test_status`. Also unsafe: `measure_name`,
+`measure_standard`, `measure_standard_level`, `client_date`, `start_date`,
+`mclass_student_number`.
+
+This is the owner's deliberate design -- the spine exists to force the nulls to
+show -- so a view reaching for a scores-side dimension is a mistake to correct,
+not a style choice.
+
+### A code's standards are sat together, and a warn test guards the rollup
+
+**Do not add an `Incomplete Measure` status.** It was proposed 2026-09-19 and
+measured away: within a multi-standard code a student sits every standard or
+none, because the pair comes off ONE probe administration (NWF-CLS and NWF-WRC
+from a single NWF sitting, ORF and ORF-Accu from one passage). AY2025 partial
+groups: 0 on Internal, 0 on Aimline. A dead enum value costs the next reader
+more than it saves.
+
+Aimline's partials are a publication gap, not a participation gap -- 1,030
+groups where the student sat both and Amplify published one aimline, 868 where
+it published neither. `No Aimline Data` already names that. `n_sat` is never 1.
+
+`met_measure_name_code_goal` DEPENDS on the pairing: it rolls up with `avg()`
+over the code partition and sees only verdicted rows, so a half-sat group would
+report the sat standard's verdict as the whole measure's. Guarded by
+`rpt_tableau__dibels_dashboard__measure_code_sat_all_or_none` at
+`severity: warn`.
+
+**If someone asks about that warning**, the diagnosis query, the corrected
+rollup SQL, and why the fix reuses the aimline sibling's countif/min pattern
+rather than a third shape are in the reference document under "If the
+measure-code pairing test fires". Do not re-derive it -- and note that the fix
+is the point at which `Incomplete Measure` stops being dead and becomes the
+right value to add.
+
+### Regions are not on the same round, and round numbers are not unique
+
+AY2025 Miami sits a week to a month behind the NJ regions on every round, and
+runs THREE rounds per season where NJ runs four. So Miami's round 4 is in
+MOY->EOY while every NJ round 4 is in BOY->MOY. Simulated against the AY2025
+gate:
+
+| As of      | Camden | Newark | Paterson | Miami        |
+| ---------- | ------ | ------ | -------- | ------------ |
+| 2025-12-01 | R3     | R3     | R3       | R2           |
+| 2026-02-05 | R4     | R4     | R4       | R4, MOY->EOY |
+
+Two consequences. `expected_round_selection` exists so a view can say "wherever
+each cohort actually is" instead of hard-coding a number -- it reads `Current`
+on the latest round whose window has OPENED, partitioned by year, region and
+grade, and carries that round's label on every other row. A string, not a
+boolean, so one filter selection follows each region; the cost is that a round
+that is current somewhere is no longer selectable by number on this field, so
+"everyone's round 3" comes from `expected_round_number` or
+`expected_round_label`. And `expected_round_label` is load-bearing, NOT
+cosmetic: a filter on the bare round number silently mixes NJ students
+mid-first-half with Miami students in their second half.
+
+Latent today only because Miami produces no rows in the extract at all. Do not
+"simplify" the label away on the grounds that round numbers look unique -- they
+look unique because Miami is missing.
+
+### The switcher grid, and why its names are inconsistent
+
+Added 2026-09-19. One Tableau selector pair drives every distribution view --
+granularity picks the row, comparison item the column:
+
+| Grain             | Own goal                        | Benchmark                            | Aimline + benchmark                          | Trajectory                            |
+| ----------------- | ------------------------------- | ------------------------------------ | -------------------------------------------- | ------------------------------------- |
+| Measure standard  | `measure_standard_goal_status`  | `admin_benchmark_goal_status`        | `aimline_category`                           | `aimline_trajectory_category`         |
+| Measure name code | `measure_name_code_goal_status` | `measure_name_code_benchmark_status` | `measure_name_code_aimline_benchmark_status` | `measure_name_code_trajectory_status` |
+| Round             | `pm_round_status`               | `round_benchmark_status`             | `aimline_round_category`                     | `round_trajectory_status`             |
+
+"Own goal" is the method's own target -- cumulative growth on Internal, the
+aimline on Aimline. The right two lenses are Aimline-only.
+
+**Do not file the naming inconsistency as a bug.** The five new columns use
+`<grain>_<lens>_status`; the four older ones do not. Aligning all nine was
+considered and DEFERRED on the day, because three of the older names are shared
+with Internal and renaming them forces a rebind of the internal Tableau tabs
+too. It is recorded in the reference document as a follow-up. Additive was the
+owner's explicit choice for timing.
+
+**Coarser grains are strictly stricter.** AY2025 Aimline benchmark: 8,731 met at
+measure standard, 5,197 at name code, 3,004 at round, zero rows where a coarser
+grain reads met while a finer one does not. If that ever inverts, something is
+wrong with a rollup window.
+
+**Grain and dimension must move together.** A coarse-grain value repeats across
+the round's measure rows, so a view showing round-grain status broken out by
+measure standard asserts a difference that does not exist, and student counts
+stop summing to the population -- 404 slice-counts against 327 students at
+measure-standard grain in one measured school. Drive the Columns dimension from
+the same parameter as the status column.
+
+### The four goal grains each have a flag and a labelled twin
+
+| Grain             | Flag                            | Labelled twin                   |
+| ----------------- | ------------------------------- | ------------------------------- |
+| Measure standard  | `met_measure_standard_goal`     | `measure_standard_goal_status`  |
+| Measure name code | `met_measure_name_code_goal`    | `measure_name_code_goal_status` |
+| Round             | `met_pm_round_overall_criteria` | `pm_round_status`               |
+| Admin benchmark   | `met_admin_benchmark_goal`      | `admin_benchmark_goal_status`   |
+
+All four flags are 1/0/null on both methods, so a numeric selector works across
+them; all four twins are non-null on PM rows. The name-code twin was added
+2026-09-19 -- before that the selector returned a number on that one option and
+strings on the rest.
+
+**Each grain needs its own dimension on the view.** Measured on the 14,924
+multi-standard code groups: the standard and benchmark flags VARY within a name
+code (2,948 and 1,746 groups on Internal), while the code and round flags are
+constant across it (0 of 14,924). Display a code-grain or round-grain value
+broken out by measure standard and it repeats identically across the
+sub-standards -- the average stays right, but the view asserts a difference that
+does not exist.
+
+### The two aimline targets, and three ways to get them wrong
+
+Measured 2026-09-19 on AY2025. Full tables in the reference doc under
+[Both methods have a moving target](../../../docs/models/dibels-dashboard-data-model.md);
+what a session needs before opening a file is here.
+
+**Aimline has TWO targets and they go in different extract columns. Keep them
+apart.**
+
+| Extract column                    | Internal rows             | Aimline rows                    |
+| --------------------------------- | ------------------------- | ------------------------------- |
+| `goal`                            | `cumulative_growth_words` | `aimline_value_by_date`         |
+| `aimline_season_student_goal`     | null                      | Amplify's season endpoint       |
+| `aimline_season_student_goal_gap` | null                      | score minus the season endpoint |
+
+`goal` is the MOVING target -- what the verdict was computed against, climbing
+across the season -- and it is the one column both methods share, because both
+halves answer the same question. The season endpoint is a different quantity,
+per student rather than per cohort, and stays in its own column. Do not merge
+them, and do not compare a score to the season endpoint to get the verdict.
+
+AY2025 populations: `goal` on all 44,865 Internal rows and 32,170 of 44,865
+Aimline rows; `aimline_season_student_goal` on 33,873 Aimline rows with the gap
+on the same 33,873. The two counts differ by ~1,700 rows where Amplify published
+a season endpoint but no aimline value for that probe -- those carry a gap while
+`measure_standard_goal_status` reads `No Aimline Data`, so a roster can show a
+gap on a row that has no verdict.
+
+**`measure_standard_round_verdicts` puts the whole season on one row.** One
+hyphen-separated character per round in round order, e.g. `B-B-A`. `A` is at or
+above (meeting aimline, or met on internal), `B` is below (below aimline, or not
+met), `?` is No Aimline Data, `.` is a round not tested. A/B is Amplify's own
+pair, which is why it was chosen over Met/Not Met wording -- leaders already
+read it that way. One alphabet for both methods on purpose. No token is the
+hyphen, so `B-B-.` reads unambiguously as three rounds.
+
+It is scoped to the administration season (never runs BOY->MOY into MOY->EOY,
+which carry different goals) and built over the expectation spine, so a skipped
+round is a `.` rather than a shortened string. It repeats across its partition
+-- season-level value on a round-level row -- so counting students on it without
+a round filter multiplies by the round count. Null on Benchmark rows.
+
+Verified AY2025: on all 89,730 PM rows the character at the row's own round
+position equals that row's own `measure_standard_goal_status`, zero mismatches
+either method. Known wrinkle: 3 partitions per method (14 rows) repeat a
+character, from the course-enrollment fan-out that predates the column.
+
+**Never verify a derived column by re-applying its own derivation.** The verdict
+string shipped broken and a check reported zero mismatches, because the check
+re-used the same CASE the column was built from -- it compared the expression to
+itself. The Aimline half matched on `like 'Met%'`, which `Meeting Aimline` does
+not satisfy (`Mee`, not `Met`), so all 13,886 met-aimline rows rendered `?`
+instead of `A` and nothing caught it. Derive the expected value from a DIFFERENT
+column -- here the underlying `met_measure_standard_goal` flag -- or the check
+is theatre. `rpt_tableau__dibels_dashboard__round_verdict_token_reconciles` now
+does that and reproduces the failure at 13,886 rows.
+
+A related habit: the token is driven off the `1`/`0`/`null` flag rather than off
+the human-readable `*_status` string, so a future wording change on either
+method's vocabulary cannot silently re-break it. Prefer flags over string
+prefixes anywhere the two methods' vocabularies diverge.
+
+WATCH OUT when verifying anything partitioned on this extract: leave
+`model_type` out of the partition and you merge Internal with Aimline, which
+silently doubles every partition. That is the same double-count trap the
+row-level rules warn about, and it burned a verification pass in this session
+before the column itself turned out to be correct.
+
+**The one open decision: Below Aimline outranks No Aimline Data.** When a
+round's measures disagree, the round rollup takes the worst state, and every
+rung of that order is forced by the row-level cascade EXCEPT this one. A student
+below the aimline on one measure and carrying no published aimline on another
+reads `Below Aimline`, on the reading that a real negative verdict beats a
+missing one. Academics have NOT confirmed it. If they reverse it, 694 of 10,046
+AY2025 `Below Aimline` round groups (6.9%) become `No Aimline Data` — a one-line
+change to the cascade that moves published numbers. Do not present round-level
+aimline figures as settled without saying this is open.
+
+**Reading a roster row.** Grain is student x measure standard x season x round,
+one row per round -- "every score so far at round 3" is three stacked rows, not
+one wide row. The season endpoint is the END OF THAT SEASON, not the year: a
+BOY->MOY row's goal is the MOY target, and MOY->EOY carries a different one.
+Round numbers run 1-8 across the year without restarting, so round 3 is
+unambiguously BOY->MOY, but Camden's MOY->EOY is rounds 6-8 where Newark and
+Paterson run 5-8 -- which is why `expected_round_label` stays load-bearing. A
+row's gap is THAT round's score minus the season endpoint, so it can read
+negative while the status reads `Meeting Aimline`: on pace, not yet arrived.
+Never filter a roster on `period` -- it is null on the 9,383 untested rows, the
+exact rows a participation view needs; use `expected_round_label`.
+
+**`aimline_value_by_date` reproduces the aimline verdict exactly.** On the
+extract, `measure_standard_score >= goal` matches `measure_standard_goal_status`
+on 32,170 of 32,170 scored Aimline rows with a target (13,886 Meeting Aimline,
+18,284 Below Aimline, zero disagreements either way). The season endpoint agrees
+on only 7,850 of those 13,886. Zero rows carry a verdict without a target or a
+target without a verdict. If a view's aimline numbers disagree with the status
+column, the view is wrong, not the data.
+
+**The hold on it is discharged.** Amplify's report documentation defines it as
+the "score that is on the aimline on the day that the PM test is administered",
+ranged 0-999 whole for most measures, 0-100 for ORF Accuracy, 0-999 with `.5`
+for Maze -- and our data conforms exactly (3,134 Maze decimals, all `.5`, no
+range violations). That definition was the blocker; it is answered.
+
+Measured behaviour, AY2025: a straight line in calendar days (mean absolute
+residual 0.126 words against the line through each partition's first and last
+probe, max 1.0), monotonic non-decreasing on 29,051 of 29,051 consecutive pairs,
+never above the season endpoint, equal to it on 1,819 extract rows and on 10.9%
+of final probes. It moves in 14,732 of 19,467 multi-probe partitions (76%) where
+the season endpoint moves in 32 (0.2%).
+
+How Amplify anchors the line is NOT an open question for this repo. Amplify
+publishes the equation behind the starting point; it is too complex to be worth
+reimplementing and there is no reason to, since school leaders already treat the
+per-student goal as Amplify's output and trust it. Route any "how is this drawn"
+question to Amplify. Do NOT spend a session fitting it from the published
+columns -- that work is done and at its limit. (For the record: the endpoint is
+not a shared season-end date; extrapolating each line to its season endpoint
+spreads Newark BOY->MOY over 52 dates. Property of the method, affects no column
+we publish.)
+
+**Amplify's `goal` is a per-student growth target, not the grade's bar.** It is
+written from the individual student's point of view -- where this student should
+reasonably reach by the end of the period, given where they started -- so two
+students in the same class on the same measure can correctly hold different
+goals. `benchmark_goal` is the opposite kind of thing: one published grade-level
+standard everyone is held to. A per-student endpoint is what the per-student
+aimline trajectory has to run to.
+
+It is therefore not `benchmark_goal` unpadded, which is the tempting guess and
+wrong for two rows in three: 36.6% of probe rows match our standard exactly,
+39.8% sit below it, 23.6% above. Grade 3 Reading Fluency BOY->MOY -- our
+standard 105, Amplify's goals 33 to 189. The rows that do match are students
+whose individual target coincides with the standard, not evidence the column is
+the standard. Never substitute either column for the other, and never label
+`goal` as a grade-level goal in a view.
+
+### A missing aimline `goal` is a school-grade condition, not thin data
+
+Grades 5 and 7 carry `goal` null rates of 15.9% and 14.6% against 1.7-3.4%
+elsewhere, which invites "those grades cancelled PM testing, so Amplify had too
+little data." Tested 2026-09-19 and rejected -- do not re-run this.
+
+- The students sat the probes: Newark Purpose grade 7 is 335 probe rows, 335
+  scored, 335 with no goal.
+- They have the BOY benchmark the goal derives from -- 99.6% of goal-null
+  students against 99.9% of goal-present ones. Prior-year PM is not an input to
+  the current year's goal at all.
+- It is binary per student: 1 of 759 grade-5 students had a mix of goal-present
+  and goal-null rows.
+- It concentrates in two cells -- Purpose grade 7 at 100% and Rise grade 5 at
+  88% are 72% of the whole problem, while TEAM grade 7 and PPMS grade 5 are at
+  zero.
+
+Reads as an mClass setup or rostering condition at those cells. **Nobody has
+asked Amplify what suppresses a `goal`** -- that is the open action, and until
+it is answered the above is inference from the pattern. The `aimline_status`
+gaps in the same grades (30.5% and 35.5%) are a superset and may have a separate
+cause; not investigated.
+
+### Filtering PM rows: `assessment_type` and `model_type` say the same thing
+
+On `rpt_tableau__dibels_dashboard`, `assessment_type = 'PM'` is exactly
+`model_type in ('Internal', 'Aimline')` -- AY2025 gives PM/Aimline 44,865,
+PM/Internal 44,865, Benchmark/BM 111,892, with no row crossing. Neither filter
+narrows the other, so adding both proves nothing. Use `model_type`: it is the
+column that separates the two PM methods, which is the filter a view actually
+needs.
+
+### The OR criteria is spelled NULL, and it is live on history
+
+**Do not read the `else max()` branch as dead legacy.** `pm_goal_criteria` never
+holds the string `'OR'` in any year. The OR behaviour is what **null** means,
+and the `case pm_goal_criteria when 'AND' then min() else max() end` sends null
+down the `max()` path.
+
+The history, from `stg_google_sheets__dibels_expected_assessments` PM rows:
+
+| Year | `AND`   | null  | Live rows                                          |
+| ---- | ------- | ----- | -------------------------------------------------- |
+| 2024 | 20      | 142   | **0** -- all switched off via `assessment_include` |
+| 2025 | 254     | 536   | 222 AND, 367 null                                  |
+| 2026 | **883** | **0** | 883 -- first fully-AND year                        |
+
+So on AY2025 the OR path is live on 367 rows, more than half. SY26-27 is a clean
+cut: every row is `AND`, no nulls at all.
+
+**What the OR meant.** Academics used to let a student pass a round by meeting
+one _set_ of measures or a single measure, rather than all of them. The code
+expresses that exactly: `max()` runs over `met_measure_name_code_goal`, which is
+already the AND-within-a-code (both NWF standards, both ORF standards). So a set
+had to be complete, but only one set had to pass. From SY26-27 a student must
+meet every measure, which is why every row is now `AND`.
+
+**Consequences for `met_pm_round_overall_criteria`.** Its `case` has an `'AND'`
+branch and a null branch, and that is complete -- there is no third value to
+handle.
+
+The null branch skips `completed_test_round` for a reason that is logical rather
+than stylistic. A round's met/not-met cannot be computed at all for a student
+who did not finish it -- **unless the criteria is OR**:
+
+- `AND` needs every measure, so a skipped measure leaves the result
+  **indeterminate**. There is no way to know whether the student would have met
+  it, so the round cannot be credited.
+- Null (OR) needs any measure, so one passing measure settles the round. What
+  was skipped cannot change the answer.
+
+Measured on AY2025, among students whose round criteria passed but who did not
+complete the round: **374 `AND` rows score 0, and 222 null rows score 1.** Do
+not "simplify" the gate away -- it is load-bearing under `AND`.
+
+Worth carrying into any reporting conversation: those 374 are not failures, they
+are **unmeasurable**. `met_pm_round_overall_criteria` cannot say so -- 0 means
+both "did not meet" and "could not be evaluated" -- so `pm_round_status` sits
+beside it and labels them `Round Incomplete`. With `AND` network-wide from
+SY26-27 that population only grows, which is why T&L's categories keep _Not
+Tested_ separate from _Below_ rather than folding it in.
+
+An earlier version of this section called the missing `'OR'` branch an inert
+gap, on the evidence that zero AY2025 rows carry `'OR'`. That was literally true
+and thoroughly misleading -- the OR behaviour is live, under a different
+spelling.
+
+### all_assessments changed grain -- every consumer must NAME its model_type
+
+**The highest-value thing to check when touching anything downstream of
+`int_amplify__all_assessments`.** It now emits one row per data method (`BM` /
+`Internal` / `Aimline`), so a consumer that does not filter `model_type` either
+double-counts or is correct only by accident.
+
+Three consumers broke on this and were fixed on the aimline branch. All three
+failed silently -- no error, no failing test, just multiplied rows:
+
+| Consumer                              | What it had               | Effect                                                            |
+| ------------------------------------- | ------------------------- | ----------------------------------------------------------------- |
+| `rpt_tableau__dibels_dashboard` PM    | nothing                   | **4x** -- 2x on the score join, 2x on roster                      |
+| `int_amplify__pm_met_criteria`        | nothing                   | 72,970 rows from 17,004 distinct score keys                       |
+| `rpt_gsheets__dibels_pm_goal_setting` | `period in ('BOY','MOY')` | one coincidence from averaging PM into a benchmark starting score |
+
+Measured precisely rather than estimated: on AY2025 the PM score attach has
+**exactly 2 rows per (year, season, round, measure, student) on 36,507 of 36,507
+groups**, and the roster **2 per (year, grade, season, round, student) on 24,594
+of 24,594**. There is no partial version of this bug -- if a join is unscoped it
+doubles, everywhere.
+
+**Every remaining consumer is safe for a reason it does not state.** That is the
+part to internalise, because each of these is one refactor from breaking:
+
+| How it survives                                                  | Which                                                                                                                                                                          |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Filters `assessment_type` explicitly                             | `rpt_gsheets__dibels_bm_goals_calculations`, `dim_assessments`, `dim_assessment_administrations`, `fct_assessment_scores_enrollment_scoped`                                    |
+| Filters `measure_standard = 'Composite'`, which PM never carries | `int_extracts__student_enrollments_subjects`, `rpt_tableau__mtss_rti`, `rpt_gsheets__mtss_rti`, `rpt_gsheets__kippmiami_payout_roster`, `int_topline__dibels_benchmark_weekly` |
+| Benchmark seasons never equal PM seasons (`BOY` vs `BOY->MOY`)   | the dashboard's own BM branch, and its composite read                                                                                                                          |
+| `overall_probe_eligible` is null on EOY rows                     | the EOY exclusion in `pm_goal_setting`                                                                                                                                         |
+
+None of those was left unscoped carelessly -- they predate `model_type`. But
+"correct because a composite filter happens to exclude PM" is not a design, and
+the fix when you touch one is to state the scope, not to rely on the coincidence
+holding.
+
+**How to audit it in one command:**
+
+```bash
+cd src/dbt/kipptaf
+for f in $(grep -rl int_amplify__all_assessments models --include=*.sql \
+           | grep -v 'int_amplify__all_assessments.sql'); do
+  printf '%-3s %-3s  %s\n' "$(grep -c assessment_type "$f")" \
+    "$(grep -c model_type "$f")" "${f#models/}"
+done | sort -k2 -n
+```
+
+A zero in the second column is not automatically a bug -- check what else scopes
+it -- but it is always worth reading.
+
+**Corollary for the aimline sibling:** it reads `all_assessments` too, and it
+must say `model_type = 'Aimline'` rather than infer it from whichever column
+happens to be null on the internal method. `overall_probe_eligible` will not
+serve: it is `'Yes'` on every Internal PM row and the composite level on every
+Aimline one, so it discriminates -- until someone changes what the aimline
+branch projects into it.
+
+### The PM branches cannot match prod's row count, and should not
+
+Do not treat a PM row-count difference against prod as a regression to fix. The
+branches drop scores from students who were never PM-eligible. Measured on
+AY2025, prod carried 8,253 such rows -- 8,170 for 3,024 students whose composite
+was At/Above Benchmark, and 83 for 28 students with no benchmark row at all.
+
+Those students were already invisible downstream -- the participation roster and
+the dashboard each re-derive eligibility independently, and both return zero
+rows for them. Verify that before accepting the drop, then treat the change as
+consolidating one gate from three places to one.
+
+### A student's two grade columns can disagree -- known, and not fixable
+
+On a PM row, `assessment_grade` comes from the score side (the grade the probe
+was administered at) and `assessment_grade_int` comes from the benchmark side
+(the grade the student was benchmarked at). A student who changes grade level
+mid-year has both, and they differ. Measured on AY2025: one student, four rows,
+`assessment_grade = '4'` against `assessment_grade_int = 3`.
+
+**This is known and accepted. Neither column is wrong** -- the student really
+did sit their benchmark at one grade and their progress monitoring at another.
+Do not "fix" it by sourcing both from one side. Both from the score side matches
+prod, but the row would then claim grade 4 while carrying the round windows and
+expected measures that came from grade 3's gate row. Both from the benchmark
+side keeps the row coherent with its expectations, but discards the grade the
+probe was actually sat at.
+
+**The dashboard is unaffected; the participation roster is not.** An earlier
+version of this section said it "settles at the reporting layer" full stop. That
+was too broad -- the two consumers join the grade differently.
+
+`rpt_tableau__dibels_dashboard`'s PM branch drives off the student's enrollment
+record -- `int_extracts__student_enrollments_subjects` joined to
+`int_google_sheets__dibels_pm_expectations` on `s.grade_level = e.grade` -- so
+the ENROLLED grade decides which expectations the student is held to, and the
+score is attached with a LEFT JOIN on year, season, round, measure and student
+number, **with no grade predicate at all**. Whichever grade the PM row carries,
+the score lands on the enrolled-grade expectation row.
+
+`int_students__dibels_participation_roster` DOES put grade in its score join
+(`s.grade_level = a.assessment_grade_int`), so a PM row keyed to the benchmark
+grade misses a student enrolled at the probe grade and `actual_row_count`
+reads 0. Measured on AY2025: one row, Newark grade 4, BOY->MOY round 2, prod 2
+against 0. `completed_test_round` is false on both sides, so nothing reported
+moves -- the count is just understated. Expect it when every measure in a round
+landed at the other grade.
+
+The remaining consequence is internal: these rows key to a different grade than
+prod does, so a prod-versus-branch comparison always shows them as branch-only.
+Confirm the count is still tiny, then move on.
+
+What _must_ match prod is the Benchmark half. That was verified byte-for-byte:
+337,073 rows, 38 columns, zero differing values.
+
+### A stale dev relation will hide a filter you removed
+
+After the `assessment_grade_int >= 3` floor was removed from
+`int_amplify__mclass__pm_student_summary_aimline`, downstream queries still
+returned grades 3-8 only. The SQL was correct; the dev relation was not rebuilt,
+and dbt prefers an existing dev relation over the deferred prod one. Rebuild the
+edited model before reading anything downstream of it, and reach for
+`--favor-state` when deferring. Same trap with the Google Sheets externals: the
+external reads the sheet live, but `stg_*` is frozen at its last build, so a
+fresh paste is invisible until you rebuild the staging model.
+
+Watch for orphaned relations from renames too -- `__dibels__` (double
+underscore) renames left single-underscore copies of both by-levels models in
+the dev and PR schemas. They resolve, they hold stale data, and nothing points
+at them.
+
+### Generating rows for both models
+
+Both models come out of the same transcribed T&L round data, which
+`scripts/generate_pm_expected_assessments_rows.py` reads from a `--rounds` TSV
+(transcribed from the doc each year, not committed; columns and example rows are
+in the script's docstring):
+
+```bash
+rounds=sy2627_expected_assessments.tsv
+
+# combo: K-2 internal scaffold + 3-8 aimline -> by-levels range, 18 columns
+uv run python3 \
+  .claude/skills/dibels-dashboard/scripts/generate_pm_expected_assessments_rows.py \
+  --academic-year 2026 --rounds "$rounds" --out /tmp/combo.tsv
+
+# internal applied to K-8 -> V1 range, 16 columns
+uv run python3 \
+  .claude/skills/dibels-dashboard/scripts/generate_pm_expected_assessments_rows.py \
+  --academic-year 2026 --rounds "$rounds" --single-rows --out /tmp/internal.tsv
+```
+
+`--single-rows` does two things: widens the scaffold from `K2_GRADES` to every
+grade 0-8, and drops columns 6 and 7 (`assessment_type`,
+`measure_standard_level`) so the output matches the 16-column V1 order.
+
+`--no-scaffold` empties the scaffold set instead, so every grade takes the
+aimline pattern -- rows only for rounds the doc lists, blank `pm_goal_include`.
+Use it with the default 18-column output for aimline-across-K-8. On the SY27 doc
+it yields 1,170 rows (758 NJ + 412 Miami) against the default's 1,294; the
+124-row difference is exactly the K-2 scaffold-fill rows.
+
+**Generating single rows from the doc is not lossy; collapsing existing split
+rows would be.** The round data carries ONE measure list per grade/round plus a
+cohort tag -- never per-cohort measure lists -- so single-row mode just omits
+the tag. The reverse direction, folding already-split sheet rows down to single
+rows, is a real decision and no script can infer it: of the 709 AY2026
+`(region, grade, round, measure)` combos in the by-levels range, 461 carry both
+cohorts and **248 carry `Well Below` only**. The same query over AY2025 returns
+790 combos with both cohorts on every one and zero cohort-only, so re-derive per
+year rather than reusing either number. Those 248 encode who gets tested --
+Miami alternates cohorts by round, and several NJ rounds are Well-Below-only.
+Flattening them either over-tests `Below` students or throws the distinction
+away. Always regenerate from the doc; never collapse the sheet.
+
+**The `pm_goal_include` scaffold is the only grade-band difference between the
+models.** Under aimline, 3-8 rows carry a blank `pm_goal_include` and exist only
+for rounds the doc lists -- Amplify supplies the goal, so no trajectory scaffold
+is needed. The internal model gives 3-8 the same scaffold K-2 always gets: a row
+for every round of a season for any measure tested at least once that season,
+with `pm_goal_include = false` on the untested rounds. Measured on the sheet:
+AY2025 3-8 has 504 rows at `false`; AY2026 3-8 in the combo model has 0.
+
+**`reporting__terms` DOES need `PLIT` rows for 3-8 now.** An earlier version of
+this section said it did not, reasoning that `PLIT` was K-2-only in AY2025
+across all four regions (true: `0,1,2` carries `PLIT` rows, `3,4` and `5,6,7,8`
+carry zero). That reasoning was wrong. `PLIT` is not a K-2 property -- it is
+what the internal method counts school days against, and it was K-2-only only
+because K-2 was the only band on the internal method. Now that academics runs
+internal across K-8, every band needs `PLIT`.
+
+Copying one band's `PLIT` rows to the others -- how the AY2026 rows were
+produced -- is only correct while the bands share a calendar, which they do
+today -- every band's `LIT` round covers the same dates, so the derived `PLIT`
+windows coincide.
+
+Watch the interaction with `int_google_sheets__dibels_pm_expectations`: its day
+count groups on `(region, year, season, round)` with **no `grade_band`**, and
+its `regexp_extract(code, r'LIT(\d+)')` is unanchored, so `PLIT1` reads as round
+1 and its window is counted alongside `LIT1`'s. Measured on Newark AY2026: the
+`LIT` window is 5 in-session days and `PLIT` adds 23/9/13/12. Since all bands
+share one group, adding 3-8 `PLIT` rows is a no-op there **only** while their
+dates match K-2's. If a band's `PLIT` dates ever diverge, the group unions both
+windows and every band's count shifts.
+
+**`pm_goal_criteria` stays `AND`** on every row of both models -- a T&L
+requirement for the year, not an aimline artifact.
+
+### Paterson's grade bands changed between AY2025 and AY2026 -- don't reuse last year's override
+
+The ref doc documents Paterson's AY2025 grade bands as `3` / `5,6,7` (no grade
+4, no grade 8) rather than the `3,4` / `5,6,7,8` Newark and Camden use. **That
+enrollment has changed**: AY2026 Paterson has 120 grade-4 students and 60
+grade-8 students (zero of either in AY2025) -- confirmed via
+`int_extracts__student_enrollments`, and consistent with the SY26-27 T&L doc,
+which gives Newark and Paterson one shared grid with no per-region grade-band
+split. Generating AY2026 rows with the old Paterson-specific band override (the
+per-region band override the old band-duplication script carried) produces the
+WRONG bands -- check current enrollment before reusing any region's prior-year
+band definition, every year, not just for Paterson.
+
+### SY26-27 NJ rollover status
+
+`reporting__terms` (K-2 `LIT`+`PLIT`, 3-4/5-8 `LIT`-only) is built and verified
+for Newark, Paterson, and Camden, and serves both data models unchanged.
+
+**Both Expected Assessments models need their own row set.** Regenerated and
+counted at the current commit:
+
+| Row set                       | Aimline (by-levels range) | Internal K-8 (V1 range) |
+| ----------------------------- | ------------------------- | ----------------------- |
+| NJ (Newark, Paterson, Camden) | 758                       | 614                     |
+| Miami                         | 412                       | 269                     |
+
+**The by-levels range takes the `--no-scaffold` set, not the default combo
+set.** An earlier version of this table listed the combo output (878 NJ + 416
+Miami = 1,294), written when K-2 was expected to stay on the internal method
+inside the 18-column range. That is not what shipped: aimline runs K-8 and
+supplies its own goals, so no grade needs the trajectory scaffold. What is in
+the sheet, verified against the staging model, is the `--no-scaffold` set --
+Newark 282, Paterson 282, Camden 194, Miami 412 = 1,170 AY2026 rows, all four
+regions pasted.
+
+The aimline set is larger at every grade despite scaffolding none of them,
+because it splits each row into `Below` / `Well Below` (523 `Both` rows become
+1,046) while the 16-column V1 range has no cohort. Verified in the generated
+output: internal 3-8 carries 112 rows at `pm_goal_include = false` (the scaffold
+extends to every grade) where combo 3-8 carries zero (aimline supplies the
+goal).
+
+**Both row sets are pasted, all four regions -- verified against the staging
+models, not assumed.** Query the staging model rather than trusting a note here;
+the sheets are live and a note goes stale the moment T&L edits a tab.
+
+| Range              | Newark | Paterson | Camden | Miami | Total |
+| ------------------ | ------ | -------- | ------ | ----- | ----- |
+| V1 16-col, PM rows | 244    | 244      | 126    | 269   | 883   |
+| By-levels 18-col   | 282    | 282      | 194    | 412   | 1,170 |
+
+The V1 range also carries 144 Benchmark rows per region for AY2026; the
+by-levels range carries none, by design.
+
+```sql
+select academic_year, region, count(*)
+from <dataset>.stg_google_sheets__dibels__expected_assessments_by_levels
+group by 1, 2
+```
+
+**Miami: the boundary rule is now verified** (see _`PLIT` boundary rule_ above
+-- same rule, with two unresolved divergences), so that is no longer the
+blocker.
+
+**Operating policy for Miami, decided deliberately: derive from the calendar and
+ship it.** Do not hold the rollover waiting on T&L to explain a divergence.
+Apply the clean rule, generate the rows, and accept that a window cut around
+state testing may need correcting later -- a correctable row beats a missing
+one, and Miami's PM windows are not reconstructable from any other source we
+hold. Flag derived rows as derived so a later correction is cheap; do not
+re-litigate the `PLIT3` question above before generating.
+
+**Miami SY26-27 is generated.** 44 `reporting__terms` rows
+(`generate_miami_lit_plit_rows.py`) and 416 `Expected Assessments` rows
+(`generate_pm_expected_assessments_rows.py --regions Miami`). What the
+generators encode, all from the T&L SY27 doc's Miami tab:
+
+- **11 rounds, season split 5 + 6.** The MOY Benchmark window (`1/5 - 1/22`)
+  falls between rounds 5 and 6. AY2025 Miami ran 6 rounds (3+3), so the shape
+  changed -- do not pattern-match off last year.
+- **Grade bands stay on AY2025's scheme** (`0,1,2` with `LIT`+`PLIT`, `3,4` and
+  `5,6,7,8` `LIT`-only), NOT the doc's own K / 1-3 / 4-5 / 6-8 groupings, whose
+  `1-3` band would straddle the K-2 / 3-8 boundary and strip `PLIT` from grades
+  1-2. Every Miami round shares identical dates across bands, so the band split
+  only matters for `PLIT`. The doc's groupings still drive measures.
+- **Cohorts alternate by round** -- odd rounds test `Below` + `Well Below`, even
+  rounds `Well Below` only. **This applies to K-2 as well as 3-8**, which NJ's
+  generator did not anticipate: its K-2 branch hardcoded `Both`, correct for NJ
+  and wrong for Miami. Now reads the round's own cohort via `k2_cohort()`; NJ
+  output re-verified byte-identical (878 rows) after the change.
+- **Measure progression**: round 1 gives grade 1 `NWF` alone (the doc splits
+  "G1" from "G2-3"); rounds 2-5 give grades 1-3 `NWF` + `ORF`; from round 6
+  `NWF` drops from grades 1-3 and `Maze` is added to grades 4-8. That round-1
+  split is the ONLY scaffold-fill in Miami's whole set -- grade 1 / `ORF` /
+  `LIT1` gets `pm_goal_include = false` (4 rows).
+- **`PM_Goal_Criteria` is `AND` for Miami too.** An earlier draft of this
+  section said to leave it blank because Miami's AY2025 rows are blank -- that
+  was wrong. The instruction is explicit and network-wide: T&L requires students
+  to meet ALL tested standards per round this year. Miami's blank AY2025 values
+  are a gap, not a precedent to preserve.
+- **`PLIT1.start` is derived**, not copied from the Benchmark start -- Miami's
+  `BOY` window opens a month into the year (`2026-09-08`), so NJ's shortcut
+  would put `PLIT1` a month late. Uses the first in-session day of AY2026
+  (`2026-08-12`), which is what AY2025 approximates.
+
+Still open for Miami: **cohort mechanics from Miami's 3-8 leads** (#3834). The
+doc's alternation is encoded as written, but nobody has confirmed the intent
+behind alternating rather than testing both cohorts every round.
+
+### TODO -- shared active/current schools model needs more eyes
+
+Deferred deliberately; do not build it as a side effect of DIBELS work.
+
+Three consumers each resolve "which schools count" independently, and they want
+different things: **FRESH** wants schools it is _recruiting for_
+(`finalsite_recruitment_year`, including Finalsite-only schools with no SIS rows
+yet, entered by SRE through the intake in the fresh-dashboard skill's Step 0c);
+**DIBELS** wants all years for Benchmark and the current year for PM (for now);
+**CSGF** wants past and current. A shared `is_active` boolean would be wrong for
+three of those four cases -- what is actually common is region resolution plus a
+school-by-academic-year presence relationship each consumer filters itself.
+
+Findings to carry in, so the next person doesn't re-derive them:
+
+- `int_students__schools` (Charlie, #4731 / PR #4775) is the SIS-agnostic school
+  spine and already has five mart consumers, but it is deliberately INCLUSIVE
+  (an anti-join shape chosen so the `999999` graduated-students sentinel
+  survives) and its Focus branch carries neither `schoolcity` nor
+  `state_excludefromreporting`. Build on it; don't build beside it.
+- `max_syear is null` (Focus) is the only active-school predicate in the repo,
+  and it exists in exactly one place: `int_tableau__fresh_enrollment_scaffold`.
+- **`min_syear` is NULL for all seven Miami schools** -- `max_syear` is a CLOSE
+  marker only, so Focus metadata cannot tell you when a school opened. Per-year
+  presence has to come from data (`int_students__calendar_day` carries schoolid
+  x academic_year for both SISes).
+- Region without `schoolcity`: `{{ extract_region(...) }}` on
+  `_dbt_source_project`, which yields values matching `reporting__terms.region`
+  exactly.
+- FRESH's `finalsite_new` overlay must NOT move into a shared model -- it
+  depends on a human intake step and deliberately includes schools with zero SIS
+  presence.

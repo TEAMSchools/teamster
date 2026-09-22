@@ -359,8 +359,10 @@ exposures:
       name: Data Team - awalters
     depends_on:
       - ref("rpt_tableau__gpa_goals")
+      - ref("rpt_tableau__gpa_goal_progress")
       - ref("rpt_tableau__gpa_cumulative_year")
       - ref("rpt_tableau__student_course_grades")
+      - ref("rpt_tableau__gradebook_audit")
     config:
       meta:
         dagster:
@@ -396,6 +398,7 @@ exposures:
     depends_on:
       - ref("rpt_tableau__gradebook_audit")
     config:
+      enabled: false
       meta:
         dagster:
           kinds:

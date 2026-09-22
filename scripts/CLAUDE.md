@@ -8,7 +8,8 @@ scripts: `bash scripts/<name>.sh`.
 | Script                                              | Purpose                                                                                                                                                                                                                                                                                                                              |
 | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `dagster-dev.py`                                    | Start Dagster webserver for selected code locations                                                                                                                                                                                                                                                                                  |
-| `dagster-mcp-launch.sh`                             | MCP launcher: exchange OP token for scoped Dagster Cloud API token, exec `dagster_plus_mcp`                                                                                                                                                                                                                                          |
+| `dagster-mcp-launch.sh`                             | MCP launcher: exchange OP token for scoped Dagster Cloud API token, exec `dagster_plus_mcp`. Pass `--no-exec` when sourcing it to get the credentials without starting the server                                                                                                                                                    |
+| `dagster-plus-mcp-headers.sh`                       | MCP `headersHelper` for Dagster's official hosted server: sources `dagster-mcp-launch.sh --no-exec`, prints the bearer and organization headers as JSON                                                                                                                                                                              |
 | `dbt-mcp-launch.sh`                                 | MCP launcher: exchange OP token for dbt Cloud service token, exec `dbt-mcp`                                                                                                                                                                                                                                                          |
 | `cube-rest-mcp-launch.sh`                           | MCP launcher (dev mode only): fetch `CUBE_API_SECRET`, exec `src/cube/mcp/server.py` in stdio. Default cube MCP path is the Cloud Run deploy — use this only when iterating on the server itself.                                                                                                                                    |
 | `tableau-mcp-launch.sh`                             | MCP launcher: fetch Tableau connection config (server/site/PAT) from 1Password item `Tableau Server PAT - Dagster` (Data Team vault), exec `@tableau/mcp-server`. Reuses the same PAT as the Dagster Tableau refresh assets.                                                                                                         |
@@ -91,6 +92,14 @@ Pattern:
   prompt fires once per user. Allow `<UPPER>_OVERRIDE` env var to bypass.
 - Launcher (`<name>-mcp-launch.sh`) handles only the secret fetch via `op read`;
   non-secret config lives in `.mcp.json` `env:`.
+- A **hosted** (`"type": "http"`) server has no launcher, and `${VAR}` in its
+  `headers` resolves against the shell, where this container keeps no secrets.
+  Point `headersHelper` at a script instead: Claude Code runs it at connection
+  time, parses stdout as a JSON object of headers, and kills it after 10s. The
+  token then lives only in that helper process, and never in `.mcp.json`, which
+  is checked in. Claude Code logs the header back as
+  `"Authorization":"[REDACTED]"`, so it does not reach the subprocess debug log
+  either. `dagster-plus-mcp-headers.sh` is the reference.
 - Adding an MCP for a system Dagster already integrates? Reuse its 1Password
   item rather than minting new credentials — `dagster-cloud.yaml`'s
   `op-<system>` `secretKeyRef` confirms the item exists (item name ≈ secret

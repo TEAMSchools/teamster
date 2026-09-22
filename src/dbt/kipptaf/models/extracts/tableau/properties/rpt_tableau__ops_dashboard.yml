@@ -143,8 +143,18 @@ models:
         data_type: string
       - name: is_enrolled_oct01_next
         data_type: boolean
+        description: >-
+          Whether the student was enrolled on 1 October of the NEXT academic
+          year, meaning this row's academic_year plus one. A student with no
+          enrollment record for that year is false, never the value from a later
+          year the student returned in.
       - name: is_enrolled_oct15_next
         data_type: boolean
+        description: >-
+          Whether the student was enrolled on 15 October of the NEXT academic
+          year, meaning this row's academic_year plus one. A student with no
+          enrollment record for that year is false, never the value from a later
+          year the student returned in.
       - name: is_retained_ever
         data_type: boolean
       - name: is_retained_year

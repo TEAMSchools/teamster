@@ -37,7 +37,7 @@ jobs:
 
       - name: Run Claude Code Review
         id: claude-review
-        uses: anthropics/claude-code-action@833fb0f8c9f6686b33d963a8bae0a94f4936ab2a # v1.0.211
+        uses: anthropics/claude-code-action@4036a180cf690f49529f5d8c79c998855287f590 # v1.0.230
         with:
           # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
           # or https://code.claude.com/docs/en/cli-reference for available options
@@ -52,7 +52,7 @@ jobs:
           plugins: |
             superpowers@superpowers-dev
             context7@claude-plugins-official
-            dagster-expert@dagster
+            dagster@dagster
             dbt@dbt-agent-marketplace
             ponytail@ponytail
           track_progress: true
@@ -60,7 +60,7 @@ jobs:
             /superpowers:requesting-code-review ${{ github.repository
             }}/pull/${{ github.event.pull_request.number }}.
 
-            Apply dagster-expert for Dagster assets and pipelines, and
+            Apply dagster:dagster-expert for Dagster assets and pipelines, and
             dbt:using-dbt-for-analytics-engineering for dbt models and
             transformations.
 
