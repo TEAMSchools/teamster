@@ -59,6 +59,12 @@ the live UI, and report what happened.
   validates that every path referenced in the XML resolves to a real file in the
   package and fails the build if not — which is exactly the bug hand-zipping
   introduced once.
+- **Never run `trunk fmt --force` over these pages.** `.trunk/trunk.yaml`
+  ignores prettier on `ps-plugins/**/*.html` because PowerSchool PSHTML `~[...]`
+  constructs don't survive a generic HTML formatter. A plain
+  `trunk check --force` will still report them — that's just noise, safe to
+  ignore. But `trunk fmt --force` doesn't report, it rewrites, and it will
+  silently mangle the `~[...]` syntax in all five pages.
 
 ## Reference materials
 

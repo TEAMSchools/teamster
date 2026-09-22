@@ -48,7 +48,7 @@ jobs:
       # plugin.xml or permissions_root/*.xml is missing from the package, so a
       # structural break fails here instead of silently in PowerSchool.
       - name: Build and validate plugin packages
-        run: uv run --no-project python ps-plugins/scripts/build_plugin.py
+        run: python3 ps-plugins/scripts/build_plugin.py
 
       - name: Upload plugin zips
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
