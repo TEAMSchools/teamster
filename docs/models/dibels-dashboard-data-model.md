@@ -352,13 +352,12 @@ or grades only appear once the data team adds them to the config.
 
 #### A whole region can be missing, and dbt is usually not the cause
 
-Miami has no AY2026 DIBELS data anywhere in the warehouse, and nothing in this
-repo can fix it — Amplify's export does not contain them. Established 2026-09-15
-by reading the raw SFTP file directly, after three wrong theories (a missing
-union member, a crosswalk gap, the `is_self_contained` exclusion).
+When an entire region has no scores, check Amplify's export before tracing a
+single join. On 2026-09-15 the SY2026-2027 file carried no Miami schools at all;
+by 2026-09-22 Amplify had added them back. The file, not the pipeline, is where
+that answer lives.
 
-Check the source first, at the top of the hierarchy, before tracing a single
-join:
+Check the source first, at the top of the hierarchy:
 
 ```sql
 select
@@ -366,7 +365,7 @@ select
     district_name,
     school_name,
     count(*) as n_rows,
-    count(distinct student_primary_id_studentnumber) as n_students,
+    count(distinct student_primary_id) as n_students,
     cast(max(sync_date) as string) as last_sync,
 from `teamster-332318`.kippnewark_amplify.benchmark_student_summary
 where school_year = '2026-2027'
@@ -374,11 +373,12 @@ group by school_year, district_name, school_name
 order by school_name
 ```
 
-For SY2026-2027 that returns 16 schools, all NJ, `district_name` of
-`Kipp New Jersey`. Swap the year for `2025-2026` and it returns
-`Kipp New Jersey And Miami` with Kipp Courage Academy and Kipp Royalty Academy
-present. The account was renamed and Miami's schools left it. The PM file has
-the same shape.
+As of 2026-09-22 that returns 20 schools: 16 under `district_name`
+`Kipp New Jersey` (Newark, Camden and both Paterson Prep schools) and 4 under
+`Kipp Florida` (Kipp Courage Academy, Kipp Royalty Academy, Kipp Legacy
+Elementary, Kipp Legacy Middle). Miami Tech is still not in the account. For
+SY2025-2026 the same query returns one district, `Kipp New Jersey And Miami`,
+with Courage and Royalty only.
 
 Three things make this class of question easy to get wrong:
 
@@ -386,24 +386,43 @@ Three things make this class of question easy to get wrong:
   from `int_people__location_crosswalk`, never from `_dbt_source_relation`, and
   `kippmiami_amplify` is deliberately not in the union — so Miami's absence from
   that union is by design and is not the defect.
-- **Amplify renames schools between years.** `Kipp Hatch Middle` became
-  `Kipp Hatch Academy` and `Kipp Sumner Elementary` became `Kipp Sumner Academy`
-  for SY2026-2027, and both are absorbed by the crosswalk. A rename the
-  crosswalk misses surfaces as a **null region**, not as missing rows, so check
-  for null regions and compare row counts across layers before blaming the
+- **Amplify renames schools between years, and adds schools the crosswalk has
+  never seen.** `Kipp Hatch Middle` became `Kipp Hatch Academy` and
+  `Kipp Sumner Elementary` became `Kipp Sumner Academy` for SY2026-2027, and
+  both are absorbed by the crosswalk. `Kipp Legacy Elementary` and
+  `Kipp Legacy Middle` arrived in the SY2026-2027 file with no crosswalk row, so
+  their rows carried a **null region** until Ops added them on 2026-09-22. A
+  name the crosswalk misses surfaces as a null region, not as missing rows, so
+  check for null regions and compare row counts across layers before blaming the
   export.
-- **Confirm by student number, not by school name.** Matching the file's
-  `student_primary_id_studentnumber` against AY2026 enrollment rules out a
-  rename entirely: 4,952 Newark, 1,568 Camden, 792 Paterson, 11 not enrolled,
-  zero Miami.
+- **Confirm by student number, not by school name.** Matching the file's student
+  id against AY2026 enrollment rules out a rename entirely. On 2026-09-22, 8,581
+  of 8,592 distinct SY2026-2027 ids matched an AY2026 `student_number`, Miami's
+  10-digit ids included.
 
-The gap is wider than the two schools that left. Miami has five schools with
-reading enrollment in AY2026 — Courage, Royalty, Legacy ES, Legacy MS, Miami
-Tech — and none are in the Amplify account. Courage and Royalty were in it for
-SY2025-2026 and were dropped; Legacy and Miami Tech were never added. Fixing the
-export is also not sufficient for the dashboard: Miami has benchmark goals in
-the BM Goals tab but no foundation goals and no PM rounds scaffold, so
-participation has nothing to measure against until both are built.
+#### SY2026-2027 header rename: the id columns moved
+
+Amplify dropped the parenthetical qualifiers from the id headers in the
+SY2026-2027 BM and PM exports. `file_to_records` slugifies headers, so the
+warehouse columns changed name:
+
+| SY2025-2026 column                          | SY2026-2027 column            |
+| ------------------------------------------- | ----------------------------- |
+| `student_primary_id_studentnumber`          | `student_primary_id`          |
+| `enrollment_teacher_staff_id_teachernumber` | `enrollment_teacher_staff_id` |
+| `assessing_teacher_staff_id_teachernumber`  | `assessing_teacher_staff_id`  |
+| `secondary_student_id_stateid`              | `secondary_student_id`        |
+| `additional_student_id_primarysisid`        | `additional_student_id`       |
+| `additional_student_id_sisid`               | `additional_student_id`       |
+
+Each year populates only its own column; the other is null. The staging model
+`stg_amplify__mclass__sftp__benchmark_student_summary` coalesces the two student
+id columns into `student_primary_id`, so downstream models never see the split.
+Until that fix landed (2026-09-22), every SY2026-2027 BM row had a null id and
+the staging uniqueness test failed with one duplicate key per grade. The PM file
+has the same rename; its staging model still reads the old column, and the Avro
+schema only started carrying `student_primary_id` with the same fix, so the PM
+coalesce follows once the SY2026-2027 PM partition is re-pulled.
 
 #### Internal structure
 
