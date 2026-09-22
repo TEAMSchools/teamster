@@ -61,6 +61,7 @@ with
                     "subject_area",
                     "test_date",
                     "test_grade",
+                    "test_status",
                     "testcode",
                     "testperformancelevel",
                     "testperformancelevel_text",
@@ -75,7 +76,7 @@ with
 
     sourced as (
         select
-            * except (_dbt_source_relation, _dbt_source_relation_2),
+            * except (_dbt_source_relation, _dbt_source_relation_2, test_status),
 
             /* The Pearson relations arrive with the staging relation they came
                from; the Cambium relations have no inner union, so fall back to
@@ -85,6 +86,10 @@ with
                 _dbt_source_relation, _dbt_source_relation_2
             ) as _dbt_source_relation,
         from union_relations
+        /* Cambium scores an incomplete attempt as its own row instead of
+           replacing it, and leaves testscorecomplete null, so only
+           test_status separates the two. Null for every Pearson row. */
+        where test_status is null or test_status = 'completed'
     )
 
 /* Every per-row derivation lives upstream: int_pearson__all_assessments in the
