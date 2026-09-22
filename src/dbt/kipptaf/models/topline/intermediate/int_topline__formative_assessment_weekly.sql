@@ -48,7 +48,7 @@ with
             and sw.academic_year >= {{ var("current_academic_year") - 1 }}
     ),
 
-    assessment_weeks_ranked as (
+    assessment_weeks_scored as (
         select
             student_number,
             academic_year,
@@ -56,19 +56,21 @@ with
             week_end_sunday,
             discipline,
             formative_strategy,
+            title,
+            administered_at,
             is_mastery_int,
-
-            row_number() over (
-                partition by
-                    student_number,
-                    academic_year,
-                    week_start_monday,
-                    discipline,
-                    formative_strategy
-                order by administered_at desc, title desc
-            ) as rn,
         from assessment_weeks
         where formative_strategy is not null
+    ),
+
+    deduplicate as (
+        {{
+            dbt_utils.deduplicate(
+                relation="assessment_weeks_scored",
+                partition_by="student_number, academic_year, week_start_monday, discipline, formative_strategy",
+                order_by="administered_at desc, title desc",
+            )
+        }}
     )
 
 select
@@ -80,5 +82,4 @@ select
     formative_strategy,
 
     if(is_mastery_int = -1, null, is_mastery_int) as is_mastery_running_int,
-from assessment_weeks_ranked
-where rn = 1
+from deduplicate
