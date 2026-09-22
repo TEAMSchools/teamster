@@ -1331,10 +1331,20 @@ Two failure shapes follow from it, and they look different:
 - **PM**: the Avro schema (`PMStudentSummary` in
   `src/teamster/libraries/amplify/mclass/sftp/schema.py`) lacked the new names,
   so `fastavro` dropped the columns and SY2026-2027 PM rows had NO id column at
-  all. The 5 fields were added to the schema on 2026-09-22; the SY2026-2027 PM
-  partition needs a re-pull before the PM staging model can coalesce them, and
-  that coalesce is a follow-up. Do not add a column the external does not have
-  yet -- prod compile and CI both fail on `Unrecognized name`.
+  all. The 5 fields were added to the schema on 2026-09-22 and both PM
+  partitions were re-pulled that day. The PM staging model keeps the OLD names
+  in its contract and folds each new column into its old one; the new
+  `additional_student_id` maps to `additional_student_id_sisid`, because that is
+  the column SY2025-2026 PM rows fill (61,387 of 61,387; `_primarysisid` is
+  empty). The re-pull alone broke prod: `select *` passed the 5 new columns
+  through and the contract failed with "missing in contract". Any future Avro
+  field add on a contracted `select *` staging model needs the staging change in
+  the same deploy as the re-pull.
+- **Miami school ids went alphanumeric in SY2026-2027** (`2332A`, `2008A`), so
+  the PM `cast(school_primary_id as int)` failed with `Bad int64 value`. Both PM
+  staging models now `safe_cast` it. Keep it an int: the kipptaf PM intermediate
+  coalesces it with the integer crosswalk school id, so a string type breaks
+  that. BM keeps the id as a string and is unaffected.
 
 A `dibels8_PM_CUSTOM_2026-2027` aimline file was not on the server as of
 2026-09-22; that asset partition is expected to be missing.
