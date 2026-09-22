@@ -160,12 +160,12 @@ drafts, three Miami, and a dates reference.
 
 One tab can feed two instances, and two tabs are not for PowerSchool at all.
 
-| Academics tab              | Produces                          |
-| -------------------------- | --------------------------------- |
-| `Newark/Paterson - MS`     | Newark **MS** and Paterson **MS** |
-| `NJ - Newark HS`           | Newark **HS**                     |
-| `NJ - Camden MSHS`         | Camden **MS** and Camden **HS**   |
-| `Miami - MS`, `Miami - HS` | **Nothing.** Skip them.           |
+| Academics tab          | Produces                          |
+| ---------------------- | --------------------------------- |
+| `Newark/Paterson - MS` | Newark **MS** and Paterson **MS** |
+| `NJ - Newark HS`       | Newark **HS**                     |
+| `NJ - Camden MS/HS`    | Camden **MS** and Camden **HS**   |
+| Any **Miami** tab      | **Nothing.** Skip them.           |
 
 - **Newark and Paterson MS share a tab** and get identical counts, but land in
   two different PowerSchool instances, so they go in two different files.
