@@ -90,10 +90,34 @@ Three consequences:
 Cube's constraints: views and members only, never cube level; 2,000 characters,
 silently truncated past that.
 
-`.claude/rules/cube-authoring.md` currently tells authors to keep guidance out
-of `meta.*` on the grounds that nothing reads it. That predates Cube documenting
-`ai_context`, and it needs the same correction. Separate change, no dependency
-on this one.
+### The authoring rule changes with it
+
+`.claude/rules/cube-authoring.md` currently carries the belief this section
+corrects:
+
+> **`meta.folders` is the only Cube-rendered `meta.*` key.** Put guidance in
+> `description:`, not `meta.usage` / `meta.synonyms` / etc. — those land in
+> `/v1/meta` but Cube Cloud and the chat agent don't read them.
+
+That rule predates Cube documenting `ai_context`, and leaving it would tell the
+next author to undo this work. It ships in PR 1, alongside the descriptions it
+governs — not as a follow-up, because the moment PR 1 merges the rule is wrong
+about the code in the same commit.
+
+The replacement says three things:
+
+- `meta.folders` is the only key Cube Cloud **renders**. That part was right and
+  stays.
+- Every `meta.*` key reaches the model, because our MCP server returns each
+  cube's `/meta` entry unchanged. `ai_context` is the one to use, because Cube
+  documents it and Cube Cloud's own agent reads it; do not invent other keys.
+- Which channel takes what: `description:` for what a member is, because
+  analysts read it as a tooltip; `meta.ai_context:` for how to use it, capped at
+  2,000 characters and silently truncated past that.
+
+It also drops the `meta.usage` / `meta.synonyms` examples. Naming keys nobody
+should use invites someone to use them, and neither appears anywhere in the
+model.
 
 ## Placement map
 
@@ -468,14 +492,14 @@ the scorer's main loop.
 
 ## PR sequence and validation
 
-| PR  | Scope                                                               | Validation                                                                                                                                                 |
-| --- | ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | YAML descriptions, `ai_context` values, reference trim, schema test | `uv run pytest tests/cube/`; Cube Cloud branch staging validates the model                                                                                 |
-| 2   | `load` and `meta` docstrings, eval family 4, pre-drain fixture      | `uv run pytest tests/cube/`; eval run, arm B beats arm A                                                                                                   |
-| 3   | C1: `response_type` and placeholder rows, plus `partition_by`       | `uv run dbt build --select fct_assessment_scores_enrollment_scoped+`; row counts before and after; dry-run bytes on a date-filtered query before and after |
-| 4   | C2: canonical standard code                                         | dbt build; pre-agg partition count unchanged on branch staging                                                                                             |
-| 5   | C3: `count_assessments`                                             | `uv run pytest tests/cube/`; branch staging query returns quartile-shaped counts                                                                           |
-| 6   | C4: `assessment_family`                                             | `uv run dbt build --select dim_assessments+`; eval rerun                                                                                                   |
+| PR  | Scope                                                                                             | Validation                                                                                                                                                 |
+| --- | ------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | YAML descriptions, `ai_context` values, the `cube-authoring.md` rule, reference trim, schema test | `uv run pytest tests/cube/`; Cube Cloud branch staging validates the model                                                                                 |
+| 2   | `load` and `meta` docstrings, eval family 4, pre-drain fixture                                    | `uv run pytest tests/cube/`; eval run, arm B beats arm A                                                                                                   |
+| 3   | C1: `response_type` and placeholder rows, plus `partition_by`                                     | `uv run dbt build --select fct_assessment_scores_enrollment_scoped+`; row counts before and after; dry-run bytes on a date-filtered query before and after |
+| 4   | C2: canonical standard code                                                                       | dbt build; pre-agg partition count unchanged on branch staging                                                                                             |
+| 5   | C3: `count_assessments`                                                                           | `uv run pytest tests/cube/`; branch staging query returns quartile-shaped counts                                                                           |
+| 6   | C4: `assessment_family`                                                                           | `uv run dbt build --select dim_assessments+`; eval rerun                                                                                                   |
 
 Each PR body carries the markdown lines it deleted, so a reviewer can see the
 fact and its new wording side by side.
