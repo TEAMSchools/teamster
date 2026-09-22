@@ -43,8 +43,13 @@ dependencies), pytest, GitHub Actions, dbt, markdown.
   and the dbt models are untouched except where a task says otherwise.
 - **Every bare `#N` is an issue in `TEAMSchools/teamster`.**
 - **Reference values, verified 2026-09-21:**
-  - Plugin package: 8 files, 14,370 bytes, sha256
-    `8cde2ff4b210f887fc3368f1c05df5c07e1f599aa2ccb17da0664762af2e0a78`
+  - Plugin package: 8 files, 14,370 bytes, and these 8 CRC32s — `452ebd2a`,
+    `5150e91a`, `612edeb9`, `6fb4cae8`, `8b25d98f`, `b5ff554c`, `d5e93b0c`,
+    `ea1daae4`. **Do not use the archive's sha256 as an acceptance check.**
+    `zipfile.ZipFile.write()` stamps each entry with the source file's mtime, so
+    a `touch` with no content change alters the sha256 — measured: `8cde2ff4…`
+    before, `5e8c1acb…` after, identical contents. CRC32 is the content check;
+    sha256 would only produce false failures.
   - Skill zip: 9 files, 46,028 bytes
   - Named-query columns (9): `id`, `school_level`, `quarter`, `week_number`,
     `cnt_w`, `cnt_h`, `cnt_f`, `cnt_s`, `notes`
@@ -253,8 +258,15 @@ empty file list and reports a clean run over nothing.
 - [ ] **Step 1: Replace each PDF's local filename with its Drive id**
 
 The 5 PDFs already sit in the shared folder `1qjtKWlEE2XrfUXBh4QAodEX2g6c8do4T`
-and match their repo copies byte for byte, so nothing is uploaded. Replace the
-file list with:
+and match their repo copies byte for byte, so nothing is uploaded.
+
+This step also closes a gap Task 1 leaves open. The copied index still describes
+the PDFs as local files under `./docs/reference/`, which Task 1 deliberately did
+not copy — so until this step lands, the repo's primary plugin-onboarding docs
+are dangling links. Leave no local-path framing behind: every row points at
+Drive.
+
+Replace the file list with:
 
 ```markdown
 | Drive file ID                       | Document                           |
