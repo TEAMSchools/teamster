@@ -2,6 +2,10 @@ select
     * except (
         student_primary_id,
         student_primary_id_studentnumber,
+        enrollment_teacher_staff_id,
+        assessing_teacher_staff_id,
+        secondary_student_id,
+        additional_student_id,
         device_date,
         sync_date,
         basic_comprehension_maze_score,
@@ -64,6 +68,21 @@ select
     cast(spelling_score as numeric) as spelling_score,
     cast(vocabulary_score as numeric) as vocabulary_score,
     cast(word_reading_wrf_score as numeric) as word_reading_wrf_score,
+
+    coalesce(
+        enrollment_teacher_staff_id_teachernumber, enrollment_teacher_staff_id
+    ) as enrollment_teacher_staff_id,
+    coalesce(
+        assessing_teacher_staff_id_teachernumber, assessing_teacher_staff_id
+    ) as assessing_teacher_staff_id,
+    coalesce(
+        secondary_student_id_stateid, secondary_student_id
+    ) as secondary_student_id,
+    coalesce(
+        additional_student_id_primarysisid,
+        additional_student_id_sisid,
+        additional_student_id
+    ) as additional_student_id,
 
     if(
         assessment_grade = 'K', 0, safe_cast(assessment_grade as int)

@@ -417,6 +417,7 @@ warehouse columns changed name:
 | `assessing_teacher_staff_id_teachernumber`  | `assessing_teacher_staff_id`  |
 | `secondary_student_id_stateid`              | `secondary_student_id`        |
 | `additional_student_id_primarysisid`        | `additional_student_id`       |
+| `additional_student_id_sisid`               | `additional_student_id`       |
 
 Each year populates only its own column; the other is null. The staging model
 `stg_amplify__mclass__sftp__benchmark_student_summary` coalesces the two student
