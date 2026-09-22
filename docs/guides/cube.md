@@ -449,8 +449,8 @@ it should stay that way — but **check an older `.env` for it**, because a copy
 made before it was removed still carries it. It is a dev bypass that supplies
 `groups` only, so it cannot validate `row_level` scoping at all, and its old
 placeholder value used group names (`cube-network-detail`,
-`cube-access-student-data`) that predate the current taxonomy (`student-<scope>`
-/ `staff-directory` / `staff-pii-<scope>`) — dead groups no policy matches, so
+`cube-access-student-data`) that predate the current taxonomy (`student` /
+`staff-directory` / `staff-pii-<scope>`) — dead groups no policy matches, so
 **every view denies**. The bypass fires whenever `NODE_ENV !== production` and
 the variable is set, and it sits in the resolution path _shared_ by both auth
 hooks, so it corrupts the REST and SQL surfaces alike. Leave it unset locally;

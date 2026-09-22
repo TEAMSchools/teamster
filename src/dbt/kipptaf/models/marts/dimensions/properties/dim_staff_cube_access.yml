@@ -29,12 +29,16 @@ models:
       # suppresses the group in that state so the viewer default-denies
       # cleanly, but the state is still a misconfiguration — error (not warn) so
       # it can't ship. The location axis is satisfied by EITHER
-      # staff_location_scope (role/department-derived) OR a non-empty
-      # additional_location_grants (individual-exception-derived) --
-      # additional_location_grants is never NULL (coalesced to [] in
-      # dim_staff_cube_access.sql), so array_length is always well-defined.
-      # reporting_chain scopes key on the staff_key chain, not this remit, so
-      # they are not covered here.
+      # staff_location_scope (role/department-derived) OR an
+      # individual-exception grant that reaches the STAFF axis. Counting
+      # includes_staff_data rather than the array length is load-bearing: since
+      # the student/staff axis split, additional_location_grants also carries
+      # student-only grants, and a bare array_length would call the remit
+      # satisfied when every grant on it widens students alone. That is exactly
+      # the empty-remit state this test exists to catch, and a contractor
+      # reaches it easily -- the non-employee leg sets staff_location_scope to
+      # 'none' by construction. reporting_chain scopes key on the staff_key
+      # chain, not this remit, so they are not covered here.
       - dbt_utils.expression_is_true:
           arguments:
             expression: |
@@ -42,7 +46,10 @@ models:
               or (
                 (
                   staff_location_scope != 'none'
-                  or array_length(additional_location_grants) > 0
+                  or (
+                      select countif(g.includes_staff_data)
+                      from unnest(additional_location_grants) as g
+                  ) > 0
                 )
                 and staff_department_scope != 'none'
               )
