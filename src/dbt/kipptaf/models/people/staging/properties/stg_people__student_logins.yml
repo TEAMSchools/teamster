@@ -1,5 +1,14 @@
 models:
   - name: stg_people__student_logins
+    description: >
+      Student usernames, Google emails, and default passwords, one row per
+      student. Append-only — a username is minted once and never rewritten, and
+      only default_password is updated on merge. Incremental runs mint logins
+      for new students, skipping any username already present. A full rebuild
+      reseeds from the current rows of snapshot_people__student_logins, keeping
+      the most recent row per username, so every username already minted stays
+      reserved and a student re-keyed to a new student number keeps only the new
+      row.
     config:
       materialized: incremental
       incremental_strategy: merge
