@@ -128,10 +128,10 @@ existing `materialized: table` and `cron_schedule: 0 0 * * *` config untouched.
 
 ## Snapshot table repair
 
-The code change alone does not fix the data: the 24M open rows stay open, and
-once the rollup stops emitting `schoolid` a snapshot run fails on the column
-mismatch. One `CREATE OR REPLACE` repairs both. Charlie runs it — the BigQuery
-MCP is SELECT-only and `bq` credentials expire mid-session.
+The code change alone does not fix the data: the 24M open rows stay open. One
+`CREATE OR REPLACE` rebuilds proper SCD2 history and drops the `schoolid`
+column. Charlie runs it — the BigQuery MCP is SELECT-only and `bq` credentials
+expire mid-session.
 
 `--full-refresh` is not an option here: `.claude/rules/dbt-models.md` prohibits
 it on a snapshot, and it would flatten the topline weekly series back to the
@@ -221,12 +221,18 @@ What each part does:
 
 ## Order of operations
 
-The repair and the merge are coupled, but the gap between them fails safe: a
-snapshot run against the un-repaired table errors on the column mismatch rather
-than corrupting anything.
+The repair and the merge are coupled, and the gap between them does not fail
+safe. A dev build on 2026-09-22 ran the new rollup's snapshot against an
+un-repaired table that still carried `schoolid` and merged without error: dbt
+leaves a target column the source no longer emits as NULL rather than failing. A
+run in that state merges on the new two-column key against thousands of open
+versions per key, and what it writes is untested.
 
 1. Merge the PR.
-2. Run the repair `CREATE OR REPLACE` before the next `0 0 * * *` tick.
+2. Run the repair `CREATE OR REPLACE` after the deploy lands and before the next
+   `0 0 * * *` tick. Not before the merge: the old rollup still emits
+   `schoolid`, and dbt adds a source column missing from the target back onto
+   it.
 3. Confirm 0 duplicated student-week keys with the issue's reproduce query.
 4. Report the shift in the published "% interventions complete" figure.
 
