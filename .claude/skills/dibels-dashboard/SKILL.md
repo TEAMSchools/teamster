@@ -2046,6 +2046,15 @@ how much transfers.
 4. Was the student tested on everything the round expected?
    (`completed_test_round`)
 
+**The model stays measure grain, so the round verdicts repeat once per
+measure.** `met_pm_round_overall_criteria` and `completed_test_round_int` are
+round-level answers written onto every measure row of the round. A consumer that
+wants one row per student-round must aggregate first, or a student tested on 4
+measures weighs 4 times (`int_topline__dibels_pm_weekly` did, #5381). Use
+`min()`, not `any_value()`: on 40 AY2025 student-weeks the verdict differs
+across measures, where `pm_goal_criteria` mixes `AND` with null (read as OR).
+`min()` is the `AND` reading, T&L's network-wide rule from SY26-27.
+
 And separately, never feeding that rollup: `met_admin_benchmark_goal`, which
 asks "at grade level" rather than "on pace". Read it as _at grade level in this
 round_, not _has reached grade level_ -- it is recomputed per round and does not
@@ -2949,12 +2958,13 @@ doubles, everywhere.
 **Every remaining consumer is safe for a reason it does not state.** That is the
 part to internalise, because each of these is one refactor from breaking:
 
-| How it survives                                                  | Which                                                                                                                                                                          |
-| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Filters `assessment_type` explicitly                             | `rpt_gsheets__dibels_bm_goals_calculations`, `dim_assessments`, `dim_assessment_administrations`, `fct_assessment_scores_enrollment_scoped`                                    |
-| Filters `measure_standard = 'Composite'`, which PM never carries | `int_extracts__student_enrollments_subjects`, `rpt_tableau__mtss_rti`, `rpt_gsheets__mtss_rti`, `rpt_gsheets__kippmiami_payout_roster`, `int_topline__dibels_benchmark_weekly` |
-| Benchmark seasons never equal PM seasons (`BOY` vs `BOY->MOY`)   | the dashboard's own BM branch, and its composite read                                                                                                                          |
-| `overall_probe_eligible` is null on EOY rows                     | the EOY exclusion in `pm_goal_setting`                                                                                                                                         |
+| How it survives                                                  | Which                                                                                                                                       |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Filters `assessment_type` explicitly                             | `rpt_gsheets__dibels_bm_goals_calculations`, `dim_assessments`, `dim_assessment_administrations`, `fct_assessment_scores_enrollment_scoped` |
+| Filters `measure_standard = 'Composite'`, which PM never carries | `int_extracts__student_enrollments_subjects`, `rpt_tableau__mtss_rti`, `rpt_gsheets__mtss_rti`, `rpt_gsheets__kippmiami_payout_roster`      |
+| Filters `measure_name = 'Composite'`, which PM never carries     | `int_topline__dibels_benchmark_weekly`                                                                                                      |
+| Benchmark seasons never equal PM seasons (`BOY` vs `BOY->MOY`)   | the dashboard's own BM branch, and its composite read                                                                                       |
+| `overall_probe_eligible` is null on EOY rows                     | the EOY exclusion in `pm_goal_setting`                                                                                                      |
 
 None of those was left unscoped carelessly -- they predate `model_type`. But
 "correct because a composite filter happens to exclude PM" is not a design, and
