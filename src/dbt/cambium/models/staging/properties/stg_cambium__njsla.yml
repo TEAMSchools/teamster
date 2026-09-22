@@ -5,10 +5,12 @@ models:
       subject test, filtered to summative, attempted records and mapped into the
       shared NJ state assessment shape that int_pearson__all_assessments
       produces for the Pearson relations. Cambium ships English Language Arts,
-      Mathematics and Science in one file, so this model carries both the NJSLA
-      and the NJSLA Science assessments and branches every subject-dependent
-      column on subject. Every Cambium-to-shared translation lives here; kipptaf
-      unions the result as a passthrough.
+      Mathematics and Science in the District Summative Record File, and the
+      Algebra I, Algebra II and Geometry end-of-course tests in a separate EOC
+      file with an identical header. This model unions both files, carries the
+      NJSLA and the NJSLA Science assessments, and branches every
+      subject-dependent column on subject. Every Cambium-to-shared translation
+      lives here; kipptaf unions the result as a passthrough.
     columns:
       # Columns carrying per-column data_tests sort to the top. Every test sets
       # severity explicitly.
@@ -73,12 +75,16 @@ models:
         data_type: int64
         description: >-
           Grade number parsed out of assessment_grade, which Cambium sends as
-          'Grade 3' through 'Grade 11'. An unparseable value yields NULL and
+          'Grade 3' through 'Grade 11'. NULL for the Algebra I, Algebra II and
+          Geometry end-of-course tests, whose forms have no grade, matching the
+          Pearson rows. An unparseable value on any other row yields NULL and
           fails here rather than flowing a NULL grade into dim_assessments.
         data_tests:
           - not_null:
               config:
                 severity: error
+                where:
+                  "`subject` not in ('Algebra I', 'Algebra II', 'Geometry')"
           - accepted_values:
               arguments:
                 values: [3, 4, 5, 6, 7, 8, 9, 11]
@@ -105,22 +111,31 @@ models:
         data_type: string
         quote: true
         description: >-
-          'English Language Arts', 'Mathematics' or 'Science'. Drives every
-          subject-dependent derivation in this model, so an unrecognized subject
-          fails here rather than silently landing on the ELA branch.
+          'English Language Arts', 'Mathematics', 'Science', or one of the
+          end-of-course subjects 'Algebra I', 'Algebra II' and 'Geometry'.
+          Drives every subject-dependent derivation in this model, so an
+          unrecognized subject fails here rather than silently landing on the
+          ELA branch.
         data_tests:
           - not_null:
               config:
                 severity: error
           - accepted_values:
               arguments:
-                values: [English Language Arts, Mathematics, Science]
+                values:
+                  - English Language Arts
+                  - Mathematics
+                  - Science
+                  - Algebra I
+                  - Algebra II
+                  - Geometry
               config:
                 severity: error
       - name: discipline
         data_type: string
-        description:
-          "'Math' for Mathematics, 'Science' for Science, else 'ELA'."
+        description: >-
+          'Math' for Mathematics and the end-of-course subjects, 'Science' for
+          Science, else 'ELA'.
         data_tests:
           - not_null:
               config:
@@ -154,14 +169,16 @@ models:
       - name: assessmentgrade
         data_type: string
         description: >-
-          The test DESIGN level as Cambium sends it, e.g. 'Grade 5'. test_grade
-          is the parsed integer; grade_level_when_assessed is the student's own
-          grade.
-      - name: grade_level_when_assessed
+          The test DESIGN level as Cambium sends it, e.g. 'Grade 5'. NULL for
+          end-of-course tests, whose 'Grade 11' is a placeholder, matching the
+          Pearson rows. test_grade is the parsed integer; gradelevelwhenassessed
+          is the student's own grade.
+      - name: gradelevelwhenassessed
         data_type: int64
         description: >-
-          The student's grade at the time of testing, which can differ from
-          test_grade for a retained or accelerated student. Cambium-only.
+          The student's grade at the time of testing. Equals test_grade on every
+          grade-level test; on end-of-course tests, where test_grade is NULL, it
+          is the only grade.
       - name: test_status
         data_type: string
         description: >-
@@ -180,8 +197,9 @@ models:
       - name: testcode
         data_type: string
         description: >-
-          Cambium test code — ELA03 through ELA09, MAT03 through MAT08, and
-          SC05, SC08, SC11 for Science.
+          Cambium test code — ELA03 through ELA09, MAT03 through MAT08, SC05,
+          SC08, SC11 for Science, and ALG01, ALG02 and GEO01 for the
+          end-of-course tests.
       - name: module_code
         data_type: string
         description: >-

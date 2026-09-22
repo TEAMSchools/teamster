@@ -106,8 +106,8 @@ models:
         data_type: string
         description: >-
           The test DESIGN level, not the student's grade — 'Grade 10' for ELA
-          and 'Grade 11' for Math. Use test_grade or grade_level_when_assessed.
-      - name: grade_level_when_assessed
+          and 'Grade 11' for Math. Use test_grade or gradelevelwhenassessed.
+      - name: gradelevelwhenassessed
         data_type: int64
         description: >-
           The student's grade at the time of testing. 11 for every row in the

@@ -27,7 +27,9 @@ Endpoint-level notes:
 - `cambium` — `stg_cambium__njsla` only. `stg_cambium__njgpa` and its source are
   disabled in `dbt_project.yml`, and so are its 9 generic tests, listed
   individually under `data_tests:` — a disabled model keeps its tests, and they
-  would scan a relation Paterson never builds
+  would scan a relation Paterson never builds. `src_cambium__eoc` is disabled
+  and `cambium_eoc_enabled: false` keeps it out of `stg_cambium__njsla` until
+  Paterson receives an EOC file
 - `pearson` — `stg_pearson__njsla` and `stg_pearson__njsla_science` enabled;
   `stg_pearson__njgpa`, `stg_pearson__parcc`, `stg_pearson__student_test_update`
   disabled in `dbt_project.yml`

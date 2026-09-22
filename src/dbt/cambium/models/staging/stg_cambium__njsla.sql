@@ -1,9 +1,17 @@
+{#- source() in the branch is captured at parse time, so a district with
+    cambium_eoc_enabled off never takes a dependency on src_cambium__eoc. -#}
+{%- set relations = [source("cambium", "src_cambium__njsla")] -%}
+{%- if var("cambium_eoc_enabled", true) -%}
+    {%- do relations.append(source("cambium", "src_cambium__eoc")) -%}
+{%- endif -%}
+
 with
+    union_relations as ({{ dbt_utils.union_relations(relations=relations) }}),
+
     njsla as (
         select
             american_indian_or_alaska_native,
             asian,
-            assessment_grade,
             assessment_year,
             black_or_african_american,
             first_name,
@@ -50,7 +58,12 @@ with
                 unit_4_online_test_start_date_time as timestamp
             ) as unit_4_start_timestamp,
 
-        from {{ source("cambium", "src_cambium__njsla") }}
+            if(
+                `subject` in ('Algebra I', 'Algebra II', 'Geometry'),
+                null,
+                assessment_grade
+            ) as assessment_grade,
+        from union_relations
         where summative_flag = 'Y' and test_attemptedness_flag = 'Y'
     ),
 
@@ -111,10 +124,9 @@ with
             ) as subject_area,
 
             case
-                `subject`
-                when 'Mathematics'
+                when `subject` in ('Mathematics', 'Algebra I', 'Algebra II', 'Geometry')
                 then 'Math'
-                when 'Science'
+                when `subject` = 'Science'
                 then 'Science'
                 else 'ELA'
             end as discipline,
@@ -176,7 +188,6 @@ with
             academic_year,
             test_date,
             test_status,
-            grade_level_when_assessed,
             `period`,
             `subject`,
             assessment_name,
@@ -194,6 +205,7 @@ with
             test_score_complete as testscorecomplete,
             assessment_grade as assessmentgrade,
             assessment_year as assessmentyear,
+            grade_level_when_assessed as gradelevelwhenassessed,
             american_indian_or_alaska_native as americanindianoralaskanative,
             black_or_african_american as blackorafricanamerican,
             first_name as firstname,

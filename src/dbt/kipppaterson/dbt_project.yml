@@ -55,6 +55,9 @@ vars:
   # Paterson's EdPlan feed starts in FY27, after the one-time NJSMART
   # archive load, so there is no archive table to union in.
   edplan_has_archive: false
+  # Paterson has no Cambium EOC file yet. Removing this and the
+  # src_cambium__eoc disable below is the dbt half of onboarding it.
+  cambium_eoc_enabled: false
   bigquery_external_connection_name: projects/teamster-332318/locations/us/connections/biglake-teamster-gcs
   # Paterson sits only NJSLA and NJSLA Science, and its Pearson files carry
   # the district SIS id, so the union reads the int_pearson__* remaps instead
@@ -186,6 +189,8 @@ sources:
   cambium:
     cambium:
       src_cambium__njgpa:
+        +enabled: false
+      src_cambium__eoc:
         +enabled: false
   deanslist:
     deanslist:
