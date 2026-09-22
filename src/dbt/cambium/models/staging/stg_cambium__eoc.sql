@@ -1,5 +1,5 @@
 with
-    njgpa as (
+    eoc as (
         select
             american_indian_or_alaska_native,
             asian,
@@ -50,7 +50,7 @@ with
                 unit_4_online_test_start_date_time as timestamp
             ) as unit_4_start_timestamp,
 
-        from {{ source("cambium", "src_cambium__njgpa") }}
+        from {{ source("cambium", "src_cambium__eoc") }}
         where summative_flag = 'Y' and test_attemptedness_flag = 'Y'
     ),
 
@@ -76,7 +76,7 @@ with
                     ) as s
             ) as earliest_test_start_timestamp,
 
-        from njgpa
+        from eoc
     )
 
 select

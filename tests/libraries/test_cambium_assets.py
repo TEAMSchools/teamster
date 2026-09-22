@@ -7,8 +7,10 @@ from dagster import (
     StaticPartitionsDefinition,
 )
 
+from teamster.code_locations.kippcamden.cambium.assets import eoc as camden_eoc
 from teamster.code_locations.kippcamden.cambium.assets import njgpa as camden_njgpa
 from teamster.code_locations.kippcamden.cambium.assets import njsla as camden_njsla
+from teamster.code_locations.kippnewark.cambium.assets import eoc as newark_eoc
 from teamster.code_locations.kippnewark.cambium.assets import njgpa as newark_njgpa
 from teamster.code_locations.kippnewark.cambium.assets import njsla as newark_njsla
 from teamster.libraries.cambium.assets import build_remote_file_regex
@@ -16,20 +18,23 @@ from teamster.libraries.cambium.assets import build_remote_file_regex
 # The tail after `Record_File`, verified against the real Cambium files.
 NJGPA_TAILS = ["_GPA"]
 NJSLA_TAILS = ["_SLA"]
+EOC_TAILS = ["_SLA_EOC"]
 
 # district code embedded in each region's filename
 ASSETS = [
     (newark_njgpa, "7325", NJGPA_TAILS),
     (newark_njsla, "7325", NJSLA_TAILS),
+    (newark_eoc, "7325", EOC_TAILS),
     (camden_njgpa, "1799", NJGPA_TAILS),
     (camden_njsla, "1799", NJSLA_TAILS),
+    (camden_eoc, "1799", EOC_TAILS),
 ]
 
 # Every ordered pair of feeds within one region. Only the directory segment
 # keeps one feed's asset off another feed's file.
 REGIONS = [
-    ([newark_njgpa, newark_njsla], "7325"),
-    ([camden_njgpa, camden_njsla], "1799"),
+    ([newark_njgpa, newark_njsla, newark_eoc], "7325"),
+    ([camden_njgpa, camden_njsla, camden_eoc], "1799"),
 ]
 
 CROSS_FEED = [
@@ -161,7 +166,7 @@ def test_one_feeds_asset_never_matches_another_feeds_file(asset, other, district
 
     other_dir = _metadata_value(asset=other, key="remote_dir_regex")
 
-    for tail in ["", "_GPA", "_SLA", "_ELA", "_MAT", "_SCI"]:
+    for tail in ["", "_GPA", "_SLA", "_SLA_EOC", "_ELA", "_MAT", "_SCI"]:
         path = f"{other_dir}/" + _filename(
             year=declared["administration_year"][0],
             season=declared["administration"][0],

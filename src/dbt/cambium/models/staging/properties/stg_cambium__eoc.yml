@@ -1,11 +1,11 @@
 models:
-  - name: stg_cambium__njsla
+  - name: stg_cambium__eoc
     description: >-
-      Cambium TIDE NJSLA district summative record file, one row per student per
-      subject test, filtered to summative, attempted records. Carries English
-      Language Arts, Mathematics and Science in one file. Columns keep Cambium's
-      names; kipptaf int_pearson__all_assessments maps them into the shared NJ-
-      assessment shape.
+      Cambium TIDE end-of-course district summative record file (Algebra I,
+      Algebra II, Geometry), one row per student per test, filtered to
+      summative, attempted records. Same header as the NJSLA file. Columns keep
+      Cambium's names; kipptaf int_pearson__all_assessments unions these rows
+      with NJSLA and maps them into the shared NJ-assessment shape.
     columns:
       # Columns carrying per-column data_tests sort to the top. Every test sets
       # severity explicitly.
@@ -37,9 +37,9 @@ models:
         data_type: string
         quote: true
         description: >-
-          Raw vendor-reported administration season. NJSLA is administered in
-          spring only, so a fall or block token fails the build instead of
-          quietly forking a second series downstream.
+          Raw vendor-reported administration season. Spring only, so a fall or
+          block token fails the build instead of quietly forking a second series
+          downstream.
         data_tests:
           # accepted_values passes NULLs, so not_null is required alongside it
           - not_null:
@@ -54,9 +54,9 @@ models:
         data_type: string
         quote: true
         description: >-
-          'English Language Arts', 'Mathematics' or 'Science'. kipptaf branches
-          every subject-dependent column on it, so an unrecognized subject fails
-          here rather than silently landing on the ELA branch.
+          'Algebra I', 'Algebra II' or 'Geometry'. kipptaf maps all three to
+          Math and nulls their grade, so a new spelling fails here rather than
+          landing on the ELA branch.
         data_tests:
           - not_null:
               config:
@@ -64,9 +64,9 @@ models:
           - accepted_values:
               arguments:
                 values:
-                  - English Language Arts
-                  - Mathematics
-                  - Science
+                  - Algebra I
+                  - Algebra II
+                  - Geometry
               config:
                 severity: error
       - name: academic_year
@@ -78,24 +78,23 @@ models:
         description: Vendor-reported school year, e.g. '2025-2026'.
       - name: assessment_grade
         data_type: string
-        description: The test design level, e.g. 'Grade 5'.
+        description: >-
+          Cambium sends a placeholder 'Grade 11' on every end-of-course row. The
+          forms have no grade; use grade_level_when_assessed.
       - name: grade_level_when_assessed
         data_type: int64
         description: The student's grade at the time of testing.
       - name: test_code
         data_type: string
         description: >-
-          Cambium test code: ELA03 through ELA09, MAT03 through MAT08, and SC05,
-          SC08, SC11 for Science.
+          Cambium test code: ALG01, ALG02 or GEO01.
       - name: test_status
         data_type: string
         description: >-
           Cambium test lifecycle status, e.g. 'completed'. Not filtered on.
       - name: test_performance_level
         data_type: numeric
-        description: >-
-          1 through 5 for English Language Arts and Mathematics, 1 through 4 for
-          Science.
+        description: 1 through 5, the same scale as NJSLA Mathematics.
       - name: test_scale_score
         data_type: numeric
         description: Scale score.
