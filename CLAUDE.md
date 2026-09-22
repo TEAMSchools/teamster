@@ -117,12 +117,13 @@ accept a subagent's self-report without the checks there.
 
 ## Tooling
 
-- Open a file under `src/dbt/` or `src/cube/` with the Read tool, never `cat`.
-  Both trees carry `.claude/rules/*.md`, which load on a Read/Edit/Write path
-  match and never on a Bash command string — `cat` returns the file and silently
-  drops the conventions governing the edit you are about to make. Auto mode's
-  Bash-first instruction does not override this: it scopes itself to work Bash
-  can accomplish, and this is work Bash cannot.
+- Open a file under `src/dbt/` or `src/cube/`, any `CLAUDE.md`, or anything
+  under `.claude/rules/`, `.claude/context/`, or `.claude/skills/` with the Read
+  tool, never `cat`. Those paths carry `.claude/rules/*.md`, which load on a
+  Read/Edit/Write path match and never on a Bash command string — `cat` returns
+  the file and silently drops the conventions governing the edit you are about
+  to make. Auto mode's Bash-first instruction does not override this: it scopes
+  itself to work Bash can accomplish, and this is work Bash cannot.
 - Use Read/Edit/Write for all other file I/O, and Bash for `git`, `uv run`,
   `gh`, `docker`, `trunk`, `ls`. On the native VS Code build Grep and Glob are
   absent as tools, so search with `rg`/`grep` via Bash.
@@ -145,8 +146,8 @@ accept a subagent's self-report without the checks there.
   monitor and a waiting one are both silent.
 - Do not truncate or hand off work because the session feels long. The harness
   compacts automatically.
-- The Claude CLI is not on `$PATH`. The user runs `claude` commands in their
-  terminal.
+- The Claude CLI is not on `$PATH`. The user runs `claude` commands, including
+  plugin and marketplace commands, in their terminal.
 
 ## Verification
 
@@ -235,33 +236,6 @@ When summarizing the conversation, always preserve:
 
 Discard freely: full file contents already on disk, verbose tool output, and
 exploration that led nowhere (keep only the conclusion).
-
-## Editing CLAUDE.md, context, rules, and skill files
-
-- Before adding a line to any of these files: name the specific decision Claude
-  will make differently because of it. If you cannot, cut it.
-- When a change deletes something, delete the text about it; do not add text
-  saying it was deleted. A tombstone ("`X` was retired", "there is no longer a
-  `Y`") reads like it passes the necessity test and does not — the decision it
-  guards against cannot arise once nothing surfaces the name. Add the negative
-  only when a live pointer survives, and then point at the replacement, not at
-  the corpse. Retirement history belongs in the commit message and the diff.
-- Where a new line goes: one MCP server's behavior goes in
-  `.claude/context/<server>.md` (auto-injected on first use). One directory's
-  specifics go in that directory's CLAUDE.md. Worktree mechanics go in
-  `.claude/rules/worktrees.md`. Subagent dispatch goes in
-  `.claude/context/agent.md`. Conventions scoped by file type or spanning
-  directories go in `.claude/rules/<topic>.md` with `paths:` (dbt SQL, dbt YAML,
-  Cube models, hooks and settings). Runbooks with no file trigger go in a skill.
-  This file keeps only what must be known BEFORE any tool runs: safety
-  prohibitions, branch and PR etiquette, and rules whose violation produces a
-  silently wrong answer rather than a loud error.
-- A new `.claude/rules/<topic>.md` whose `paths:` reach outside `src/dbt/` and
-  `src/cube/` needs the first _Tooling_ bullet widened to match. That bullet
-  names the trees to open with Read instead of `cat`; a rule outside them loads
-  for nobody who reads the file through Bash.
-- Bold is reserved for the _Never_ block. Outside this file, bold only a line a
-  reader who skims must not miss.
 
 ## MCP servers
 

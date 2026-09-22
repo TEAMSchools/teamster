@@ -7,35 +7,11 @@ integration-specific — it is the foundation all other modules build on.
 
 ### `resources.py`
 
-Shared resource instances and factory functions imported by every code
-location's `definitions.py`. Two categories:
-
-**Factories** (called with arguments per code location):
-
-- `get_io_manager_gcs_pickle(code_location)` → `GCSIOManager` (pickle, default
-  IO manager)
-- `get_io_manager_gcs_avro(code_location)` → `GCSIOManager` (Avro, used by
-  SFTP/API assets)
-- `get_io_manager_gcs_file(code_location)` → `GCSIOManager` (raw file, used by
-  paginated Deanslist)
-- `get_dbt_cli_resource(dbt_project)` → `DbtCliResource` (passes
-  `target="defer"` when `DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT == "1"`; otherwise
-  uses the shipped profile default, which is `prod`)
-- `get_powerschool_ssh_resource()` → `SSHResource` (reads from shared env vars)
-
 All IO manager factories redirect to `teamster-test` bucket when
 `DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT=1`.
 
 **Env var gotcha**: `DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT` is `"0"` (not absent)
 in full deployments — always check `== "1"`, never truthy.
-
-**Singletons** (shared across all code locations):
-
-- `BIGQUERY_RESOURCE`, `GCS_RESOURCE`, `DLT_RESOURCE`
-- `DEANSLIST_RESOURCE`, `OVERGRAD_RESOURCE`, `ZENDESK_RESOURCE`
-- `GOOGLE_DRIVE_RESOURCE`, `GOOGLE_FORMS_RESOURCE`
-- `SSH_COUCHDROP`, `SSH_EDPLAN`, `SSH_IREADY`, `SSH_RENLEARN`, `SSH_TITAN`,
-  `SSH_RESOURCE_AMPLIFY` — SFTP resources
 
 ### `io_managers/gcs.py` — `GCSIOManager`
 
@@ -79,17 +55,6 @@ Checks-tab visibility.
 `[deadline - lower_bound_delta, deadline]`. A materialization landing AFTER the
 deadline is outside the window. Set `deadline_cron` past the asset's typical
 arrival time, not before, or the check flaps FAIL→PASS every cycle.
-
-### `asset_checks.py`
-
-Two functions used by every SFTP/API asset factory:
-
-- `build_check_spec_avro_schema_valid(asset_key)` → `AssetCheckSpec` (declare
-  the check)
-- `check_avro_schema_valid(asset_key, records, schema)` → `AssetCheckResult`
-  (warn — not fail — if records contain fields not present in the Avro schema)
-
-All asset factories that yield Avro output call both of these.
 
 ### `automation_conditions.py`
 
@@ -152,26 +117,3 @@ nodes.
 **Dep fan-out rule**: An unpartitioned dep of a partitioned asset fans out to
 ALL partitions on every materialization. To preserve per-partition triggering,
 the dep must itself be partitioned with the same `PartitionsDefinition`.
-
-### `utils/classes.py`
-
-- `FiscalYear(datetime, start_month)` — computes `.fiscal_year` (int), `.start`
-  (date), `.end` (date). Used throughout for July-based fiscal year
-  calculations.
-- `FiscalYearPartitionsDefinition` — `TimeWindowPartitionsDefinition` subclass
-  with `cron_schedule="0 0 {start_day} {start_month} *"`.
-- `CustomJSONEncoder` — JSON encoder that handles `timedelta`, `Decimal`,
-  `bytes`, `datetime`, and `date` types.
-
-### `utils/functions.py`
-
-- `file_to_records(file_path, ...)` / `csv_string_to_records(csv_string, ...)` —
-  read CSV into `list[dict]`, slugifying column names by default (spaces/special
-  chars → underscores). Empty strings become `None`. Adds `source_file_name`
-  when reading from a file path.
-- `regex_pattern_replace(pattern, replacements)` — replaces `(?P<name>...)`
-  regex named groups with values from a dict. Core of SFTP partition key
-  substitution.
-- `parse_partition_key(partition_key)` / `get_partition_key_path(...)` —
-  converts a partition key string to a Hive-style GCS path segment list.
-- `chunk(obj, size)` — yields successive list slices.
