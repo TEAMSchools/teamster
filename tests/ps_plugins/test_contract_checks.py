@@ -54,3 +54,27 @@ def test_column_contract_fails_when_the_plugin_declares_an_unknown_column(tmp_pa
     )
     errors = build_plugin.check_column_contract(tmp_path, DBT_MODEL)
     assert any("made_up" in e for e in errors)
+
+
+def test_dbt_model_columns_survives_a_comment_containing_the_word_from(tmp_path):
+    # A first-substring search for "from " truncates here, at the comment --
+    # before the select list even starts -- so every column below it vanishes
+    # from the result. That's the bug: a genuinely new, undeclared column
+    # added after a comment like this would never be seen as new.
+    sql = tmp_path / "model.sql"
+    sql.write_text(
+        "-- computed from the raw PS export\n"
+        "select\n"
+        "    cast(id as int) as id,\n"
+        "    cast(cnt_s as int) as cnt_s,\n"
+        "from source_table\n"
+    )
+    assert build_plugin.dbt_model_columns(sql) == {"id", "cnt_s"}
+
+
+def test_dbt_model_columns_strips_an_inline_trailing_comment(tmp_path):
+    sql = tmp_path / "model.sql"
+    sql.write_text(
+        "select\n    cast(cnt_s as int) as cnt_s, -- audit field\nfrom source_table\n"
+    )
+    assert build_plugin.dbt_model_columns(sql) == {"cnt_s"}

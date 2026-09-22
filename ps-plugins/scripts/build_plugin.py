@@ -131,15 +131,23 @@ def dbt_model_columns(sql_path: Path) -> set[str]:
     """Column names the dbt staging model projects.
 
     The model enumerates its columns, so the names are readable without a dbt
-    parse. Backticks around reserved words (`quarter`) are stripped.
+    parse. Backticks around reserved words (`quarter`) are stripped. A
+    full-line `--` comment or a blank line is skipped before it's tested
+    against the FROM clause, so a comment that happens to contain the word
+    "from" (e.g. "-- computed from the raw PS export") can't be mistaken for
+    it; an inline trailing `-- ...` comment on a column line is dropped before
+    the column name is extracted.
     """
-    body = sql_path.read_text()
-    body = body[: body.index("from ")]
     columns: set[str] = set()
-    for line in body.splitlines():
-        line = line.strip().rstrip(",")
+    for line in sql_path.read_text().splitlines():
+        line = line.strip()
         if not line or line.startswith(("select", "--")):
             continue
+        if line.lower().startswith("from "):
+            break
+        if "--" in line:
+            line = line.split("--", 1)[0].strip()
+        line = line.rstrip(",")
         name = line.split(" as ")[-1] if " as " in line else line
         columns.add(name.strip().strip("`"))
     return columns
