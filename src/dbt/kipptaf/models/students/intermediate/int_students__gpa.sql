@@ -87,11 +87,10 @@ with
             on fs.school_number = loc.focus_school_id
         -- The archive branch above owns Miami's years before the cutover, so
         -- admit only rows at or after it — the same boundary, applied from the
-        -- other side. One row. See int_students__sis_cutover for why the
-        -- boundary is a floor and why it is derived from recorded attendance
-        -- rather than row presence.
-        cross join {{ ref("int_students__sis_cutover") }} as sc
-        where g.syear >= sc.focus_start_academic_year
+        -- other side. A floor rather than a set of Focus years: a Focus year
+        -- that recorded nothing must not fall back to an archive holding
+        -- nothing for it either.
+        where g.syear >= 2026
     )
 
 select
