@@ -125,6 +125,49 @@ Every fact in the reference file, its destination, and what happens to the
 markdown. "Present" means the shipped description already says it and the
 markdown line is simply deleted.
 
+### How each fact is placed
+
+The tables below record ~50 decisions. This is the procedure that produced them,
+written down so PR 1 does not re-adjudicate each one by taste, and so a fact
+added later lands in the same place. It is a sieve, in the same shape as the
+column procedure in `.claude/rules/ferpa-pii.md`: **work down the list, stop at
+the first match.**
+
+1. **Is it a point-in-time number?** Score volumes, percentages, year ranges,
+   the performance-band cut-point table. Delete it, or restate it qualitatively.
+   This runs first because it removes content regardless of which channel would
+   otherwise take it.
+2. **Is it derivable live?** Which region has which source in which years is a
+   query. Delete the specifics; say that coverage is uneven and how to check.
+3. **Does it hold for more than one view?** `notSet` versus `equals "null"`, and
+   the de-duplicating dimension-only pull, are Cube mechanics. They go in the
+   `load` or `meta` docstring.
+4. **Is it about the answer rather than the query?** A cross-instrument gap
+   being a calibration artifact, totals not reconciling to vendor reports, a
+   missing current-year state result being a release lag. The query is correct
+   and the reading is at risk. These go in the view's `ai_context`.
+5. **Is it a definition?** What a value means, which values exist, what is null
+   and when. That member's `description:`.
+6. **Is it an instruction?** Do this, do not do that, use X instead. That
+   member's `ai_context:`.
+7. **Is it process or unratified policy?** Stays in the markdown.
+
+Steps 5 and 6 are why most rows split rather than move. A bullet in the
+reference file usually carries a definition and an instruction in one paragraph,
+so it matches both and gets cut in two — the member keeps what it is and sheds
+what to do about it.
+
+**Tie-breaker when 5 and 6 both fit.** Ask who is harmed when the sentence is
+missing. An analyst reading a tooltip who cannot tell what a value means →
+`description:`. An agent building a query that will be wrong → `ai_context:`.
+That resolves `count_students`: "exact distinct count" is the definition, while
+"heavy at fine grain, fall back to `count_scores`" only ever helps the agent.
+
+The procedure decides placement. Two other things hold it in place: the schema
+test asserts one key phrase per moved fact keyed by member name, so a later edit
+cannot silently drop one, and the eval is the empirical check — if the routing
+is wrong, arm B does not beat arm A.
+
 ### Shared conventions
 
 | Fact                                                                                                                                                      | Destination                                                                                                     |
@@ -461,21 +504,59 @@ The eval runs after PR 2 and again after PR 6. Arm B must beat arm A on the trap
 rate for the family, or the description text is revised before the markdown
 deletion in that PR merges.
 
-### The trap checks are reusable against production
+### Why family 4 stops at eight
 
-`scorer.py` inspects the captured `load` query, not the answer text. Nothing
-about that is specific to a synthetic prompt: the same predicate runs against a
-real logged query. A separate spec covers recording MCP interactions to BigQuery
-— question, `query_json`, `members_referenced`, outcome, `server_sha`. Once that
-lands, each trap defined here becomes a standing monitor instead of a single
-pre-merge gate.
+Eight traps against ~50 facts looks like a sample. It is closer to the whole
+set. A trap is a predicate over a captured query, so a fact can only become one
+when the query alone proves the violation. The facts split three ways:
 
-This matters because the success criterion above proves the descriptions work on
-eight written prompts. It does not say whether they work on what people actually
-ask, or whether they still work in November. Nothing here changes: the
-implementation belongs with the recording work, and the only obligation this
-spec takes on is keeping the trap predicates importable rather than inlined in
-the scorer's main loop.
+- **Malformed query — checkable.** `is_internal_assessment` used to select a
+  source; `equals "null"` where `notSet` was meant; `module_code` with no
+  subject filter; `avg_scale_score` with no `assessment_type` filter; a band
+  number grouped with no band-set scope. These are family 4.
+- **Correct query, misread answer — never checkable.** The calibration-artifact
+  rule, totals not reconciling to vendor or state reports, a missing
+  current-year state result being a release lag, uneven coverage, scale scores
+  compressing at higher grades. Nothing in the query is wrong, so no predicate
+  over query shape can fire. This is a permanent limit, not pending work — and
+  it is why step 4 of the placement procedure routes these to prose.
+- **Definitions — nothing to violate.** Value lists, FL's Level 3 mastery bar,
+  `module_type`'s open list.
+
+So the eval measures the checkable third and the descriptions carry the rest.
+Adding traps past eight costs a written prompt and two arms of model-in-the-loop
+runtime each, against a gate that already blocks PR 2 and PR 6; the predicate
+was never the expensive part.
+
+### Pointing the trap checks at production, deferred
+
+`scorer.py` inspects the captured `load` query, not the answer text, so the same
+predicate would run against a real logged query. That is deliberately **not** in
+scope here, and the reason is narrower than "the recording spec does not exist
+yet."
+
+Measured 2026-09-22: every Cube query reaches BigQuery under one service
+account, and the only job label is `cube_request_id`, a UUID — 369 jobs on the
+assessment fact over 7 days, 227 distinct ids, no surface, user or application
+field. An agent's query and a Superset dashboard refresh are indistinguishable,
+so a trap **rate** computed from `JOBS_BY_PROJECT` would put every human
+dashboard load in the denominator. Compiled SQL is also all that survives, not
+the Cube query JSON, and the question that prompted it is nowhere.
+
+What that leaves available today is the crude form: regex the compiled SQL for a
+member reference and count. It answers whether a shape occurs in production, not
+how often an agent falls into a trap. The C2 rollup measurement above used
+exactly this technique, and its limits are the same.
+
+The real dependency is therefore **attribution and question text**, which the
+separate MCP-interaction recording spec provides — question, `query_json`,
+`members_referenced`, outcome, `server_sha`. Once that lands, each trap becomes
+a standing monitor instead of a pre-merge gate, which matters because the
+success criterion above proves the descriptions work on eight written prompts,
+not on what people actually ask or on whether they still work in November.
+
+The only obligation this spec takes on is keeping the trap predicates importable
+rather than inlined in the scorer's main loop.
 
 ## Project-knowledge trim
 
