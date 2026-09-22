@@ -56,8 +56,9 @@ jobs:
         if: github.event_name == 'pull_request'
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
+          BASE_REF: ${{ github.base_ref }}
         run: |
-          base=$(git merge-base origin/${{ github.base_ref }} HEAD)
+          base=$(git merge-base "origin/$BASE_REF" HEAD)
           pages=$(git diff --name-only "$base"...HEAD -- 'ps-plugins/gradebook-audit/WEB_ROOT/**' | wc -l)
           skill=$(git diff --name-only "$base"...HEAD -- 'ps-plugins/skills/**' | wc -l)
           if [ "$pages" -gt 0 ] && [ "$skill" -eq 0 ]; then
