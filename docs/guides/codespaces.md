@@ -238,3 +238,23 @@ own, so a call that worked under your user credential can still 403 under ADC.
 - **dbt Core Tools extension**: activates on
   `workspaceContains:**/dbt_project.yml` and parses projects on startup. Risk:
   extension may activate before `uv sync` installs dbt-core.
+- **uv cache lives outside the repo**: `UV_CACHE_DIR` points at
+  `/workspaces/.uv-cache` so the cache sits on the same filesystem as the venvs,
+  letting `UV_LINK_MODE=hardlink` share package files instead of copying them
+  into every worktree `.venv`. Both settings come from `devcontainer.json`, so a
+  change to either needs a container rebuild. The rebuild discards the old cache
+  at `~/.cache/uv` along with the rest of the home directory, so there is
+  nothing to clean up afterwards. If a host ever puts the cache and
+  `/workspaces` on different filesystems, uv warns and falls back to copying
+  rather than failing.
+- **A rebuild wipes the home directory**: `/home/vscode` sits on the container
+  overlay and only `/workspaces` is on the persistent volume, so a rebuild
+  deletes `~/.claude` — every Claude Code session transcript, the stored
+  credentials, and `~/.claude.json`. Archive them onto the volume first, then
+  restore after the rebuild:
+
+  ```bash
+  tar -czf /workspaces/claude-backup.tar.gz -C /home/vscode .claude .claude.json
+  # rebuild the container, then:
+  tar -xzf /workspaces/claude-backup.tar.gz -C /home/vscode
+  ```

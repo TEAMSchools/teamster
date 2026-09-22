@@ -57,3 +57,13 @@ models:
         data_type: int64
       - name: streak_length_calendar
         data_type: int64
+      - name: academic_year
+        data_type: int64
+        description:
+          The academic year the streak belongs to, named for the fall of the
+          school year. Derived in the powerschool package from yearid.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: int_powerschool__attendance_streak
+            source_column: academic_year

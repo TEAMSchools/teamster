@@ -11,7 +11,13 @@ models:
       college-entrance assessments. Branches that do not populate a given
       scheduling column carry a typed NULL for that column (e.g. Illuminate and
       AP carry NULL administration_period; state branches carry NULL
-      source_assessment_id).
+      source_assessment_id). NJSLA, NJSLA Science and NJGPA each get two
+      branches, because New Jersey moved their score reporting from Pearson to
+      Cambium TIDE with the Spring 2026 administration: Pearson supplies the
+      earlier academic years and Cambium the later ones. Without the Cambium
+      branches, every Cambium score orphans on assessment_administration_key.
+      One Cambium branch serves both NJSLA and NJSLA Science, because its source
+      sets assessment_type per subject.
     config:
       materialized: table
       meta:

@@ -92,6 +92,28 @@ with
     ),
 
     -- grain projection, not dup-masking
+    -- State NJ NJSLA and NJSLA Science via Cambium: one administration per
+    -- (module_code, period, academic_year, _dbt_source_project).
+    state_nj_njsla_cambium_administrations as (
+        select distinct
+            subject_area,
+            discipline as scope,
+            module_code,
+            test_grade as grade_level,
+            academic_year,
+            administration_period,
+            _dbt_source_project,
+            assessment_type,
+            assessment_name as title,
+
+            cast(null as date) as administered_date,
+            cast(null as int64) as source_assessment_id,
+            cast(null as string) as test_type,
+        from {{ ref("stg_cambium__njsla") }}
+        where testscalescore is not null
+    ),
+
+    -- grain projection, not dup-masking
     -- State NJ NJGPA: one administration per (testcode, period, academic_year,
     -- _dbt_source_project).
     state_nj_njgpa_administrations as (
@@ -397,6 +419,9 @@ with
         union all
         select {{ union_cols }},
         from state_nj_njsla_science_administrations
+        union all
+        select {{ union_cols }},
+        from state_nj_njsla_cambium_administrations
         union all
         select {{ union_cols }},
         from state_nj_parcc_administrations

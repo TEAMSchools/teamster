@@ -96,7 +96,6 @@
       "Read(//home/vscode/.claude/**)",
       "Read(//tmp/dagster/**)",
       "Read(//workspaces/teamster/**)",
-      "Skill(claude-md-management:revise-claude-md:*)",
       "Skill(commit-commands:commit:*)",
       "Skill(dbt:using-dbt-for-analytics-engineering:*)"
     ],
@@ -157,7 +156,8 @@
       "mcp__dagster__reexecute_run",
       "mcp__dagster__search_assets",
       "mcp__dagster__set_sensor_cursor",
-      "mcp__dagster__terminate_runs"
+      "mcp__dagster__terminate_runs",
+      "mcp__github__merge_pull_request"
     ]
   },
   "enabledMcpjsonServers": ["dagster", "dagster-plus", "bigquery", "dbt"],
@@ -217,7 +217,6 @@
     ]
   },
   "enabledPlugins": {
-    "claude-md-management@claude-plugins-official": true,
     "commit-commands@claude-plugins-official": true,
     "dagster@dagster": true,
     "dbt@dbt-agent-marketplace": true,
@@ -251,5 +250,6 @@
       }
     }
   },
+  "promptSuggestionEnabled": false,
   "autoMemoryEnabled": false
 }

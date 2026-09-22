@@ -18,9 +18,8 @@ from {{ ref("int_students__terms") }}
 where
     -- Miami left Illuminate ahead of AY2026-27
     _dbt_source_project != 'kippmiami'
-    -- Excludes the synthetic quarter rows int_students__terms adds for a
-    -- handful of historical schoolids whose termbins quarter has no matching
-    -- row in the raw terms table (see int_students__terms.sql) -- those carry
-    -- no term name or PowerSchool identifiers and are not real
-    -- Illuminate-importable terms.
+    -- Keeps only the rows that carry a term name. On the PowerSchool arm a
+    -- quarter usually appears twice: once from the raw terms table, carrying
+    -- the name and identifiers Illuminate needs, and once as a quarter row
+    -- carrying neither. This keeps the first and drops the second.
     and `name` is not null
