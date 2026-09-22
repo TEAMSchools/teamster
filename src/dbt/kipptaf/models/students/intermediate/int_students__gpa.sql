@@ -1,43 +1,33 @@
 with
     powerschool_conformed as (
         select
-            gt._dbt_source_relation,
-            gt._dbt_source_project,
-            gt.studentid,
-            gt.schoolid,
-            gt.yearid,
-            gt.term_name,
-            gt.semester,
-            gt.gpa_term,
-            gt.gpa_y1,
-            gt.gpa_y1_unweighted,
-            gt.gpa_semester,
-            gt.n_failing_y1,
-            gt.total_credit_hours_term,
-            gt.total_credit_hours_y1,
-            gt.grade_avg_term,
-            gt.grade_avg_y1,
-            gt.students_student_number as student_number,
-
-            gc.cumulative_y1_gpa,
-            gc.cumulative_y1_gpa_unweighted,
-            gc.cumulative_y1_gpa_projected,
-            gc.earned_credits_cum,
-            gc.potential_credits_cum,
-
-            -- PowerSchool's yearid is academic_year - 1990. gpa_term carries no
-            -- academic_year of its own, and the Focus branch has no yearid, so
-            -- both columns are derived on whichever side lacks them.
-            gt.yearid + 1990 as academic_year,
+            _dbt_source_relation,
+            _dbt_source_project,
+            studentid,
+            schoolid,
+            yearid,
+            academic_year,
+            term_name,
+            semester,
+            gpa_term,
+            gpa_y1,
+            gpa_y1_unweighted,
+            gpa_semester,
+            n_failing_y1,
+            total_credit_hours_term,
+            total_credit_hours_y1,
+            grade_avg_term,
+            grade_avg_y1,
+            cumulative_y1_gpa,
+            cumulative_y1_gpa_unweighted,
+            cumulative_y1_gpa_projected,
+            earned_credits_cum,
+            potential_credits_cum,
+            students_student_number as student_number,
 
             -- The PowerSchool GPA chain does not produce class rank at all.
             cast(null as int64) as class_rank,
-        from {{ ref("int_powerschool__gpa_term") }} as gt
-        left join
-            {{ ref("int_powerschool__gpa_cumulative") }} as gc
-            on gt.studentid = gc.studentid
-            and gt.schoolid = gc.schoolid
-            and gt._dbt_source_project = gc._dbt_source_project
+        from {{ ref("int_powerschool__gpa") }}
     ),
 
     focus_conformed as (
@@ -51,11 +41,6 @@ with
 
             st.student_number,
             loc.powerschool_school_id as schoolid,
-
-            -- Derived so the reporting-terms join in fct_grades_gpa keeps
-            -- working for both branches, even though no Focus row resolves a
-            -- term.
-            g.syear - 1990 as yearid,
 
             cast(null as int64) as studentid,
 
@@ -88,6 +73,11 @@ with
             cast(null as float64) as cumulative_y1_gpa_projected,
             cast(null as float64) as potential_credits_cum,
 
+            -- Derived so the reporting-terms join in fct_grades_gpa keeps
+            -- working for both branches, even though no Focus row resolves a
+            -- term.
+            g.syear - 1990 as yearid,
+
         from {{ ref("stg_focus__student_gpa_calculated") }} as g
         inner join
             {{ ref("int_focus__students") }} as st on g.student_id = st.student_id
@@ -97,17 +87,64 @@ with
             on fs.school_number = loc.focus_school_id
         -- The archive branch above owns Miami's years before the cutover, so
         -- admit only rows at or after it — the same boundary, applied from the
-        -- other side. One row. See int_students__sis_cutover for why the
-        -- boundary is a floor and why it is derived from recorded attendance
-        -- rather than row presence.
-        cross join {{ ref("int_students__sis_cutover") }} as sc
-        where g.syear >= sc.focus_start_academic_year
+        -- other side. A floor rather than a set of Focus years: a Focus year
+        -- that recorded nothing must not fall back to an archive holding
+        -- nothing for it either.
+        where g.syear >= 2026
     )
 
-select *,
+select
+    _dbt_source_relation,
+    _dbt_source_project,
+    studentid,
+    schoolid,
+    yearid,
+    academic_year,
+    term_name,
+    semester,
+    gpa_term,
+    gpa_y1,
+    gpa_y1_unweighted,
+    gpa_semester,
+    n_failing_y1,
+    total_credit_hours_term,
+    total_credit_hours_y1,
+    grade_avg_term,
+    grade_avg_y1,
+    cumulative_y1_gpa,
+    cumulative_y1_gpa_unweighted,
+    cumulative_y1_gpa_projected,
+    earned_credits_cum,
+    potential_credits_cum,
+    student_number,
+    class_rank,
 from powerschool_conformed
 
-full union all corresponding
+union all
 
-select *,
+select
+    _dbt_source_relation,
+    _dbt_source_project,
+    studentid,
+    schoolid,
+    yearid,
+    academic_year,
+    term_name,
+    semester,
+    gpa_term,
+    gpa_y1,
+    gpa_y1_unweighted,
+    gpa_semester,
+    n_failing_y1,
+    total_credit_hours_term,
+    total_credit_hours_y1,
+    grade_avg_term,
+    grade_avg_y1,
+    cumulative_y1_gpa,
+    cumulative_y1_gpa_unweighted,
+    cumulative_y1_gpa_projected,
+    earned_credits_cum,
+    potential_credits_cum,
+    student_number,
+    class_rank,
 from focus_conformed

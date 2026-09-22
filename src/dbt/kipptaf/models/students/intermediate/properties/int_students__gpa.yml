@@ -1,14 +1,13 @@
 models:
   - name: int_students__gpa
     description: >-
-      SIS-neutral GPA spine. Unions the PowerSchool GPA chain
-      (`int_powerschool__gpa_term` left-joined to
-      `int_powerschool__gpa_cumulative`) with Miami's Focus
-      `student_gpa_calculated`, conformed inline to the PowerSchool column
-      vocabulary. The Miami PowerSchool branch is scoped to years before Focus
-      coverage begins, and the Focus branch to years at or after it, so the
-      frozen archive and the live SIS never overlap. Replaces the two
-      `int_powerschool__gpa_*` models as the source `fct_grades_gpa` reads.
+      SIS-neutral GPA spine. Unions the shared `int_powerschool__gpa` package
+      model with Miami's Focus `student_gpa_calculated`, conformed inline to the
+      PowerSchool column vocabulary. The Miami PowerSchool branch is scoped to
+      years before Focus coverage begins, and the Focus branch to years at or
+      after it, so the frozen archive and the live SIS never overlap. Replaces
+      the two `int_powerschool__gpa_*` models as the source `fct_grades_gpa`
+      reads.
 
 
       **The Focus branch is cumulative-only.** Focus's `student_gpa_calculated`
@@ -113,8 +112,9 @@ models:
       - name: academic_year
         data_type: int64
         description: >-
-          Academic year. Derived as `yearid + 1990` on the PowerSchool branch
-          and taken from Focus's `syear` on the Focus branch.
+          Academic year. Read from `int_powerschool__gpa` on the PowerSchool
+          branch (derived there as `yearid + 1990`) and taken from Focus's
+          `syear` on the Focus branch.
       - name: studentid
         data_type: int64
         description: >-

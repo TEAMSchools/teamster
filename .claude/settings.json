@@ -255,5 +255,6 @@
       }
     }
   },
+  "promptSuggestionEnabled": false,
   "autoMemoryEnabled": false
 }

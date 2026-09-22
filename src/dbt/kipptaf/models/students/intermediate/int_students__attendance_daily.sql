@@ -125,17 +125,14 @@ with
             and ad.academic_year = fcw.academic_year
             and ad.school_date between fcw.week_start_monday and fcw.week_end_sunday
             and ad._dbt_source_project = fcw._dbt_source_project
-        -- One row. See int_students__sis_cutover for why the boundary is a
-        -- floor derived from recorded attendance rather than from Focus row
-        -- presence: int_focus__attendance_daily scaffolds a present-by-default
-        -- row back to AY2020, so scoping on the years it contains would
-        -- replace six years of real PowerSchool attendance with fabricated
-        -- perfect attendance. Required, not belt-and-braces: without it
-        -- Focus's AY2020 through AY2025 rows land beside PowerSchool's real
-        -- rows for the same Miami school-days and break this model's own
-        -- grain test.
-        cross join {{ ref("int_students__sis_cutover") }} as c
-        where ad.academic_year >= c.focus_start_academic_year
+        -- A floor, not a scope on the years Focus carries:
+        -- int_focus__attendance_daily scaffolds a present-by-default row back
+        -- to AY2020, so scoping on row presence would replace six years of
+        -- real PowerSchool attendance with fabricated perfect attendance.
+        -- Required, not belt-and-braces: without it Focus's AY2020 through
+        -- AY2025 rows land beside PowerSchool's real rows for the same Miami
+        -- school-days and break this model's own grain test.
+        where ad.academic_year >= 2026
     ),
 
     -- `full union all corresponding` matches columns by NAME. A plain
