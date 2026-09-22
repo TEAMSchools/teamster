@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<!--
+  gradebook_expectations_delete.html
+  Gradebook Audit Plugin - Phase 1 v1.9
+  Path in plugin zip: WEB_ROOT/admin/gradebookaudit/gradebook_expectations_delete.html
+
+  Dedicated delete page. Receives ?id=XX via URL.
+  Auto-submits a DirectTable delete POST on page load via JavaScript.
+  Redirects back to list page after deletion.
+  Never displayed to the user — pure pass-through.
+-->
+<html>
+<head>
+  <title>Deleting...</title>
+  ~[wc:commonscripts]
+</head>
+<body>
+
+  <form id="delete-form"
+        action="gradebook_expectations.html"
+        method="POST">
+    ~[DirectTable.Select:U_EXPECTATIONS;ID:~(gpv.id)]
+    <input type="hidden" name="DD-U_EXPECTATIONS.ID:~(gpv.id)" value="1">
+    <input type="hidden" name="ac" value="prim">
+  </form>
+
+  <script>
+    document.getElementById('delete-form').submit();
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<!--
+  gradebook_expectations_new.html
+  Gradebook Audit Plugin - Phase 1 v1.1
+  Path in plugin zip: WEB_ROOT/admin/gradebookaudit/gradebook_expectations_new.html
+-->
+<html>
+<head>
+  <title>New Gradebook Expectation</title>
+  ~[wc:UI_js_includes]
+  ~[wc:commonscripts]
+  <link href="/images/css/screen.css" rel="stylesheet" media="screen">
+  <link href="/images/css/print.css" rel="stylesheet" media="print">
+  <style>
+    .ga-form table { width: 100%; }
+    .ga-form td.label {
+      width: 160px;
+      font-weight: bold;
+      font-size: 13px;
+      padding: 8px 12px 8px 0;
+      vertical-align: middle;
+    }
+    .ga-form td.field {
+      padding: 6px 0;
+      vertical-align: middle;
+    }
+    .ga-form select,
+    .ga-form input[type="text"],
+    .ga-form textarea {
+      font-size: 13px;
+      padding: 4px 6px;
+    }
+    .ga-form textarea {
+      width: 400px;
+      height: 80px;
+    }
+    .ga-form input.num-field {
+      width: 70px;
+    }
+    .ga-actions {
+      margin-top: 16px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .hint {
+      font-size: 11px;
+      color: #777;
+      margin-top: 2px;
+    }
+    .ga-warning {
+      display: none;
+      background: #fff3cd;
+      border: 1px solid #ffc107;
+      border-radius: 4px;
+      padding: 10px 14px;
+      margin-bottom: 14px;
+      font-size: 13px;
+      color: #856404;
+    }
+  </style>
+</head>
+<body>
+
+~[wc:admin_header_frame_css]
+<a href="/admin/home.html" target="_top">Start Page</a> &gt;
+<a href="gradebook_expectations.html">Gradebook Expectations</a> &gt;
+New Expectation
+~[wc:admin_navigation_frame_css]
+
+~[wc:title_begin]New Gradebook Expectation~[wc:title_end]
+
+<div class="box-round">
+
+  <div id="dup-warning" class="ga-warning">
+    &#9888; A record already exists for this School Level / Quarter / Week combination.
+    Please go back and edit the existing record instead, or choose a different combination.
+  </div>
+
+  <form id="new-form"
+        action="gradebook_expectations.html"
+        method="POST"
+        class="ga-form"
+        onsubmit="return checkDuplicate()">
+
+    ~[DirectTable.Select:U_EXPECTATIONS;ID:-1]
+
+    <table>
+      <tr>
+        <td class="label">School Level</td>
+        <td class="field">
+          <select name="[U_EXPECTATIONS]school_level" id="f-sl">
+            <option value="">— Select —</option>
+            <option value="ES">ES — Elementary School</option>
+            <option value="MS">MS — Middle School</option>
+            <option value="HS">HS — High School</option>
+          </select>
+        </td>
+      </tr>
+      <tr>
+        <td class="label">Quarter</td>
+        <td class="field">
+          <select name="[U_EXPECTATIONS]quarter" id="f-q">
+            <option value="">— Select —</option>
+            <option value="Q1">Q1</option>
+            <option value="Q2">Q2</option>
+            <option value="Q3">Q3</option>
+            <option value="Q4">Q4</option>
+          </select>
+        </td>
+      </tr>
+      <tr>
+        <td class="label">Week Number</td>
+        <td class="field">
+          <input type="text"
+                 class="num-field"
+                 name="[U_EXPECTATIONS]week_number"
+                 id="f-wk"
+                 placeholder="e.g. 1">
+          <div class="hint">Week number within the quarter (1–10 typical)</div>
+        </td>
+      </tr>
+      <tr>
+        <td class="label">Work Habits (W)</td>
+        <td class="field">
+          <input type="text"
+                 class="num-field"
+                 name="[U_EXPECTATIONS]cnt_w"
+                 value="0">
+        </td>
+      </tr>
+      <tr>
+        <td class="label">Homework (H)</td>
+        <td class="field">
+          <input type="text"
+                 class="num-field"
+                 name="[U_EXPECTATIONS]cnt_h"
+                 value="0">
+        </td>
+      </tr>
+      <tr>
+        <td class="label">Formative (F)</td>
+        <td class="field">
+          <input type="text"
+                 class="num-field"
+                 name="[U_EXPECTATIONS]cnt_f"
+                 value="0">
+        </td>
+      </tr>
+      <tr>
+        <td class="label">Summative (S)</td>
+        <td class="field">
+          <input type="text"
+                 class="num-field"
+                 name="[U_EXPECTATIONS]cnt_s"
+                 value="0">
+        </td>
+      </tr>
+      <tr>
+        <td class="label">Notes</td>
+        <td class="field">
+          <textarea name="[U_EXPECTATIONS]notes"
+                    placeholder="Optional message to teachers..."></textarea>
+          <div class="hint">Optional message to teachers (max 255 characters)</div>
+        </td>
+      </tr>
+    </table>
+
+    <div class="ga-actions">
+      <input type="submit" value="Save New Expectation" class="button">
+      <a href="gradebook_expectations.html" class="button">Cancel</a>
+      <input type="hidden" name="ac" value="prim">
+    </div>
+
+  </form>
+
+</div>
+
+<script>
+  var existingRows = [
+    ~[tlist_sql:SELECT school_level, quarter, week_number FROM u_expectations]
+    { sl: "~(school_level)", q: "~(quarter)", wk: "~(week_number)" },
+    ~[/tlist_sql]
+    null
+  ].filter(Boolean);
+
+  function checkDuplicate() {
+    var sl = document.getElementById('f-sl').value;
+    var q  = document.getElementById('f-q').value;
+    var wk = document.getElementById('f-wk').value;
+
+    if (!sl || !q || !wk) {
+      alert('Please fill in School Level, Quarter, and Week Number before saving.');
+      return false;
+    }
+
+    var isDup = existingRows.some(function(r) {
+      return r.sl === sl && r.q === q && String(r.wk) === String(wk);
+    });
+
+    if (isDup) {
+      document.getElementById('dup-warning').style.display = 'block';
+      window.scrollTo(0, 0);
+      return false;
+    }
+
+    return true;
+  }
+</script>
+
+~[wc:admin_footer_frame_css]
+
+</body>
+</html>

@@ -1,0 +1,58 @@
+# Builds each plugin into an installable zip and validates it before publishing.
+#
+# Two reasons this exists:
+#
+#   1. It removes hand-zipping. Zipping by hand is how the WEB_ROOT/admin/
+#      gradebookaudit/ folder level got lost, producing a plugin whose nav link
+#      404'd and whose permission mappings bound to nothing -- silently, with no
+#      error at install or enable time. scripts/build_plugin.py fails the build if
+#      any path referenced in the XML doesn't resolve in the package.
+#
+#   2. It gives anyone a correct zip to download without needing a local checkout
+#      or a git client: open the workflow run and grab the artifact.
+#
+# Action SHAs are pinned to match the versions vetted in TEAMSchools/teamster.
+# The two `paths:` lists below are intentionally duplicated -- GitHub Actions does
+# not support YAML anchors, so they must be kept in sync by hand.
+
+name: Build plugin
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ps-plugins/**
+      - src/dbt/powerschool/models/sis/staging/dlt/stg_powerschool__u_expectations.sql
+      - tests/ps_plugins/**
+      - .github/workflows/build-plugin.yaml
+  pull_request:
+    paths:
+      - ps-plugins/**
+      - src/dbt/powerschool/models/sis/staging/dlt/stg_powerschool__u_expectations.sql
+      - tests/ps_plugins/**
+      - .github/workflows/build-plugin.yaml
+  workflow_dispatch: null
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Validates and packages. Exits non-zero if any page path referenced in
+      # plugin.xml or permissions_root/*.xml is missing from the package, so a
+      # structural break fails here instead of silently in PowerSchool.
+      - name: Build and validate plugin packages
+        run: uv run --no-project python ps-plugins/scripts/build_plugin.py
+
+      - name: Upload plugin zips
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: plugin-zips
+          path: ps-plugins/dist/*.zip
+          if-no-files-found: error

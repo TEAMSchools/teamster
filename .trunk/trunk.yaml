@@ -39,6 +39,10 @@ lint:
     - trufflehog
   ignore:
     - paths:
+        - ps-plugins/**/*.html
+      linters:
+        - prettier
+    - paths:
         - src/teamster/**
       linters:
         - sqlfluff

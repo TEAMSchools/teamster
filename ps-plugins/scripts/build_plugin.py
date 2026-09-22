@@ -1,0 +1,171 @@
+#!/usr/bin/env python3
+"""Build an installable PowerSchool plugin zip, and validate it before writing.
+
+Usage:
+    python3 scripts/build_plugin.py                  # build every plugin
+    python3 scripts/build_plugin.py gradebook-audit  # build one
+
+Writes dist/<plugin_name>_v<version>.zip.
+
+The validation matters more than the packaging. Every page path referenced in
+plugin.xml and permissions_root/*.xml must resolve to a real file inside the
+package. A path pointing at a folder that doesn't exist fails silently in
+PowerSchool -- the nav link 404s and permission mappings bind to nothing, with no
+error at install or enable time. That bug reached this repo once, when the
+WEB_ROOT/admin/gradebookaudit/ folder level was lost in migration. This script
+turns it into a build failure instead.
+
+Standard library only, so it runs anywhere with python3 and needs no install.
+"""
+
+from __future__ import annotations
+
+import re
+import shutil
+import sys
+import tempfile
+import xml.etree.ElementTree as ET
+import zipfile
+from pathlib import Path
+
+REPO = Path(__file__).resolve().parent.parent
+DIST = REPO / "dist"
+
+# Documentation and repo furniture never belong in a plugin package -- PS only
+# needs plugin.xml and the *_root/WEB_ROOT trees.
+EXCLUDE_DIRS = {"docs", ".git", "__pycache__"}
+EXCLUDE_FILES = {"README.md", ".DS_Store"}
+
+# Matches the page paths PS resolves against WEB_ROOT, e.g.
+# "/admin/gradebookaudit/gradebook_expectations.html"
+PAGE_PATH = re.compile(r"""["'](/(?:admin|teachers|guardian)/[^"']+\.html)["']""")
+
+
+def find_plugins() -> list[Path]:
+    return sorted(p.parent for p in REPO.glob("*/plugin.xml"))
+
+
+def plugin_meta(plugin_xml: Path) -> tuple[str, str]:
+    root = ET.parse(plugin_xml).getroot()
+    name = root.get("name") or plugin_xml.parent.name
+    version = root.get("version") or "0.0"
+    return name, version
+
+
+def referenced_paths(src: Path) -> set[str]:
+    """Every page path the plugin's XML expects PS to serve."""
+    refs: set[str] = set()
+    for xml in [src / "plugin.xml", *sorted((src / "permissions_root").glob("*.xml"))]:
+        if xml.exists():
+            refs |= set(PAGE_PATH.findall(xml.read_text()))
+    return refs
+
+
+def stage(src: Path, dest: Path) -> None:
+    for item in sorted(src.iterdir()):
+        if item.name in EXCLUDE_DIRS or item.name in EXCLUDE_FILES:
+            continue
+        if item.is_dir():
+            shutil.copytree(
+                item,
+                dest / item.name,
+                ignore=shutil.ignore_patterns(*EXCLUDE_DIRS, *EXCLUDE_FILES),
+            )
+        else:
+            shutil.copy2(item, dest / item.name)
+
+
+def validate(staged: Path, refs: set[str]) -> list[str]:
+    errors = []
+
+    if not (staged / "plugin.xml").exists():
+        errors.append("plugin.xml missing from package root (PS requires it there)")
+
+    for ref in sorted(refs):
+        # PS serves WEB_ROOT as the document root, so /admin/x.html lives at
+        # WEB_ROOT/admin/x.html inside the package.
+        target = staged / "WEB_ROOT" / ref.lstrip("/")
+        if not target.is_file():
+            errors.append(
+                f"{ref} is referenced in XML but WEB_ROOT{ref} is not in the package"
+            )
+
+    # An orphaned page is not fatal -- pages reached only by a relative link from
+    # another page legitimately have no XML reference -- but a whole missing
+    # directory usually shows up here first, so it's worth surfacing.
+    web_root = staged / "WEB_ROOT"
+    if web_root.exists():
+        packaged = {
+            "/" + str(p.relative_to(web_root)) for p in web_root.rglob("*.html")
+        }
+        for orphan in sorted(packaged - refs):
+            print(f"  note: {orphan} is packaged but not referenced in any XML")
+
+    return errors
+
+
+def build(plugin_dir: Path) -> Path | None:
+    name, version = plugin_meta(plugin_dir / "plugin.xml")
+    slug = plugin_dir.name.replace("-", "_")
+    print(f"\n=== {name} v{version} ({plugin_dir.name}) ===")
+
+    refs = referenced_paths(plugin_dir)
+    print(f"  {len(refs)} page path(s) referenced in XML")
+
+    with tempfile.TemporaryDirectory() as tmp:
+        staged = Path(tmp) / "pkg"
+        staged.mkdir()
+        stage(plugin_dir, staged)
+
+        errors = validate(staged, refs)
+        if errors:
+            print("\n  BUILD FAILED:")
+            for e in errors:
+                print(f"    - {e}")
+            return None
+
+        DIST.mkdir(exist_ok=True)
+        out = DIST / f"{slug}_v{version}.zip"
+        if out.exists():
+            out.unlink()
+
+        with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
+            for f in sorted(staged.rglob("*")):
+                if f.is_file():
+                    z.write(f, f.relative_to(staged))
+
+        with zipfile.ZipFile(out) as z:
+            count = len(z.namelist())
+        print(f"  validated: all XML paths resolve")
+        print(
+            f"  wrote {out.relative_to(REPO)} ({count} files, {out.stat().st_size:,} bytes)"
+        )
+        return out
+
+
+def main() -> int:
+    wanted = sys.argv[1:]
+    plugins = find_plugins()
+    if wanted:
+        plugins = [p for p in plugins if p.name in wanted]
+        missing = set(wanted) - {p.name for p in plugins}
+        for m in sorted(missing):
+            print(f"error: no plugin.xml found in {m}/", file=sys.stderr)
+        if missing:
+            return 2
+
+    if not plugins:
+        print("error: no plugins found", file=sys.stderr)
+        return 2
+
+    failed = [p.name for p in plugins if build(p) is None]
+    if failed:
+        print(f"\n{len(failed)} plugin(s) failed to build: {', '.join(failed)}")
+        return 1
+
+    print(f"\nBuilt {len(plugins)} plugin(s) into dist/")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

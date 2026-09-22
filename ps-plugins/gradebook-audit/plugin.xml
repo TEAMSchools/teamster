@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin
+  xmlns="http://plugin.powerschool.pearson.com"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://plugin.powerschool.pearson.com plugin.xsd"
+  name="KIPP NJ Gradebook Audit"
+  version="2.5">
+  <publisher name="KTAF Data Team">
+    <contact email="data@kippnj.org"/>
+  </publisher>
+  <links>
+    <link display-text="Gradebook Expectations"
+          path="/admin/gradebookaudit/gradebook_expectations.html"
+          title="Manage gradebook assignment expectations">
+      <ui_contexts>
+        <ui_context id="admin.left_nav"/>
+      </ui_contexts>
+    </link>
+  </links>
+</plugin>
