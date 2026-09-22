@@ -20,8 +20,8 @@ with
             g.grade_avg_y1,
             g.students_student_number as student_number,
 
-            -- Read from the kipptaf union rather than int_powerschool__gpa,
-            -- which carries the same measures but rebuilds far less often.
+            -- int_powerschool__gpa carries only five of these ten measures, so
+            -- all ten come from one relation.
             gc.cumulative_y1_gpa,
             gc.cumulative_y1_gpa_unweighted,
             gc.cumulative_y1_gpa_projected,

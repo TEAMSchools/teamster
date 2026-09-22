@@ -128,22 +128,6 @@ with
             cumulative_y1_gpa_unweighted_band,
             cumulative_y1_gpa_projected_unweighted_band,
         from {{ ref("int_students__gpa") }}
-        -- A year with no measure at all must not end the previous year's
-        -- carry-forward window.
-        where
-            student_number is not null
-            and (
-                cumulative_y1_gpa is not null
-                or cumulative_y1_gpa_unweighted is not null
-                or cumulative_y1_gpa_projected is not null
-                or cumulative_y1_gpa_projected_s1 is not null
-                or cumulative_y1_gpa_projected_s1_unweighted is not null
-                or cumulative_y1_gpa_projected_unweighted is not null
-                or core_cumulative_y1_gpa is not null
-                or earned_credits_cum is not null
-                or earned_credits_cum_projected is not null
-                or potential_credits_cum is not null
-            )
     ),
 
     gpa_cumulative as (
