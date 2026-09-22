@@ -163,6 +163,45 @@ markdown line is simply deleted.
 | `lea_student_identifier` is the SIS number; `district_student_identifier` is Miami-only | those dimensions on the students cube |
 | FL `is_mastery` is Level 3 and up; `PM1` to `PM3` windows                               | `is_mastery`, `administration_period` |
 
+### What moves to `ai_context`
+
+The tables above are unchanged. This one routes a subset of their facts to the
+second channel, applying one rule: **`description:` says what a member is;
+`ai_context:` says how to use it.** Most rows split rather than move — the
+member keeps its definition and sheds the advice.
+
+| Member                           | `description:` keeps                              | `ai_context:` takes                                                                                                                                                                                                                                                                                                                           |
+| -------------------------------- | ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `count_students`                 | distinct students per student-year                | heavy at fine grain; `count_scores` is the reliable fallback                                                                                                                                                                                                                                                                                  |
+| `performance_band_label_number`  | numeric ordering within the band scale            | never compare a band number across band sets                                                                                                                                                                                                                                                                                                  |
+| `module_code`                    | the code identifying the assessment variant       | not a subject filter; not chronological by name; varies by subject, grade and region                                                                                                                                                                                                                                                          |
+| `is_internal_assessment`         | true for Illuminate, false for state and vendor   | do not select a source with this; use `assessment_type`                                                                                                                                                                                                                                                                                       |
+| `response_type`                  | the value list                                    | not additive across types                                                                                                                                                                                                                                                                                                                     |
+| `response_type_code`             | the code and its two spellings                    | normalize before a standards rollup; group on the canonical dimension                                                                                                                                                                                                                                                                         |
+| `response_type_root_description` | description of the root response type             | unreliable for FL standards                                                                                                                                                                                                                                                                                                                   |
+| `grade_level_tested`             | the grade the assessment targets; null for vendor | for a vendor cut use `grade_level`, not this                                                                                                                                                                                                                                                                                                  |
+| `proficiency_level`              | the per-source band vocabularies                  | tier-movement rates are not comparable across instruments                                                                                                                                                                                                                                                                                     |
+| `administration_period`          | the per-source vocabulary                         | only meaningful with `assessment_type` scoped; "most recent diagnostic" is the latest named round, not max `date_taken`; `Outside Round` drops out of a named-round filter                                                                                                                                                                    |
+| `source_assessment_id`           | the Illuminate assessment id                      | "times assessed" is a distinct count of this                                                                                                                                                                                                                                                                                                  |
+| `enrollment_resolution`          | subject_section or homeroom                       | filter to `subject_section` for course and section rollups                                                                                                                                                                                                                                                                                    |
+| `scale_score`                    | the scale score; null for internal rows           | compresses at higher grades; not comparable across sources                                                                                                                                                                                                                                                                                    |
+| `staff_lead_teacher.full_name`   | `Last, First` format                              | resolve a name against `staff_directory` first                                                                                                                                                                                                                                                                                                |
+| the view                         | what the view holds                               | enrollment-scoped, so totals do not reconcile to vendor or state reports; coverage is uneven by region and source; a cross-instrument gap is a calibration artifact; there is no growth measure; dedup multiple sittings in one window; query this view, not the upstream i-Ready model; a missing current-year state result is a release lag |
+
+Facts that do **not** move, and why: anything a reader needs in order to read a
+value correctly stays in `description:`. The per-source band vocabularies,
+`module_type`'s open value list, `academic_subject`'s source dependence, the
+identifier definitions, FL's Level 3 mastery bar, and the computer-adaptive note
+on NJSLA and NJGPA are all definitions, not advice.
+
+Query mechanics that apply to any view stay in the `load` docstring, unchanged:
+`notSet` versus `equals "null"`, and the de-duplicating dimension-only pull.
+
+Two constraints on writing these. Each `ai_context` value is capped at 2,000
+characters and truncated silently past that, so the view's entry is the one at
+risk — keep it to the traps, not a second view description. And the same
+no-point-in-time-numbers rule that governs `description:` governs this channel.
+
 ### Stays in the markdown
 
 The standing protocol, calibration gate, session log and Drive filing, PII
@@ -250,6 +289,18 @@ Check before the PR: `int_assessments__scaffold` consumers other than the
 rollup, to confirm nothing expects assigned-but-unscored rows to reach this
 fact.
 
+**Partition the fact in this same PR.**
+`fct_assessment_scores_enrollment_scoped` carries `assessment_date_key` as a
+DATE column and has no time partitioning, no range partitioning and no
+clustering — verified 2026-09-22 against the prod table, 15,046,358 rows and
+4.78 GiB. PR 3 rebuilds this table anyway, so a `partition_by` costs one rebuild
+here instead of two later. Note the limit from
+`.claude/rules/cube-authoring.md`: a date filter routed through the `dates` join
+compiles to a predicate on `dim_dates` and prunes nothing, so partitioning pays
+off only for queries that filter a fact-side time dimension. Decide the
+partitioning column and whether the view needs a fact-side date member when PR 3
+is planned.
+
 Alternatives. Cube-only: a `scored` segment, or filter the proficiency
 primitives on `is_mastery IS NOT NULL`. No rebuild, but it changes measure
 semantics without a schema change. Text only: describe the null, the operator,
@@ -277,6 +328,38 @@ Because `pct_proficient` is built from additive primitives, grouping on the
 canonical code makes Cube do the count-weighted recompute the reference asks the
 analyst to do by hand. The `response_type_code` description names the two
 spellings and points at the canonical dimension.
+
+**The rollup this depends on is barely serving.** Measured 2026-09-22 over the
+prior 7 days, from `JOBS_BY_PROJECT` for the Cube Cloud service account:
+
+| What                                            | Measured                   |
+| ----------------------------------------------- | -------------------------- |
+| `proficiency_rollup` partition builds           | 242 jobs, 396.9 GiB billed |
+| Queries that read the fact directly (a miss)    | 264                        |
+| Of those, referencing a member the rollup lacks | 166 (63%)                  |
+
+The rollup carries 18 dimensions and 2 measures. Six members that real queries
+group or filter on are absent: `location_name`, `proficiency_level`,
+`is_mastery`, `assessment_type`, `scale_score`, `percent_correct`. A rollup
+serves a query only when every referenced member is in it, so each of those 166
+falls through to the 15.0M-row fact. The remaining 97 misses are not explained
+by that probe and were not characterized; `count_students` is not the cause,
+since no miss used a distinct count.
+
+Two things follow for this spec, neither of which kills C2:
+
+- **C2's stated benefit is currently theoretical.** "Cube does the
+  count-weighted recompute" requires queries to reach the rollup. Adding
+  `response_type_code_canonical` to it is still right — the dimension is correct
+  regardless, and it costs no rows — but it does not buy the speedup the
+  rationale claims until the rollup's member list covers what people ask.
+- **PR 4's validation guards an underused structure.** "Pre-agg partition count
+  unchanged on branch staging" is still worth checking, and still cheap. It is
+  not evidence that anything got faster.
+
+Widening the rollup's member list is a separate change, out of scope here.
+Re-measure both figures before PR 4 is planned; this is a 7-day window on a
+system whose usage is still growing.
 
 Not chosen here. Fixing the rollup or the Illuminate intermediate would merge
 the pairs for `rpt_tableau__ddi_dashboard`, `rpt_tableau__power_standards`,
@@ -385,14 +468,14 @@ the scorer's main loop.
 
 ## PR sequence and validation
 
-| PR  | Scope                                                          | Validation                                                                                        |
-| --- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| 1   | YAML descriptions, reference trim, schema test                 | `uv run pytest tests/cube/`; Cube Cloud branch staging validates the model                        |
-| 2   | `load` and `meta` docstrings, eval family 4, pre-drain fixture | `uv run pytest tests/cube/`; eval run, arm B beats arm A                                          |
-| 3   | C1: `response_type` and placeholder rows                       | `uv run dbt build --select fct_assessment_scores_enrollment_scoped+`; row counts before and after |
-| 4   | C2: canonical standard code                                    | dbt build; pre-agg partition count unchanged on branch staging                                    |
-| 5   | C3: `count_assessments`                                        | `uv run pytest tests/cube/`; branch staging query returns quartile-shaped counts                  |
-| 6   | C4: `assessment_family`                                        | `uv run dbt build --select dim_assessments+`; eval rerun                                          |
+| PR  | Scope                                                               | Validation                                                                                                                                                 |
+| --- | ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | YAML descriptions, `ai_context` values, reference trim, schema test | `uv run pytest tests/cube/`; Cube Cloud branch staging validates the model                                                                                 |
+| 2   | `load` and `meta` docstrings, eval family 4, pre-drain fixture      | `uv run pytest tests/cube/`; eval run, arm B beats arm A                                                                                                   |
+| 3   | C1: `response_type` and placeholder rows, plus `partition_by`       | `uv run dbt build --select fct_assessment_scores_enrollment_scoped+`; row counts before and after; dry-run bytes on a date-filtered query before and after |
+| 4   | C2: canonical standard code                                         | dbt build; pre-agg partition count unchanged on branch staging                                                                                             |
+| 5   | C3: `count_assessments`                                             | `uv run pytest tests/cube/`; branch staging query returns quartile-shaped counts                                                                           |
+| 6   | C4: `assessment_family`                                             | `uv run dbt build --select dim_assessments+`; eval rerun                                                                                                   |
 
 Each PR body carries the markdown lines it deleted, so a reviewer can see the
 fact and its new wording side by side.
