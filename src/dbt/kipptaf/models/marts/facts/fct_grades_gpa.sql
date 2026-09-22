@@ -25,29 +25,46 @@ with
         where `type` = 'RT'
     ),
 
+    -- Full join: Focus years carry cumulative GPA with no term row.
+    gpa_term_cumulative as (
+        select
+            t.yearid,
+            t.term_name,
+            t.semester,
+            t.gpa_term,
+            t.gpa_y1,
+            t.gpa_y1_unweighted,
+            t.gpa_semester,
+            t.n_failing_y1,
+            t.total_credit_hours_term,
+            t.total_credit_hours_y1,
+            t.grade_avg_term,
+            t.grade_avg_y1,
+
+            c.cumulative_y1_gpa,
+            c.cumulative_y1_gpa_unweighted,
+            c.cumulative_y1_gpa_projected,
+            c.earned_credits_cum,
+            c.potential_credits_cum,
+
+            coalesce(
+                t._dbt_source_project, c._dbt_source_project
+            ) as _dbt_source_project,
+            coalesce(t.schoolid, c.schoolid) as schoolid,
+            coalesce(t.academic_year, c.academic_year) as academic_year,
+            coalesce(t.student_number, c.student_number) as student_number,
+        from {{ ref("int_students__gpa_term") }} as t
+        full join
+            {{ ref("int_students__gpa_cumulative") }} as c
+            on t.student_number = c.student_number
+            and t.schoolid = c.schoolid
+            and t.academic_year = c.academic_year
+            and t._dbt_source_project = c._dbt_source_project
+    ),
+
     gpa_term as (
         select
-            _dbt_source_project,
-            schoolid,
-            yearid,
-            academic_year,
-            student_number,
-            term_name,
-            semester,
-            gpa_term,
-            gpa_y1,
-            gpa_y1_unweighted,
-            gpa_semester,
-            n_failing_y1,
-            total_credit_hours_term,
-            total_credit_hours_y1,
-            grade_avg_term,
-            grade_avg_y1,
-            cumulative_y1_gpa,
-            cumulative_y1_gpa_unweighted,
-            cumulative_y1_gpa_projected,
-            earned_credits_cum,
-            potential_credits_cum,
+            *,
 
             row_number() over (
                 partition by _dbt_source_project, student_number, schoolid
@@ -67,7 +84,7 @@ with
                     end desc
             ) as rn_current,
 
-        from {{ ref("int_students__gpa") }}
+        from gpa_term_cumulative
     )
 
 select

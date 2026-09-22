@@ -107,10 +107,8 @@ with
         where graduation_pathway_math = 'M' or graduation_pathway_ela = 'M'
     ),
 
-    gpa_cumulative_year as (
-        -- grain projection, not dup-masking: the cumulative measures repeat on
-        -- every term row of a student-school-year
-        select distinct
+    gpa_cumulative as (
+        select
             _dbt_source_project,
             student_number,
             schoolid,
@@ -127,18 +125,12 @@ with
             potential_credits_cum,
             cumulative_y1_gpa_unweighted_band,
             cumulative_y1_gpa_projected_unweighted_band,
-        from {{ ref("int_students__gpa") }}
-    ),
-
-    gpa_cumulative as (
-        select
-            *,
 
             lead(academic_year, 1, 9999) over (
                 partition by _dbt_source_project, student_number, schoolid
                 order by academic_year
             ) as valid_until_academic_year,
-        from gpa_cumulative_year
+        from {{ ref("int_students__gpa_cumulative") }}
     )
 
 select

@@ -1,0 +1,153 @@
+models:
+  - name: int_students__gpa_cumulative
+    description: >-
+      SIS-neutral cumulative GPA, one row per student, school and academic year.
+      Unions PowerSchool's `int_powerschool__gpa_cumulative` with Miami's Focus
+      `student_gpa_calculated`, conformed to the PowerSchool column vocabulary,
+      and computes the KTAF GPA bands once for both systems. The Miami
+      PowerSchool branch covers years before Focus coverage begins, and the
+      Focus branch covers years at or after it, so the frozen archive and the
+      live SIS never overlap.
+
+
+      **PowerSchool cumulative GPA has no year of its own.** PowerSchool stores
+      one current value per student and school. The PowerSchool branch takes its
+      years from the student's term GPA rows in `int_powerschool__gpa` and
+      repeats that current value on each of them. Focus stores a value per
+      school year, so Focus rows are genuinely year-specific.
+
+
+      **Miami Focus coverage is partial, and that comes from the source.** On
+      the first prod load Focus held rows for only a fraction of Miami's AY2026
+      enrollment, spread across every grade K through 9, and every student with
+      imported course history had a row. So a Miami student missing from this
+      model has no imported course history; the join is not broken.
+
+
+      Keyed on `student_number` rather than PowerSchool's `studentid`, because
+      the Focus branch has no PowerSchool `studentid`.
+    config:
+      materialized: table
+      meta:
+        dagster:
+          # Hourly, matching int_extracts__student_enrollments (0 * * * *),
+          # which takes its GPA from here. This model is cumulative-only, so an
+          # hourly build is a fraction of the old term-grained
+          # int_students__gpa's 0.137 GiB. Refs #5462
+          #
+          # Not a view, even though the intermediate layer permits it. The
+          # uniqueness test here is the SIS-cutover tripwire. The PowerSchool
+          # and Focus branches are exact complements around the Focus floor,
+          # so a >= slipping to > or the floor moving makes one Miami academic
+          # year emit from both branches -- both carrying
+          # _dbt_source_project = 'kippmiami', which the uniqueness key
+          # catches. As a view the test would fire only on code change, because
+          # the data-change condition re-materializes tables only.
+          automation_condition:
+            cron_schedule: 0 * * * *
+    data_tests:
+      # Scoped to rows that resolved a student_number; see
+      # int_students__gpa_term for the 4 Camden AY2015 rows with none.
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - academic_year
+              - schoolid
+              - _dbt_source_project
+          config:
+            where: student_number is not null
+    columns:
+      - name: _dbt_source_relation
+        data_type: string
+        description: District relation the row was unioned from.
+      - name: _dbt_source_project
+        data_type: string
+        description: District code location derived from `_dbt_source_relation`.
+      - name: student_number
+        data_type: int64
+        description: >-
+          Network student number. The only student key both branches share.
+        config:
+          meta:
+            contains_pii: true
+      - name: studentid
+        data_type: int64
+        description: >-
+          PowerSchool student id. Null on every Focus row — Focus has no
+          PowerSchool student id.
+      - name: schoolid
+        data_type: int64
+        description: >-
+          PowerSchool school id. On the Focus branch it is
+          `stg_google_sheets__people__locations.powerschool_school_id`, reached
+          by joining Focus's `school_number` to that model's `focus_school_id`.
+      - name: academic_year
+        data_type: int64
+        description: >-
+          Academic year. On the PowerSchool branch, a year the student has term
+          GPA rows at the school; on the Focus branch, Focus's `syear`.
+      - name: cumulative_y1_gpa
+        data_type: float64
+        description: >-
+          Cumulative weighted GPA. Mapped from Focus's
+          `cumulative_weighted_gpa`, which is the weighted measure despite the
+          unqualified PowerSchool column name.
+      - name: cumulative_y1_gpa_unweighted
+        data_type: float64
+        description: >-
+          Cumulative unweighted GPA. Mapped from Focus's `cumulative_gpa`.
+      - name: cumulative_y1_gpa_projected
+        data_type: float64
+        description: >-
+          Projected year-end cumulative weighted GPA. Null on every Focus row —
+          Focus projects nothing.
+      - name: cumulative_y1_gpa_projected_unweighted
+        data_type: float64
+        description: >-
+          Projected year-end cumulative unweighted GPA. Null on every Focus row.
+      - name: cumulative_y1_gpa_projected_s1
+        data_type: float64
+        description: >-
+          Projected cumulative weighted GPA counting current-year Y1 grades as
+          of the end of Q2. Null on every Focus row.
+      - name: cumulative_y1_gpa_projected_s1_unweighted
+        data_type: float64
+        description: >-
+          Unweighted counterpart of `cumulative_y1_gpa_projected_s1`. Null on
+          every Focus row.
+      - name: core_cumulative_y1_gpa
+        data_type: float64
+        description: >-
+          Cumulative weighted GPA over math, science, English and social studies
+          courses only. Null on every Focus row.
+      - name: earned_credits_cum
+        data_type: float64
+        description: >-
+          Cumulative credits earned. Mapped from Focus's `cumulative_credits`.
+      - name: earned_credits_cum_projected
+        data_type: float64
+        description: >-
+          Projected cumulative credits earned, counting in-progress courses.
+          Null on every Focus row.
+      - name: potential_credits_cum
+        data_type: float64
+        description: Cumulative credits attempted. Null on every Focus row.
+      - name: class_rank
+        data_type: int64
+        description: >-
+          Class rank as the SIS computed it. Null on every PowerSchool row —
+          that chain does not produce a rank — and populated on only a handful
+          of Focus rows so far, so it is not yet usable as a reporting measure.
+      - name: cumulative_y1_gpa_unweighted_band
+        data_type: int64
+        description: >-
+          KTAF GPA band for `cumulative_y1_gpa_unweighted` (4 = 3.00 and above,
+          3 = 2.50–2.99, 2 = 2.00–2.49, 1 = below 2.00). Null when the GPA is
+          null.
+      - name: cumulative_y1_gpa_projected_unweighted_band
+        data_type: int64
+        description: >-
+          KTAF GPA band for `cumulative_y1_gpa_projected_unweighted`, on the
+          same cut-offs. Null when the projected GPA is null, which is every
+          Focus row.

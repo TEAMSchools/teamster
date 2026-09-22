@@ -1,46 +1,33 @@
 with
     powerschool_conformed as (
         select
-            g._dbt_source_relation,
-            g._dbt_source_project,
-            g.studentid,
-            g.schoolid,
-            g.yearid,
-            g.academic_year,
-            g.term_name,
-            g.semester,
-            g.gpa_term,
-            g.gpa_y1,
-            g.gpa_y1_unweighted,
-            g.gpa_semester,
-            g.n_failing_y1,
-            g.total_credit_hours_term,
-            g.total_credit_hours_y1,
-            g.grade_avg_term,
-            g.grade_avg_y1,
-            g.students_student_number as student_number,
-
-            -- int_powerschool__gpa carries only five of these ten measures, so
-            -- all ten come from one relation.
-            gc.cumulative_y1_gpa,
-            gc.cumulative_y1_gpa_unweighted,
-            gc.cumulative_y1_gpa_projected,
-            gc.earned_credits_cum,
-            gc.potential_credits_cum,
-            gc.cumulative_y1_gpa_projected_unweighted,
-            gc.cumulative_y1_gpa_projected_s1,
-            gc.cumulative_y1_gpa_projected_s1_unweighted,
-            gc.core_cumulative_y1_gpa,
-            gc.earned_credits_cum_projected,
+            _dbt_source_relation,
+            _dbt_source_project,
+            studentid,
+            schoolid,
+            yearid,
+            academic_year,
+            term_name,
+            semester,
+            gpa_term,
+            gpa_y1,
+            gpa_y1_unweighted,
+            gpa_semester,
+            n_failing_y1,
+            total_credit_hours_term,
+            total_credit_hours_y1,
+            grade_avg_term,
+            grade_avg_y1,
+            cumulative_y1_gpa,
+            cumulative_y1_gpa_unweighted,
+            cumulative_y1_gpa_projected,
+            earned_credits_cum,
+            potential_credits_cum,
+            students_student_number as student_number,
 
             -- The PowerSchool GPA chain does not produce class rank at all.
             cast(null as int64) as class_rank,
-        from {{ ref("int_powerschool__gpa") }} as g
-        left join
-            {{ ref("int_powerschool__gpa_cumulative") }} as gc
-            on g.studentid = gc.studentid
-            and g.schoolid = gc.schoolid
-            and g._dbt_source_project = gc._dbt_source_project
+        from {{ ref("int_powerschool__gpa") }}
     ),
 
     focus_conformed as (
@@ -82,15 +69,9 @@ with
             cast(g.cumulative_gpa as float64) as cumulative_y1_gpa_unweighted,
             cast(g.cumulative_credits as float64) as earned_credits_cum,
 
-            -- Focus projects neither a year-end GPA nor potential credits, and
-            -- computes no core-course GPA.
+            -- Focus projects neither a year-end GPA nor potential credits.
             cast(null as float64) as cumulative_y1_gpa_projected,
             cast(null as float64) as potential_credits_cum,
-            cast(null as float64) as cumulative_y1_gpa_projected_unweighted,
-            cast(null as float64) as cumulative_y1_gpa_projected_s1,
-            cast(null as float64) as cumulative_y1_gpa_projected_s1_unweighted,
-            cast(null as float64) as core_cumulative_y1_gpa,
-            cast(null as float64) as earned_credits_cum_projected,
 
             -- Derived so the reporting-terms join in fct_grades_gpa keeps
             -- working for both branches, even though no Focus row resolves a
@@ -110,98 +91,60 @@ with
         -- that recorded nothing must not fall back to an archive holding
         -- nothing for it either.
         where g.syear >= 2026
-    ),
-
-    unioned as (
-        select
-            _dbt_source_relation,
-            _dbt_source_project,
-            studentid,
-            schoolid,
-            yearid,
-            academic_year,
-            term_name,
-            semester,
-            gpa_term,
-            gpa_y1,
-            gpa_y1_unweighted,
-            gpa_semester,
-            n_failing_y1,
-            total_credit_hours_term,
-            total_credit_hours_y1,
-            grade_avg_term,
-            grade_avg_y1,
-            cumulative_y1_gpa,
-            cumulative_y1_gpa_unweighted,
-            cumulative_y1_gpa_projected,
-            cumulative_y1_gpa_projected_unweighted,
-            cumulative_y1_gpa_projected_s1,
-            cumulative_y1_gpa_projected_s1_unweighted,
-            core_cumulative_y1_gpa,
-            earned_credits_cum,
-            earned_credits_cum_projected,
-            potential_credits_cum,
-            student_number,
-            class_rank,
-        from powerschool_conformed
-
-        union all
-
-        select
-            _dbt_source_relation,
-            _dbt_source_project,
-            studentid,
-            schoolid,
-            yearid,
-            academic_year,
-            term_name,
-            semester,
-            gpa_term,
-            gpa_y1,
-            gpa_y1_unweighted,
-            gpa_semester,
-            n_failing_y1,
-            total_credit_hours_term,
-            total_credit_hours_y1,
-            grade_avg_term,
-            grade_avg_y1,
-            cumulative_y1_gpa,
-            cumulative_y1_gpa_unweighted,
-            cumulative_y1_gpa_projected,
-            cumulative_y1_gpa_projected_unweighted,
-            cumulative_y1_gpa_projected_s1,
-            cumulative_y1_gpa_projected_s1_unweighted,
-            core_cumulative_y1_gpa,
-            earned_credits_cum,
-            earned_credits_cum_projected,
-            potential_credits_cum,
-            student_number,
-            class_rank,
-        from focus_conformed
     )
 
 select
-    *,
+    _dbt_source_relation,
+    _dbt_source_project,
+    studentid,
+    schoolid,
+    yearid,
+    academic_year,
+    term_name,
+    semester,
+    gpa_term,
+    gpa_y1,
+    gpa_y1_unweighted,
+    gpa_semester,
+    n_failing_y1,
+    total_credit_hours_term,
+    total_credit_hours_y1,
+    grade_avg_term,
+    grade_avg_y1,
+    cumulative_y1_gpa,
+    cumulative_y1_gpa_unweighted,
+    cumulative_y1_gpa_projected,
+    earned_credits_cum,
+    potential_credits_cum,
+    student_number,
+    class_rank,
+from powerschool_conformed
 
-    case
-        when cumulative_y1_gpa_unweighted >= 3.00
-        then 4
-        when cumulative_y1_gpa_unweighted >= 2.50
-        then 3
-        when cumulative_y1_gpa_unweighted >= 2.00
-        then 2
-        when cumulative_y1_gpa_unweighted < 2.00
-        then 1
-    end as cumulative_y1_gpa_unweighted_band,
+union all
 
-    case
-        when cumulative_y1_gpa_projected_unweighted >= 3.00
-        then 4
-        when cumulative_y1_gpa_projected_unweighted >= 2.50
-        then 3
-        when cumulative_y1_gpa_projected_unweighted >= 2.00
-        then 2
-        when cumulative_y1_gpa_projected_unweighted < 2.00
-        then 1
-    end as cumulative_y1_gpa_projected_unweighted_band,
-from unioned
+select
+    _dbt_source_relation,
+    _dbt_source_project,
+    studentid,
+    schoolid,
+    yearid,
+    academic_year,
+    term_name,
+    semester,
+    gpa_term,
+    gpa_y1,
+    gpa_y1_unweighted,
+    gpa_semester,
+    n_failing_y1,
+    total_credit_hours_term,
+    total_credit_hours_y1,
+    grade_avg_term,
+    grade_avg_y1,
+    cumulative_y1_gpa,
+    cumulative_y1_gpa_unweighted,
+    cumulative_y1_gpa_projected,
+    earned_credits_cum,
+    potential_credits_cum,
+    student_number,
+    class_rank,
+from focus_conformed
