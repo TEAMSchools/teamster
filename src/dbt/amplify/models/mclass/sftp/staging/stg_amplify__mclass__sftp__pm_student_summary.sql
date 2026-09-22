@@ -44,8 +44,7 @@ with
                 additional_student_id_primarysisid,
                 sync_date,
                 total_number_of_probes,
-                measure,
-                school_primary_id
+                measure
             ),
 
             cast(probe_number as int) as probe_number,
@@ -64,10 +63,6 @@ with
             ) as student_primary_id_studentnumber,
 
             cast(left(school_year, 4) as int) as academic_year,
-
-            -- Miami school ids are alphanumeric from SY2026-2027 (e.g. 2332A);
-            -- kipptaf replaces this with the crosswalk school id anyway.
-            safe_cast(school_primary_id as int) as school_primary_id,
 
             if(
                 assessment_grade = 'K', 0, cast(assessment_grade as int)

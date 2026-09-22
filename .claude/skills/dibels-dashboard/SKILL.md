@@ -1342,9 +1342,12 @@ Two failure shapes follow from it, and they look different:
   the same deploy as the re-pull.
 - **Miami school ids went alphanumeric in SY2026-2027** (`2332A`, `2008A`), so
   the PM `cast(school_primary_id as int)` failed with `Bad int64 value`. Both PM
-  staging models now `safe_cast` it. Keep it an int: the kipptaf PM intermediate
-  coalesces it with the integer crosswalk school id, so a string type breaks
-  that. BM keeps the id as a string and is unaffected.
+  staging models now keep it as a string, like BM. The user chose this over
+  `safe_cast` on 2026-09-22 so the vendor id is not silently nulled. The kipptaf
+  PM intermediate casts both coalesce inputs to string, so it works whether a
+  district copy is still int64 or already string. Nothing downstream joins on
+  `school_primary_id`; region and school come from the crosswalk on
+  `school_name`.
 
 A `dibels8_PM_CUSTOM_2026-2027` aimline file was not on the server as of
 2026-09-22; that asset partition is expected to be missing.

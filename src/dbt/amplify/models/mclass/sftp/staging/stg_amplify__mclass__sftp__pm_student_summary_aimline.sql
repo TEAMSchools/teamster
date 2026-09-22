@@ -7,7 +7,6 @@ with
                 cast(total_number_of_probes as int) as total_number_of_probes,
                 cast(device_date as date) as device_date,
                 cast(sync_date as date) as sync_date,
-                safe_cast(school_primary_id as int) as school_primary_id,
                 cast(aimline_value_by_date as numeric) as aimline_value_by_date,
                 cast(goal as numeric) as goal,
                 cast(cast(student_primary_id as numeric) as int) as student_primary_id,

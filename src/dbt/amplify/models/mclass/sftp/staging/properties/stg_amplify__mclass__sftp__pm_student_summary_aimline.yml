@@ -106,10 +106,10 @@ models:
         data_type: string
         description: School name.
       - name: school_primary_id
-        data_type: int64
+        data_type: string
         description: >-
-          Amplify school identifier as an integer. Null where Amplify sends a
-          non-numeric id, as it does for some Miami schools.
+          Amplify school identifier, kept as a string because some Miami ids
+          carry letters (for example 2332A).
       - name: student_last_name
         data_type: string
         description: Student last name.

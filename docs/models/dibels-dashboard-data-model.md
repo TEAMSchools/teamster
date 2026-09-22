@@ -432,10 +432,11 @@ partitions were re-pulled that day before the coalesce could compile.
 
 From SY2026-2027 Amplify reports Miami school ids such as `2332A` (Royalty
 Academy, previously `30200804`) and `2008A` (Legacy Elementary). The two PM
-staging models cast `school_primary_id` with `safe_cast`, so a non-numeric id
-reads null. Nothing downstream loses it: the kipptaf PM intermediate replaces
-`school_primary_id` with the crosswalk school id matched on `school_name`. The
-BM staging model keeps the id as a string and was never affected.
+staging models used to cast `school_primary_id` to an integer, which failed on
+these ids. They now keep it as a string, matching the BM staging model, so the
+vendor's id survives as sent. The kipptaf PM intermediate casts both its inputs
+to strings and prefers the crosswalk school id matched on `school_name`, so its
+`school_primary_id` is a string too. Nothing downstream joins on it.
 
 #### Internal structure
 

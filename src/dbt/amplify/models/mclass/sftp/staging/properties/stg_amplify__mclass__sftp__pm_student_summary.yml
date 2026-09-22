@@ -96,11 +96,11 @@ models:
       - name: district_primary_id
         data_type: string
       - name: school_primary_id
-        data_type: int64
+        data_type: string
         description: >-
-          Amplify school identifier as an integer. Null where Amplify sends a
-          non-numeric id, as it does for some Miami schools; kipptaf replaces
-          this column with the crosswalk school id matched on school_name.
+          Amplify school identifier, kept as a string because some Miami ids
+          carry letters (for example 2332A). kipptaf replaces it with the
+          crosswalk school id matched on school_name.
       - name: student_last_name
         data_type: string
       - name: student_first_name
