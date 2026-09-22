@@ -54,7 +54,6 @@ flowchart TD
         src_gs_xwalk["Google Sheets\nassessments__course_subject_crosswalk"]
         src_ps_districts["PowerSchool\n(kippnewark / kippcamden\n/ kippmiami / kipppaterson)"]
         src_ps_spenroll["PowerSchool\nspenrollments"]
-        src_ps_terms["PowerSchool\nterms"]
         src_ps_schools["PowerSchool\nschools"]
         src_ps_cal["PowerSchool\ncalendar_day"]
         src_ps_nj_crs["PowerSchool\ns_nj_crs_x"]
@@ -69,7 +68,6 @@ flowchart TD
         stg_pm["stg_google_sheets__\ndibels_pm_goals"]
         stg_long["stg_google_sheets__\ndibels_goals_long"]
         stg_terms["stg_google_sheets__\nreporting__terms"]
-        stg_ps_terms["stg_powerschool__terms"]
         stg_schools["stg_powerschool__schools"]
         stg_cal["stg_powerschool__calendar_day"]
         stg_nj_crs["stg_powerschool__s_nj_crs_x"]
@@ -128,7 +126,6 @@ flowchart TD
     src_gs_long  --> stg_long
     src_gs_terms --> stg_terms
     src_ps_spenroll --> int_spenroll
-    src_ps_terms --> stg_ps_terms
     src_ps_schools --> stg_schools
     src_ps_cal   --> stg_cal
     src_ps_nj_crs --> stg_nj_crs
@@ -164,7 +161,6 @@ flowchart TD
 
     %% ── Edges: Student enrollment chain ──────────────────────────────────────
     int_spenroll --> int_enroll
-    stg_ps_terms --> int_enroll
 
     int_enroll      --> int_enroll_subj
     base_ce         --> int_enroll_subj
@@ -203,8 +199,8 @@ flowchart TD
     classDef intmodel  fill:#fce4d6,stroke:#ed7d31,color:#000
     classDef report    fill:#d9e1f2,stroke:#4472c4,color:#000,font-weight:bold
 
-    class src_amp,src_gs_exp,src_gs_bm,src_gs_pm,src_gs_long,src_gs_terms,src_gs_xwalk,src_ps_districts,src_ps_spenroll,src_ps_terms,src_ps_schools,src_ps_cal,src_ps_nj_crs,src_ps_nj_stu source
-    class stg_exp,stg_bm,stg_pm,stg_long,stg_terms,stg_ps_terms,stg_schools,stg_cal,stg_nj_crs staging
+    class src_amp,src_gs_exp,src_gs_bm,src_gs_pm,src_gs_long,src_gs_terms,src_gs_xwalk,src_ps_districts,src_ps_spenroll,src_ps_schools,src_ps_cal,src_ps_nj_crs,src_ps_nj_stu source
+    class stg_exp,stg_bm,stg_pm,stg_long,stg_terms,stg_schools,stg_cal,stg_nj_crs staging
     class base_ce base
     class int_bm_sum,int_bm_unpivot,int_pm_sum,int_all,int_pm_crit,int_gs_exp,int_gs_pm_exp,int_spenroll,int_nj_stu,int_enroll,int_enroll_subj,int_dibels_roster,int_cal,int_focus_cal,int_fast,int_pearson,int_fldoe,int_iready,int_deanslist intmodel
     class RPT report
@@ -214,8 +210,8 @@ flowchart TD
 
 | Layer        | Count | Purpose                                                                   |
 | ------------ | ----- | ------------------------------------------------------------------------- |
-| Sources      | 14    | Raw Google Sheets, Amplify DDS, and district PowerSchool tables           |
-| Staging      | 9     | Light cleaning and type-casting of source data                            |
+| Sources      | 13    | Raw Google Sheets, Amplify DDS, and district PowerSchool tables           |
+| Staging      | 8     | Light cleaning and type-casting of source data                            |
 | Base         | 1     | Union of 4 district `course_enrollments` tables                           |
 | Intermediate | 17    | Business logic — enrollment, DIBELS roster, assessment joins, PM criteria |
 | Report       | 1     | Final Tableau extract with both Benchmark and PM branches                 |
