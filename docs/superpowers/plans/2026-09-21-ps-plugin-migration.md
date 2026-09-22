@@ -814,18 +814,27 @@ tabs carry user-friendly names — changing only the URL sends a reader to a she
 whose tabs are not the ones the skill names. Verified 2026-09-22 by comparing
 header rows; each pair below is identical in its columns.
 
-| Skill says today | Change it to                 | Holds                                    |
-| ---------------- | ---------------------------- | ---------------------------------------- |
-| `ps_plugin_raw`  | `Plugin Data Raw`            | what actually landed in `U_EXPECTATIONS` |
-| `ps_plugin_data` | `Template QW-Date Crosswalk` | the quarter-week to date mapping         |
-| —                | `PS Full Calendar`           | the full-year week grid (Step 6)         |
-| —                | `PS Plugin CSV Template`     | the literal CSV header row, to copy      |
+The 3 presentation tabs pair one-to-one across the 2 sheets. Only
+`PS Plugin CSV Template` has no counterpart — it is typed by hand, not fed by a
+model.
 
-`PS Plugin CSV Template` exists only on the Reports copy and has no model behind
-it. Its header row is `School Level,Quarter,Week Number,W,H,F,S,Notes` — the
-same header the plugin's validator enforces and `references/csv-format.md`
-documents. Name it in `sheets.md` as the place to copy the header from, so
-nobody retypes it by hand.
+| IMPORTRANGE Sources | Reports                      | Holds                                    |
+| ------------------- | ---------------------------- | ---------------------------------------- |
+| `ps_all_weeks`      | `PS Full Calendar`           | the full-year week grid (Step 6)         |
+| `ps_plugin_raw`     | `Plugin Data Raw`            | what actually landed in `U_EXPECTATIONS` |
+| `ps_plugin_data`    | `Template QW-Date Crosswalk` | the quarter-week to date mapping         |
+| none                | `PS Plugin CSV Template`     | the literal CSV header row, to copy      |
+
+The skill names only `ps_plugin_raw` and `ps_plugin_data` today, so those 2 are
+renames and the other 2 are additions. Use the Reports column throughout — those
+are the tabs a T&L reader sees.
+
+`PS Plugin CSV Template` has no model behind it and no source-side twin. Its
+header row is `School Level,Quarter,Week Number,W,H,F,S,Notes` — the same header
+the plugin's validator enforces and `references/csv-format.md` documents, which
+makes it a third place that header lives. Name it in `sheets.md` as the place to
+copy the header from, so nobody retypes it by hand; a retyped header is rejected
+outright by the import page.
 
 Then grep the whole folder — a playbook may carry the old id or an old tab name:
 
