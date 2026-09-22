@@ -18,8 +18,8 @@ from {{ ref("int_students__terms") }}
 where
     -- Miami left Illuminate ahead of AY2026-27
     _dbt_source_project != 'kippmiami'
-    -- Keeps only the rows that carry a term name. On the PowerSchool arm each
-    -- quarter appears twice: once from the raw terms table, carrying the name
-    -- and identifiers Illuminate needs, and once as a quarter row carrying
-    -- neither. This drops the second of each pair.
+    -- Keeps only the rows that carry a term name. On the PowerSchool arm a
+    -- quarter usually appears twice: once from the raw terms table, carrying
+    -- the name and identifiers Illuminate needs, and once as a quarter row
+    -- carrying neither. This keeps the first and drops the second.
     and `name` is not null
