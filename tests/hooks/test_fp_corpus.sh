@@ -79,6 +79,12 @@ check_output "dagster asset check planned event (dbt test name)" clean \
 check_output "dbt accepted_values test name with short upper codes" clean \
 	"asset check accepted_values_${mdl}__Benchmark_Period__BOY__MOY__EOY__PM1__PM2__PM3__PM4__PM5__PM6"
 
+# A GitHub blob URL is one run from past `github.com` to `.md`: 129-169 chars
+# for claude-* spec branches, mixed case from the org name, no underscores
+# (2026-09-22, issue_read get_comments on #5381).
+check_output "GitHub blob URL for a spec branch" clean mcp__github__issue_read \
+	"Spec: https://github.com/TEAMSchools/teamster/blob/cbini/fix/claude-attendance-interventions-snapshot-fanout/docs/superpowers/specs/2026-09-17-attendance-interventions-snapshot-fanout-design.md"
+
 # A 1Password reference names a vault; the bare scheme, or a template whose
 # vault is a placeholder, names nothing (tests/conftest.py, tests/CLAUDE.md).
 scheme="op:""//"
