@@ -50,17 +50,27 @@ version stays the same.
 ### `dbt_union_relations_automation_condition()`
 
 A third condition that sits between view and table. Triggers on everything in
-the view condition, plus:
+the view condition, plus one extra trigger:
 
-- **Ancestor code version changes** — recursive `code_version_changed` detection
-  through intermediate views (up to 10 levels). When an upstream model's raw SQL
-  changes (e.g., a staging model adds a column after a deploy), the view re-runs
-  so the `union_relations` macro recompiles with the updated column set.
+- **A parent's code change lands** — the view re-runs on the tick a parent
+  table's post-code-change materialization lands. "Code change" covers the
+  parent's own raw SQL or any of its ancestors'. View parents are looked through
+  to the table behind them (up to 10 levels).
+
+It does **not** re-run on the deploy tick itself. At that point the parent still
+has its old schema, and re-running then compiles the stale column list
+([#4290](https://github.com/TEAMSchools/teamster/issues/4290)). The trigger
+stays armed until the view is requested, so a run that started before the parent
+landed cannot consume it.
 
 Unlike the table condition, this does **not** trigger on upstream data changes
 (`any_deps_updated`). Re-materializing views on every upstream data refresh
-would waste Dagster credits and Kubernetes resources. Only code deploys that
-change upstream model definitions trigger a re-run.
+would waste Dagster credits and Kubernetes resources.
+
+Known limits: a parent that reloads and finishes rebuilding within one sensor
+tick is missed; and if a parent table does a data rebuild before its changed
+ancestor rebuilds, the view re-runs early against the old schema. In either
+case, rematerialize the view from the Dagster UI.
 
 The `CustomDagsterDbtTranslator` **auto-detects** these views by checking for
 `"union_relations"` in the model's `raw_code`.
