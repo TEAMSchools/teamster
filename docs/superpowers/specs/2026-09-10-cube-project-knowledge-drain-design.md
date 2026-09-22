@@ -17,12 +17,14 @@ heading toward query the same Cube MCP without them.
 Move each fact to the one channel every surface reads, chosen by how narrow the
 fact is:
 
-| Fact is about                        | Destination                                                     |
-| ------------------------------------ | --------------------------------------------------------------- |
-| one measure or dimension             | that member's `description:` in the cube YAML                   |
-| the whole view                       | the view `description:` in `student_assessment_scores_view.yml` |
-| any view (query mechanics)           | the `load` or `meta` docstring in `src/cube/mcp/server.py`      |
-| session process or unratified policy | stays in the markdown, shaped for the later skill               |
+| Fact is about                         | Destination                                                     |
+| ------------------------------------- | --------------------------------------------------------------- |
+| what one measure or dimension _is_    | that member's `description:` in the cube YAML                   |
+| how to _use_ one measure or dimension | that member's `meta.ai_context:` in the cube YAML               |
+| the whole view                        | the view `description:` in `student_assessment_scores_view.yml` |
+| how to use the whole view             | the view's `meta.ai_context:`                                   |
+| any view (query mechanics)            | the `load` or `meta` docstring in `src/cube/mcp/server.py`      |
+| session process or unratified policy  | stays in the markdown, shaped for the later skill               |
 
 Four documented workarounds become model changes instead of prose. Each ships in
 its own PR with the text version merged first as a fallback, then removed.
@@ -48,11 +50,50 @@ Cube views inherit each included member's `description:` from its cube, and the
 `meta` tool returns those descriptions per view. The `load` docstring already
 carries the academic-year crosswalk for exactly this reason: `instructions=` is
 dropped by the claude.ai connector and truncated in Claude Code, while tool
-descriptions reach the model on every surface. `meta.usage` and other `meta.*`
-keys are not rendered by Cube Cloud or the connector; only `meta.folders` is.
-Serving the reference file as an MCP tool or resource was rejected: the model
-has to choose to call it, resources do not reliably surface through claude.ai
-connectors, and it duplicates the skill.
+descriptions reach the model on every surface. Serving the reference file as an
+MCP tool or resource was rejected: the model has to choose to call it, resources
+do not reliably surface through claude.ai connectors, and it duplicates the
+skill.
+
+### `meta.ai_context` is a real channel, verified
+
+An earlier draft of this spec said `meta.*` keys other than `folders` do not
+reach the model. That is true of **rendering** — Cube Cloud's UI draws only
+`folders` — and false of the **payload**, which is the path that matters here.
+
+Measured 2026-09-22 against Cube 1.7.43 on the local dev server, with a
+throwaway `meta.ai_context` and a throwaway arbitrary key added to one view and
+one cube measure, then reverted:
+
+| Placement                           | In REST `/meta` | Via our `meta` tool          |
+| ----------------------------------- | --------------- | ---------------------------- |
+| `meta.ai_context` on the view       | yes             | yes                          |
+| `meta.ai_context` on a cube measure | yes             | yes, inherited onto the view |
+| an arbitrary `meta.<other>` key     | yes             | yes                          |
+
+Three consequences:
+
+- **Member-level `meta` on a cube is inherited by the view member**, alongside
+  `aliasMember`. So `ai_context` uses this spec's existing placement pattern
+  unchanged: edit the cube YAML member, the view picks it up. No new file and no
+  new routing rule.
+- **Our MCP server does no field filtering.** `meta` returns each cube dict
+  verbatim (`src/cube/mcp/server.py`), which is why "not rendered by Cube Cloud"
+  and Cube's own `ai_context` documentation are both correct — one is about
+  display, ours is about passthrough.
+- **`ai_context` is not privileged on our path.** It arrives as one more JSON
+  key beside `description`. Cube Cloud's own AI agent treats it as agent-only;
+  our server does not, and nothing in this spec makes it do so. The gain is
+  separation — query guidance stops competing for room in a string that analysts
+  read as a tooltip — not a channel the model weights more heavily.
+
+Cube's constraints: views and members only, never cube level; 2,000 characters,
+silently truncated past that.
+
+`.claude/rules/cube-authoring.md` currently tells authors to keep guidance out
+of `meta.*` on the grounds that nothing reads it. That predates Cube documenting
+`ai_context`, and it needs the same correction. Separate change, no dependency
+on this one.
 
 ## Placement map
 
@@ -312,6 +353,22 @@ a hand-written `META_STUB`. This adds a second family without disturbing it.
 The eval runs after PR 2 and again after PR 6. Arm B must beat arm A on the trap
 rate for the family, or the description text is revised before the markdown
 deletion in that PR merges.
+
+### The trap checks are reusable against production
+
+`scorer.py` inspects the captured `load` query, not the answer text. Nothing
+about that is specific to a synthetic prompt: the same predicate runs against a
+real logged query. A separate spec covers recording MCP interactions to BigQuery
+— question, `query_json`, `members_referenced`, outcome, `server_sha`. Once that
+lands, each trap defined here becomes a standing monitor instead of a single
+pre-merge gate.
+
+This matters because the success criterion above proves the descriptions work on
+eight written prompts. It does not say whether they work on what people actually
+ask, or whether they still work in November. Nothing here changes: the
+implementation belongs with the recording work, and the only obligation this
+spec takes on is keeping the trap predicates importable rather than inlined in
+the scorer's main loop.
 
 ## Project-knowledge trim
 
