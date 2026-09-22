@@ -1153,7 +1153,7 @@ Add to `.github/workflows/build-plugin.yaml`, after the plugin build step:
   uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
   with:
     name: gradebook-expectations-upload
-    path: dist/gradebook_expectations_upload_*.zip
+    path: ps-plugins/dist/gradebook_expectations_upload_*.zip
     if-no-files-found: error
 ```
 
