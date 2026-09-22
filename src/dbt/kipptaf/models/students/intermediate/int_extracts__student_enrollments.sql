@@ -26,14 +26,6 @@ with
                 school_abbreviation,
                 null
             ) as es_grad_school_abbreviation,
-
-            lead(school_abbreviation, 1) over (
-                partition by student_number, rn_year order by academic_year asc
-            ) as next_year_school_lead,
-
-            lead(schoolid, 1) over (
-                partition by student_number, rn_year order by academic_year asc
-            ) as next_year_schoolid_lead,
         from {{ ref("base_powerschool__student_enrollments") }}
     ),
 
@@ -43,9 +35,7 @@ with
                 ms_school_abbreviation,
                 es_school_abbreviation,
                 es_grad_school_abbreviation,
-                days_enrolled,
-                next_year_school_lead,
-                next_year_schoolid_lead
+                days_enrolled
             ),
 
             first_value(ms_school_abbreviation ignore nulls) over (
@@ -66,18 +56,23 @@ with
                 rows between unbounded preceding and unbounded following
             ) as es_graduated,
 
-            max(if(rn_year = 1, next_year_school_lead, null)) over (
-                partition by student_number, academic_year
-            ) as next_year_school,
-
-            max(if(rn_year = 1, next_year_schoolid_lead, null)) over (
-                partition by student_number, academic_year
-            ) as next_year_schoolid,
-
             sum(days_enrolled) over (
                 partition by _dbt_source_project, academic_year, student_number
             ) as days_enrolled_year,
         from enrollments
+    ),
+
+    -- keyed on the year BEFORE its own, so the join below matches
+    -- academic_year + 1 and nothing else
+    next_year as (
+        select
+            student_number,
+            schoolid,
+            school_abbreviation,
+
+            academic_year - 1 as prior_academic_year,
+        from enrollments
+        where rn_year = 1
     ),
 
     mia_territory as (
@@ -264,6 +259,9 @@ select
     gc.earned_credits_cum,
     gc.earned_credits_cum_projected,
     gc.potential_credits_cum,
+
+    nxt.school_abbreviation as next_year_school,
+    nxt.schoolid as next_year_schoolid,
 
     'KTAF' as district,
 
@@ -526,8 +524,8 @@ left join
     and e.academic_year = (adapy.academic_year + 1)
     and e._dbt_source_project = adapy._dbt_source_project
 left join
-    {{ ref("int_powerschool__gpa_cumulative") }} as gc
-    on e.studentid = gc.studentid
+    {{ ref("int_students__gpa_cumulative") }} as gc
+    on e.student_number = gc.student_number
     and e.schoolid = gc.schoolid
     and e._dbt_source_project = gc._dbt_source_project
 left join
@@ -546,3 +544,7 @@ left join
     {{ ref("int_students__contacts_pivot") }} as sc
     on e.student_number = sc.student_number
     and e._dbt_source_project = sc._dbt_source_project
+left join
+    next_year as nxt
+    on e.student_number = nxt.student_number
+    and e.academic_year = nxt.prior_academic_year

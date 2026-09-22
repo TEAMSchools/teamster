@@ -53,13 +53,19 @@ models:
         description: Assessment grade as integer, K-8 with kindergarten as 0.
         data_tests:
           - not_null
-      - name: goal
+      - name: aimline_season_student_goal
         data_type: numeric
-        description:
-          End-of-period aimline goal score. Only ever populated by the aimline
-          file today — the base PM file has never carried this field — but not
-          coalesced, since a coalesce needs a second populated source to be
-          meaningful.
+        description: >-
+          End-of-period aimline goal score, set by Amplify per student — where
+          this student should reach by the end of the period given where they
+          started, not the grade-level bar. Two students in the same class on
+          the same measure can correctly hold different goals, so this is not
+          benchmark_goal unpadded. On AY2025 it equals the published standard on
+          36.6% of probe rows, sits below it on 39.8% and above it on 23.6%.
+          Never substitute one column for the other, and never label this one as
+          a grade-level goal. Only ever populated by the aimline file today —
+          the base PM file has never carried this field — but not coalesced,
+          since a coalesce needs a second populated source to be meaningful.
         config:
           meta:
             source_system: Amplify

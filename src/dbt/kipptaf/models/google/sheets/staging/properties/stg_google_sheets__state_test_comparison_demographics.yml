@@ -22,6 +22,47 @@ models:
               - comparison_demographic_group
               - comparison_demographic_subgroup
     columns:
+      - name: comparison_demographic_subgroup
+        data_type: string
+        description: >
+          Demographic subgroup the comparison row describes, normalized here to
+          the vocabulary the KTAF-derived comparison rows use. The sheet's own
+          vocabulary is split -- NJ rows entered for academic year 2024 and
+          every Miami row spell two subgroups differently from the rows
+          int_tableau__state_assessments_demographic_comps generates, and
+          rpt_tableau__state_assessments_dashboard_comps joins a comparison row
+          to its Region row on this string. An unnormalized value finds no
+          Region partner, and the comparison booleans read false rather than
+          null, so the dashboard shows a loss instead of a gap. Black Or African
+          American becomes African American and Non-Econ. Disadvantaged becomes
+          Non Economically Disadvantaged. The accepted_values test is what keeps
+          a newly entered year from re-splitting the vocabulary silently --
+          extend it deliberately, never to make a build pass.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - accepted_values:
+              arguments:
+                values:
+                  - African American
+                  - All Students
+                  - American Indian
+                  - Asian
+                  - Economically Disadvantaged
+                  - Female
+                  - Hispanic
+                  - Male
+                  - ML
+                  - Native Hawaiian
+                  - Non Economically Disadvantaged
+                  - Other
+                  - SE Accommodation
+                  - Students With Disabilities
+                  - White
+              config:
+                severity: error
+
       - name: academic_year
         data_type: int64
         description: Academic year the benchmarks apply to.
@@ -72,12 +113,6 @@ models:
         description: >
           Raw demographic group label from the source sheet (e.g. Grade,
           Aggregate Ethnicity, Gender).
-
-      - name: comparison_demographic_subgroup
-        data_type: string
-        description: >
-          Raw demographic subgroup label from the source sheet (e.g. Grade - 05,
-          Black or African American, Female).
 
       - name: percent_proficient
         data_type: float64

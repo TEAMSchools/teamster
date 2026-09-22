@@ -4,10 +4,11 @@ snapshots:
     config:
       schema: students
       strategy: check
+      # schoolid is not a key column: it is NULL for most students, and a NULL
+      # key never matches, so no version would ever close (#5381)
       unique_key:
         - student_number
         - academic_year
-        - schoolid
       check_cols:
         - successful_call_count
         - total_anticipated_calls
