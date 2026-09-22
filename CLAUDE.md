@@ -83,7 +83,7 @@ specifics live there.
 - Stage with `git add -u`. Naming protected paths triggers the hook; `-A` stages
   unrelated files.
 - A model or column rename sweep includes `*.md`: `--include='*.{sql,yml,md}'`.
-  CLAUDE.md examples, specs, and doc cross-refs otherwise go stale.
+  CLAUDE.md examples and doc cross-refs otherwise go stale.
 
 ## Subagents
 
