@@ -394,10 +394,10 @@ Three things make this class of question easy to get wrong:
   never seen.** `Kipp Hatch Middle` became `Kipp Hatch Academy` and
   `Kipp Sumner Elementary` became `Kipp Sumner Academy` for SY2026-2027, and
   both are absorbed by the crosswalk. `Kipp Legacy Elementary` and
-  `Kipp Legacy Middle` are NOT in the crosswalk as of 2026-09-22, so their rows
-  carry a **null region** and drop out of every region-filtered model. A name
-  the crosswalk misses surfaces as a null region, not as missing rows, so check
-  for null regions and compare row counts across layers before blaming the
+  `Kipp Legacy Middle` arrived in the SY2026-2027 file with no crosswalk row, so
+  their rows carried a **null region** until Ops added them on 2026-09-22. A
+  name the crosswalk misses surfaces as a null region, not as missing rows, so
+  check for null regions and compare row counts across layers before blaming the
   export.
 - **Confirm by student number, not by school name.** Matching the file's student
   id against AY2026 enrollment rules out a rename entirely. On 2026-09-22, 8,581

@@ -1280,10 +1280,12 @@ Four rules for this class of question:
   crosswalk absorbed both. A rename it misses produces a **null region**, not
   missing rows -- so compare row counts layer by layer and check for null
   regions before concluding anything. Identical counts across layers means
-  nothing is being dropped at the join. Live gap as of 2026-09-22:
-  `Kipp Legacy Elementary` and `Kipp Legacy Middle` (Miami, ~205 students) are
-  in the export and not in the crosswalk. Adding them to the locations sheet is
-  Ops' fix, not a dbt one.
+  nothing is being dropped at the join. Example: `Kipp Legacy Elementary` and
+  `Kipp Legacy Middle` (Miami, ~205 students) arrived in the SY2026-2027 file
+  with no crosswalk row and read as null region until Ops added them to the
+  sheet on 2026-09-22. The fix is a sheet row, not dbt; verify it by reading the
+  sheet external through ADC (the MCP cannot), then wait for the staging
+  rebuild.
 - **Confirm by student number, not by school name.** Matching the file's student
   id against enrollment rules out a rename entirely, because it never touches a
   name. That is the check that actually closes the question. Which column holds
