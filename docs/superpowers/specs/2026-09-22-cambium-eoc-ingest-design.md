@@ -142,9 +142,9 @@ cambium staging models.
 - **The Pearson aliases move to kipptaf `int_pearson__all_assessments`.** Its
   Pearson relations stay a `union_relations` passthrough. Two CTEs map the
   kipptaf `stg_cambium__njsla` + `stg_cambium__eoc` union views and the
-  `stg_cambium__njgpa` view to the shared shape. `full union all corresponding`
-  joins the three by column name. Tests on the shared columns move there, scoped
-  to Cambium rows.
+  `stg_cambium__njgpa` view to the shared shape. A positional `union all` over
+  enumerated columns joins the three. Tests on the shared columns move there,
+  scoped to Cambium rows.
 - **No new intermediate models.** `dim_assessments` and
   `dim_assessment_administrations` read the Cambium rows from
   `int_pearson__all_assessments` instead of `stg_cambium__*`.
