@@ -222,8 +222,7 @@ def build(plugin_dir: Path) -> Path | None:
 
         errors = validate(staged, refs)
         errors += check_column_contract(plugin_dir, DBT_U_EXPECTATIONS)
-        if SKILL_DIR.is_dir():
-            errors += check_csv_header_contract(plugin_dir, SKILL_DIR)
+        errors += check_csv_header_contract(plugin_dir, SKILL_DIR)
         if errors:
             print("\n  BUILD FAILED:")
             for e in errors:
