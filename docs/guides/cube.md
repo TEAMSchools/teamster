@@ -329,8 +329,8 @@ Include a network-scoped, a region-scoped, a school-scoped, a `none`-scope, and
 one deliberately unresolvable viewer. Expect the network viewer to return all
 four regions, the region viewer only their own, the school viewer a subset of
 that region, and the last two no rows at all (default-deny) — which confirms
-`resolveAccess` and the `student-<scope>` policies agree. Because identity is
-the connecting `user`, one run covers the matrix with no restart.
+`resolveAccess` and the flat `student` policy agree. Because identity is the
+connecting `user`, one run covers the matrix with no restart.
 
 It exits non-zero if any viewer's connection or query fails, and calls out the
 one ambiguous result explicitly: if **every** viewer returns zero rows,

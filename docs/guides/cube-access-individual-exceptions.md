@@ -132,8 +132,10 @@ A row can do either or both of the following. A row that does neither is inert
 
 If a person has multiple rows for their location grants, put any visibility
 overrides on **only one** of those rows and write `inherit` on the other rows —
-the sheet will fail validation if two of a person's active rows disagree on the
-same setting.
+the sheet will fail validation if two of a person's active rows each set any
+override column. It does not matter whether the two rows agree, or whether they
+set the same column: a second row carrying any value other than `inherit` in any
+of the five columns fails the check.
 
 ### `inherit` versus `none` on the override columns
 
@@ -152,6 +154,42 @@ apart by looking at the sheet.
 
 `none` is a real tool — it is how you revoke someone's visibility below their
 role's default — just rarely what you want.
+
+## Granting staff access takes three columns, not one
+
+`additional_staff_location_scope` on its own gets someone the **staff
+directory** — the roster, employment and work-contact fields, for everyone in
+the locations you named. It does **not** get them personal emails, cell numbers,
+birth dates, or demographics. Those live behind a second gate.
+
+Sensitive staff fields need all three of these on the same person:
+
+| column                            | write                              |
+| --------------------------------- | ---------------------------------- |
+| `additional_staff_location_scope` | `network`, `region`, or `school`   |
+| `staff_pii_scope`                 | `all_in_scope` or `teaching_staff` |
+| `staff_department_scope`          | `all`                              |
+
+Miss any one of the three and the person sees no sensitive fields at all. Two of
+the three is the easy mistake, and it does not fail loudly at the moment you
+type it — the next pipeline run turns a data test red instead.
+
+`staff_department_scope` is the one people forget. For someone with no
+employment record it starts at `none`, so unless you write `all` on their row
+the department half of the gate stays shut. `own_group` does not work for them
+either: with no job, they are in no department, so "their own group" is empty.
+
+Someone who already has an employment record usually has a department setting
+from their role, so for them a location grant plus `staff_pii_scope` is often
+enough — but write `staff_department_scope` explicitly if you are unsure.
+
+## What a contractor sees with no grants at all
+
+A row that grants no location and overrides no setting leaves a contractor
+seeing **nothing** — not even the staff directory. That is deliberate. The
+directory is open to employees because the network publishes it to staff; a
+person with no employment record reaches it only when you give them a staff
+location above.
 
 ## Lifecycle: status, grant_date, expiry_date
 

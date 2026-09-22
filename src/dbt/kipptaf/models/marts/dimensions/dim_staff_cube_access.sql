@@ -216,9 +216,12 @@ with
     -- This leg gives them a row of their own. The directory join is the
     -- authorization check: the address must be a real Google account, and one
     -- that is neither suspended nor archived, so a typo or a deprovisioned
-    -- contractor cannot mint an identity. Every role- and org-derived attribute
-    -- is NULL by construction, so each scope below falls through to 'none' and
-    -- the person sees only what their own exception rows grant.
+    -- contractor cannot mint an identity. Minting is deliberately ungated on
+    -- location_scope: a remit-only grant row carries no location, and
+    -- test_cube_access_individual_exceptions_grant_reaches_a_viewer requires
+    -- every live row to resolve to a viewer. A row that grants nothing
+    -- therefore yields a viewer who is denied everything -- is_employee below
+    -- is what keeps that viewer out of the open staff directory.
     non_employee_grantees as (
         select distinct
             {{
@@ -238,7 +241,8 @@ with
 
     -- Both kinds of viewer on one grain, so the resolution below is written
     -- once. The staff leg carries its role and org attributes; the non-employee
-    -- leg carries NULLs, which the coalesces read as 'none'.
+    -- leg carries NULLs, which the coalesces read as 'none'. entity is the
+    -- exception: 'unknown' is its deny sentinel, and the column is never NULL.
     access_spine as (
         select
             staff_key,
@@ -249,6 +253,8 @@ with
             job_function_code,
             region_key,
             location_abbreviation,
+
+            true as is_employee,
         from enriched
 
         union all
@@ -258,10 +264,12 @@ with
             google_email,
             cast(null as string) as department_name,
             cast(null as string) as department_group,
-            cast(null as string) as entity,
+            'unknown' as entity,
             cast(null as string) as job_function_code,
             cast(null as string) as region_key,
             cast(null as string) as location_abbreviation,
+
+            false as is_employee,
         from non_employee_grantees
     ),
 
@@ -274,6 +282,7 @@ with
             e.department_group,
             e.entity,
             e.job_function_code,
+            e.is_employee,
 
             rp.job_function_level,
 
@@ -334,6 +343,7 @@ select
     entity,
     job_function_code,
     job_function_level,
+    is_employee,
 
     student_location_scope,
 

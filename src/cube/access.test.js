@@ -9,6 +9,7 @@ const a = require("./access");
 // all_in_scope PII).
 const SL = {
   staff_key: "self",
+  is_employee: true,
   region_key: "R1",
   location_abbreviation: "ABC",
   department_group: "Ops",
@@ -59,7 +60,7 @@ test("buildGroups: a sensitive tier is emitted per scope != none", () => {
   assert.ok(!g.includes("staff-benefits"));
 });
 
-test("buildGroups: directory is open to every staff viewer, even full-deny", () => {
+test("buildGroups: directory is open to every employee, even full-deny", () => {
   const denied = {
     ...SL,
     student_location_scope: "none",
@@ -107,6 +108,7 @@ test("buildGroups: an object with no staff_key gets no groups (not even staff-di
 test("buildSecurityContext flattens the access row + chain", () => {
   const row = {
     staff_key: "s1",
+    is_employee: true,
     staff_pii_scope: "reporting_chain_or_below_rank",
     region_key: "R1",
     location_abbreviation: "ABC",
@@ -168,13 +170,13 @@ test("buildGroups: all_in_scope with a full remit emits the group", () => {
 
 test("buildGroups: all_in_scope with an empty location remit does NOT emit the group", () => {
   const g = a.buildGroups(
-    { staff_key: "s1", staff_pii_scope: "all_in_scope" },
+    { staff_key: "s1", is_employee: true, staff_pii_scope: "all_in_scope" },
     [],
     ["Ops"],
     [],
   );
   assert.ok(!g.includes("staff-pii-all_in_scope"));
-  assert.ok(g.includes("staff-directory")); // directory tier stays open
+  assert.ok(g.includes("staff-directory")); // directory stays open to employees
 });
 
 test("buildGroups: all_in_scope with an empty department remit does NOT emit the group", () => {
@@ -674,9 +676,11 @@ test("resolveEmulationTarget: a non-string callerEmail resolves to no caller and
 // A non-employee grantee (contractor) as dim_staff_cube_access now emits one:
 // a real staff_key off the exceptions sheet, but NULL for every role- and
 // org-derived attribute, so all five scopes sit at 'none' and the only thing
-// granting anything is additional_location_grants.
+// granting anything is additional_location_grants. is_employee false is what
+// keeps the open staff directory off them until a grant reaches the staff axis.
 const CONTRACTOR = {
   staff_key: "non-employee-hash",
+  is_employee: false,
   region_key: null,
   location_abbreviation: null,
   department_group: null,
@@ -767,10 +771,42 @@ test("contractor: a location grant WITHOUT student data grants no student access
   assert.ok(!g.includes("student"));
 });
 
-test("contractor: a grantee with no live grants at all gets no student or pii access", () => {
+test("contractor: a grantee whose grants widen nothing is denied everything", () => {
+  // The inert sheet row — both axes 'none', every remit 'inherit' — still
+  // mints a viewer, because the grant-reaches-a-viewer dbt test requires every
+  // live row to resolve. That viewer must hold NO group at all: staff_directory
+  // carries no row_level filter, so a staff-directory group here would hand a
+  // contractor the whole unfiltered network directory.
   const g = a.buildGroups(CONTRACTOR, [], [], [], []);
-  assert.ok(!g.includes("student"));
-  assert.ok(!g.some((x) => x.startsWith("staff-pii-")));
-  // Still a resolved identity, so the open directory tier is present.
+  assert.deepEqual(g, []);
+});
+
+test("contractor: a staff-axis grant is what opens the directory to them", () => {
+  // The complement of the test above — non-empty allowedAbbreviations means
+  // some grant of theirs reached the staff axis, which is the condition.
+  const g = a.buildGroups(CONTRACTOR, ["B"], [], [], []);
   assert.deepEqual(g, ["staff-directory"]);
+});
+
+test("employee: an empty staff allow-list still keeps the open directory", () => {
+  // 4 employees resolve to staff_location_scope 'none' in prod today. The
+  // directory is open to staff by policy, so is_employee — not the allow-list
+  // — is what gates it; keying on the list alone would silently deny them.
+  const g = a.buildGroups(
+    { staff_key: "s1", is_employee: true },
+    [],
+    [],
+    [],
+    [],
+  );
+  assert.deepEqual(g, ["staff-directory"]);
+});
+
+test("buildGroups: a row missing is_employee falls to the grant check, not open access", () => {
+  // Fail-closed on schema skew: if Cube deploys before the mart carries the
+  // column, an unknown is_employee must not read as employee.
+  assert.deepEqual(a.buildGroups({ staff_key: "s1" }, [], [], [], []), []);
+  assert.deepEqual(a.buildGroups({ staff_key: "s1" }, ["B"], [], [], []), [
+    "staff-directory",
+  ]);
 });

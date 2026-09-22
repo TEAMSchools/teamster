@@ -14,15 +14,20 @@
 //     with every individual-exception grant that has includes_student_data
 //     (see unionAdditionalGrants) — this is what lets an exception grant a
 //     single extra school, not just a whole network/region tier.
-//   - The staff directory is OPEN (staff-directory group, every resolved
-//     viewer); sensitive staff PII is gated in the staff_pii view per
+//   - The staff directory is OPEN to every EMPLOYEE (staff-directory group,
+//     emitted on row.is_employee). A non-employee grantee — a contractor, who
+//     reaches this table only through the individual-exceptions sheet — holds
+//     it only when allowed_abbreviations is non-empty, i.e. some grant of
+//     theirs reaches the staff axis. A grant row that widens nothing therefore
+//     yields a viewer denied everything, which is the whole point of letting
+//     an inert row mint a viewer at all (see dim_staff_cube_access.sql).
+//     Sensitive staff PII is gated separately, in the staff_pii view per
 //     staff_pii_scope (staff-pii-<scope>), scoped by a location ∩ department
 //     remit precomputed into allowed_abbreviations / allowed_department_groups.
-//     allowed_abbreviations is likewise the base staff_location_scope UNIONED
-//     with every individual-exception grant — unconditionally, regardless of
-//     includes_student_data (a location grant always widens staff visibility;
-//     includes_student_data only decides whether it ALSO widens student
-//     visibility).
+//     allowed_abbreviations is the base staff_location_scope UNIONED with
+//     every individual-exception grant carrying includes_staff_data; the
+//     student axis reads includes_student_data. The two are independent, so a
+//     grant can widen one without the other (see unionAdditionalGrants).
 
 // Sensitive staff leaf → the access-row scope column that gates it. The PII
 // members live in the staff_pii view; compensation is registered here
@@ -83,8 +88,18 @@ function buildGroups(
     groups.push("student");
   }
 
-  // Open staff directory for every resolved staff viewer.
-  groups.push("staff-directory");
+  // Open staff directory for every EMPLOYEE. A non-employee grantee holds it
+  // only when a grant of theirs reached the staff axis — allowedAbbreviations
+  // is the base staff scope (always empty for them) unioned with exactly those
+  // grants, so a non-empty list IS that condition. staff_directory carries no
+  // row_level filter, so this group is the only gate on it; without the
+  // is_employee split an inert sheet row would hand a contractor the whole
+  // unfiltered directory. is_employee is read defensively (=== true) so a row
+  // predating the column, or a stubbed test row, falls to the grant check
+  // rather than to open access.
+  if (row.is_employee === true || allowedAbbreviations.length > 0) {
+    groups.push("staff-directory");
+  }
 
   // Staff PII: emit the scope-specific group ONLY when the securityContext
   // arrays its staff_pii.yml access_policy interpolates are non-empty. Cube
