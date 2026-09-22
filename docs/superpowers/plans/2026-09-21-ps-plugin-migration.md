@@ -142,18 +142,30 @@ than editing.
 
 - [ ] **Step 4: Stop prettier reformatting the PSHTML pages**
 
-Add to `.trunk/trunk.yaml`, at top level (the file has no `ignore:` block yet):
+Add an entry to the **existing `lint.ignore:` list** in `.trunk/trunk.yaml`,
+matching the key order its neighbours use. A top-level `ignore:` is not valid
+config and trips `trunk/config-error`.
 
 ```yaml
-ignore:
-  - linters: [prettier]
-    paths:
-      - ps-plugins/**/*.html
+lint:
+  ignore:
+    - paths:
+        - ps-plugins/**/*.html
+      linters:
+        - prettier
 ```
 
 PowerSchool PSHTML uses `~[...]` constructs that a generic HTML formatter
 rewrites. `trunk-check.yaml` runs on every pull request, so without this the
 first plugin PR silently mangles all 5 pages.
+
+**`--force` deliberately bypasses this.** Trunk says so itself: a normal check
+prints `Hint: use --force to check ignored files`. So the repo's
+`trunk check --force` habit still reports prettier on these pages. That is
+noise, not a regression — PR CI and the pre-push hook both run without `--force`
+and honour the ignore. The danger is `trunk fmt --force`, which would rewrite
+the pages rather than report them. Note that in `ps-plugins/CLAUDE.md` beside
+the existing hand-zipping warning.
 
 - [ ] **Step 5: Give the directory an owner and a reviewer**
 
@@ -182,13 +194,20 @@ paths:
   - .github/workflows/build-plugin.yaml
 ```
 
-Change the build step's `run:` to
-`uv run --no-project python ps-plugins/scripts/build_plugin.py`, and the upload
-step's `path:` to `ps-plugins/dist/*.zip`.
+Change the build step's `run:` to `python3 ps-plugins/scripts/build_plugin.py`,
+and the upload step's `path:` to `ps-plugins/dist/*.zip`.
 
 `build_plugin.py` resolves `DIST` as `REPO / "dist"` where `REPO` is the
 script's grandparent — now `ps-plugins/`, not the repository root. The artifact
 path must follow it or the upload fails with `if-no-files-found: error`.
+
+Keep the build step on `python3`, not `uv run`. The script is standard-library
+only by design — that is why the upstream workflow ran `python3` and installed
+nothing — and `ubuntu-latest` ships one. Using `uv` here would mean adding a
+`setup-uv` step to run a script with no dependencies. Task 3 adds `setup-uv`
+when it adds the pytest step, which genuinely needs it. The repo's "always
+`uv run`" rule governs local work in the Codespace, where the venv matters; it
+is not a CI rule.
 
 The dbt path matters: Task 3's column check must fire when the **dbt** side
 changes, not only when the plugin does. A one-sided change is exactly the
@@ -478,9 +497,20 @@ worse than none, because it reads as coverage.
 
 - [ ] **Step 7: Add the pytest run to the workflow, then commit**
 
-In `.github/workflows/build-plugin.yaml`, after the build step:
+In `.github/workflows/build-plugin.yaml`, after the build step. The `setup-uv`
+step is required — `ubuntu-latest` has no `uv`, and the build step deliberately
+uses bare `python3` because the build script has no dependencies.
+
+Copy the `setup-uv` line verbatim from `.github/workflows/pytest.yaml` — SHA,
+version comment, and the URL comment above it. Do not paste a SHA from anywhere
+else: `pinact` enforces pinned actions, dependabot moves this pin, and a stale
+SHA copied from a plan is how two workflows drift onto different versions of the
+same action.
 
 ```yaml
+# https://github.com/astral-sh/setup-uv
+- uses: astral-sh/setup-uv@<same SHA as pytest.yaml> # <same version comment>
+
 - name: Run plugin contract tests
   run: uv run pytest tests/ps_plugins -v
 ```
