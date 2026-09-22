@@ -148,6 +148,14 @@ models:
         data_type: string
         description: Student first name as reported by Pearson.
 
+      - name: gradelevelwhenassessed
+        data_type: int64
+        description: >-
+          The student's grade at the time of testing. Equals test_grade on
+          grade-level tests. On the Algebra I, Algebra II and Geometry
+          end-of-course tests, where test_grade is NULL, it is the only grade.
+          NULL for NJGPA rows from Pearson, which did not send it.
+
       - name: lastorsurname
         data_type: string
         description: Student last name or surname as reported by Pearson.

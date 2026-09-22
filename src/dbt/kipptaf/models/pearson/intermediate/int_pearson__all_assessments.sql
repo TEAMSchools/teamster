@@ -36,6 +36,7 @@ with
                     "district_state",
                     "englishlearnerel",
                     "firstname",
+                    "gradelevelwhenassessed",
                     "hispanicorlatinoethnicity",
                     "iep_status",
                     "is_504",
