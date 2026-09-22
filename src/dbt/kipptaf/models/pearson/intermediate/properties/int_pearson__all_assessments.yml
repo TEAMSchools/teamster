@@ -91,11 +91,12 @@ models:
       - name: assessmentgrade
         data_type: string
         description: >-
-          Assessment grade level as reported by the vendor. Pearson sent 'Grade
-          11' on every row. Cambium sends the test DESIGN level instead — 'Grade
-          10' for ELAGP and 'Grade 11' for MATGP — so this column carries two
-          values and is NOT the student's grade. Use test_grade (always 11 for
-          NJGPA) or the enrollment for reporting grade level.
+          Assessment grade level as reported by the vendor, e.g. 'Grade 5'. NULL
+          on the Algebra I, Algebra II and Geometry end-of-course rows from both
+          vendors. On NJGPA, Pearson sent 'Grade 11' on every row, while Cambium
+          sends the test DESIGN level — 'Grade 10' for ELAGP and 'Grade 11' for
+          MATGP. It is NOT the student's grade; use test_grade or
+          gradelevelwhenassessed for reporting grade level.
 
       - name: assessmentyear
         data_type: string
