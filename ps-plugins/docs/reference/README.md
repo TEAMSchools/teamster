@@ -17,14 +17,53 @@ New to PS plugin development, read in this order: **02** for what a plugin
 actually is, then **03** for the `plugin.xml` schema, then **04** and **05** for
 database extensions.
 
-| #   | File                                                                                                                | Pages | Covers                                                                                                                                                                                                                                                 | Reach for it when                                                                                                       |
-| --- | ------------------------------------------------------------------------------------------------------------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
-| 01  | [PS Data Dictionary](https://drive.google.com/file/d/1wtd7lmAB9LEI0yPtIQ6tTEdDjTJlt7TY/view) — Drive, not committed | —     | Every PS table and field: names, types, sizes                                                                                                                                                                                                          | Looking up a core table or field before writing a named query. See [Why 01 lives in Drive](#why-01-lives-in-drive)      |
-| 02  | [`02_plugins_intro.pdf`](./02_plugins_intro.pdf)                                                                    | 2     | What a plugin is; `plugin.xml` as a single file vs. a packaged zip; installing via System > System Settings > Plugin Management Dashboard                                                                                                              | Orienting for the first time, or explaining the deployment model to someone new                                         |
-| 03  | [`03_plugin_xml_reference.pdf`](./03_plugin_xml_reference.pdf)                                                      | 12    | Full `plugin.xml` element hierarchy — `<links>`, `<link>`, `<ui_contexts>`, `<ui_context>`, `<permissions>`, `<publisher>`, `<oauth>`, `<saml>`, `<openid>`, `<registration>`. Notes which PS version each element arrived in (21.11.0 through 25.2.0) | **The one you'll open most.** Any change to `plugin.xml` — nav links, `ui_context` ids, permissions, version attributes |
-| 04  | [`04_database_extensions_admin.pdf`](./04_database_extensions_admin.pdf)                                            | 2     | Database extensions from the admin side: one-to-one, one-to-many, and independent tables, and how they combine. Current — captured from the live admin docs, © 2026                                                                                    | Creating or altering a `U_` table through the Database Extensions UI                                                    |
-| 05  | [`05_database_extensions_advanced_guide_2015.pdf`](./05_database_extensions_advanced_guide_2015.pdf)                | 44    | The deep one: page customization against database extensions, PS-HTML form elements, `tlist_child`, one-to-one and one-to-many code samples                                                                                                            | Writing or debugging the HTML pages — form field naming, list rendering, insert/update patterns                         |
-| 06  | [`06_powerteacher_pro_customization.pdf`](./06_powerteacher_pro_customization.pdf)                                  | 15    | PowerTeacher Pro customization: plugin folder layout under `web_root/teachers/powerteacher-pro`, student custom pages, message-key i18n properties, top-level `<div>` configuration attributes                                                         | Phase 6 — the teacher-facing report page. PTP customization works differently from admin pages                          |
+| Drive file ID                       | Document                           |
+| ----------------------------------- | ---------------------------------- |
+| `1LH0b5PSX_49PKnPOz3I2W_kD2QDI50Gd` | 2 - PS Plugins Intro               |
+| `1jRvB4-Cc9N8kQ1zDOGb_bDNtOtDwrRl1` | 3 - PS Plugins XML                 |
+| `1N8uHTD9oJhZpQAEa0UsYR2oy1yF6qC5r` | 4 - Database Extensions            |
+| `18P1l28IanSON-lPuMCwR560HWKzxQujE` | 5 - Advanced User Guide            |
+| `1ZxRjgezkF1Mi2ZTAyE6Q0WCwamq69mq5` | 6 - PowerTeacher Pro Customization |
+| `1wtd7lmAB9LEI0yPtIQ6tTEdDjTJlt7TY` | 1 - PS Data Dictionary             |
+
+### Document descriptions
+
+**2 - PS Plugins Intro** (2 pages)  
+What a plugin is; `plugin.xml` as a single file vs. a packaged zip; installing
+via System > System Settings > Plugin Management Dashboard. Reach for it when
+orienting for the first time, or explaining the deployment model to someone new.
+
+**3 - PS Plugins XML** (12 pages)  
+Full `plugin.xml` element hierarchy — `<links>`, `<link>`, `<ui_contexts>`,
+`<ui_context>`, `<permissions>`, `<publisher>`, `<oauth>`, `<saml>`, `<openid>`,
+`<registration>`. Notes which PS version each element arrived in (21.11.0
+through 25.2.0). **The one you'll open most.** Reach for it when making any
+change to `plugin.xml` — nav links, `ui_context` ids, permissions, version
+attributes.
+
+**4 - Database Extensions** (2 pages)  
+Database extensions from the admin side: one-to-one, one-to-many, and
+independent tables, and how they combine. Current — captured from the live admin
+docs, © 2026. Reach for it when creating or altering a `U_` table through the
+Database Extensions UI.
+
+**5 - Advanced User Guide** (44 pages)  
+The deep one: page customization against database extensions, PS-HTML form
+elements, `tlist_child`, one-to-one and one-to-many code samples. Reach for it
+when writing or debugging the HTML pages — form field naming, list rendering,
+insert/update patterns.
+
+**6 - PowerTeacher Pro Customization** (15 pages)  
+PowerTeacher Pro customization: plugin folder layout under
+`web_root/teachers/powerteacher-pro`, student custom pages, message-key i18n
+properties, top-level `<div>` configuration attributes. Reach for it during
+Phase 6 — the teacher-facing report page. PTP customization works differently
+from admin pages.
+
+**1 - PS Data Dictionary**  
+Every PS table and field: names, types, sizes. Reach for it when looking up a
+core table or field before writing a named query. See
+[Why 01 lives in Drive](#why-01-lives-in-drive).
 
 ### Version caveat on 05
 
@@ -61,6 +100,19 @@ The file ID is recorded so an assistant session with a Drive connector can fetch
 it directly without searching. That same Drive folder also holds copies of
 documents 02–06, so the folder alone is a complete set for anyone who prefers
 Drive to git.
+
+---
+
+## Reading one
+
+The folder is shared with the Codespaces service account
+(`codespaces@teamster-332318.iam.gserviceaccount.com`), so a script under
+`uv run` downloads the bytes to disk with Application Default Credentials. That
+is the working path.
+
+The Google Drive connector returns file content as base64, which
+`check-output.sh` redacts as a high-entropy string, so binary files cannot be
+read through the connector. Use it for metadata only.
 
 ---
 
