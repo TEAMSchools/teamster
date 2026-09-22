@@ -69,13 +69,13 @@ the live UI, and report what happened.
 ## Reference materials
 
 - **[`docs/reference/`](./docs/reference/)** — PowerSchool developer
-  documentation PDFs, with an [index](./docs/reference/README.md) saying what
-  each covers. Consult before changing `plugin.xml` (doc 03), `U_` tables or
-  named queries (docs 04–05), the HTML pages' PS-HTML patterns (doc 05), or
-  anything PowerTeacher Pro / teacher-facing (doc 06). Doc 05 is from 2015 / PS
-  9.x — still the best PS-HTML reference, but verify its specifics against doc
-  04 or the test instance. The PS Data Dictionary is in Drive, file ID in the
-  index.
+  documentation. The [index](./docs/reference/README.md) in this directory lists
+  all PDF documents, which live in the shared Drive folder. Consult before
+  changing `plugin.xml` (doc 03), `U_` tables or named queries (docs 04–05), the
+  HTML pages' PS-HTML patterns (doc 05), or anything PowerTeacher Pro /
+  teacher-facing (doc 06). Doc 05 is from 2015 / PS 9.x — still the best PS-HTML
+  reference, but verify its specifics against doc 04 or the test instance. The
+  PS Data Dictionary is in Drive; file ID is in the index.
 - **[`gradebook-audit/docs/`](./gradebook-audit/docs/)** — deployment guide.
 
 ### Related data models
