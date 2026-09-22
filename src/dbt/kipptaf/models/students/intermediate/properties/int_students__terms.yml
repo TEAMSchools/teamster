@@ -10,15 +10,23 @@ models:
       Miami from the cutover year on. The 2026 floor is on the Focus arm alone,
       so the three NJ districts stay on the PowerSchool arm in every year,
       cutover included. Only Miami is split, and for Miami the two arms are
-      disjoint by year. Nothing is reconciled between them. On the PowerSchool
-      arm the quarter-only columns (term, term_start_date, term_end_date,
-      semester, is_current_term) are populated only on quarter rows, and the
-      raw-terms columns (dcid, name, firstday, lastday, id, and the PowerSchool
-      bookkeeping fields) only on the rows that come from the raw terms table,
-      so a quarter usually appears as two rows -- one carrying its abbreviation
-      and scheduling-window dates, one carrying its term code and
-      grade-storage-window dates. A quarter that termbins carries but the raw
-      terms table never had appears as one row, the spine's. The two windows
+      disjoint by year. Nothing is reconciled between them. This model states
+      the cutover year as the literal 2026 rather than reading
+      int_students__sis_cutover, which its sibling conforms cross join. That
+      model derives the year from the first Focus academic year with recorded
+      attendance, so a Focus attendance backfill would lower it, and a lower
+      floor here would admit the fabricated year, semester, and quarter rows
+      Focus carries back to 1980 for schools with no enrollment behind them. The
+      attendance cutover and the terms cutover are the same year today and are
+      not the same fact, so this model takes no dependency on the cutover model.
+      On the PowerSchool arm the quarter-only columns (term, term_start_date,
+      term_end_date, semester, is_current_term) are populated only on quarter
+      rows, and the raw-terms columns (dcid, name, firstday, lastday, id, and
+      the PowerSchool bookkeeping fields) only on the rows that come from the
+      raw terms table, so a quarter usually appears as two rows -- one carrying
+      its abbreviation and scheduling-window dates, one carrying its term code
+      and grade-storage-window dates. A quarter that termbins carries but the
+      raw terms table never had appears as one row, the spine's. The two windows
       routinely disagree, and no consumer reads both halves on one row. The
       Focus arm has no such split -- one row per marking period, and a
       quarter-type period carries its abbreviation, its scheduling window, and
