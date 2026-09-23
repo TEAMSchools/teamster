@@ -31,8 +31,8 @@ Tracked in [#5266](https://github.com/TEAMSchools/teamster/issues/5266), on
 | 1   | Why a sandbox at all                      | Approved                |
 | 2   | Deployment shape and Cube Cloud isolation | Approved                |
 | 3   | Piece 1 — isolation proof                 | Approved                |
-| 4   | Piece 2 — coverage contract               | **Drafted — needs you** |
-| 5   | Piece 3 — generator scope and fabrication | Not drafted             |
+| 4   | Piece 2 — coverage contract               | Approved                |
+| 5   | Piece 3 — generator scope and fabrication | **Drafted — needs you** |
 | 6   | Piece 3 — adversarial canaries            | Not drafted             |
 | 7   | Piece 4 — drift gate                      | Not drafted, unblocked  |
 | 8   | Piece 5 — deploy mode and cadence         | Not drafted             |
@@ -592,15 +592,130 @@ Evidence: [A4](#a4--the-coverage-manifests-null-rule-cannot-work-as-written).
 
 ## Part 5 — Piece 3, generator scope and fabrication
 
-Not drafted. Decides what the generator reads, what it invents, and in what
-order. See [A5](#a5--staff_benefits_scope-is-answerable-from-evidence).
+### Two steps, two identities, and preferably two systems
 
-Carried here from Part 3, which raised them but does not settle them:
+Part 3 split the work at the isolation boundary. Naming where each half runs:
 
-- **Where the schema snapshot lives and what shape it takes**, alongside the
-  codeset allowlist and cardinality ceiling that Part 3 made a hard rule.
-- **What runs the refresh step.** A Dagster asset in `teamster-332318` is the
-  obvious home, since that is where production credentials already are.
+| Step              | Reads                                       | Writes                    | Identity    |
+| ----------------- | ------------------------------------------- | ------------------------- | ----------- |
+| Refresh           | Production `INFORMATION_SCHEMA`, codesets   | The snapshot, to the repo | Production  |
+| Generate and load | The pinned snapshot, `access.js`, cube YAML | Sandbox tables            | Sandbox key |
+
+The refresh belongs in Dagster, where production credentials already are. The
+generate-and-load step needs only committed files and the sandbox key, so it can
+run in CI. **Prefer that split.** Neither identity is dangerous alone, and
+keeping them in separate systems costs nothing here — putting both in one
+Dagster deployment is allowed but is the weaker arrangement, for the same reason
+Part 3 builds the isolation check as two checks.
+
+The snapshot lives beside the model it describes, under `src/cube/sandbox/`,
+with the coverage manifest. It is committed, diffed in review, and pinned by
+revision per Part 4.
+
+### The codeset allowlist is derived, then guarded three ways
+
+Part 3 made this a hard rule because the snapshot lands in permanent git
+history. Filling it in, and keeping it generated rather than hand-listed:
+
+1. **Candidates are derived from the model** — a column qualifies only if a
+   public view exposes it as a `type: string` dimension. A column no view
+   surfaces cannot teach the kit anything, so it needs no codeset.
+2. **PII columns are excluded outright**, by `config.meta.contains_pii` in the
+   dbt YAML and by membership of `staff_pii`. A distinct-values pull on a name
+   column writes real people into git permanently, and the tag is the repo's
+   existing answer to which columns those are.
+3. **A cardinality ceiling rejects the rest.** A column whose distinct count
+   exceeds the ceiling is not an enumeration, whatever its type, and the pull
+   **fails** rather than truncating. Truncating would silently ship a partial
+   domain, which is the failure the enum rule already exists to prevent.
+
+The tag is authoritative but incomplete, per the repo's own PII reference, so
+the ceiling is the second guard and the committed diff — reviewed by a person
+before it merges — is the third.
+
+Part 3's rule stands: never from free text, never from anything naming a person.
+
+### Derive the table set and order; do not write them down
+
+Piece 3 lists the tables and their dependency tiers explicitly. That list is now
+wrong: it names `fct_student_attendance_daily`, which no longer exists, and
+misses both `fct_student_attendance_enrollment_periods` and
+`dim_staff_reporting_periods`.
+
+It has gone stale twice, so stop maintaining it. The generator derives the table
+set from the union Part 4 defines and the order from the model's join edges,
+then asserts the counts it found. What stays is the invariant, which does not go
+stale: **facts never invent a key — every foreign key is sampled from rows
+already generated**, which makes referential integrity hold by construction.
+
+The spine cycle also stays, because it is structural rather than a fact about
+today's tables: `dim_student_enrollments` and `dim_student_section_enrollments`
+reference each other, so neither can go first. Write enrollments with a null
+homeroom key, generate section enrollments against them, then update the
+enrollments. Leaving a slice of homeroom keys null is one of the manifest's
+required cells, not sloppiness. This is the most likely place to produce a
+dataset that loads cleanly and fails at query time, because a broken cycle shows
+up as a join returning nothing rather than as an error.
+
+### Scale, re-measured 2026-09-23
+
+| Table                                       | Rows       | In the spec         |
+| ------------------------------------------- | ---------- | ------------------- |
+| `fct_student_attendance_enrollment_daily`   | 29,791,485 | 12,603,269, renamed |
+| `fct_assessment_scores_enrollment_scoped`   | 15,080,518 | 13,504,949          |
+| `fct_student_attendance_enrollment_periods` | 4,402,039  | Absent              |
+| `dim_dates`                                 | 2,921,940  | 2,921,940           |
+| `dim_students`                              | 31,297     | 31,194              |
+| `dim_staff_work_history`                    | 30,116     | —                   |
+| `dim_staff_reporting_chain`                 | 9,310      | —                   |
+
+Generate at that scale. Pagination and query-timeout behaviour is what the
+partner is meant to discover here rather than at repoint, and the biggest fact
+is now 2.4 times what the spec sized for. Bound `dim_dates` to the real
+academic-year range: production's spine runs to the year 9999, and an unbounded
+date dimension is what drove the partitioned pre-aggregation incident (#4460).
+
+**The latency fidelity break is smaller than the spec says.** It claimed 12 of
+20 tables were production views the sandbox would flatten, making the sandbox
+systematically faster. Today 9 of 21 are views, and the three that became
+physical include the largest fact. The gap remains and still runs in the
+direction the fidelity rule forbids, so keep telling the partner in writing that
+sandbox latency must not be used to size timeouts, page sizes or caching — but
+it is no longer the dominant effect.
+
+### What the fabricated data must make true
+
+Beyond the coverage manifest's cells, four things the generator must produce on
+purpose, because a plausible dataset would omit all four:
+
+- **Students whose cumulative position crosses mid-year**, so an unpinned date
+  range returns a materially higher count than a pinned date (Part 4).
+- **Day-weighted and student-weighted rates that disagree**, so the two
+  attendance views are visibly not interchangeable (Part 4).
+- **School weeks that split at month and term boundaries**, so an ISO week
+  grouping is visibly wrong (Part 4).
+- **Two distinct non-`none` `staff_benefits_scope` values**, plus `none`. One
+  would let a kit author write `scope === 'all_in_scope'` and pass every test,
+  freezing an equality check where `access.js` does a non-`none` check
+  ([A5](#a5--staff_benefits_scope-is-answerable-from-evidence)). Read the
+  siblings' live value set rather than carrying it from the spec.
+
+Nothing here is anonymized: no real row enters the generator at any point. Only
+schema and codesets are read from production.
+
+### What is open
+
+- **The cardinality ceiling's value.** It wants a number, and the right one is
+  visible from the candidate columns' actual distinct counts once the allowlist
+  is derived. Set it then rather than guessing now.
+- **Persona coverage needs regenerating, not editing.** Piece 3's personas are
+  specified against seven scope columns and there are now five
+  ([A9](#a9--the-specs-cube-model-facts-checked-against-main)).
+
+<!-- CB: comments on Part 5 go here, or inline above. -->
+
+Evidence: [A5](#a5--staff_benefits_scope-is-answerable-from-evidence),
+[A9](#a9--the-specs-cube-model-facts-checked-against-main).
 
 ## Part 6 — Piece 3, adversarial canaries
 
