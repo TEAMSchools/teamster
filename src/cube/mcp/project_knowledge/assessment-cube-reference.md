@@ -30,12 +30,18 @@ Apply to every assessment source unless a source section overrides them.
   string, not SQL NULL, and silently returns zero rows. This holds for any NULL
   filter.
 - **Headline metric: `pct_proficient`.** It is the one score measure comparable
-  across the incompatible scales of all sources (proficient scores / total).
-  `is_mastery` is the underlying per-score proficient flag. `scale_score`,
-  `percent_correct`, `avg_scale_score`, and `avg_percent_correct` are
-  scope-bound — meaningful only within one source/subject/grade; pooling them
-  across sources returns a valid-looking but meaningless number. Use
-  `pct_proficient` / `is_mastery` for any cross-source comparison.
+  across the incompatible scales of all sources (proficient scores / scores
+  carrying a proficiency verdict). `is_mastery` is the underlying per-score
+  proficient flag, and its denominator counts only the rows where that flag is
+  set — so it is smaller than `count_scores`, which also counts rows with no
+  verdict (Illuminate `not_taken`, the DIBELS K-2 phonics subtests, and a small
+  share of STAR rows). Do not reconstruct the rate as
+  `_sum_proficient / count_scores`; that is the pre-#5501 formula and reads 16
+  points low on STAR. `scale_score`, `percent_correct`, `avg_scale_score`, and
+  `avg_percent_correct` are scope-bound — meaningful only within one
+  source/subject/grade; pooling them across sources returns a valid-looking but
+  meaningless number. Use `pct_proficient` / `is_mastery` for any cross-source
+  comparison.
 - **A cross-instrument gap is a calibration artifact until proven otherwise.**
   Two instruments measuring the same students in the same year routinely
   disagree by double digits, because each carries its own proficiency definition

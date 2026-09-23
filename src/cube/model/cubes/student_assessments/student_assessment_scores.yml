@@ -184,14 +184,35 @@ cubes:
           - sql: "{student_assessments.assessment_key} IS NOT NULL"
           - sql: "{regions.region_key} IS NOT NULL"
 
+      - name: _count_scored
+        description: >-
+          Count of rows carrying a proficiency verdict (is_mastery set).
+          Denominator for pct_proficient — a row with no verdict cannot enter
+          the numerator, so counting it only drags the rate down. Distinct from
+          count_scores, which counts every score row including the not-taken and
+          unset-benchmark ones.
+        type: count
+        public: false
+        # Forces joins to student_assessments and regions so all proficiency
+        # measures share one CTE, enabling side-by-side queries without
+        # BigQuery's "query too complex" multi-CTE fan-out error.
+        filters:
+          - sql: "{CUBE}.is_mastery IS NOT NULL"
+          - sql: "{student_assessments.assessment_key} IS NOT NULL"
+          - sql: "{regions.region_key} IS NOT NULL"
+
       - name: pct_proficient
         description: >-
-          Proficiency/mastery rate — proficient scores / total scores. The
-          headline, source-agnostic metric (the only score measure comparable
-          across the incompatible scales of internal vs state assessments).
-          Built from additive primitives (_sum_proficient / count_scores) so
+          Proficiency/mastery rate — proficient scores / scores carrying a
+          proficiency verdict. The headline, source-agnostic metric (the only
+          score measure comparable across the incompatible scales of internal vs
+          state assessments). The denominator excludes rows with no verdict
+          (is_mastery unset: Illuminate not-taken rows, DIBELS K-2 phonics
+          subtests whose benchmark level is unset upstream, and a small share of
+          STAR overall rows), so it is smaller than count_scores. Built from
+          additive primitives (_sum_proficient / _count_scored) so
           pre-aggregations roll it up to any grain.
-        sql: "1.0 * {_sum_proficient} / NULLIF({count_scores}, 0)"
+        sql: "1.0 * {_sum_proficient} / NULLIF({_count_scored}, 0)"
         type: number
         format: percent
         public: true
@@ -264,13 +285,16 @@ cubes:
           - sql: "{regions.region_key} IS NOT NULL"
           - sql: "{student_assessments.module_type} IN ('QA', 'MQQ', 'CRQ')"
 
-      - name: _count_scores_formative
+      - name: _count_scored_formative
         description: >-
-          Score count scoped to formative module types (QA, MQQ, CRQ). Building
-          block for pct_proficient_formative.
+          Count of rows carrying a proficiency verdict (is_mastery set), scoped
+          to formative module types (QA, MQQ, CRQ). Building block for
+          pct_proficient_formative — a row with no verdict cannot enter the
+          numerator, so counting it only drags the rate down.
         type: count
         public: false
         filters:
+          - sql: "{CUBE}.is_mastery IS NOT NULL"
           - sql: "{student_assessments.assessment_key} IS NOT NULL"
           - sql: "{regions.region_key} IS NOT NULL"
           - sql: "{student_assessments.module_type} IN ('QA', 'MQQ', 'CRQ')"
@@ -280,10 +304,11 @@ cubes:
           Proficiency rate across all formative module types (Quick Assessments,
           Multiple-Choice Quick Questions, and Constructed Response Questions).
           CRQ is included and also available as the standalone
-          pct_proficient_crq measure. Built from additive primitives so
-          pre-aggregations roll it up.
+          pct_proficient_crq measure. The denominator excludes rows with no
+          proficiency verdict (is_mastery unset), matching pct_proficient. Built
+          from additive primitives so pre-aggregations roll it up.
         sql:
-          "1.0 * {_sum_proficient_formative} / NULLIF({_count_scores_formative},
+          "1.0 * {_sum_proficient_formative} / NULLIF({_count_scored_formative},
           0)"
         type: number
         format: percent
@@ -301,13 +326,16 @@ cubes:
           - sql: "{regions.region_key} IS NOT NULL"
           - sql: "{student_assessments.module_type} = 'CRQ'"
 
-      - name: _count_scores_crq
+      - name: _count_scored_crq
         description: >-
-          Score count scoped to Constructed Response Questions (CRQ). Building
-          block for pct_proficient_crq.
+          Count of rows carrying a proficiency verdict (is_mastery set), scoped
+          to Constructed Response Questions (CRQ). Building block for
+          pct_proficient_crq — a row with no verdict cannot enter the numerator,
+          so counting it only drags the rate down.
         type: count
         public: false
         filters:
+          - sql: "{CUBE}.is_mastery IS NOT NULL"
           - sql: "{student_assessments.assessment_key} IS NOT NULL"
           - sql: "{regions.region_key} IS NOT NULL"
           - sql: "{student_assessments.module_type} = 'CRQ'"
@@ -315,9 +343,11 @@ cubes:
       - name: pct_proficient_crq
         description: >-
           Proficiency rate for Constructed Response Questions (CRQ) across all
-          regions. CRQ is a subset of pct_proficient_formative. Built from
-          additive primitives so pre-aggregations roll it up.
-        sql: "1.0 * {_sum_proficient_crq} / NULLIF({_count_scores_crq}, 0)"
+          regions. CRQ is a subset of pct_proficient_formative. The denominator
+          excludes rows with no proficiency verdict (is_mastery unset), matching
+          pct_proficient. Built from additive primitives so pre-aggregations
+          roll it up.
+        sql: "1.0 * {_sum_proficient_crq} / NULLIF({_count_scored_crq}, 0)"
         type: number
         format: percent
         public: true
@@ -337,6 +367,10 @@ cubes:
         measures:
           - student_assessment_scores.count_scores
           - student_assessment_scores._sum_proficient
+          # pct_proficient's denominator. A rollup only serves a query whose
+          # every referenced member is in it, so without this every
+          # pct_proficient query falls back to the fact.
+          - student_assessment_scores._count_scored
         dimensions:
           - dates.academic_year
           - student_assessments.module_code
