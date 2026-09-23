@@ -182,12 +182,10 @@ Evidence: [A1](#a1--cube-cloud-account-isolation-is-unaddressed).
 
 ## Part 3 — Piece 1, isolation proof
 
-### Piece 1 is built; the test has not been run
+### Piece 1 is built, and the isolation test passes
 
-Built on 2026-09-23. [A3](#a3--the-sandbox-gcp-project-does-not-exist-yet) is
-closed. The configuration below is as reported by Cristina and has not been
-independently checked here, and **the two-leg test has not been run** — see
-"What is still open".
+Built and tested on 2026-09-23.
+[A3](#a3--the-sandbox-gcp-project-does-not-exist-yet) is closed.
 
 | Thing             | Value                                                              |
 | ----------------- | ------------------------------------------------------------------ |
@@ -208,7 +206,7 @@ project sits in the resource hierarchy.
 | --- | ------------------------------------------------------------- | ------------------------ | -------- |
 | 1   | The sandbox service account holds no IAM on `teamster-332318` | Reading the allow policy | Reported |
 | 2   | A later grant cannot reopen it                                | `deny-sandbox-bigquery`  | Built    |
-| 3   | The read actually fails                                       | A test that errors       | Not run  |
+| 3   | The read actually fails                                       | A test that errors       | Verified |
 
 Claim 1 is about what was written. Claim 3 is about what happens. The design
 wants all three because the first two can both hold while the third quietly does
@@ -234,9 +232,26 @@ So the isolation test is two assertions, not one:
 Without the positive leg the test goes green on the day the sandbox breaks. With
 it, a broken deployment fails the test loudly instead of passing it silently.
 
-Neither leg has been run yet. Until both have, claim 3 above is an expectation
-rather than a result — which is the distinction this whole part exists to draw,
-so it is worth keeping honest here.
+Both legs were run on 2026-09-23, authenticating with the sandbox service
+account's own key — the same path Cube Cloud uses through
+`CUBEJS_DB_BQ_CREDENTIALS`, so the test exercises the real connection rather
+than a stand-in:
+
+- Positive: `SELECT 1`, billed to `teamster-cube-sandbox`, succeeded.
+- Negative: `SELECT * FROM teamster-332318.kipptaf_marts.dim_locations LIMIT 1`
+  returned `403 Access Denied … User does not have permission to query table`.
+
+### What the passing test does and does not prove
+
+It proves claim 3. It does **not** independently prove claim 2, because an
+absent grant and an active deny policy produce the same 403 — the test cannot
+tell which one refused the read.
+
+That gap is small but real, and closing it does not need an invasive test.
+Assert that `deny-sandbox-bigquery` exists, as a second assertion alongside the
+403, which is what the review asked for in
+[A2](#a2--the-backstop-is-an-iam-deny-policy). The scheduled form of this check
+should carry both.
 
 ### The boundary has a consequence: no single identity can build the sandbox
 
@@ -313,12 +328,9 @@ reopen.
 
 ### What is still open
 
-- **The two-leg test has not been run.** Both legs, as one run, acting as
-  `cube-cloud-sandbox@teamster-cube-sandbox.iam.gserviceaccount.com`: a query
-  against `teamster-332318.kipptaf_marts.dim_locations` must fail on
-  permissions, and a query against the sandbox project must succeed. Until then
-  claim 3 is unproven, and the design's stated reason for wanting claim 3
-  separately from claims 1 and 2 applies to this spec too.
+- **The deny-policy-exists assertion is not written yet.** The test proves the
+  403; it does not yet prove which control caused it. One API call, and it goes
+  wherever the scheduled check lands.
 - **Where the snapshot file lives and what shape it takes.** Part 5, alongside
   the codeset allowlist.
 - **What runs the refresh step.** A Dagster asset in `teamster-332318` is the
