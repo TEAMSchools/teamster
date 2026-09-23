@@ -167,11 +167,8 @@ with
         left join role_picked as rp on e.staff_key = rp.staff_key
     ),
 
-    -- KTAF's own legal entity enrolls no students, so a role-mapped region or
-    -- school scope would resolve to an empty allow-list and deny KTAF staff
-    -- outright. KTAF serves the whole network, so any granted scope widens to
-    -- network; 'none' is a decision about the role, not the desk, and passes
-    -- through unchanged.
+    -- KTAF's granted scopes widen to network; see the student_location_scope
+    -- description for why.
     resolved as (
         select
             * except (role_student_location_scope),
