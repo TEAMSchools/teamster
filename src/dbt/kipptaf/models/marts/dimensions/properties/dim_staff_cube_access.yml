@@ -33,13 +33,14 @@ models:
             severity: error
       # An employing business unit that does not match dim_regions.legal_entity
       # must deny, not fall through to a grant: 'unknown' matches only the
-      # entity-agnostic 'any' role rows. Zero rows today across 1,573 staff, so
-      # a hit means ADP added or renamed an org unit and dim_regions has not
-      # caught up.
+      # entity-agnostic 'any' role rows, never the KTAF/Region-specific grants.
+      # Asserts every staff member's employing entity resolves. Zero rows today
+      # across 1,573 staff, so a hit means ADP added or renamed an org unit and
+      # dim_regions has not caught up.
       - dbt_utils.expression_is_true:
           arguments:
             expression: |
-              entity != 'unknown' or legal_entity_region_key is null
+              entity != 'unknown'
           config:
             severity: error
       # KTAF's own legal entity enrolls no students, so a role-mapped region or
