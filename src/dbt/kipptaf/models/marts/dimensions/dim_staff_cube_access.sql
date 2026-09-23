@@ -46,13 +46,9 @@ with
 
             r.region_key as legal_entity_region_key,
 
-            -- FERPA binds student-record access to the employing LEA, so the
-            -- scope key comes from business_unit_name, never from the desk:
-            -- all 149 KTAF staff sit in a per-city office room that enrolls no
-            -- students. A business unit dim_regions does not know resolves to
-            -- 'unknown', a deny sentinel matching only entity-agnostic 'any'
-            -- role rows. business_unit_code is matched rather than the legal
-            -- name because codes outlive rebrands.
+            -- Matched on business_unit_code rather than the legal name because
+            -- codes outlive rebrands. The unmatched branch must stay first: see
+            -- the legal_entity_region_key description for why 'unknown' denies.
             case
                 when r.region_key is null
                 then 'unknown'
