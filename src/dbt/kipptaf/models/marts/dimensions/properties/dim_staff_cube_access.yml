@@ -42,6 +42,17 @@ models:
               entity != 'unknown' or legal_entity_region_key is null
           config:
             severity: error
+      # KTAF's own legal entity enrolls no students, so a role-mapped region or
+      # school scope would resolve to an empty allow-list and deny outright —
+      # measured as 5 KTAF viewers at zero rows and 3 capped to one city. KTAF
+      # staff serve the whole network, so any granted student scope is network.
+      # 'none' is preserved: it is a decision about the role, not the desk.
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: |
+              entity != 'KTAF' or student_location_scope in ('network', 'none')
+          config:
+            severity: error
     columns:
       - name: staff_key
         data_type: string
@@ -132,7 +143,11 @@ models:
         description: >-
           Student data location breadth — network, region, school, or none. The
           only gating on student data: a viewer with a non-none scope sees every
-          student view and all fields, including PII.
+          student view and all fields, including PII. Region and school scopes
+          are bounded by legal_entity_region_key and location_abbreviation
+          respectively. A KTAF viewer granted any scope resolves to network,
+          because KTAF's own legal entity enrolls no students; a KTAF viewer
+          mapped to none stays none.
         data_tests:
           - not_null
           - accepted_values:

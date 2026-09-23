@@ -139,7 +139,7 @@ with
 
             coalesce(
                 ovr.student_location_scope, rp.student_location_scope, 'none'
-            ) as student_location_scope,
+            ) as role_student_location_scope,
 
             coalesce(
                 ovr.staff_location_scope, rp.staff_location_scope, 'none'
@@ -165,6 +165,25 @@ with
             as ovr
             on e.department_name = ovr.department
         left join role_picked as rp on e.staff_key = rp.staff_key
+    ),
+
+    -- KTAF's own legal entity enrolls no students, so a role-mapped region or
+    -- school scope would resolve to an empty allow-list and deny KTAF staff
+    -- outright. KTAF serves the whole network, so any granted scope widens to
+    -- network; 'none' is a decision about the role, not the desk, and passes
+    -- through unchanged.
+    resolved as (
+        select
+            * except (role_student_location_scope),
+
+            case
+                when entity != 'KTAF'
+                then role_student_location_scope
+                when role_student_location_scope = 'none'
+                then 'none'
+                else 'network'
+            end as student_location_scope,
+        from matched
     )
 
 select
@@ -186,4 +205,4 @@ select
     staff_compensation_scope,
     staff_observations_scope,
     staff_benefits_scope,
-from matched
+from resolved
