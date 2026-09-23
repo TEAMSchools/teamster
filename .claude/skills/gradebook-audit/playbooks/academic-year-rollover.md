@@ -6,14 +6,15 @@ year's gradebook expectations sheet", "the audit is still reporting against last
 year's expectations"
 
 **The academics team owns this, and the mechanics are not here.** They run it
-from a Claude Desktop chat skill that reads the planning sheet and emits the
-upload CSVs. That skill is the source of truth for the generation rules -- the
-week mapping, the per-column fill, the per-instance split -- and it lives with
-the plugin it feeds:
+from the `gradebook-expectations-upload` Claude skill, which reads the planning
+sheet and emits the upload CSVs. That skill is the source of truth for the
+generation rules -- the week mapping, the per-column fill, the per-instance
+split -- and it lives in this repo, alongside the plugin it feeds, at
+[`ps-plugins/skills/gradebook-expectations-upload/`](../../../../ps-plugins/skills/gradebook-expectations-upload/SKILL.md).
+Building and deploying the plugin itself is covered in
+[`maintain-the-plugin.md`](maintain-the-plugin.md); shipping a change to this
+chat skill is covered in [`ship-a-skill-update.md`](ship-a-skill-update.md).
 
-- Repo: [`TEAMSchools/ps-plugins`](https://github.com/TEAMSchools/ps-plugins) --
-  how the PowerSchool plugin was built and is maintained, plus the academics
-  chat skill
 - Input sheet tab: `ps_plugin_data`. Columns F and G (`week_start_monday` /
   `week_end_friday`) exist so academics can match a week number to the actual
   calendar dates while filling in counts -- a reading aid for a person, not part
@@ -24,8 +25,8 @@ the plugin it feeds:
 
 Deliberately a pointer and not a copy. This procedure used to carry the full
 mechanics; two copies of a fill rule drift, and when they disagree nobody can
-tell which is right. If you are asked for the mechanics, read the chat skill in
-that repo rather than reconstructing them here.
+tell which is right. If you are asked for the mechanics, read that skill's own
+source rather than reconstructing them here.
 
 ## The replacement rule, and the quiet failure
 
@@ -83,8 +84,7 @@ per `region x school_level` out of
 `int_powerschool__u_expectations_qtd_unpivot`, and the four-row
 `category_summary` floor intact.
 
-That query is also the fallback path. If academics is blocked or the plugin repo
-is unreachable, a data-team member can generate the CSVs from
-`int_students__calendar_week` and the planning sheet directly -- but read the
-chat skill's rules first, and hand the upload back, because the delete-and-load
-happens in the plugin.
+That query is also the fallback path. If academics is blocked, a data-team
+member can generate the CSVs from `int_students__calendar_week` and the planning
+sheet directly -- but read the chat skill's rules first, and hand the upload
+back, because the delete-and-load happens in the plugin.

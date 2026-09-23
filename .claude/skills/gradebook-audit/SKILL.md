@@ -1,16 +1,30 @@
 ---
 name: gradebook-audit
 description: >-
-  Use when any question or task touches the gradebook audit data model or its
-  lineage. Triggers: explaining the model, listing refs/lineage/sources for the
-  gradebook audit dashboard, adding/removing a flag, adding a region, debugging
-  a flag that isn't firing, rolling the assignment expectations over to a new
-  year (turning T&L's expectations sheet into U_EXPECTATIONS count rows to
-  upload to PowerSchool), or working on rpt_tableau__gradebook_audit or
-  rpt_gsheets__gradebook_audit_student_flags and their upstream models.
+  Use when any question or task touches the gradebook audit pipeline end to end:
+  the dbt models and dashboards, the PowerSchool Gradebook Audit plugin,
+  shipping a change to the gradebook-expectations-upload end-user skill, or the
+  published Google Sheet pairs it feeds. Triggers: explaining the model, listing
+  refs/lineage/sources for the gradebook audit dashboard, adding/removing a
+  flag, adding a region, debugging a flag that isn't firing, rolling the
+  assignment expectations over to a new year (turning T&L's expectations sheet
+  into U_EXPECTATIONS count rows to upload to PowerSchool), changing or
+  deploying the `ps-plugins/gradebook-audit/` plugin, bumping or distributing a
+  new version of the gradebook-expectations-upload skill, a change to a
+  gradebook audit IMPORTRANGE/Reports sheet pair, or working on
+  rpt_tableau__gradebook_audit or rpt_gsheets__gradebook_audit_student_flags and
+  their upstream models.
 ---
 
 # Gradebook Audit Data Model
+
+This skill owns the whole chain, not just the dbt layer: (1) the dbt models and
+the Tableau/Sheets dashboards, (2) the PowerSchool Gradebook Audit plugin that
+manages `U_EXPECTATIONS`, (3) propagating a change to the
+`gradebook-expectations-upload` end-user skill that Teaching & Learning runs,
+and (4) the published Google Sheet pairs the pipeline feeds. One skill knowing
+how all four fit together is the point — the alternative is three or four places
+each knowing a third and drifting apart.
 
 ## Always read first
 
@@ -48,3 +62,6 @@ below is the _how_; `plan-a-change.md` is the _what and whether_.
 | A flag is firing when it shouldn't, or not firing when it should                                    | [`playbooks/debug-a-flag.md`](playbooks/debug-a-flag.md)                     |
 | Explain why an undocumented filter, column, or threshold exists                                     | [`playbooks/explain-a-decision.md`](playbooks/explain-a-decision.md)         |
 | List refs/lineage/sources for the dashboard, explain the model, or look up a configurable threshold | [`references/data-model.md`](references/data-model.md)                       |
+| Change, build, or deploy the PowerSchool plugin itself                                              | [`playbooks/maintain-the-plugin.md`](playbooks/maintain-the-plugin.md)       |
+| Get a plugin or skill change to Teaching & Learning (organization skills or per-user zip)           | [`playbooks/ship-a-skill-update.md`](playbooks/ship-a-skill-update.md)       |
+| A published Sheet's source/report pair needs a matching update, or one looks out of sync            | [`references/published-sheets.md`](references/published-sheets.md)           |
