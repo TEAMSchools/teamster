@@ -13,6 +13,21 @@ partitioning work alone. Two reference facts about `response_type` and one about
 `administration_period` are now wrong and are corrected below. C2's figures
 drifted without changing its argument. C3 and C4 are unchanged.
 
+**Revision, 2026-09-23 — C1 is closed and `count_scores` no longer exists.**
+[#5508](https://github.com/TEAMSchools/teamster/pull/5508) fixed the
+`pct_proficient` denominator and, in doing so, found that the naming problem
+underneath it could not be left alone: the public `count_scores` counted every
+row, including the `not_taken` placeholders, so the corrected rate and the
+public count no longer reconciled. It ships three nested counts in place of one
+— `count_assigned` (every row), `count_taken` (`response_type != 'not_taken'`)
+and `count_scored` (`is_mastery IS NOT NULL`) — plus a `pct_taken` participation
+rate that is meaningful only for Illuminate. Consequences for this spec, applied
+below: C1 is closed rather than shrunk, and PR 1 inherits nothing from it; the
+`response_type` corrections this document called for are shipped; and every
+forward-looking mention of `count_scores` is repointed, while C1's own findings
+keep the name because they are a dated record of what was measured before the
+change. PR 1 reads the shipped descriptions before rewriting any of them.
+
 ## Decision
 
 The Claude + Cube working group runs on two markdown files uploaded by hand to a
@@ -170,7 +185,7 @@ what to do about it.
 missing. An analyst reading a tooltip who cannot tell what a value means →
 `description:`. An agent building a query that will be wrong → `ai_context:`.
 That resolves `count_students`: "exact distinct count" is the definition, while
-"heavy at fine grain, fall back to `count_scores`" only ever helps the agent.
+"heavy at fine grain, fall back to a plain count" only ever helps the agent.
 
 The procedure decides placement. Two other things hold it in place: the schema
 test asserts one key phrase per moved fact keyed by member name, so a later edit
@@ -186,7 +201,7 @@ is wrong, arm B does not beat arm A.
 | `notSet` vs `equals "null"`                                                                                                                               | `load` docstring                                                                                                |
 | `pct_proficient` is the cross-source headline; `is_mastery` underlies it; scale and percent measures are scope-bound                                      | present on the measures; add the `is_mastery` sentence                                                          |
 | a cross-instrument gap is a calibration artifact                                                                                                          | view description                                                                                                |
-| `count_scores` additive and reliable; `count_students` heavy at fine grain                                                                                | `count_students` description plus `load` docstring fallback sentence                                            |
+| the plain counts are additive and reliable; `count_students` heavy at fine grain                                                                          | `count_students` description plus `load` docstring fallback sentence                                            |
 | a dimension-only pull de-duplicates                                                                                                                       | `load` docstring                                                                                                |
 | bands are Illuminate-only; a band number is meaningful only inside its band set; mastery bar and band count differ by set                                 | `performance_band_label_number`, `proficiency_level` (scores cube); the band-set table is deleted               |
 | `academic_subject` is source-dependent; Illuminate has no `English Language Arts`, uses `Text Study` and course names; `discipline` is the course subject | `academic_subject` (assessments cube), `discipline` (courses cube)                                              |
@@ -248,7 +263,7 @@ member keeps its definition and sheds the advice.
 
 | Member                           | `description:` keeps                              | `ai_context:` takes                                                                                                                                                                                                                                                                                                                           |
 | -------------------------------- | ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `count_students`                 | distinct students per student-year                | heavy at fine grain; `count_scores` is the reliable fallback                                                                                                                                                                                                                                                                                  |
+| `count_students`                 | distinct students per student-year                | heavy at fine grain; a plain count is the reliable fallback                                                                                                                                                                                                                                                                                   |
 | `performance_band_label_number`  | numeric ordering within the band scale            | never compare a band number across band sets                                                                                                                                                                                                                                                                                                  |
 | `module_code`                    | the code identifying the assessment variant       | not a subject filter; not chronological by name; varies by subject, grade and region                                                                                                                                                                                                                                                          |
 | `is_internal_assessment`         | true for Illuminate, false for state and vendor   | do not select a source with this; use `assessment_type`                                                                                                                                                                                                                                                                                       |
@@ -334,9 +349,12 @@ correct shipped text:
 - `academic_subject`: currently lists "English Language Arts" as an example.
   Adds that values are source-dependent and Illuminate's ELA-equivalent is
   `Text Study`.
-- `count_scores` and `pct_proficient`: until C1 lands, say that Illuminate
-  carries unscored `not_taken` rows that sit in the denominator when
-  `response_type` is not filtered, and name the filter that excludes them.
+- The count measures and `pct_proficient`: **shipped in #5508, nothing left for
+  PR 1.** `count_scores` was split into `count_assigned` (every row),
+  `count_taken` (`response_type != 'not_taken'`) and `count_scored`
+  (`is_mastery IS NOT NULL`), a `pct_taken` participation rate was added, and
+  all four carry the descriptions this row called for. Read the shipped text
+  before touching them.
 
 A test in `tests/cube/test_cube_schema.py` loads the YAML and asserts one key
 phrase per moved fact, keyed by member name, so a later edit cannot drop one
@@ -351,7 +369,7 @@ merge.
   literal string and returns zero rows.
 - Grain and counts: a query with no measure de-duplicates identical rows, so add
   a count or the primary key to see row counts; `count_students` is a distinct
-  count and can time out at fine grain, where `count_scores` is the reliable
+  count and can time out at fine grain, where a plain count is the reliable
   fallback.
 
 `meta` gains one sentence: refresh before concluding a member is missing.
@@ -424,11 +442,13 @@ That is a live correctness bug on a published metric, not a documentation-drain
 task, so it moved to its own issue with the worked fix attached. It is Cube-only
 and needs no dbt change.
 
-**C1 shrinks to a description change and folds into PR 1.** What remains here is
-saying, on `count_scores` and `pct_proficient`, that a score row can carry no
-proficiency verdict, and on `response_type`, what `not_taken` means. Those
-sentences are needed whether or not #5501 has landed; they get reworded once it
-does.
+**C1 is closed by [#5508](https://github.com/TEAMSchools/teamster/pull/5508),
+with nothing left for PR 1.** What remained after the denominator split out was
+saying, on the count measures and `pct_proficient`, that a score row can carry
+no proficiency verdict, and on `response_type`, what `not_taken` means. #5508
+ships all of it, plus the three-way count split that the naming problem turned
+out to require. PR 1 should read the shipped descriptions rather than write
+these.
 
 The rows themselves stay. `not_taken` is a deliberate, documented signal that a
 student was assigned an assessment and never sat it, pinned by an
@@ -525,12 +545,12 @@ Side finding for the same PR's description text: 2,260 standard-level rows from
 ### C3. Assessment count
 
 Finding. "How many times was this standard assessed" is a distinct count of
-`source_assessment_id`, not `count_scores`. Re-measured 2026-09-22 and
-unchanged: per standard per year the distinct assessment count has quartiles 1,
-1, 2, 3 and a maximum of 52, across 6,729 standard-years, and 43.4% of
-standard-years rest on one assessment. Distinct `assessment_administration_key`
-differs in 84.6% of standard-years because that key includes region and
-administered date, so it counts sittings.
+`source_assessment_id`, not a row count. Re-measured 2026-09-22 and unchanged:
+per standard per year the distinct assessment count has quartiles 1, 1, 2, 3 and
+a maximum of 52, across 6,729 standard-years, and 43.4% of standard-years rest
+on one assessment. Distinct `assessment_administration_key` differs in 84.6% of
+standard-years because that key includes region and administered date, so it
+counts sittings.
 
 Chosen. Add `count_assessments` to the scores cube: `count_distinct` on
 `{student_assessment_administrations.source_assessment_id}`, public, exposed on
@@ -538,7 +558,7 @@ the view. Description states it counts distinct assessments, not sittings or
 scored responses, and that a standard resting on one assessment is a thin base.
 Cube only; no dbt change.
 
-Alternative. Text only on `count_scores` and `source_assessment_id`.
+Alternative. Text only on `count_taken` and `source_assessment_id`.
 
 ### C4. Source family
 
