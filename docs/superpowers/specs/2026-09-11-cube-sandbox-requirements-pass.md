@@ -29,8 +29,8 @@ Tracked in [#5266](https://github.com/TEAMSchools/teamster/issues/5266), on
 | #   | Part                                      | Status                  |
 | --- | ----------------------------------------- | ----------------------- |
 | 1   | Why a sandbox at all                      | Approved                |
-| 2   | Deployment shape and Cube Cloud isolation | **Drafted — needs you** |
-| 3   | Piece 1 — isolation proof                 | Not drafted             |
+| 2   | Deployment shape and Cube Cloud isolation | Approved                |
+| 3   | Piece 1 — isolation proof                 | **Drafted — needs you** |
 | 4   | Piece 2 — coverage contract               | Not drafted             |
 | 5   | Piece 3 — generator scope and fabrication | Not drafted             |
 | 6   | Piece 3 — adversarial canaries            | Not drafted             |
@@ -182,8 +182,88 @@ Evidence: [A1](#a1--cube-cloud-account-isolation-is-unaddressed).
 
 ## Part 3 — Piece 1, isolation proof
 
-Not drafted. Decides how the isolation boundary is enforced and proven. See
-[A2](#a2--the-backstop-is-an-iam-deny-policy) and
+### What changed: the project exists
+
+As of 2026-09-23 the sandbox GCP project has been created and Cristina holds
+credentials for it. [A3](#a3--the-sandbox-gcp-project-does-not-exist-yet) is
+closed, and Piece 1 stops being doc-derived — every claim below can be tested
+before a single row is fabricated, which is exactly what Piece 1 is for.
+
+### Three claims, and they are not the same claim
+
+| #   | Claim                                                         | Proven by                    |
+| --- | ------------------------------------------------------------- | ---------------------------- |
+| 1   | The sandbox service account holds no IAM on `teamster-332318` | Reading the allow policy     |
+| 2   | A later grant cannot reopen it                                | An IAM deny policy exists    |
+| 3   | The read actually fails                                       | A scheduled test that errors |
+
+Claim 1 is about what was written. Claim 3 is about what happens. The design
+wants all three because the first two can both hold while the third quietly does
+not, and because claim 3 alone can pass for a reason that has nothing to do with
+isolation — see the next section.
+
+### The test needs a positive control, or it proves nothing
+
+Part 2 established that a Cube deployment missing `CUBEJS_DB_BQ_CREDENTIALS`
+falls back to Cube Cloud's ambient host identity, which denies everyone. A
+service account with no working credentials at all fails on production reads
+too. **A deployment that is simply broken is indistinguishable from a deployment
+that is perfectly isolated, if the only thing you test is that production reads
+fail.**
+
+So the isolation test is two assertions, not one:
+
+- **Negative:** the sandbox service account reading
+  `teamster-332318.kipptaf_marts` fails with a permission error.
+- **Positive:** the same service account, in the same run, reading the sandbox
+  project's own dataset succeeds.
+
+Without the positive leg the test goes green on the day the sandbox breaks. With
+it, a broken deployment fails the test loudly instead of passing it silently.
+
+### Steps to run now
+
+Yours — they need the sandbox credentials, so they belong in your terminal, not
+here. I could not run `gcloud` in this session, so confirm flag names with
+`--help` where noted.
+
+1. **Get the project number and where the project landed.**
+   `gcloud projects describe <sandbox-project-id>`. The number feeds the deny
+   policy's principal identifier; the parent closes the last of A3.
+2. **Write down the service account email** that the Cube deployment will use.
+   Everything below references it, and it is not a secret.
+3. **Run the negative leg** — query `teamster-332318.kipptaf_marts` as that
+   service account, and confirm it errors on permissions rather than returning
+   zero rows. Impersonation is cleaner than a downloaded key here; check whether
+   your `bq`/`gcloud` build takes an impersonate flag, and note that
+   impersonating needs `roles/iam.serviceAccountTokenCreator` on that account.
+4. **Run the positive leg** — the same account reading anything in the sandbox
+   project, which should succeed. If both legs fail, the credentials are wrong
+   and nothing has been proven yet.
+5. **Check whether you can create a deny policy at all.**
+   `gcloud iam deny-policies create --help` first. This is the one unchecked
+   item in [A2](#a2--the-backstop-is-an-iam-deny-policy); if you lack the role,
+   it goes to the same engineer who created the project.
+
+### What to do with the credentials
+
+- **Never in the checkout.** The repo's hooks block credential JSON paths for
+  every tool, and git history is permanent.
+- **1Password is the store.** The Cube deployment reads the key as
+  `CUBEJS_DB_BQ_CREDENTIALS`, set on the sandbox deployment alongside
+  `CUBEJS_DB_BQ_PROJECT_ID`, per Part 2.
+- **Prefer impersonation for local testing** over a second copy of a downloaded
+  key. The Cube deployment needs a key because it runs outside GCP; your laptop
+  does not.
+
+### What is still unchecked
+
+- Which role creates an IAM deny policy, and whether Cristina holds it. Step 5
+  answers it.
+
+<!-- CB: comments on Part 3 go here, or inline above. -->
+
+Evidence: [A2](#a2--the-backstop-is-an-iam-deny-policy),
 [A3](#a3--the-sandbox-gcp-project-does-not-exist-yet).
 
 ## Part 4 — Piece 2, coverage contract
@@ -260,15 +340,18 @@ now the only open item here: which role is needed to create a deny policy.
 
 ### A3 — The sandbox GCP project does not exist yet
 
-Belongs to Part 3, and to how the plan is sequenced.
+**Closed 2026-09-23: the project now exists and Cristina holds credentials.**
+Kept because the sequencing conclusion below still shapes the plan.
 
-Cristina lacks `roles/resourcemanager.projectCreator`; the request is with an
-engineer. This blocks the load step and the deployment. It does not block the
-generator or the coverage contract, both of which run on local files and
-read-only introspection.
+The original blocker: Cristina lacked `roles/resourcemanager.projectCreator`, so
+the project was with an engineer. That gated the load step and the deployment,
+but not the generator or the coverage contract, both of which run on local files
+and read-only introspection.
 
-So the plan should separate "builds and verifies with no cloud resources" from
-"needs the sandbox project to exist", and work can start without waiting.
+The plan should still separate "builds and verifies with no cloud resources"
+from "needs the sandbox project" — not to work around a wait that is now over,
+but because the first group stays runnable in CI and on any laptop without
+handing out sandbox credentials.
 
 ### A4 — The coverage manifest's null rule cannot work as written
 
