@@ -28,8 +28,8 @@ Tracked in [#5266](https://github.com/TEAMSchools/teamster/issues/5266), on
 
 | #   | Part                                      | Status                  |
 | --- | ----------------------------------------- | ----------------------- |
-| 1   | Why a sandbox at all                      | **Drafted — needs you** |
-| 2   | Deployment shape and Cube Cloud isolation | Not drafted             |
+| 1   | Why a sandbox at all                      | Approved                |
+| 2   | Deployment shape and Cube Cloud isolation | **Drafted — needs you** |
 | 3   | Piece 1 — isolation proof                 | Not drafted             |
 | 4   | Piece 2 — coverage contract               | Not drafted             |
 | 5   | Piece 3 — generator scope and fabrication | Not drafted             |
@@ -112,9 +112,72 @@ deployment pointed at a separate BigQuery project. If a stakeholder says
 
 ## Part 2 — Deployment shape and Cube Cloud account isolation
 
-Not drafted. Decides how the sandbox deployment relates to the production one,
-and what stops MasterBorn reaching production through the shared Cube Cloud
-account. See [A1](#a1--cube-cloud-account-isolation-is-unaddressed).
+### What is already settled and not reopened here
+
+The sandbox is a hosted Cube Cloud deployment reading a separate BigQuery
+project. Cube confirmed a separate deployment with a separate data source, and a
+local Cube Core container was considered and declined on 2026-09-11.
+
+### The gap: the design has two boundaries and built one
+
+| Boundary      | Separates                                       | Designed in |
+| ------------- | ----------------------------------------------- | ----------- |
+| Data plane    | Sandbox BigQuery project from `teamster-332318` | Piece 1     |
+| Control plane | Sandbox Cube Cloud deployment from production's | Nowhere     |
+
+Both deployments live in one Cube Cloud account. A GCP deny policy says nothing
+about that. If MasterBorn holds a console seat, what they can reach in the
+production deployment is decided by their Cube Cloud role — and nothing in the
+spec says what that role is.
+
+### Proposal: MasterBorn gets no Cube Cloud seat
+
+Give them the sandbox's own API secret and SQL API password, and nothing else.
+
+This is the move the design has already made twice. A shared dataset with a
+templated name was rejected for turning a structural boundary into a string. The
+local container was rejected for needing a new seam in `cube.js`. Seats governed
+by a role are a configuration guarantee; no seats is a structural one. It is
+also the only one of the three options that needs no procurement and no
+verification.
+
+The alternatives, for the record:
+
+- **Deployment-scoped custom roles.** The review cites these as Enterprise-only.
+  I could not confirm that tier in the published documentation, so this option
+  carries an unverified cost on top of being the weaker kind of guarantee.
+- **A separate Cube Cloud account.** Structural, and the right fallback if
+  MasterBorn turns out to need a console. Costs a second subscription.
+
+**What would change the answer:** whether the kit can be built against `/meta`,
+the committed catalog and an API client alone. If MasterBorn needs Playground,
+the fallback is the separate account — not seats in ours.
+
+### What the sandbox deployment must be configured with
+
+- **`CUBEJS_DB_BQ_PROJECT_ID` and `CUBEJS_DB_BQ_CREDENTIALS`, both set.**
+  `cube.js` builds its own BigQuery client. Without explicit credentials it
+  falls back to Cube Cloud's ambient host identity
+  ([#4466](https://github.com/TEAMSchools/teamster/issues/4466)), which denies
+  everyone. That failure matters more here than it normally would: a deployment
+  that denies everyone looks exactly like perfect isolation, so Piece 1's test
+  would pass for the wrong reason. Part 3 has to tell the two apart.
+- **`CUBE_IMPERSONATORS`.** Console users resolve through `cubeCloud.username`
+  against the fabricated `dim_staff_cube_access`, so a real KTAF person matches
+  no row and is denied. Anyone testing personas in the sandbox console needs an
+  entry. Under the proposal above this list is KTAF-only.
+
+### What this part cannot settle
+
+- **Whether MasterBorn needs a console at all.** A question for them, and the
+  only input that changes the proposal.
+- **Whether deployment-scoped custom roles are Enterprise-only.** Cited by the
+  review from Cube's documentation; I could not confirm it. Only matters if the
+  proposal is rejected.
+
+<!-- CB: comments on Part 2 go here, or inline above. -->
+
+Evidence: [A1](#a1--cube-cloud-account-isolation-is-unaddressed).
 
 ## Part 3 — Piece 1, isolation proof
 
