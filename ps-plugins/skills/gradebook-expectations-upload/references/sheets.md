@@ -74,8 +74,8 @@ does my math match what's already live, and did my rows land.
 Its `_dbt_source_project` column — `kippcamden`, `kippnewark`, `kipppaterson` —
 is the region. **`U_EXPECTATIONS` has no `academic_year` or `region` column, on
 purpose.** Academic year is controlled by backend code, not user input; region
-is implied by _which PowerSchool instance the row lives in_ — the model joins
-other queries to put it back. That is the same reason the upload is one file per
+isn't stored in the table at all — it's known only from which PowerSchool
+instance the row came from. That is the same reason the upload is one file per
 instance, and why a CSV header must never try to add either field back in.
 
 **`Template QW-Date Crosswalk`** — close to the shape PowerSchool needs, but its
