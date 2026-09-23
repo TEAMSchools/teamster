@@ -326,18 +326,23 @@ reopen.
   key. The Cube deployment needs a key because it runs outside GCP; your laptop
   does not.
 
-### What is still open
+### What the scheduled check must assert
 
-- **The deny-policy-exists assertion is not written yet.** The test proves the
-  403; it does not yet prove which control caused it. One API call, and it goes
-  wherever the scheduled check lands.
-- **Where the snapshot file lives and what shape it takes.** Part 5, alongside
-  the codeset allowlist.
-- **What runs the refresh step.** A Dagster asset in `teamster-332318` is the
-  obvious home, since that is where production credentials already are. Part 5.
+Two assertions, not one. The second is the gap the passing test leaves:
+
+1. The 403 on production, with the sandbox read succeeding in the same run.
+2. That `deny-sandbox-bigquery` still exists on `teamster-332318`.
+
+Reading a deny policy needs `iam.googleapis.com/denypolicies.list` on the
+production project, which the codespace's own credentials do not hold. So
+whatever runs this check needs an identity that does — a constraint on where the
+check lives, and one for the plan rather than for this part.
+
+### Nothing here is open
 
 A2's last unchecked item — which role creates an IAM deny policy — is answered
-by the policy existing.
+by the policy existing. The snapshot's file location, its shape, and what runs
+the refresh step are Part 5's, and are recorded there.
 
 <!-- CB: comments on Part 3 go here, or inline above. -->
 
@@ -353,6 +358,13 @@ Not drafted. Decides what the generated coverage manifest asserts. See
 
 Not drafted. Decides what the generator reads, what it invents, and in what
 order. See [A5](#a5--staff_benefits_scope-is-answerable-from-evidence).
+
+Carried here from Part 3, which raised them but does not settle them:
+
+- **Where the schema snapshot lives and what shape it takes**, alongside the
+  codeset allowlist and cardinality ceiling that Part 3 made a hard rule.
+- **What runs the refresh step.** A Dagster asset in `teamster-332318` is the
+  obvious home, since that is where production credentials already are.
 
 ## Part 6 — Piece 3, adversarial canaries
 
