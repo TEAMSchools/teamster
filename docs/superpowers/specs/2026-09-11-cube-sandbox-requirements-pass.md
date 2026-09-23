@@ -34,7 +34,7 @@ Tracked in [#5266](https://github.com/TEAMSchools/teamster/issues/5266), on
 | 4   | Piece 2 — coverage contract               | Not drafted             |
 | 5   | Piece 3 — generator scope and fabrication | Not drafted             |
 | 6   | Piece 3 — adversarial canaries            | Not drafted             |
-| 7   | Piece 4 — drift gate                      | Not drafted, 1 blocker  |
+| 7   | Piece 4 — drift gate                      | Not drafted, unblocked  |
 | 8   | Piece 5 — deploy mode and cadence         | Not drafted             |
 | 9   | Sign-offs — reserved names, domain        | Not drafted             |
 | 10  | Out of scope — kit enforcement            | Not drafted             |
@@ -182,20 +182,31 @@ Evidence: [A1](#a1--cube-cloud-account-isolation-is-unaddressed).
 
 ## Part 3 — Piece 1, isolation proof
 
-### What changed: the project exists
+### Piece 1 is built and verified
 
-As of 2026-09-23 the sandbox GCP project has been created and Cristina holds
-credentials for it. [A3](#a3--the-sandbox-gcp-project-does-not-exist-yet) is
-closed, and Piece 1 stops being doc-derived — every claim below can be tested
-before a single row is fabricated, which is exactly what Piece 1 is for.
+Done on 2026-09-23, so this part records what exists rather than what to do.
+[A3](#a3--the-sandbox-gcp-project-does-not-exist-yet) is closed.
+
+| Thing             | Value                                                              |
+| ----------------- | ------------------------------------------------------------------ |
+| Sandbox project   | `teamster-cube-sandbox`, `kipptaf_marts` in US                     |
+| Service account   | `cube-cloud-sandbox@teamster-cube-sandbox.iam.gserviceaccount.com` |
+| Its roles         | `bigquery.jobUser`, `bigquery.dataViewer`, sandbox project only    |
+| Cross-project IAM | None, in either direction                                          |
+| Deny policy       | `deny-sandbox-bigquery` on `teamster-332318`                       |
+
+The deny policy blocks every service account in the sandbox project from
+BigQuery reads, queries and writes in production. A deny overrides any grant, so
+a stray grant later cannot reopen access, and it does not depend on where the
+project sits in the resource hierarchy.
 
 ### Three claims, and they are not the same claim
 
-| #   | Claim                                                         | Proven by                    |
-| --- | ------------------------------------------------------------- | ---------------------------- |
-| 1   | The sandbox service account holds no IAM on `teamster-332318` | Reading the allow policy     |
-| 2   | A later grant cannot reopen it                                | An IAM deny policy exists    |
-| 3   | The read actually fails                                       | A scheduled test that errors |
+| #   | Claim                                                         | Proven by                | State    |
+| --- | ------------------------------------------------------------- | ------------------------ | -------- |
+| 1   | The sandbox service account holds no IAM on `teamster-332318` | Reading the allow policy | Verified |
+| 2   | A later grant cannot reopen it                                | `deny-sandbox-bigquery`  | Built    |
+| 3   | The read actually fails                                       | A test that errors       | Verified |
 
 Claim 1 is about what was written. Claim 3 is about what happens. The design
 wants all three because the first two can both hold while the third quietly does
@@ -221,29 +232,72 @@ So the isolation test is two assertions, not one:
 Without the positive leg the test goes green on the day the sandbox breaks. With
 it, a broken deployment fails the test loudly instead of passing it silently.
 
-### Steps to run now
+Both legs were run on 2026-09-23 by acting as the service account: `SELECT 1` in
+the sandbox succeeds, and a query on
+`teamster-332318.kipptaf_marts.dim_locations` returns Access Denied. The test is
+the scheduled form of that pair.
 
-Yours — they need the sandbox credentials, so they belong in your terminal, not
-here. I could not run `gcloud` in this session, so confirm flag names with
-`--help` where noted.
+### The boundary has a consequence: no single identity can build the sandbox
 
-1. **Get the project number and where the project landed.**
-   `gcloud projects describe <sandbox-project-id>`. The number feeds the deny
-   policy's principal identifier; the parent closes the last of A3.
-2. **Write down the service account email** that the Cube deployment will use.
-   Everything below references it, and it is not a secret.
-3. **Run the negative leg** — query `teamster-332318.kipptaf_marts` as that
-   service account, and confirm it errors on permissions rather than returning
-   zero rows. Impersonation is cleaner than a downloaded key here; check whether
-   your `bq`/`gcloud` build takes an impersonate flag, and note that
-   impersonating needs `roles/iam.serviceAccountTokenCreator` on that account.
-4. **Run the positive leg** — the same account reading anything in the sandbox
-   project, which should succeed. If both legs fail, the credentials are wrong
-   and nothing has been proven yet.
-5. **Check whether you can create a deny policy at all.**
-   `gcloud iam deny-policies create --help` first. This is the one unchecked
-   item in [A2](#a2--the-backstop-is-an-iam-deny-policy); if you lack the role,
-   it goes to the same engineer who created the project.
+The generator was specified to read production's `INFORMATION_SCHEMA` and write
+sandbox rows. **No identity can now do both**, and the two directions are closed
+by different mechanisms, which is what decides whether an exception is even
+possible:
+
+| Direction            | Blocked by              | Can it be excepted?                   |
+| -------------------- | ----------------------- | ------------------------------------- |
+| Sandbox → production | `deny-sandbox-bigquery` | No. Only by deleting the deny policy. |
+| Production → sandbox | Absence of a binding    | Yes, by granting one.                 |
+
+So "make an exception" means exactly one thing: give a production service
+account write access to the sandbox project.
+
+**Reject that.** It creates an identity that can read real student data and
+write to the surface MasterBorn queries. Of all the bindings the design could
+add, that is the one whose failure mode is real rows landing in the sandbox —
+the single thing the sandbox exists to make impossible.
+
+### Decision: the generator reads a committed schema snapshot
+
+Split the work at the boundary instead of punching through it:
+
+1. **Refresh the snapshot.** Runs with production credentials, reads
+   `INFORMATION_SCHEMA` for the Cube-referenced columns, writes a file to the
+   repo. No sandbox access.
+2. **Generate and load.** Runs with sandbox credentials, reads the committed
+   snapshot, writes sandbox tables. No production access.
+
+Each step holds one identity and needs no cross-project grant. That is not a
+workaround — it is better than what it replaces, in three ways:
+
+- **Reproducibility comes back.** The generator's inputs become seed, commit SHA
+  and a committed file. The review's reason for cutting the GCS run manifest —
+  "a seeded generator plus its commit SHA already makes every run reproducible"
+  — was broken by live schema being an input, and this repairs it. See
+  [A6](#a6--the-piece-4-cut-and-how-big-the-addition-is).
+- **Drift becomes a reviewable diff.** A production column dropped or retyped
+  shows up as a snapshot diff in a pull request, read by a person, before it
+  reaches the sandbox. That is strictly more informative than a fingerprint
+  mismatch and it arrives earlier.
+- **It gives the deliberate-deploy story its release note.** The spec already
+  wanted each sandbox bump to ship a diff of added, removed and retyped members.
+  The snapshot diff is that document, for free.
+
+### One hard rule on the snapshot, because it goes into git
+
+The snapshot carries schema **and codesets** — the distinct values of
+categorical fields, per Part 1. Git history is permanent, so the codeset half
+needs a rule rather than a judgment call each time:
+
+- Codesets are pulled only for columns on an explicit allowlist, each a genuine
+  low-cardinality enumeration such as `race` or `enrollment_status`.
+- A cardinality ceiling, so a column that is not really an enumeration fails the
+  pull instead of dumping its values.
+- Never from free-text columns or anything naming a person. A distinct-values
+  pull on the wrong column writes student data to git permanently.
+
+Part 5 settles the allowlist and the ceiling. The rule itself is not Part 5's to
+reopen.
 
 ### What to do with the credentials
 
@@ -256,10 +310,15 @@ here. I could not run `gcloud` in this session, so confirm flag names with
   key. The Cube deployment needs a key because it runs outside GCP; your laptop
   does not.
 
-### What is still unchecked
+### What is still open
 
-- Which role creates an IAM deny policy, and whether Cristina holds it. Step 5
-  answers it.
+- **Where the snapshot file lives and what shape it takes.** Part 5, alongside
+  the codeset allowlist.
+- **What runs the refresh step.** A Dagster asset in `teamster-332318` is the
+  obvious home, since that is where production credentials already are. Part 5.
+
+A2's last unchecked item — which role creates an IAM deny policy — is answered
+by the policy existing.
 
 <!-- CB: comments on Part 3 go here, or inline above. -->
 
@@ -283,10 +342,12 @@ review keeps these as-is and calls them the most valuable piece.
 
 ## Part 7 — Piece 4, drift gate
 
-Not drafted, and **one decision blocks it**. The review cuts most of Piece 4;
-the question is whether that cut lands as written or with a small addition. See
-[A6](#a6--the-piece-4-cut-and-how-big-the-addition-is). Nothing needs answering
-until we reach this part.
+Not drafted, and **no longer blocked**. The review cuts most of Piece 4, and
+Part 3's committed-snapshot decision settles the question of whether that cut
+needed an addition: it does not. What remains for this part is narrower — what
+the `/meta`-versus-committed-catalog check does between a landed snapshot
+refresh and the sandbox rebuild that follows it. See
+[A6](#a6--the-piece-4-cut-and-how-big-the-addition-is).
 
 ## Part 8 — Piece 5, deploy mode and cadence
 
@@ -335,8 +396,11 @@ project through a `principalSet` identifier, covers the BigQuery read and
 job-creation permissions, and overrides any allow. A later well-meaning grant
 cannot reopen the read.
 
-So the resource-hierarchy question stops gating Piece 1. Still unchecked, and
-now the only open item here: which role is needed to create a deny policy.
+So the resource-hierarchy question stops gating Piece 1.
+
+**Implemented 2026-09-23** as `deny-sandbox-bigquery` on `teamster-332318`,
+which also answers the one item this entry left unchecked: the role needed to
+create a deny policy was one Cristina held.
 
 ### A3 — The sandbox GCP project does not exist yet
 
@@ -435,9 +499,24 @@ production schema becomes a generator input, so seed plus SHA no longer
 determines the output. Logging the schema fingerprint each run reads restores
 the claim. Roughly 2 lines, and independent of the item above.
 
-Proposed for Part 7: take the cut as written, plus both additions, with the
-first written as "the generator fails loudly on a short schema read". Net
-addition over the review's cut is about 7 lines.
+**Superseded in part on 2026-09-23 by Part 3.** The isolation boundary means no
+identity can read production and write the sandbox in one run, so the generator
+reads a committed schema snapshot rather than live `INFORMATION_SCHEMA`. That
+changes both items above:
+
+- The short-read assert moves to the snapshot **refresh** step, which is the
+  only step that talks to production. Same check, earlier, and a person reviews
+  its diff before it reaches the sandbox.
+- Fingerprint logging is no longer needed to restore reproducibility. A
+  committed snapshot plus seed plus commit SHA determines the run outright,
+  which is what the review assumed all along.
+
+So the review's cut stands and needs no addition. Part 7's remaining question is
+narrower: what the `/meta`-versus-committed-catalog check does when the snapshot
+refresh has landed a change the sandbox has not been rebuilt for yet.
+
+Proposed for Part 7 before this: take the cut plus both additions, at about 7
+lines. Kept for the record; the snapshot decision is the better answer.
 
 ### A7 — The spec's second reason for CLI mode is wrong
 
