@@ -203,7 +203,15 @@ paths:
 ```
 
 Change the build step's `run:` to `python3 ps-plugins/scripts/build_plugin.py`,
-and the upload step's `path:` to `ps-plugins/dist/*.zip`.
+and the upload step's `path:` to `ps-plugins/dist/gradebook_audit_*.zip`.
+
+Glob the plugin specifically, not `*.zip`. Task 7 writes the end-user skill's
+zip into the same directory, and a bare `*.zip` sweeps it into the `plugin-zips`
+artifact as well as its own. Nothing fails, which is why it is easy to miss —
+but a PowerSchool administrator downloading `plugin-zips` to install the plugin
+then finds two zips and has to know which one is not a plugin. Narrowing the
+glob fixes it order-independently; reordering the steps does not, and
+order-dependence is how it returns.
 
 `build_plugin.py` resolves `DIST` as `REPO / "dist"` where `REPO` is the
 script's grandparent — now `ps-plugins/`, not the repository root. The artifact
