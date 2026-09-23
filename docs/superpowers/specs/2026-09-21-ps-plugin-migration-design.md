@@ -225,14 +225,16 @@ becomes a pull-request gate.
 ### Column set
 
 `gradebook_audit.named_queries.xml` declares nine columns: `id`, `school_level`,
-`quarter`, `week_number`, `cnt_w`, `cnt_h`, `cnt_f`, `cnt_s`, `notes`. Two dbt
-models read the same table:
-`src/dbt/powerschool/models/sis/staging/odbc/stg_powerschool__u_expectations.sql`
-and
-`src/dbt/kipptaf/models/powerschool/staging/stg_powerschool__u_expectations.sql`.
+`quarter`, `week_number`, `cnt_w`, `cnt_h`, `cnt_f`, `cnt_s`, `notes`. Three dbt
+models carry that table, but only one is both live and machine-readable:
+`src/dbt/powerschool/models/sis/staging/dlt/stg_powerschool__u_expectations.sql`.
+Its `odbc/` sibling is archived and disabled by default (#4442, see
+`src/dbt/powerschool/CLAUDE.md`), and the kipptaf-level
+`stg_powerschool__u_expectations` is a `dbt_utils.union_relations` wrapper with
+no enumerated column list for a parser to read.
 
-A check parses the named-query columns and compares them to the columns those
-models select. A column added on one side and not the other fails the build.
+A check parses the named-query columns and compares them to the columns the dlt
+model selects. A column added on one side and not the other fails the build.
 
 ### CSV header
 

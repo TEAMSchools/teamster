@@ -45,6 +45,12 @@ and a set of instructions about that screen.
    distribution path applies. Both exist because the primary one has
    preconditions that can be off on any given day.
 
+   Workflow artifacts expire — 90 days by default — so if no `ps-plugins/**`
+   change has landed on `main` for a few months, the run you are looking for has
+   no artifact attached any more. Re-run the workflow from the Actions UI
+   (`workflow_dispatch`) to rebuild it; nothing is lost, the zip is just no
+   longer sitting there.
+
 ## Distribution path A — organization skills (primary)
 
 An administrator uploads the zip at claude.ai, under **Organization settings →

@@ -48,7 +48,11 @@ closing the loop with the dbt model and the end-user skill.
    XML resolves to a real packaged file, and now also checks two contracts that
    used to drift silently:
    - the columns the named queries declare on `U_EXPECTATIONS` against the
-     columns `stg_powerschool__u_expectations` actually projects;
+     columns the **dlt** `stg_powerschool__u_expectations`
+     (`src/dbt/powerschool/models/sis/staging/dlt/`) actually projects. That is
+     the only one of the three variants the check can use: `odbc/` is archived
+     and disabled by default, and the kipptaf-level model is a `union_relations`
+     wrapper that enumerates no columns.
    - the plugin's CSV import header against what the end-user skill's
      `references/csv-format.md` documents.
 
