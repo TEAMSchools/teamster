@@ -43,7 +43,7 @@ models:
             severity: warn
       - dbt_utils.expression_is_true:
           arguments:
-            expression:
+            expression: |
               last_enrolled_date = if(_dbt_source_project = 'kippmiami',
               exitdate, date_sub(exitdate, interval 1 day))
           config:
