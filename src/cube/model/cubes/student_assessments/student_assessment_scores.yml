@@ -436,16 +436,20 @@ cubes:
           # response_type (overall / standard / group / not_taken) is
           # effectively determined by response_type_code above: 1,863 distinct
           # codes against 1,865 code+type pairs, so it adds no meaningful
-          # cardinality. response_type_description is NOT — 2,770 code+
-          # description pairs, a ~1.49x multiplier at this level, because
-          # response_type_code is null on all 2,797,958 Illuminate group rows
-          # while the description is populated there (measured 2026-09-23).
-          # It is kept anyway: it serves the standard-level cut the working
-          # group runs (filter response_type = 'standard', break out by
-          # response_type_description — the IEP-vs-gen-ed-by-standard pilot
-          # pattern, WG 2026-07-02), and a rollup only serves a query whose
-          # every member it carries. Dropping it to save the multiplier would
-          # push that cut back to the fact.
+          # cardinality. response_type_description is NOT determined by the
+          # code — it is null on all 2,797,958 Illuminate group rows where the
+          # description is populated, so ~900 descriptions share one null code.
+          # Measure the cost at THIS grain, not on the code/description pair
+          # alone: in isolation the pair looks like a 1.49x multiplier, but
+          # across the rollup's full dimension set it is 1.13x — 2,372,041 rows
+          # without the description against 2,690,413 with it (2026-09-23),
+          # because teacher, school, race, grade and module already separate
+          # most of those rows. Cheap at that size, and it serves the
+          # standard-level cut the working group runs (filter
+          # response_type = 'standard', break out by response_type_description
+          # — the IEP-vs-gen-ed-by-standard pilot pattern, WG 2026-07-02). A
+          # rollup only serves a query whose every member it carries, so
+          # dropping it would push that cut back to the fact.
           - student_assessment_scores.response_type
           - student_assessment_scores.response_type_description
           - students.race
