@@ -3,26 +3,6 @@
 The **network-wide analytics project** — aggregates all source-system packages
 and four district projects into network-level marts, reporting, and extracts.
 
-## Model Structure
-
-```text
-models/
-  <source>/          # per-integration (adp, deanslist, powerschool, etc.)
-    staging/         # table, contract enforced
-    intermediate/
-  assessments/       # cross-source assessment aggregations
-  people/            # unified staff/HR (ADP + LDAP + PS + perf mgmt, has snapshots)
-  students/          # cross-school student data
-  marts/             # dim_*/fct_* for Tableau + Cube semantic layer, contract enforced
-  reporting/         # topline reporting (+schema: reporting, no contract defaults)
-  extracts/          # outbound feeds, contract enforced
-    tableau/         # +schema: tableau → lands in kipptaf_tableau
-    deanslist/
-    powerschool/     # see note below
-    google/
-  exposures/         # dbt exposures (Tableau, Google Sheets, etc.)
-```
-
 ## Source File Conventions
 
 Each integration uses two source files with the **same `name:` under
@@ -220,24 +200,13 @@ belongs in the `int_` model every consumer reads, not copy-pasted per consumer.
 
 ## `dbt_project.yml` Inherited Defaults
 
-These are set at directory level — **do not repeat per-model** or flag their
-absence:
-
-| Directory / pattern                    | `materialized` | `contract: enforced` |
-| -------------------------------------- | -------------- | -------------------- |
-| All integration `staging/`             | `table`        | `true`               |
-| `extracts/`                            | view (default) | `true`               |
-| `marts/`                               | view (default) | `true`               |
-| `illuminate/dlt/staging/repositories/` | `table`        | `false` (override)   |
+Materialization and contract defaults are set at directory level in
+`dbt_project.yml` — **do not repeat them per-model** or flag their absence.
 
 The `repositories/` contract override is deliberate — the unpivot macro reads
 columns at parse time, so they cannot be declared. See
 `models/illuminate/CLAUDE.md` for that, the disabled repository list, and the
 `fivetran/`-is-dead warning.
-
-**Disabled integrations** (project-level `+enabled: false`): ACT, ADP Workforce
-Manager, ADP Workforce Now Fivetran, Alchemer, Coupa Fivetran, Dayforce,
-Facebook, Illuminate Fivetran, Instagram.
 
 **`partition_by` on a Cube-read mart is a no-op on its own.** Cube compiles a
 date filter routed through the `dates` join into a predicate on `dim_dates`, and
