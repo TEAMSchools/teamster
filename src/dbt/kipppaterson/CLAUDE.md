@@ -24,10 +24,12 @@ dlt models its PowerSchool instance does not populate — see the
 Package list: `packages.yml` is ground truth (see `src/dbt/CLAUDE.md`).
 Endpoint-level notes:
 
-- `cambium` — `stg_cambium__njsla` only. `stg_cambium__njgpa` and its source are
-  disabled in `dbt_project.yml`, and so are its 9 generic tests, listed
-  individually under `data_tests:` — a disabled model keeps its tests, and they
-  would scan a relation Paterson never builds
+- `cambium` — `stg_cambium__njsla` only. `stg_cambium__njgpa`,
+  `stg_cambium__eoc` and their sources are disabled in `dbt_project.yml`, and so
+  are their generic tests, listed individually under `data_tests:` — a disabled
+  model keeps its tests, and they would scan a relation Paterson never builds.
+  Quoted columns (`period`, `subject`) get a trailing underscore in the test
+  name. Enable EOC when Paterson receives the file
 - `pearson` — `stg_pearson__njsla` and `stg_pearson__njsla_science` enabled;
   `stg_pearson__njgpa`, `stg_pearson__parcc`, `stg_pearson__student_test_update`
   disabled in `dbt_project.yml`

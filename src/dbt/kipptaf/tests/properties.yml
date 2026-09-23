@@ -840,6 +840,21 @@ data_tests:
           ref:
             name: stg_cambium__njsla
 
+  - name: stg_cambium__eoc__not_empty
+    description: >-
+      stg_cambium__eoc must never build empty, for the same reason as its NJGPA
+      and NJSLA siblings above -- a dropped or renamed Cambium column reads
+      entirely NULL, the district staging filter returns zero rows, and every
+      unique / not_null test passes vacuously over an empty relation, removing
+      Algebra I, Algebra II and Geometry at once. Declared here in kipptaf for
+      the same severity reason.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: stg_cambium__eoc
+
   - name: int_students__graduation_path_codes__cutoff_within_score_scale
     description: >-
       A graduation pathway cut score must be reachable on the scale of the
