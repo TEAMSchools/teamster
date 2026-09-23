@@ -274,7 +274,7 @@ views:
           filters:
             - member: locations_region_key
               operator: equals
-              values: ["{ securityContext.region_key }"]
+              values: ["{ securityContext.legal_entity_region_key }"]
       - group: student-school
         member_level:
           includes: "*"

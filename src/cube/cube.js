@@ -150,7 +150,7 @@ async function resolveAccess(email) {
     const universes = await loadUniverses(bq);
     const allowedAbbreviations = access.computeAllowedAbbreviations(
       row?.staff_location_scope,
-      row?.region_key,
+      row?.legal_entity_region_key,
       row?.location_abbreviation,
       universes.locations,
     );

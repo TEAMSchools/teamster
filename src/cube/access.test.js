@@ -9,7 +9,7 @@ const a = require("./access");
 // all_in_scope PII).
 const SL = {
   staff_key: "self",
-  region_key: "R1",
+  legal_entity_region_key: "R1",
   location_abbreviation: "ABC",
   department_group: "Ops",
   job_function_level: 4,
@@ -93,19 +93,36 @@ test("buildSecurityContext flattens the access row + chain", () => {
     staff_key: "s1",
     student_location_scope: "region",
     staff_pii_scope: "reporting_chain_or_below_rank",
-    region_key: "R1",
+    legal_entity_region_key: "R1",
     location_abbreviation: "ABC",
     department_group: "Operations",
     job_function_level: 5,
   };
   const ctx = a.buildSecurityContext(row, ["k1", "k2"]);
-  assert.strictEqual(ctx.region_key, "R1");
+  assert.strictEqual(ctx.legal_entity_region_key, "R1");
   assert.strictEqual(ctx.job_function_level, 5);
   assert.deepEqual(ctx.reportee_staff_keys, ["k1", "k2"]);
   assert.ok(ctx.groups.includes("staff-directory"));
   // Scope-specific student group (canonical group-based RLS), not "student".
   assert.ok(ctx.groups.includes("student-region"));
   assert.ok(ctx.groups.includes("staff-pii-reporting_chain_or_below_rank"));
+});
+
+test("buildSecurityContext exposes legal_entity_region_key, not region_key", () => {
+  const ctx = a.buildSecurityContext(
+    { staff_key: "S1", legal_entity_region_key: "R1" },
+    [],
+  );
+  assert.strictEqual(ctx.legal_entity_region_key, "R1");
+  assert.ok(
+    !("region_key" in ctx),
+    "region_key must not survive: a field no longer returned here cannot be overwritten on the Cube Cloud paste path",
+  );
+});
+
+test("buildSecurityContext defaults legal_entity_region_key to null", () => {
+  const ctx = a.buildSecurityContext(null, []);
+  assert.strictEqual(ctx.legal_entity_region_key, null);
 });
 
 test("buildSecurityContext is null-safe for an unresolved viewer", () => {
@@ -231,6 +248,21 @@ test("computeAllowedAbbreviations: none/undefined scope denies", () => {
   );
   assert.deepEqual(
     a.computeAllowedAbbreviations(undefined, "R1", "A", LOCATION_UNIVERSE),
+    [],
+  );
+});
+
+test("computeAllowedAbbreviations: region scope with a null key denies, and does not match null-region locations", () => {
+  const universe = [
+    { abbreviation: "A", region_key: "R1" },
+    { abbreviation: "Orphan", region_key: null },
+  ];
+  assert.deepStrictEqual(
+    a.computeAllowedAbbreviations("region", null, null, universe),
+    [],
+  );
+  assert.deepStrictEqual(
+    a.computeAllowedAbbreviations("region", undefined, null, universe),
     [],
   );
 });
