@@ -50,7 +50,10 @@ dependencies), pytest, GitHub Actions, dbt, markdown.
     a `touch` with no content change alters the sha256 — measured: `8cde2ff4…`
     before, `5e8c1acb…` after, identical contents. CRC32 is the content check;
     sha256 would only produce false failures.
-  - Skill zip: 9 files, 46,028 bytes
+  - Skill zip: 9 files. The 46,028 figure recorded earlier is the sum of the
+    nine files' **uncompressed** sizes, not the archive — the built zip is
+    smaller (23,717 bytes as first built). Check the file count and the zip-root
+    layout; do not treat either byte figure as an acceptance value.
   - Named-query columns (9): `id`, `school_level`, `quarter`, `week_number`,
     `cnt_w`, `cnt_h`, `cnt_f`, `cnt_s`, `notes`
   - CSV header: `School Level,Quarter,Week Number,W,H,F,S,Notes`
