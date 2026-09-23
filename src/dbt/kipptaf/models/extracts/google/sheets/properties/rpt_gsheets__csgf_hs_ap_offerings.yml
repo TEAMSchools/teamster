@@ -35,7 +35,7 @@ models:
       changes. Scoped to enroll_status in (0, 3) -- Currently Enrolled or
       Graduated -- to match rpt_gsheets__csgf_hs_enrollment's population; see
       rpt_gsheets__csgf_hs_sat.yml for the full rationale (same fix, applied to
-      all four HS-scoped student-level models on 2026-09-11).
+      all four HS-scoped student-level models).
     columns:
       - name: school_name
         data_type: string

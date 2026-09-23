@@ -5,12 +5,12 @@ models:
       match rpt_gsheets__csgf_hs_enrollment's population, per that task's own
       instruction "ONLY INCLUDE STUDENTS WHO COMPLETED THE 25-26 SCHOOL YEAR."
       CSGF cross-validates every HSDC tab's studentid against the HS Enrollment
-      tab and flags "ID not on Enrollment Tab" otherwise. Confirmed on
-      2026-09-11 -- 170 students network-wide transferred out mid-year
-      (enroll_status = 2) and were previously included here (and in csgf_hs_act,
-      csgf_hs_ap_scores, csgf_hs_ap_offerings) despite being excluded from
-      Enrollment -- all four models needed the same filter added, not just this
-      one.
+      tab and flags "ID not on Enrollment Tab" otherwise; a student who
+      transferred out mid-year (enroll_status = 2) would otherwise still appear
+      here despite being correctly excluded from Enrollment. Same filter applies
+      to csgf_hs_act, csgf_hs_ap_scores, and csgf_hs_ap_offerings. Full
+      provenance and verification numbers live in
+      docs/models/csgf-data-model.md.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
