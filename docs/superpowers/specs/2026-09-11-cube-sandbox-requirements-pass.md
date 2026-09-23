@@ -447,22 +447,46 @@ never will have one. A sandbox with more nulls than production makes the kit
 defensive, which is the same reasoning that already covers enum values
 production has never had.
 
-### The manifest reads the snapshot, not production
+### Three committed artifacts, and none of them may go stale
 
-Piece 2 currently has the manifest generator read `INFORMATION_SCHEMA` itself.
-That is the same production read the snapshot refresh in
+Piece 2 has the manifest generator read `INFORMATION_SCHEMA` itself. That is the
+same production read the snapshot refresh in
 [Part 3](#decision-the-generator-reads-a-committed-schema-snapshot) already
-does, producing a second committed artifact from the same source.
+does. Naming all three artifacts together makes the overlap visible and fixes a
+worse problem underneath it:
 
-Make the snapshot the single production read. The manifest generator then takes
-committed inputs only — the snapshot, `access.js`, and the cube YAML — and needs
-no cloud access at all. Consequences worth having:
+| Artifact                 | Generated from                       | Needs         |
+| ------------------------ | ------------------------------------ | ------------- |
+| Schema snapshot          | Production `INFORMATION_SCHEMA`      | BigQuery read |
+| `coverage_manifest.yml`  | The snapshot, `access.js`, cube YAML | Nothing       |
+| `cube-catalog-meta.json` | Production Cube `/meta`              | Cube API read |
 
-- It runs in CI and on any laptop, with no credentials and no sandbox project.
-- Its output is deterministic from committed inputs, so a manifest diff is
-  reviewable in a pull request exactly as the snapshot diff is.
-- It sharpens A3's sequencing note: the manifest and the contract are in the
-  group that needs no cloud resources at all.
+So the manifest takes committed inputs only and needs no cloud access: it runs
+in CI and on any laptop, its output is deterministic, and its diff is reviewable
+in a pull request exactly as the snapshot diff is. That sharpens A3's sequencing
+note — the manifest and the contract need no cloud resources at all.
+
+### The catalog is stale today, and nothing would have caught it
+
+The catalog is what MasterBorn builds the kit against and what Piece 4's
+surviving `/meta` check compares to. The copy that exists predates last week's
+query-rewrite and attendance changes: it still carries `is_latest_record`,
+`is_month_end_record` and `staff_department_scope`, and has no reference to the
+new attendance periods view or table.
+
+A stale catalog is not a housekeeping problem. It is Part 1's failure mode
+exactly — a kit frozen against a model that no longer exists.
+
+The `/meta` check is the control that should have caught it, and it did not,
+because the catalog is not on `main` and no check runs. So:
+
+- **Regenerate the catalog from the current deployment, and land it on `main`**
+  before anything is built against it. Never carry it forward from a branch or
+  from scratch.
+- **A model change refreshes the snapshot and the catalog together.** Both
+  describe the surface the sandbox imitates, and last week moved both.
+- **Wire the `/meta` check before the kit is handed over, not after.** Its value
+  is catching this class of drift, and it has already missed one instance.
 
 ### Two things stay exactly as specified
 
@@ -790,9 +814,20 @@ Two changes carry design weight rather than just a number:
   `staff_benefits_scope`. Piece 2's persona coverage is specified against the
   old seven, so those cells need regenerating rather than editing.
 
-Separately, **`docs/reference/cube-catalog-meta.json` does not exist on
-`main`.** It lives on the unmerged branch
-`cristinabaldor/feat/claude-cube-api-key-access`, and a copy sits in
-`.claude/scratch/masterborn-handoff/`. Parts 2 and 7 both treat it as the
-committed catalog the `/meta` check compares against, so something has to land
-it on `main` before that check can be built.
+Separately, **`docs/reference/cube-catalog-meta.json` does not exist on `main`,
+and the copies that do exist are stale.** It lives on the unmerged branch
+`cristinabaldor/feat/claude-cube-api-key-access`, with a copy in
+`.claude/scratch/masterborn-handoff/`. That copy, checked 2026-09-23:
+
+| Marker                                       | Occurrences |
+| -------------------------------------------- | ----------- |
+| `is_latest_record`                           | 11          |
+| `is_month_end_record`                        | 6           |
+| `staff_department_scope`                     | 2           |
+| `student_attendance_enrollment_periods_view` | 0           |
+| `fct_student_attendance_enrollment_periods`  | 0           |
+
+The first three were removed from the model; the last two were added. The
+catalog describes a model that no longer exists, so it must be regenerated
+rather than carried forward from a branch or from scratch. Part 4 covers what
+follows from that.
