@@ -384,11 +384,19 @@ cubes:
           - student_assessments.grade_level_tested
           - student_assessment_administrations.administration_period
           - student_assessment_scores.response_type_code
-          # response_type (overall / strand / standard) and its human-readable
-          # description are both functionally determined by response_type_code
-          # above (zero added rows). They serve standard-level cuts: filter
-          # response_type = 'standard' and break out by response_type_description
-          # (the IEP-vs-gen-ed-by-standard pilot pattern, WG 2026-07-02).
+          # response_type (overall / standard / group / not_taken) is
+          # effectively determined by response_type_code above: 1,863 distinct
+          # codes against 1,865 code+type pairs, so it adds no meaningful
+          # cardinality. response_type_description is NOT — 2,770 code+
+          # description pairs, a ~1.49x multiplier at this level, because
+          # response_type_code is null on all 2,797,958 Illuminate group rows
+          # while the description is populated there (measured 2026-09-23).
+          # It is kept anyway: it serves the standard-level cut the working
+          # group runs (filter response_type = 'standard', break out by
+          # response_type_description — the IEP-vs-gen-ed-by-standard pilot
+          # pattern, WG 2026-07-02), and a rollup only serves a query whose
+          # every member it carries. Dropping it to save the multiplier would
+          # push that cut back to the fact.
           - student_assessment_scores.response_type
           - student_assessment_scores.response_type_description
           - students.race

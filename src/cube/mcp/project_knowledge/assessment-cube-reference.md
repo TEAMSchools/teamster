@@ -161,8 +161,11 @@ Apply to every assessment source unless a source section overrides them.
   trap.
 - **Domain rollup: `response_type_root_description`** is the CCSS domain rollup
   — reliable for CCSS-aligned content, unreliable for FL state-aligned
-  standards. Illuminate only (null elsewhere, since `response_type` is null
-  elsewhere).
+  standards. It is populated on Illuminate `standard` rows and nowhere else, so
+  it is null on every i-Ready, DIBELS, STAR and state row, and on Illuminate's
+  own `group`, `overall` and `not_taken` rows. That is a fact about this
+  column's upstream population, not about `response_type`, which is never null.
+  Never group a cross-source query by it.
 - **The view is enrollment-scoped — its totals are not the vendor's or the
   state's totals.** A score appears only if it resolves to a section enrollment;
   scores that don't resolve are out of scope by design. For 2025-26 i-Ready that
