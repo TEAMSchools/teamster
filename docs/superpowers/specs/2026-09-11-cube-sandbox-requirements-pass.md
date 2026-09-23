@@ -348,11 +348,45 @@ Two assertions, not one:
 
 The second is not about today's state, which is attested. It catches a later
 deletion or edit — the same reason the design wants claim 3 separately from
-claim 1. Whatever runs it needs an identity holding `denypolicies.list` on
-production, which nothing on the sandbox side can have and neither account above
-holds today. Granting that read, and to whom, is a plan question.
+claim 1.
 
-### Nothing here is open
+### When it runs
+
+The child spec says only "run the isolation check on a schedule as a Dagster
+asset check" and that a failure blocks the generator. It never says how often,
+so this part sets it:
+
+- **Daily, on a schedule.** The risk being guarded is an IAM edit nobody
+  remembers making, which moves on the scale of days, not minutes.
+- **And as a blocking check before each generator run.** The generator writes
+  only on deliberate bumps, so it could otherwise write against a boundary that
+  broke since the last daily run.
+
+Neither leg is expensive: two small queries and one IAM call.
+
+### It needs two identities, split the same way the generator is
+
+| Assertion                      | Identity                            |
+| ------------------------------ | ----------------------------------- |
+| The 403, and the sandbox read  | The sandbox service account key     |
+| `deny-sandbox-bigquery` exists | A production identity with IAM read |
+
+Neither is the dangerous combination: the sandbox account cannot read production
+data by construction, and an IAM-read identity touches no BigQuery data and
+cannot write to the sandbox. But one service account holding both would be a
+step toward the binding
+[rejected above](#the-boundary-has-a-consequence-no-single-identity-can-build-the-sandbox),
+so the check is built as two, split on the same boundary as the generator.
+
+Nothing on the analytics side holds `denypolicies.list` on `teamster-332318`
+today, so granting that read — and to whom — is the one thing this check needs
+before it can be built.
+
+### What is open
+
+- **Who gets `denypolicies.list` on `teamster-332318`.** Needed before the
+  second assertion can be built. It is an IAM-read grant, not data access, and
+  it goes to whatever identity runs the check.
 
 A2's last unchecked item — which role creates an IAM deny policy — is answered
 by the engineer holding it. The snapshot's file location, its shape, and what
