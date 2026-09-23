@@ -699,7 +699,7 @@ driven by the same toggled year filter as the audit models, check the summer
 toggle's state before reading it as the new year's grid.
 
 Plugin source and update instructions:
-[TEAMSchools/ps-plugins](https://github.com/TEAMSchools/ps-plugins)
+[`ps-plugins/gradebook-audit/`](https://github.com/TEAMSchools/teamster/tree/main/ps-plugins/gradebook-audit)
 
 #### One upload per PowerSchool instance
 
