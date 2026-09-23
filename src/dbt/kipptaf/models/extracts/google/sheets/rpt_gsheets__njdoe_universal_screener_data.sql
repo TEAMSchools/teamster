@@ -2,12 +2,14 @@ with
     -- hardcoded sources so that we can access raw data
     base_scores as (
         select
-            * except (school_year, student_primary_id_studentnumber),
+            * except (
+                school_year, student_primary_id, student_primary_id_studentnumber
+            ),
 
             safe_cast(left(school_year, 4) as int64) as academic_year,
 
             safe_cast(
-                student_primary_id_studentnumber as int
+                coalesce(student_primary_id_studentnumber, student_primary_id) as int
             ) as student_primary_id_studentnumber,
 
         from kippnewark_amplify.benchmark_student_summary
@@ -16,12 +18,14 @@ with
         union all
 
         select
-            * except (school_year, student_primary_id_studentnumber),
+            * except (
+                school_year, student_primary_id, student_primary_id_studentnumber
+            ),
 
             safe_cast(left(school_year, 4) as int64) as academic_year,
 
             safe_cast(
-                student_primary_id_studentnumber as int
+                coalesce(student_primary_id_studentnumber, student_primary_id) as int
             ) as student_primary_id_studentnumber,
 
         from kipppaterson_amplify.benchmark_student_summary
