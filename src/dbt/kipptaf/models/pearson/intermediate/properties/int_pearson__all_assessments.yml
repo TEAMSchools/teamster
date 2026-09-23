@@ -5,13 +5,16 @@ models:
       Science, NJGPA) enriched with student crosswalk lookups and standardized
       metadata. NJGPA is dual-vendor -- Pearson through the Fall 2025
       administration, Cambium TIDE starting Spring 2026 -- unioned into this
-      same shape. The model's Pearson-only name is a known misnomer now that a
-      second vendor feeds it; a rename is pending. The aligned demographic
-      labels, proficiency banding, and subject/test-code normalization are
-      computed upstream: int_pearson__all_assessments in the pearson package per
-      district, and stg_cambium__njgpa in the cambium package. This model only
-      unions the district copies, repairs localstudentidentifier from the
-      crosswalk, and casts the state id.
+      same shape. NJSLA, NJSLA Science and the Algebra I, Algebra II and
+      Geometry end-of-course tests are Cambium from Spring 2026 too. The model's
+      Pearson-only name is a known misnomer now that a second vendor feeds it; a
+      rename is pending. Pearson rows arrive already aligned from
+      int_pearson__all_assessments in the pearson package per district. Cambium
+      rows arrive in Cambium's own column names from stg_cambium__njsla,
+      stg_cambium__eoc and stg_cambium__njgpa, and this model maps them to the
+      Pearson names, aligned demographic labels, proficiency bands and
+      subject/test-code normalization. It then repairs localstudentidentifier
+      from the crosswalk and casts the state id.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -60,6 +63,28 @@ models:
               config:
                 severity: error
 
+      - name: test_grade
+        data_type: int64
+        description: >-
+          Grade of the test form, parsed from assessmentgrade (NJSLA) or set
+          from the test code (NJGPA, always 11). NULL on end-of-course rows,
+          whose forms have no grade. The tests cover Cambium rows only, where
+          this model derives the value; a new Cambium grade label fails them.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+                where: |
+                  _dbt_source_relation like '%cambium%'
+                  and `subject` not in ('Algebra I', 'Algebra II', 'Geometry')
+          - accepted_values:
+              arguments:
+                values: [3, 4, 5, 6, 7, 8, 9, 11]
+                quote: false
+              config:
+                severity: error
+                where: _dbt_source_relation like '%cambium%'
+
       - name: _dbt_source_relation
         data_type: string
         description: Source relation identifier from dbt_utils.union_relations.
@@ -91,11 +116,12 @@ models:
       - name: assessmentgrade
         data_type: string
         description: >-
-          Assessment grade level as reported by the vendor. Pearson sent 'Grade
-          11' on every row. Cambium sends the test DESIGN level instead — 'Grade
-          10' for ELAGP and 'Grade 11' for MATGP — so this column carries two
-          values and is NOT the student's grade. Use test_grade (always 11 for
-          NJGPA) or the enrollment for reporting grade level.
+          Assessment grade level as reported by the vendor, e.g. 'Grade 5'. NULL
+          on the Algebra I, Algebra II and Geometry end-of-course rows from both
+          vendors. On NJGPA, Pearson sent 'Grade 11' on every row, while Cambium
+          sends the test DESIGN level — 'Grade 10' for ELAGP and 'Grade 11' for
+          MATGP. It is NOT the student's grade; use test_grade or
+          gradelevelwhenassessed for reporting grade level.
 
       - name: assessmentyear
         data_type: string
@@ -148,6 +174,14 @@ models:
         data_type: string
         description: Student first name as reported by Pearson.
 
+      - name: gradelevelwhenassessed
+        data_type: int64
+        description: >-
+          The student's grade at the time of testing. Equals test_grade on
+          grade-level tests. On the Algebra I, Algebra II and Geometry
+          end-of-course tests, where test_grade is NULL, it is the only grade.
+          NULL for NJGPA rows from Pearson, which did not send it.
+
       - name: lastorsurname
         data_type: string
         description: Student last name or surname as reported by Pearson.
@@ -186,18 +220,14 @@ models:
         description:
           Globally unique identifier for the student's test-taking event.
 
-      - name: test_grade
-        data_type: int64
-        description: Numeric grade level at which the test was taken.
-
       - name: testperformancelevel_text
         data_type: string
         description:
           Performance level label as reported by Pearson (e.g. 'Level 4').
 
       - name: testperformancelevel
-        data_type: float64
-        description: Numeric performance level as reported by Pearson.
+        data_type: int64
+        description: Numeric performance level as reported by the vendor.
 
       - name: testscalescore
         data_type: float64

@@ -4,12 +4,13 @@ paths:
   - ".claude/settings.local.json"
   - ".claude/hooks/**"
   - ".devcontainer/scripts/**"
+  - ".claude/context/**"
 ---
 
 # Editing hooks and settings
 
-Loads on the first read of a hook script, a settings file, or a devcontainer
-script. Hook block list and protocol: `.claude/CLAUDE.md`.
+Loads on the first read of a hook script, a settings file, a devcontainer
+script, or a `.claude/context/` file. Hook block list: `.claude/CLAUDE.md`.
 
 ## Modifying protected files
 
@@ -75,3 +76,46 @@ no hooks fire, no deny rules apply. Claude Code does not log a warning.
 See `.claude/hooks/CLAUDE.md` (loads when working under `.claude/hooks/`):
 `bash tests/hooks/run_all.sh`, ad-hoc rule probing via a scratch harness, and
 the recurring gotchas when editing the hooks (phantom CI revert, `SC2312`).
+
+## Hook protocol
+
+Claude Code hooks communicate decisions via **stdout JSON + exit code 0**:
+
+- **Allow**: exit 0 with no output (or empty stdout)
+- **PreToolUse deny**: exit 0 with
+  `{"hookSpecificOutput": {"permissionDecision": "deny", ...}}` on stdout
+- **PostToolUse redact**: exit 0 with
+  `{"hookSpecificOutput": {"updatedToolOutput": <redacted tool_response>, ...}}`.
+  PostToolUse cannot deny: the tool already ran, and `permissionDecision` is
+  silently ignored on this event (the scanner emitted it for months with no
+  effect). `updatedToolOutput` must keep the tool's output shape or the harness
+  drops it and shows the original. `{"decision": "block", "reason": ...}` ends
+  the turn with a warning and is used only when there is nothing to redact.
+
+**Exit 1 is a non-blocking error** — Claude Code logs it but executes the tool
+anyway. Never use `exit 1` to deny. Never write deny JSON to stderr (`>&2`). The
+regression test suite (`expect_deny_exit0`) enforces both invariants.
+
+Auto mode does not replace either hook: `permissions.deny` and PreToolUse hooks
+run before the classifier, and the classifier never sees tool results.
+
+## Context injection (`tool-gotchas.sh`)
+
+A third hook adds context instead of blocking. `tool-gotchas.sh` (PreToolUse,
+matcher `Agent|Workflow|mcp__.*`) injects `.claude/context/<key>.md` the first
+time a key is used in a session. The key is the server segment of an MCP tool
+name (`mcp__<server>__<tool>`), or `agent` for the `Agent` and `Workflow` tools.
+Add or change guidance for a server by editing that file — no hook or settings
+change needed. A new non-MCP tool needs a new `case` arm in the script.
+
+- It fails **open** (unparseable payload → exit 0, call proceeds) because it
+  only adds context. The two guard hooks fail closed — do not copy this pattern
+  into them.
+- `additionalContext` is consumed by PreToolUse at runtime but is NOT in the
+  harness's documented PreToolUse schema (only `permissionDecision`,
+  `permissionDecisionReason`, `updatedInput` are). If injection silently stops
+  after an upgrade, move the matcher to PostToolUse, where the field IS
+  documented; the script echoes the event name back, so it needs no edit.
+- Fires once per session per server, tracked by
+  `.claude/scratch/.gotchas-<session>-<server>`. A SessionStart `compact` hook
+  deletes those markers so the guidance survives a compaction.

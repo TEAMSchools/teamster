@@ -52,12 +52,10 @@ validation/profiling goes through BigQuery MCP, not `dbt show`.
 
 - **ANSI SQL or a dbt macro first; BigQuery syntax only where it adds
   capability.** When standard SQL or an installed macro produces the same
-  result, use it. Reach for a BigQuery-only form
-  (`full union all corresponding`, `qualify`, `select * except`, `group by all`)
-  only when it does something the standard form cannot. `qualify` and
-  `group by all` never pass that test and are banned outright below. Example:
-  two enumerated UNION branches take a positional `union all` with
-  `cast(null as <type>)` padding, not `full union all corresponding`.
+  result, use it. Reach for a BigQuery-only form (`select * except`) only when
+  it does something the standard form cannot. `qualify`, `group by all` and
+  `full union all corresponding` never pass that test and are banned outright
+  below.
 - **Before writing or editing any inline SQL comment, stop and ask: would this
   survive as a properties.yml `description:` instead?** A comment explaining
   rationale, background, or what/why a model computes belongs in the properties
@@ -195,8 +193,13 @@ validation/profiling goes through BigQuery MCP, not `dbt show`.
   column add an edit to the view's own SQL, so it recompiles on deploy.
   2026-09-09: `kipptaf_powerschool.int_powerschool__gpa_term` compiled with
   `cast(null as INT64) as students_student_number` for 3 regions and stayed that
-  way until a manual materialization. `full union all corresponding` removes the
-  positional-swap hazard but not this one.
+  way until a manual materialization.
+- **No `full union all corresponding`.** Join UNION branches with a positional
+  `union all` that enumerates the same columns in the same order in every
+  branch. Pad a column one branch lacks with `cast(null as <type>) as <col>`.
+  Branches that differ in shape or column set are not an exception; the padding
+  is the remedy. Existing models that use it don't need a sweep — convert them
+  when editing the model anyway.
 - **A standalone `select *` takes a trailing comma** (`select *,`) to satisfy
   sqlfluff CV03 (e.g. `stg_overgrad__schools.sql`; a `source` CTE) — distinct
   from the UNION-ALL case above, which must enumerate columns.

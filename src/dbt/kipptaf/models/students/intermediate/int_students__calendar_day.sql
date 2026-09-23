@@ -47,10 +47,8 @@ with
             cd.academic_year - 1990 as yearid,
         from {{ ref("int_focus__calendar_day") }} as cd
         inner join focus_schools as fs on cd.schoolid = fs.focus_school_id
-        -- One row. Floors on the cutover year, not on Focus row presence
-        -- (#5193).
-        cross join {{ ref("int_students__sis_cutover") }} as c
-        where cd.academic_year >= c.focus_start_academic_year
+        -- Floors on the cutover year, not on Focus row presence (#5193).
+        where cd.academic_year >= 2026
     )
 
 -- `union all` matches columns by POSITION, so both branches list the same
