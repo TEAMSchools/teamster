@@ -19,8 +19,11 @@ views:
     cubes:
       - join_path: student_assessment_scores
         includes:
-          - count_scores
+          - count_assigned
+          - count_taken
+          - count_scored
           - count_students
+          - pct_taken
           - pct_proficient
           - pct_proficient_formative
           - pct_proficient_crq

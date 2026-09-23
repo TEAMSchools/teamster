@@ -147,17 +147,41 @@ cubes:
         public: true
 
     measures:
-      - name: count_scores
+      # Three nested counts, widest first: assigned contains taken contains
+      # scored. Each answers a different question and they are not
+      # interchangeable — see each description. Renamed from count_scores in
+      # #5501, which counted the widest population under the narrowest name.
+      - name: count_assigned
         description: >-
-          Scored-response count. COUNT(*) over the unique PK
-          (assessment_score_key) — additive, so pre-aggregations roll it up to
-          any grain.
+          Every assessment row, including the Illuminate not_taken rows where a
+          student was assigned an assessment and never sat it. This is the
+          widest of the three counts and the denominator for pct_taken. For
+          assessments actually sat use count_taken; for the population
+          pct_proficient is computed over use count_scored. COUNT(*) over the
+          unique PK (assessment_score_key) — additive, so pre-aggregations roll
+          it up to any grain.
         type: count
         public: true
         # Forces joins to student_assessments and regions so all proficiency
         # measures share one CTE, enabling side-by-side queries without
         # BigQuery's "query too complex" multi-CTE fan-out error.
         filters:
+          - sql: "{student_assessments.assessment_key} IS NOT NULL"
+          - sql: "{regions.region_key} IS NOT NULL"
+
+      - name: count_taken
+        description: >-
+          Assessments a student actually sat — every row except the Illuminate
+          not_taken placeholders. Use this for "how many assessments were
+          taken". It is wider than count_scored: a student can sit an assessment
+          that carries no proficiency verdict, which is most STAR kindergarten
+          and Early Literacy rows and the DIBELS K-2 phonics subtests. Only
+          Illuminate can express non-participation, so for every other source
+          this equals count_assigned.
+        type: count
+        public: true
+        filters:
+          - sql: "{CUBE}.response_type != 'not_taken'"
           - sql: "{student_assessments.assessment_key} IS NOT NULL"
           - sql: "{regions.region_key} IS NOT NULL"
 
@@ -186,15 +210,20 @@ cubes:
           - sql: "{student_assessments.assessment_key} IS NOT NULL"
           - sql: "{regions.region_key} IS NOT NULL"
 
-      - name: _count_scored
+      - name: count_scored
         description: >-
-          Count of rows carrying a proficiency verdict (is_mastery set).
-          Denominator for pct_proficient — a row with no verdict cannot enter
-          the numerator, so counting it only drags the rate down. Distinct from
-          count_scores, which counts every score row including the not-taken and
-          unset-benchmark ones.
+          Assessments carrying a proficiency verdict (is_mastery set) — the
+          narrowest of the three counts and the denominator pct_proficient is
+          computed over. A row with no verdict cannot enter the numerator, so
+          counting it would only drag the rate down. Narrower than count_taken
+          by the rows that were sat but cannot be judged: STAR publishes no
+          proficiency benchmark for kindergarten at any subject or for Early
+          Literacy at any grade, and the DIBELS K-2 phonics subtests have no
+          benchmark level set upstream. Report this alongside pct_proficient
+          whenever the rate carries weight — it is the n the rate rests on, and
+          it is not count_assigned.
         type: count
-        public: false
+        public: true
         # Forces joins to student_assessments and regions so all proficiency
         # measures share one CTE, enabling side-by-side queries without
         # BigQuery's "query too complex" multi-CTE fan-out error.
@@ -203,18 +232,35 @@ cubes:
           - sql: "{student_assessments.assessment_key} IS NOT NULL"
           - sql: "{regions.region_key} IS NOT NULL"
 
+      - name: pct_taken
+        description: >-
+          Grain: recomputes at any query grain, but meaningful only within
+          Illuminate — pooling it across sources is a silent-failure trap
+          (numerically valid, semantically meaningless). Participation rate —
+          assessments sat / assessments assigned. Only Illuminate records
+          non-participation, so every other source reads exactly 100% by
+          construction rather than by fact, and a pooled cross-source rate is
+          diluted by sources that cannot express a no-show. Filter
+          assessment_type to illuminate before reporting this. Built from
+          additive primitives (count_taken / count_assigned) so pre-aggregations
+          roll it up to any grain.
+        sql: "1.0 * {count_taken} / NULLIF({count_assigned}, 0)"
+        type: number
+        format: percent
+        public: true
+
       - name: pct_proficient
         description: >-
           Proficiency/mastery rate — proficient scores / scores carrying a
           proficiency verdict. The headline, source-agnostic metric (the only
           score measure comparable across the incompatible scales of internal vs
-          state assessments). The denominator excludes rows with no verdict
-          (is_mastery unset: Illuminate not_taken rows, DIBELS K-2 phonics
-          subtests whose benchmark level is unset upstream, and a small share of
-          STAR and Illuminate overall rows), so it is smaller than count_scores.
-          Built from additive primitives (_sum_proficient / _count_scored) so
-          pre-aggregations roll it up to any grain.
-        sql: "1.0 * {_sum_proficient} / NULLIF({_count_scored}, 0)"
+          state assessments). Its denominator is count_scored, NOT
+          count_assigned, so multiplying this rate by count_assigned overstates
+          the proficient count — by 1.49x on STAR. Pair it with count_scored,
+          which is the n it rests on. Built from additive primitives
+          (_sum_proficient / count_scored) so pre-aggregations roll it up to any
+          grain.
+        sql: "1.0 * {_sum_proficient} / NULLIF({count_scored}, 0)"
         type: number
         format: percent
         public: true
@@ -367,12 +413,15 @@ cubes:
       # with the key (adds width, not rows).
       - name: proficiency_rollup
         measures:
-          - student_assessment_scores.count_scores
+          # All three nested counts plus the proficient sum, so every rate the
+          # view exposes is servable here. A rollup only serves a query whose
+          # every referenced member is in it: without count_scored every
+          # pct_proficient query falls back to the fact, and without
+          # count_taken every pct_taken query does.
+          - student_assessment_scores.count_assigned
+          - student_assessment_scores.count_taken
+          - student_assessment_scores.count_scored
           - student_assessment_scores._sum_proficient
-          # pct_proficient's denominator. A rollup only serves a query whose
-          # every referenced member is in it, so without this every
-          # pct_proficient query falls back to the fact.
-          - student_assessment_scores._count_scored
         dimensions:
           - dates.academic_year
           - student_assessments.module_code

@@ -47,12 +47,12 @@ Apply to every assessment source unless a source section overrides them.
 - **Headline metric: `pct_proficient`.** It is the one score measure comparable
   across the incompatible scales of all sources (proficient scores / scores
   carrying a proficiency verdict). `is_mastery` is the underlying per-score
-  proficient flag, and its denominator counts only the rows where that flag is
-  set — so it is smaller than `count_scores`, which also counts rows with no
-  verdict (Illuminate `not_taken`, the DIBELS K-2 phonics subtests, and a small
-  share of STAR and Illuminate `overall` rows). Do not reconstruct the rate as
-  `_sum_proficient / count_scores`; that is the pre-#5501 formula and reads 16
-  points low on STAR. `scale_score`, `percent_correct`, `avg_scale_score`, and
+  proficient flag, and the rate divides by `count_scored` — the narrowest of the
+  three counts, holding only the rows where that flag is set. Report
+  `count_scored` beside the rate: it is the n the rate rests on. Do NOT multiply
+  the rate by `count_assigned` to recover a proficient headcount — that
+  overstates it by 1.49x on STAR, because `count_assigned` also counts rows with
+  no verdict. `scale_score`, `percent_correct`, `avg_scale_score`, and
   `avg_percent_correct` are scope-bound — meaningful only within one
   source/subject/grade; pooling them across sources returns a valid-looking but
   meaningless number. Use `pct_proficient` / `is_mastery` for any cross-source
@@ -66,16 +66,22 @@ Apply to every assessment source unless a source section overrides them.
   achievement, and flag it for team review instead of presenting it as a
   finding. (A logged session had to extend this reasoning by analogy because it
   was documented for internal-vs-state only; it applies generally.)
-- **Grain.** `count_scores` is additive and resilient (scored-response count) —
-  it succeeded across every logged session. `count_students` is a distinct
-  student count and is heavier and historically fragile at fine (standard) grain
-  (timeouts, and an intermittent location-`US` 400 on the
-  `dim_student_enrollments` dependency); `count_scores` is the reliable fallback
-  there.
+- **Three nested counts — pick the one that answers the question.**
+  `count_assigned` (every row, including Illuminate `not_taken`) ⊇ `count_taken`
+  (actually sat) ⊇ `count_scored` (carries a proficiency verdict). "How many
+  assessments were taken" is `count_taken`. The denominator of `pct_proficient`
+  is `count_scored`. `pct_taken` is `count_taken / count_assigned` and is
+  Illuminate-only meaningful — every other source reads 100% because nothing
+  upstream can record a no-show.
+- **Grain.** All three counts are additive and resilient — they succeeded across
+  every logged session. `count_students` is a distinct student count and is
+  heavier and historically fragile at fine (standard) grain (timeouts, and an
+  intermittent location-`US` 400 on the `dim_student_enrollments` dependency); a
+  plain count is the reliable fallback there.
 - **A dimension-only pull silently de-duplicates.** A query with no measure
   collapses identical rows and hides true row counts; add a measure (e.g.
-  `count_scores`) or the primary key (`assessment_score_key`) to see the real
-  row count.
+  `count_taken`) or the primary key (`assessment_score_key`) to see the real row
+  count.
 - **Performance bands are Illuminate-only, and a band number only means
   something inside its own band set.** `performance_band_label_number` is
   populated only for Illuminate; null for state and for i-Ready/DIBELS/STAR.
@@ -269,10 +275,10 @@ Apply to every assessment source unless a source section overrides them.
   as two independent keys; merging one pair moved a standard from a confusing
   split to a clean SY25 16.7% (n=1,356) versus SY26 20.4% (n=1,379).
 - **"How many times was this standard assessed" is a distinct count of
-  `source_assessment_id`,** not `count_scores`. `count_scores` counts scored
-  student responses; the distinct administration count is typically 1–5 per
-  standard per year. A standard resting on one administration is a thin
-  evidentiary base — say so rather than trending it.
+  `source_assessment_id`,** not a row count. `count_taken` counts student
+  responses; the distinct administration count is typically 1–5 per standard per
+  year. A standard resting on one administration is a thin evidentiary base —
+  say so rather than trending it.
 - **A CCSS code's own grade can differ from `grade_level_tested`.** A grade-6
   code appearing in a grade-8 mix is spiral or prerequisite review content, not
   a data error. Flag it for curriculum confirmation instead of excluding it
