@@ -156,7 +156,8 @@
       "mcp__dagster__reexecute_run",
       "mcp__dagster__search_assets",
       "mcp__dagster__set_sensor_cursor",
-      "mcp__dagster__terminate_runs"
+      "mcp__dagster__terminate_runs",
+      "mcp__github__merge_pull_request"
     ]
   },
   "enabledMcpjsonServers": ["dagster", "dagster-plus", "bigquery", "dbt"],
@@ -249,5 +250,6 @@
       }
     }
   },
+  "promptSuggestionEnabled": false,
   "autoMemoryEnabled": false
 }

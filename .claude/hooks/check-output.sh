@@ -103,7 +103,7 @@ stripped=${combined//[[:space:]]/}
 # key/secret/token=<value> rule was trialed but BACKED OUT — it false-positived
 # on doc placeholders (e.g. "password: enter-your-password-here"); the
 # high-entropy heuristic below still catches opaque values.
-secret_re='op://|-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|PRIVATE KEY-----|AIza[0-9A-Za-z_-]{35}|ya29\.[0-9A-Za-z_-]+|goog_[a-zA-Z0-9_-]+|eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}|ops_eyJ[A-Za-z0-9_-]{50,}|AKIA[0-9A-Z]{16}|(postgres(ql)?|mysql|mongodb(\+srv)?)://[^[:space:]]+:[^[:space:]]+@|"type"[[:space:]]*:[[:space:]]*"service_account"|gh[pusor]_[A-Za-z0-9_]{36,}|github_pat_[A-Za-z0-9_]{22,}|xox[baprs]-[0-9A-Za-z-]{10,}|\b(sk|rk)_(live|test)_[0-9A-Za-z]{16,}|hooks\.slack\.com/services/[A-Za-z0-9/]+|aws_secret_access_key["[:space:]:=]+[A-Za-z0-9/+]{40}'
+secret_re='op://[^/{}[:space:]]+/|-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|PRIVATE KEY-----|AIza[0-9A-Za-z_-]{35}|ya29\.[0-9A-Za-z_-]+|goog_[a-zA-Z0-9_-]+|eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}|ops_eyJ[A-Za-z0-9_-]{50,}|AKIA[0-9A-Z]{16}|(postgres(ql)?|mysql|mongodb(\+srv)?)://[^[:space:]]+:[^[:space:]]+@|"type"[[:space:]]*:[[:space:]]*"service_account"|gh[pusor]_[A-Za-z0-9_]{36,}|github_pat_[A-Za-z0-9_]{22,}|xox[baprs]-[0-9A-Za-z-]{10,}|\b(sk|rk)_(live|test)_[0-9A-Za-z]{16,}|hooks\.slack\.com/services/[A-Za-z0-9/]+|aws_secret_access_key["[:space:]:=]+[A-Za-z0-9/+]{40}'
 
 # On the whitespace-stripped copy scan ONLY the JWT pattern (the realistic
 # token-split-across-newline case, #30) — not the full set, which would
@@ -120,11 +120,19 @@ fi
 # mix is an identifier, path, or hash, not an encoded blob: dot-free dbt paths
 # (target/compiled/kipptaf/models/<a>/<b>/tests/dbt_utils_unique_combination_o_<hex>)
 # reach 120 chars, while a random 120-char base64 string is single-case with
-# p = (38/64)^120 ~ 1e-27.
-# ponytail: case-mix test, not Shannon entropy; upgrade to an awk entropy
-# score (>5.0 bits/char) if a mixed-case identifier run false-positives.
+# p = (38/64)^120 ~ 1e-27. A run with an underscore at least every 24 chars is
+# a snake_case identifier: dagster-dbt asset check names embed Title_Case dbt
+# column names (135-290 chars, mixed case, a `_` every ~5 chars). Random
+# url-safe base64 has a `_` only 1 char in 64: simulated exemption rate 1.6e-4
+# at 120 chars, 0 in 200k at 160+. A run with a `_`, `-` or `/` at least every
+# 16 chars is a path or slug: GitHub blob URLs for claude-* branches run
+# 129-169 chars past `github.com`, mixed case from the org name. Random url-safe
+# base64 passes that test at 2e-5 (120 chars), 0 in 200k at 160.
+# ponytail: case-mix + separator-spacing tests, not Shannon entropy; an
+# entropy floor would stop flagging the 1-bit/char gG fixture in the scanner
+# suite, so revisit that fixture before switching.
 entropy_input=$(echo "${combined}" | sed -E 's#data:[^,[:space:]]*;base64,[A-Za-z0-9+/=]+##g')
 long_runs=$(echo "${entropy_input}" | grep -oE '[A-Za-z0-9+/=_-]{120,}' || true)
-if [[ -n ${long_runs} ]] && echo "${long_runs}" | grep -qvE '^[0-9a-fA-F]+$|^[^a-z]*$|^[^A-Z]*$'; then
+if [[ -n ${long_runs} ]] && echo "${long_runs}" | grep -qvE '^[0-9a-fA-F]+$|^[^a-z]*$|^[^A-Z]*$|^([^_]{0,23}_+)*[^_]{0,23}$|^([^_/-]{0,15}[_/-]+)*[^_/-]{0,15}$'; then
 	emit_redacted "⛔ Tool output contained a high-entropy string (possible encoded secret) — redacted by check-output.sh"
 fi

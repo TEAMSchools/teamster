@@ -23,6 +23,11 @@ models:
         data_type: int64
       - name: enroll_status
         data_type: int64
+        description: >-
+          Current PowerSchool enroll_status (0 active, 2 transferred out, 3
+          graduated); inactive (1) and pre-registered (-1) students are
+          excluded. Student-level and current-only, so a student's prior-year
+          rows carry their status today, not as of that year.
       - name: entrydate
         data_type: date
       - name: exitdate

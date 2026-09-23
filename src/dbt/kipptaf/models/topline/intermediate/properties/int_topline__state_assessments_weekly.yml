@@ -1,5 +1,13 @@
 models:
   - name: int_topline__state_assessments_weekly
+    description: >-
+      Weekly state assessment proficiency, one row per student, discipline and
+      week. Miami rows carry the FAST result for the administration window whose
+      reporting term covers the week, grade 3 and up, every academic year. NJ
+      rows carry the spring state test result on every school week of the
+      current and prior academic year. A student whose enrollment stint changes
+      during a week keeps one row, taken from the stint enrolled on the Monday,
+      or the later stint when both are. Feeds int_topline__student_metrics.
     config:
       materialized: table
       meta:
@@ -9,3 +17,39 @@ models:
           # Refs #4153
           automation_condition:
             cron_schedule: 0 0 * * *
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - academic_year
+              - week_start_monday
+              - discipline
+          config:
+            severity: error
+    columns:
+      - name: student_number
+        description: KIPP student number of the enrolled student.
+        config:
+          meta:
+            contains_pii: true
+      - name: academic_year
+        description: Academic year the week belongs to.
+      - name: region
+        description: Region of the student's enrollment that week.
+      - name: week_start_monday
+        description: Monday that opens the week.
+      - name: week_end_sunday
+        description: Sunday that closes the week.
+      - name: discipline
+        description: Subject discipline the row reports on (ELA or Math).
+      - name: test_round
+        description:
+          FAST administration window (PM1, PM2, PM3) for Miami rows; Spring for
+          NJ rows.
+      - name: is_proficient_int
+        description:
+          1 when the student scored proficient on the assessment, 0 when not.
+        config:
+          meta:
+            contains_pii: true

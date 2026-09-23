@@ -1,5 +1,15 @@
 models:
   - name: int_topline__dibels_pm_weekly
+    description: >-
+      DIBELS progress-monitoring round verdicts carried onto the enrollment week
+      spine, one row per student-week that falls inside one of the student's PM
+      round windows, in the current and prior academic year.
+      int_amplify__pm_met_criteria is one row per student per round per measure,
+      so it is collapsed to one row per round before the join. The round
+      verdicts use min() across measures, the AND reading (a round counts as met
+      only when every measure met it), which is the network-wide rule for
+      SY26-27 and settles rounds where measures disagree. Feeds
+      int_topline__student_metrics.
     config:
       materialized: table
       meta:
@@ -9,3 +19,38 @@ models:
           # midnight tick (deps-in-progress guard serializes). Refs #4153
           automation_condition:
             cron_schedule: 0 0 * * *
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - academic_year
+              - week_start_monday
+          config:
+            severity: error
+    columns:
+      - name: student_number
+        description: KIPP student number of the enrolled student.
+        config:
+          meta:
+            contains_pii: true
+      - name: academic_year
+        description: Academic year the enrollment week belongs to.
+      - name: week_start_monday
+        description: Monday that opens the enrollment week.
+      - name: week_end_sunday
+        description: Sunday that closes the enrollment week.
+      - name: met_pm_round_overall_criteria
+        description:
+          Whether the student met the PM round's overall criteria on every
+          measure assessed in the round.
+        config:
+          meta:
+            contains_pii: true
+      - name: completed_test_round_int
+        description:
+          1 when the student completed the PM round on every measure assessed in
+          the round, otherwise 0.
+        config:
+          meta:
+            contains_pii: true

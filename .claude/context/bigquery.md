@@ -165,3 +165,8 @@ Cost triage ("why did BigQuery costs go up"): query
 dbt models (on-demand ≈ $6.25/TiB billed; filter `statement_type != 'SCRIPT'` to
 avoid double-counting parent jobs). Group by `user_email` to split Dagster vs
 dbt Cloud CI vs humans.
+
+MCP hook block: queries must start with SELECT/SHOW/DESCRIBE/WITH; embedded
+DML/DDL (INSERT, UPDATE, DELETE, CREATE, DROP, etc.) is blocked. The block
+matches the keyword as a substring — including inside a string literal
+(`where type = 'Drop'`). Reword to avoid the literal (`like 'Dr%'`).
