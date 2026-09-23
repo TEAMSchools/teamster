@@ -3,6 +3,26 @@
 How the internal and aimline chains are built and kept apart, and the join and
 grain hazards that have bitten.
 
+## What's in here
+
+- Growth fields on `int_amplify__all_assessments`
+- Benchmark is not per data model -- it must be single-sourced
+- The participation roster spans three expectation models
+- The two chains share no model -- split at the source, not behind a flag
+- Do not hoist a downstream filter into the shared gate
+- The Benchmark half moved to `int_amplify__benchmark_student_summary`
+- `region` on the aimline PM model must be the city form
+- `UNION ALL` binds by position, and a same-typed misplacement is silent
+- `all_assessments` carries scored rows only -- do not LEFT join the scores
+- A dedup step belongs to exactly one grain
+- Miami needs focus_student_number on the aimline PM model too -- FIXED
+- Slice on `expected_*`, never on a scores-side column
+- A code's standards are sat together, and a warn test guards the rollup
+- Filtering PM rows: `assessment_type` and `model_type` say the same thing
+- The OR criteria is spelled NULL, and it is live on history
+- all_assessments changed grain -- every consumer must NAME its model_type
+- TODO -- shared active/current schools model needs more eyes
+
 ## Growth fields on `int_amplify__all_assessments`
 
 T&L asked for "% of students that made above average growth" BOY-to-MOY and

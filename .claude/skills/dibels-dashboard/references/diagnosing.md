@@ -3,6 +3,19 @@
 What to do before reporting a gap, and the checks a field change runs before
 anyone trusts it.
 
+## What's in here
+
+- Explain a gap before reporting it
+- A whole region missing: read Amplify's file before tracing any join
+- SY2026-2027 header rename: null ids are a column move, not missing data
+- Verifying a year that is not in prod yet -- go to the source
+- "It should match prod" means diff every column, not the row count
+- Check the paste before anyone trusts it
+- Every field change runs this check sequence before you report it
+- The PM branches cannot match prod's row count, and should not
+- A student's two grade columns can disagree -- known, and not fixable
+- A stale dev relation will hide a filter you removed
+
 ## Explain a gap before reporting it
 
 Missing DIBELS data usually has a boring, checkable cause, and this model has

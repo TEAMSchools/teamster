@@ -3,6 +3,29 @@
 Rolling the expected-assessments scaffold forward a year or a season, and every
 grade-band, round-numbering and calendar rule it depends on.
 
+## What's in here
+
+- PM/aimline migration (#3834)
+- Canonical annual rollover process
+- Sheet identity
+- Benchmark seasonal rollover -- the process, since it repeats every year
+- Existing PM precedent -- the template for item 2, verified against real rows
+- `reporting__terms` grade bands -- `PLIT` covers EVERY band, K-8
+- Two Expected Assessments chains ship in parallel -- one per data model
+- `measure_standard_level` cohort split (`Below` / `Well Below`)
+- `assessment_type` -- derived on the internal chain, sheet-authored on the
+  combo chain
+- Benchmark `month_round` must match `reporting__terms`, not be copied forward
+- Calendar and school sources -- Miami is Focus-only from AY2026
+- `PLIT` boundary rule -- verified, K-2 only, one open edge case
+- A round can legitimately have NO `PLIT` window -- 10 rows against 11 rounds is
+  not a bug
+- `pm_goal_include` scaffolding -- internal-only, and aimline must FILTER it
+- Generating rows for both models
+- Paterson's grade bands changed between AY2025 and AY2026 -- don't reuse last
+  year's override
+- SY26-27 NJ rollover status
+
 ## PM/aimline migration (#3834)
 
 Full spec: issue #3834. Two distinct kinds of work live under this track -- easy

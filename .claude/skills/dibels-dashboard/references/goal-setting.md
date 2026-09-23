@@ -3,6 +3,19 @@
 Setting and pasting goals: the Bright Spots / foundation track, the PM goal-row
 procedure, and how each method's goals are derived.
 
+## What's in here
+
+- Bright Spots tracker / foundation goals (#4952)
+- New staging schema: `stg_google_sheets__dibels_foundation_goals`
+- MLL population -- shipped with placeholder values, real numbers still needed
+- Tier lookup table: `stg_google_sheets__dibels_brightspot_goals`
+- Procedure: generate goal rows from T&L's sheet
+- Nobody sets the internal PM goals -- they are derived from the cohort
+- benchmark_goal is Amplify's published standard, and it can be missing
+- The internal PM evaluation is four questions, and only one is method-specific
+- Disabling a PM test: which column, and why the goals must be rebuilt
+- Run goal setting per region, and only for regions that have finished testing
+
 ## Bright Spots tracker / foundation goals (#4952)
 
 Builds on the benchmark path, not PM/aimline -- the two tracks are unblocked and

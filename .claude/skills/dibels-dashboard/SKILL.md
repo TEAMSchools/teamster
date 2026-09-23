@@ -41,7 +41,9 @@ every Newark/Camden row across AY2024 and AY2025, zero exceptions:
 
 ## Where to look
 
-This file routes. Read the one page your task needs, not the whole skill.
+This file routes. Read the one page your task needs, not the whole skill. Each
+page opens with a contents list -- jump to the section you need rather than
+reading the page end to end.
 
 | If you are                                                                                         | Read                                                                 |
 | -------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
@@ -51,6 +53,7 @@ This file routes. Read the one page your task needs, not the whole skill.
 | Answering what an aimline label means, or reporting a rate against the aimline                     | [references/aimline-method.md](references/aimline-method.md)         |
 | Changing a model, a column, or a join in either PM chain                                           | [references/model-architecture.md](references/model-architecture.md) |
 | Explaining a number that looks wrong, or verifying a change before reporting it                    | [references/diagnosing.md](references/diagnosing.md)                 |
+| Finishing a change -- what to check, and what else must be updated                                 | [references/diagnosing.md](references/diagnosing.md)                 |
 
 The data model itself — every column, its domain, and the decisions behind it —
 lives in

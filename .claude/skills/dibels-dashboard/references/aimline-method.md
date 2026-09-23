@@ -3,6 +3,21 @@
 What the aimline verdict means, the two targets it involves, the grains it is
 reported at, and where our wording departs from T&L's.
 
+## What's in here
+
+- The aimline sibling, and the three traps in it
+- "% meeting aimline, overall and by measure" is three grains, and all three
+  already exist
+- The met/not-met flags have labelled twins, and the workbook needs a change
+- Measure grain and measure-standard grain differ by 15 points on ORF
+- Where the model's wording departs from T&L's doc, on purpose
+- Regions are not on the same round, and round numbers are not unique
+- The switcher grid, and why its names are inconsistent
+- The four goal grains each have a flag and a labelled twin
+- The two aimline targets, and three ways to get them wrong
+- A missing aimline `goal` is a school-grade condition, not thin data
+- What the aimline verdict is judged against, and why it is not ours to change
+
 ## The aimline sibling, and the three traps in it
 
 `int_amplify__pm_met_criteria_aimline` mirrors the internal model stage for
