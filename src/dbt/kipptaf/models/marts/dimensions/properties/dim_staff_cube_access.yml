@@ -43,11 +43,15 @@ models:
               entity != 'unknown'
           config:
             severity: error
-      # KTAF's own legal entity enrolls no students, so a role-mapped region or
-      # school scope would resolve to an empty allow-list and deny outright —
-      # measured as 5 KTAF viewers at zero rows and 3 capped to one city. KTAF
-      # staff serve the whole network, so any granted student scope is network.
-      # 'none' is preserved: it is a decision about the role, not the desk.
+      # Guards the CASE in the `resolved` CTE against a future edit, NOT the
+      # data: the CASE already forces this outcome for every KTAF row, so this
+      # cannot fail against any input. It fails if someone later adds a KTAF
+      # branch returning region or school — which is the mistake worth
+      # catching, because KTAF's own legal entity enrolls no students and such
+      # a scope resolves to an empty allow-list and denies outright (measured
+      # before the fix as 5 KTAF viewers at zero rows and 3 capped to one
+      # city). 'none' must stay reachable for KTAF: it is a decision about the
+      # role, not the desk.
       - dbt_utils.expression_is_true:
           arguments:
             expression: |
@@ -121,6 +125,16 @@ models:
           staff_location_scope is region or school, which FERPA does not argue
           for; a model-level warn test flags any viewer who reaches that state.
           NULL when the employing business unit does not resolve, which denies.
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_regions')
+              to_columns: [region_key]
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_regions')
+                field: region_key
 
       - name: location_abbreviation
         data_type: string
