@@ -333,7 +333,14 @@ way.
 5. **"Are GPAs weighted?"** → **Yes**. In `rpt_gsheets__csgf_hs_enrollment`, 680
    of 1,710 AY2025 students have
    `weighted_cumulative_gpa != unweighted_cumulative_gpa` -- the weighted column
-   is a real, distinct calculation, not a duplicate of unweighted.
+   is a real, distinct calculation, not a duplicate of unweighted. This 1,710 is
+   against OLD prod (pre-PR-#5059, before `exited_hs`/FDC/`passed_algebra_i`
+   fixes); the PR #5059 dev-branch rebuild documented further down (see "clean
+   build... 1,681 rows" in the Known Data Risks section) counts the SAME 3
+   schools/year on the fixed model -- the 29-row gap is from those fixes, not a
+   contradiction. Don't average or reconcile the two into one number; use
+   whichever build (prod vs. the PR branch) matches what you're verifying
+   against.
 
 6. **"What is the grading scale?"** → KTAF uses a plus/minus-based GPA point
    scale: regular (unweighted) courses cap at **4.33**, advanced/honors
@@ -1019,7 +1026,8 @@ Miami** -- `stg_google_sheets__topline_enrollment_targets` has rows for
 academic_year 2025 only (checked directly: even Royalty/Courage, which DO have a
 2025 row, have none for 2026); no district has this year's targets entered yet.
 The Portal task's own instructions say **"do not leave any cells blank,"** so
-this will fail validation for all 26 schools as-is, not just Miami's. No dbt fix
+this will fail validation for every school as-is (24 rows as of 2026-09-23;
+re-check the row count -- it's moved before), not just Miami's. No dbt fix
 possible without real source data -- likely just means this year's budget-target
 sheet hasn't been populated yet (a normal seasonal lag, not a Miami-specific
 gap), but confirm with whoever owns it before assuming it'll be ready in time

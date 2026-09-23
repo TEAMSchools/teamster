@@ -105,10 +105,12 @@ enrollment/demographic/principal data, the 2 closed-school ghost rows are gone,
 and the 19 non-Miami rows are unchanged.
 
 **Still open, and bigger than Miami**: `total_budgeted_enrollment` is NULL for
-all 26 schools network-wide — `stg_google_sheets__topline_enrollment_targets`
-has rows for academic_year 2025 only, none yet for 2026, for any district. The
-Enrollment task's own instructions require every cell filled; this needs whoever
-owns that sheet to add this year's targets before submission, not a dbt fix.
+every row in `csgf_enrollment` (24 schools as of 2026-09-23; re-check the row
+count rather than trusting this number, since the network's school count moves)
+— `stg_google_sheets__topline_enrollment_targets` has rows for academic_year
+2025 only, none yet for 2026, for any district. The Enrollment task's own
+instructions require every cell filled; this needs whoever owns that sheet to
+add this year's targets before submission, not a dbt fix.
 
 ### Miami's first HS is a forward risk for next cycle, not this one
 
@@ -245,11 +247,14 @@ being correctly absent from Enrollment. CSGF cross-validates every HSDC tab's
 student ID against the Enrollment tab and flags "ID not on Enrollment Tab" for
 every one of these — confirmed live via a real error report during the 2026-2027
 submission. Root cause confirmed directly: every flagged student had
-`enroll_status = 2`. Network-wide impact: 170 students transferred out mid-year
-and were included in one or more of the four models before this fix. Fixed by
-adding `enroll_status in (0, 3)` to all four, matching `csgf_hs_enrollment`
-exactly. Verified after the fix: zero SAT or AP Scores student IDs are missing
-from the Enrollment tab's population.
+`enroll_status = 2`. Network-wide impact, measured 2026-09-11: 170 of 1,851 HS
+students network-wide had `enroll_status = 2` and were included in one or more
+of the four models before this fix. This count moves as more transfers get coded
+during the year (178 of the same 1,851 when re-checked 2026-09-23) -- re-derive
+rather than quoting either number as current. Fixed by adding
+`enroll_status in (0, 3)` to all four, matching `csgf_hs_enrollment` exactly.
+Verified after the fix, 2026-09-11: zero SAT or AP Scores student IDs were
+missing from the Enrollment tab's population.
 
 ## Exit-code reference
 
