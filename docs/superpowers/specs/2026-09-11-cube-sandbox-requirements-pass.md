@@ -543,17 +543,48 @@ Restated because both are load-bearing and easy to lose in a rewrite:
 
 Checked against `main` on 2026-09-23, after last week's query-rewrite and
 attendance changes. The snapshot anchors no longer exist, so the manifest's
-anchor cells and their exemption are both gone from this part. Several other
-counts moved. The full list is in
+anchor cells and their null-rule exemption are both gone from this part; what
+takes their place is below. Several other counts moved. The full list is in
 [A9](#a9--the-specs-cube-model-facts-checked-against-main).
 
-### What is open
+### What replaces the anchor rule
 
-- **Which cells replace the anchor rule, if any.** The anchors existed to stop a
-  uniformly-true flag making anchored measures look additive. If the
-  query-rewrite change moved that hazard somewhere else rather than removing it,
-  the replacement belongs here. Part 5 cannot answer it; you or the engineer who
-  made the change can.
+The anchors are gone because the fact is now dense: it carries a row for every
+calendar day a student was enrolled, break days included, so any date resolves
+and no anchor flag is needed or available. Point-in-time questions pin
+`attendance_date` instead.
+
+The hazard did not go with them. It changed shape, and the model documents the
+new form in its own comments — each of these is a query that **compiles, runs,
+and returns a plausible wrong number**, which is the class the anchor cells
+existed to expose. Three replacement cells, all read off traps the model already
+names rather than invented here:
+
+| Cell                          | What the sandbox must make visible                                  |
+| ----------------------------- | ------------------------------------------------------------------- |
+| Unpinned cumulative measures  | A date range must give a materially higher count than a pinned date |
+| The two attendance views      | Day-weighted and student-weighted rates must disagree               |
+| School weeks versus ISO weeks | An ISO week grouping must be visibly wrong                          |
+
+- **Unpinned cumulative measures.** `count_chronically_absent`, `count_truants`
+  and their rates read a cumulative position the fact re-stamps on every daily
+  row, so over an open range they count students who crossed the line on _any_
+  day, which runs high. If every fabricated student is either always or never
+  chronically absent, the pinned and unpinned numbers match and a kit author
+  never learns the pin matters. Fabricate students who cross mid-year.
+- **The two attendance views are not interchangeable.** One is day-weighted and
+  additive over a range; the other is student-weighted and non-additive across
+  periods. Production has them diverging by 0.66 points. A sandbox where they
+  agree teaches that either will do.
+- **`period_type = 'week'` is the PowerSchool school week, not ISO.** Grouping
+  by a native week granularity compiles, does not throw, and silently returns a
+  meaningless breakdown, with no query-time guard. School weeks diverge from ISO
+  Mondays on roughly 14% of production calendar days, so fabricate school weeks
+  that split at month and term boundaries rather than a clean Monday-to-Sunday
+  grid.
+
+Part 5 fabricates the data that makes these true; Part 6 decides which also get
+a canary.
 
 <!-- CB: comments on Part 4 go here, or inline above. -->
 
