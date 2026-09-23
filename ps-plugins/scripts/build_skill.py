@@ -19,8 +19,14 @@ REPO = Path(__file__).resolve().parent.parent
 SKILL = REPO / "skills" / "gradebook-expectations-upload"
 DIST = REPO / "dist"  # ps-plugins/dist, beside the plugin zips
 
-VERSION = re.compile(r'^version:\s*"([^"]+)"', re.MULTILINE)
+# Accepts "1.0.0", '1.0.0', and 1.0.0 -- whatever quote style the next editor
+# of SKILL.md's frontmatter happens to use.
+VERSION = re.compile(r"^version:\s*[\"']?([^\"'\n]+?)[\"']?\s*$", re.MULTILINE)
 MD_LINK = re.compile(r"\[[^\]]*\]\(([^)]+)\)")
+# A markdown link may carry a title after the path: [text](path "title") or
+# [text](path 'title'). Strips it so the title text isn't checked as part of
+# the path.
+LINK_TITLE = re.compile(r"^(\S+)\s+[\"'].*[\"']$")
 
 
 def skill_version(skill_dir: Path) -> str:
@@ -31,10 +37,21 @@ def skill_version(skill_dir: Path) -> str:
 
 
 def unresolved_links(skill_dir: Path) -> list[str]:
-    """Relative markdown links that do not resolve inside the skill folder."""
+    """Relative markdown links that do not resolve inside the skill folder.
+
+    Only inline links (`[text](path)`, optionally with a trailing title) are
+    checked. Reference-style links (`[text][ref]`) are not matched at all, so
+    a broken one passes silently, and links inside fenced code blocks are
+    checked as if they were real -- both are accepted limitations, not bugs to
+    fix here, given the skill uses inline links throughout.
+    """
     missing: list[str] = []
     for md in sorted(skill_dir.rglob("*.md")):
-        for target in MD_LINK.findall(md.read_text()):
+        for raw_target in MD_LINK.findall(md.read_text()):
+            target = raw_target.strip()
+            title_match = LINK_TITLE.match(target)
+            if title_match:
+                target = title_match.group(1)
             if target.startswith(("http://", "https://", "#", "mailto:")):
                 continue
             if not (md.parent / target.split("#")[0]).exists():

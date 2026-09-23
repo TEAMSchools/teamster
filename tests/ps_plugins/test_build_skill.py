@@ -43,3 +43,16 @@ def test_every_relative_link_in_the_skill_resolves(tmp_path):
     missing = build_skill.unresolved_links(SKILL)
     assert missing == [], f"broken relative links: {missing}"
     assert "references/sheets.md" in names
+
+
+def test_version_accepts_single_quotes(tmp_path):
+    """The regex shouldn't care which quote style the next edit uses."""
+    (tmp_path / "SKILL.md").write_text("---\nname: x\nversion: '2.3.4'\n---\n")
+    assert build_skill.skill_version(tmp_path) == "2.3.4"
+
+
+def test_unresolved_links_ignores_a_title_after_the_path(tmp_path):
+    """[text](path "title") must check `path`, not `path "title"`."""
+    (tmp_path / "target.md").write_text("hi\n")
+    (tmp_path / "SKILL.md").write_text('[text](target.md "a title")\n')
+    assert build_skill.unresolved_links(tmp_path) == []
