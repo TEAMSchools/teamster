@@ -69,4 +69,4 @@ when to reach for it.
 
 ---
 
-_KTAF Data Team · data@kippnj.org_
+Maintained by the KTAF Data Team · data@kippnj.org

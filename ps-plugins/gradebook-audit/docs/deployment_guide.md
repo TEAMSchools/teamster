@@ -75,25 +75,26 @@ plugin.
    > plugin. If it does recur, stop: don't enable the plugin against a table
    > with missing fields.
 
-| Field Name     | Data Type   | Default Value | Description                                                              |
-| -------------- | ----------- | ------------- | ------------------------------------------------------------------------ |
-| `school_level` | String(2)   | ES            | The school level: ES, MS or HS                                           |
-| `quarter`      | String(2)   |               | The quarter/term for the current academic year (Q1 to Q4)                |
-| `week_number`  | Integer     |               | The week number for the given quarter. Numbering restarts every quarter. |
-| `cnt_w`        | Integer     | 0             | The number of Work Habit assignments expected YTD.                       |
-| `cnt_h`        | Integer     | 0             | The number of Homework assignments expected YTD.                         |
-| `cnt_f`        | Integer     | 0             | The number of Formative assignments expected YTD.                        |
-| `cnt_s`        | Integer     | 0             | The number of Summative assignments expected YTD.                        |
-| `notes`        | String(255) |               | Notes for teachers.                                                      |
+   | Field Name     | Data Type   | Default Value | Description                                                              |
+   | -------------- | ----------- | ------------- | ------------------------------------------------------------------------ |
+   | `school_level` | String(2)   | ES            | The school level: ES, MS or HS                                           |
+   | `quarter`      | String(2)   |               | The quarter/term for the current academic year (Q1 to Q4)                |
+   | `week_number`  | Integer     |               | The week number for the given quarter. Numbering restarts every quarter. |
+   | `cnt_w`        | Integer     | 0             | The number of Work Habit assignments expected YTD.                       |
+   | `cnt_h`        | Integer     | 0             | The number of Homework assignments expected YTD.                         |
+   | `cnt_f`        | Integer     | 0             | The number of Formative assignments expected YTD.                        |
+   | `cnt_s`        | Integer     | 0             | The number of Summative assignments expected YTD.                        |
+   | `notes`        | String(255) |               | Notes for teachers.                                                      |
 
-> ℹ️ **Field names are lowercase snake_case**, matching the convention used
-> throughout the KTAF database — and matching what is already deployed on the
-> other instances. **Group and table names are the exception:** they stay
-> uppercase with the `U_` prefix (`U_GRADEBOOK_AUDIT`, `U_EXPECTATIONS`), which
-> is why Step 6 above has you type `EXPECTATIONS` rather than `expectations`.
+   > ℹ️ **Field names are lowercase snake_case**, matching the convention used
+   > throughout the KTAF database — and matching what is already deployed on the
+   > other instances. **Group and table names are the exception:** they stay
+   > uppercase with the `U_` prefix (`U_GRADEBOOK_AUDIT`, `U_EXPECTATIONS`),
+   > which is why Step 6 above has you type `EXPECTATIONS` rather than
+   > `expectations`.
 
-> ⚠️ PS displays fields alphabetically in the UI — this is normal and does not
-> affect functionality.
+   > ⚠️ PS displays fields alphabetically in the UI — this is normal and does
+   > not affect functionality.
 
 9. Click **Submit** to save the table and all fields.
 
@@ -286,7 +287,7 @@ point.
 
 The header row is **required and validated positionally**. It must be exactly:
 
-```
+```text
 School Level,Quarter,Week Number,W,H,F,S,Notes
 ```
 
@@ -339,7 +340,7 @@ and the data is invisible to every dashboard and model.
 
 **The change is one file per instance:**
 
-```
+```text
 src/teamster/code_locations/<code_location>/powerschool/sis/dlt/config/assets.yaml
 ```
 

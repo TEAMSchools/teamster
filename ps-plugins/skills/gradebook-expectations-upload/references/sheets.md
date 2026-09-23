@@ -86,7 +86,7 @@ weeks are counted off the PowerSchool calendar. Details in `week-matching.md`.
 **`PS Plugin CSV Template`** — the literal CSV header row, to copy rather than
 retype:
 
-```
+```text
 School Level,Quarter,Week Number,W,H,F,S,Notes
 ```
 

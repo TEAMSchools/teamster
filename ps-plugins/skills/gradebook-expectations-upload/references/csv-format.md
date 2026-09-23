@@ -21,7 +21,7 @@ tool for this — write a plain `.csv`.
 
 ## The header row must be exactly this
 
-```
+```text
 School Level,Quarter,Week Number,W,H,F,S,Notes
 ```
 

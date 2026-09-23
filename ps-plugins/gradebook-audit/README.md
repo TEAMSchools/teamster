@@ -42,7 +42,7 @@ UI. See the full deployment guide:
 
 ## File Inventory
 
-```
+```text
 gradebook-audit/
 ├── plugin.xml
 ├── permissions_root/
@@ -181,4 +181,4 @@ the negative case is the whole point.
 
 ---
 
-_KTAF Data Team · data@kippnj.org_
+Maintained by the KTAF Data Team · data@kippnj.org

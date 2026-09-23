@@ -24,6 +24,11 @@ import re
 import shutil
 import sys
 import tempfile
+
+# The only XML this script parses is plugin.xml and its siblings, which are
+# repo-controlled files, not untrusted input. defusedxml would also break the
+# standard-library-only constraint this script is built under.
+# trunk-ignore(bandit/B405): repo-controlled XML, not untrusted input
 import xml.etree.ElementTree as ET
 import zipfile
 from pathlib import Path
@@ -53,6 +58,7 @@ def find_plugins() -> list[Path]:
 
 
 def plugin_meta(plugin_xml: Path) -> tuple[str, str]:
+    # trunk-ignore(bandit/B314): repo-controlled XML, not untrusted input
     root = ET.parse(plugin_xml).getroot()
     name = root.get("name") or plugin_xml.parent.name
     version = root.get("version") or "0.0"
@@ -241,7 +247,7 @@ def build(plugin_dir: Path) -> Path | None:
 
         with zipfile.ZipFile(out) as z:
             count = len(z.namelist())
-        print(f"  validated: all XML paths resolve")
+        print("  validated: all XML paths resolve")
         print(
             f"  wrote {out.relative_to(REPO)} ({count} files, {out.stat().st_size:,} bytes)"
         )

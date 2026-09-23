@@ -154,7 +154,7 @@ at the last completed week.
 3. **Delete four columns:** `academic_year`, `region`, `week_start_monday` and
    `week_end_friday` (columns F and G).
 4. **Retype the header row** to exactly:
-   ```
+   ```text
    School Level,Quarter,Week Number,W,H,F,S,Notes
    ```
    The tab's own headers are the database names. Left as they are, the file is
