@@ -101,8 +101,8 @@ three different claims and the design wants all three.
 
 ### One terminology trap
 
-"The sandbox" is not Cube's **Playground**. Playground is a console feature in
-the existing production deployment, and
+"The sandbox" is not Cube's **Playground**. Playground is a Cube Cloud web UI
+feature in the existing production deployment, and
 [`src/cube/CLAUDE.md`](../../../src/cube/CLAUDE.md) forbids its Models tab
 because it overwrites hand-authored YAML. The sandbox is a separate Cube Cloud
 deployment pointed at a separate BigQuery project. If a stakeholder says
@@ -126,32 +126,36 @@ local Cube Core container was considered and declined on 2026-09-11.
 | Control plane | Sandbox Cube Cloud deployment from production's | Nowhere     |
 
 Both deployments live in one Cube Cloud account. A GCP deny policy says nothing
-about that. If MasterBorn holds a console seat, what they can reach in the
-production deployment is decided by their Cube Cloud role — and nothing in the
-spec says what that role is.
+about that. If MasterBorn holds a seat in that account, what they can reach in
+the production deployment is decided by their Cube Cloud role — and nothing in
+the spec says what that role is.
 
-### Proposal: MasterBorn gets no Cube Cloud seat
+### Decision: MasterBorn gets no Cube Cloud account and no web UI access
 
-Give them the sandbox's own API secret and SQL API password, and nothing else.
+Confirmed by Cristina, 2026-09-23. They hold the sandbox's own API secret and
+SQL API password, and nothing else. No seat exists for them in KTAF's Cube Cloud
+account, so the control-plane boundary has nothing to govern.
+
+They build the kit against three things: the `/meta` endpoint, the committed
+[`cube-catalog-meta.json`](../../reference/cube-catalog-meta.json), and the
+query APIs. No Cube Cloud web UI, so no Playground and no data model browser.
 
 This is the move the design has already made twice. A shared dataset with a
 templated name was rejected for turning a structural boundary into a string. The
 local container was rejected for needing a new seam in `cube.js`. Seats governed
-by a role are a configuration guarantee; no seats is a structural one. It is
-also the only one of the three options that needs no procurement and no
-verification.
+by a role would be a configuration guarantee; no seats is a structural one.
 
-The alternatives, for the record:
+Two alternatives were available and are now moot. Recording them so the decision
+is not reopened by someone who finds them:
 
 - **Deployment-scoped custom roles.** The review cites these as Enterprise-only.
-  I could not confirm that tier in the published documentation, so this option
-  carries an unverified cost on top of being the weaker kind of guarantee.
-- **A separate Cube Cloud account.** Structural, and the right fallback if
-  MasterBorn turns out to need a console. Costs a second subscription.
+  I could not confirm that tier in the published documentation — and with no
+  seats to scope, the question no longer has to be answered.
+- **A separate Cube Cloud account for MasterBorn.** Structural, but it costs a
+  second subscription to solve a problem that no longer exists.
 
-**What would change the answer:** whether the kit can be built against `/meta`,
-the committed catalog and an API client alone. If MasterBorn needs Playground,
-the fallback is the separate account — not seats in ours.
+**What would reopen this:** MasterBorn asking for the web UI. The answer then is
+a separate Cube Cloud account, not a seat in KTAF's.
 
 ### What the sandbox deployment must be configured with
 
@@ -162,18 +166,15 @@ the fallback is the separate account — not seats in ours.
   everyone. That failure matters more here than it normally would: a deployment
   that denies everyone looks exactly like perfect isolation, so Piece 1's test
   would pass for the wrong reason. Part 3 has to tell the two apart.
-- **`CUBE_IMPERSONATORS`.** Console users resolve through `cubeCloud.username`
+- **`CUBE_IMPERSONATORS`.** Web UI users resolve through `cubeCloud.username`
   against the fabricated `dim_staff_cube_access`, so a real KTAF person matches
-  no row and is denied. Anyone testing personas in the sandbox console needs an
-  entry. Under the proposal above this list is KTAF-only.
+  no row and is denied. Anyone testing personas in the sandbox web UI needs an
+  entry. Per the decision above, this list is KTAF-only.
 
-### What this part cannot settle
+### Nothing here is open
 
-- **Whether MasterBorn needs a console at all.** A question for them, and the
-  only input that changes the proposal.
-- **Whether deployment-scoped custom roles are Enterprise-only.** Cited by the
-  review from Cube's documentation; I could not confirm it. Only matters if the
-  proposal is rejected.
+Both questions this part opened are closed: MasterBorn needs no account, and the
+custom-role tier question died with it.
 
 <!-- CB: comments on Part 2 go here, or inline above. -->
 
@@ -229,12 +230,14 @@ checked, not because it needs reading now.
 
 ### A1 — Cube Cloud account isolation is unaddressed
 
-Belongs to Part 2. This is the largest gap in the design.
+Belongs to Part 2, and **closed by the decision there on 2026-09-23**: no
+MasterBorn account, so there is no seat to scope. Kept as the record of what the
+review found, since the review called it the largest gap in the design.
 
 GCP isolation does nothing about two deployments sharing one Cube Cloud account.
-If MasterBorn gets console seats for the sandbox, their reach into the
-production deployment depends on their Cube Cloud role, and deployment-scoped
-roles are custom roles, which are Enterprise-only.
+If MasterBorn gets web UI seats for the sandbox, their reach into the production
+deployment depends on their Cube Cloud role, and deployment-scoped roles are
+custom roles, which are Enterprise-only.
 
 Three options, per the review: API access only (the sandbox's own API secret and
 SQL password, no seats), deployment-scoped custom roles, or a separate Cube
@@ -365,7 +368,7 @@ vendor documentation on 2026-09-23:
 > Staging environments are activated automatically for specific source code
 > branches **when a branch is switched to in the Cube Cloud UI**.
 
-The trigger is a person switching branches in that deployment's console. Not a
+The trigger is a person switching branches in that deployment's web UI. Not a
 push, and not the act of connecting the repository. There is a toggle, but it
 governs availability rather than creation.
 
@@ -384,7 +387,7 @@ Proposed for Part 8: delete the paragraph and keep CLI mode on its first reason
 alone, which is that nothing deploys until someone runs the command. Say plainly
 that the margin over Git mode is one reason rather than two.
 
-Also for Part 8: three console checks collapse to one, and the survivor decides
+Also for Part 8: three web UI checks collapse to one, and the survivor decides
 whether Git mode is even available. **Can a Git-mode deployment point its
 production environment at a branch other than `main`?** The documentation
 describes the production environment as running "the data model from the main
