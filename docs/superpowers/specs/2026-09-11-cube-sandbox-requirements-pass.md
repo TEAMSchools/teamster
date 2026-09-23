@@ -137,8 +137,9 @@ SQL API password, and nothing else. No seat exists for them in KTAF's Cube Cloud
 account, so the control-plane boundary has nothing to govern.
 
 They build the kit against three things: the `/meta` endpoint, the committed
-[`cube-catalog-meta.json`](../../reference/cube-catalog-meta.json), and the
-query APIs. No Cube Cloud web UI, so no Playground and no data model browser.
+catalog `cube-catalog-meta.json`, and the query APIs. No Cube Cloud web UI, so
+no Playground and no data model browser. Note that the catalog is not on `main`
+yet — see [A9](#a9--the-specs-cube-model-facts-checked-against-main).
 
 This is the move the design has already made twice. A shared dataset with a
 templated name was rejected for turning a structural boundary into a string. The
@@ -413,26 +414,27 @@ keeps that true.
 ### The null rule cannot work as written
 
 The rule is one null row and one non-null row per column, "unless declared
-not-nullable". Every column in `kipptaf_marts` reports `NULLABLE`, so the
-exemption never fires and the rule demands a null in all 230 — including join
-keys and the columns `access_policy` filters on. A null join key breaks the very
-fixtures the manifest defines, and a null policy column makes the persona
-resolve to nothing, which is the one thing the sandbox exists to exercise.
+not-nullable". Re-measured against production on 2026-09-23: **243 columns
+across 21 tables, every one `NULLABLE`, none nested.** So the exemption never
+fires, and the rule demands a null in all 243 — including join keys and the
+columns `access_policy` filters on. A null join key breaks the very fixtures the
+manifest defines, and a null policy column makes the persona resolve to nothing,
+which is the one thing the sandbox exists to exercise.
 
-The spec measured "every one of them nullable" on 2026-09-11; the review says
-"nearly every". The fix does not depend on which is right, but the generator
-should assert the count it finds rather than carry either figure as a constant.
+The spec's "every one of them nullable" was right and the review's "nearly
+every" was the imprecise one. The generator should still assert the count it
+finds rather than carry 243 as a constant — the figure has already moved once,
+from the spec's 230.
 
 ### Decision: exempt structurally, and err toward more nulls than production
 
-Three exemption classes, each **derived rather than listed**, so the
+Two exemption classes, each **derived rather than listed**, so the
 generated-not-hand-written property survives:
 
 | Class                                  | Derived from                       |
 | -------------------------------------- | ---------------------------------- |
 | Join and surrogate keys                | The join-path fixtures             |
 | Columns any `access_policy` filters on | Parsing the 6 views' policy blocks |
-| The 4 snapshot anchors                 | Their own true/false rule already  |
 
 Every other column requires both a null and a non-null.
 
@@ -467,22 +469,35 @@ no cloud access at all. Consequences worth having:
 Restated because both are load-bearing and easy to lose in a rewrite:
 
 - **The table set is the union of `sql_table:` values and the `kipptaf_marts.*`
-  references in `cube.js`, asserted to have 20 members.** Parsing `sql_table:`
-  alone finds 19. The missing one, `dim_staff_reporting_chain`, is read directly
-  by `cube.js` and appears in no cube YAML. Miss it and the sandbox still
-  compiles, while identity resolution fails for exactly the `reporting_chain`
-  personas that production cannot test either.
+  references in `cube.js`, asserted against the count the generator finds.**
+  Parsing `sql_table:` alone finds 20 distinct tables across 21 declarations.
+  The missing one, `dim_staff_reporting_chain`, is read directly by
+  [`cube.js:145`](../../../src/cube/cube.js) and appears in no cube YAML, making
+  the union 21. Miss it and the sandbox still compiles, while identity
+  resolution fails for exactly the `reporting_chain` personas that production
+  cannot test either. Assert the count rather than hard-coding it: the spec said
+  20 and it is now 21.
 - **Enum domains come from `access.js`, never from `SELECT DISTINCT`.**
   Production is a subset of the domain the code handles — 4 policy branches have
   no production row that reaches them. This does not breach the parent spec's
   fidelity rule, which covers a sandbox wider than production, not a production
   narrower than its own code.
 
+### The spec's model facts are stale — see A9
+
+Checked against `main` on 2026-09-23, after last week's query-rewrite and
+attendance changes. The snapshot anchors no longer exist, so the manifest's
+anchor cells and their exemption are both gone from this part. Several other
+counts moved. The full list is in
+[A9](#a9--the-specs-cube-model-facts-checked-against-main).
+
 ### What is open
 
-- **Whether the anchors' exemption is right.** They are exempt from the null
-  rule because they carry a stricter rule of their own. If a null anchor is
-  something the kit could meet in production, they should require one too.
+- **Which cells replace the anchor rule, if any.** The anchors existed to stop a
+  uniformly-true flag making anchored measures look additive. If the
+  query-rewrite change moved that hazard somewhere else rather than removing it,
+  the replacement belongs here. Part 5 cannot answer it; you or the engineer who
+  made the change can.
 
 <!-- CB: comments on Part 4 go here, or inline above. -->
 
@@ -612,9 +627,13 @@ never on a value list:
 
 <!-- markdownlint-enable MD040 -->
 
-So any non-`none` string emits `staff-benefits`. The vocabulary is settled by
-the sibling columns: `staff_compensation_scope` and `staff_observations_scope`
-both use `all_in_scope`, `reporting_chain`, and `reporting_chain_or_below_rank`.
+So any non-`none` string emits `staff-benefits`. Re-checked on 2026-09-23: the
+loop is at `access.js:109-110`, still branches on `!== "none"`, and
+`staff_benefits_scope` is one of three `STAFF_SENSITIVE_TIERS` alongside
+`staff_compensation_scope` and `staff_observations_scope`. Those siblings settle
+the vocabulary, but Part 5 should read their live value set rather than carry it
+from the spec — two other scope columns were removed since it was written, per
+[A9](#a9--the-specs-cube-model-facts-checked-against-main).
 
 Proposed for Part 5: the generator emits **two** distinct non-`none` values plus
 `none`. Two rather than one on purpose — a single non-`none` value lets a kit
@@ -734,3 +753,46 @@ token-exchange Cloud Run service, which is Deliverable 1 of the parent spec. The
 generator, the drift gate, and the deploy mechanism are all indifferent to it.
 
 Proposed for Part 10: it moves to its own issue.
+
+### A9 — The spec's Cube model facts, checked against `main`
+
+Belongs to Parts 4 to 6. Checked on 2026-09-23 against the working tree, which
+is level with `origin/main`, after last week's query-rewrite and attendance
+changes. Column counts re-measured against production `INFORMATION_SCHEMA`.
+
+| Spec claim                                            | Reality on `main`                       |
+| ----------------------------------------------------- | --------------------------------------- |
+| 4 snapshot anchors                                    | **Gone.** No `is_*_record` in the model |
+| 7 `*_scope` columns                                   | **5**                                   |
+| 230 columns across 20 tables                          | **243 across 21**                       |
+| Table-set union has 20 members                        | **21**                                  |
+| `sql_table:` yields 19 tables                         | **20 distinct, 21 declarations**        |
+| 129 YAML files under `src/cube/model/`                | **30** (24 cubes, 6 views)              |
+| 6 views                                               | 6, but 2 attendance view names are new  |
+| Every column `NULLABLE`, none nested                  | Confirmed: 0 not-nullable, 0 nested     |
+| `dim_staff_reporting_chain` invisible to `sql_table:` | Confirmed, `cube.js:145`                |
+| `cube.js` refs at :51, :59, :137, :145, :221          | All five exact                          |
+| `access.js:109-111` branches on `!== "none"`          | Correct, now at 109-110                 |
+| `hasRemit` / `hasChain` in `buildGroups`              | Both present                            |
+| `student_assessment_scores` pre-aggregation           | Present                                 |
+| `scripts/cube_rls_matrix.py` on `main`                | Present                                 |
+
+Two changes carry design weight rather than just a number:
+
+- **The anchors are gone.** Piece 2 required a true/false mix on
+  `is_latest_record`, `is_month_end_record`, `is_week_end_record` and
+  `is_current_record`, to stop a uniformly-true flag making anchored measures
+  look additive to the kit. That hazard was real; whether the query-rewrite
+  change removed it or moved it is the open question in Part 4.
+- **`staff_location_scope` and `staff_department_scope` no longer exist.** The
+  remaining five are `student_location_scope`, `staff_pii_scope`,
+  `staff_compensation_scope`, `staff_observations_scope` and
+  `staff_benefits_scope`. Piece 2's persona coverage is specified against the
+  old seven, so those cells need regenerating rather than editing.
+
+Separately, **`docs/reference/cube-catalog-meta.json` does not exist on
+`main`.** It lives on the unmerged branch
+`cristinabaldor/feat/claude-cube-api-key-access`, and a copy sits in
+`.claude/scratch/masterborn-handoff/`. Parts 2 and 7 both treat it as the
+committed catalog the `/meta` check compares against, so something has to land
+it on `main` before that check can be built.
