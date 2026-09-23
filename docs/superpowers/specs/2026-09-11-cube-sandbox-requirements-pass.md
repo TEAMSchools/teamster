@@ -193,20 +193,21 @@ Built and tested on 2026-09-23.
 | Service account   | `cube-cloud-sandbox@teamster-cube-sandbox.iam.gserviceaccount.com` |
 | Its roles         | `bigquery.jobUser`, `bigquery.dataViewer`, sandbox project only    |
 | Cross-project IAM | None, in either direction                                          |
-| Deny policy       | `deny-sandbox-bigquery` on `teamster-332318`                       |
+| Deny policy       | `deny-sandbox-bigquery` on `teamster-332318` — **unverified**      |
 
-The deny policy blocks every service account in the sandbox project from
-BigQuery reads, queries and writes in production. A deny overrides any grant, so
-a stray grant later cannot reopen access, and it does not depend on where the
-project sits in the resource hierarchy.
+The deny policy is intended to block every service account in the sandbox
+project from BigQuery reads, queries and writes in production. A deny overrides
+any grant, so a stray grant later cannot reopen access, and it does not depend
+on where the project sits in the resource hierarchy. Whether it exists has not
+been confirmed — see "The deny policy is unverified" below.
 
 ### Three claims, and they are not the same claim
 
-| #   | Claim                                                         | Proven by                | State    |
-| --- | ------------------------------------------------------------- | ------------------------ | -------- |
-| 1   | The sandbox service account holds no IAM on `teamster-332318` | Reading the allow policy | Reported |
-| 2   | A later grant cannot reopen it                                | `deny-sandbox-bigquery`  | Built    |
-| 3   | The read actually fails                                       | A test that errors       | Verified |
+| #   | Claim                                                         | Proven by                | State      |
+| --- | ------------------------------------------------------------- | ------------------------ | ---------- |
+| 1   | The sandbox service account holds no IAM on `teamster-332318` | Reading the allow policy | Reported   |
+| 2   | A later grant cannot reopen it                                | `deny-sandbox-bigquery`  | Unverified |
+| 3   | The read actually fails                                       | A test that errors       | Verified   |
 
 Claim 1 is about what was written. Claim 3 is about what happens. The design
 wants all three because the first two can both hold while the third quietly does
@@ -326,23 +327,52 @@ reopen.
   key. The Cube deployment needs a key because it runs outside GCP; your laptop
   does not.
 
+### The deny policy is unverified, and may not exist
+
+Claim 2 rests on `deny-sandbox-bigquery` existing on `teamster-332318`. Two
+attempts to confirm it on 2026-09-23 both failed on the same permission:
+
+| Identity                               | Result                          |
+| -------------------------------------- | ------------------------------- |
+| `codespaces@teamster-332318` (the ADC) | 403, `denypolicies.list` denied |
+| `cbaldor@apps.teamschools.org`         | 403, `denypolicies.list` denied |
+
+This is more than a missing confirmation. Creating a deny policy needs
+`iam.denypolicies.create` on the project, and an identity able to create one can
+normally list them. The account that reported creating the policy cannot list
+it, so either it was created under a different identity or it was not created.
+
+The passing isolation test does not settle it either way. Its 403 read
+`User does not have permission to query table`, which is the ordinary
+absent-grant denial. A deny policy would also produce a 403, so the message
+neither confirms nor rules one out.
+
+**Until someone with `denypolicies.list` on `teamster-332318` confirms it, claim
+2 is unverified and the isolation rests on claim 1 alone** — that is, on the
+absence of a grant, which is precisely the thing a deny policy exists to stop a
+later edit from undoing.
+
 ### What the scheduled check must assert
 
-Two assertions, not one. The second is the gap the passing test leaves:
+Two assertions, not one:
 
 1. The 403 on production, with the sandbox read succeeding in the same run.
-2. That `deny-sandbox-bigquery` still exists on `teamster-332318`.
+2. That `deny-sandbox-bigquery` exists on `teamster-332318`.
 
-Reading a deny policy needs `iam.googleapis.com/denypolicies.list` on the
-production project, which the codespace's own credentials do not hold. So
-whatever runs this check needs an identity that does — a constraint on where the
-check lives, and one for the plan rather than for this part.
+The permission gap above is a constraint on the check, not just on today: the
+identity that runs it needs production IAM read, which nothing on the sandbox
+side can have. Where that check lives is a plan question.
 
-### Nothing here is open
+### What is open
 
-A2's last unchecked item — which role creates an IAM deny policy — is answered
-by the policy existing. The snapshot's file location, its shape, and what runs
-the refresh step are Part 5's, and are recorded there.
+- **Confirm the deny policy exists, or create it.** Needs someone with
+  `denypolicies.list` — and `iam.denypolicies.create` if it turns out to be
+  missing — on `teamster-332318`. Likely the same engineer who created the
+  sandbox project.
+
+A2's last unchecked item — which role creates an IAM deny policy — is _not_
+answered after all; it is now the open item above. The snapshot's file location,
+its shape, and what runs the refresh step are Part 5's, and are recorded there.
 
 <!-- CB: comments on Part 3 go here, or inline above. -->
 
@@ -429,9 +459,10 @@ cannot reopen the read.
 
 So the resource-hierarchy question stops gating Piece 1.
 
-**Implemented 2026-09-23** as `deny-sandbox-bigquery` on `teamster-332318`,
-which also answers the one item this entry left unchecked: the role needed to
-create a deny policy was one Cristina held.
+**Reported implemented 2026-09-23** as `deny-sandbox-bigquery` on
+`teamster-332318`, but not confirmed: no identity tried that day could run
+`denypolicies.list` on that project. See Part 3. The item this entry left
+unchecked — which role creates a deny policy — is therefore still open.
 
 ### A3 — The sandbox GCP project does not exist yet
 
