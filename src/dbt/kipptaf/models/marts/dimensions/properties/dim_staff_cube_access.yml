@@ -31,12 +31,12 @@ models:
               )
           config:
             severity: error
-      # An employing business unit that does not match dim_regions.legal_entity
-      # must deny, not fall through to a grant: 'unknown' matches only the
-      # entity-agnostic 'any' role rows, never the KTAF/Region-specific grants.
-      # Asserts every staff member's employing entity resolves. Zero rows today
-      # across 1,573 staff, so a hit means ADP added or renamed an org unit and
-      # dim_regions has not caught up.
+      # An employing business unit whose code does not match
+      # dim_regions.business_unit_code must deny, not fall through to a grant:
+      # 'unknown' matches only the entity-agnostic 'any' role rows, never the
+      # KTAF/Region-specific grants. Asserts every staff member's employing
+      # entity resolves. Zero rows today across 1,573 staff, so a hit means ADP
+      # added an org unit and dim_regions has not caught up.
       - dbt_utils.expression_is_true:
           arguments:
             expression: |
@@ -65,6 +65,23 @@ models:
             expression: |
               student_location_scope != 'school'
               or location_abbreviation is not null
+          config:
+            severity: warn
+      # legal_entity_region_key is employer-derived for a FERPA reason that
+      # covers student records only. It also bounds the staff-PII remit, via
+      # computeAllowedAbbreviations, whenever staff_location_scope is region or
+      # school — and staff records are not education records, so that half has
+      # no FERPA argument behind it. It is inert only while no viewer holds both
+      # a location-bounded remit and a non-none PII scope; zero do today,
+      # network-wide. This is the tripwire for that: a hit means someone's staff
+      # PII remit is now bounded by their employer rather than their desk, which
+      # is a decision to make deliberately, not to discover. Warn, not error —
+      # it constrains a future grant, not current correctness.
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: |
+              staff_pii_scope = 'none'
+              or staff_location_scope not in ('region', 'school')
           config:
             severity: warn
     columns:
@@ -96,23 +113,14 @@ models:
         data_type: string
         description: >-
           Region key of the legal entity EMPLOYING this viewer, resolved by
-          joining business_unit_name to dim_regions.legal_entity — not the
+          joining business_unit_code to dim_regions.business_unit_code — not the
           region of the desk they sit at. This is the student row-level security
           boundary: FERPA binds student-record access to the employing LEA, and
           region maps 1:1 to legal entity, so the value is still joinable to
-          dim_locations.region_key. NULL when the employing business unit does
-          not match a known legal entity, which denies.
-        data_tests:
-          - not_null:
-              config:
-                severity: warn
-
-      - name: legal_entity
-        data_type: string
-        description: >-
-          Legal name of the employing entity, straight from the work
-          assignment's home organizational unit. Carried for debugging and for
-          the dim_regions join that produces legal_entity_region_key and entity.
+          dim_locations.region_key. It also bounds the staff-PII remit when
+          staff_location_scope is region or school, which FERPA does not argue
+          for; a model-level warn test flags any viewer who reaches that state.
+          NULL when the employing business unit does not resolve, which denies.
 
       - name: location_abbreviation
         data_type: string

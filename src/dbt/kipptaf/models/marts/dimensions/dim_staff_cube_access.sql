@@ -40,15 +40,13 @@ with
             j.job_function_code,
 
             o.department_name,
-            o.business_unit_name as legal_entity,
 
             loc.abbreviation as location_abbreviation,
 
             r.region_key as legal_entity_region_key,
 
-            -- Matched on business_unit_code rather than the legal name because
-            -- codes outlive rebrands. The unmatched branch must stay first: see
-            -- the legal_entity_region_key description for why 'unknown' denies.
+            -- 'unknown' is the deny sentinel for an employer dim_regions does
+            -- not know; see the legal_entity_region_key description.
             case
                 when r.region_key is null
                 then 'unknown'
@@ -73,7 +71,11 @@ with
             and wal.is_current
         left join
             {{ ref("dim_locations") }} as loc on wal.location_key = loc.location_key
-        left join {{ ref("dim_regions") }} as r on o.business_unit_name = r.legal_entity
+        -- Joined on the ADP business-unit code, not the legal name: codes
+        -- outlive rebrands, and this column is already declared and tested as
+        -- an FK to dim_regions.business_unit_code.
+        left join
+            {{ ref("dim_regions") }} as r on o.business_unit_code = r.business_unit_code
     ),
 
     enriched as (
@@ -83,7 +85,6 @@ with
             ca.job_function_code,
             ca.department_name,
             ca.entity,
-            ca.legal_entity,
             ca.legal_entity_region_key,
             ca.location_abbreviation,
 
@@ -128,7 +129,6 @@ with
         select
             e.staff_key,
             e.google_email,
-            e.legal_entity,
             e.legal_entity_region_key,
             e.location_abbreviation,
             e.department_group,
@@ -186,7 +186,6 @@ with
 select
     staff_key,
     google_email,
-    legal_entity,
     legal_entity_region_key,
     location_abbreviation,
     department_group,
