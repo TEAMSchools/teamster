@@ -76,10 +76,14 @@ Two were rejected, for reasons a stakeholder can repeat without help:
 
 ### Why fabrication is days of work rather than months
 
-Only two things are read from production: **schema and codesets** — column
-names, types, nullability, and the distinct values of categorical fields such as
-`race` and `enrollment_status`. No rows, ever. The privacy argument is one
-sentence long, and it is structural rather than statistical.
+One thing is read from production: **schema** — column names, types and
+nullability. No data of any kind, ever. The privacy argument is one sentence
+long, and it is structural rather than statistical.
+
+Values the kit must match come from the model rather than from production.
+`access.js` settles the access-control enums, and every other load-bearing value
+is already written down in the cube YAML, because a value that matters gets
+documented. Everything else is invented.
 
 ### The part that is easy to miss
 
@@ -299,21 +303,18 @@ workaround — it is better than what it replaces, in three ways:
   wanted each sandbox bump to ship a diff of added, removed and retyped members.
   The snapshot diff is that document, for free.
 
-### One hard rule on the snapshot, because it goes into git
+### The snapshot carries schema only
 
-The snapshot carries schema **and codesets** — the distinct values of
-categorical fields, per Part 1. Git history is permanent, so the codeset half
-needs a rule rather than a judgment call each time:
+Because the snapshot is committed and git history is permanent, the safest rule
+is the narrowest one: **the snapshot carries column names, types and
+nullability, and nothing else.** No values, no distinct-value pulls, no counts.
+There is then no PII decision to get right on the refresh step, because it never
+reads a row.
 
-- Codesets are pulled only for columns on an explicit allowlist, each a genuine
-  low-cardinality enumeration such as `race` or `enrollment_status`.
-- A cardinality ceiling, so a column that is not really an enumeration fails the
-  pull instead of dumping its values.
-- Never from free-text columns or anything naming a person. A distinct-values
-  pull on the wrong column writes student data to git permanently.
-
-Part 5 settles the allowlist and the ceiling. The rule itself is not Part 5's to
-reopen.
+An earlier draft had it carry codesets too, with an allowlist, a cardinality
+ceiling and a PII exclusion to keep the pull safe. Part 5 retires that: the
+values the kit must match are in the model, not in production data, so the guard
+protected a read that does not need to happen.
 
 ### What to do with the credentials
 
@@ -598,7 +599,7 @@ Part 3 split the work at the isolation boundary. Naming where each half runs:
 
 | Step              | Reads                                       | Writes                    | Identity    |
 | ----------------- | ------------------------------------------- | ------------------------- | ----------- |
-| Refresh           | Production `INFORMATION_SCHEMA`, codesets   | The snapshot, to the repo | Production  |
+| Refresh           | Production `INFORMATION_SCHEMA`             | The snapshot, to the repo | Production  |
 | Generate and load | The pinned snapshot, `access.js`, cube YAML | Sandbox tables            | Sandbox key |
 
 The refresh belongs in Dagster, where production credentials already are. The
@@ -612,28 +613,33 @@ The snapshot lives beside the model it describes, under `src/cube/sandbox/`,
 with the coverage manifest. It is committed, diffed in review, and pinned by
 revision per Part 4.
 
-### The codeset allowlist is derived, then guarded three ways
+### Decision: no codesets, and the values come from the model
 
-Part 3 made this a hard rule because the snapshot lands in permanent git
-history. Filling it in, and keeping it generated rather than hand-listed:
+The spec reads "schema and codesets" from production. Drop the codesets. The
+refresh step then reads no production data at all, only `INFORMATION_SCHEMA`.
 
-1. **Candidates are derived from the model** — a column qualifies only if a
-   public view exposes it as a `type: string` dimension. A column no view
-   surfaces cannot teach the kit anything, so it needs no codeset.
-2. **PII columns are excluded outright**, by `config.meta.contains_pii` in the
-   dbt YAML and by membership of `staff_pii`. A distinct-values pull on a name
-   column writes real people into git permanently, and the tag is the repo's
-   existing answer to which columns those are.
-3. **A cardinality ceiling rejects the rest.** A column whose distinct count
-   exceeds the ceiling is not an enumeration, whatever its type, and the pull
-   **fails** rather than truncating. Truncating would silently ship a partial
-   domain, which is the failure the enum rule already exists to prevent.
+Three reasons, in order of weight:
 
-The tag is authoritative but incomplete, per the repo's own PII reference, so
-the ceiling is the second guard and the committed diff — reviewed by a person
-before it merges — is the third.
+1. **The vocabulary that matters is already elsewhere.** `access.js` settles the
+   access-control enums, and the spec already forbids sourcing those from
+   production data. Every other value the kit must match is written down in the
+   cube YAML — `period_type` is year, month and week; `ada_tier` is Tier 1
+   through 4; tardy is the T-prefix codes; out-of-school suspension is OS, OSS,
+   OSSP and SHI. A value that matters gets documented, because it has to be.
+2. **Real values make the sandbox worse at its job.** A kit author who hardcodes
+   a value list taken from the sandbox has written a bug. If the sandbox carries
+   production's real values, that bug survives repoint by luck. If the values
+   are visibly invented, it fails in the sandbox — which is what the sandbox is
+   for.
+3. **It removes the only production-data read in the design**, and with it the
+   allowlist, the cardinality ceiling and the PII exclusion that existed solely
+   to make that read safe. Part 1's privacy argument becomes absolute rather
+   than qualified.
 
-Part 3's rule stands: never from free text, never from anything naming a person.
+The risk, stated plainly: a load-bearing value that is **not** in the model
+leaves the kit without it. That is discoverable rather than silent, and the fix
+is to document the value in the model, where it belonged already. Copying it
+across quietly would have hidden the same gap.
 
 ### Derive the table set and order; do not write them down
 
@@ -697,17 +703,15 @@ purpose, because a plausible dataset would omit all four:
 - **Two distinct non-`none` `staff_benefits_scope` values**, plus `none`. One
   would let a kit author write `scope === 'all_in_scope'` and pass every test,
   freezing an equality check where `access.js` does a non-`none` check
-  ([A5](#a5--staff_benefits_scope-is-answerable-from-evidence)). Read the
-  siblings' live value set rather than carrying it from the spec.
+  ([A5](#a5--staff_benefits_scope-is-answerable-from-evidence)). Take the
+  siblings' vocabulary from `access.js` and the view policies, not from
+  production rows.
 
-Nothing here is anonymized: no real row enters the generator at any point. Only
-schema and codesets are read from production.
+Nothing here is anonymized: no real row enters the generator at any point, and
+with codesets dropped, nothing reads production data either.
 
 ### What is open
 
-- **The cardinality ceiling's value.** It wants a number, and the right one is
-  visible from the candidate columns' actual distinct counts once the allowlist
-  is derived. Set it then rather than guessing now.
 - **Persona coverage needs regenerating, not editing.** Piece 3's personas are
   specified against seven scope columns and there are now five
   ([A9](#a9--the-specs-cube-model-facts-checked-against-main)).
