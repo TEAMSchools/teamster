@@ -186,11 +186,21 @@ reason about.
   both row-level identifiers and aggregate-breakdown dimensions on the same
   view; there is no separate detail/summary pair. Three policies, one per
   non-`none` `student_location_scope` — `student-region` (`row_level` on the
-  region key), `student-school` (`row_level` on the school abbreviation),
-  `student-network` (no `row_level` — every location). All three use
+  region key of the viewer's EMPLOYING legal entity,
+  `securityContext.legal_entity_region_key` — never their desk's region; FERPA
+  binds student records to the employing LEA, and region maps 1:1 to legal
+  entity so the filtered member is still `locations_region_key`),
+  `student-school` (`row_level` on the school abbreviation), `student-network`
+  (no `row_level` — every location). All three use
   `member_level: { includes: "*" }` — any viewer holding one of these groups
   sees every field on every student view, including PII. `none` scope → no group
   → default-deny (zero rows).
+  - **A KTAF employee is always network-scoped on student data.** KTAF's own
+    legal entity enrolls no students and all 149 of its staff sit in a per-city
+    office room, so a role-mapped `region` or `school` scope resolved to an
+    empty allow-list and denied outright. `dim_staff_cube_access` resolves any
+    granted KTAF scope to `network`; a KTAF viewer mapped to `none` stays
+    `none`.
 - **Staff views are split.** `staff_directory` (roster/employment/work-contact
   fields — no personal or sensitive data) has one open block:
   `member_level: { includes: "*" }` under `staff-directory`, no `row_level` —
