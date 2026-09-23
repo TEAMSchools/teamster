@@ -21,29 +21,22 @@ Apply to every assessment source unless a source section overrides them.
     (`college`, `ap`, `state_nj_parcc`, `state_fl_fsa`, plus `_unknown`
     fallbacks) but carry no scores on this view today.
 - **`response_type` — always filter it explicitly.** It is never NULL. Four
-  values, measured 2026-09-23 (singular `standard` / `group`, not the older
-  `standards` / `groups`):
+  values (singular `standard` / `group`, not the older `standards` / `groups`):
 
-  | Value       | Rows      | Sources                    |
-  | ----------- | --------- | -------------------------- |
-  | `standard`  | 8,007,109 | illuminate                 |
-  | `group`     | 4,270,912 | illuminate, iready, dibels |
-  | `overall`   | 1,862,227 | every source               |
-  | `not_taken` | 924,466   | illuminate                 |
-
-  Every row count in this file is scoped the way the count measures are, by the
-  two join-forcing filters they carry (`assessment_key IS NOT NULL` and
-  `region_key IS NOT NULL`), so these reconcile against `count_assigned` per
-  source. An unfiltered scan of the fact returns slightly more.
+  | Value       | Sources                    |
+  | ----------- | -------------------------- |
+  | `standard`  | illuminate                 |
+  | `group`     | illuminate, iready, dibels |
+  | `overall`   | every source               |
+  | `not_taken` | illuminate                 |
 
   Not additive across values. Default to `overall` unless a standard- or
   group-level breakdown is explicitly requested. **Only Illuminate carries
-  `standard` and `not_taken`, but `group` is not Illuminate-only** — i-Ready
-  (1,206,860 rows) and DIBELS (269,776) both carry it, so a `group` query that
-  means "Illuminate standards clusters" must also filter `assessment_type`. STAR
-  and every state source are `overall` only. Do not filter `response_type` with
-  the `notSet` operator: no row has a NULL `response_type`, so it returns zero
-  rows silently.
+  `standard` and `not_taken`, but `group` is not Illuminate-only** — i-Ready and
+  DIBELS both carry it in volume, so a `group` query that means "Illuminate
+  standards clusters" must also filter `assessment_type`. STAR and every state
+  source are `overall` only. Do not filter `response_type` with the `notSet`
+  operator: no row has a NULL `response_type`, so it returns zero rows silently.
 
 - **Filter a genuinely nullable field with `set` / `notSet`, never
   `equals "null"`.** `equals "null"` matches the literal four-character string
@@ -56,12 +49,12 @@ Apply to every assessment source unless a source section overrides them.
   three counts, holding only the rows where that flag is set. Report
   `count_scored` beside the rate: it is the n the rate rests on. Do NOT multiply
   the rate by `count_assigned` to recover a proficient headcount — that
-  overstates it by 1.49x on STAR, because `count_assigned` also counts rows with
-  no verdict. `scale_score`, `percent_correct`, `avg_scale_score`, and
-  `avg_percent_correct` are scope-bound — meaningful only within one
-  source/subject/grade; pooling them across sources returns a valid-looking but
-  meaningless number. Use `pct_proficient` / `is_mastery` for any cross-source
-  comparison.
+  overstates it wherever rows carry no verdict, worst on STAR, because
+  `count_assigned` counts those rows too. `scale_score`, `percent_correct`,
+  `avg_scale_score`, and `avg_percent_correct` are scope-bound — meaningful only
+  within one source/subject/grade; pooling them across sources returns a
+  valid-looking but meaningless number. Use `pct_proficient` / `is_mastery` for
+  any cross-source comparison.
 - **A cross-instrument gap is a calibration artifact until proven otherwise.**
   Two instruments measuring the same students in the same year routinely
   disagree by double digits, because each carries its own proficiency definition
@@ -95,15 +88,15 @@ Apply to every assessment source unless a source section overrides them.
   sets disagree on cut points, on band count, and on where mastery starts. The
   sets carrying the most 2025-26 `overall` scores:
 
-  | Band set                    | Cut points (percent correct) | Mastery starts | Scores  |
-  | --------------------------- | ---------------------------- | -------------- | ------- |
-  | KIPP T and F 2021-22 MS PB  | 0 / 25 / 45 / 65 / 85        | band 4         | 497,445 |
-  | HS Summative (non-AP)       | 0 / 40 / 60 / 75 / 88        | **band 3**     | 273,585 |
-  | KIPP T and F 2021-22 ES PB  | 0 / 30 / 50 / 70 / 85        | band 4         | 249,755 |
-  | KIPP T and F 2026-27 K-2 PB | 0 / 30 / 60 / 80 / 90        | band 4         | 216,665 |
-  | District Default            | 0 / 60 / 70 / 80 / 90        | band 4         | 64,735  |
-  | FAST Performance Bands 3-4  | 8 bands                      | band 6         | 113,304 |
-  | SY25-26 Practice SAT Math   | 45 bands                     | band 19        | 11,295  |
+  | Band set                    | Cut points (percent correct) | Mastery starts |
+  | --------------------------- | ---------------------------- | -------------- |
+  | KIPP T and F 2021-22 MS PB  | 0 / 25 / 45 / 65 / 85        | band 4         |
+  | HS Summative (non-AP)       | 0 / 40 / 60 / 75 / 88        | **band 3**     |
+  | KIPP T and F 2021-22 ES PB  | 0 / 30 / 50 / 70 / 85        | band 4         |
+  | KIPP T and F 2026-27 K-2 PB | 0 / 30 / 60 / 80 / 90        | band 4         |
+  | District Default            | 0 / 60 / 70 / 80 / 90        | band 4         |
+  | FAST Performance Bands 3-4  | 8 bands                      | band 6         |
+  | SY25-26 Practice SAT Math   | 45 bands                     | band 19        |
 
   Three consequences. **The mastery bar ranges from 60% to 80% correct depending
   on the band set**, so `is_mastery` and `pct_proficient` on Illuminate are not
@@ -137,10 +130,10 @@ Apply to every assessment source unless a source section overrides them.
   `grade_band = 'MS'` is a school proxy, not a student-grade filter. For a
   student's actual grade use `grade_level`; for the grade an assessment targets
   use `grade_level_tested`.
-  - **`grade_level_tested` is populated for Illuminate (99.8%) and every state
-    source, and is null on all 302,907 i-Ready, DIBELS, and STAR rows.** Filter
-    a vendor diagnostic by it and you get zero rows with no error. This has cost
-    two logged sessions a false "no data." For vendor sources, always use
+  - **`grade_level_tested` is populated for Illuminate and every state source,
+    and is null on every i-Ready, DIBELS, and STAR row.** Filter a vendor
+    diagnostic by it and you get zero rows with no error. This has cost two
+    logged sessions a false "no data." For vendor sources, always use
     `grade_level`.
   - The two also answer different questions where both exist, so a result can
     change materially depending which you pick — say which one you used.
@@ -182,7 +175,7 @@ Apply to every assessment source unless a source section overrides them.
 - **The view is enrollment-scoped — its totals are not the vendor's or the
   state's totals.** A score appears only if it resolves to a section enrollment;
   scores that don't resolve are out of scope by design. For 2025-26 i-Ready that
-  is about 6% of tests, unevenly: Newark 8.0%, Camden 4.2%, Miami 2.5% — and
+  is a small share of tests, unevenly by region — Newark loses the most — and
   `Outside Round` sittings lose roughly a third. So a Cube count will not
   reconcile to a vendor or state report, and the gap is expected, not a bug. Say
   which one you are quoting.
@@ -218,24 +211,22 @@ Apply to every assessment source unless a source section overrides them.
 
 - `assessment_type = 'illuminate'`; `is_internal_assessment = true`. The only
   source with standards breakdowns.
-- **Module types: there are seven, not three.** 2025-26 volumes, `overall`
-  scores:
+- **Module types: there are seven, not three.** In descending volume:
 
-  | `module_type`                           | Codes               | Scores  |
-  | --------------------------------------- | ------------------- | ------- |
-  | `QA` (Quick Assessments)                | `QA1`–`QA4`, `QA11` | 835,794 |
-  | `TP`                                    | `TP1`–`TP8`         | 490,421 |
-  | `MQQ` (Multiple-Choice Quick Questions) | `MQQ1`–`MQQ4`       | 472,235 |
-  | `CRQ` (Constructed Response Questions)  | `CRQ1`–`CRQ9`       | 353,781 |
-  | `UA`                                    | `UA1`–`UA6`         | 140,945 |
-  | `ET`                                    | `ET1`–`ET7`         | 132,684 |
-  | `WPP`                                   | `WPP1`–`WPP4`       | 37,687  |
+  | `module_type`                           | Codes               |
+  | --------------------------------------- | ------------------- |
+  | `QA` (Quick Assessments)                | `QA1`–`QA4`, `QA11` |
+  | `TP`                                    | `TP1`–`TP8`         |
+  | `MQQ` (Multiple-Choice Quick Questions) | `MQQ1`–`MQQ4`       |
+  | `CRQ` (Constructed Response Questions)  | `CRQ1`–`CRQ9`       |
+  | `UA`                                    | `UA1`–`UA6`         |
+  | `ET`                                    | `ET1`–`ET7`         |
+  | `WPP`                                   | `WPP1`–`WPP4`       |
 
   `TP` is the second-largest module type in the network. `TP` / `UA` / `ET` /
-  `WPP` together carry 801,737 scores — roughly a third of all module-coded
-  Illuminate work — and none of them were documented before. What `TP`, `UA`,
-  `ET`, and `WPP` stand for is an open question for the model owner; do not
-  invent an expansion.
+  `WPP` together carry roughly a third of all module-coded Illuminate work — and
+  none of them were documented before. What `TP`, `UA`, `ET`, and `WPP` stand
+  for is an open question for the model owner; do not invent an expansion.
 
 - **Which module codes exist varies by subject, grade, AND region** — never
   assume a standard checkpoint set. In Newark 2025-26, Math grades 3-4 have no
@@ -252,10 +243,10 @@ Apply to every assessment source unless a source section overrides them.
 - **`module_code` is not a subject filter — always pair it with
   `academic_subject`.** One module code spans every subject assessed in that
   round. `QA3` in 2025-26 covers 21 distinct `academic_subject` values across
-  25,842 `overall` scores, of which `Mathematics` is 7,854 — under a third.
-  Filtering `module_code = 'QA3'` alone and calling the result "QA3 math" mixes
-  Text Study, Science, Social Studies, the `English 100`–`400` and AP courses,
-  and the HS math courses into one number.
+  its `overall` scores, of which `Mathematics` is under a third. Filtering
+  `module_code = 'QA3'` alone and calling the result "QA3 math" mixes Text
+  Study, Science, Social Studies, the `English 100`–`400` and AP courses, and
+  the HS math courses into one number.
 - **Measures — `pct_proficient_formative` does not cover all formative work.**
   It filters `module_type IN ('QA', 'MQQ', 'CRQ')`, so it silently excludes
   `TP`, `UA`, `ET`, and `WPP` — about a third of module-coded Illuminate scores.
@@ -265,9 +256,9 @@ Apply to every assessment source unless a source section overrides them.
   report per-instrument is an open decision — flag it.)
 - **Measures — `pct_taken` is meaningful here and nowhere else.** Illuminate is
   the only source that records non-participation, so it is the only source where
-  a participation rate says anything. Its rate is 92.98% as of 2026-09-23. Every
-  other source reads 100% by construction, so never report `pct_taken` across
-  sources.
+  a participation rate says anything, and it runs a little under 100%. Every
+  other source reads exactly 100% by construction, so never report `pct_taken`
+  across sources.
 - **`response_type`:** `overall` / `standard` / `group` / `not_taken`. Use
   `overall` unless a standard/group breakdown is requested. `not_taken` is
   Illuminate-only and marks an assessment a student was assigned and never sat —
@@ -281,14 +272,13 @@ Apply to every assessment source unless a source section overrides them.
   `response_type_code` and `response_type_description` both carry formatting
   variants for the same standard (`8.EE.C.8.b` vs `8.EE.C.8b`; `y = mx + b` vs
   `y = m x + b`), which splits one standard across two rows and halves each
-  one's counts. 2,620 raw codes collapse to 2,565 canonical ones — **55
-  standards are fragmented today.** The rule: strip all non-alphanumeric
-  characters from `response_type_code`, group on the result, and recompute
-  `pct_proficient` as a **count-weighted average of the underlying counts —
-  never an average of the two reported percentages.** A logged session
-  corroborated this across four grade levels using the code and the description
-  as two independent keys; merging one pair moved a standard from a confusing
-  split to a clean SY25 16.7% (n=1,356) versus SY26 20.4% (n=1,379).
+  one's counts. **Dozens of standards are fragmented this way.** The rule: strip
+  all non-alphanumeric characters from `response_type_code`, group on the
+  result, and recompute `pct_proficient` as a **count-weighted average of the
+  underlying counts — never an average of the two reported percentages.** A
+  logged session corroborated this across four grade levels using the code and
+  the description as two independent keys; merging one pair moved a standard
+  from a confusing split to a clean year-over-year comparison.
 - **"How many times was this standard assessed" is a distinct count of
   `source_assessment_id`,** not a row count. `count_taken` counts student
   responses; the distinct administration count is typically 1–5 per standard per
@@ -311,9 +301,9 @@ Apply to every assessment source unless a source section overrides them.
   (`category`): Math and ELA.
 - **Grade field: use `grade_level`. `grade_level_tested` is null on every
   i-Ready row** — filtering by it returns zero rows silently.
-- `response_type` is `overall` (255,368 rows) and `group` (1,206,860) — the
-  group rows are i-Ready's domain-level subscores, not an Illuminate-style
-  standards breakdown. Filter `overall` for a diagnostic-level score.
+- `response_type` is `overall` and `group` — the group rows are i-Ready's
+  domain-level subscores, not an Illuminate-style standards breakdown. Filter
+  `overall` for a diagnostic-level score.
 - **Proficiency:** `proficiency_level` is i-Ready's grade-level placement scale
   — `3 or More Grade Levels Below`, `2 Grade Levels Below`,
   `1 Grade Level Below`, `Early On Grade Level`, `Mid or Above Grade Level`.
@@ -327,7 +317,7 @@ Apply to every assessment source unless a source section overrides them.
   rows — scope deliberately and state which windows you used.
 - **`Outside Round` is also the least complete round.** Roughly a third of
   `Outside Round` sittings never resolve to a section enrollment, so they never
-  reach this view (Newark loses ~40%); the named rounds lose under 10%. Treat
+  reach this view, Newark worst; the named rounds lose far less. Treat
   `Outside Round` counts as a floor, not a census.
 - **Resolving "the most recent diagnostic":** take the latest _named_ round
   (`BOY` / `MOY` / `EOY`) within the latest `academic_year_label` — do **not**
@@ -366,9 +356,8 @@ Apply to every assessment source unless a source section overrides them.
   a single benchmark window, so dedup to the most recent `date_taken` per
   student per window before computing anything student-level. **The rate varies
   enormously by slice**, so treat the dedup as standing practice rather than
-  something to skip when it looks unnecessary: Camden grade 6 ELA runs 1.55% at
-  BOY, **15.38% at MOY**, and 3.06% at EOY, while Newark grades 3-4 Math runs
-  0.08% / 0.57% / 0.75% across the same rounds. Most windows sit under 2%; one
+  something to skip when it looks unnecessary: it is negligible in most
+  school-grade-round windows and spikes into double digits in a few. One
   measured window hit one student in six. It is genuine repeat testing, not a
   section-join fan-out. Skipping the dedup inflates any student-level count or
   growth figure. (Which sitting is _authoritative_ for reporting is an open
@@ -392,15 +381,15 @@ Apply to every assessment source unless a source section overrides them.
   benchmark tiers; i-Ready has five placement levels. Fewer, wider bins
   mechanically produce a higher "stayed the same" rate, so a DIBELS no-movement
   share will look worse than i-Ready's for the same students — one logged
-  session saw 22% versus 10% in the same grade. Compare each instrument to
-  itself over time, never to the other.
-- `response_type` is `overall` (61,115 rows) and `group` (269,776) — the group
-  rows are the per-subtest measures. Filter `overall` for a composite score.
+  session saw one instrument report double the other's rate in the same grade.
+  Compare each instrument to itself over time, never to the other.
+- `response_type` is `overall` and `group` — the group rows are the per-subtest
+  measures. Filter `overall` for a composite score.
 - **Proficiency:** `proficiency_level` is the DIBELS benchmark tier —
   `Well Below Benchmark`, `Below Benchmark`, `At Benchmark`, `Above Benchmark`.
   `is_mastery` is populated on the `overall` rows but NOT on the K-2 phonics
-  subtests, whose benchmark level is unset upstream — 5,562 `group` rows carry
-  no verdict, so `count_scored` is that much smaller than `count_taken` here.
+  subtests, whose benchmark level is unset upstream — those `group` rows carry
+  no verdict, so `count_scored` is smaller than `count_taken` here.
   `performance_band_label_number` is null.
 - **Time:** `academic_year` / `academic_year_label` now resolve — filter the
   school year with them.
@@ -420,7 +409,7 @@ Apply to every assessment source unless a source section overrides them.
   (`category`): ELA and Math.
 - **Grade field: use `grade_level`. `grade_level_tested` is null on every STAR
   row.**
-- `response_type` is `overall` only (7,344 rows). It is never null.
+- `response_type` is `overall` only. It is never null.
 - **Proficiency:** `proficiency_level` is `Level 1`–`Level 5` (a share of rows
   have null `proficiency_level` / `is_mastery`). `performance_band_label_number`
   is null.
