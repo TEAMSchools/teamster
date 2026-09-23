@@ -35,7 +35,7 @@ select
     co.week_number_academic_year,
     co.quarter,
 
-    if(co.is_enrolled_week, 0, 1) as is_attrition,
+    if(co.week_start_monday between co.entrydate and co.exitdate, 0, 1) as is_attrition,
 from {{ ref("int_extracts__student_enrollments_weeks") }} as co
 inner join
     prev_year as py
