@@ -1189,15 +1189,27 @@ Expected: 4 passed.
 
 - [ ] **Step 6: Prove the link check catches a dead pointer**
 
+Target the link's **href**, not its label. `SKILL.md` writes these as
+``[`playbooks/rollover.md`](playbooks/rollover.md)`` — the same path twice on
+one line — and `sed` without `/g` replaces only the first occurrence, which is
+the label. The href stays valid, the check passes, and the step proves nothing.
+Match the parenthesised form so only the href changes:
+
 ```bash
-cd "$w" && sed -i 's|playbooks/rollover.md|playbooks/does-not-exist.md|' \
+cd "$w" && sed -i 's|](playbooks/rollover.md)|](playbooks/does-not-exist.md)|' \
   ps-plugins/skills/gradebook-expectations-upload/SKILL.md
 uv run --no-project python ps-plugins/scripts/build_skill.py; echo "exit=$?"
 git -C "$w" checkout -- ps-plugins/skills/gradebook-expectations-upload/SKILL.md
 ```
 
 Expected: a `ValueError` naming `playbooks/does-not-exist.md`, and a non-zero
-exit.
+exit. An `exit=0` here means the sed did not bite — fix the sed, not the
+expectation.
+
+**`git checkout --` restores the whole file**, so it also discards any other
+uncommitted edit to `SKILL.md` — the version stamp from Step 1, for instance.
+Commit that stamp before running this step, or re-apply it afterwards and
+confirm with `git diff` that only the intended change remains.
 
 - [ ] **Step 7: Build and attach the zip in CI**
 
