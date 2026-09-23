@@ -253,8 +253,8 @@ member keeps its definition and sheds the advice.
 | `module_code`                    | the code identifying the assessment variant       | not a subject filter; not chronological by name; varies by subject, grade and region                                                                                                                                                                                                                                                          |
 | `is_internal_assessment`         | true for Illuminate, false for state and vendor   | do not select a source with this; use `assessment_type`                                                                                                                                                                                                                                                                                       |
 | `response_type`                  | the value list                                    | not additive across types                                                                                                                                                                                                                                                                                                                     |
-| `response_type_code`             | the code and its two spellings                    | normalize before a standards rollup; group on the canonical dimension                                                                                                                                                                                                                                                                         |
-| `response_type_root_description` | description of the root response type             | unreliable for FL standards                                                                                                                                                                                                                                                                                                                   |
+| `response_type_code`             | the code and its two spellings                    | normalize before a standards rollup; group on the canonical dimension; null on every Illuminate `group` row while `response_type_description` is populated there, so a group-level cut keyed on the code silently drops Illuminate and keeps i-Ready and DIBELS                                                                               |
+| `response_type_root_description` | description of the root response type             | unreliable for FL standards; populated on Illuminate `standard` rows only, so it is null for every i-Ready, DIBELS, STAR and state row — never group a cross-source query by it                                                                                                                                                               |
 | `grade_level_tested`             | the grade the assessment targets; null for vendor | for a vendor cut use `grade_level`, not this                                                                                                                                                                                                                                                                                                  |
 | `proficiency_level`              | the per-source band vocabularies                  | tier-movement rates are not comparable across instruments                                                                                                                                                                                                                                                                                     |
 | `administration_period`          | the per-source vocabulary                         | only meaningful with `assessment_type` scoped; "most recent diagnostic" is the latest named round, not max `date_taken`; `Outside Round` drops out of a named-round filter                                                                                                                                                                    |
@@ -308,7 +308,27 @@ correct shipped text:
   `standard`, `group`, `not_taken` — the null case is gone as of 2026-09-22, and
   `not_taken` marks an assigned-but-unsat Illuminate assessment. Says that
   `standard` is Illuminate-only but `group` is not: i-Ready and DIBELS populate
-  it too.
+  it too. #5508 lands this one ahead of PR 1, alongside the #5501 denominator
+  fix — check the shipped text before rewriting it.
+- `response_type_code`, `response_type_description` and
+  `response_type_root_description`: each currently says only "Null for state".
+  True, and incomplete enough to mislead — each is null across a different and
+  much larger slice. Measured 2026-09-23:
+
+  | Member                           | Populated on                                    | Null on                                                       |
+  | -------------------------------- | ----------------------------------------------- | ------------------------------------------------------------- |
+  | `response_type_code`             | `standard`, plus `group` for i-Ready and DIBELS | every Illuminate `group` row, and all `overall` / `not_taken` |
+  | `response_type_description`      | `standard` and every `group`                    | all `overall` / `not_taken`                                   |
+  | `response_type_root_description` | Illuminate `standard` only                      | every i-Ready, DIBELS, STAR and state row                     |
+
+  Each description states the slice it is populated on, in those terms. The
+  load-bearing one is `response_type_code`: it is null on all 2,797,958
+  Illuminate `group` rows while `response_type_description` is populated on
+  them, so a standards-cluster cut keyed on the code silently drops every
+  Illuminate group row and keeps the i-Ready and DIBELS ones. That asymmetry
+  goes in `ai_context` on `response_type_code`, since it is advice about which
+  member to group by rather than a definition.
+
 - `performance_band_label_number`: currently "Null for state". Adds Illuminate
   only, and not comparable across band sets.
 - `academic_subject`: currently lists "English Language Arts" as an example.
