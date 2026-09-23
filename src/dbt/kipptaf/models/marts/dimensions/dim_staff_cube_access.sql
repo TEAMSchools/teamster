@@ -40,29 +40,25 @@ with
             j.job_function_code,
 
             o.department_name,
-            o.business_unit_name,
+            o.business_unit_name as legal_entity,
 
-            loc.region_key,
             loc.abbreviation as location_abbreviation,
 
-            -- Explicit allow-list. An unrecognized or NULL business unit resolves
-            -- to 'unknown' (a deny sentinel) rather than 'Region': 'unknown'
-            -- matches only entity-agnostic 'any' role rows in the crosswalk, never
-            -- the entity-specific KTAF/Region grants (e.g. Region's region-wide
-            -- student scope). Prevents fail-toward-grant on an unresolved org unit.
+            r.region_key as legal_entity_region_key,
+
+            -- FERPA binds student-record access to the employing LEA, so the
+            -- scope key comes from business_unit_name, never from the desk:
+            -- all 149 KTAF staff sit in a per-city office room that enrolls no
+            -- students. A business unit dim_regions does not know resolves to
+            -- 'unknown', a deny sentinel matching only entity-agnostic 'any'
+            -- role rows. business_unit_code is matched rather than the legal
+            -- name because codes outlive rebrands.
             case
-                o.business_unit_name
-                when 'KIPP TEAM and Family Schools Inc.'
+                when r.region_key is null
+                then 'unknown'
+                when r.business_unit_code = 'KIPP_TAF'
                 then 'KTAF'
-                when 'TEAM Academy Charter School'
-                then 'Region'
-                when 'KIPP Cooper Norcross Academy'
-                then 'Region'
-                when 'KIPP Miami'
-                then 'Region'
-                when 'KIPP Paterson'
-                then 'Region'
-                else 'unknown'
+                else 'Region'
             end as entity,
         from primary_deduped as pd
         inner join {{ ref("dim_staff") }} as s on pd.staff_key = s.staff_key
@@ -81,6 +77,7 @@ with
             and wal.is_current
         left join
             {{ ref("dim_locations") }} as loc on wal.location_key = loc.location_key
+        left join {{ ref("dim_regions") }} as r on o.business_unit_name = r.legal_entity
     ),
 
     enriched as (
@@ -90,7 +87,8 @@ with
             ca.job_function_code,
             ca.department_name,
             ca.entity,
-            ca.region_key,
+            ca.legal_entity,
+            ca.legal_entity_region_key,
             ca.location_abbreviation,
 
             dr.department_group,
@@ -134,7 +132,8 @@ with
         select
             e.staff_key,
             e.google_email,
-            e.region_key,
+            e.legal_entity,
+            e.legal_entity_region_key,
             e.location_abbreviation,
             e.department_group,
             e.entity,
@@ -175,7 +174,8 @@ with
 select
     staff_key,
     google_email,
-    region_key,
+    legal_entity,
+    legal_entity_region_key,
     location_abbreviation,
     department_group,
     entity,

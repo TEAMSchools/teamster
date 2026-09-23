@@ -31,6 +31,17 @@ models:
               )
           config:
             severity: error
+      # An employing business unit that does not match dim_regions.legal_entity
+      # must deny, not fall through to a grant: 'unknown' matches only the
+      # entity-agnostic 'any' role rows. Zero rows today across 1,573 staff, so
+      # a hit means ADP added or renamed an org unit and dim_regions has not
+      # caught up.
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: |
+              entity != 'unknown' or legal_entity_region_key is null
+          config:
+            severity: error
     columns:
       - name: staff_key
         data_type: string
@@ -56,11 +67,27 @@ models:
               config:
                 severity: warn
 
-      - name: region_key
+      - name: legal_entity_region_key
         data_type: string
         description: >-
-          Viewer's region identity key (from dim_locations). cube.js filters on
-          this for a region location scope. NULL when location does not resolve.
+          Region key of the legal entity EMPLOYING this viewer, resolved by
+          joining business_unit_name to dim_regions.legal_entity — not the
+          region of the desk they sit at. This is the student row-level security
+          boundary: FERPA binds student-record access to the employing LEA, and
+          region maps 1:1 to legal entity, so the value is still joinable to
+          dim_locations.region_key. NULL when the employing business unit does
+          not match a known legal entity, which denies.
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+
+      - name: legal_entity
+        data_type: string
+        description: >-
+          Legal name of the employing entity, straight from the work
+          assignment's home organizational unit. Carried for debugging and for
+          the dim_regions join that produces legal_entity_region_key and entity.
 
       - name: location_abbreviation
         data_type: string
@@ -77,8 +104,10 @@ models:
       - name: entity
         data_type: string
         description: >-
-          KTAF, Region, or unknown, derived from business_unit_name via an
-          explicit allow-list. Unrecognized or NULL business units resolve to
+          KTAF, Region, or unknown, derived from the dim_regions join that
+          produces legal_entity_region_key: KTAF when the matched region's
+          business_unit_code is KIPP_TAF, Region for every other matched
+          business unit. A business unit dim_regions does not know resolves to
           unknown — a deny sentinel that matches only entity-agnostic 'any' role
           rows, never the KTAF/Region-specific grants.
         data_tests:
