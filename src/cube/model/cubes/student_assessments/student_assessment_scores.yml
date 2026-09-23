@@ -109,8 +109,10 @@ cubes:
 
       - name: response_type
         description: >-
-          Response-type breakdown (e.g., overall, strand, standard). Null for
-          state assessments.
+          Response-type breakdown. Never null; four values — overall (every
+          source), standard and not_taken (Illuminate only), and group
+          (Illuminate, i-Ready and DIBELS). Not additive across values, so
+          filter it explicitly; default to overall.
         sql: response_type
         type: string
         public: true
@@ -207,10 +209,10 @@ cubes:
           proficiency verdict. The headline, source-agnostic metric (the only
           score measure comparable across the incompatible scales of internal vs
           state assessments). The denominator excludes rows with no verdict
-          (is_mastery unset: Illuminate not-taken rows, DIBELS K-2 phonics
+          (is_mastery unset: Illuminate not_taken rows, DIBELS K-2 phonics
           subtests whose benchmark level is unset upstream, and a small share of
-          STAR overall rows), so it is smaller than count_scores. Built from
-          additive primitives (_sum_proficient / _count_scored) so
+          STAR and Illuminate overall rows), so it is smaller than count_scores.
+          Built from additive primitives (_sum_proficient / _count_scored) so
           pre-aggregations roll it up to any grain.
         sql: "1.0 * {_sum_proficient} / NULLIF({_count_scored}, 0)"
         type: number

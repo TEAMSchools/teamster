@@ -20,22 +20,37 @@ Apply to every assessment source unless a source section overrides them.
   - Treat this list as current, not closed: other categories exist upstream
     (`college`, `ap`, `state_nj_parcc`, `state_fl_fsa`, plus `_unknown`
     fallbacks) but carry no scores on this view today.
-- **`response_type` — always filter it explicitly.** Values: `overall`,
-  `standard`, `group`, `null` (singular `standard` / `group`, not the older
-  `standards` / `groups`). Not additive across types. Default to `overall`
-  unless a standard- or group-level breakdown is explicitly requested. Only
-  Illuminate populates `standard` / `group`; every other source is
-  `response_type = null` (overall only). To isolate those null rows, filter with
-  operator `notSet` (or `set` for present) — `equals "null"` matches the literal
-  string, not SQL NULL, and silently returns zero rows. This holds for any NULL
-  filter.
+- **`response_type` — always filter it explicitly.** It is never NULL. Four
+  values, measured 2026-09-23 (singular `standard` / `group`, not the older
+  `standards` / `groups`):
+
+  | Value       | Rows      | Sources                    |
+  | ----------- | --------- | -------------------------- |
+  | `standard`  | 8,003,325 | illuminate                 |
+  | `group`     | 4,276,380 | illuminate, iready, dibels |
+  | `overall`   | 1,858,437 | every source               |
+  | `not_taken` | 925,222   | illuminate                 |
+
+  Not additive across values. Default to `overall` unless a standard- or
+  group-level breakdown is explicitly requested. **Only Illuminate carries
+  `standard` and `not_taken`, but `group` is not Illuminate-only** — i-Ready
+  (1,208,591 rows) and DIBELS (269,831) both carry it, so a `group` query that
+  means "Illuminate standards clusters" must also filter `assessment_type`. STAR
+  and every state source are `overall` only. Do not filter `response_type` with
+  the `notSet` operator: no row has a NULL `response_type`, so it returns zero
+  rows silently.
+
+- **Filter a genuinely nullable field with `set` / `notSet`, never
+  `equals "null"`.** `equals "null"` matches the literal four-character string
+  and silently returns zero rows. This holds for every NULL filter — for example
+  `grade_level_tested`, which is null on every i-Ready, DIBELS, and STAR row.
 - **Headline metric: `pct_proficient`.** It is the one score measure comparable
   across the incompatible scales of all sources (proficient scores / scores
   carrying a proficiency verdict). `is_mastery` is the underlying per-score
   proficient flag, and its denominator counts only the rows where that flag is
   set — so it is smaller than `count_scores`, which also counts rows with no
   verdict (Illuminate `not_taken`, the DIBELS K-2 phonics subtests, and a small
-  share of STAR rows). Do not reconstruct the rate as
+  share of STAR and Illuminate `overall` rows). Do not reconstruct the rate as
   `_sum_proficient / count_scores`; that is the pre-#5501 formula and reads 16
   points low on STAR. `scale_score`, `percent_correct`, `avg_scale_score`, and
   `avg_percent_correct` are scope-bound — meaningful only within one
@@ -272,7 +287,9 @@ Apply to every assessment source unless a source section overrides them.
   (`category`): Math and ELA.
 - **Grade field: use `grade_level`. `grade_level_tested` is null on every
   i-Ready row** — filtering by it returns zero rows silently.
-- `response_type = null` (overall only — no standards breakdown).
+- `response_type` is `overall` (255,720 rows) and `group` (1,208,591) — the
+  group rows are i-Ready's domain-level subscores, not an Illuminate-style
+  standards breakdown. Filter `overall` for a diagnostic-level score.
 - **Proficiency:** `proficiency_level` is i-Ready's grade-level placement scale
   — `3 or More Grade Levels Below`, `2 Grade Levels Below`,
   `1 Grade Level Below`, `Early On Grade Level`, `Mid or Above Grade Level`.
@@ -353,7 +370,8 @@ Apply to every assessment source unless a source section overrides them.
   share will look worse than i-Ready's for the same students — one logged
   session saw 22% versus 10% in the same grade. Compare each instrument to
   itself over time, never to the other.
-- `response_type = null` (overall only).
+- `response_type` is `overall` (61,128 rows) and `group` (269,831) — the group
+  rows are the per-subtest measures. Filter `overall` for a composite score.
 - **Proficiency:** `proficiency_level` is the DIBELS benchmark tier —
   `Well Below Benchmark`, `Below Benchmark`, `At Benchmark`, `Above Benchmark`.
   `is_mastery` is populated. `performance_band_label_number` is null.
@@ -375,7 +393,7 @@ Apply to every assessment source unless a source section overrides them.
   (`category`): ELA and Math.
 - **Grade field: use `grade_level`. `grade_level_tested` is null on every STAR
   row.**
-- `response_type = null` (overall only).
+- `response_type` is `overall` only (7,349 rows). It is never null.
 - **Proficiency:** `proficiency_level` is `Level 1`–`Level 5` (a share of rows
   have null `proficiency_level` / `is_mastery`). `performance_band_label_number`
   is null.
@@ -394,7 +412,8 @@ Apply to every assessment source unless a source section overrides them.
 - `assessment_type` values: `state_nj_njsla` (NJSLA ELA/Math),
   `state_nj_njsla_science` (NJSLA Science), `state_nj_njgpa` (NJGPA). `category`
   carries the subject (ELA / Math / Science).
-- `response_type = null` (overall only — no standards breakdown for state).
+- `response_type` is `overall` only — no standards breakdown for state. It is
+  never null.
 - **Proficiency:** `proficiency_level` is the state achievement level;
   `is_mastery` is the proficient flag. `performance_band_label_number` is null.
 - **Time:** `academic_year` / `academic_year_label` now resolve for state
@@ -434,7 +453,7 @@ Apply to every assessment source unless a source section overrides them.
 - `assessment_type` values: `state_fl_fast` (FAST ELA/Math), `state_fl_science`
   (Science), `state_fl_eoc` (end-of-course, e.g. Civics). `category` carries the
   subject.
-- `response_type = null` (overall only).
+- `response_type` is `overall` only. It is never null.
 - **Proficiency:** `is_mastery` is the proficient flag — for FAST this matches
   Level 3+. `proficiency_level` carries the achievement level.
   `performance_band_label_number` is null.
