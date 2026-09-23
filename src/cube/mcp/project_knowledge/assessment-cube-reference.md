@@ -26,15 +26,20 @@ Apply to every assessment source unless a source section overrides them.
 
   | Value       | Rows      | Sources                    |
   | ----------- | --------- | -------------------------- |
-  | `standard`  | 8,003,325 | illuminate                 |
-  | `group`     | 4,276,380 | illuminate, iready, dibels |
-  | `overall`   | 1,858,437 | every source               |
-  | `not_taken` | 925,222   | illuminate                 |
+  | `standard`  | 8,007,109 | illuminate                 |
+  | `group`     | 4,270,912 | illuminate, iready, dibels |
+  | `overall`   | 1,862,227 | every source               |
+  | `not_taken` | 924,466   | illuminate                 |
+
+  Every row count in this file is scoped the way the count measures are, by the
+  two join-forcing filters they carry (`assessment_key IS NOT NULL` and
+  `region_key IS NOT NULL`), so these reconcile against `count_assigned` per
+  source. An unfiltered scan of the fact returns slightly more.
 
   Not additive across values. Default to `overall` unless a standard- or
   group-level breakdown is explicitly requested. **Only Illuminate carries
   `standard` and `not_taken`, but `group` is not Illuminate-only** — i-Ready
-  (1,208,591 rows) and DIBELS (269,831) both carry it, so a `group` query that
+  (1,206,860 rows) and DIBELS (269,776) both carry it, so a `group` query that
   means "Illuminate standards clusters" must also filter `assessment_type`. STAR
   and every state source are `overall` only. Do not filter `response_type` with
   the `notSet` operator: no row has a NULL `response_type`, so it returns zero
@@ -165,13 +170,15 @@ Apply to every assessment source unless a source section overrides them.
   Any growth figure is therefore constructed by the analyst: say so explicitly,
   and see the i-Ready section for why cross-grade-band growth comparisons are a
   trap.
-- **Domain rollup: `response_type_root_description`** is the CCSS domain rollup
-  — reliable for CCSS-aligned content, unreliable for FL state-aligned
-  standards. It is populated on Illuminate `standard` rows and nowhere else, so
-  it is null on every i-Ready, DIBELS, STAR and state row, and on Illuminate's
-  own `group`, `overall` and `not_taken` rows. That is a fact about this
-  column's upstream population, not about `response_type`, which is never null.
-  Never group a cross-source query by it.
+- **Domain rollup: `response_type_root_description`** is the CCSS domain rollup.
+  Two separate limits, often confused. Where it IS populated it is reliable for
+  CCSS-aligned content and unreliable for Illuminate content aligned to
+  Florida's own standards, because the rollup is a CCSS hierarchy those codes do
+  not fit. Separately, it is populated on Illuminate `standard` rows and nowhere
+  else, so it is null on every i-Ready, DIBELS, STAR and state row, and on
+  Illuminate's own `group`, `overall` and `not_taken` rows. That is a fact about
+  this column's upstream population, not about `response_type`, which is never
+  null. Never group a cross-source query by it.
 - **The view is enrollment-scoped — its totals are not the vendor's or the
   state's totals.** A score appears only if it resolves to a section enrollment;
   scores that don't resolve are out of scope by design. For 2025-26 i-Ready that
@@ -304,7 +311,7 @@ Apply to every assessment source unless a source section overrides them.
   (`category`): Math and ELA.
 - **Grade field: use `grade_level`. `grade_level_tested` is null on every
   i-Ready row** — filtering by it returns zero rows silently.
-- `response_type` is `overall` (255,720 rows) and `group` (1,208,591) — the
+- `response_type` is `overall` (255,368 rows) and `group` (1,206,860) — the
   group rows are i-Ready's domain-level subscores, not an Illuminate-style
   standards breakdown. Filter `overall` for a diagnostic-level score.
 - **Proficiency:** `proficiency_level` is i-Ready's grade-level placement scale
@@ -387,11 +394,14 @@ Apply to every assessment source unless a source section overrides them.
   share will look worse than i-Ready's for the same students — one logged
   session saw 22% versus 10% in the same grade. Compare each instrument to
   itself over time, never to the other.
-- `response_type` is `overall` (61,128 rows) and `group` (269,831) — the group
+- `response_type` is `overall` (61,115 rows) and `group` (269,776) — the group
   rows are the per-subtest measures. Filter `overall` for a composite score.
 - **Proficiency:** `proficiency_level` is the DIBELS benchmark tier —
   `Well Below Benchmark`, `Below Benchmark`, `At Benchmark`, `Above Benchmark`.
-  `is_mastery` is populated. `performance_band_label_number` is null.
+  `is_mastery` is populated on the `overall` rows but NOT on the K-2 phonics
+  subtests, whose benchmark level is unset upstream — 5,562 `group` rows carry
+  no verdict, so `count_scored` is that much smaller than `count_taken` here.
+  `performance_band_label_number` is null.
 - **Time:** `academic_year` / `academic_year_label` now resolve — filter the
   school year with them.
 - **Administrations:** `administration_period` = `BOY` / `MOY` / `EOY`, the same
@@ -410,7 +420,7 @@ Apply to every assessment source unless a source section overrides them.
   (`category`): ELA and Math.
 - **Grade field: use `grade_level`. `grade_level_tested` is null on every STAR
   row.**
-- `response_type` is `overall` only (7,349 rows). It is never null.
+- `response_type` is `overall` only (7,344 rows). It is never null.
 - **Proficiency:** `proficiency_level` is `Level 1`–`Level 5` (a share of rows
   have null `proficiency_level` / `is_mastery`). `performance_band_label_number`
   is null.
@@ -479,5 +489,7 @@ Apply to every assessment source unless a source section overrides them.
   2026 lands in the 2025-26 year). `administration_period` is the FLDOE window
   (FAST `PM1` / `PM2` / `PM3`).
 - FL is the Miami region (`region_name = 'Miami'` / `state = 'FL'`).
-- `response_type_root_description` is unreliable for FL state-aligned standards
-  — do not use it for FL domain rollups.
+- `response_type_root_description` is null on every FL state assessment row, as
+  it is for every non-Illuminate source — there is nothing to roll up, not
+  merely something to distrust. For a domain cut on FL content, work from the
+  Illuminate rows aligned to Florida standards, where the column is populated.
