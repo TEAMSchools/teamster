@@ -18,12 +18,12 @@ chat skill is covered in [`ship-a-skill-update.md`](ship-a-skill-update.md).
 The `ps_plugin_data` tab (the IMPORTRANGE Sources tab feeding the
 `Template QW-Date Crosswalk` Reports tab -- see
 [`../references/published-sheets.md`](../references/published-sheets.md))
-carries columns F and G (`week_start_monday` / `week_end_friday`) so academics
-can match a week number to the actual calendar dates while filling in counts --
-a reading aid for a person, not part of the upload and not something the skill
-computes from. Because the sheet already resolves week numbers to dates, the
-chat skill does no week-mapping arithmetic at all, which is the single biggest
-reason this work is safe to hand to a chat session.
+carries `week_start_monday` and `week_end_friday` so academics can match a week
+number to the actual calendar dates while filling in counts -- a reading aid for
+a person, not part of the upload and not something the skill computes from.
+Because the sheet already resolves week numbers to dates, the chat skill does no
+week-mapping arithmetic at all, which is the single biggest reason this work is
+safe to hand to a chat session.
 
 Deliberately a pointer and not a copy. This procedure used to carry the full
 mechanics; two copies of a fill rule drift, and when they disagree nobody can

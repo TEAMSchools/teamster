@@ -87,10 +87,6 @@ reports it.
 > wins — tell the data team the mismatch so they can fix whichever one has
 > drifted.
 
-> **If you are reading this and the steps above are missing or still say
-> PLACEHOLDER, stop.** Do not guess your way through a delete in PowerSchool.
-> Contact the data team — this skill shipped incomplete.
-
 ## 5. Fixing one row
 
 The list page also edits rows one at a time. For a single wrong week this is the
@@ -151,12 +147,32 @@ at the last completed week.
    download, never in the sheet — the sheet is read-only and warehouse-fed.
 2. **Split the rows by `region`** into one file per PowerSchool instance. Do
    this first, while you still have the column.
-3. **Delete four columns:** `academic_year`, `region`, `week_start_monday` and
-   `week_end_friday` (columns F and G).
-4. **Retype the header row** to exactly:
+3. **Delete four columns**, picking them out **by the header you see on screen**
+   — not by column letter, because the letters shift the moment you delete the
+   first one. Delete `region`, `week_start_monday`, `week_end_friday` and
+   `academic_year`.
+4. **Move `notes` so it is the last column**, to the right of `S`. On the tab it
+   sits to the left of `W`, and PowerSchool reads the columns by position, so it
+   has to be moved. After steps 3 and 4 you should have eight columns, left to
+   right, in exactly this order:
+
+   ```text
+   school_level  quarter  week_number_quarter  W  H  F  S  notes
+   ```
+
+5. **Retype the header row** to exactly:
+
    ```text
    School Level,Quarter,Week Number,W,H,F,S,Notes
    ```
+
    The tab's own headers are the database names. Left as they are, the file is
    rejected outright and nothing imports.
-5. **Save as `.csv`**, then load it per the steps above.
+
+6. **Check the two end columns before you save.** Read the file left to right:
+   the first column should hold `ES`, `MS` or `HS`, and the last column should
+   hold your note text — not a number. PowerSchool matches columns by position
+   and never by name, so if `notes` is still sitting where `W` belongs, the
+   header is accepted and then **every row** is rejected with "W must be a
+   number".
+7. **Save as `.csv`**, then load it per the steps above.
