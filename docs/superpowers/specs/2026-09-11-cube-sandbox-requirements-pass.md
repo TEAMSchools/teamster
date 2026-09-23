@@ -482,11 +482,43 @@ because the catalog is not on `main` and no check runs. So:
 
 - **Regenerate the catalog from the current deployment, and land it on `main`**
   before anything is built against it. Never carry it forward from a branch or
-  from scratch.
+  from scratch. Doing this is plan work, not this branch's.
 - **A model change refreshes the snapshot and the catalog together.** Both
   describe the surface the sandbox imitates, and last week moved both.
 - **Wire the `/meta` check before the kit is handed over, not after.** Its value
   is catching this class of drift, and it has already missed one instance.
+
+### Refreshing is not deploying, and the sandbox pins a revision
+
+A refresh landing on `main` must change nothing MasterBorn sees. The spec
+already rejected tracking `main` because "a model change merged on a Tuesday
+afternoon breaks MasterBorn's in-flight build with no warning and no changelog",
+and that reasoning applies to the data side exactly as it does to the model.
+
+So the pipeline has a deliberate gap in the middle:
+
+1. Production changes.
+2. The snapshot and catalog refresh lands as a pull request — visible, diffed,
+   reviewed. **Nothing has moved for MasterBorn.**
+3. Someone decides to bump.
+4. The generator rebuilds the sandbox and the model is redeployed.
+
+The diff accumulated across step 2 is the release note step 4 ships. That is the
+document Piece 5 already asked for, produced as a by-product rather than written
+by hand.
+
+**The generator pins a snapshot revision rather than reading the latest.** A
+bump is the act of moving that pin. Without this, a generator run for any other
+reason — a retry, a bugfix, a re-materialization — would quietly pull in every
+refresh since the last bump, which is the Tuesday-afternoon break arriving by a
+different route.
+
+This also decides what the `/meta` check compares against: **the catalog at the
+pinned revision, not the newest one on `main`.** Comparing against `main` would
+turn the check red on every production change, and a gate that cries wolf gets
+overridden within a month — the review's own objection to the fingerprint gate.
+How far the pin has drifted from `main` is a separate and much softer signal,
+which is what Piece 4 meant by measuring the distance. Part 7 settles that.
 
 ### Two things stay exactly as specified
 
