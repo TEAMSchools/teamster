@@ -10,8 +10,37 @@ Exposure: `rpt_gsheets__njdoe_universal_screener_data` in
 Google Sheet, which a person then submits to NJDOE. Nothing in this pipeline
 talks to the state directly.
 
-Grain: one row per student per benchmark period, carrying a score and a
-performance level for each of six measures.
+Grain: one row per student, benchmark period and assessment name, carrying a
+score and a performance level for each of six measures. The full composite key
+the SQL groups on is `region`, `schoolid`, `school`, `benchmark_period`,
+`district_code`, `school_code`, `sid` and `assessment_name`.
+
+`assessment_name` is part of that key and is easy to miss. Amplify has shipped
+one assessment edition per year so far, so in practice the grain has been one
+row per student per period — but the query does not enforce that, and no
+uniqueness test guards it. An edition change mid-year would produce two rows for
+the same student and period without anything failing.
+
+!!! danger "The extract currently returns 0 rows"
+
+    Verified against production on 22 September 2026.
+    `kipptaf_extracts.rpt_gsheets__njdoe_universal_screener_data` is empty, and
+    the cause is upstream rather than a shortage of assessment data — Amplify
+    holds 3,078 New Jersey rows in grades K through 3 for AY2026.
+
+    Amplify moved the student identifier between years. The model reads
+    `student_primary_id_studentnumber`, which was populated on all 8,150 AY2025
+    rows and is populated on **none** of the 3,078 AY2026 rows. The value now
+    arrives in `student_primary_id` instead. `additional_student_id_sisid` and
+    `secondary_student_id_stateid` moved the same way, to
+    `additional_student_id` and to nothing respectively.
+
+    The `safe_cast` on that column therefore returns NULL for every row, the
+    inner join to `int_extracts__student_enrollments` matches nothing, and the
+    view returns empty. Nothing fails — there is no test on this model, so the
+    break is silent.
+
+    The Beginning-of-Year submission is due 13 November 2026.
 
 !!! warning "This model reads raw Amplify datasets, not a dbt source"
 

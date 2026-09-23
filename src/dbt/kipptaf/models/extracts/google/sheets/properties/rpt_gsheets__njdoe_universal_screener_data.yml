@@ -3,8 +3,13 @@ models:
     description: >-
       Universal literacy screener results in the shape New Jersey's Department
       of Education expects for its Universal Literacy Screener collection. One
-      row per student per benchmark period, carrying a score and a performance
-      level for each of six DIBELS measures.
+      row per student, benchmark period and assessment name, carrying a score
+      and a performance level for each of six DIBELS measures.
+
+      The grain includes assessment_name, which is easy to miss. Amplify has
+      shipped one assessment edition per year so far, so in practice there has
+      been one row per student per period — but the query does not enforce that
+      and no uniqueness test guards it.
 
       Scoped to New Jersey students in grades K through 3 whose enrollment grade
       matches the grade they were assessed in, for the current academic year
