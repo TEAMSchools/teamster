@@ -52,7 +52,9 @@ with
             end as is_cohort_grad_year,
 
             case
-                when co.academic_year + 1 = co.cohort and co.exitcode = 'G1'
+                -- <= is deliberate, not a typo. Rationale in the
+                -- model description.
+                when co.academic_year + 1 <= co.cohort and co.exitcode = 'G1'
                 then 1
                 else 0
             end as is_4yr_grad,

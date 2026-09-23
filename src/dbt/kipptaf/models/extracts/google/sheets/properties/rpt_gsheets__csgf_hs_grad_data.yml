@@ -12,7 +12,11 @@ models:
       single school spanning cohorts 2011-2030. Confirmed against CSGF's task
       instructions ("if the school did not have 12th graders in [year], leave
       all rows blank") that one row per school for the current cohort is
-      correct.
+      correct. A student who graduates ahead of their cohort year counts as a
+      4-year graduate, because the adjusted cohort rate is defined by the class
+      the student entered with, so the graduate predicate reads academic_year +
+      1 <= cohort rather than an equality. A student who graduates late still
+      does not count.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -22,17 +26,41 @@ models:
     columns:
       - name: cohort
         data_type: int64
+        description: >-
+          Graduating class this row reports on. The model reports one class at a
+          time, the class named by the current_academic_year variable.
       - name: school
         data_type: string
+        description: >-
+          School name as CSGF expects it. KIPP Cooper Norcross High is expanded
+          to KIPP Cooper Norcross High School to match their list.
       - name: total_9_entry
         data_type: int64
+        description: >-
+          Students who entered grade 9 at this school, were enrolled on 1
+          October, were in their first year at the school, and were not
+          repeating the grade.
       - name: total_transfer_in
         data_type: int64
+        description: >-
+          Students whose first year at this school was grade 10, 11 or 12, plus
+          students who entered grade 9 after 1 October.
       - name: total_transfer_out
         data_type: int64
+        description: >-
+          Students who left with exit code D9, or with an exit code starting
+          with T.
       - name: adjusted_cohort
         data_type: int64
+        description: >-
+          total_9_entry plus total_transfer_in, minus total_transfer_out. The
+          denominator of pct_grad.
       - name: total_4yr_grad
         data_type: int64
+        description: >-
+          Students who left with exit code G1 on or before their cohort's
+          expected graduation year. An early graduate counts here. A late
+          graduate does not, because this is a 4-year rate.
       - name: pct_grad
         data_type: float64
+        description: total_4yr_grad divided by adjusted_cohort.

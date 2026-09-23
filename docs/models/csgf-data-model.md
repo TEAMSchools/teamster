@@ -195,6 +195,30 @@ by moving the dead CTE's cohort filter onto the live `grad_roster` query path
 and removing the dead `graduated` CTE entirely. Confirmed against prod: three
 schools, three rows, all cohort 2026.
 
+### `csgf_hs_grad_data` did not count early graduates — resolved
+
+[Issue #5432](https://github.com/TEAMSchools/teamster/issues/5432) found a
+second defect in the same model. `is_4yr_grad` required
+`academic_year + 1 = cohort`, so a student who graduated ahead of their cohort
+year failed the equality. That student still counted toward `adjusted_cohort`
+through `is_entry_cohort`, so they sat in the denominator and never reached the
+numerator, and the rate read low.
+
+Early graduation is not rare and it is growing. Counting `exitcode = 'G1'` rows
+at a high school outside Miami: 2 early in AY2022, 6 in AY2023, 3 in AY2024, and
+14 in AY2025. Late graduates over the same years were 3, 0, 1 and 3.
+
+Fixed by relaxing the predicate to `academic_year + 1 <= cohort`. An early
+graduate now counts in the cohort they entered with, which is how New Jersey's
+adjusted cohort rate treats them. A late graduate still does not count, because
+this is a 4-year rate. For the class of 2026 the network total moves from 374
+graduates to 377.
+
+One assumption sits under this and is not settled in the repo: whether CSGF
+defines a 4-year graduate the way the state does. Neither this page nor the
+`csgf-data-collection` skill answers it. Confirm it against CSGF's own field
+definitions before the next submission.
+
 !!! note "SED field uses the same FRL definition" CSGF's new "Socioeconomically
 Disadvantaged (SED)" field on the HS Enrollment tab instructs submitters to "use
 what is valid for the state." `csgf_hs_enrollment`'s `student_is_frl` was
