@@ -1,15 +1,39 @@
 models:
   - name: int_extracts__student_enrollments_subjects_weeks
-    description: >-
-      Weekly expansion of int_extracts__student_enrollments_subjects across
-      int_students__calendar_week. Carries no uniqueness test of its own: the
-      grain is one row per subjects row per school week by construction, since
-      both parents are uniqueness-tested at severity error and the join is fully
-      keyed on academic_year, schoolid and _dbt_source_project. A grain break
-      therefore fails a parent's test first, and this model cannot be the first
-      place it surfaces.
+    description:
+      One row per student, academic year, school week and discipline, built by
+      expanding int_extracts__student_enrollments_subjects across the in-session
+      weeks each stint covers. A stint covers a week when it starts on or before
+      the week's last school day and its last_enrolled_date falls on or after
+      the week's first school day. When two stints cover the same week (a
+      mid-week transfer or re-entry), the row kept is the stint enrolled on the
+      Monday, and otherwise the later stint.
     config:
       schema: extracts
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - academic_year
+              - week_start_monday
+              - discipline
+          config:
+            severity: error
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression:
+              not (_dbt_source_project != 'kippmiami' and is_enrolled_week and
+              exitdate = week_start_monday)
+          config:
+            severity: error
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression:
+              not (_dbt_source_project != 'kippmiami' and exitdate =
+              school_week_start_date)
+          config:
+            severity: error
     columns:
       - name: _dbt_source_relation
         data_type: string
@@ -127,6 +151,16 @@ models:
             source_system: PowerSchool
             source_model: stg_powerschool__students
             source_column: exitdate
+      - name: last_enrolled_date
+        data_type: date
+        description:
+          Inclusive last day the student was enrolled in this stint. PowerSchool
+          records exitdate as the first day the student is no longer enrolled,
+          so PowerSchool stints use the day before exitdate; Focus trims each
+          stint to the day before the next one starts, so Focus stints use
+          exitdate unchanged. Null for graduate placeholder rows, which carry no
+          exit date. Use this column, not exitdate, for any "enrolled on date X"
+          test.
       - name: region
         data_type: string
       - name: school_level
@@ -440,6 +474,12 @@ models:
       - name: is_enrolled_week
         data_type: boolean
         description:
-          The school enrollment entry date from the student table for EOY it the
-          next schools beginning date.Indexed. Conditional on entrydate,
-          exitdate, week_start_monday.
+          True when the student was enrolled in this stint on the week's Monday,
+          meaning week_start_monday falls between entrydate and
+          last_enrolled_date.
+      - name: is_enrolled_week_end
+        data_type: boolean
+        description:
+          True when the student was enrolled in this stint on the week's Sunday,
+          meaning week_end_sunday falls between entrydate and
+          last_enrolled_date.
