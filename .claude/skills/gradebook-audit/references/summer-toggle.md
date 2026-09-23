@@ -10,11 +10,10 @@ views this summer"
 _expectations_ for the new year is a separate task owned by the academics team,
 done in PowerSchool via the `U_EXPECTATIONS` plugin — not a dbt change. For
 that, see
-[Procedure: Roll the assignment expectations over to a new year](../playbooks/academic-year-rollover.md)
-and Step 1 of the start-of-year procedure in the
-[reference doc](../../../../docs/models/gradebook-audit-data-model.md), which
-carries the plugin repo link and ownership. The steps below cover only the
-dbt-side year / grade-source toggle.
+[Procedure: Roll the assignment expectations over to a new year](../playbooks/academic-year-rollover.md);
+for the plugin itself and who owns it, see
+[`../playbooks/maintain-the-plugin.md`](../playbooks/maintain-the-plugin.md).
+The steps below cover only the dbt-side year / grade-source toggle.
 
 **What's happening:** In July, the data engineering team bumps
 `current_academic_year` (e.g., 2025 → 2026). At that point:

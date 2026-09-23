@@ -7,6 +7,11 @@ playbook — those are the _how_; this is the _what and whether_. This matters
 most when you did not build this model: it forces the questions and the impact
 checks a newcomer would otherwise miss.
 
+Steps 2-4 are about dbt lineage and model risk, so they assume a change to a dbt
+model. If what you were asked to change is the PowerSchool plugin itself, the
+end-user skill, or a published Sheet — and touches no dbt model — skip straight
+to the matching entry in step 5; there's no dbt lineage to map.
+
 1. **Clarify the change with the requester — do not assume.** Invoke the
    `superpowers:brainstorming` skill (`Skill` tool) and use it to pin down, one
    question at a time: exactly what should change, why, at which grain (student
@@ -52,9 +57,21 @@ checks a newcomer would otherwise miss.
    - both **exposures** — the Tableau workbook and the Google Sheet each consume
      an output of this pipeline.
 
-5. **Implement** via the specific playbook (add/remove/edit a flag:
-   `change-a-flag.md`; add a region: `add-a-region.md`; or the rollover:
-   `academic-year-rollover.md`), following the grain rules it gives.
+5. **Implement** via the specific playbook or reference that matches your
+   change, following the grain rules it gives:
+
+   - add/remove/edit a flag → [`change-a-flag.md`](change-a-flag.md)
+   - add a region → [`add-a-region.md`](add-a-region.md)
+   - roll T&L's expectations over to a new year →
+     [`academic-year-rollover.md`](academic-year-rollover.md)
+   - change a hardcoded threshold, or need the current lineage/refs →
+     [`../references/data-model.md`](../references/data-model.md)
+   - change, build, or deploy the PowerSchool plugin itself →
+     [`maintain-the-plugin.md`](maintain-the-plugin.md)
+   - propagate a plugin or skill change to Teaching & Learning →
+     [`ship-a-skill-update.md`](ship-a-skill-update.md)
+   - update a published Sheet's source/report pair →
+     [`../references/published-sheets.md`](../references/published-sheets.md)
 
 6. **Validate, then get a review.** Build the affected models one at a time
    (never cascade a downstream build mid-refactor), confirm the checks that

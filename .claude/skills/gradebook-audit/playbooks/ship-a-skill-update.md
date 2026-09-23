@@ -71,9 +71,12 @@ themselves in Claude Desktop, following the skill's own
 This path has **no auto-update**. Each person is running exactly whatever zip
 they installed, indefinitely, until someone sends them a new one and they repeat
 the install. That is why step 2's version bump matters here specifically — when
-someone reports the skill doing something you already fixed, the version number
-in their `SKILL.md` (visible in the skill's description in Claude Desktop) is
-the only way to tell whether they're behind or you have a new bug.
+someone reports the skill doing something you already fixed, the only way to
+tell whether they're behind or you have a new bug is the version, and there are
+two ways to get it from them: the filename of the zip they downloaded and
+installed (`gradebook_expectations_upload_v<version>.zip`), or asking them to
+ask Claude, in a conversation where the skill is active, to open its own
+`SKILL.md` and read back the `version:` field.
 
 Use this path whenever organization skills are unavailable: the plan tier or the
 code-execution setting is off, the recipient is outside the organization, or a
