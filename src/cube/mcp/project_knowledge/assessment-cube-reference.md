@@ -256,8 +256,16 @@ Apply to every assessment source unless a source section overrides them.
   build the rollup explicitly from the module types you intend.
   `pct_proficient_crq` isolates CRQ. (Whether to pool across module types or
   report per-instrument is an open decision — flag it.)
-- **`response_type`:** `overall` / `standard` / `group`. Use `overall` unless a
-  standard/group breakdown is requested.
+- **Measures — `pct_taken` is meaningful here and nowhere else.** Illuminate is
+  the only source that records non-participation, so it is the only source where
+  a participation rate says anything. Its rate is 92.98% as of 2026-09-23. Every
+  other source reads 100% by construction, so never report `pct_taken` across
+  sources.
+- **`response_type`:** `overall` / `standard` / `group` / `not_taken`. Use
+  `overall` unless a standard/group breakdown is requested. `not_taken` is
+  Illuminate-only and marks an assessment a student was assigned and never sat —
+  it holds no score, and it is what `count_assigned` counts and `count_taken`
+  excludes.
 - **Bands:** `performance_band_label_number` applies, but read the Shared
   conventions entry first — the number is only meaningful inside the
   assessment's own band set, and the sets differ on cut points, band count, and
