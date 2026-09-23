@@ -76,8 +76,9 @@ gradebook-audit/
 
 ## Access Control
 
-The list page guards itself with `~[if.not.memberof:Gradebook Group]` and
-redirects everyone else to the PS admin home page.
+Access is meant to be controlled by PS group membership, with non-members
+redirected to the PS admin home page. Read the TODO below before relying on
+that: it is not enforced as described.
 
 The group is matched **by name**, not by ID — a group named exactly
 `Gradebook Group` must exist on each instance. (Older docs said "Group #51";
@@ -88,35 +89,35 @@ Members.
 
 ### 🛑 TODO — access control is not enforced
 
-Two defects, found while deploying to Paterson in August 2026. Neither is fixed
-yet.
+Two defects, found while deploying in August 2026. Neither is fixed yet.
 
-**1. The guard is missing from four of five pages.** Only
-`gradebook_expectations.html` carries `~[if.not.memberof:Gradebook Group]`. The
-`_new`, `_edit`, `_insert`, and `_delete` pages have no check, so an
-authenticated PS admin user who navigates directly to those URLs can add or
-delete records without group membership. `_insert` and `_delete` are the ones
-that write.
+**1. The group-membership guard is present on only one of the five pages.** The
+rest carry no check, so being in the group is not what decides who can reach
+them.
 
-**2. The guard fails _open_ when the group does not exist.** Confirmed
-empirically: `Gradebook Group` does not exist on `ps.kipppaterson.org`, and
-`gradebook_expectations.html` loads there anyway. So on any instance without
-that group, the existing check grants access rather than denying it — and
-copying the same construct onto the other four pages would inherit the weakness.
+**2. Where the guard is present, it fails _open_ when the group does not
+exist.** Confirmed empirically on an instance where the group had not been
+created: the page loads anyway. So on any instance without the group, the
+existing check grants access rather than denying it — and copying the same
+construct onto the other pages would inherit the weakness rather than fix it.
 
-**Current state:** on Paterson all five pages are reachable by any authenticated
-PS admin user. Impact is limited while the table is empty; it rises as soon as
-ops loads expectations data.
+**Current state:** on an instance without the group, every page is reachable by
+any authenticated PS admin user. Impact is limited while `U_EXPECTATIONS` is
+empty; it rises as soon as ops loads expectations data.
 
 **The fix must fail closed.** Rather than "redirect if not a member", wrap page
 content in a positive membership check so an absent or misspelled group denies
-access instead of granting it. The PS-HTML construct for this is **not
-documented in `docs/reference/`** — those PDFs don't cover `memberof` at all —
-so the behavior has to be verified on `kippnj2.clgpstest.com` before it ships.
+access instead of granting it. The PS-HTML construct for this is **not covered
+by the reference PDFs** — they don't document `memberof` at all — so the
+behavior has to be verified on the shared test instance before it ships.
 
 **Nothing is blocked.** The plugin works without `Gradebook Group` existing —
 that's what failing open means. Creating and populating the group is a
 nice-to-have, not a prerequisite for use.
+
+> Which pages, which instances, and the exact construct are deliberately not in
+> this file: this repository is public. That detail, and the per-instance check
+> of whether the group exists, are in the Data Team's Asana task for this work.
 
 ### The actual decision
 
@@ -125,10 +126,10 @@ The repo is currently between two coherent positions, which is the real problem:
 - **Gate by group.** Create and populate `Gradebook Group` per instance, wrap
   all five pages in a fail-closed membership check, bump to v2.6, deploy to all
   three regions. Access control then means something.
-- **Don't gate.** Remove the vestigial guard from the list page and document
-  that any PS admin who can reach the page can manage expectations, relying on
-  PowerSchool's own page permissions. No setup, and the docs stop describing
-  protection that isn't there.
+- **Don't gate.** Remove the vestigial guard and document that any PS admin who
+  can reach the page can manage expectations, relying on PowerSchool's own page
+  permissions. No setup, and the docs stop describing protection that isn't
+  there.
 
 Today the second is in force by accident while the docs describe the first.
 Either end state is defensible; the gap between them is not.

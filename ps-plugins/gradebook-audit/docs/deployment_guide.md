@@ -220,9 +220,10 @@ To update an existing plugin installation with a new version:
 
 ## Part 3: Grant Access to Users
 
-Access is controlled by PS group membership. The list page guards itself with
-`~[if.not.memberof:Gradebook Group]` and redirects everyone else to the PS admin
-home page.
+Access is meant to be controlled by PS group membership, with non-members
+redirected to the PS admin home page. See the access-control TODO in the plugin
+README before relying on that — it is not currently enforced as described, so
+group membership is not what decides who can reach these pages.
 
 > ⚠️ **The group is matched by name, not by ID.** Earlier versions of this guide
 > said "Group #51" — that is simply the ID Newark happened to assign, and it has
