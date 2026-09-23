@@ -793,8 +793,20 @@ different numbers.
 | School-week grouping versus ISO-week grouping | Materially         |
 
 If any pair converges, the fabricated data has lost the property Part 5 built
-in, and the sandbox has quietly stopped teaching that lesson. Same runner, same
-CI, different expectation kind.
+in, and the sandbox has quietly stopped teaching that lesson.
+
+**They go in their own file, not in `canaries.yml`.** The reason is not tidiness
+— it is whose gate fails. MasterBorn runs `canaries.yml` unmodified as their
+acceptance gate, and a canary going red means the access model broke. A
+divergence assertion going red means KTAF's generator regressed. Merge the two
+and MasterBorn's gate fails for something MasterBorn cannot fix, which is how a
+gate starts getting overridden.
+
+Two smaller reasons agree. The row shapes differ: a canary is one query and an
+expected outcome, a divergence assertion is two queries and a relation between
+their results. And the two failures have different owners and different urgency.
+
+One runner still serves both — it takes a path either way.
 
 ### Mutation testing is the only honest measure
 
@@ -805,11 +817,15 @@ canary to flip red. Report uncaught mutations as a percentage.
 This applies to the divergence assertions too: perturb the generator so a pair
 converges, and the assertion must fail.
 
-### What is open
+### One thing this part depends on
 
-- **Whether the divergence assertions live in `canaries.yml` or beside it.** One
-  file keeps one runner; two keep the expectation kinds from blurring. A
-  build-time detail, but decide it before writing either.
+`canSwitchSqlUser` rejects `@kippmiami.org`, so no Miami persona can be emulated
+over the SQL API — 166 of the 1573 rows in `dim_staff_cube_access`, measured
+2026-09-23. Until [#5517](https://github.com/TEAMSchools/teamster/issues/5517)
+lands, the canary suite cannot cover Miami, and a green suite means less than it
+appears to.
+
+### Nothing here is open
 
 <!-- CB: comments on Part 6 go here, or inline above. -->
 
