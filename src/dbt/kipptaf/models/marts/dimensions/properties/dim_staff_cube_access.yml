@@ -53,6 +53,19 @@ models:
               entity != 'KTAF' or student_location_scope in ('network', 'none')
           config:
             severity: error
+      # A school student scope whose location does not resolve grants nothing:
+      # the policy filters on a NULL abbreviation and the viewer is denied every
+      # row, which looks exactly like a correct deny at the Cube surface. Warn,
+      # not error — the rows are a real upstream gap in the work-assignment
+      # location (9 Miami-employed viewers as of 2026-09-23), so this surfaces
+      # them for Ops rather than blocking a deploy.
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: |
+              student_location_scope != 'school'
+              or location_abbreviation is not null
+          config:
+            severity: warn
     columns:
       - name: staff_key
         data_type: string
