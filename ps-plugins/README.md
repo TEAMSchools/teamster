@@ -31,11 +31,11 @@ than PowerSchool**, so it has no PS instance and no plugin here applies to it.
 
 ## Reference Documentation
 
-PowerSchool's developer documentation lives in
-[`docs/reference/`](./docs/reference/) — plugin XML schema, database extensions,
-PS-HTML page customization, and PowerTeacher Pro. Start with the
-[index](./docs/reference/README.md), which says what each document covers and
-when to reach for it.
+PowerSchool's developer documentation — plugin XML schema, database extensions,
+PS-HTML page customization, PowerTeacher Pro — is a set of vendor PDFs in the
+Data Team's shared Drive folder, not files in this repo. The
+[index](./docs/reference/README.md) says what each document covers, when to
+reach for it, and the Drive file ID to fetch it by.
 
 ---
 

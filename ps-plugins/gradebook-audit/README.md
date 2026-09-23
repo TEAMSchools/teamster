@@ -147,10 +147,10 @@ the negative case is the whole point.
 
 ## Key Technical Notes
 
-> 📚 PowerSchool's own developer docs are in
-> [`../docs/reference/`](../docs/reference/) — see the
-> [index](../docs/reference/README.md). Doc 03 covers `plugin.xml`; doc 05
-> covers the PS-HTML page patterns these pages are built on.
+> 📚 PowerSchool's own developer docs are PDFs in the Data Team's shared Drive
+> folder, not files in this repo — the [index](../docs/reference/README.md)
+> gives each one's Drive file ID. Doc 03 covers `plugin.xml`; doc 05 covers the
+> PS-HTML page patterns these pages are built on.
 
 - Plugin is hosted on CLG-managed PS instances — Oracle DDL auto-provisioning
   from `user_schema_root` XML does not work. Tables must be created manually.

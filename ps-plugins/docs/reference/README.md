@@ -1,13 +1,18 @@
 # PowerSchool Reference Documentation
 
-Vendor documentation for building PS plugins. These were previously held in a
-Claude Desktop project, which meant only one person could see them. They live
-here so anyone working on a plugin in this repo — or any AI assistant session
-working in it — has the same reference material.
+Vendor documentation for building PS plugins. **The documents are PDFs in the
+Data Team's shared Drive folder. None of them are in this repo** — this file is
+the index: what each one covers, when to reach for it, and the Drive file ID to
+fetch it by.
+
+They were previously held in a Claude Desktop project, which meant only one
+person could see them. Indexing them here means anyone working on a plugin in
+this repo — or any AI assistant session working in it — reaches the same
+reference material.
 
 > **Internal use only.** These are PowerSchool Group LLC / Pearson copyrighted
-> documents, kept here for KTAF staff working on our own plugins. Do not
-> redistribute outside the network.
+> documents, kept for KTAF staff working on our own plugins. Do not redistribute
+> outside the network.
 
 ---
 
@@ -62,15 +67,15 @@ from admin pages.
 
 **1 - PS Data Dictionary**  
 Every PS table and field: names, types, sizes. Reach for it when looking up a
-core table or field before writing a named query. See
-[Why 01 lives in Drive](#why-01-lives-in-drive).
+core table or field before writing a named query. The largest of the six by far
+— see [Why they live in Drive](#why-they-live-in-drive).
 
 ### Version caveat on 05
 
 Document 05 is **version 1.4, released June 2015, written against PS release
 9.x** (originally a Pearson-era document owned by K-12 Sales). It is still the
 most complete treatment of PS-HTML and `tlist_child` anywhere, which is why it's
-here — but it long predates our instances. Where 05 and 04 disagree, **04
+in the set — but it long predates our instances. Where 05 and 04 disagree, **04
 wins**. Treat 05's specifics as a strong hint to verify on the test instance
 (`kippnj2.clgpstest.com`), not as settled fact.
 
@@ -79,27 +84,25 @@ sites in April 2026, so they reflect roughly current behavior. They are
 snapshots, not living documents — if something doesn't match what a PS instance
 actually does, the instance is right and the snapshot is stale.
 
-### Why 01 lives in Drive
+### Why they live in Drive
 
-The PS Data Dictionary is 18.8 MB and is regenerated for each PowerSchool
-release. Committing it would mean storing a fresh ~19 MB blob in git history on
-every PS upgrade, permanently — in a repo whose actual plugin code is under 100
-KB. It's also a lookup table rather than a guide: you search it for one field
-and close it.
+They are PowerSchool's PDFs, not ours, and a git repo is a poor home for them:
+each re-capture stores another copy in history, permanently, in a repo whose
+actual plugin code is under 100 KB. Document 01 makes the case on its own — the
+PS Data Dictionary is 18.8 MB and is regenerated for every PowerSchool release,
+so committing it would mean a fresh ~19 MB blob on every PS upgrade. It is also
+a lookup table rather than a guide: you search it for one field and close it.
 
-So it stays in the Data Team shared Drive folder, which everyone on the team can
-already reach:
+So all six stay in the Data Team shared Drive folder, which everyone on the team
+can already reach:
 
 - **Folder:**
   https://drive.google.com/drive/folders/1qjtKWlEE2XrfUXBh4QAodEX2g6c8do4T
-- **File:**
+- **01, PS Data Dictionary:**
   https://drive.google.com/file/d/1wtd7lmAB9LEI0yPtIQ6tTEdDjTJlt7TY/view
-- **Drive file ID:** `1wtd7lmAB9LEI0yPtIQ6tTEdDjTJlt7TY`
 
-The file ID is recorded so an assistant session with a Drive connector can fetch
-it directly without searching. That same Drive folder also holds copies of
-documents 02–06, so the folder alone is a complete set for anyone who prefers
-Drive to git.
+Every document's Drive file ID is in the table above, so an assistant session
+with a Drive connector can fetch one directly without searching.
 
 ---
 
