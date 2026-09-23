@@ -79,6 +79,18 @@ jobs:
       - name: Build and validate plugin packages
         run: python3 ps-plugins/scripts/build_plugin.py
 
+      # Packages the nine end-user skill files at the zip root and fails the
+      # build if any relative markdown link in the skill doesn't resolve.
+      - name: Build the end-user skill zip
+        run: python3 ps-plugins/scripts/build_skill.py
+
+      - name: Upload the skill zip
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: gradebook-expectations-upload
+          path: ps-plugins/dist/gradebook_expectations_upload_*.zip
+          if-no-files-found: error
+
       # https://github.com/astral-sh/setup-uv
       - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
 

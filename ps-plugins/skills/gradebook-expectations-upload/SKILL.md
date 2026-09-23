@@ -1,5 +1,6 @@
 ---
 name: gradebook-expectations-upload
+version: "1.0.0"
 description: >-
   Use when the gradebook audit's weekly assignment expectations need to go into,
   or be diagnosed in, PowerSchool. Triggers: "we need to load the gradebook
