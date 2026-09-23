@@ -32,8 +32,8 @@ Tracked in [#5266](https://github.com/TEAMSchools/teamster/issues/5266), on
 | 2   | Deployment shape and Cube Cloud isolation | Approved                |
 | 3   | Piece 1 — isolation proof                 | Approved                |
 | 4   | Piece 2 — coverage contract               | Approved                |
-| 5   | Piece 3 — generator scope and fabrication | **Drafted — needs you** |
-| 6   | Piece 3 — adversarial canaries            | Not drafted             |
+| 5   | Piece 3 — generator scope and fabrication | Approved                |
+| 6   | Piece 3 — adversarial canaries            | **Drafted — needs you** |
 | 7   | Piece 4 — drift gate                      | Not drafted, unblocked  |
 | 8   | Piece 5 — deploy mode and cadence         | Not drafted             |
 | 9   | Sign-offs — reserved names, domain        | Not drafted             |
@@ -636,10 +636,10 @@ Three reasons, in order of weight:
    to make that read safe. Part 1's privacy argument becomes absolute rather
    than qualified.
 
-The risk, stated plainly: a load-bearing value that is **not** in the model
-leaves the kit without it. That is discoverable rather than silent, and the fix
-is to document the value in the model, where it belonged already. Copying it
-across quietly would have hidden the same gap.
+The one risk worth naming was a load-bearing value that is **not** in the model,
+leaving the kit without it. Cristina confirmed on 2026-09-23 that the cube YAML
+always carries the allowlists, and the YAML is where the kit reads them from —
+so there is no such category. The concern is closed rather than accepted.
 
 ### Derive the table set and order; do not write them down
 
@@ -723,8 +723,97 @@ Evidence: [A5](#a5--staff_benefits_scope-is-answerable-from-evidence),
 
 ## Part 6 — Piece 3, adversarial canaries
 
-Not drafted. Decides the must-be-empty canaries and how they are verified. The
-review keeps these as-is and calls them the most valuable piece.
+The review keeps this piece unchanged and calls it the most valuable one. Most
+of this part is therefore confirmation rather than decision — except for one
+conflict it exposes with Part 9, and one question Part 4 handed forward.
+
+### The distinction the whole piece rests on
+
+`canaries.yml` holds entries shaped `{persona, query_shape, expect}`, where
+`expect` is `BLOCKED`, `ROWS` or `ZERO`. `BLOCKED` asserts the real denial text
+— for the SQL API, `Table or CTE with name '<view>' not found`.
+
+**A quiet zero rows against a `BLOCKED` canary is a failure, not a pass.** That
+one rule is what mechanically forces sign-off in production mode: a dev-mode
+runner fails its own canaries immediately rather than reporting a falsely benign
+matrix. Without it the entire suite can go green while enforcing nothing.
+
+The Cube Cloud form of that criterion: run the canaries against the sandbox's
+**production environment**, never a Dev Mode one.
+
+The work is small because the runner exists.
+[`scripts/cube_rls_matrix.py`](../../../scripts/cube_rls_matrix.py) already
+emulates one viewer per connection; adding an `--expect <canaries.yml>` flag and
+a non-zero exit turns a human-read matrix into an assertion runner. Do not
+recreate the script.
+
+Both tiers run the same files. KTAF CI owns them, because KTAF owns the dbt
+marts and the `access_policy` blocks and must break first when a policy changes.
+MasterBorn's kit suite runs them unmodified as its acceptance gate.
+
+### The personas must live on `@apps.teamschools.org`
+
+`cube_rls_matrix.py` connects over the **SQL API** — it is a `psycopg` client,
+verified 2026-09-23. So persona switching goes through `canSwitchSqlUser`, which
+only switches to `@apps.teamschools.org` addresses and must not be broadened.
+
+**This rules out Part 9's synthetic domain for any persona a canary exercises.**
+A `ktaf-sandbox.invalid` address cannot be switched to, so every canary using
+one would fail for the wrong reason. Fabricated personas need addresses on the
+real domain, made non-colliding by a reserved prefix such as `sandbox-`. Part 9
+settles the prefix; it no longer gets to settle the domain.
+
+### Poison pills: cut, and free instead
+
+The spec seeds two assessment scopes with deliberately incomparable ranges so a
+wrong cross-scope `avg_scale_score` pooling produces an absurd number. The
+review cuts it as separate work, and is right: **realistic ranges already do
+it.** SAT at 400–1600 beside ACT at 1–36 pools into a number nobody can read as
+plausible, with no special seeding.
+
+Keep the reasoning, which the cut does not remove. This is the one failure no
+assertion catches — scope-bound measures recompute correctly at any grain and
+are simply meaningless across incomparable scopes. Only a person noticing
+catches it, so the error has to announce itself in a screenshot.
+
+### What Part 4's hazards get instead of canaries
+
+Part 4 named three queries that compile, run and return a plausible wrong
+number. None fits the `BLOCKED`/`ROWS`/`ZERO` shape, because none is an access
+failure — the caller is allowed to run them and gets an answer.
+
+They need a second, smaller file of **divergence assertions**: pairs of queries
+a careless kit would treat as equivalent, asserted to return materially
+different numbers.
+
+| Pair                                          | Asserted to differ |
+| --------------------------------------------- | ------------------ |
+| Pinned versus unpinned cumulative count       | Materially         |
+| Daily view rate versus periods view rate      | Materially         |
+| School-week grouping versus ISO-week grouping | Materially         |
+
+If any pair converges, the fabricated data has lost the property Part 5 built
+in, and the sandbox has quietly stopped teaching that lesson. Same runner, same
+CI, different expectation kind.
+
+### Mutation testing is the only honest measure
+
+A canary that would still pass with the policy deleted proves nothing. Perturb
+one `access_policy` block or one persona's scope value and require at least one
+canary to flip red. Report uncaught mutations as a percentage.
+
+This applies to the divergence assertions too: perturb the generator so a pair
+converges, and the assertion must fail.
+
+### What is open
+
+- **Whether the divergence assertions live in `canaries.yml` or beside it.** One
+  file keeps one runner; two keep the expectation kinds from blurring. A
+  build-time detail, but decide it before writing either.
+
+<!-- CB: comments on Part 6 go here, or inline above. -->
+
+Evidence: [A9](#a9--the-specs-cube-model-facts-checked-against-main).
 
 ## Part 7 — Piece 4, drift gate
 
@@ -742,8 +831,12 @@ Not drafted. Decides CLI versus Git deploy mode and the bump cadence. See
 
 ## Part 9 — Sign-offs
 
-Not drafted. Reserved surnames and the synthetic email domain for fabricated
-personas.
+Not drafted. Reserved surnames and the email addresses fabricated personas use.
+
+Constrained by [Part 6](#the-personas-must-live-on-appsteamschoolsorg): the
+canary runner goes through the SQL API, so persona addresses must be on
+`@apps.teamschools.org` and made non-colliding by a reserved prefix. The spec's
+`ktaf-sandbox.invalid` domain cannot work for any persona a canary exercises.
 
 ## Part 10 — Out of scope, kit enforcement
 
