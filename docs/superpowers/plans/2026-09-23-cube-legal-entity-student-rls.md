@@ -235,11 +235,13 @@ placed at the top of the `columns:` list because they carry tests:
 - [ ] **Step 2: Run the tests to verify they fail**
 
 ```bash
-cd /workspaces/teamster && uv run dbt parse --project-dir src/dbt/kipptaf 2>&1 | tail -n 20
+cd /workspaces/teamster && uv run dbt build --select dim_staff_cube_access --project-dir src/dbt/kipptaf --target dev --defer --state src/dbt/kipptaf/target/prod 2>&1 | tail -n 25
 ```
 
-Expected: FAIL. The contract and the tests name `legal_entity_region_key` and
-`legal_entity`, which the SQL does not yet produce.
+Expected: FAIL with a contract error naming `legal_entity_region_key` and
+`legal_entity` as declared-but-missing. It must be `build`, not `parse` — dbt
+compares the built relation's schema to the YAML at run time, so `parse` checks
+neither the contract nor the new test's column reference and would pass.
 
 - [ ] **Step 3: Add the `dim_regions` join to `current_assignment`**
 
@@ -787,8 +789,10 @@ cd /workspaces/teamster && git checkout src/cube/cube.js && grep -rn "zz_" src/c
 
 Expected: no output.
 
-Reverting `cube.js` discards Task 3's edit to it, so re-apply step 4 of Task 3
-and re-run `node --test access.test.js cube.test.js` before committing.
+Task 3's rename is already committed, so `git checkout` restores it along with
+everything else in HEAD — it is not lost. Confirm with
+`grep -n "legal_entity_region_key" src/cube/cube.js`, which must return one hit:
+the `computeAllowedAbbreviations` argument.
 
 - [ ] **Step 6: Record the boundary in the authoring rules**
 
