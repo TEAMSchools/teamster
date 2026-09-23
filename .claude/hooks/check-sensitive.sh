@@ -105,15 +105,18 @@ fi
 #    the full corpus.
 _env_scan=$(echo "${no_content}" | sed -E 's/\.env\.(example|sample|template|dist)([^a-zA-Z]|$)/\2/g')
 if echo "${_env_scan}" | grep -qiE '\.env[.a-z]*' ||
-	echo "${no_content}" | grep -qiE '(^|[ /])(\.ssh|\.kube|\.pem|\.key|\.cer|secrets\.json|credentials\.json|application_default_credentials\.json|\.git-credentials|\.netrc|secret-volume)([ /]|$)|(^|[ /])(\.?/)?env(/|[ ]|$)|\.config/op([ /]|$)|\.devcontainer/tpl/'; then
-	deny "check-sensitive.sh Rule 1: an argument matches a secret-file pattern (dotenv, .ssh or .kube dirs, key/cert files, credentials or secrets JSON, netrc, secret-volume, devcontainer tpl, or the bare word env). If it is a real secret file, do not read or name it; ask the user. If it is prose, write 'environment variable' and 'dotenv'."
+	echo "${no_content}" | grep -qiE '(^|[ /])(\.ssh|\.kube|secrets\.json|credentials\.json|application_default_credentials\.json|\.git-credentials|\.netrc|secret-volume)([ /]|$)|(^|[ /])(\.?/)?env(/|[ ]|$)|\.config/op([ /]|$)|\.devcontainer/tpl/'; then
+	deny "check-sensitive.sh Rule 1: an argument matches a secret-file pattern (dotenv, .ssh or .kube dirs, credentials or secrets JSON, netrc, secret-volume, devcontainer tpl, or the bare word env). If it is a real secret file, do not read or name it; ask the user. If it is prose, write 'environment variable' and 'dotenv'."
 fi
 
-# 1b. File-extension patterns scoped to path_only (named path keys incl. MCP
-#     uri/url/localPath/source, recursive) — catches cert/key files under those
-#     keys without scanning free-text fields like a SQL `sql` parameter, where a
-#     dot-attribute such as record.key would otherwise false-positive.
-if echo "${path_only}" | grep -qiE '\*?\.(cer|key|pem)([ /]|$)'; then
+# 1b. Cert/key file extensions, scoped to path_only (named path keys incl. MCP
+#     uri/url/localPath/source, recursive). The leading class requires a
+#     filename character, glob star, slash, or start-of-string before the dot,
+#     so a real path (server.key, /etc/ssl/site.pem, *.key, ~/.key) matches
+#     while a bare dot-attribute in a command (jq '... | .key') does not.
+#     These extensions live ONLY here — Rule 1's (^|[ /]) anchor made it fire
+#     on the jq form and miss every real filename.
+if echo "${path_only}" | grep -qiE '(^|[*A-Za-z0-9_~/-])\.(cer|key|pem)([ /]|$)'; then
 	deny "check-sensitive.sh Rule 1b: a path argument ends in .cer, .key, or .pem (certificate or private key). Do not open it; ask the user."
 fi
 
@@ -329,7 +332,12 @@ fi
 # and Dagster/dbt run launches carry free text outbound but matched no verb.
 if [[ ${tool_name} == webfetch || ${tool_name} == websearch ]] ||
 	[[ ${tool_name} =~ ^mcp__.*(create|update|write|add|comment|upload|send|post|put|delete|append|insert|merge|push|reply|share|forward|schedule|launch|trigger) ]]; then
-	if echo "${path}" | grep -qiE 'op://|-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|PRIVATE KEY-----|AIza[0-9A-Za-z_-]{35}|ya29\.[0-9A-Za-z_-]+|goog_[a-zA-Z0-9_-]+|eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}|ops_eyJ[A-Za-z0-9_-]{50,}|AKIA[0-9A-Z]{16}|(postgres(ql)?|mysql|mongodb(\+srv)?)://[^[:space:]]+:[^[:space:]]+@|"type"[[:space:]]*:[[:space:]]*"service_account"|gh[pusor]_[A-Za-z0-9_]{36,}|github_pat_[A-Za-z0-9_]{22,}|xox[baprs]-[0-9A-Za-z-]{10,}|\b(sk|rk)_(live|test)_[0-9A-Za-z]{16,}|hooks\.slack\.com/services/[A-Za-z0-9/]+|aws_secret_access_key["[:space:]:=]+[A-Za-z0-9/+]{40}'; then
+	if echo "${path}" | grep -qiE 'op://[^/{}[:space:]]+/|-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|PRIVATE KEY-----|AIza[0-9A-Za-z_-]{35}|ya29\.[0-9A-Za-z_-]+|goog_[a-zA-Z0-9_-]+|eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}|ops_eyJ[A-Za-z0-9_-]{50,}|AKIA[0-9A-Z]{16}|(postgres(ql)?|mysql|mongodb(\+srv)?)://[^[:space:]]+:[^[:space:]]+@|"type"[[:space:]]*:[[:space:]]*"service_account"|gh[pusor]_[A-Za-z0-9_]{36,}|github_pat_[A-Za-z0-9_]{22,}|xox[baprs]-[0-9A-Za-z-]{10,}|\b(sk|rk)_(live|test)_[0-9A-Za-z]{16,}|hooks\.slack\.com/services/[A-Za-z0-9/]+|aws_secret_access_key["[:space:]:=]+[A-Za-z0-9/+]{40}'; then
 		deny "check-sensitive.sh Section 4: this outbound write carries a secret-shaped value (1Password reference, private-key header, cloud token, JWT, connection string, service-account JSON). Redact it (write op-uri) before sending."
+	fi
+	# Asana PAT: 1/<gid>:<32 hex> (legacy) or 2/<gid>/<gid>:<32 hex>. Mirrors the
+	# Asana PAT branch of secret_re in check-output.sh.
+	if echo "${path}" | grep -qiE '\b[12]/[0-9]+(/[0-9]+)?:[0-9a-f]{32}\b'; then
+		deny "check-sensitive.sh Section 4: this outbound write carries an Asana personal access token. Redact it before sending."
 	fi
 fi

@@ -6,6 +6,12 @@ models:
       `is_enrolled_recent` or `is_out_of_district` dropped Miami entirely until
       #5038 populated those flags upstream; `is_self_contained` is still null
       for Miami by design. Ratified on #4996.
+
+
+      The cumulative GPA columns come from `int_students__gpa_cumulative`, so
+      they cover both PowerSchool and Focus. Cumulative GPA is calculated per
+      school, so every enrollment year at a school shows the student's current
+      cumulative GPA at that school.
     config:
       schema: extracts
       materialized: table
@@ -27,6 +33,14 @@ models:
               - entrydate
           config:
             severity: error
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - academic_year
+          config:
+            where: rn_year = 1
+            severity: warn
     columns:
       - name: _dbt_source_project
         data_type: string
@@ -791,8 +805,17 @@ models:
         data_type: float64
       - name: next_year_school
         data_type: string
+        description:
+          School abbreviation on the student's primary enrollment for the
+          following academic year. Null when the student has no enrollment in
+          that year, including a student who leaves and returns after a gap.
       - name: next_year_schoolid
         data_type: int64
+        description:
+          School id on the student's primary enrollment for the following
+          academic year. Null when the student has no enrollment in that year,
+          including a student who leaves and returns after a gap. The 999999
+          placeholder carries through from the graduate placeholder rows.
       - name: finalsite_student_id
         data_type: string
       - name: district
@@ -935,6 +958,18 @@ models:
         description:
           The enrollment status of the student. Categorical mapping of
           enroll_status.
+      - name: exited_hs
+        data_type: string
+        description:
+          Whether the student graduated or completed high school, per exitcode =
+          'G1' (Gen Table 6 cat=exitcodes, labeled "Graduated from a KIPP NJ
+          school"). The codeset also lists 'GR' ("Graduated"), 'EG' ("Early
+          Graduate"), and 'L' ("Graduation Code"), but none of the three has
+          ever been assigned to a real enrollment record network-wide -- 'G1' is
+          the only graduation code actually in use, so checking it alone is
+          sufficient. Shared by rpt_gsheets__csgf_hs_postsec_pathways and
+          rpt_gsheets__csgf_hs_enrollment -- promoted here from a duplicated
+          per-model calculation so both stay in sync.
       - name: race_ethnicity
         data_type: string
         description:

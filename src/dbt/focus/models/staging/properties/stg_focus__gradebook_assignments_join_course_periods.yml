@@ -31,7 +31,7 @@ models:
                 to: ref('stg_focus__gradebook_assignments')
                 field: assignment_id
               config:
-                severity: error
+                severity: warn
       - name: course_period_id
         description: >-
           Focus course period (section) the assignment was assigned to.

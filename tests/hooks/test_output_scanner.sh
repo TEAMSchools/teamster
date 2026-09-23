@@ -232,4 +232,48 @@ expect_redacted "text block with a base64 data field is not exempt" \
 	"${img_b64}"
 # trunk-ignore-end(shellcheck/SC2312)
 
+echo ""
+echo -e "${YELLOW}PostToolUse: Asana pagination cursor exemption + Asana PAT${NC}"
+# Asana next_page.offset is a JWT-shaped cursor, echoed in next_page.path and
+# next_page.uri. It is exempt only as the offset= param of an
+# https://app.asana.com/api/ URL in the same output. Every fixture is built at
+# run time so this file carries no JWT or PAT shape.
+# trunk-ignore-begin(shellcheck/SC2312)
+b64u() { printf '%s' "$1" | base64 -w0 | tr '+/' '-_' | tr -d '='; }
+cursor="$(b64u '{"typ":"JWT","alg":"HS256"}').$(b64u '{"border_rank":"[\"x\",1]","iat":1700000000}').FAKEsig0fakeSIG1fakeSig2fakeSIG3"
+other_jwt="$(b64u '{"alg":"HS256","typ":"JWT"}').$(b64u '{"sub":"someone","iat":1700000001}').OtherFAKEsig0fakeSIG1fake"
+opaque="Qm9ndXNDdXJzb3JGb3JUZXN0aW5nT25seU5vdEFTZWNyZXQ$(printf 'aB3xZ9qL%.0s' {1..12})"
+pat_v2="2/1200000000000001/1200000000000002"":0123456789abcdef0123456789abcdef"
+pat_v1="1/1200000000001"":fedcba9876543210fedcba9876543210"
+au="https://app.asana.com/api/1.0/tasks?project=1200000000000001&limit=100"
+asana_page() { # $1 cursor, $2 task name
+	jq -cn --arg o "$1" --arg u "${au}&offset=$1" --arg n "${2:-Task}" \
+		'{data:[{gid:"1",name:$n}], next_page:{offset:$o, path:("/tasks?limit=100&offset="+$o), uri:$u}}'
+}
+check_output "Asana get_tasks next_page cursor is clean" clean mcp__asana__get_tasks \
+	"$(asana_page "${cursor}")"
+check_output "Asana opaque 150-char cursor is clean" clean mcp__asana__get_tasks \
+	"$(asana_page "${opaque}")"
+check_output "Bash print(next_page) python repr is clean" clean \
+	"{'offset': '${cursor}', 'path': '/tasks?limit=100&offset=${cursor}', 'uri': '${au}&offset=${cursor}'}"
+check_output "fake Asana PAT (2/...) is redacted" deny "ASANA_TOKEN=${pat_v2}"
+check_output "fake Asana PAT (1/...) is redacted" deny "ASANA_TOKEN=${pat_v1}"
+check_output "fake Asana PAT beside a valid cursor is redacted" deny mcp__asana__get_tasks \
+	"$(asana_page "${cursor}" "${pat_v2}")"
+check_output "fake Asana PAT as an Asana offset= param is redacted" deny "${au}&offset=${pat_v2}"
+check_output "other JWT beside a valid cursor is redacted" deny mcp__asana__get_tasks \
+	"$(asana_page "${cursor}" "${other_jwt}")"
+check_output "JWT under an offset key, no Asana URL, is redacted" deny "{\"offset\": \"${cursor}\"}"
+check_output "JWT offset= on a non-Asana host is redacted" deny \
+	"https://evil.example.com/api/1.0/x?offset=${cursor}"
+check_output "JWT offset= on app.asana.com.<other> is redacted" deny \
+	"https://app.asana.com.evil.example/api/1.0/x?offset=${cursor}"
+check_output "JWT offset= behind a URL embedding the Asana URL is redacted" deny \
+	"https://evil.example/https://app.asana.com/api/1.0/x?offset=${cursor}"
+check_output "JWT offset= on app.asana.com outside /api/ is redacted" deny \
+	"https://app.asana.com/0/123?offset=${cursor}"
+check_output "different opaque blob beside a valid cursor is redacted" deny mcp__asana__get_tasks \
+	"$(asana_page "${cursor}" "${opaque//a/c}")"
+# trunk-ignore-end(shellcheck/SC2312)
+
 print_summary "Output Scanner"

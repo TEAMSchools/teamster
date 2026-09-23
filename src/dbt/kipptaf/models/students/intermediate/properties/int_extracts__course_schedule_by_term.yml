@@ -16,6 +16,18 @@ models:
               - quarter
           config:
             severity: error
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - _dbt_source_project
+              - academic_year
+              - schoolid
+              - teacher_number
+              - course_number
+              - quarter
+              - section_or_period
+          config:
+            severity: error
     columns:
       - name: _dbt_source_project
         data_type: string
@@ -232,7 +244,7 @@ models:
         config:
           meta:
             source_system: PowerSchool
-            source_model: int_powerschool__terms
+            source_model: int_powerschool__terms_spine
             source_column: term
       - name: semester
         data_type: string
@@ -240,7 +252,7 @@ models:
         config:
           meta:
             source_system: PowerSchool
-            source_model: int_powerschool__terms
+            source_model: int_powerschool__terms_spine
             source_column: semester
       - name: quarter_start_date
         data_type: date
@@ -248,7 +260,7 @@ models:
         config:
           meta:
             source_system: PowerSchool
-            source_model: int_powerschool__terms
+            source_model: int_powerschool__terms_spine
             source_column: term_start_date
       - name: quarter_end_date
         data_type: date
@@ -256,7 +268,7 @@ models:
         config:
           meta:
             source_system: PowerSchool
-            source_model: int_powerschool__terms
+            source_model: int_powerschool__terms_spine
             source_column: term_end_date
       - name: quarter_start_date_alt
         data_type: date
@@ -284,7 +296,7 @@ models:
         config:
           meta:
             source_system: PowerSchool
-            source_model: int_powerschool__terms
+            source_model: int_powerschool__terms_spine
             source_column: is_current_term
       - name: first_day_school_year
         data_type: date
@@ -358,5 +370,12 @@ models:
       - name: section_or_period
         data_type: string
         description: >
-          External expression for HS sections (period/day schedule); section
-          number for non-HS sections.
+          Display label identifying one section to a school-based staff member.
+          HS sections use the external expression (period/day schedule) followed
+          by the section number, because two HS sections of the same course can
+          meet in the same period with the same teacher, and the period alone
+          does not tell them apart. HS section numbers already lead with the
+          period and add a qualifier, so the combined label reads as period plus
+          qualifier. Non-HS sections use the section number alone, which names
+          the cohort and is already unique. A null external expression yields
+          the bare section number rather than a null label.

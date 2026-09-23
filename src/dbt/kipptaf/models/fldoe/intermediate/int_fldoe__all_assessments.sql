@@ -80,14 +80,6 @@ select
     end as aligned_level_test_code,
 
     case
-        when fl.assessment_subject like 'English Language Arts%'
-        then 'Text Study'
-        when fl.assessment_subject in ('Algebra I', 'Algebra II', 'Geometry')
-        then 'Mathematics'
-        else fl.assessment_subject
-    end as illuminate_subject,
-
-    case
         when fl.performance_level = 1
         then 'Below/Far Below'
         when fl.performance_level = 2

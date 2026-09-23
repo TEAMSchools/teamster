@@ -17,8 +17,14 @@ built from the frozen `src_powerschool__*` externals (final ODBC pull
 2026-07-01). It was rebuilt on 2026-09-09 (#5012). It was rebuilt again after
 #5231 merged, adding identity and school columns to the GPA, final grades,
 calendar day, and student enrollment models, and a third time after #5250 to
-carry calendar-week fields on `int_powerschool__ps_adaadm_daily_ctod` (#5193).
-The recipe is the `dbt_project.yml` `powerschool:` block: re-include the package
+carry calendar-week fields on `int_powerschool__ps_adaadm_daily_ctod` (#5193),
+and a fourth time to add `int_powerschool__section_teachers`, the
+section-teacher join, for #5260, and a fifth time to add `int_powerschool__gpa`
+and widen storedgrades, the two GPA models, attendance streak, and calendar day,
+for #5413, and a sixth time for #5397, which rebuilt 97 tables and took
+`int_powerschool__terms` to 88 rows by picking up the quarter fallback #5396
+added, with `int_powerschool__terms_spine` built on its own afterwards. The
+recipe is the `dbt_project.yml` `powerschool:` block: re-include the package
 with the ODBC staging variant and 16 post-hooks — the 8400 Focus prefix on
 `student_number` (`stg_powerschool__students`), 14 staging models with `yearid`
 dropping rows past AY2025 (`yearid > 35`), and `stg_powerschool__calendar_day`

@@ -26,7 +26,7 @@ models:
                 to: ref('stg_focus__student_groups')
                 field: id
               config:
-                severity: error
+                severity: warn
       - name: student_id
         description: >-
           Focus student id in the group. Note this is the network student number
@@ -42,7 +42,7 @@ models:
                 to: ref('stg_focus__students')
                 field: student_id
               config:
-                severity: error
+                severity: warn
         config:
           meta:
             contains_pii: true

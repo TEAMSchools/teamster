@@ -6,14 +6,18 @@ models:
       crosswalk. Rewrites _dbt_source_relation to reflect the school's actual
       dagster_code_location, enabling correct multi-region routing as additional
       district SFTP files become available.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_primary_id
+              - school_year
+              - pm_period
+              - measure
+              - probe_number
+              - device_date
+              - assessment_grade
     columns:
-      - name: surrogate_key
-        data_type: string
-        description: >-
-          Hash of student_primary_id, school_year, pm_period, measure,
-          probe_number, device_date, and assessment_grade.
-        data_tests:
-          - unique
       - name: school_name
         data_type: string
         description: School name as provided in the vendor file.
@@ -60,7 +64,7 @@ models:
         data_type: string
         description: District primary identifier.
       - name: school_primary_id
-        data_type: int64
+        data_type: string
         description: School primary identifier from the mCLASS source.
       - name: student_last_name
         data_type: string

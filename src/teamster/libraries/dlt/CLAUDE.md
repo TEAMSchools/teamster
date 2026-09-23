@@ -11,11 +11,8 @@ DLT (data load tool) pipeline assets for source systems that use the
 Loads tables from the **Illuminate** (assessment platform) PostgreSQL database
 directly to BigQuery using `dlt`'s `sql_database` source with PyArrow backend.
 
-- Asset keys: `[code_location, "dlt", "illuminate", schema, table]`
 - `filter_date_taken_callback` handles a PostgreSQL `infinity` date value in
   certain tables that breaks psycopg
-- Factory:
-  `build_illuminate_dlt_assets(sql_database_credentials, code_location, schema, table_name)`
 
 ### `focus/`
 
@@ -49,12 +46,6 @@ PyArrow backend. Probe-gated, same style as `powerschool/`.
 - `cursor_column` is `updated_at` for every Focus table except `co_teachers`,
   which is count-only. A new table must declare one in `config/focus.yaml`; the
   code location reads `a["cursor_column"]`, so omitting it fails at module load.
-- Uses `reflection_level="full_with_precision"` + `remove_nullability_adapter`
-  (forces all columns `NULLABLE` so upstream `NOT NULL` changes don't break the
-  `replace` load — see `focus/CLAUDE.md`)
-- `interval_to_microseconds_adapter` maps Postgres `interval` to INT64
-  microseconds; without it dlt rejects the inferred `duration[us]` (see
-  `focus/CLAUDE.md`)
 
 ### `salesforce/`
 
@@ -66,9 +57,6 @@ Loads Salesforce objects to BigQuery. Pipeline and helpers are adapted from the
 Loads Zendesk Support data (tickets, users, organizations, etc.) to BigQuery
 using a vendored DLT Zendesk pipeline.
 
-- Asset keys: `[code_location, "dlt", "zendesk", "support", resource_name]`
-- Factory:
-  `build_zendesk_support_dlt_assets(zendesk_credentials, code_location)`
 - Vendored pipeline in `zendesk/pipeline/` handles auth via
   `TZendeskCredentials` and API pagination
 
@@ -76,11 +64,7 @@ using a vendored DLT Zendesk pipeline.
 
 Loads PowerSchool SIS Oracle tables to BigQuery over an SSH tunnel
 (`table_rows` + PyArrow), full-replace. Change detection lives in the intraday
-sensor, not the op. Factories:
-`build_powerschool_dlt_assets(code_location, tables, op_tags=None, max_extract_workers=None)`
-and
-`build_powerschool_dlt_intraday_sensor(code_location, tables, nightly_schedule_name, minimum_interval_seconds=900)`
-(`sensors.py`); asset keys `[code_location, "powerschool", "sis", table]`.
+sensor, not the op.
 
 - **Op run-config contract** (`PowerSchoolDltConfig`): `probe` present (intraday
   sensor) → load exactly the run's asset selection with the passed per-table

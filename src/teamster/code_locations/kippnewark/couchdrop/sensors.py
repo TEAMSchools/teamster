@@ -1,5 +1,7 @@
 from teamster.code_locations.kippnewark import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.code_locations.kippnewark.cambium.assets import eoc as cambium_eoc
 from teamster.code_locations.kippnewark.cambium.assets import njgpa as cambium_njgpa
+from teamster.code_locations.kippnewark.cambium.assets import njsla as cambium_njsla
 from teamster.code_locations.kippnewark.finalsite.assets import status_report
 from teamster.code_locations.kippnewark.pearson.assets import (
     njgpa,
@@ -14,7 +16,9 @@ couchdrop_sftp_sensor = build_couchdrop_sftp_sensor(
     code_location=CODE_LOCATION,
     local_timezone=LOCAL_TIMEZONE,
     asset_selection=[
+        cambium_eoc,
         cambium_njgpa,
+        cambium_njsla,
         njgpa,
         njsla_science,
         njsla,

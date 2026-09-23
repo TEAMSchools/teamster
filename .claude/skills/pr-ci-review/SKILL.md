@@ -54,6 +54,16 @@ description:
   awaiting a required review approval (CODEOWNERS `src/dbt/` =
   analytics-engineers), not a CI failure.
 
+- **`claude-review` skips PRs that touch only `*.md`, `package.json`, or
+  `package-lock.json`**, and anything outside `src/`, `tests/`, `scripts/`, and
+  `.github/workflows/` (`paths:` filter in `claude-code-review.yaml`). A docs or
+  CLAUDE.md PR gets no review comment: do not wait for one, and drop the "Review
+  the Claude Code Review comment" checkbox from its body.
+- **Re-read the PR state before any follow-up push or body edit.** A small docs
+  PR can merge within minutes of opening. Merge auto-deletes the branch, and a
+  later `git push` silently recreates it as an orphan (`* [new branch]` in the
+  output is the tell), while a body PATCH lands on a closed PR. If
+  `merged: true`, start a new branch from `origin/main` and cherry-pick.
 - **`claude-review` fires only on PR `opened` / `ready_for_review`**, never on
   `synchronize` — it does NOT re-run when you push fixes, so don't wait or
   monitor for a re-review after a fix push. To get it onto code pushed after its
@@ -106,6 +116,13 @@ hash-mismatches and fans out to rebuild the whole graph.
 Auto-retried CI runs invoke `dbt retry`, which replays the prior run's compiled
 SQL. After fixing external state (defer relations, transient BQ errors), trigger
 a fresh `dbt build` — don't rely on the retry.
+
+A `Clone - Staging` run recreates the `zz_stg_*` tables while it runs, so a CI
+run in flight at the same time fails `Not found: Table zz_stg_kipptaf_<x>.<y>`
+on models the PR never touched (run 70403224899793 overlapped a CI run this way,
+4 unrelated nodes). Check `list_jobs_runs` for an overlapping clone before
+reading the failure as a bug, wait for the clone to finish, then re-push for a
+fresh build.
 
 ## Editing a `sources-kipp*.yml` schema fans out `state:modified+`
 

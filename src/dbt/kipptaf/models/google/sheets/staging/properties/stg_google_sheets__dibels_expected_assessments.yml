@@ -3,47 +3,90 @@ models:
     columns:
       - name: Academic_Year
         data_type: int64
+        description:
+          Starting calendar year of the school year (e.g. 2025 for 2025-2026).
       - name: Region
         data_type: string
+        description:
+          The city form of the region -- Newark, Camden, Miami, Paterson.
       - name: Grade
         data_type: int64
+        description:
+          Grade level the standard applies to, as written on the sheet.
       - name: Test_Type
         data_type: string
+        description: Assessment family the row belongs to.
       - name: Discipline
         data_type: string
+        description: Discipline the assessment sits under, e.g. Literacy.
       - name: Subject_Area
         data_type: string
+        description: Subject area the assessment sits under.
       - name: Measure_Standard
         data_type: string
+        description:
+          The measure the standard applies to, e.g. Reading Fluency (ORF).
       - name: Test_Code
         data_type: string
+        description:
+          Term code the round maps to in reporting__terms, e.g. LIT1 or PLIT3.
       - name: Admin_Season
         data_type: string
+        description: The administration -- BOY, MOY or EOY.
       - name: Month_Round
         data_type: string
+        description: Calendar month the round's window falls in.
       - name: Illuminate_Subject
         data_type: string
+        description:
+          Course-subject mapping used by the section-enrollment resolver.
       - name: iReady_Subject
         data_type: string
+        description: iReady subject the row maps to.
       - name: PS_Credit_Type
         data_type: string
+        description: PowerSchool credit type the row maps to.
       - name: Assessment_Include
         data_type: boolean
+        description:
+          Null means the round runs. Non-null cancels the whole round for that
+          grade and region.
       - name: PM_Goal_Include
         data_type: boolean
+        description:
+          Null means a real tested round; non-null marks a scaffold row that
+          keeps the internal trajectory continuous across a round the measure
+          was not tested in.
       - name: PM_Goal_Criteria
         data_type: string
+        description:
+          How the round's measure codes combine. AND requires every code; NULL
+          is the OR criteria.
       - name: assessment_type
         data_type: string
+        description:
+          Whether the row is a Benchmark administration or a PM round. Authored
+          on the sheet rather than derived.
       - name: matching_pm_season
         data_type: string
+        description:
+          The PM season this administration's standard governs -- MOY maps to
+          BOY->MOY, EOY to MOY->EOY, so a PM round is measured against the NEXT
+          benchmark's standard.
       - name: expected_measure_name_code
         data_type: string
+        description: Short code of the measure expected in this round.
       - name: expected_measure_name
         data_type: string
+        description: Full name of the measure expected in this round.
       - name: expected_measure_standard
         data_type: string
+        description: The measure standard expected in this round.
       - name: grade_level_text
         data_type: string
+        description: Grade level in its written form, e.g. K.
       - name: round_number
         data_type: int64
+        description:
+          The round parsed from Test_Code. Anchored so a double-digit round is
+          not read as its first digit.
