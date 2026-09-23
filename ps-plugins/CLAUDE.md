@@ -54,11 +54,12 @@ the live UI, and report what happened.
   fails silently at deploy time: the nav link 404s and permissions bind to
   nothing.
 - Bump the `version` attribute in `plugin.xml` on every change.
-- **Never hand-zip a plugin.** Run `python3 scripts/build_plugin.py` (or
-  download the `plugin-zips` artifact from the Build plugin workflow). It
-  validates that every path referenced in the XML resolves to a real file in the
-  package and fails the build if not — which is exactly the bug hand-zipping
-  introduced once.
+- **Never hand-zip a plugin.** Run
+  `uv run --no-project python ps-plugins/scripts/build_plugin.py` (or download
+  the `plugin-zips` artifact from the Build plugin workflow). It validates that
+  every path referenced in the XML resolves to a real file in the package and
+  fails the build if not — which is exactly the bug hand-zipping introduced
+  once.
 - **Never run `trunk fmt --force` over these pages.** `.trunk/trunk.yaml`
   ignores prettier on `ps-plugins/**/*.html` because PowerSchool PSHTML `~[...]`
   constructs don't survive a generic HTML formatter. A plain
@@ -81,8 +82,7 @@ the live UI, and report what happened.
 ### Related data models
 
 These named queries reimplement, natively in PS, transformations that already
-exist as DBT staging/intermediate models in the data platform repo
-([`TEAMSchools/teamster`](https://github.com/TEAMSchools/teamster)). Read the
-existing model before writing new named query or schema logic rather than
-re-deriving a transformation — but treat `teamster` as the source of truth and
-read it there; don't copy SQL into this repo where it would go stale.
+exist as dbt staging/intermediate models under `src/dbt/` in this same repo.
+Read the existing model before writing new named query or schema logic rather
+than re-deriving a transformation — and leave the SQL there. A copy under
+`ps-plugins/` would go stale, and the model is the source of truth.

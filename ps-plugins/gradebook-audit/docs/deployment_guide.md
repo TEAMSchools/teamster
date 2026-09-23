@@ -135,8 +135,10 @@ To view or add fields to an existing table, follow the same navigation flow:
    and then silently didn't work. Either:
    - **Download from CI:** repo → **Actions** → **Build plugin** → latest run →
      download the `plugin-zips` artifact, or
-   - **Build locally:** `python3 scripts/build_plugin.py`, which writes to
-     `dist/` and fails if any path in the plugin's XML doesn't resolve.
+   - **Build locally**, from the repo root:
+     `uv run --no-project python ps-plugins/scripts/build_plugin.py`, which
+     writes to `ps-plugins/dist/` and fails if any path in the plugin's XML
+     doesn't resolve.
 2. Log in to the PS admin console.
 3. Navigate to **System Management → Server → Plugin Configuration**.
 4. Click **Install** — the button is labelled just `Install`, not "Install

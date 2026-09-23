@@ -169,9 +169,10 @@ the negative case is the whole point.
 2. Bump the version in `plugin.xml`
 3. PR → merge to `main`
 4. Get the zip from the
-   [Build plugin](../../../actions/workflows/build-plugin.yaml) CI run
-   (`plugin-zips` artifact), or run `python3 scripts/build_plugin.py` locally —
-   **don't zip by hand**
+   [Build plugin](https://github.com/TEAMSchools/teamster/actions/workflows/build-plugin.yaml)
+   CI run (`plugin-zips` artifact), or run
+   `uv run --no-project python ps-plugins/scripts/build_plugin.py` from the repo
+   root — **don't zip by hand**
 5. Upload via PS Plugin Configuration
 6. Disable and re-enable the plugin
 7. Update the deployment tracker above

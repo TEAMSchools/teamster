@@ -4,9 +4,9 @@ Custom PowerSchool plugins built and maintained by the KTAF Data Team.
 
 ## About
 
-This repository contains native PowerSchool plugins built to extend PS
-functionality for KIPP Team & Family Schools. Each plugin lives in its own
-folder with its own documentation and deployment guide.
+This directory holds native PowerSchool plugins built to extend PS functionality
+for KIPP Team & Family Schools. Each plugin lives in its own folder with its own
+documentation and deployment guide.
 
 KTAF runs PowerSchool in three regions, plus one shared test instance. Plugins
 must be deployed and configured separately on each. **Miami is on Focus rather
@@ -45,9 +45,11 @@ reach for it, and the Drive file ID to fetch it by.
 2. Read the plugin-specific `README.md` for setup requirements
 3. Get the plugin zip — **don't build it by hand.** Either:
    - **Download it from CI:** open the latest
-     [Build plugin](../../actions/workflows/build-plugin.yaml) run and download
-     the `plugin-zips` artifact, or
-   - **Build it locally:** `python3 scripts/build_plugin.py` writes to `dist/`
+     [Build plugin](https://github.com/TEAMSchools/teamster/actions/workflows/build-plugin.yaml)
+     run and download the `plugin-zips` artifact, or
+   - **Build it locally**, from the repo root:
+     `uv run --no-project python ps-plugins/scripts/build_plugin.py`, which
+     writes to `ps-plugins/dist/`
 4. Upload to PS via System Management → Server → Plugin Configuration
 
 > ⚠️ Hand-zipping is how a required folder level once went missing, producing a
