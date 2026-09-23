@@ -30,8 +30,8 @@ Tracked in [#5266](https://github.com/TEAMSchools/teamster/issues/5266), on
 | --- | ----------------------------------------- | ----------------------- |
 | 1   | Why a sandbox at all                      | Approved                |
 | 2   | Deployment shape and Cube Cloud isolation | Approved                |
-| 3   | Piece 1 — isolation proof                 | **Drafted — needs you** |
-| 4   | Piece 2 — coverage contract               | Not drafted             |
+| 3   | Piece 1 — isolation proof                 | Approved                |
+| 4   | Piece 2 — coverage contract               | **Drafted — needs you** |
 | 5   | Piece 3 — generator scope and fabrication | Not drafted             |
 | 6   | Piece 3 — adversarial canaries            | Not drafted             |
 | 7   | Piece 4 — drift gate                      | Not drafted, unblocked  |
@@ -399,8 +399,94 @@ Evidence: [A2](#a2--the-backstop-is-an-iam-deny-policy),
 
 ## Part 4 — Piece 2, coverage contract
 
-Not drafted. Decides what the generated coverage manifest asserts. See
-[A4](#a4--the-coverage-manifests-null-rule-cannot-work-as-written).
+### What Piece 2 produces, and why it comes first
+
+A generated file, `coverage_manifest.yml`, listing every cell the sandbox data
+must contain, each marked `uncovered` until the generator fills it. It is
+written before the data generator, because it is that generator's specification.
+
+The property worth protecting: it is **generated, not hand-written**. A new
+production column, view or scope value becomes a loud uncovered cell rather than
+an absence nobody notices. Every decision below is judged against whether it
+keeps that true.
+
+### The null rule cannot work as written
+
+The rule is one null row and one non-null row per column, "unless declared
+not-nullable". Every column in `kipptaf_marts` reports `NULLABLE`, so the
+exemption never fires and the rule demands a null in all 230 — including join
+keys and the columns `access_policy` filters on. A null join key breaks the very
+fixtures the manifest defines, and a null policy column makes the persona
+resolve to nothing, which is the one thing the sandbox exists to exercise.
+
+The spec measured "every one of them nullable" on 2026-09-11; the review says
+"nearly every". The fix does not depend on which is right, but the generator
+should assert the count it finds rather than carry either figure as a constant.
+
+### Decision: exempt structurally, and err toward more nulls than production
+
+Three exemption classes, each **derived rather than listed**, so the
+generated-not-hand-written property survives:
+
+| Class                                  | Derived from                       |
+| -------------------------------------- | ---------------------------------- |
+| Join and surrogate keys                | The join-path fixtures             |
+| Columns any `access_policy` filters on | Parsing the 6 views' policy blocks |
+| The 4 snapshot anchors                 | Their own true/false rule already  |
+
+Every other column requires both a null and a non-null.
+
+The rejected alternative was to require a null only where production has one.
+That is evidence-based, but it is the wrong direction twice over. It would make
+the manifest depend on reading production **data**, not just schema — costing
+Part 1 its one-sentence privacy argument for a null count nobody needs. And
+mirroring production exactly lets the kit assume a column with no nulls today
+never will have one. A sandbox with more nulls than production makes the kit
+defensive, which is the same reasoning that already covers enum values
+production has never had.
+
+### The manifest reads the snapshot, not production
+
+Piece 2 currently has the manifest generator read `INFORMATION_SCHEMA` itself.
+That is the same production read the snapshot refresh in
+[Part 3](#decision-the-generator-reads-a-committed-schema-snapshot) already
+does, producing a second committed artifact from the same source.
+
+Make the snapshot the single production read. The manifest generator then takes
+committed inputs only — the snapshot, `access.js`, and the cube YAML — and needs
+no cloud access at all. Consequences worth having:
+
+- It runs in CI and on any laptop, with no credentials and no sandbox project.
+- Its output is deterministic from committed inputs, so a manifest diff is
+  reviewable in a pull request exactly as the snapshot diff is.
+- It sharpens A3's sequencing note: the manifest and the contract are in the
+  group that needs no cloud resources at all.
+
+### Two things stay exactly as specified
+
+Restated because both are load-bearing and easy to lose in a rewrite:
+
+- **The table set is the union of `sql_table:` values and the `kipptaf_marts.*`
+  references in `cube.js`, asserted to have 20 members.** Parsing `sql_table:`
+  alone finds 19. The missing one, `dim_staff_reporting_chain`, is read directly
+  by `cube.js` and appears in no cube YAML. Miss it and the sandbox still
+  compiles, while identity resolution fails for exactly the `reporting_chain`
+  personas that production cannot test either.
+- **Enum domains come from `access.js`, never from `SELECT DISTINCT`.**
+  Production is a subset of the domain the code handles — 4 policy branches have
+  no production row that reaches them. This does not breach the parent spec's
+  fidelity rule, which covers a sandbox wider than production, not a production
+  narrower than its own code.
+
+### What is open
+
+- **Whether the anchors' exemption is right.** They are exempt from the null
+  rule because they carry a stricter rule of their own. If a null anchor is
+  something the kit could meet in production, they should require one too.
+
+<!-- CB: comments on Part 4 go here, or inline above. -->
+
+Evidence: [A4](#a4--the-coverage-manifests-null-rule-cannot-work-as-written).
 
 ## Part 5 — Piece 3, generator scope and fabrication
 
