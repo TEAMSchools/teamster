@@ -12,11 +12,17 @@ for those weeks, for every school in the region.
 Log in to that region's PowerSchool as an admin with the school selector set to
 **District**. The **Gradebook Expectations** link is in the left navigation bar
 under Applications. Newark, Camden and Paterson are separate instances with
-separate logins — the per-instance URLs are in the deployment guide, Part 4.
+separate logins:
+
+| Region   | PowerSchool instance  |
+| -------- | --------------------- |
+| Newark   | `psteam.kippnj.org`   |
+| Camden   | `camden.kippnj.org`   |
+| Paterson | `ps.kipppaterson.org` |
 
 If the link is missing, or the page bounces you back to the admin home, the
-account is not in the `Gradebook Group` security group (deployment guide, Part
-3). Stop and ask the data team. Do not work around it.
+account is not in the `Gradebook Group` security group. Stop and ask the data
+team. Do not work around it.
 
 ## 2. Delete the rows being replaced
 
@@ -76,11 +82,9 @@ Filters**. Spot-check one week's W/H/F/S against the file.
 Write down the row count per region and quarter — the next-day check below
 reports it.
 
-> Navigation, access and CSV rules above come from the Gradebook Audit plugin's
-> deployment guide — `gradebook-audit/docs/deployment_guide.md` in the data
-> team's `ps-plugins` repo — Parts 3 and 4. If you cannot reach the repo, ask
-> the data team for a copy. If what you see on screen does not match what is
-> written here, trust the deployment guide and tell the data team this skill has
+> The data team maintains an authoritative internal reference for these screens.
+> If what you see on screen does not match what is written here, that reference
+> wins — tell the data team the mismatch so they can fix whichever one has
 > drifted.
 
 > **If you are reading this and the steps above are missing or still say
