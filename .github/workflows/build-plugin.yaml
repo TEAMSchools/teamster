@@ -35,6 +35,7 @@ on:
 
 jobs:
   build:
+    if: github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -62,14 +63,14 @@ jobs:
           pages=$(git diff --name-only "$base"...HEAD -- 'ps-plugins/gradebook-audit/WEB_ROOT/**' | wc -l)
           skill=$(git diff --name-only "$base"...HEAD -- 'ps-plugins/skills/**' | wc -l)
           if [ "$pages" -gt 0 ] && [ "$skill" -eq 0 ]; then
-            echo "::error::This PR changes plugin pages but not the end-user skill."
-            echo "Confirm references/powerschool-navigation.md still matches the"
-            echo "screens, then rebuild the zip. If the walkthrough genuinely needs"
-            echo "no change, add [skill-unaffected] to the PR title."
             if echo "$PR_TITLE" | grep -q '\[skill-unaffected\]'; then
               echo "Author asserted the walkthrough is unaffected."
               exit 0
             fi
+            echo "::error::This PR changes plugin pages but not the end-user skill."
+            echo "Confirm references/powerschool-navigation.md still matches the"
+            echo "screens, then rebuild the zip. If the walkthrough genuinely needs"
+            echo "no change, add [skill-unaffected] to the PR title."
             exit 1
           fi
 
@@ -84,18 +85,23 @@ jobs:
       - name: Build the end-user skill zip
         run: python3 ps-plugins/scripts/build_skill.py
 
+      # https://github.com/astral-sh/setup-uv
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+
+      # Both uploads sit below this step on purpose. build_skill.py's own link
+      # and version checks already gate the skill zip's structure, but the
+      # content-hygiene suite -- which asserts the skill never names the
+      # internal source sheet or its tab names -- lives here. Uploading first
+      # would publish a skill artifact from a red run.
+      - name: Run plugin contract tests
+        run: uv run pytest tests/ps_plugins -v
+
       - name: Upload the skill zip
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: gradebook-expectations-upload
           path: ps-plugins/dist/gradebook_expectations_upload_*.zip
           if-no-files-found: error
-
-      # https://github.com/astral-sh/setup-uv
-      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
-
-      - name: Run plugin contract tests
-        run: uv run pytest tests/ps_plugins -v
 
       - name: Upload plugin zips
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
