@@ -46,9 +46,11 @@ This is the whole transformation. Do it per tab, per quarter, in date order.
 ### Week numbers come from `PS Full Calendar`, never from the sheet
 
 1. Take the row's `Dates` from the Academics tab.
-2. Find the row in `PS Full Calendar` (`sheets.md`), for that region, whose
-   `week_start_monday` and `week_end_friday` bracket those dates. Its
-   `week_number_quarter` is the week number.
+2. Find the row in `PS Full Calendar` (`sheets.md`) for that **region and school
+   level** whose `week_start_monday` and `week_end_friday` bracket those dates.
+   Its `week_number_quarter` is the week number. The calendar has an MS row and
+   an HS row per week, and the two can diverge, so matching on region alone
+   picks one of them arbitrarily.
 
 `PS Full Calendar` carries the whole school year, not just weeks that have
 already loaded into PowerSchool, so this works the same way for a week that

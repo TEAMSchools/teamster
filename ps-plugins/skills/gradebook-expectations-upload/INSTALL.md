@@ -19,9 +19,10 @@ is uploaded, and why you should not skip those checks.
 In **Claude Desktop**:
 
 1. Click **your name** (bottom left) → **Settings** → **Skills**.
-2. Click **Add**, then **Upload skill**, and choose
-   `gradebook-expectations-upload.zip` — **the zip file itself. Do not unzip it
-   first.** It is already packaged the way Claude expects.
+2. Click **Add**, then **Upload skill**, and choose the zip the data team sent
+   you — it is named `gradebook_expectations_upload_v<version>.zip`, e.g.
+   `gradebook_expectations_upload_v1.0.0.zip`. Upload **the zip file itself. Do
+   not unzip it first.** It is already packaged the way Claude expects.
 3. The skill appears in your list. Make sure its toggle is **on**.
 
 Anthropic's own instructions, if the screens here look different:
@@ -35,11 +36,16 @@ team and ask them to sort it out.
 
 ## Before your first run
 
-Two things have to be ready:
+Three things have to be ready:
 
 - **The Google Drive connector must be connected in Claude.** The skill reads
-  the planning sheet and nothing else — no databases, no PowerSchool. If Drive
-  isn't connected it cannot start.
+  two spreadsheets and nothing else — Academics' planning sheet and the data
+  team's **Gradebook Audit Template** sheet. No databases, no PowerSchool. If
+  Drive isn't connected it cannot start.
+- **Code execution must be turned on.** The skill needs it to write the CSV
+  files you download; without it the skill can do the arithmetic but cannot hand
+  you a file. It is an organization setting rather than one in your own
+  settings, so if it turns out to be off, ask the data team.
 - **The planning sheet**, with the quarter(s) you want decided and filled in.
   You don't need to tell Claude which quarters — it checks the sheet itself and
   tells you what it found decided versus still in progress. It's fine if only

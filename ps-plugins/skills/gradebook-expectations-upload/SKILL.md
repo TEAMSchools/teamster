@@ -74,11 +74,12 @@ Regardless of which playbook you're in, stop and contact the data team if:
 - The Academics sheet is where a year's counts are decided, and its tabs are
   renamed each year (`- Q1`, `(Q2-4 under construction)`). Match tabs by region
   and level, not by exact tab name.
-- **Access control on the single-row pages is a known gap.** Per
-  `gradebook-audit/README.md`, the `Gradebook Group` guard is on the list page
-  only; `_new`, `_edit`, `_insert` and `_delete` carry none, and the guard fails
-  open when the group does not exist. `powerschool-navigation.md`'s single-row
-  fix now sends people to those pages, so it is worth closing.
+- **Access control on the single-row pages is a known gap.** Per the plugin's
+  own README in the `TEAMSchools/teamster` repo — not a file in this skill — the
+  `Gradebook Group` guard is on the list page only; `_new`, `_edit`, `_insert`
+  and `_delete` carry none, and the guard fails open when the group does not
+  exist. `powerschool-navigation.md`'s single-row fix now sends people to those
+  pages, so it is worth closing.
 - **`rpt_gsheets__gradebook_audit_student_flags`** is part of the gradebook
   audit dashboard, downstream of this process. It exists because plugin data
   reaches PowerSchool, but it is technically independent — not an input, not a

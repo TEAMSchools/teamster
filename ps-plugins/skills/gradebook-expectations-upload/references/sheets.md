@@ -98,10 +98,10 @@ the PowerSchool import page.
 > **Everything comes from the PowerSchool calendar.** Academics' own week
 > numbering is theirs; PowerSchool's is the one that decides where a row goes.
 
-**All four tabs are as of the previous week, and refresh nightly between 2 and 3
-AM.** Nothing you upload today appears here until 3 AM tomorrow at the earliest,
-and none of them ever show the week currently in progress. That is by design,
-not a fault — see `week-matching.md`, _How the audit reads this_.
+**The three warehouse-fed tabs are as of the previous week, and refresh nightly
+between 2 and 3 AM.** Nothing you upload today appears here until 3 AM tomorrow
+at the earliest, and none of them ever show the week currently in progress. That
+is by design, not a fault — see `week-matching.md`, _How the audit reads this_.
 
 ## How to read these sheets
 
