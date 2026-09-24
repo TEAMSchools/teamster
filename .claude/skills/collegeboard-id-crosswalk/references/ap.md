@@ -1,13 +1,4 @@
----
-name: collegeboard-ap-data-ingest-protocol
-description:
-  Use when resolving gaps in the College Board AP ID crosswalk, when new AP
-  scores aren't showing up on the AP assessment / CARAT dashboard, when
-  stg_collegeboard__ap hasn't picked up a new AP score file drop, or when
-  auditing the AP codes/course-crosswalk sheets for completeness.
----
-
-# College Board AP Data Ingest Protocol
+# AP — ingest, crosswalk match, and pipeline check
 
 ## Overview
 
@@ -21,23 +12,8 @@ approving every risky action and every batch of data before it moves.
 
 **Full design rationale and validation evidence:**
 `docs/superpowers/specs/2026-07-13-collegeboard-ap-pipeline-audit-design.md`.
-This file is the runbook; that doc is the "why."
-
-## PII — read this before running anything
-
-Crosswalk-matching results (Phases 4-8) include student names, DOB, and gender,
-so the root CLAUDE.md PII rule applies to them; the codes, course-tagging, and
-lineage checks carry no PII.
-
-## Why crosswalk gaps happen (say this to the user)
-
-A College Board ID can be missing from the crosswalk sheet for two reasons: a
-first-time AP tester (no ID ever existed to add), or a student with a second CB
-account for this admin (College Board's merge process is too tedious for KTAF to
-pursue — the fix is just adding the new ID as another mapping to the same
-`student_number`). Both resolve identically (add the row) — say this out loud
-when presenting results so a "new" ID doesn't read as something having gone
-wrong.
+This file is the runbook; that doc is the "why." PII and the reasons IDs go
+missing are in [SKILL.md](../SKILL.md).
 
 ## Phase 1: Ingestion check
 
@@ -68,7 +44,7 @@ Only proceed to Phase 2 once staging is confirmed fresh.
 ## Phase 2: Codes completeness check
 
 Compile
-[`src/dbt/kipptaf/analyses/collegeboard_ap_codes_completeness.sql`](../../../src/dbt/kipptaf/analyses/collegeboard_ap_codes_completeness.sql)
+[`src/dbt/kipptaf/analyses/collegeboard_ap_codes_completeness.sql`](../../../../src/dbt/kipptaf/analyses/collegeboard_ap_codes_completeness.sql)
 (`uv run dbt compile --select "path:analyses/collegeboard_ap_codes_completeness.sql" --project-dir src/dbt/kipptaf --target prod`)
 and run the compiled SQL
 (`target/compiled/kipptaf/analyses/collegeboard_ap_codes_completeness.sql`) via
@@ -86,7 +62,7 @@ access here.
 ## Phase 3: AP course tagging check
 
 Compile
-[`src/dbt/kipptaf/analyses/collegeboard_ap_course_tagging.sql`](../../../src/dbt/kipptaf/analyses/collegeboard_ap_course_tagging.sql)
+[`src/dbt/kipptaf/analyses/collegeboard_ap_course_tagging.sql`](../../../../src/dbt/kipptaf/analyses/collegeboard_ap_course_tagging.sql)
 (`uv run dbt compile --select "path:analyses/collegeboard_ap_course_tagging.sql" --project-dir src/dbt/kipptaf --target prod`)
 and run the compiled SQL via the BigQuery MCP.
 
@@ -122,7 +98,7 @@ PowerSchool?" **Don't proceed without confirmation.**
 ## Phase 5: Run the tiered match
 
 Once approved, compile
-[`src/dbt/kipptaf/analyses/collegeboard_ap_tiered_crosswalk_match.sql`](../../../src/dbt/kipptaf/analyses/collegeboard_ap_tiered_crosswalk_match.sql)
+[`src/dbt/kipptaf/analyses/collegeboard_ap_tiered_crosswalk_match.sql`](../../../../src/dbt/kipptaf/analyses/collegeboard_ap_tiered_crosswalk_match.sql)
 (`uv run dbt compile --select "path:analyses/collegeboard_ap_tiered_crosswalk_match.sql" --project-dir src/dbt/kipptaf --target prod`)
 and run the compiled SQL via the BigQuery MCP. This already includes the Tier
 C/D corroboration checks (gender hard-gate, course-enrollment informational
@@ -136,38 +112,30 @@ many `flagged_for_review` (gender mismatch), and how many `no_match`. Ask:
 "Ready to start copy-pasting matches into the sheet?" **Don't proceed without
 confirmation.**
 
-## Phase 7: Batch-by-batch delivery
+## Phase 7: Delivery
 
-Present `resolved` rows in batches of 20, **as a plain delimited block in a
-fenced code block** (`College_Board_ID<tab>PowerSchool_Student_Number`, one pair
-per line) — not a markdown table, so it pastes cleanly into two Sheet columns
-without pipe/dash characters riding along. If a batch contains any Tier C/D
-rows, put a small markdown review table (tier tag, course-enrollment note)
-immediately above the paste block for eyeballing — not for pasting.
+Write every `resolved` row to one tab-separated file in the session scratchpad,
+`College_Board_ID<tab>PowerSchool_Student_Number`, no header, and hand it over
+per _Handing rows to the user_ in [SKILL.md](../SKILL.md): destination
+`src_collegeboard__ap_id_crosswalk`, appended below the last filled row. If any
+row is Tier C/D, show a small markdown review table in chat first (tier tag,
+course-enrollment note) — for eyeballing, not for pasting.
 
-After each batch, ask "Ready for the next batch?" and wait — **never dump all
-batches in one message.**
-
-Present `flagged_for_review` rows (if any) separately, after all `resolved`
-batches, as a markdown table (CB first/last/gender vs. PS first/last/gender) for
-the user to decide on individually — these never go in a paste block.
+Present `flagged_for_review` rows (if any) separately as a markdown table (CB
+first/last/gender vs. PS first/last/gender) for the user to decide on
+individually — these never go in the paste file.
 
 Present `no_match` rows (if any) as a single markdown table (CB first/last/DOB)
 — see Phase 12.
 
-The Google Sheet itself:
-`https://docs.google.com/spreadsheets/d/1dmPEB3lVBwNhcGANh1H8_D42nK3zIrFFE0rBFZQBuxE`
-(tab `src_collegeboard__ap_id_crosswalk`).
-
 ## Phase 8: User pastes
 
-The user manually pastes each batch's rows into the Google Sheet — as they go,
-or after the last batch, whichever they prefer. No tool here can write to Sheets
+The user pastes the file into the sheet. No tool here can write to Sheets
 directly.
 
 ## Phase 9: Post-paste reconciliation
 
-Once the last batch is delivered, watch
+Once the file is pasted, watch
 `stg_google_sheets__collegeboard__ap_id_crosswalk`'s row count (Dagster asset
 health, or a direct BigQuery row count) until it increases by the number of
 resolved rows generated. Tell the user explicitly that a reconciliation check is
@@ -183,7 +151,7 @@ rows in that table:
 ## Phase 10: Downstream lineage verification
 
 Once the sheet reconciles cleanly, compile and run (via the BigQuery MCP)
-[`src/dbt/kipptaf/analyses/collegeboard_ap_downstream_lineage_summary.sql`](../../../src/dbt/kipptaf/analyses/collegeboard_ap_downstream_lineage_summary.sql):
+[`src/dbt/kipptaf/analyses/collegeboard_ap_downstream_lineage_summary.sql`](../../../../src/dbt/kipptaf/analyses/collegeboard_ap_downstream_lineage_summary.sql):
 
 ```bash
 uv run dbt compile --select "path:analyses/collegeboard_ap_downstream_lineage_summary.sql" \
@@ -196,9 +164,9 @@ before/after count summary across crosswalk sheet →
 `int_collegeboard__ap_unpivot` → dashboard.
 
 If counts don't reconcile, compile and run
-[`collegeboard_ap_downstream_lineage_missing_rows.sql`](../../../src/dbt/kipptaf/analyses/collegeboard_ap_downstream_lineage_missing_rows.sql)
+[`collegeboard_ap_downstream_lineage_missing_rows.sql`](../../../../src/dbt/kipptaf/analyses/collegeboard_ap_downstream_lineage_missing_rows.sql)
 (same `--vars` pattern) to find exactly which rows are missing, then
-[`collegeboard_ap_downstream_lineage_root_cause.sql`](../../../src/dbt/kipptaf/analyses/collegeboard_ap_downstream_lineage_root_cause.sql)
+[`collegeboard_ap_downstream_lineage_root_cause.sql`](../../../../src/dbt/kipptaf/analyses/collegeboard_ap_downstream_lineage_root_cause.sql)
 -- passing the missing student numbers it surfaced via
 `--vars '{missing_student_numbers: [...], current_academic_year: <target_year>}'`
 -- to distinguish a PowerSchool tagging gap from the known dashboard
@@ -229,3 +197,7 @@ it didn't match, in chat only (never write real names/DOB to a committed file):
 
 This is diagnostic, not a promise to keep expanding tiers forever — the goal is
 a small manual-review bucket and evidence-based future additions.
+
+## Phase 13: Pipeline QA and the KIPP Forward summary
+
+Run _Pipeline QA after a crosswalk update_ in [SKILL.md](../SKILL.md).
