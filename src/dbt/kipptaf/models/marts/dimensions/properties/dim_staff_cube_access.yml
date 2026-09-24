@@ -74,19 +74,6 @@ models:
           Viewer's functional department grouping from the rollup crosswalk;
           cube.js filters on this for an own_group department scope.
 
-      - name: entity
-        data_type: string
-        description: >-
-          KTAF, Region, or unknown, derived from business_unit_name via an
-          explicit allow-list. Unrecognized or NULL business units resolve to
-          unknown — a deny sentinel that matches only entity-agnostic 'any' role
-          rows, never the KTAF/Region-specific grants.
-        data_tests:
-          - not_null
-          - accepted_values:
-              arguments:
-                values: [KTAF, Region, unknown]
-
       - name: job_function_code
         data_type: string
         description: Current ADP job function code (CHIEF, SL, TEACH, ...).
@@ -191,3 +178,11 @@ models:
                   - reporting_chain_or_below_rank
                   - reporting_chain
                   - teaching_staff
+
+      - name: entity
+        data_type: string
+        description: >-
+          KTAF, Region, or unknown, derived from business_unit_name via an
+          explicit allow-list. Unrecognized or NULL business units resolve to
+          unknown — a deny sentinel that matches only entity-agnostic 'any' role
+          rows, never the KTAF/Region-specific grants.
