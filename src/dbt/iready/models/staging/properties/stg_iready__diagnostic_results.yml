@@ -913,3 +913,139 @@ models:
         description: >-
           The name of the SFTP file this row was loaded from, added
           automatically by the ingestion pipeline.
+
+unit_tests:
+  - name: unit_iready_diagnostic_results_rn_subj_day_pick_order
+    description:
+      Pins the same-day pick order behind rn_subj_day, one tie-break per
+      student. Each student sat Math twice on the same completion date, and the
+      row that should rank 1 loses every later tie-break so only the level under
+      test can pick it. Student 1 tests the earliest academic-year partition (a
+      re-sent prior-year copy), student 2 the latest start date, student 3 the
+      higher overall scale score, and student 4 the longer duration.
+    model: stg_iready__diagnostic_results
+    given:
+      - input: source('iready', 'src_iready__diagnostic_results')
+        rows:
+          - {
+              _dagster_partition_academic_year: 2025,
+              _dagster_partition_subject: math,
+              student_id: 900001,
+              start_date: 09/10/2025,
+              completion_date: 09/15/2025,
+              overall_scale_score: 480,
+              duration_min: 20,
+            }
+          - {
+              _dagster_partition_academic_year: 2026,
+              _dagster_partition_subject: math,
+              student_id: 900001,
+              start_date: 09/12/2025,
+              completion_date: 09/15/2025,
+              overall_scale_score: 520,
+              duration_min: 40,
+            }
+          - {
+              _dagster_partition_academic_year: 2025,
+              _dagster_partition_subject: math,
+              student_id: 900002,
+              start_date: 09/12/2025,
+              completion_date: 09/15/2025,
+              overall_scale_score: 480,
+              duration_min: 20,
+            }
+          - {
+              _dagster_partition_academic_year: 2025,
+              _dagster_partition_subject: math,
+              student_id: 900002,
+              start_date: 09/10/2025,
+              completion_date: 09/15/2025,
+              overall_scale_score: 520,
+              duration_min: 40,
+            }
+          - {
+              _dagster_partition_academic_year: 2025,
+              _dagster_partition_subject: math,
+              student_id: 900003,
+              start_date: 09/10/2025,
+              completion_date: 09/15/2025,
+              overall_scale_score: 520,
+              duration_min: 20,
+            }
+          - {
+              _dagster_partition_academic_year: 2025,
+              _dagster_partition_subject: math,
+              student_id: 900003,
+              start_date: 09/10/2025,
+              completion_date: 09/15/2025,
+              overall_scale_score: 480,
+              duration_min: 40,
+            }
+          - {
+              _dagster_partition_academic_year: 2025,
+              _dagster_partition_subject: math,
+              student_id: 900004,
+              start_date: 09/10/2025,
+              completion_date: 09/15/2025,
+              overall_scale_score: 500,
+              duration_min: 40,
+            }
+          - {
+              _dagster_partition_academic_year: 2025,
+              _dagster_partition_subject: math,
+              student_id: 900004,
+              start_date: 09/10/2025,
+              completion_date: 09/15/2025,
+              overall_scale_score: 500,
+              duration_min: 20,
+            }
+    expect:
+      rows:
+        - student_id: 900001
+          academic_year_int: 2025
+          start_date: 2025-09-10
+          overall_scale_score: 480
+          duration_min: 20
+          rn_subj_day: 1
+        - student_id: 900001
+          academic_year_int: 2026
+          start_date: 2025-09-12
+          overall_scale_score: 520
+          duration_min: 40
+          rn_subj_day: 2
+        - student_id: 900002
+          academic_year_int: 2025
+          start_date: 2025-09-12
+          overall_scale_score: 480
+          duration_min: 20
+          rn_subj_day: 1
+        - student_id: 900002
+          academic_year_int: 2025
+          start_date: 2025-09-10
+          overall_scale_score: 520
+          duration_min: 40
+          rn_subj_day: 2
+        - student_id: 900003
+          academic_year_int: 2025
+          start_date: 2025-09-10
+          overall_scale_score: 520
+          duration_min: 20
+          rn_subj_day: 1
+        - student_id: 900003
+          academic_year_int: 2025
+          start_date: 2025-09-10
+          overall_scale_score: 480
+          duration_min: 40
+          rn_subj_day: 2
+        - student_id: 900004
+          academic_year_int: 2025
+          start_date: 2025-09-10
+          overall_scale_score: 500
+          duration_min: 40
+          rn_subj_day: 1
+        - student_id: 900004
+          academic_year_int: 2025
+          start_date: 2025-09-10
+          overall_scale_score: 500
+          duration_min: 20
+          rn_subj_day: 2

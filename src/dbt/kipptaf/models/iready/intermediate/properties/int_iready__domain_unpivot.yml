@@ -9,6 +9,16 @@ models:
       unpivot's inclusion rule exactly.
     config:
       materialized: table
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - _dbt_source_project
+              - student_id
+              - subject
+              - completion_date
+              - rn_subj_day
+              - domain_name
     columns:
       - name: relative_placement
         data_type: string
