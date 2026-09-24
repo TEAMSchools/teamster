@@ -1064,13 +1064,18 @@ guarantee drops from structural to procedural.
 
 ### Proof by glance now rests on two conventions
 
-| Convention            | Covers                 | Kind of guarantee |
-| --------------------- | ---------------------- | ----------------- |
-| The `sandbox-` prefix | Email addresses        | Policy            |
-| The reserved surnames | Name fields on any row | Policy            |
+| Convention            | Covers                 | Non-collision               |
+| --------------------- | ---------------------- | --------------------------- |
+| The `sandbox-` prefix | Email addresses        | A promise                   |
+| Coined surnames       | Name fields on any row | Inherent, by being invented |
 
 Both are needed. The prefix covers addresses; the surnames cover `dim_students`
 and `dim_staff` name columns, where no address appears.
+
+They are not equally strong, and the difference is worth keeping. Nobody is
+named Quillamber, so a coined surname cannot collide with a real person no
+matter what anyone does later. A `sandbox-` address on a routable domain only
+stays non-colliding while KTAF keeps a promise.
 
 The prefix is free today: **0 of 1573** addresses in `dim_staff_cube_access`
 start with `sandbox`, measured 2026-09-24. Note that 4 real addresses already
@@ -1095,14 +1100,37 @@ glance returns to structural, and the routable-domain risk above disappears.
 This is a follow-on, not a prerequisite. The design works with the prefix; it is
 simply better with the domain.
 
-### A reserved name set nobody adopted is not reserved
+### What `reserved_names.yml` is, since it is on no branch
 
-`reserved_names.yml` is labelled a starter set, and a starter set is a draft.
-The property it exists for only holds once the set is agreed and published — in
-`docs/reference/` and in the partner handoff — so that someone seeing one of
-those surnames knows what it means without asking.
+It was written, then deleted. Commit `aaa57b7222`, "reserve a synthetic-person
+namespace, add the starter set", added `src/cube/sandbox/reserved_names.yml`
+with 40 coined surnames and 31 given names. The revert that made this branch
+specs-only removed it with everything else built before the plan. It is
+recoverable from git history and is not on `main`.
 
-Until then the file is a list of names, not a namespace. Publishing it is the
+What it holds, and why each half is shaped the way it is:
+
+- **Coined surnames** — Fennworth, Quillamber, Bramblehyde. Every fabricated
+  person takes a surname from the list, and nothing else uses those words. The
+  file's own argument is the right one: a closed list of _plausible_ names would
+  prove only provenance, since a real student could be called Jayden Rodriguez
+  too. An invented surname makes the **appearance** of the name the proof.
+- **Realistic given names**, each tagged with the character class it exercises —
+  accents, apostrophes, and the rest of what breaks layout and sorting. The
+  tagging lets the coverage script assert every class is present rather than
+  hoping a random sample caught the hard ones.
+
+So it is a list KTAF already made and will restore from the plan, not one still
+to be invented. Writing names is not the work left.
+
+### A namespace nobody adopted is not reserved
+
+The file labels itself a starter set for review, and it is right to. Coinage
+makes a surname unique; it does not make anyone recognise it. That half needs
+the set agreed and published — in `docs/reference/` and in the partner handoff —
+so someone meeting "Bramblehyde" in a report knows what it means without asking.
+
+Until then the file is a list of words, not a namespace. Publishing it is the
 sign-off.
 
 ### Nothing here is open
