@@ -111,13 +111,16 @@ Put column and model semantics in the model's properties yml, workflow and
 reasoning here, and the narrative in the reference document. The repo's yml
 conventions still apply to descriptions.
 
-`.claude/hooks/dibels-docs-gate.sh` enforces the floor: it denies a `git commit`
-when the branch changes a `src/dbt/` file with `dibels` or `amplify` in its path
-but not both the reference doc and this skill. It checks the branch, not the
-commit, so a later model edit on a branch that already touched both passes; the
-rule above still applies to it. When a change really moves nothing a reader
-relies on (a lint fix), put `[skip-dibels-docs]` in the commit message and say
-why in the same message.
+**Ask before every push.** When the user asks to push, commit and push, or
+update the PR, and the branch changes any `src/dbt/` file with `dibels` or
+`amplify` in its path, stop before pushing and ask, in these words:
+
+> We need to update the skill and ref doc — do you authorize the update checks?
+
+On yes, check both files against what the branch changed and what the session
+learned, update what is missing, then push. On no, push as asked and say in the
+PR body that the reference doc and skill were not updated for this change. Ask
+again on the next push; one answer does not cover the branch.
 
 Covers the whole DIBELS dashboard suite. Documented below: the Bright Spots
 tracker / foundation goals retrofit (#4952) -- benchmark-goal work, not
