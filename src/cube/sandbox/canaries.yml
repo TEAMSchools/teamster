@@ -42,7 +42,7 @@ canaries:
       none staff_pii_scope emits no staff-pii group, so the PII view
       default-denies even though the directory does not.
 
-  - persona: diana.taurasi@ktaf-sandbox.invalid
+  - persona: sheryl.swoopes@ktaf-sandbox.invalid
     query_shape: SELECT count(*) FROM student_attendance_enrollment_daily_view
     expect: ROWS
     why: network student scope sees every location.
@@ -57,9 +57,9 @@ canaries:
     expect: ROWS
     why:
       reporting_chain PII scope with a NON-empty chain. Pairs with
-      shaquille.oneal below, whose chain is empty.
+      shaquille.oquinn below, whose chain is empty.
 
-  - persona: shaquille.oneal@ktaf-sandbox.invalid
+  - persona: shaquille.oquinn@ktaf-sandbox.invalid
     query_shape: SELECT count(*) FROM staff_pii
     expect: BLOCKED
     why:

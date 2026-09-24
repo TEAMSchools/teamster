@@ -594,7 +594,7 @@ class _Fabricator:
         # filler reporting-chain rows sample their manager from the same
         # staff pool the personas sit in — so without this every persona
         # ends up with a chain, `hasChain false` never occurs, and
-        # shaquille.oneal's BLOCKED canary quietly becomes a ROWS one.
+        # shaquille.oquinn's BLOCKED canary quietly becomes a ROWS one.
         # That branch (reporting_chain with an empty chain) is the one
         # production cannot reach, so nothing else would catch the loss.
         self.column_forbidden: dict[tuple[str, str], set[Any]] = {
@@ -918,7 +918,7 @@ class _Fabricator:
         """The declared reporting edges first, so hasChain resolves as declared.
 
         `ororo.munroe` and `karl-anthony.maximoff` declare a reportee and must
-        resolve a non-empty chain; `shaquille.oneal` declares none and
+        resolve a non-empty chain; `shaquille.oquinn` declares none and
         must resolve an empty one, which is the no-group default-deny branch
         production cannot reach.
         """

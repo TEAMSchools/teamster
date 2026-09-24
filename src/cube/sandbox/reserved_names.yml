@@ -56,7 +56,7 @@
 # asserts every class appears in a generated dataset rather than trusting a
 # random sample to include the hard ones.
 
-# 59 surnames: 20 WNBA, 20 NBA, 19 Marvel and X-Men. Every one verified to
+# 58 surnames: 20 WNBA, 19 NBA, 19 Marvel and X-Men. Every one verified to
 # match no KTAF staff member and no KTAF student.
 surnames:
   # WNBA
@@ -93,7 +93,6 @@ surnames:
   - Divac
   - Kukoč
   - Gasol
-  - O'Neal
   - O'Quinn
   - Ilgauskas
   - Porziņģis
@@ -140,6 +139,7 @@ given_names:
   - { name: Dikembe, class: plain }
   - { name: Vlade, class: plain }
   - { name: Pascal, class: plain }
+  - { name: Jalen, class: plain }
   - { name: Ororo, class: plain }
   - { name: Wanda, class: plain }
 

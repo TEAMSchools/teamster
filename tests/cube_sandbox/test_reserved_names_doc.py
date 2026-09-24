@@ -47,4 +47,4 @@ def test_the_reservation_is_not_silently_empty() -> None:
     # A parser change that made _published() return nothing would make the
     # test above pass only if the YAML were empty too — assert the real size
     # so neither can quietly become a no-op.
-    assert len(_published()) == 59
+    assert len(_published()) == 58

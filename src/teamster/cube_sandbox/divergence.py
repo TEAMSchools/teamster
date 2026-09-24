@@ -26,7 +26,7 @@ DIVERGENCES_PATH = Path("src/cube/sandbox/divergences.yml")
 # The persona these run as. Every pair reads a student view, so the runner
 # needs the one persona with network student scope; a narrower one returns
 # zero rows on both sides and both pairs "converge" for the wrong reason.
-DEFAULT_VIEWER = "diana.taurasi@ktaf-sandbox.invalid"
+DEFAULT_VIEWER = "sheryl.swoopes@ktaf-sandbox.invalid"
 
 # Where the sandbox deployment's SQL API is. Named rather than defaulted to
 # localhost: a divergence run against a local dev server proves nothing about

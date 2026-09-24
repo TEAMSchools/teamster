@@ -11,9 +11,9 @@
 # staff-pii group unless BOTH resolve non-empty, so a persona missing them
 # default-denies on staff_pii no matter what its staff_pii_scope says.
 personas:
-  - email: diana.taurasi@ktaf-sandbox.invalid
-    given_name: Diana
-    surname: Taurasi
+  - email: sheryl.swoopes@ktaf-sandbox.invalid
+    given_name: Sheryl
+    surname: Swoopes
     purpose: Network-wide student access, full staff PII remit.
     scopes:
       student_location_scope: network
@@ -99,9 +99,9 @@ personas:
     reportees:
       - aja.ogwumike@ktaf-sandbox.invalid
 
-  - email: shaquille.oneal@ktaf-sandbox.invalid
+  - email: shaquille.oquinn@ktaf-sandbox.invalid
     given_name: Shaquille
-    surname: O'Neal
+    surname: O'Quinn
     purpose:
       Chain-scoped PII with an EMPTY chain. Exercises the no-group default-deny
       path that exists because Cube errors on an equals-[] row filter, and that

@@ -33,7 +33,7 @@ API_SECRET = "CUBE_SANDBOX_API_SECRET"
 # CubeToMetaTransformer.compile() and never reads the warehouse, so the
 # member list does not depend on who asks. It still has to be a signed
 # identity, because checkAuth verifies before it resolves.
-DEFAULT_VIEWER = "diana.taurasi@ktaf-sandbox.invalid"
+DEFAULT_VIEWER = "sheryl.swoopes@ktaf-sandbox.invalid"
 
 
 def _members(doc: dict[str, Any]) -> dict[str, str]:

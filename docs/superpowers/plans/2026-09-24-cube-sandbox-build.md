@@ -139,7 +139,7 @@ Avro. Pass `build/cube_sandbox/tiny`, not `build/cube_sandbox`. The runbook in
 - Task 1's `scope_values["staff_pii_scope"]` is bounded to the
   `switch (row.staff_pii_scope)` body. The bare `case` regex in the task text
   sweeps five spurious labels from unrelated switches.
-- Task 3 has a sixth persona, `shaquille.oneal@ktaf-sandbox.invalid`, with
+- Task 3 has a sixth persona, `shaquille.oquinn@ktaf-sandbox.invalid`, with
   `reporting_chain` and an empty chain. It exercises the no-group default-deny
   path that exists because Cube errors on an `equals []` row filter.
 - Task 4's `dbt_not_null` matches the test name exactly. A substring match also
@@ -638,9 +638,9 @@ Run: `uv run pytest tests/cube_sandbox/test_personas.py -v` Expected: FAIL with
 # Declared, not generated. canaries.yml references these by email, so they must
 # survive a seed change and a generator refactor.
 personas:
-  - email: diana.taurasi@ktaf-sandbox.invalid
-    given_name: Diana
-    surname: Taurasi
+  - email: sheryl.swoopes@ktaf-sandbox.invalid
+    given_name: Sheryl
+    surname: Swoopes
     purpose: Network-wide student access, full staff PII remit.
     scopes:
       student_location_scope: network
@@ -1953,7 +1953,7 @@ canaries:
     expect: BLOCKED
     why: no dim_staff_cube_access row at all resolves to an empty context.
 
-  - persona: diana.taurasi@ktaf-sandbox.invalid
+  - persona: sheryl.swoopes@ktaf-sandbox.invalid
     query_shape: SELECT count(*) FROM student_attendance_enrollment_daily_view
     expect: ROWS
     why: network student scope sees every location.

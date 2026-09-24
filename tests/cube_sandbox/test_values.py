@@ -18,18 +18,18 @@ def test_emails_fold_to_ascii() -> None:
 
 def test_every_reserved_given_name_yields_a_usable_local_part() -> None:
     # A name with no ASCII at all folds to an EMPTY local part — an address
-    # like ".taurasi@..." that is not a valid mailbox and resolves to nobody,
+    # like ".swoopes@..." that is not a valid mailbox and resolves to nobody,
     # which is the precise failure ASCII-folding exists to prevent. The
     # non-Latin and right-to-left names that used to reach this guard are gone
     # (production has none), so nothing in the list exercises it today. The
     # guard stays because the next name added might.
     for entry in generate.reserved_given_names():
-        email = generate.to_ascii_email(entry["name"], "Taurasi")
+        email = generate.to_ascii_email(entry["name"], "Swoopes")
         local = email.split("@")[0]
         given_part, _, surname_part = local.partition(".")
         assert email.isascii(), entry
         assert given_part, f"{entry['name']} folded to an empty local part"
-        assert surname_part == "taurasi"
+        assert surname_part == "swoopes"
 
 
 def test_latin_extended_letters_transliterate_rather_than_vanish() -> None:
@@ -43,7 +43,7 @@ def test_distinct_given_names_do_not_collide_on_one_surname() -> None:
     # synthetic people sharing an address makes whichever row wins arbitrary,
     # and the persona then tests something other than what it declares.
     locals_ = {
-        generate.to_ascii_email(e["name"], "Taurasi")
+        generate.to_ascii_email(e["name"], "Swoopes")
         for e in generate.reserved_given_names()
     }
     assert len(locals_) == len(generate.reserved_given_names())

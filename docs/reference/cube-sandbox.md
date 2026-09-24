@@ -88,23 +88,25 @@ impossible.
 
 !!! note "Publishing the list is what reserves it"
 
-    A namespace nobody published is not reserved. These 59 surnames are
+    A namespace nobody published is not reserved. These 58 surnames are
     reserved for synthetic people and must not be used for anything else.
     They come from WNBA and NBA players active within the last thirty years
-    and from Marvel characters. Every one was checked against production,
-    and no KTAF staff member and no KTAF student carries any of them —
-    which is what makes a surname from this list self-identifying:
+    and from Marvel characters. No KTAF staff member and no KTAF student
+    carries any of them, which is what makes a surname here
+    self-identifying, and `uv run python -m teamster.cube_sandbox.collisions`
+    re-checks that against production and fails on a single match. The
+    reserved surnames are:
 
     Taurasi, Swoopes, Catchings, Fowles, Griner, Ionescu,
     McCoughtry, Ogwumike, Delle Donne, Plum, Diggins-Smith,
     Sutton-Brown, Weatherspoon, Vandersloot, Ogunbowale, Meesseman,
     Holdsclaw, Magbegor, Loyd, Ndour, Antetokounmpo, Dončić, Jokić,
     Embiid, Wembanyama, Ginóbili, Nowitzki, Mutombo, Divac, Kukoč,
-    Gasol, O'Neal, O'Quinn, Ilgauskas, Porziņģis, Valančiūnas,
-    Siakam, Gobert, Şengün, Haliburton, Stark, Romanoff, Danvers,
-    Maximoff, Murdock, Rambeau, Natchios, Odinson, Osborn, Quill,
-    Strange, Toomes, Frost, Howlett, LeBeau, Munroe, Pryde,
-    Rasputin, Worthington.
+    Gasol, O'Quinn, Ilgauskas, Porziņģis, Valančiūnas, Siakam,
+    Gobert, Şengün, Haliburton, Stark, Romanoff, Danvers, Maximoff,
+    Murdock, Rambeau, Natchios, Odinson, Osborn, Quill, Strange,
+    Toomes, Frost, Howlett, LeBeau, Munroe, Pryde, Rasputin,
+    Worthington.
 
 Given names stay realistic, because that is where the character classes that
 break interfaces live — apostrophes, hyphens, diacritics, internal spaces,
