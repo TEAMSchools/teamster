@@ -39,6 +39,7 @@ from typing import Any
 SANDBOX_PROJECT = "teamster-cube-sandbox"
 SANDBOX_DATASET = "kipptaf_marts"
 STAGING_BUCKET = f"{SANDBOX_PROJECT}-staging"
+SERVICE_ACCOUNT = f"cube-cloud-sandbox@{SANDBOX_PROJECT}.iam.gserviceaccount.com"
 DEFAULT_AVRO_DIR = Path("build/cube_sandbox/full")
 
 
@@ -115,8 +116,33 @@ def upload(storage_client: Any, path: Path, bucket_name: str) -> str:
     the first real run would have failed on a missing object after creating
     every table.
     """
+    from google.api_core import exceptions
+
     blob = storage_client.bucket(bucket_name).blob(path.name)
-    blob.upload_from_filename(str(path), content_type="application/octet-stream")
+    try:
+        blob.upload_from_filename(str(path), content_type="application/octet-stream")
+    except exceptions.NotFound as err:
+        # Two setup steps nothing else checks, and a stack trace buries both.
+        raise SystemExit(
+            f"the staging bucket gs://{bucket_name} does not exist. Create it "
+            f"and grant the sandbox service account write access, using your "
+            f"own identity rather than the key:\n\n"
+            f"  gcloud storage buckets create gs://{bucket_name} \\\n"
+            f"      --project={SANDBOX_PROJECT} --location=US\n"
+            f"  gcloud storage buckets add-iam-policy-binding gs://{bucket_name} \\\n"
+            f"      --member=serviceAccount:{SERVICE_ACCOUNT} \\\n"
+            f"      --role=roles/storage.objectAdmin\n"
+        ) from err
+    except exceptions.Forbidden as err:
+        raise SystemExit(
+            f"the sandbox service account cannot write to gs://{bucket_name}. "
+            f"Its project roles are BigQuery-only, which grant nothing in "
+            f"Cloud Storage. Grant it object access, using your own identity:"
+            f"\n\n"
+            f"  gcloud storage buckets add-iam-policy-binding gs://{bucket_name} \\\n"
+            f"      --member=serviceAccount:{SERVICE_ACCOUNT} \\\n"
+            f"      --role=roles/storage.objectAdmin\n"
+        ) from err
     return f"gs://{bucket_name}/{path.name}"
 
 
