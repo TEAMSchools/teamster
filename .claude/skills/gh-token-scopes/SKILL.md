@@ -1,6 +1,10 @@
 ---
 name: gh-token-scopes
-description: Use when a git push to a different org repo, `gh run rerun`, `gh workflow run`, or a ProjectV2 mutation fails with "Resource not accessible by integration" or an auth error from the Codespace: which GitHub token each command uses, the scopes it lacks, and the fallback that works.
+description:
+  'Use when a git push to a different org repo, `gh run rerun`, `gh workflow
+  run`, or a ProjectV2 mutation fails with "Resource not accessible by
+  integration" or an auth error from the Codespace: which GitHub token each
+  command uses, the scopes it lacks, and the fallback that works.'
 ---
 
 # GitHub token scopes in the Codespace
