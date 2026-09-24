@@ -162,12 +162,16 @@ models:
           wording those columns use for the same condition; it read No Aimline
           Status until 2026-09-19, which was two spellings for one concept.
 
-          Precedence is settled-first. A round the evidence settles reads Met or
-          Not Met even when something is missing, because under AND one miss
-          ends it and under the null (OR) criteria one pass does. Only an
-          unsettled round reaches the two unknown states, and an incomplete
-          round is named ahead of an unpublished status because finishing the
-          testing is the actionable half.
+          Round Incomplete comes first. Any round the student did not finish
+          reads Round Incomplete, even when a measure they sat was already below
+          the aimline and would settle the round under AND. This is academics'
+          decision, so that schools finish the testing before the round is
+          judged; do not restore the settled-first order. The internal sibling
+          still lets a failed measure settle an incomplete round, so the two
+          methods' round columns differ on partial rounds by design. A completed
+          round reads Meeting Aimline when every expected measure met, No
+          Aimline Data when none was below but a verdict is unpublished, and
+          Below Aimline otherwise.
       - name: aimline_round_category
         data_type: string
         description: >-

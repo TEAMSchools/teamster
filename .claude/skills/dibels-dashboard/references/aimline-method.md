@@ -193,10 +193,18 @@ view mixing an aimline grain with an internal one cannot -- only `Not Tested` is
 shared.
 
 They exist because `met_pm_round_overall_criteria = 0` means both "did not meet"
-and "could not be evaluated". `Round Incomplete` keys on
-`met_pm_round_criteria`, NOT on the overall flag -- under `AND` a measure the
-student sat and failed settles the round however much is missing, so keying on
-the overall flag overstates it about fourfold. 375 rows of 35,524 on AY2025.
+and "could not be evaluated". The two methods now word an incomplete round
+differently, on purpose:
+
+- **Internal**: `Round Incomplete` keys on `met_pm_round_criteria`, NOT on the
+  overall flag -- under `AND` a measure the student sat and failed settles the
+  round however much is missing. 375 rows of 35,524 on AY2025.
+- **Aimline**: every round the student did not finish reads `Round Incomplete`,
+  checked first, even when a sat measure was already below. Academics' decision
+  on 2026-09-24, so schools finish the testing before the round is judged. On
+  AY2025 that moved 640 partial student-rounds from `Below Aimline`, making
+  1,115 in all, equal to the roster's `Round Incomplete` count. Do not restore
+  the settled-first order on either side to make them match.
 
 **The workbook is the other half of this and is not done.** The Literacy
 Dashboard's `PM - Met Goal Selector` is a CASE returning one of the three

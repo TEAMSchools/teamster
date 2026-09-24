@@ -425,14 +425,10 @@ select
     end as measure_name_code_goal_status,
 
     case
-        when met_pm_round_overall_criteria = 1
-        then 'Meeting Aimline'
-        when met_pm_round_criteria = 0 and pm_goal_criteria = 'AND'
-        then 'Below Aimline'
-        when met_pm_round_criteria = 0 and completed_test_round
-        then 'Below Aimline'
         when not completed_test_round
         then 'Round Incomplete'
+        when met_pm_round_overall_criteria = 1
+        then 'Meeting Aimline'
         when met_pm_round_criteria is null
         then 'No Aimline Data'
         else 'Below Aimline'
