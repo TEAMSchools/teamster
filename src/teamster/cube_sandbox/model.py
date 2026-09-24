@@ -244,6 +244,30 @@ def _column_of(sql: str) -> str | None:
     return match.group(1) if match else None
 
 
+def primary_key_columns(cube_root: Path) -> set[tuple[str, str]]:
+    """Each cube's OWN primary key, as (table, column).
+
+    Split out of `key_columns`, which unions primary keys with every join
+    operand and so cannot tell the two apart. The generator needs the
+    distinction: a column that is its own table's primary key is generated,
+    never sampled from a parent, even when a join declares it on the child
+    side. `dim_student_enrollments.student_enrollment_key` is the child
+    operand of two joins (onto the status table and onto the section table)
+    while being the enrollment grain's own key — sampling it from either
+    would duplicate the key and invert the grain.
+    """
+    cubes = _cubes(cube_root)
+    out: set[tuple[str, str]] = set()
+    for name, cube in cubes.items():
+        resolved = _resolve(name, cubes)
+        if not resolved.table:
+            continue
+        for dim in cube.get("dimensions", []):
+            if dim.get("primary_key") and (column := _column_of(str(dim.get("sql")))):
+                out.add((resolved.table, column))
+    return out
+
+
 def key_columns(cube_root: Path) -> set[tuple[str, str]]:
     """Join and surrogate keys, as (table, column).
 
@@ -266,7 +290,7 @@ def key_columns(cube_root: Path) -> set[tuple[str, str]]:
     to surface it.
     """
     cubes = _cubes(cube_root)
-    out: set[tuple[str, str]] = set()
+    out: set[tuple[str, str]] = primary_key_columns(cube_root)
 
     def operand(text: str, near_table: str) -> tuple[str, str] | None:
         if match := _CUBE_COLUMN.match(text):
@@ -278,14 +302,10 @@ def key_columns(cube_root: Path) -> set[tuple[str, str]]:
                 return (far.table, column)
         return None
 
-    for name, cube in cubes.items():
+    for name in cubes:
         resolved = _resolve(name, cubes)
         if not resolved.table:
             continue
-
-        for dim in cube.get("dimensions", []):
-            if dim.get("primary_key") and (column := _column_of(str(dim.get("sql")))):
-                out.add((resolved.table, column))
 
         for join in resolved.joins:
             for left, right in _EQUALITY.findall(str(join.get("sql", ""))):

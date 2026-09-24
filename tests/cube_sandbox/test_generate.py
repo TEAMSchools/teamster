@@ -4,7 +4,7 @@ import random
 
 import pytest
 
-from teamster.cube_sandbox import generate
+from teamster.cube_sandbox import coverage, generate, personas, snapshot
 
 
 def test_dependencies_are_generated_first() -> None:
@@ -173,3 +173,234 @@ def test_the_null_slice_survives_a_tiny_run() -> None:
             rng=random.Random(seed),
         )
         assert any(r["is_current_homeroom"] is None for r in rows)
+
+
+# ---------------------------------------------------------------------------
+# The whole-dataset contract
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture(scope="module")
+def tiny() -> dict[str, list[dict]]:
+    return generate.generate(
+        snapshot.load(),
+        personas.load(generate.PERSONAS_PATH),
+        "tiny",
+        generate.DEFAULT_SEED,
+    )
+
+
+def test_a_tiny_run_leaves_no_uncovered_cell(tiny: dict[str, list[dict]]) -> None:
+    """The test that matters most.
+
+    The manifest is the generator's specification, so a `tiny` run that
+    leaves an uncovered cell means the generator does not satisfy its own
+    contract. Eight cells are reported UNPROVEN rather than uncovered — the
+    two derived states, the unresolvable identity and the three divergences
+    — because proving them needs a live query against the deployment rather
+    than a scan of rows; the canary and divergence suites own those, each
+    with its own non-zero exit.
+    """
+    cells = generate.load_cells()
+    assessed = coverage.assess({"cells": cells}, tiny)
+
+    assert coverage.uncovered(assessed) == []
+    assert coverage.exit_code(assessed) == 0
+    assert len(coverage.unproven(assessed)) == 8
+
+
+def test_every_table_in_the_snapshot_is_generated(tiny: dict[str, list[dict]]) -> None:
+    snap = snapshot.load()
+    assert set(tiny) == set(snap["tables"])
+    for table, rows in tiny.items():
+        # Every row carries every column, or the Avro write fails on the
+        # missing field rather than on anything a reader would recognise.
+        assert all(set(row) == set(snap["tables"][table]) for row in rows)
+
+
+def test_the_same_seed_and_commit_produce_the_same_rows() -> None:
+    snap = snapshot.load()
+    people = personas.load(generate.PERSONAS_PATH)
+    first = generate.generate(snap, people, "tiny", 7)
+    second = generate.generate(snap, people, "tiny", 7)
+    assert first == second
+
+
+def test_a_different_seed_produces_different_rows() -> None:
+    # A "deterministic" generator that ignores its seed is deterministic for
+    # the wrong reason, and every seeded test above would pass on it.
+    snap = snapshot.load()
+    people = personas.load(generate.PERSONAS_PATH)
+    assert generate.generate(snap, people, "tiny", 1) != generate.generate(
+        snap, people, "tiny", 2
+    )
+
+
+def test_the_declared_personas_are_written_verbatim(
+    tiny: dict[str, list[dict]],
+) -> None:
+    # canaries.yml names these by address. A seed-derived persona means a
+    # seed change silently changes who the canaries test, and the suite
+    # stays green while testing something else.
+    people = personas.load(generate.PERSONAS_PATH)
+    by_email = {row["google_email"]: row for row in tiny["dim_staff_cube_access"]}
+    for person in people:
+        row = by_email[person.email]
+        for name, value in person.scopes.items():
+            assert row[name] == value, f"{person.email}.{name}"
+
+
+def test_has_remit_and_has_chain_each_resolve_both_ways(
+    tiny: dict[str, list[dict]],
+) -> None:
+    """The supporting rows, not just the declared ones.
+
+    `personas.yml` declares neither `staff_location_scope` nor
+    `staff_department_scope`, and declares reportees rather than chain rows.
+    buildGroups reads the derived states, so the generator has to make both
+    resolve true for some persona and false for another — otherwise the
+    branch production cannot reach (reporting_chain with an empty chain) is
+    not in the sandbox either.
+    """
+    people = personas.load(generate.PERSONAS_PATH)
+    by_email = {row["google_email"]: row for row in tiny["dim_staff_cube_access"]}
+    abbreviations = {row["abbreviation"] for row in tiny["dim_locations"]}
+    department_groups = {
+        row["department_group"]
+        for row in tiny["dim_staff_cube_access"]
+        if row["department_group"]
+    }
+    managers = {row["manager_staff_key"] for row in tiny["dim_staff_reporting_chain"]}
+
+    remit, chain = set(), set()
+    for person in people:
+        row = by_email[person.email]
+        allowed_abbreviations = {
+            "network": abbreviations,
+            "region": {row["location_abbreviation"]} if row["region_key"] else set(),
+            "school": {row["location_abbreviation"]},
+        }.get(row["staff_location_scope"], set())
+        allowed_departments = {
+            "all": department_groups,
+            "own_group": {row["department_group"]},
+        }.get(row["staff_department_scope"], set())
+        remit.add(bool(allowed_abbreviations and allowed_departments))
+        chain.add(row["staff_key"] in managers)
+        # The declaration is what the derived state has to match.
+        assert bool(person.reportees) == (row["staff_key"] in managers), person.email
+
+    assert remit == {True, False}
+    assert chain == {True, False}
+
+
+def test_one_identity_resolves_to_no_access_row(tiny: dict[str, list[dict]]) -> None:
+    # The clean default-deny fixture: a real staff member the warehouse has
+    # never given a Cube access row.
+    staff = {row["google_email"] for row in tiny["dim_staff"]}
+    access = {row["google_email"] for row in tiny["dim_staff_cube_access"]}
+    assert personas.UNRESOLVABLE in staff
+    assert personas.UNRESOLVABLE not in access
+
+
+def test_every_fabricated_address_is_unresolvable_by_construction(
+    tiny: dict[str, list[dict]],
+) -> None:
+    # RFC 2606 reserves .invalid and guarantees it never resolves, so no mail
+    # can reach a synthetic person even by accident. Nulls are skipped, not
+    # tolerated by accident: the manifest requires a null row on both of
+    # these columns, because neither carries a dbt `not_null` test.
+    for row in tiny["dim_staff"]:
+        for column in ("google_email", "personal_email", "work_email"):
+            if row[column] is not None:
+                assert row[column].endswith(".invalid"), f"{column}: {row[column]}"
+
+
+def test_every_phone_is_in_the_block_reserved_for_fiction(
+    tiny: dict[str, list[dict]],
+) -> None:
+    for row in tiny["dim_staff"]:
+        if row["personal_cell_phone"] is not None:
+            assert generate.PHONE_PREFIX in row["personal_cell_phone"]
+
+
+def test_identifiers_come_from_a_range_production_never_issues(
+    tiny: dict[str, list[dict]],
+) -> None:
+    for row in tiny["dim_students"]:
+        if row["lea_student_identifier"] is not None:
+            assert row["lea_student_identifier"] >= generate.RESERVED_ID_BASE
+    for row in tiny["dim_staff"]:
+        if row["staff_unique_id"] is not None:
+            assert row["staff_unique_id"] >= generate.RESERVED_ID_BASE
+
+
+def test_every_surname_is_a_reserved_one(tiny: dict[str, list[dict]]) -> None:
+    # The surname carries the proof: nothing else uses these words, so the
+    # appearance of the name is what identifies the row as fabricated.
+    reserved = set(generate.reserved_surnames())
+    for row in tiny["dim_staff"]:
+        if row["last_name"] is not None:
+            assert row["last_name"] in reserved
+
+
+def test_every_declared_character_class_appears(tiny: dict[str, list[dict]]) -> None:
+    # Cycling the reserved given names rather than sampling them is what
+    # makes this true on every seed instead of on most of them.
+    present = {
+        entry["class"]
+        for entry in generate.reserved_given_names()
+        if any(row["first_name"] == entry["name"] for row in tiny["dim_staff"])
+    }
+    assert present == generate.given_name_classes()
+
+
+def test_the_date_spine_is_bounded_to_a_real_academic_year_range(
+    tiny: dict[str, list[dict]],
+) -> None:
+    # Production's calendar spine runs to the year 9999, and an unbounded
+    # date dimension is what drove the partitioned pre-aggregation incident
+    # (#4460).
+    days = [row["date_key"] for row in tiny["dim_dates"]]
+    assert min(days) == generate.DATE_SPINE_START
+    assert max(days).year < 2100
+    assert len(days) == generate.DATE_SPINE_MAX
+
+
+def test_the_school_week_is_not_the_iso_week(tiny: dict[str, list[dict]]) -> None:
+    # The semantic hazard, reproduced rather than smoothed: an ISO grouping
+    # over these rows compiles, runs, and returns a different breakdown, and
+    # there is no query-time guard anywhere.
+    diverging = sum(
+        1
+        for row in tiny["dim_dates"]
+        if row["school_week_start_date"] != row["calendar_week_start_date"]
+    )
+    assert diverging > 0
+
+
+def test_a_scale_score_stays_inside_its_own_assessment_range(
+    tiny: dict[str, list[dict]],
+) -> None:
+    # SAT at 400-1600 beside ACT at 1-36 is the point: a wrong cross-scope
+    # average produces a number nobody can read as plausible, which is the
+    # one failure no assertion catches.
+    scope_of = {row["assessment_key"]: row["scope"] for row in tiny["dim_assessments"]}
+    scope_by_administration = {
+        row["assessment_administration_key"]: scope_of.get(row["assessment_key"])
+        for row in tiny["dim_assessment_administrations"]
+    }
+    seen = set()
+    for row in tiny["fct_assessment_scores_enrollment_scoped"]:
+        scope = scope_by_administration.get(row["assessment_administration_key"])
+        if scope not in generate._SCALE_RANGES or row["scale_score"] is None:
+            continue
+        low, high = generate._SCALE_RANGES[scope]
+        assert low <= row["scale_score"] <= high, f"{scope}: {row['scale_score']}"
+        seen.add(scope)
+    # Two incomparable ranges have to be present, or nothing announces itself.
+    assert len(seen) >= 2
+
+
+def test_row_targets_are_honoured(tiny: dict[str, list[dict]]) -> None:
+    for table, rows in tiny.items():
+        assert len(rows) == generate.row_target(table, "tiny")
