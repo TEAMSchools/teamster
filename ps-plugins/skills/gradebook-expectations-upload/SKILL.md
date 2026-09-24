@@ -101,12 +101,16 @@ Regardless of which playbook you're in, stop and contact the data team if:
   `TEAMSchools/teamster` repo. It holds the dbt lineage, the verification query,
   and the reasoning behind the replacement rule. It deliberately does not repeat
   the generation steps — those live here, so the two cannot drift.
-- The per-quarter delete in `powerschool-navigation.md` leans on three
-  behaviours of `gradebook_expectations.html`: the filter hides and unchecks
-  non-matching rows, the header checkbox checks only visible rows, and Delete
-  Selected acts only on checked rows. Replace mode, by contrast, reads the
-  unfiltered row set. If a future plugin version adds a real scoped-delete
-  control, replace that dance with it.
+- **There is no safe bulk per-quarter delete in the plugin today**, which is why
+  `powerschool-navigation.md` replaces one quarter by building a whole-instance
+  file and using Replace. The filter-and-delete route looks right and is not:
+  `renderTable()` re-renders after every delete and import without re-applying
+  the filter, so all rows become visible while the dropdown still shows the
+  quarter, and re-picking that same quarter fires no change event. The header
+  checkbox then selects the whole instance. The filter is fine for finding one
+  or two rows to edit by hand, which is the only place the skill still uses it.
+  If a future plugin version adds a real scoped-delete control, or re-applies
+  the filter on render, revisit this.
 - This skill was restructured from a single flat file into this
   playbook/reference split so that a third intent (troubleshooting) could be
   added without threading a diagnostic flow through steps meant for building and
