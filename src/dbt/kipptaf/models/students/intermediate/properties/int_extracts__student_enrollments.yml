@@ -108,6 +108,16 @@ models:
             source_system: PowerSchool
             source_model: stg_powerschool__students
             source_column: exitdate
+      - name: last_enrolled_date
+        data_type: date
+        description:
+          Inclusive last day the student was enrolled in this stint. PowerSchool
+          records exitdate as the first day the student is no longer enrolled,
+          so PowerSchool stints use the day before exitdate; Focus trims each
+          stint to the day before the next one starts, so Focus stints use
+          exitdate unchanged. Null for graduate placeholder rows, which carry no
+          exit date. Use this column, not exitdate, for any "enrolled on date X"
+          test.
       - name: entrycode
         data_type: string
         description:
