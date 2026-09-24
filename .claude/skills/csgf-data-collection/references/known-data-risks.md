@@ -51,18 +51,11 @@ used to be abbreviated codes (`KHS`/`NCA`/`NLH`) -- fixed to full names
 (`KIPP Newark Lab High School` / etc.), confirmed against CSGF's Portal task
 labels.
 
-**Both fixes above are only in PR #5059 (this branch), not yet in prod as of
-2026-09-11.** Confirmed live: prod's `rpt_gsheets__csgf_hs_grad_data` (a VIEW,
-last recreated 2026-07-17 per `__TABLES__.last_modified_time`) still outputs the
-old abbreviated codes -- `git branch --contains` on the fixing commit
-(`b7344ed8b`) shows only this PR's branch, and `origin/main`'s copy of the file
-is still the pre-fix version from 2025-10-08. A view re-executes live but
-against its own STORED definition, which only updates when Dagster recreates it
-after a deploy -- so this won't self-correct by waiting. **Don't treat this
-model as fixed for the actual submission until #5059 merges and kipptaf
-redeploys** (confirm via `mcp__dagster__get_location_load_history` showing a
-`LOADED` entry with the merge commit's hash, same check as any prod-deploy
-verification). PR #5059 has since merged and deployed -- these fixes are live.
+**Both fixes above shipped in PR #5059 and are live in prod.** For any future
+fix to these views: a view re-executes live but against its own STORED
+definition, which only updates when Dagster recreates it after a deploy. Confirm
+the deploy via `mcp__dagster__get_location_load_history` (a `LOADED` entry with
+the merge commit's hash) before treating the fix as live.
 
 **New this cycle (2026-09-11): CSGF added "Total Number of Graduates" to the HS
 Grad Data task** -- a real, distinct field from the existing "# Stud in Adj
@@ -80,11 +73,10 @@ definition before assuming it maps to an existing model column -- two columns
 that sound similar (here, "graduates" vs. "4-year cohort grads") can be
 genuinely different metrics.**
 
-**`rpt_gsheets__csgf_enrollment` currently under-reports Miami** (as of this
-cycle -- owner is aware and fixing separately from this skill; check whether
-it's still open before relying on this note). The model is driven by
-`stg_powerschool__schools`, a frozen PowerSchool-era Miami school catalog that
-was never updated after Miami's cutover to Focus as its SIS. Concretely:
+**`rpt_gsheets__csgf_enrollment` under-reported Miami before PR #5059** (the fix
+is described below). The model was driven by `stg_powerschool__schools`, a
+frozen PowerSchool-era Miami school catalog that was never updated after Miami's
+cutover to Focus as its SIS. Concretely:
 
 - Two Focus-marked-`(Closed)` schools (Sunrise, Liberty) still appear in the
   catalog and show up in the extract with every enrollment/demographic column
@@ -104,16 +96,15 @@ was never updated after Miami's cutover to Focus as its SIS. Concretely:
   buildings as of this cycle: Courage, Royalty, Miami Tech, Legacy ES, Legacy
   MS) rather than trusting the extract's row count at face value.
 
-**Fixed (2026-09-11, this branch): `rpt_gsheets__csgf_enrollment` now sources
-Miami from Focus instead of the frozen PowerSchool catalog.** Added a
-`focus_schools` CTE (`int_focus__schools` joined to
-`stg_google_sheets__people__locations`, filtered `school_level is not null` --
-confirmed this correctly excludes Sunrise/Liberty, since Focus itself nulls
-their level on closure, and also excludes 2 non-school placeholder Focus records
-that happen to share the same null). Rebuilt in dev and confirmed all 5 real
-Miami schools now appear with real enrollment counts and real principal
-demographics -- no more missing rows, no more null-column ghost rows for the
-closed schools. Not yet merged (same PR #5059 as the other fixes above).
+**Fixed in PR #5059 (live): `rpt_gsheets__csgf_enrollment` now sources Miami
+from Focus instead of the frozen PowerSchool catalog.** Added a `focus_schools`
+CTE (`int_focus__schools` joined to `stg_google_sheets__people__locations`,
+filtered `school_level is not null` -- confirmed this correctly excludes
+Sunrise/Liberty, since Focus itself nulls their level on closure, and also
+excludes 2 non-school placeholder Focus records that happen to share the same
+null). Rebuilt in dev and confirmed all 5 real Miami schools now appear with
+real enrollment counts and real principal demographics -- no more missing rows,
+no more null-column ghost rows for the closed schools.
 
 **Corrected, confirmed against the real Portal task instructions (2026-09-11):
 `total_budgeted_enrollment` is NULL for EVERY school network-wide, not just
@@ -173,12 +164,9 @@ to those two CTEs before this model rolls to AY2026. The other 6 HS models
 likely have the same PowerSchool-only gap somewhere in their lineage -- not yet
 verified per-model.
 
-**`rpt_gsheets__csgf_hs_enrollment`'s fixes are also only on PR #5059, not yet
-in prod, same staleness pattern as `hs_grad_data` above.** Confirmed live:
-prod's view (last recreated 2026-07-24) still lacks `exited_hs` entirely, still
-misses `FDC` in the FRL/SED flag, and still carries the old `passed_algebra_i`
-output column with the comma-bug-corrupted IN-list behind it. Rebuilt this
-branch's version in dev
+**`rpt_gsheets__csgf_hs_enrollment`'s fixes also shipped in PR #5059 and are
+live:** `exited_hs`, `FDC` in the FRL/SED flag, and the corrected
+`passed_algebra_i` IN-list. Validated in dev before merge
 (`int_extracts__student_enrollments rpt_gsheets__csgf_hs_enrollment`, since
 `exited_hs` is a same-PR addition to the upstream too -- deferring to stale prod
 for just the report model fails with `Name exited_hs not found inside e`) --

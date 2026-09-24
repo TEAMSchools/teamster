@@ -7,7 +7,7 @@ directory). Per-linter config: `.trunk/config/`.
 
 Suppression syntax (`# trunk-ignore(<linter>/<rule>): reason` on the line
 immediately before; never linter-native disables): see root CLAUDE.md →
-_Linter_.
+_Linting_.
 
 `trunk-ignore-all` is a comment directive — it cannot suppress findings in JSON
 (no comment syntax); drop/relocate the file or add a `lint.ignore` path rule in
@@ -39,9 +39,9 @@ _Linter_.
 
 ## Hooks
 
-Pre-commit runs `fmt` only; pre-push runs `check` — details (and the worktree
-binary-path gotcha) in root CLAUDE.md → _Trunk linting/formatting_. Never use
-`--no-verify` — fix reported issues instead.
+Pre-commit runs `fmt` only; pre-push runs `check` — see root CLAUDE.md →
+_Linting_; the binary path and worktree invocation are in the `trunk-lint`
+skill. Never use `--no-verify` — fix reported issues instead.
 
 ## Shell Style
 

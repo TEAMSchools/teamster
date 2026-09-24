@@ -69,7 +69,8 @@ The root CLAUDE.md names the allowed `gh` subcommands; the mechanics live here.
   runs for CI poll loops (Monitor); no single `mcp__github__*` tool covers both
   surfaces.
 - `gh run *` — Actions run inspection/control; no MCP coverage.
-- `gh workflow *` — Actions workflow inspection/dispatch; no MCP coverage.
+- `gh workflow *` — Actions workflow inspection; no MCP coverage. Dispatch: see
+  the `gh-token-scopes` skill.
 - `gh repo edit` — repo settings; `gh repo create/view/list` have MCP
   equivalents and are not on this list.
 - Editing an existing comment — `mcp__github__add_issue_comment` only creates.

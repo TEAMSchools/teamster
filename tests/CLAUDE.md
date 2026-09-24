@@ -27,9 +27,9 @@
   module-load construction in production `resources.py` when it is unset (e.g. a
   codespace) — so never copy that idiom there. Plain `int(EnvVar("X"))` casts
   the marker object, not the value.
-- **Worktree tests**: VS Code doesn't discover tests in worktrees. Run manually
-  ensuring `OP_SERVICE_ACCOUNT_TOKEN` is set, then
-  `cd .worktrees/<branch> && uv run pytest ...`.
+- **Worktree tests**: VS Code doesn't discover tests in worktrees. Run from the
+  CLI: `cd <abs-worktree> && uv run pytest ...` (conftest reads the token file
+  itself). Invocation details: `.claude/rules/worktrees.md`.
 - **Unit testing Dagster resources**: `SSHResource` and other
   `ConfigurableResource` subclasses are frozen Pydantic models — use
   `build_resources()` context manager to instantiate, then call methods on

@@ -91,7 +91,7 @@ its upstream producer — never re-derive it downstream.
 `base_` models using `star()` resolve columns from BigQuery at run time, not
 SQL. YAML properties drift silently. **Rule**: enumerate columns explicitly when
 joining these models (see `INFORMATION_SCHEMA.COLUMNS` query in
-`src/dbt/CLAUDE.md`).
+`.claude/rules/dbt-sql.md`).
 
 `union_relations` views have a related issue (stale compiled SQL) but are
 handled automatically by `dbt_union_relations_automation_condition()`.
@@ -338,7 +338,8 @@ config:
 These crons become real Dagster refresh schedules
 (`code_locations/kipptaf/tableau/schedules.py`) and set the freshness floor for
 upstream cadence decisions — check them before moving an upstream model to a
-cron automation condition (see `src/dbt/CLAUDE.md` → View→table flips).
+cron automation condition (see `.claude/rules/dbt-models.md` → View→table
+flips).
 
 ## dbt Cloud CI
 
@@ -419,7 +420,7 @@ from there. Seed EVERY district that unions into the kipptaf model (e.g.
 `kipppaterson`, which feeds `stg_pearson__njsla`/`_science` via its own
 `int_pearson__*`, not the package `stg_*`).
 
-Alternative to the two-PR pattern in `src/dbt/CLAUDE.md`.
+Alternative to the two-PR pattern in `.claude/rules/dbt-models.md`.
 
 ## Stale-wide `zz_stg` union defer copy
 

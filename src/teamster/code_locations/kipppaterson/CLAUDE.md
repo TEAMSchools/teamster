@@ -30,14 +30,14 @@ GCS bucket: `teamster-kipppaterson`
 Paterson ingests PowerSchool with **dlt**, syncing directly from its Oracle
 database through an in-process paramiko SSH tunnel (`ssh_powerschool` resource,
 `enable_legacy_rsa=True`) and landing to BigQuery via keyless ADC (issue #3807).
-This is the pilot/template for migrating the ODBC districts (`kippnewark`,
-`kippcamden`, `kippmiami`) off `sshpass`. ONE `@dlt_assets` multi-asset covers
-every configured table (`powerschool/sis/dlt/`); `cursor_column: null` tables
-always replace. Config in `powerschool/sis/dlt/config/assets.yaml` (per-table
-`cursor_column` + `intraday`/`nightly` membership booleans). Intraday selection
-is decided by `kipppaterson__powerschool__dlt__intraday_sensor` (probe +
-dlt-state baseline); the nightly schedule full-refreshes its targets
-unconditionally and re-baselines. Design:
+`kippnewark` and `kippcamden` use the same dlt pattern; `kippmiami` has retired
+PowerSchool for Focus. ONE `@dlt_assets` multi-asset covers every configured
+table (`powerschool/sis/dlt/`); `cursor_column: null` tables always replace.
+Config in `powerschool/sis/dlt/config/assets.yaml` (per-table `cursor_column` +
+`intraday`/`nightly` membership booleans). Intraday selection is decided by
+`kipppaterson__powerschool__dlt__intraday_sensor` (probe + dlt-state baseline);
+the nightly schedule full-refreshes its targets unconditionally and
+re-baselines. Design:
 `docs/superpowers/specs/2026-07-20-powerschool-dlt-intraday-sensor-design.md`.
 
 Consequences:

@@ -142,9 +142,5 @@ session's message. Keep the Bash `description` generic; it is scanned too.
 `.claude/scratch/` is gitignored and writable by all tools, but it is shared per
 checkout — every session working that checkout sees the same files. Use it only
 for temp files that must live IN the checkout, such as the hook-probe harnesses
-in `.claude/hooks/CLAUDE.md`, and give each a distinctive name.
-
-Everything session-local — commit messages, draft bodies, query output,
-intermediate scratch — goes in the session scratchpad instead (absolute path in
-the system prompt). It is isolated per session, so it needs no `rm -f` dance and
-cannot collide with a concurrent session.
+in `.claude/hooks/CLAUDE.md`, and give each a distinctive name. Everything else
+goes in the session scratchpad.
