@@ -111,6 +111,14 @@ Put column and model semantics in the model's properties yml, workflow and
 reasoning here, and the narrative in the reference document. The repo's yml
 conventions still apply to descriptions.
 
+`.claude/hooks/dibels-docs-gate.sh` enforces the floor: it denies a `git commit`
+when the branch changes a `src/dbt/` file with `dibels` or `amplify` in its path
+but not both the reference doc and this skill. It checks the branch, not the
+commit, so a later model edit on a branch that already touched both passes; the
+rule above still applies to it. When a change really moves nothing a reader
+relies on (a lint fix), put `[skip-dibels-docs]` in the commit message and say
+why in the same message.
+
 Covers the whole DIBELS dashboard suite. Documented below: the Bright Spots
 tracker / foundation goals retrofit (#4952) -- benchmark-goal work, not
 PM/aimline -- and the PM/aimline migration (#3834). As the other tracks land,

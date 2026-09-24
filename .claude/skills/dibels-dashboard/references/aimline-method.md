@@ -466,15 +466,23 @@ silently doubles every partition. That is the same double-count trap the
 row-level rules warn about, and it burned a verification pass in this session
 before the column itself turned out to be correct.
 
-**The one open decision: Below Aimline outranks No Aimline Data.** When a
-round's measures disagree, the round rollup takes the worst state, and every
-rung of that order is forced by the row-level cascade EXCEPT this one. A student
-below the aimline on one measure and carrying no published aimline on another
-reads `Below Aimline`, on the reading that a real negative verdict beats a
-missing one. Academics have NOT confirmed it. If they reverse it, 694 of 10,046
-AY2025 `Below Aimline` round groups (6.9%) become `No Aimline Data` — a one-line
-change to the cascade that moves published numbers. Do not present round-level
-aimline figures as settled without saying this is open.
+**Below Aimline outranks No Aimline Data, and that is settled.** Academics
+confirmed it 2026-09-22. Do not reopen it or offer to reverse it.
+
+**Academics' 2026-09-24 answers are recorded but mostly not built.** The table
+is in the reference doc under "Academics' answers on labels and the roster".
+Before building any of it:
+
+- The Trajectory rule is open. Academics want benchmark as the only indicator,
+  and nobody has defined what separates On Track from Off Track without the
+  aimline. Do not implement it by keeping the aimline as a hidden tiebreaker,
+  and do not implement benchmark-first plus aimline: measured, that makes
+  Trajectory an exact copy of Aimline and Benchmark.
+- Renaming `Meeting Aimline, On-Track` to `Meeting Aimline, Meeting Benchmark`
+  while leaving the 490 in it makes the label false for them. Raise it before
+  shipping the rename.
+- Label renames break literal-string calcs in the workbook. Hand the user the
+  old and new values when the extract changes.
 
 **Reading a roster row.** Grain is student x measure standard x season x round,
 one row per round -- "every score so far at round 3" is three stacked rows, not
@@ -619,6 +627,16 @@ reached their end-of-season goal. Those are different students, and on ORF it is
    round target was 8, the score was 13, and the grade-level benchmark was 30.
 3. The evidence above is observational, not vendor-documented. Confirming it
    with Amplify is still open. Say so rather than citing it as their spec.
+4. Verify at the raw file, not the extract. Re-checked 2026-09-24 at every
+   layer: the raw aimline file agrees on 56,265 of 56,265 rows, the SY26-27 base
+   PM file on 121 of 121, the verdict model on 32,999 of 32,999. All 2,401 rows
+   where the score equals the by-date value read At or Above, so the rule is
+   `>=`.
+5. `int_amplify__mclass__pm_student_summary_aimline` coalesces `aimline_status`
+   and `aimline_value_by_date` from the two Amplify files independently. Today
+   each year carries both columns in one file only, so a row cannot pair one
+   file's status with the other's target. If Amplify ever ships both columns in
+   both files, re-run the raw-file check before trusting the verdict.
 
 The existing note on `aimline_season_student_goal` in
 `int_amplify__pm_met_criteria_aimline.yml` already says not to derive the

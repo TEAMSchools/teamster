@@ -2208,7 +2208,7 @@ is still unidentified; start from the `met_pm_round_criteria` window partitions
 rather than from the CASE, since the CASE reads columns that are themselves
 round-level.
 
-##### Below Aimline outranks No Aimline Data — the one open decision
+##### Below Aimline outranks No Aimline Data — decided 2026-09-22
 
 A student sits several measures in a round and can hold a different verdict on
 each. The round-level columns collapse those into one answer, which needs a
@@ -2225,18 +2225,41 @@ defensible answers:
 - **No Aimline Data wins** — the picture is incomplete, so decline to render a
   verdict rather than report one built on partial evidence.
 
-The model implements the first. That is a choice about what a school leader
-should see, not a fact about the data, and **academics have not confirmed it.**
+The model implements the first, and academics confirmed it on 2026-09-22:
+"Better for us to know that they're below on the measure they were tested on."
+Keep it.
 
-**What it costs if they reverse it.** On AY2025, 694 of the 10,046 round groups
-now reading `Below Aimline` hold at least one no-data measure, so they would
-read `No Aimline Data` instead — 6.9% of that bucket, 4.1% of all 17,011 round
-groups. It is a one-line change to the precedence cascade, but it moves
-published numbers, so it wants an answer before the dashboard is socialised
-rather than after.
+**What it covers.** On AY2025, 694 of the 10,046 round groups reading
+`Below Aimline` hold at least one no-data measure — 6.9% of that bucket, 4.1% of
+all 17,011 round groups. Under the other rule they would read `No Aimline Data`.
 
 Affects `aimline_round_category` and, through the same cascade, the round-grain
 columns built beside it.
+
+##### Academics' answers on labels and the roster, 2026-09-24
+
+Returned in the label crosswalk workbook. What is decided, what has shipped, and
+what is still open:
+
+| Item                                                                      | Decision                                                                                                                                                                          | Status                                                                                                                                                       |
+| ------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Aimline and Benchmark labels                                              | `Meeting Aimline, On-Track` becomes `Meeting Aimline, Meeting Benchmark`; `Meeting Aimline, Off-Track` becomes `Meeting Aimline, Not Yet at Benchmark`; `Below Aimline` unchanged | Decided, not built                                                                                                                                           |
+| Trajectory labels                                                         | `On Track to Benchmark` becomes `Meeting Benchmark`; `On Aimline, Below Benchmark` becomes `On Track to Benchmark`; `Below Aimline` becomes `Off Track to Benchmark`              | Decided, not built                                                                                                                                           |
+| Trajectory logic                                                          | Benchmark is the only indicator; the aimline does not decide it. A student who met benchmark is `Meeting Benchmark` regardless of aimline                                         | Open: what separates On Track from Off Track without the aimline is not defined                                                                              |
+| The 490 students below aimline but at benchmark, on Aimline and Benchmark | Leave as is                                                                                                                                                                       | Decided. The new wording labels them `Meeting Aimline, Meeting Benchmark`, which says outright they meet an aimline they do not; raise again before building |
+| Partial rounds                                                            | Hold them out everywhere, including the bars                                                                                                                                      | Decided, not built                                                                                                                                           |
+| Uncoloured No Aimline Data categories                                     | Existing grey                                                                                                                                                                     | Workbook                                                                                                                                                     |
+| Aimline comparison item labels                                            | No change requested                                                                                                                                                               | Blank in the workbook, read as keep                                                                                                                          |
+| What "Meeting Aimline" measures                                           | Keep Amplify's definition; wants to discuss further                                                                                                                               | Open                                                                                                                                                         |
+| Roster                                                                    | Season Verdicts renamed Aimline History; Season Goal and Season Gap removed; Benchmark Goal and Benchmark Gap added                                                               | Workbook done except Benchmark Gap, which needed `benchmark_goal_gap`                                                                                        |
+
+Blanks in the decision column were read as keep-today's-label. Measured when
+weighing the Trajectory answer, AY2025 measure grain: with benchmark deciding
+first, Trajectory sorts every fully tested row with an aimline into exactly the
+same groups as Aimline and Benchmark (16,813 / 7,070 / 6,844 rows), differing
+only on No Aimline Data and partial rounds. That is why the Trajectory
+definition has to come from academics rather than from reusing the aimline
+verdict.
 
 ##### The status vocabulary, settled 2026-09-19
 
