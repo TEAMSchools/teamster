@@ -67,25 +67,33 @@ first task not marked complete.** Trust this block and `git log` over any
 recollection. The SDD ledger under `.superpowers/` carries more detail but is
 gitignored, so it may not exist in your checkout.
 
-| Task       | State                  | Commits            |
-| ---------- | ---------------------- | ------------------ |
-| 1          | Complete, review clean | `82c68d9..3c080e0` |
-| 2          | Complete, review clean | `3c080e0..e5eadca` |
-| 3          | Complete, review clean | `e5eadca..09272d8` |
-| 7          | Complete, review clean | `09272d8..7d76082` |
-| 10         | Complete, review clean | `7d76082..84f7dd8` |
-| 4          | **Mid fix round 1**    | `84f7dd8..6b449e1` |
-| 5, 6, 8, 9 | Not started            | —                  |
-| 11–16      | Not started            | —                  |
+| Task  | State                  | Commits             |
+| ----- | ---------------------- | ------------------- |
+| 1     | Complete, review clean | `82c68d9..3c080e0`  |
+| 2     | Complete, review clean | `3c080e0..e5eadca`  |
+| 3     | Complete, review clean | `e5eadca..09272d8`  |
+| 7     | Complete, review clean | `09272d8..7d76082`  |
+| 10    | Complete, review clean | `7d76082..84f7dd8`  |
+| 4     | Complete, review clean | `84f7dd8..ad3de7e5` |
+| 5     | Complete               | `ad3de7e5..2a12dc9` |
+| 6     | Complete               | `2a12dc9..a723c57`  |
+| 8     | Complete               | `a723c57..de23dd7`  |
+| 9     | Complete               | `de23dd7..aef1b79`  |
+| 11–15 | Complete, not run live | `bf0f8b8..f4f2db7`  |
+| 16    | Complete               | `f4f2db7..740c09b`  |
 
-**Task 4's open finding**, if the fix round did not land: `_KEY_SUFFIXES` in
-`manifest.py` exempts any column ending `_key`/`_id`/`_identifier`/`_number`
-from needing a null cell. That wrongly exempts `state_student_identifier`,
-`district_student_identifier` and `lea_student_identifier`, which are routinely
-null for a newly enrolled student — the exact case the sandbox exists to teach.
-Replace the heuristic with a `key_columns(cube_root) -> set[tuple[str, str]]` in
-`model.py` derived from `primary_key: true` dimensions and columns named in
-`joins[].sql`, then regenerate the manifest.
+Every task in the plan is now implemented. Two follow-up commits sit between
+them, both from the Task 4 review: `f2815bd1` narrows the key and policy
+exemptions, and `4790bc4f` adds the join-path orphan cells the spec requires
+and `build()` never emitted. `bf0f8b8d` closes the two deferred Minors below.
+
+**Not done, and not doable here:** no live run of anything. Task 10's `main`,
+Task 11's two scripts, Task 12's canary runner, and Tasks 13–15's live legs
+are written and unit-tested against fakes only. The generator itself (Tasks 5
+and 6) has its ordering, spine, value rules and scale profiles, but there is
+no `generate(snap, people, scale, seed)` entry point producing whole tables
+yet, and no Avro has ever been written. Coverage has never been assessed
+against real generated rows.
 
 **Decisions taken during execution that the task text does not carry:**
 
@@ -105,6 +113,44 @@ Replace the heuristic with a `key_columns(cube_root) -> set[tuple[str, str]]` in
   catches `not_null_proportion`, which asserts a proportion rather than absence.
 - Task 7 implements all three of `avro_schema`, `bq_schema` and `write`. The
   task's numbered steps cover only the first; Task 10 calls the other two.
+- Task 4's key exemption is `model.key_columns`, derived from `primary_key:
+true` dimensions and the operands of an EQUALITY in a join's `sql:`. Not every
+  column named in a predicate: a bare boolean term
+  (`is_current_homeroom`) and a `BETWEEN` range bound
+  (`effective_start_date`) are ordinary attributes, and exempting them repeats
+  the over-exemption the name-suffix rule was deleted for.
+- Task 4's `policy_columns` returns `(table, column)`, resolved through each
+  view's `includes:` blocks and its `prefix:` rule. As bare names, `staff_key`
+  exempted that column on three unrelated tables and `locations_abbreviation`
+  matched no warehouse column at all.
+- Task 4 emits the spec's "one orphan on each side of every join path" cells,
+  which the task text omits. 24 paths, 48 cells. Without them nothing requires
+  an unmatched key, and `location_key` / `work_location_key` are documented
+  NULL in production.
+- Task 5 breaks the spine cycle at HEAD → TAIL, not TAIL → HEAD as the task's
+  Step 3 code does. The plan contradicts itself here: its own Step 1 test
+  asserts `dim_student_enrollments` comes first, and that test is right. The
+  homeroom join is declared from the enrollment side but its foreign key lives
+  on the section table.
+- Task 5's `resolve_spine` fills `is_current_homeroom` on the SECTION rows.
+  There is no `homeroom_section_key` on `dim_student_enrollments` — that
+  column does not exist in the pinned snapshot, and the relationship runs the
+  other way.
+- Task 5's `_PRODUCTION_ROWS` carries the spec's 2026-09-24 figures
+  unverified. Re-measuring needs a production `INFORMATION_SCHEMA` read.
+- Task 9 required fixing `referenced_columns`: sweeping every bare identifier
+  out of a member's `sql:` attributed measure names and cube names to tables
+  as columns, so the check reported 30 phantom missing columns and could never
+  pass. `member_columns` now resolves `{CUBE}.col`, `{member}` and
+  `{other_cube.member}` separately.
+- Task 9 also asserts the committed `coverage_manifest.yml` matches a fresh
+  `build()`. A drifted generated file makes every later coverage result an
+  assertion against a stale contract.
+- Task 12's `BLOCKED` matches the real SQL API denial shape, not a bare "not
+  found", and `load_canaries` refuses a BLOCKED-only file — every view reports
+  "not found" for everyone against an empty compiled schema.
+- Task 13's `divergences.yml` carries all three cells including
+  `attendance_view_weighting`, which the task text omits.
 
 ### If you are a scheduled cloud agent
 
@@ -128,14 +174,28 @@ Run everything with `uv run`. Push after each task. Leave this Status section
 updated for whoever picks it up next, and end with a list of every ruling you
 made and what it costs if wrong.
 
-**Two Minors deferred for the final review to triage:**
+**Two Minors deferred for the final review to triage:** both were real, and
+both are closed in `bf0f8b8d`. Task 7's NUMERIC precision/scale is now
+asserted whole, with the two numbers as named constants. Task 10's B608
+suppression now cites an identifier guard rather than the caller's good
+intentions.
 
-- Task 7: `test_logical_types_map_exactly` never asserts the NUMERIC
-  `precision`/`scale`. A future narrowing would pass the suite and silently
-  truncate. Likely a must-fix.
-- Task 10: the `trunk-ignore(bandit/B608)` comment states as absolute that
-  project and dataset are never user input. True of the only call site, not of
-  the signature.
+### Two things a cloud agent cannot do, discovered 2026-09-24
+
+- **`uv run` cannot sync this project in the cloud container.** `dbt-core`
+  pulls `dbt-core-experimental-parser`, whose build backend downloads a wheel
+  from GitHub with `urllib`. Python 3.13 enables `ssl.VERIFY_X509_STRICT` by
+  default and the agent proxy's CA carries no `keyUsage` extension, so the
+  build fails TLS verification where Python 3.11 succeeds. Tests were run with
+  `PYTHONPATH=src uv run --no-project --python 3.13 --with pytest --with pyyaml
+--with fastavro --with google-cloud-bigquery --with 'psycopg[binary]' python -m
+pytest`. Dependency versions there are not the lockfile's.
+- **`trunk` is unavailable**: no `.trunk/tools/`, not on `PATH`, and
+  `get.trunk.io` is refused by the egress policy (403). Linting was done with
+  the underlying tools at the versions `.trunk/trunk.yaml` pins — `ruff
+0.16.8` (check and format), `prettier 3.9.8`, `markdownlint-cli2` against a
+  copy of the repo's config, `yamllint 1.38.0`, `bandit 1.9.4`. Run
+  `trunk check` before merging.
 
 ## Execution order
 
@@ -1946,25 +2006,20 @@ divergences:
     why:
       Cumulative position is re-stamped daily, so an open range counts students
       who crossed on any day.
-    a:
-      SELECT count_chronically_absent FROM
+    a: SELECT count_chronically_absent FROM
       student_attendance_enrollment_daily_view WHERE attendance_date =
       '2026-03-02'
-    b:
-      SELECT count_chronically_absent FROM
+    b: SELECT count_chronically_absent FROM
       student_attendance_enrollment_daily_view WHERE attendance_date BETWEEN
       '2025-07-01' AND '2026-03-02'
 
   - name: school_week_vs_iso
     min_ratio: 0.05
-    why:
-      period_type week is the PowerSchool school week, and ISO bucketing
+    why: period_type week is the PowerSchool school week, and ISO bucketing
       compiles, does not throw, and returns a meaningless breakdown.
-    a:
-      SELECT count(*) FROM student_attendance_enrollment_periods_view WHERE
+    a: SELECT count(*) FROM student_attendance_enrollment_periods_view WHERE
       period_type = 'week'
-    b:
-      SELECT count(*) FROM student_attendance_enrollment_daily_view GROUP BY
+    b: SELECT count(*) FROM student_attendance_enrollment_daily_view GROUP BY
       DATE_TRUNC(attendance_date, ISOWEEK)
 ```
 
