@@ -62,3 +62,18 @@ personas:
       staff_benefits_scope: none
     reportees:
       - mira.corvasine@ktaf-sandbox.invalid
+
+  - email: desmond.thistlewane@ktaf-sandbox.invalid
+    given_name: Desmond
+    surname: Thistlewane
+    purpose:
+      Chain-scoped PII with an EMPTY chain. Exercises the no-group default-deny
+      path that exists because Cube errors on an equals-[] row filter, and that
+      production cannot reach.
+    scopes:
+      student_location_scope: school
+      staff_pii_scope: reporting_chain
+      staff_compensation_scope: none
+      staff_observations_scope: none
+      staff_benefits_scope: none
+    reportees: []
