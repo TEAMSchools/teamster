@@ -19,6 +19,20 @@ REPO = Path(__file__).resolve().parent.parent
 SKILL = REPO / "skills" / "gradebook-expectations-upload"
 DIST = REPO / "dist"  # ps-plugins/dist, beside the plugin zips
 
+# This zip is sent to Teaching & Learning, so anything a local editor or the OS
+# leaves behind would ship to them. build_plugin.py excludes the same shapes.
+EXCLUDE_NAMES = {".DS_Store", "Thumbs.db", ".gitkeep"}
+EXCLUDE_SUFFIXES = (".pyc", ".swp", ".swo", ".bak", ".orig", ".rej", "~")
+EXCLUDE_DIRS = {"__pycache__", ".ipynb_checkpoints"}
+
+
+def is_excluded(path: Path) -> bool:
+    """Editor and OS leftovers that must not reach an end user's install."""
+    if path.name in EXCLUDE_NAMES or path.name.endswith(EXCLUDE_SUFFIXES):
+        return True
+    return any(part in EXCLUDE_DIRS for part in path.parts)
+
+
 # Accepts "1.0.0", '1.0.0', and 1.0.0 -- whatever quote style the next editor
 # of SKILL.md's frontmatter happens to use.
 VERSION = re.compile(r"^version:\s*[\"']?([^\"'\n]+?)[\"']?\s*$", re.MULTILINE)
@@ -71,7 +85,7 @@ def build(skill_dir: Path, dist: Path) -> Path:
 
     with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
         for f in sorted(skill_dir.rglob("*")):
-            if f.is_file():
+            if f.is_file() and not is_excluded(f):
                 z.write(f, f.relative_to(skill_dir))
     return out
 

@@ -144,6 +144,13 @@ def dbt_model_columns(sql_path: Path) -> set[str]:
     "from" (e.g. "-- computed from the raw PS export") can't be mistaken for
     it; an inline trailing `-- ...` comment on a column line is dropped before
     the column name is extracted.
+
+    Assumes the model is a single `select ... from ...` with no leading CTE. A
+    `with x as (select ... from ...)` before the final select would stop the
+    walk at the CTE's own FROM and derive the wrong column set. That fails the
+    contract check loudly rather than passing a wrong one, so it is a known
+    limit, not a silent hole -- but widen this parser rather than work around
+    it if the staging model ever gains a CTE.
     """
     columns: set[str] = set()
     for line in sql_path.read_text().splitlines():
@@ -195,22 +202,32 @@ def plugin_csv_header(plugin_dir: Path) -> list[str]:
 
 
 def check_csv_header_contract(plugin_dir: Path, skill_dir: Path) -> list[str]:
-    """The end-user skill must document the header the plugin accepts."""
-    documented = skill_dir / "references" / "csv-format.md"
-    if not documented.is_file():
-        return [f"{documented} is missing; the skill must document the header"]
+    """Every place that states the header must state the one the plugin accepts.
 
+    Both reference files are checked, not just one: a reader who opens
+    `sheets.md` and copies the header from there never sees `csv-format.md`,
+    so a stale copy in either file sends someone to build a file the import
+    page rejects.
+    """
     header = ",".join(plugin_csv_header(plugin_dir))
-    lines = (
-        line.strip().lower().replace(", ", ",")
-        for line in documented.read_text().splitlines()
-    )
-    if not any(line == header for line in lines):
-        return [
-            f"references/csv-format.md does not contain the header the plugin "
-            f"accepts: {header}"
-        ]
-    return []
+    problems = []
+
+    for name in ("csv-format.md", "sheets.md"):
+        documented = skill_dir / "references" / name
+        if not documented.is_file():
+            problems.append(f"{documented} is missing; it must state the header")
+            continue
+
+        lines = (
+            line.strip().lower().replace(", ", ",")
+            for line in documented.read_text().splitlines()
+        )
+        if not any(line == header for line in lines):
+            problems.append(
+                f"references/{name} does not contain the header the plugin "
+                f"accepts: {header}"
+            )
+    return problems
 
 
 def build(plugin_dir: Path) -> Path | None:

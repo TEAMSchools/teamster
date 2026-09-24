@@ -18,6 +18,8 @@ models:
               - school_level
               - quarter
               - week_number_quarter
+          config:
+            severity: error
     columns:
       - name: region
         data_type: string

@@ -106,16 +106,44 @@ def test_missing_validator_reports_the_file_not_a_type_error(tmp_path):
         build_plugin.plugin_csv_header(tmp_path)
 
 
+HEADER_LINE = "    School Level, Quarter, Week Number, W, H, F, S, Notes\n"
+
+
+def _write_references(tmp_path, csv_format=HEADER_LINE, sheets=HEADER_LINE):
+    references = tmp_path / "references"
+    references.mkdir()
+    (references / "csv-format.md").write_text(f"Header:\n\n{csv_format}")
+    (references / "sheets.md").write_text(f"Header:\n\n{sheets}")
+    return references
+
+
 def test_csv_header_contract_holds_when_the_skill_documents_the_exact_header(
     tmp_path,
 ):
+    _write_references(tmp_path)
+    assert build_plugin.check_csv_header_contract(PLUGIN, tmp_path) == []
+
+
+def test_csv_header_contract_fails_when_only_sheets_md_drifts(tmp_path):
+    # Both reference files state the header, and a reader may open either one.
+    # csv-format.md staying correct must not excuse sheets.md going stale --
+    # that was the gap when only csv-format.md was checked.
+    _write_references(
+        tmp_path,
+        sheets="    School Level, Quarter, Week Number, W, H, F, S\n",
+    )
+    errors = build_plugin.check_csv_header_contract(PLUGIN, tmp_path)
+    assert len(errors) == 1
+    assert "sheets.md" in errors[0]
+
+
+def test_csv_header_contract_fails_when_a_reference_file_is_missing(tmp_path):
     references = tmp_path / "references"
     references.mkdir()
-    (references / "csv-format.md").write_text(
-        "Upload a CSV with this header:\n\n"
-        "    School Level, Quarter, Week Number, W, H, F, S, Notes\n"
-    )
-    assert build_plugin.check_csv_header_contract(PLUGIN, tmp_path) == []
+    (references / "csv-format.md").write_text(f"Header:\n\n{HEADER_LINE}")
+    errors = build_plugin.check_csv_header_contract(PLUGIN, tmp_path)
+    assert len(errors) == 1
+    assert "sheets.md" in errors[0]
 
 
 def test_csv_header_contract_fails_when_the_documented_header_has_an_extra_column(
@@ -127,11 +155,11 @@ def test_csv_header_contract_fails_when_the_documented_header_has_an_extra_colum
     # a build failure, not a pass. A naive `header in text` substring check
     # wrongly passes here because the correct 8-column string still occurs
     # inside the 9-column line.
-    references = tmp_path / "references"
-    references.mkdir()
-    (references / "csv-format.md").write_text(
-        "Upload a CSV with this header:\n\n"
-        "    School Level, Quarter, Week Number, W, H, F, S, Notes, Extra Column\n"
+    _write_references(
+        tmp_path,
+        csv_format=(
+            "    School Level, Quarter, Week Number, W, H, F, S, Notes, Extra\n"
+        ),
     )
     errors = build_plugin.check_csv_header_contract(PLUGIN, tmp_path)
     assert errors != []
