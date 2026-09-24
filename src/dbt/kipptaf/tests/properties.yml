@@ -1073,10 +1073,13 @@ data_tests:
       and Learning, Data, and Executive get a role at every New Jersey school
       regardless of which region's office they sit in. Errors rather than warns
       because a hit means another region's rosters are being sent to a vendor
-      they no longer use.
+      they no longer use. Hosted on int_extracts__student_enrollments, an hourly
+      table the test reads directly, because the feeds are views: they never
+      rematerialize on a data change, so a check hosted on a feed would run once
+      at deploy and then go dormant.
     config:
       severity: error
       meta:
         dagster:
           ref:
-            name: rpt_illuminate__roster
+            name: int_extracts__student_enrollments

@@ -1,5 +1,6 @@
 with
     miami_students as (
+        -- grain projection, not dup-masking
         select distinct student_number,
         from {{ ref("int_extracts__student_enrollments") }}
         where region = 'Miami'
@@ -12,6 +13,7 @@ with
     ),
 
     miami_staff as (
+        -- grain projection, not dup-masking
         select distinct employee_number,
         from {{ ref("int_people__staff_roster") }}
         where home_work_location_dagster_code_location = 'kippmiami'
