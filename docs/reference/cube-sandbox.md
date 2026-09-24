@@ -6,8 +6,7 @@ layer without ever holding a credential that reads real student or staff data.
 
 Design:
 [2026-09-11-cube-sandbox-build-design.md](https://github.com/TEAMSchools/teamster/blob/main/docs/superpowers/specs/2026-09-11-cube-sandbox-build-design.md).
-Tracked in
-[#5266](https://github.com/TEAMSchools/teamster/issues/5266).
+Tracked in [#5266](https://github.com/TEAMSchools/teamster/issues/5266).
 
 ## Who uses it, and what they see
 
@@ -17,9 +16,9 @@ Tracked in
 | 2    | KTAF devs  | An app built on the kit             | Synthetic only |
 | 3    | KTAF staff | The finished app                    | Production     |
 
-MasterBorn has no Cube Cloud account and no web UI, so no Playground and no
-data model browser. They keep using the sandbox after the production cutover:
-the repoint grants the product's end users access, not MasterBorn's engineers.
+MasterBorn has no Cube Cloud account and no web UI, so no Playground and no data
+model browser. They keep using the sandbox after the production cutover: the
+repoint grants the product's end users access, not MasterBorn's engineers.
 
 ## What differs from production
 
@@ -31,14 +30,14 @@ Three things, and only the second needs a mechanism.
 | Revision             | Older — a tagged commit on `main`'s own history |
 | Deployment variables | `CUBEJS_DB_BQ_PROJECT_ID` and its credentials   |
 
-The model files are identical because every `sql_table:` is
-project-unqualified, so the same files read a different warehouse from one
-variable. There is no sandbox branch — the sandbox needs a revision, not a
-branch. A forked sandbox YAML would mean the kit is no longer building
-against the production semantic layer.
+The model files are identical because every `sql_table:` is project-unqualified,
+so the same files read a different warehouse from one variable. There is no
+sandbox branch — the sandbox needs a revision, not a branch. A forked sandbox
+YAML would mean the kit is no longer building against the production semantic
+layer.
 
-The sandbox deployment also sets `CUBEJS_DB_BQ_CREDENTIALS` explicitly.
-Without it `cube.js` falls back to Cube Cloud's ambient host identity
+The sandbox deployment also sets `CUBEJS_DB_BQ_CREDENTIALS` explicitly. Without
+it `cube.js` falls back to Cube Cloud's ambient host identity
 ([#4466](https://github.com/TEAMSchools/teamster/issues/4466)), which denies
 everyone — and a deployment that denies everyone looks exactly like perfect
 isolation, so the isolation test would pass for the wrong reason.
@@ -65,8 +64,8 @@ survive a seed change.
   the connecting user and the deployment's SQL password. Identity is the
   connecting user, so the connection _is_ the switch; there is no in-session
   swap and none is needed.
-- **REST** — mint a token carrying the persona's `email` claim, signed with
-  the sandbox deployment's API secret. `checkAuth` verifies the signature and
+- **REST** — mint a token carrying the persona's `email` claim, signed with the
+  sandbox deployment's API secret. `checkAuth` verifies the signature and
   resolves that identity.
 
 Holding a deployment's API secret therefore means being able to become any
@@ -79,12 +78,13 @@ have, and is KTAF-only.
 
 ## The reserved name namespace
 
-Every fabricated person takes a surname from `src/cube/sandbox/reserved_names.yml`,
-and nothing else uses these words. A closed list of _plausible_ names would
-prove only provenance — a real student could be called Jayden Rodriguez too —
-so an invented surname makes the appearance of the name the proof. It works
-the way `example.com` does: self-identifying because it is reserved and
-published, not because the string is impossible.
+Every fabricated person takes a surname from
+`src/cube/sandbox/reserved_names.yml`, and nothing else uses these words. A
+closed list of _plausible_ names would prove only provenance — a real student
+could be called Jayden Rodriguez too — so an invented surname makes the
+appearance of the name the proof. It works the way `example.com` does:
+self-identifying because it is reserved and published, not because the string is
+impossible.
 
 !!! note "Publishing the list is what reserves it"
 
@@ -106,12 +106,12 @@ published, not because the string is impossible.
 Given names stay realistic, because that is where the character classes that
 break interfaces live — apostrophes, hyphens, diacritics, non-Latin scripts,
 single characters, overflow lengths. Each given name carries the class it
-exercises, so coverage can assert every class is present rather than trusting
-a random sample to include the hard ones.
+exercises, so coverage can assert every class is present rather than trusting a
+random sample to include the hard ones.
 
 Addresses are on a domain under `.invalid`, which RFC 2606 guarantees never
-resolves, so a fabricated address cannot collide with a real account and no
-mail can reach a synthetic person even by accident.
+resolves, so a fabricated address cannot collide with a real account and no mail
+can reach a synthetic person even by accident.
 
 ## Deploying
 
@@ -130,26 +130,25 @@ cd src/cube && npx cubejs-cli deploy
 
 ## Bumping the pin
 
-One pin covers the model, the schema snapshot and the catalog together.
-Pinning them separately would make the checks compare the wrong pair.
+One pin covers the model, the schema snapshot and the catalog together. Pinning
+them separately would make the checks compare the wrong pair.
 
 **The review is scheduled; the bump is not.** Read the drift report monthly.
 Bump when MasterBorn asks, or when KTAF has a reason — the kit needs a member
-that does not exist yet, or the repoint is getting worse. A drift threshold
-that compels a bump is tracking `main` with extra steps, and it reopens the
-failure the design rejects: MasterBorn's in-flight build moving under them
-without anyone deciding. Analytics engineering owns the bump.
+that does not exist yet, or the repoint is getting worse. A drift threshold that
+compels a bump is tracking `main` with extra steps, and it reopens the failure
+the design rejects: MasterBorn's in-flight build moving under them without
+anyone deciding. Analytics engineering owns the bump.
 
 Each bump, in order:
 
 1. Move the single pin — model, snapshot and catalog together.
 2. Regenerate the catalog and commit it, so the move is a reviewable diff.
 3. Tag the commit `sandbox-YYYY.MM.DD`.
-4. Take the member-level diff of additions, removals and retypes as the
-   release note.
-5. Send that note to MasterBorn **before** deploying. A note arriving after
-   the surface changed is a changelog, not a warning, and warning is the
-   point.
+4. Take the member-level diff of additions, removals and retypes as the release
+   note.
+5. Send that note to MasterBorn **before** deploying. A note arriving after the
+   surface changed is a changelog, not a warning, and warning is the point.
 6. Deploy that checkout.
 7. Re-run the coverage, canary and divergence suites against the new state.
 
@@ -164,31 +163,35 @@ Each bump, in order:
 Everything except the load step and the live checks runs from committed files
 with no cloud access.
 
-| Command                                                 | Does                                                | Needs the sandbox?  |
-| ------------------------------------------------------- | --------------------------------------------------- | ------------------- |
-| `uv run python -m teamster.cube_sandbox.snapshot`       | Refresh the schema snapshot from production         | No (needs prod)     |
-| `uv run python -m teamster.cube_sandbox.manifest`       | Regenerate `coverage_manifest.yml`                  | No                  |
-| `uv run python -m teamster.cube_sandbox.checks`         | Assert model, snapshot and manifest agree           | No                  |
-| `uv run python -m teamster.cube_sandbox.load`           | Stage Avro to GCS and create the native tables      | Yes                 |
-| `uv run scripts/cube_sandbox_isolation.py`              | Both isolation legs, as the sandbox service account | Yes                 |
-| `uv run scripts/cube_sandbox_deny_policy.py`            | Assert `deny-sandbox-bigquery` still exists         | No (needs prod IAM) |
-| `uv run scripts/cube_rls_matrix.py --expect <canaries>` | Assert the canaries                                 | Yes                 |
+| Command                                                 | Does                                                  | Needs the sandbox?  |
+| ------------------------------------------------------- | ----------------------------------------------------- | ------------------- |
+| `uv run python -m teamster.cube_sandbox.snapshot`       | Refresh the schema snapshot from production           | No (needs prod)     |
+| `uv run python -m teamster.cube_sandbox.manifest`       | Regenerate `coverage_manifest.yml`                    | No                  |
+| `uv run python -m teamster.cube_sandbox.checks`         | Assert model, snapshot and manifest agree             | No                  |
+| `uv run python -m teamster.cube_sandbox.load`           | Create the native tables and load Avro already in GCS | Yes                 |
+| `uv run scripts/cube_sandbox_isolation.py`              | Both isolation legs, as the sandbox service account   | Yes                 |
+| `uv run scripts/cube_sandbox_deny_policy.py`            | Assert `deny-sandbox-bigquery` still exists           | No (needs prod IAM) |
+| `uv run scripts/cube_rls_matrix.py --expect <canaries>` | Assert the canaries                                   | Yes                 |
+
+It does not stage anything to GCS — the Avro has to be there already, and
+nothing writes it yet. See _Known gaps_.
 
 `.github/workflows/cube-sandbox-contract.yaml` runs the consistency check and
-the unit tests on every pull request touching `src/cube/` or the toolchain.
+the unit tests on every pull request touching `src/cube/`, the toolchain,
+`scripts/`, or the dbt marts whose `not_null` tests the manifest reads.
 
 ### The coverage contract
 
-`src/cube/sandbox/coverage_manifest.yml` lists every cell the data must
-contain, each marked `uncovered` until the generator fills it. It is
-**generated, not hand-written**, so a new production column, view or scope
-value becomes a loud uncovered cell rather than an absence nobody notices.
+`src/cube/sandbox/coverage_manifest.yml` lists every cell the data must contain,
+each marked `uncovered` until the generator fills it. It is **generated, not
+hand-written**, so a new production column, view or scope value becomes a loud
+uncovered cell rather than an absence nobody notices.
 
 A column needs both a null row and a non-null row, except where one of three
 derived exemptions applies: it is a join or surrogate key, a column an
-`access_policy` filters on, or a column dbt asserts is never null. All three
-are derived structurally — none is a list, and none is a rule about the
-column's name.
+`access_policy` filters on, or a column dbt asserts is never null. All three are
+derived structurally — none is a list, and none is a rule about the column's
+name.
 
 !!! note "A missing exemption is a dbt ticket, not a manifest edit"
 
@@ -210,16 +213,22 @@ column's name.
 The isolation test has two legs and **both must run or neither counts**: the
 sandbox account is refused on production, and the same account in the same run
 reads the sandbox successfully. A service account whose credentials are broken
-fails the production read exactly like an isolated one, so without the
-positive leg the test goes green on the day the sandbox breaks.
+fails the production read exactly like an isolated one, so without the positive
+leg the test goes green on the day the sandbox breaks.
 
 It is two scripts because it needs two identities. One account holding both
 would be a step toward the cross-project binding the design exists to prevent.
 
 ## Known gaps
 
-- Nothing on the analytics side holds `iam.googleapis.com/denypolicies.list`
-  on `teamster-332318`, so `cube_sandbox_deny_policy.py` exits UNPROVEN rather
-  than PASS.
+- **No data has ever been generated.** There is no `generate()` entry point
+  producing whole tables, so no Avro file has been written, nothing has been
+  staged to GCS, and the load step has never run against real output.
+- **Coverage has never been assessed.** `coverage.py` is unit-tested against
+  fabricated rows only; the manifest has never been scored against a generated
+  dataset, so every cell in it still reads `uncovered`.
+- Nothing on the analytics side holds `iam.googleapis.com/denypolicies.list` on
+  `teamster-332318`, so `cube_sandbox_deny_policy.py` exits UNPROVEN rather than
+  PASS.
 - `cube-catalog-meta.json` is not yet on `main`, so the `/meta` check has no
   current pinned catalog to compare against.
