@@ -110,6 +110,22 @@ Camden's Q1 week 1 is 8/17–8/21; Academics' Camden tab starts at 8/24. That we
 still needs a row, and Academics' first row is week **2**, not week 1. If you
 number by row order you shift every Camden week by one and every count with it.
 
+**Newark and Paterson MS share an Academics tab. They do not share a calendar.**
+One set of counts is planned for both, but each is its own PowerSchool instance
+with its own week dates, so match each region against its own `PS Full Calendar`
+rows rather than reusing Newark's.
+
+The week numbers come out the same — the divergence is in how long a week is. In
+SY27 it happens twice: Q2 week 8 is 2 days in Newark and 3 in Paterson, and Q3
+week 7 is 5 days in Newark and 4 in Paterson. Everywhere else the two match.
+
+That matters only when a tab prorates its counts by week length, which the
+holiday-aware blocks do. Then a week the shared tab treats as short is not short
+in both regions, and Paterson carries Newark's number for a day it does teach.
+**Say so when you see it** — one line naming the quarter, the week and the day
+counts. Do not change the number: what Academics planned for both regions is
+theirs to revise, not yours. Flagging it is what lets them.
+
 ### When a tab holds two blocks for the same quarter
 
 A tab can carry more than one set of counts for one quarter — typically a plain

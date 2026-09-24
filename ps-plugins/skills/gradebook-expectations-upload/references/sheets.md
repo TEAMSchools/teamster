@@ -168,7 +168,10 @@ One tab can feed two instances, and two tabs are not for PowerSchool at all.
 | Any **Miami** tab      | **Nothing.** Skip them.           |
 
 - **Newark and Paterson MS share a tab** and get identical counts, but land in
-  two different PowerSchool instances, so they go in two different files.
+  two different PowerSchool instances, so they go in two different files. They
+  also have separate calendars that differ in a couple of weeks a year — match
+  each against its own `PS Full Calendar` rows, and see `week-matching.md` for
+  what to flag when a shared count meets two different week lengths.
 - **Camden's single tab produces both MS and HS rows**, identical to each other.
 - **Miami is on Focus, not PowerSchool.** It has no PS instance and no
   `U_EXPECTATIONS` table. Never build a Miami file.
