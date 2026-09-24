@@ -365,8 +365,8 @@ chain. Do not report a change as done on a subset.
    SQL. A scripted edit is not evidence it landed where intended.
 2. **Union-branch balance**, whenever `rpt_tableau__dibels_dashboard` is
    touched:
-   `uv run python .claude/scratch/gr-diff-union-branches.py <abs path>`. All
-   three branches must report the same projection count and **0 mismatched
+   `uv run python .claude/skills/dibels-dashboard/scripts/diff_union_branches.py <abs path>`.
+   All three branches must report the same projection count and **0 mismatched
    ordinals**. BigQuery binds UNION ALL by POSITION, so a column added or
    removed on one branch needs the same on the other two.
 3. **Contract column count matches the SQL.**
