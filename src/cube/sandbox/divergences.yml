@@ -15,36 +15,45 @@
 divergences:
   - name: unpinned_cumulative
     min_ratio: 0.10
-    why: Cumulative position is re-stamped on every daily row, so an open date
-      range counts students who crossed the threshold on any day, not
-      students chronically absent as of a date. Pin the date.
-    a: SELECT count_chronically_absent FROM
+    why:
+      Cumulative position is re-stamped on every daily row, so an open date
+      range counts students who crossed the threshold on any day, not students
+      chronically absent as of a date. Pin the date.
+    a:
+      SELECT count_chronically_absent FROM
       student_attendance_enrollment_daily_view WHERE attendance_date =
       '2026-03-02'
-    b: SELECT count_chronically_absent FROM
+    b:
+      SELECT count_chronically_absent FROM
       student_attendance_enrollment_daily_view WHERE attendance_date BETWEEN
       '2025-07-01' AND '2026-03-02'
 
   - name: attendance_view_weighting
     min_ratio: 0.005
-    why: The daily view's measures are day-weighted and the periods view's are
+    why:
+      The daily view's measures are day-weighted and the periods view's are
       student-weighted, so the two attendance rates are different questions.
       They diverge by 0.66 points in production (0.9207 against 0.9141 for
       AY2025), which is why a student-weighted rate must not reuse the daily
       view's measure name.
-    a: SELECT MEASURE(ada) FROM student_attendance_enrollment_daily_view WHERE
+    a:
+      SELECT MEASURE(ada) FROM student_attendance_enrollment_daily_view WHERE
       dates_academic_year = 2025
-    b: SELECT MEASURE(pct_present) FROM
-      student_attendance_enrollment_periods_view WHERE period_type = 'year'
-      AND academic_year = 2025
+    b:
+      SELECT MEASURE(pct_present) FROM
+      student_attendance_enrollment_periods_view WHERE period_type = 'year' AND
+      academic_year = 2025
 
   - name: school_week_vs_iso
     min_ratio: 0.05
-    why: period_type = 'week' is the PowerSchool school week, which splits at
-      month and term boundaries — about 14% of calendar days diverge from an
-      ISO Monday. ISO bucketing compiles, does not throw, and silently
-      returns a meaningless breakdown. There is no query-time guard.
-    a: SELECT count(*) FROM student_attendance_enrollment_periods_view WHERE
+    why:
+      period_type = 'week' is the PowerSchool school week, which splits at month
+      and term boundaries — about 14% of calendar days diverge from an ISO
+      Monday. ISO bucketing compiles, does not throw, and silently returns a
+      meaningless breakdown. There is no query-time guard.
+    a:
+      SELECT count(*) FROM student_attendance_enrollment_periods_view WHERE
       period_type = 'week'
-    b: SELECT count(*) FROM student_attendance_enrollment_daily_view GROUP BY
+    b:
+      SELECT count(*) FROM student_attendance_enrollment_daily_view GROUP BY
       DATE_TRUNC(attendance_date, ISOWEEK)
