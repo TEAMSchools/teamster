@@ -14,13 +14,20 @@ still outstanding._
 
 1. **Read `../references/sheets.md`** if you have not already — the two
    spreadsheets, their columns, and which tab feeds which instance.
-2. **Confirm the rollover can actually run.** Two things have to both be true:
+2. **Confirm the rollover can actually run.** Two things have to both be true,
+   and one check settles both:
 
    1. The new school year's calendar is already loaded in PowerSchool.
    2. **The data warehouse's current academic year has been rolled over.**
 
-   Check the second one by opening `PS Full Calendar` (`sheets.md`) and reading
-   its `academic_year` column.
+   `PS Full Calendar` is built from PowerSchool's calendar, so if it shows a
+   full set of weeks for the year you are loading, PowerSchool has that calendar
+   and the warehouse has rolled over. You do not need to check PowerSchool
+   separately, and you must not ask the person — they would have to go and look
+   at something you can already see.
+
+   Check it by opening `PS Full Calendar` (`sheets.md`) and reading its
+   `academic_year` column.
 
    🛑 **If it does not show the year you are loading, stop here and tell the
    data team the academic year needs rolling over in the warehouse first.**

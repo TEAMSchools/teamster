@@ -34,6 +34,11 @@ someone loads it, and that's expected right up until it opens. Give the same
 "Q_n_ opens Monday _date_" framing `refresh.md` uses, and stop there — this
 isn't a diagnostic case, it's a not-ready-yet case.
 
+Take that date from `PS Full Calendar` — the `week_start_monday` of that
+quarter's week 1 for the region and school level. It holds the whole year, so
+the date is there even when the Academics tab for that quarter is an empty
+draft. Never tell the person the date can't be worked out; it always can.
+
 ## 3. Re-derive what _should_ be there, and diff it against prod
 
 1. Read `../references/sheets.md` and open the Academics tab(s) for the affected

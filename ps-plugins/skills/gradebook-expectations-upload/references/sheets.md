@@ -100,10 +100,24 @@ the PowerSchool import page.
 > **Everything comes from the PowerSchool calendar.** Academics' own week
 > numbering is theirs; PowerSchool's is the one that decides where a row goes.
 
-**The three warehouse-fed tabs are as of the previous week, and refresh nightly
-between 2 and 3 AM.** Nothing you upload today appears here until 3 AM tomorrow
-at the earliest, and none of them ever show the week currently in progress. That
-is by design, not a fault — see `week-matching.md`, _How the audit reads this_.
+**All three warehouse-fed tabs refresh nightly, between 2 and 3 AM.** What each
+one covers is different, and the difference matters:
+
+- **`PS Full Calendar` carries the whole school year**, including weeks months
+  away. That is what makes a rollover possible before any of it has happened,
+  and it is what you match dates against. It is not limited to weeks that have
+  passed.
+- **`Plugin Data Raw` shows the instance as of the last refresh.** Anything
+  uploaded or hand-edited today does not appear until about 3 AM tomorrow, so
+  treat it as up to a day behind whenever that matters.
+- **`Template QW-Date Crosswalk` stops at the last completed week.** It is empty
+  for anything you are about to load, which is expected — see `csv-format.md`
+  check 3.
+
+Separately from tab freshness, the dashboard's own reading rule is that a
+running quarter shows the week _before_ the current one. That is by design, not
+a fault, and it is a different thing from any of the above — see
+`week-matching.md`, _How the audit reads this_.
 
 ## How to read these sheets
 
@@ -135,8 +149,11 @@ sequence.
 > another region's file, silently. Names, always.
 
 **The first tab is a hidden `(Q2-4 under construction)` draft.** That is normal
-and does not mean the read failed. There are **ten tabs**: three usable, three
-drafts, three Miami, and a dates reference.
+and does not mean the read failed. Expect roughly ten tabs, in four kinds: the
+per-region quarter tabs you use, hidden drafts, Miami tabs you skip, and a dates
+reference. Academics add and rename tabs every year, so count the kinds, not the
+tabs — a different total is not a problem, and does not mean the read was
+partial.
 
 > 🛑 **Stop and say so if you cannot see every tab's rows _and_ every tab's
 > name.** A truncated content read, or names you could not retrieve, both mean
@@ -160,7 +177,8 @@ drafts, three Miami, and a dates reference.
 
 ## Which tabs feed which instance
 
-One tab can feed two instances, and two tabs are not for PowerSchool at all.
+One tab can feed two instances, and several tabs are not for PowerSchool at all
+— every Miami tab, and the dates reference.
 
 | Academics tab          | Produces                          |
 | ---------------------- | --------------------------------- |

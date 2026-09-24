@@ -20,9 +20,14 @@ separate logins:
 | Camden   | `camden.kippnj.org`   |
 | Paterson | `ps.kipppaterson.org` |
 
-If the link is missing, or the page bounces you back to the admin home, the
-account is not in the `Gradebook Group` security group. Stop and ask the data
-team. Do not work around it.
+If the link is missing, or the page bounces you back to the admin home, stop and
+ask the data team. Do not work around it.
+
+That is a PowerSchool access problem, not necessarily a group one. The
+`Gradebook Group` check is not what decides whether you can reach these pages —
+on some instances it is absent entirely and everything opens regardless. So
+being let in is not proof you are in the group, and being kept out does not tell
+you which permission is missing. Either way it is the data team's to sort out.
 
 ## 2. Decide the path before you describe it
 
@@ -232,10 +237,10 @@ at the last completed week.
    rejected outright and nothing imports.
 
 6. **Check the two end columns before you save.** Read the file left to right:
-   the first column should hold `ES`, `MS` or `HS`, and the last column should
-   hold your note text — not a number. The header is checked by name, but the
-   **data rows are read purely by position**, so a header you retyped correctly
-   over columns you left in the wrong order passes the header check and then
-   fails every row. If `notes` is sitting where `W` belongs, you get "W must be
-   a number" on **every row**.
+   the first column should hold `MS` or `HS`, and the last column should hold
+   your note text — not a number. The header is checked by name, but the **data
+   rows are read purely by position**, so a header you retyped correctly over
+   columns you left in the wrong order passes the header check and then fails
+   every row. If `notes` is sitting where `W` belongs, you get "W must be a
+   number" on **every row**.
 7. **Save as `.csv`**, then load it per the steps above.

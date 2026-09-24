@@ -94,8 +94,10 @@ and how to tell the load worked. You are doing the upload; the skill is reading
 you the directions and telling you what each screen should look like.
 
 For "something looks wrong," it produces no files at all. It compares what
-Academics decided against what you tell it PowerSchool is showing, and tells you
-what it finds. Most of the time the fix is a single row, not a whole reload.
+Academics decided against what is actually live — it reads that from the data
+team's sheet, including who last changed each row and when, so you do not have
+to go and look. It tells you what it finds. Most of the time the fix is a single
+row, not a whole reload.
 
 ## ⚠️ You need PowerSchool access to do the upload
 
@@ -106,8 +108,10 @@ Anyone on the team can get that far.
 `Gradebook Group` security group, on each region's instance.** That is your
 account, not the skill's — the skill has no way into PowerSchool at all.
 
-If you don't have that access, you will find out when you try to reach the
-plugin screen and it isn't there. Stop at that point. Send the files the skill
+If you don't have that access, you'll usually find out when the plugin screen
+isn't there — though not always, because the group check isn't reliably what
+gates it. If you can reach the page but the upload fails, that's the same
+problem wearing a different hat. Stop either way. Send the files the skill
 produced to the data team and let them do the load.
 
 **Do not try to work around it.** The upload starts by deleting the existing

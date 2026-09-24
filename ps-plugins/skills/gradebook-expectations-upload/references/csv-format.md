@@ -44,7 +44,14 @@ School Level,Quarter,Week Number,W,H,F,S,Notes
 | `S`            | `Summative Mastery`                              |
 | `Notes`        | `NOTE`                                           |
 
-Quote any `Notes` value containing a comma.
+**Quote any `Notes` value containing a comma, a double quote or a line break,
+and double any quote inside it** — `He said "go"` is written `"He said ""go"""`.
+An unquoted comma shifts every later column on that row, and a raw line break
+splits the row in two. Both then fail as invalid rows, which the import skips
+while still reporting success, so the week simply never arrives.
+
+Simpler still: strip line breaks out of a note rather than quoting them. A note
+is one line of text.
 
 Order the rows **all MS first, then all HS, each ascending by week number.**
 PowerSchool does not care, but a person scanning the table in the conversation

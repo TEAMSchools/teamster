@@ -134,9 +134,14 @@ One set of counts is planned for both, but each is its own PowerSchool instance
 with its own week dates, so match each region against its own `PS Full Calendar`
 rows rather than reusing Newark's.
 
-The week numbers come out the same — the divergence is in how long a week is. In
-SY27 it happens twice: Q2 week 8 is 2 days in Newark and 3 in Paterson, and Q3
-week 7 is 5 days in Newark and 4 in Paterson. Everywhere else the two match.
+The week numbers come out the same — the divergence is in how long a week is.
+
+**Find it by comparing, not by remembering.** For each week of the quarter, put
+Newark's `week_start_monday`/`week_end_friday` beside Paterson's for that week
+number and look for a pair that differs. It is rare — twice in SY27, where Q2
+week 8 ran 2 days in Newark against 3 in Paterson, and Q3 week 7 ran 5 against 4
+— but the weeks it lands on change every year, so those two are an example of
+the shape, not a list to check against.
 
 That matters only when a tab prorates its counts by week length, which the
 holiday-aware blocks do. Then a week the shared tab treats as short is not short
