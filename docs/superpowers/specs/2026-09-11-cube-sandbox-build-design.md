@@ -51,9 +51,14 @@ semantic layer.
 
 There is no sandbox branch. The sandbox needs a revision, not a branch.
 
-### One thing is read from production
+### One thing is read from production, by one step
 
 **Schema** — column names, types and nullability. No data of any kind, ever.
+
+Only the refresh step reads it, and it writes what it read into the repo as a
+pull request. **The generator never reads production**; it reads the committed
+snapshot at the pinned revision. So production schema is an input to the repo,
+never an input to a build.
 
 Values the kit must match come from the model. `access.js` settles the
 access-control enums, and every other load-bearing value is documented in the
@@ -432,12 +437,20 @@ screenshot.
 
 Three checks and one signal. None of them is a fingerprint.
 
-**Every column the model references exists in the pinned snapshot.** A set
-difference between two committed files: no credentials, no warehouse read. It
-runs in CI on every pull request and blocks the generator. It runs before
-anything is generated or deployed, it catches the case that happens — a model
-change outrunning the snapshot — and it cannot cry wolf, because both inputs are
-pinned.
+**Every column the model references exists in the snapshot, at the same
+commit.** A set difference between two files in one checkout: no credentials, no
+warehouse read. It runs in CI on every pull request and blocks the generator.
+
+Comparing within a commit rather than against the pin is what makes it work on a
+refresh PR. A refresh computes the snapshot from the model as it stood when the
+refresh ran; if a model change lands while that PR is open, merging it would
+otherwise produce a commit whose model and snapshot disagree. Holding the
+invariant at every commit means the pinned pair is consistent for free, because
+the pin is a commit.
+
+It runs before anything is generated or deployed, it catches the case that
+happens — a model change outrunning the snapshot — and it cannot cry wolf,
+because it reads no moving input.
 
 **After loading, the sandbox's columns equal the pinned snapshot's columns.**
 Catches a partial load, which is the one way the sandbox can end up short of the
