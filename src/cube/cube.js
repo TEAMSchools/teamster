@@ -12,14 +12,16 @@ const groupCache = new Map(); // email → { ctx, expiresAt }
 // copy of the location universe would change every viewer's resolved
 // abbreviations and make a passing run untrustworthy for the opposite reason.
 // The gating rules live in access.resolveAccessDataset, which is unit-tested.
+const requestedAccessDataset = process.env.CUBE_ACCESS_DATASET;
+const hasDeploymentCredentials = Boolean(process.env.CUBEJS_DB_BQ_CREDENTIALS);
 const ACCESS_DATASET = access.resolveAccessDataset(
-  process.env.CUBE_ACCESS_DATASET,
-  Boolean(process.env.CUBEJS_DB_BQ_CREDENTIALS),
+  requestedAccessDataset,
+  hasDeploymentCredentials,
 );
 
-// Say so on every startup where the override is in force, not only when it is
-// rejected. A silently honored redirect of identity resolution is the thing
-// worth seeing in a log; a silently ignored one is the safe outcome.
+// Log both outcomes of a set override. An honored one redirects identity
+// resolution, which must be visible. An ignored one is safe, but silent it lets
+// a local run read prod while looking like it tested the dev copy.
 if (ACCESS_DATASET !== "kipptaf_marts") {
   console.warn(
     JSON.stringify({
@@ -27,6 +29,15 @@ if (ACCESS_DATASET !== "kipptaf_marts") {
       dataset: ACCESS_DATASET,
       message:
         "Identity reads are resolving against a dev copy of dim_staff_cube_access, not kipptaf_marts. Expected only on a local run.",
+    }),
+  );
+} else if (requestedAccessDataset) {
+  console.warn(
+    JSON.stringify({
+      event: "cube_access_dataset_ignored",
+      message: hasDeploymentCredentials
+        ? "CUBE_ACCESS_DATASET is set but CUBEJS_DB_BQ_CREDENTIALS is too, so identity reads stay on kipptaf_marts. Unset the credentials to use a dev copy locally."
+        : "CUBE_ACCESS_DATASET must match ^zz_[a-z0-9_]+$, so identity reads stay on kipptaf_marts.",
     }),
   );
 }

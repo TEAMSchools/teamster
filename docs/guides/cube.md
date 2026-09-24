@@ -262,12 +262,13 @@ CUBE_ACCESS_DATASET=zz_<you>_kipptaf_marts NODE_ENV=production CUBEJS_DEV_MODE=f
 ```
 
 Two gates govern it, and both must hold. The value must match `^zz_[a-z0-9_]+$`,
-and the BigQuery credentials variable must be unset — the local ADC path. Every
-working deployment sets those credentials, so the override cannot take effect on
-one, whatever the value. That matters because `zz_` is the prefix of every
+and `CUBEJS_DB_BQ_CREDENTIALS` must be unset — the local ADC path. Every working
+deployment sets that variable, so the override cannot take effect on one,
+whatever the value. That matters because `zz_` is the prefix of every
 developer's own writable schema: honored in prod, it would let anyone resolve
-their own identity row. A honored override logs `cube_access_dataset_override`
-at startup.
+their own identity row. At startup, an honored override logs
+`cube_access_dataset_override`; a set but ignored one logs
+`cube_access_dataset_ignored` with the reason.
 
 It redirects the two `dim_staff_cube_access` reads only. `dim_locations` stays
 on prod deliberately — a dev copy of the location universe would change every
