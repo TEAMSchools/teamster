@@ -594,7 +594,7 @@ class _Fabricator:
         # filler reporting-chain rows sample their manager from the same
         # staff pool the personas sit in — so without this every persona
         # ends up with a chain, `hasChain false` never occurs, and
-        # desmond.thistlewane's BLOCKED canary quietly becomes a ROWS one.
+        # shaquille.oneal's BLOCKED canary quietly becomes a ROWS one.
         # That branch (reporting_chain with an empty chain) is the one
         # production cannot reach, so nothing else would catch the loss.
         self.column_forbidden: dict[tuple[str, str], set[Any]] = {
@@ -848,7 +848,7 @@ class _Fabricator:
             # dim_staff_cube_access row, so resolveAccess finds nothing and
             # the viewer takes the clean default-deny path. Excluded from
             # every pool below so no access row can accidentally adopt it.
-            given, surname = "Unresolvable", "Vexley"
+            given, surname = "Unresolvable", "Odinson"
             email = personas.UNRESOLVABLE
             key = surrogate_key("persona:unresolvable", 0)
             self.excluded.add(key)
@@ -917,8 +917,8 @@ class _Fabricator:
     ) -> dict[str, Any]:
         """The declared reporting edges first, so hasChain resolves as declared.
 
-        `zoe.quillamber` and `orrin.dunmarrow` declare a reportee and must
-        resolve a non-empty chain; `desmond.thistlewane` declares none and
+        `ororo.munroe` and `karl-anthony.maximoff` declare a reportee and must
+        resolve a non-empty chain; `shaquille.oneal` declares none and
         must resolve an empty one, which is the no-group default-deny branch
         production cannot reach.
         """

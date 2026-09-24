@@ -24,7 +24,17 @@ def _published() -> set[str]:
     text = _PAGE.read_text(encoding="utf-8")
     start = text.index("must not be used for anything else")
     block = text[start : text.index("Given names stay realistic", start)]
-    return set(re.findall(r"\b[A-Z][a-z]+\b", block.split(":", 1)[1]))
+    # Split on commas, not on a capitalised-word regex. A regex breaks
+    # "Delle Donne" and "Diggins-Smith" into pieces and does not match
+    # Dončić or Şengün at all, so it would silently compare the wrong set.
+    #
+    # Take the text after the LAST colon, not the first: the prose above the
+    # list may contain one, and splitting on the first swallowed a sentence
+    # into the name set. Collapse whitespace too, because the list is
+    # line-wrapped and a name can straddle the break.
+    listed = block.rsplit(":", 1)[1].strip().rstrip(".")
+    listed = re.sub(r"\s+", " ", listed)
+    return {part.strip() for part in listed.split(",") if part.strip()}
 
 
 def test_the_page_publishes_exactly_the_reserved_surnames() -> None:
@@ -37,4 +47,4 @@ def test_the_reservation_is_not_silently_empty() -> None:
     # A parser change that made _published() return nothing would make the
     # test above pass only if the YAML were empty too — assert the real size
     # so neither can quietly become a no-op.
-    assert len(_published()) == 40
+    assert len(_published()) == 59

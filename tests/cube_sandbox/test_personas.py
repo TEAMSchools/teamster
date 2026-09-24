@@ -86,12 +86,12 @@ def _has_remit(person: personas.Persona, scopes: dict[str, set[str]]) -> bool:
 # email and complete, so adding a persona forces the decision rather than
 # defaulting it.
 _EXPECTED_REMIT = {
-    "amara.fennworth@ktaf-sandbox.invalid": True,  # "full staff PII remit"
-    "zoe.quillamber@ktaf-sandbox.invalid": True,  # school-scoped manager
-    "soren.bramblehyde@ktaf-sandbox.invalid": True,  # teaching-staff PII
-    "mira.corvasine@ktaf-sandbox.invalid": False,  # "default-deny on every axis"
-    "orrin.dunmarrow@ktaf-sandbox.invalid": True,  # "both a remit and a chain"
-    "desmond.thistlewane@ktaf-sandbox.invalid": True,  # denied by chain, not remit
+    "diana.taurasi@ktaf-sandbox.invalid": True,  # "full staff PII remit"
+    "ororo.munroe@ktaf-sandbox.invalid": True,  # school-scoped manager
+    "zydrunas.ilgauskas@ktaf-sandbox.invalid": True,  # teaching-staff PII
+    "aja.ogwumike@ktaf-sandbox.invalid": False,  # "default-deny on every axis"
+    "karl-anthony.maximoff@ktaf-sandbox.invalid": True,  # "both a remit and a chain"
+    "shaquille.oneal@ktaf-sandbox.invalid": True,  # denied by chain, not remit
 }
 
 

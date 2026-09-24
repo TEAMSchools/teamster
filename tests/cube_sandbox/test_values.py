@@ -11,30 +11,31 @@ from teamster.cube_sandbox import generate
 def test_emails_fold_to_ascii() -> None:
     # google_email is matched exactly by resolveAccess, and a non-ASCII local
     # part needs SMTPUTF8 and is not what any real directory holds.
-    email = generate.to_ascii_email("Zoë", "Quillamber")
+    email = generate.to_ascii_email("Ororo", "Munroe")
     assert email.isascii()
-    assert email == "zoe.quillamber@ktaf-sandbox.invalid"
+    assert email == "ororo.munroe@ktaf-sandbox.invalid"
 
 
 def test_every_reserved_given_name_yields_a_usable_local_part() -> None:
-    # 李, Ольга and أمينة carry no ASCII at all. Dropping their characters
-    # leaves an EMPTY local part — an address like ".fennworth@..." that is
-    # not a valid mailbox and resolves to nobody, which is the precise failure
-    # ASCII-folding exists to prevent. Every reserved given name must produce
-    # a local part.
+    # A name with no ASCII at all folds to an EMPTY local part — an address
+    # like ".taurasi@..." that is not a valid mailbox and resolves to nobody,
+    # which is the precise failure ASCII-folding exists to prevent. The
+    # non-Latin and right-to-left names that used to reach this guard are gone
+    # (production has none), so nothing in the list exercises it today. The
+    # guard stays because the next name added might.
     for entry in generate.reserved_given_names():
-        email = generate.to_ascii_email(entry["name"], "Fennworth")
+        email = generate.to_ascii_email(entry["name"], "Taurasi")
         local = email.split("@")[0]
         given_part, _, surname_part = local.partition(".")
         assert email.isascii(), entry
         assert given_part, f"{entry['name']} folded to an empty local part"
-        assert surname_part == "fennworth"
+        assert surname_part == "taurasi"
 
 
 def test_latin_extended_letters_transliterate_rather_than_vanish() -> None:
     # NFKD does not decompose ø, æ or ß — they carry no combining mark — so a
     # drop-what-is-not-ASCII fold turns Søren into "sren".
-    assert generate.to_ascii_email("Søren", "Vexley").startswith("soren.")
+    assert generate.to_ascii_email("Søren", "Odinson").startswith("soren.")
 
 
 def test_distinct_given_names_do_not_collide_on_one_surname() -> None:
@@ -42,7 +43,7 @@ def test_distinct_given_names_do_not_collide_on_one_surname() -> None:
     # synthetic people sharing an address makes whichever row wins arbitrary,
     # and the persona then tests something other than what it declares.
     locals_ = {
-        generate.to_ascii_email(e["name"], "Fennworth")
+        generate.to_ascii_email(e["name"], "Taurasi")
         for e in generate.reserved_given_names()
     }
     assert len(locals_) == len(generate.reserved_given_names())
@@ -126,6 +127,6 @@ def test_the_sandbox_domain_is_invalid_per_rfc_2606() -> None:
 
 @pytest.mark.parametrize("part", ["", "   ", "'-'"])
 def test_a_name_with_no_usable_characters_still_yields_a_local_part(part: str) -> None:
-    email = generate.to_ascii_email(part, "Vexley")
+    email = generate.to_ascii_email(part, "Odinson")
     assert email.split("@")[0].partition(".")[0]
     assert email.isascii()

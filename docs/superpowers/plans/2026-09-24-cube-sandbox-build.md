@@ -139,7 +139,7 @@ Avro. Pass `build/cube_sandbox/tiny`, not `build/cube_sandbox`. The runbook in
 - Task 1's `scope_values["staff_pii_scope"]` is bounded to the
   `switch (row.staff_pii_scope)` body. The bare `case` regex in the task text
   sweeps five spurious labels from unrelated switches.
-- Task 3 has a sixth persona, `desmond.thistlewane@ktaf-sandbox.invalid`, with
+- Task 3 has a sixth persona, `shaquille.oneal@ktaf-sandbox.invalid`, with
   `reporting_chain` and an empty chain. It exercises the no-group default-deny
   path that exists because Cube errors on an `equals []` row filter.
 - Task 4's `dbt_not_null` matches the test name exactly. A substring match also
@@ -638,9 +638,9 @@ Run: `uv run pytest tests/cube_sandbox/test_personas.py -v` Expected: FAIL with
 # Declared, not generated. canaries.yml references these by email, so they must
 # survive a seed change and a generator refactor.
 personas:
-  - email: amara.fennworth@ktaf-sandbox.invalid
-    given_name: Amara
-    surname: Fennworth
+  - email: diana.taurasi@ktaf-sandbox.invalid
+    given_name: Diana
+    surname: Taurasi
     purpose: Network-wide student access, full staff PII remit.
     scopes:
       student_location_scope: network
@@ -650,9 +650,9 @@ personas:
       staff_benefits_scope: all_in_scope
     reportees: []
 
-  - email: zoe.quillamber@ktaf-sandbox.invalid
-    given_name: Zoë
-    surname: Quillamber
+  - email: ororo.munroe@ktaf-sandbox.invalid
+    given_name: Ororo
+    surname: Munroe
     purpose: School-scoped students; chain-scoped PII with a non-empty chain.
     scopes:
       student_location_scope: school
@@ -661,11 +661,11 @@ personas:
       staff_observations_scope: reporting_chain
       staff_benefits_scope: reporting_chain
     reportees:
-      - soren.bramblehyde@ktaf-sandbox.invalid
+      - zydrunas.ilgauskas@ktaf-sandbox.invalid
 
-  - email: soren.bramblehyde@ktaf-sandbox.invalid
-    given_name: Soren
-    surname: Bramblehyde
+  - email: zydrunas.ilgauskas@ktaf-sandbox.invalid
+    given_name: Žydrūnas
+    surname: Ilgauskas
     purpose: Region-scoped students; teaching-staff PII. Empty chain.
     scopes:
       student_location_scope: region
@@ -675,9 +675,9 @@ personas:
       staff_benefits_scope: none
     reportees: []
 
-  - email: mira.corvasine@ktaf-sandbox.invalid
-    given_name: Mira
-    surname: Corvasine
+  - email: aja.ogwumike@ktaf-sandbox.invalid
+    given_name: A'ja
+    surname: Ogwumike
     purpose: Default-deny on every axis. Resolves to a row with no groups.
     scopes:
       student_location_scope: none
@@ -687,9 +687,9 @@ personas:
       staff_benefits_scope: none
     reportees: []
 
-  - email: orrin.dunmarrow@ktaf-sandbox.invalid
-    given_name: Orrin
-    surname: Dunmarrow
+  - email: karl-anthony.maximoff@ktaf-sandbox.invalid
+    given_name: Karl-Anthony
+    surname: Maximoff
     purpose: Rank-scoped PII with both a remit and a chain.
     scopes:
       student_location_scope: network
@@ -698,7 +698,7 @@ personas:
       staff_observations_scope: all_in_scope
       staff_benefits_scope: none
     reportees:
-      - mira.corvasine@ktaf-sandbox.invalid
+      - aja.ogwumike@ktaf-sandbox.invalid
 ```
 
 Note: `unresolvable@ktaf-sandbox.invalid` is deliberately **absent** from this
@@ -1213,7 +1213,7 @@ from teamster.cube_sandbox import generate
 def test_emails_fold_to_ascii() -> None:
     # google_email is matched exactly by resolveAccess, and a non-ASCII local
     # part needs SMTPUTF8 and is not what any real directory holds.
-    email = generate.to_ascii_email("Zoë", "Quillamber")
+    email = generate.to_ascii_email("Ororo", "Munroe")
     assert email.isascii()
     assert email.endswith("@ktaf-sandbox.invalid")
 
@@ -1943,7 +1943,7 @@ def expectation_met(expect: str, rows: list[tuple], error: str | None) -> bool:
 # Both tiers run this file. KTAF CI owns it, because KTAF owns the marts and
 # the access_policy blocks and must break first when a policy changes.
 canaries:
-  - persona: mira.corvasine@ktaf-sandbox.invalid
+  - persona: aja.ogwumike@ktaf-sandbox.invalid
     query_shape: SELECT count(*) FROM student_attendance_enrollment_daily_view
     expect: BLOCKED
     why: none on every axis emits no group, so the view default-denies.
@@ -1953,12 +1953,12 @@ canaries:
     expect: BLOCKED
     why: no dim_staff_cube_access row at all resolves to an empty context.
 
-  - persona: amara.fennworth@ktaf-sandbox.invalid
+  - persona: diana.taurasi@ktaf-sandbox.invalid
     query_shape: SELECT count(*) FROM student_attendance_enrollment_daily_view
     expect: ROWS
     why: network student scope sees every location.
 
-  - persona: soren.bramblehyde@ktaf-sandbox.invalid
+  - persona: zydrunas.ilgauskas@ktaf-sandbox.invalid
     query_shape: SELECT count(*) FROM staff_pii
     expect: ROWS
     why: teaching_staff PII scope resolves against a non-empty remit.

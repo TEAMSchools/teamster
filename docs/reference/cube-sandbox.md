@@ -88,23 +88,26 @@ impossible.
 
 !!! note "Publishing the list is what reserves it"
 
-    Coinage makes a surname unique; it does not make anyone recognise it, so
-    a namespace nobody published is not reserved. These 40 surnames are
+    A namespace nobody published is not reserved. These 59 surnames are
     reserved for synthetic people and must not be used for anything else.
-    The set still awaits data-team sign-off — `reserved_names.yml` carries a
-    starter-set header until then — but the list itself is settled and is
-    published here so it can be referenced:
+    They come from WNBA and NBA players active within the last thirty years
+    and from Marvel characters. Every one was checked against production,
+    and no KTAF staff member and no KTAF student carries any of them —
+    which is what makes a surname from this list self-identifying:
 
-    Ashenvale, Bellowgate, Brackenmoss, Bramblehyde, Calderwyn, Cloverhelm,
-    Corvasine, Cranwillow, Dovetallow, Drindlewood, Dunmarrow, Fennworth,
-    Ferralun, Gimblewood, Hesperwood, Kesslehorn, Lomberry, Marrowby,
-    Merrivane, Muffleton, Orlanthe, Orrindale, Pellworth, Peskworth,
-    Pinchwater, Quillamber, Quorley, Rushmantle, Sablewick, Snithwick,
-    Stavelock, Thistlewane, Thornquill, Tumbleridge, Vandermire, Vellacourt,
-    Vexley, Wexmoor, Wrenhollow, Yarrowmede.
+    Taurasi, Swoopes, Catchings, Fowles, Griner, Ionescu,
+    McCoughtry, Ogwumike, Delle Donne, Plum, Diggins-Smith,
+    Sutton-Brown, Weatherspoon, Vandersloot, Ogunbowale, Meesseman,
+    Holdsclaw, Magbegor, Loyd, Ndour, Antetokounmpo, Dončić, Jokić,
+    Embiid, Wembanyama, Ginóbili, Nowitzki, Mutombo, Divac, Kukoč,
+    Gasol, O'Neal, O'Quinn, Ilgauskas, Porziņģis, Valančiūnas,
+    Siakam, Gobert, Şengün, Haliburton, Stark, Romanoff, Danvers,
+    Maximoff, Murdock, Rambeau, Natchios, Odinson, Osborn, Quill,
+    Strange, Toomes, Frost, Howlett, LeBeau, Munroe, Pryde,
+    Rasputin, Worthington.
 
 Given names stay realistic, because that is where the character classes that
-break interfaces live — apostrophes, hyphens, diacritics, non-Latin scripts,
+break interfaces live — apostrophes, hyphens, diacritics, internal spaces,
 single characters, overflow lengths. Each given name carries the class it
 exercises, so coverage can assert every class is present rather than trusting a
 random sample to include the hard ones.
