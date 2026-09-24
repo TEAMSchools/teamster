@@ -106,6 +106,28 @@ Replace the heuristic with a `key_columns(cube_root) -> set[tuple[str, str]]` in
 - Task 7 implements all three of `avro_schema`, `bq_schema` and `write`. The
   task's numbered steps cover only the first; Task 10 calls the other two.
 
+### If you are a scheduled cloud agent
+
+You have **no Google Cloud credentials and no sandbox service-account key**.
+Never authenticate to GCP, never run a live load, and never run the snapshot
+refresh — the snapshot is already committed at
+`src/cube/sandbox/schema_snapshot.json`. Tasks 4, 5, 6, 8 and 9 need only
+committed files, so all of them are yours to do.
+
+**Task 11 copies a script from `.claude/scratch/`, which is gitignored and
+absent from your clone.** Write `scripts/cube_sandbox_isolation.py` fresh from
+the spec's Piece 1 section instead. It must run the positive leg first and skip
+the negative leg when the positive fails, tell a real permission denial from a
+missing table, and refuse to impersonate from production credentials.
+
+**Task 10's `main` and Task 11's scripts cannot be run here**, only written and
+unit-tested against fakes. Say so plainly in your report rather than implying a
+live run happened.
+
+Run everything with `uv run`. Push after each task. Leave this Status section
+updated for whoever picks it up next, and end with a list of every ruling you
+made and what it costs if wrong.
+
 **Two Minors deferred for the final review to triage:**
 
 - Task 7: `test_logical_types_map_exactly` never asserts the NUMERIC
