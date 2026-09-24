@@ -62,6 +62,15 @@
     },
     {
       "grade": 11,
+      "test_type": "Practice",
+      "scope": "SAT",
+      "season": "Spring",
+      "months": ["March"],
+      "growth": true,
+      "scope_round": "SAT2"
+    },
+    {
+      "grade": 11,
       "test_type": "Official",
       "scope": "SAT",
       "season": "Winter",
