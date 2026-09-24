@@ -15,16 +15,10 @@ import yaml
 from teamster.cube_sandbox import model, personas, snapshot
 from teamster.cube_sandbox.personas import Persona
 
-_KEY_SUFFIXES = ("_key", "_id", "_identifier", "_number")
-
 CUBE_ROOT = Path("src/cube")
 MARTS_ROOT = Path("src/dbt/kipptaf/models/marts")
 PERSONAS_PATH = CUBE_ROOT / "sandbox" / "personas.yml"
 MANIFEST_PATH = CUBE_ROOT / "sandbox" / "coverage_manifest.yml"
-
-
-def _is_key(column: str) -> bool:
-    return column.endswith(_KEY_SUFFIXES)
 
 
 def _is_not_null_test(test: Any) -> bool:
@@ -65,6 +59,7 @@ def dbt_not_null(marts_root: Path) -> set[tuple[str, str]]:
 def build(
     snap: dict[str, Any],
     referenced: dict[str, set[str]],
+    key_columns: set[tuple[str, str]],
     policy_columns: set[str],
     not_null: set[tuple[str, str]],
     scopes: dict[str, set[str]],
@@ -85,8 +80,12 @@ def build(
                     "status": "uncovered",
                 }
             )
+            # Three derived exemptions, never a name heuristic: a join or
+            # surrogate key (a null one breaks the fixtures), a column an
+            # access_policy filters on (a null one makes the persona resolve
+            # to nothing), and a column dbt asserts is never null.
             exempt = (
-                _is_key(column)
+                (table, column) in key_columns
                 or column in policy_columns
                 or (table, column) in not_null
             )
@@ -207,6 +206,7 @@ def main() -> int:
     result = build(
         snap=snapshot.load(),
         referenced=model.referenced_columns(CUBE_ROOT),
+        key_columns=model.key_columns(CUBE_ROOT),
         policy_columns=model.policy_columns(CUBE_ROOT),
         not_null=dbt_not_null(MARTS_ROOT),
         scopes=model.scope_values(CUBE_ROOT / "access.js"),

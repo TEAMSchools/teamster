@@ -24,6 +24,11 @@ cells:
     column: source_assessment_id
     detail: at least one non-null row
     status: uncovered
+  - kind: "null"
+    table: dim_assessment_administrations
+    column: source_assessment_id
+    detail: at least one null row
+    status: uncovered
   - kind: non_null
     table: dim_assessment_administrations
     column: test_type
@@ -153,6 +158,11 @@ cells:
     table: dim_course_sections
     column: location_key
     detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_course_sections
+    column: location_key
+    detail: at least one null row
     status: uncovered
   - kind: non_null
     table: dim_course_sections
@@ -324,10 +334,20 @@ cells:
     column: month_number
     detail: at least one non-null row
     status: uncovered
+  - kind: "null"
+    table: dim_dates
+    column: month_number
+    detail: at least one null row
+    status: uncovered
   - kind: non_null
     table: dim_dates
     column: quarter_number
     detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_dates
+    column: quarter_number
+    detail: at least one null row
     status: uncovered
   - kind: non_null
     table: dim_dates
@@ -353,6 +373,11 @@ cells:
     table: dim_dates
     column: year_number
     detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_dates
+    column: year_number
+    detail: at least one null row
     status: uncovered
   - kind: non_null
     table: dim_locations
@@ -669,6 +694,11 @@ cells:
     column: manager_staff_key
     detail: at least one non-null row
     status: uncovered
+  - kind: "null"
+    table: dim_staff_reporting_periods
+    column: manager_staff_key
+    detail: at least one null row
+    status: uncovered
   - kind: non_null
     table: dim_staff_reporting_periods
     column: staff_key
@@ -703,11 +733,6 @@ cells:
     table: dim_staff_work_history
     column: effective_start_date
     detail: at least one non-null row
-    status: uncovered
-  - kind: "null"
-    table: dim_staff_work_history
-    column: effective_start_date
-    detail: at least one null row
     status: uncovered
   - kind: non_null
     table: dim_staff_work_history
@@ -904,10 +929,20 @@ cells:
     column: entry_date_key
     detail: at least one non-null row
     status: uncovered
+  - kind: "null"
+    table: dim_student_enrollments
+    column: entry_date_key
+    detail: at least one null row
+    status: uncovered
   - kind: non_null
     table: dim_student_enrollments
     column: exit_date_key
     detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_student_enrollments
+    column: exit_date_key
+    detail: at least one null row
     status: uncovered
   - kind: non_null
     table: dim_student_enrollments
@@ -1004,11 +1039,6 @@ cells:
     column: is_current_homeroom
     detail: at least one non-null row
     status: uncovered
-  - kind: "null"
-    table: dim_student_section_enrollments
-    column: is_current_homeroom
-    detail: at least one null row
-    status: uncovered
   - kind: non_null
     table: dim_student_section_enrollments
     column: is_current_section_enrollment
@@ -1079,6 +1109,11 @@ cells:
     column: district_student_identifier
     detail: at least one non-null row
     status: uncovered
+  - kind: "null"
+    table: dim_students
+    column: district_student_identifier
+    detail: at least one null row
+    status: uncovered
   - kind: non_null
     table: dim_students
     column: enrollment_status
@@ -1139,10 +1174,20 @@ cells:
     column: salesforce_contact_id
     detail: at least one non-null row
     status: uncovered
+  - kind: "null"
+    table: dim_students
+    column: salesforce_contact_id
+    detail: at least one null row
+    status: uncovered
   - kind: non_null
     table: dim_students
     column: state_student_identifier
     detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_students
+    column: state_student_identifier
+    detail: at least one null row
     status: uncovered
   - kind: non_null
     table: dim_students
@@ -1204,10 +1249,20 @@ cells:
     column: location_key
     detail: at least one non-null row
     status: uncovered
+  - kind: "null"
+    table: dim_terms
+    column: location_key
+    detail: at least one null row
+    status: uncovered
   - kind: non_null
     table: dim_terms
     column: school_id
     detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_terms
+    column: school_id
+    detail: at least one null row
     status: uncovered
   - kind: non_null
     table: dim_terms
@@ -1314,6 +1369,11 @@ cells:
     column: performance_band_label_number
     detail: at least one non-null row
     status: uncovered
+  - kind: "null"
+    table: fct_assessment_scores_enrollment_scoped
+    column: performance_band_label_number
+    detail: at least one null row
+    status: uncovered
   - kind: non_null
     table: fct_assessment_scores_enrollment_scoped
     column: proficiency_level
@@ -1378,6 +1438,11 @@ cells:
     table: fct_assessment_scores_enrollment_scoped
     column: test_date_key
     detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: fct_assessment_scores_enrollment_scoped
+    column: test_date_key
+    detail: at least one null row
     status: uncovered
   - kind: non_null
     table: fct_student_attendance_enrollment_daily
@@ -1624,15 +1689,30 @@ cells:
     column: period_end_date_key
     detail: at least one non-null row
     status: uncovered
+  - kind: "null"
+    table: fct_student_attendance_enrollment_periods
+    column: period_end_date_key
+    detail: at least one null row
+    status: uncovered
   - kind: non_null
     table: fct_student_attendance_enrollment_periods
     column: period_start_date_key
     detail: at least one non-null row
     status: uncovered
+  - kind: "null"
+    table: fct_student_attendance_enrollment_periods
+    column: period_start_date_key
+    detail: at least one null row
+    status: uncovered
   - kind: non_null
     table: fct_student_attendance_enrollment_periods
     column: period_start_membership_date_key
     detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: fct_student_attendance_enrollment_periods
+    column: period_start_membership_date_key
+    detail: at least one null row
     status: uncovered
   - kind: non_null
     table: fct_student_attendance_enrollment_periods

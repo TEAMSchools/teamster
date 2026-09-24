@@ -43,6 +43,45 @@ def test_policy_columns_descends_into_or_and_and_blocks() -> None:
     assert "job_function_level" in cols
 
 
+def test_key_columns_finds_primary_keys_and_join_columns() -> None:
+    keys = model.key_columns(CUBE_ROOT)
+    # A `primary_key: true` dimension's column.
+    assert ("dim_student_section_enrollments", "student_section_enrollment_key") in keys
+    # The `{CUBE}.<column>` side of a join predicate.
+    assert ("dim_student_section_enrollments", "lead_teacher_staff_key") in keys
+    # The `{other_cube.member}` side, resolved through the other cube's
+    # dimension to its own table's column.
+    assert ("dim_course_sections", "course_section_key") in keys
+    # Every entry names a real table and a real column, never a cube or a
+    # view-member name.
+    assert all("." not in t and "." not in c for t, c in keys)
+
+
+def test_key_columns_resolves_role_play_cubes_through_extends() -> None:
+    keys = model.key_columns(CUBE_ROOT)
+    # staff_lead_teacher carries no sql_table of its own — it is
+    # `extends: staff`. student_section_enrollments joins it as
+    # `{staff_lead_teacher.staff_key} = {CUBE}.lead_teacher_staff_key`, so
+    # without resolving extends the join's far side names a cube with no
+    # table and the key silently goes missing from dim_staff.
+    assert ("dim_staff", "staff_key") in keys
+
+
+def test_the_student_identifiers_are_not_keys() -> None:
+    keys = model.key_columns(CUBE_ROOT)
+    # These three are the reason the name-suffix heuristic had to go. They end
+    # in `_identifier`, so a suffix rule exempts them from needing a null cell
+    # — but they are routinely null for a newly enrolled student, which is the
+    # exact case the sandbox exists to teach. Nothing joins on them and none is
+    # a primary key, so a structural rule leaves them un-exempt.
+    for column in (
+        "state_student_identifier",
+        "district_student_identifier",
+        "lea_student_identifier",
+    ):
+        assert ("dim_students", column) not in keys
+
+
 def test_scope_values_come_from_access_js() -> None:
     values = model.scope_values(CUBE_ROOT / "access.js")
     assert "staff_pii_scope" in values

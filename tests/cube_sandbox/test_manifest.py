@@ -26,6 +26,7 @@ def test_keys_and_policy_columns_are_exempt_from_the_null_rule() -> None:
     cells = manifest.build(
         snap=SNAP,
         referenced={"dim_x": {"student_key", "nickname", "abbreviation"}},
+        key_columns={("dim_x", "student_key")},
         policy_columns={"abbreviation"},
         not_null=set(),
         scopes={},
@@ -36,10 +37,60 @@ def test_keys_and_policy_columns_are_exempt_from_the_null_rule() -> None:
     assert _null_columns(cells) == {"nickname"}
 
 
+def test_key_exemption_is_per_table_not_per_column_name() -> None:
+    # The exemption is keyed on (table, column), so the same column name on a
+    # table that does not join on it still needs a null cell. A bare set of
+    # column names — or the name-suffix heuristic this replaced — would exempt
+    # both.
+    snap = {
+        "tables": {
+            "dim_x": {"student_key": {"type": "STRING", "nullable": True}},
+            "dim_y": {"student_key": {"type": "STRING", "nullable": True}},
+        }
+    }
+    cells = manifest.build(
+        snap=snap,
+        referenced={"dim_x": {"student_key"}, "dim_y": {"student_key"}},
+        key_columns={("dim_x", "student_key")},
+        policy_columns=set(),
+        not_null=set(),
+        scopes={},
+        people=[],
+    )["cells"]
+    assert {(c["table"], c["column"]) for c in cells if c["kind"] == "null"} == {
+        ("dim_y", "student_key")
+    }
+
+
+def test_an_identifier_suffix_alone_does_not_exempt() -> None:
+    # state_student_identifier is routinely null for a newly enrolled student,
+    # and nothing joins on it. The old `_identifier` suffix rule exempted it
+    # from ever getting a null cell, which is the one case the sandbox most
+    # needs to teach.
+    snap = {
+        "tables": {
+            "dim_students": {
+                "state_student_identifier": {"type": "STRING", "nullable": True}
+            }
+        }
+    }
+    cells = manifest.build(
+        snap=snap,
+        referenced={"dim_students": {"state_student_identifier"}},
+        key_columns=set(),
+        policy_columns=set(),
+        not_null=set(),
+        scopes={},
+        people=[],
+    )["cells"]
+    assert _null_columns(cells) == {"state_student_identifier"}
+
+
 def test_dbt_not_null_columns_are_exempt() -> None:
     cells = manifest.build(
         snap=SNAP,
         referenced={"dim_x": {"nickname"}},
+        key_columns=set(),
         policy_columns=set(),
         not_null={("dim_x", "nickname")},
         scopes={},
@@ -65,6 +116,7 @@ def test_persona_with_an_unhandled_scope_value_is_rejected() -> None:
         manifest.build(
             snap={"tables": {}},
             referenced={},
+            key_columns=set(),
             policy_columns=set(),
             not_null=set(),
             scopes={"staff_pii_scope": {"all_in_scope"}},
@@ -88,6 +140,7 @@ def test_persona_with_a_non_none_sensitive_tier_value_is_accepted() -> None:
     result = manifest.build(
         snap={"tables": {}},
         referenced={},
+        key_columns=set(),
         policy_columns=set(),
         not_null=set(),
         scopes={"staff_compensation_scope": {"__non_none__"}},
@@ -101,6 +154,7 @@ def test_scope_cells_skip_the_non_none_sentinel() -> None:
     cells = manifest.build(
         snap={"tables": {}},
         referenced={},
+        key_columns=set(),
         policy_columns=set(),
         not_null=set(),
         scopes={
