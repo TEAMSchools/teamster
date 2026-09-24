@@ -49,8 +49,9 @@ where
     and sr.home_department_name not in ('Teaching and Learning', 'Data', 'Executive')
     and sr.home_work_location_is_campus
     and not sr.home_work_location_is_pathways
-    -- Miami left Illuminate ahead of AY2026-27
-    and sr.home_work_location_dagster_code_location != 'kippmiami'
+    -- Miami left Illuminate ahead of AY2026-27 (#4777, #5537)
+    and sr.home_work_location_dagster_code_location
+    in ('kippnewark', 'kippcamden', 'kipppaterson')
 
 union all
 
@@ -74,8 +75,9 @@ where
     worker_status_code != 'Terminated'
     and home_department_name not in ('Teaching and Learning', 'Data', 'Executive')
     and not home_work_location_is_campus
-    -- Miami left Illuminate ahead of AY2026-27
-    and home_work_location_dagster_code_location != 'kippmiami'
+    -- Miami left Illuminate ahead of AY2026-27 (#4777, #5537)
+    and home_work_location_dagster_code_location
+    in ('kippnewark', 'kippcamden', 'kipppaterson')
 
 union all
 
@@ -95,5 +97,5 @@ select
     1 as `05 Session Type ID`,
 -- trunk-ignore-end(sqlfluff/RF05)
 from {{ ref("int_people__temp_staff") }}
--- Miami left Illuminate ahead of AY2026-27
-where dagster_code_location != 'kippmiami'
+-- Miami left Illuminate ahead of AY2026-27 (#4777, #5537)
+where dagster_code_location in ('kippnewark', 'kippcamden', 'kipppaterson')
