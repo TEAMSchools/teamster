@@ -231,12 +231,12 @@ group membership is not what decides who can reach these pages.
 > `Gradebook Group` exists, with that spelling and capitalization. On a new
 > instance, create it; don't try to force a particular ID.
 
-> 🛑 **Known gap:** only the list page carries this guard.
-> `gradebook_expectations_new.html`, `_edit`, `_insert`, and `_delete` have no
-> group check, so any authenticated PS admin user who navigates directly to
-> those URLs can add or delete expectations records without being in
-> `Gradebook Group`. Requires an admin login, so this is not public exposure —
-> but the access control is not as broad as it looks. Fix pending.
+> 🛑 **Known gap:** the guard does not cover every page, and where it is present
+> it fails open when the group is absent. So group membership is not what
+> decides who can reach these pages today. Reaching them still requires an
+> authenticated PS admin login, so this is not public exposure. Fix pending —
+> see the access-control TODO in the plugin README, and the Data Team's Asana
+> task for the specifics.
 
 ### To find, create, or populate the group
 
