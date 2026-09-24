@@ -574,12 +574,12 @@ starts meaning "keeping up with yourself."
 **T&L's four reporting categories are those two verdicts combined, with the
 at-grade-level one winning outright:**
 
-| Label                      | Rule                                              |
-| -------------------------- | ------------------------------------------------- |
-| On Track & Meeting Aimline | at grade level -- regardless of what on-pace says |
-| Meeting Aimline, Off-Track | on pace, not yet at grade level                   |
-| Below Aimline              | neither                                           |
-| Not Tested                 | the participation gate                            |
+| Label                                 | Rule                                              |
+| ------------------------------------- | ------------------------------------------------- |
+| Meeting Aimline, Meeting Benchmark    | at grade level -- regardless of what on-pace says |
+| Meeting Aimline, Not Yet at Benchmark | on pace, not yet at grade level                   |
+| Below Aimline                         | neither                                           |
+| Not Tested                            | the participation gate                            |
 
 That first row is a rider from T&L's own definition -- "if a student is meeting
 benchmark but not aimline, they should still be in this category" -- so it is a

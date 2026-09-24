@@ -296,7 +296,7 @@ valid grade range** on the Expected Assessments sheet. Raise it with academics
 as a testing-assignment error; do not propose adding rows to the goals table,
 and do not treat the null as noise -- it makes the at-or-above-benchmark
 comparison unevaluable, which is exactly the test that separates On Track &
-Meeting Aimline from Meeting Aimline, Off Track.
+Meeting Aimline from Meeting Aimline, Not Yet at Benchmark.
 
 ## "It should match prod" means diff every column, not the row count
 

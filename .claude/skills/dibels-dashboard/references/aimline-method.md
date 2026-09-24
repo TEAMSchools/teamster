@@ -83,14 +83,15 @@ three-in-a-row variant.
 - `Not Tested` overrides every other category, because they define it at the
   round: not tested on one or more of the round's expected measures means Not
   Tested for the whole round, including the measures they did sit.
-- `Meeting Aimline, On-Track` fires on the benchmark alone, per their rule that
-  a student meeting benchmark but not aimline still belongs there. The label
-  overstates what it checks; that is their wording.
-- `No Aimline Data, On-Track` and `No Aimline Data, Off-Track` are the fifth and
-  sixth categories their four omit. Academics chose to show the score and flag
-  the missing target rather than hide the row or call it Not Tested. The same
-  words, `No Aimline Data`, name the same condition on every other aimline
-  status column -- one spelling network-wide since 2026-09-19.
+- `Meeting Aimline, Meeting Benchmark` fires on the benchmark alone, per their
+  rule that a student meeting benchmark but not aimline still belongs there. The
+  label overstates what it checks; that is their wording.
+- `No Aimline Data, Meeting Benchmark` and
+  `No Aimline Data, Not Yet at Benchmark` are the fifth and sixth categories
+  their four omit. Academics chose to show the score and flag the missing target
+  rather than hide the row or call it Not Tested. The same words,
+  `No Aimline Data`, name the same condition on every other aimline status
+  column -- one spelling network-wide since 2026-09-19.
 - `aimline_status` is the source the verdict is translated FROM, and stops at
   this model -- the extract does not publish it, because
   `measure_standard_goal_status` already carries the same verdict in academics'
@@ -127,7 +128,7 @@ Three things to say when this comes up:
 
 - **Take it from the verdict, not from `aimline_category`.** The category
   applies T&L's benchmark-wins rule, so 696 AY2025 rows read
-  `Meeting Aimline, On-Track` while below the aimline. For an
+  `Meeting Aimline, Meeting Benchmark` while below the aimline. For an
   intervention-targeting metric the label undercounts the problem set.
 - **Name the grain on every view.** AY2025 "% not meeting" runs 56.8% at measure
   standard, 65.1% at name code, 72.9% at round, and 77.6% at round with the
@@ -274,9 +275,11 @@ everywhere except two places, both settled by the dashboard owner on 2026-09-19
 after reading the doc against the model. **Do not "correct" either one back to
 the doc.**
 
-- **`Meeting Aimline, On-Track`** -- the doc says "On Track and Meeting
-  Aimline". Kept as is so it reads as a pair with `Meeting Aimline, Off-Track`.
-  Same concept, better-matched siblings.
+- **`Meeting Aimline, Meeting Benchmark`** -- the doc says "On Track and Meeting
+  Aimline". Academics chose this wording on 2026-09-24; it read
+  `Meeting Aimline, On-Track` before, and `Off-Track` became
+  `Not Yet at Benchmark` at the same time. Do not bring On-Track or Off-Track
+  back into any Aimline and Benchmark label.
 - **`Not Tested` vs `Round Incomplete`** -- the doc defines Not Tested as "not
   PM tested on ONE OR MORE measures", i.e. our Round Incomplete. Split
   deliberately, for two reasons worth repeating to whoever asks: cohort-level
@@ -486,16 +489,16 @@ Before building any of it:
   aimline. Do not implement it by keeping the aimline as a hidden tiebreaker,
   and do not implement benchmark-first plus aimline: measured, that makes
   Trajectory an exact copy of Aimline and Benchmark.
-- Renaming `Meeting Aimline, On-Track` to `Meeting Aimline, Meeting Benchmark`
-  while leaving the 490 in it makes the label false for them. Raise it before
-  shipping the rename.
+- The 490 students below aimline but at benchmark (681 AY2025 rows) sit in
+  `Meeting Aimline, Meeting Benchmark`, so the label is false for them.
+  Academics knew and chose that on 2026-09-24. Do not move them.
 - Label renames break literal-string calcs in the workbook. Hand the user the
   old and new values when the extract changes.
-- Partial rounds are held out at Round granularity only. Never extend the
-  hold-out to Measure Standard or Measure granularity; academics want a
-  partial-round student's sat measures scored there. Join the roster's
-  `round_test_status` to find the rounds, the way `aimline_round_category`
-  already does.
+- Partial rounds differ by comparison item, on purpose. The Aimline item holds
+  them out at Round granularity only and scores each sat measure at Measure
+  Standard and Measure. Aimline and Benchmark holds them out as
+  `Round Incomplete` at every grain, because the percent-tested reporting asked
+  for by Alisha Fairfax needs incomplete as its own state. Do not align the two.
 
 **Reading a roster row.** Grain is student x measure standard x season x round,
 one row per round -- "every score so far at round 3" is three stacked rows, not
@@ -636,10 +639,10 @@ reached their end-of-season goal. Those are different students, and on ORF it is
    correction.
 2. Do not show the season goal or the season gap on the dashboard. Academics
    asked for both to be hidden on 2026-09-24. Next to the verdict they read as a
-   contradiction: "Season Gap 0" beside "Meeting Aimline, Off-Track" makes sense
-   only once you see the round target was 8, the score 13, and the benchmark 30.
-   `aimline_season_student_goal` and its gap stay in the extract; do not bind
-   them to a view or propose them for one.
+   contradiction: "Season Gap 0" beside "Meeting Aimline, Not Yet at Benchmark"
+   makes sense only once you see the round target was 8, the score 13, and the
+   benchmark 30. `aimline_season_student_goal` and its gap stay in the extract;
+   do not bind them to a view or propose them for one.
 3. The evidence above is observational, not vendor-documented. Confirming it
    with Amplify is still open. Say so rather than citing it as their spec.
    Academics reviewed the difference and accepted this definition on 2026-09-24.

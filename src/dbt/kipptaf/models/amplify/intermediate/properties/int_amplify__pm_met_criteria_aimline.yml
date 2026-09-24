@@ -108,9 +108,11 @@ models:
         data_type: string
         description: >-
           T&L's reporting category for the row, per measure standard — Meeting
-          Aimline On-Track, Meeting Aimline Off-Track, Below Aimline, No Aimline
-          Data On-Track, No Aimline Data Off-Track, or Round Incomplete. Their
-          definitions, from the PM guidance document, in the order the case
+          Aimline, Meeting Benchmark; Meeting Aimline, Not Yet at Benchmark;
+          Below Aimline; No Aimline Data, Meeting Benchmark; No Aimline Data,
+          Not Yet at Benchmark; or Round Incomplete. Academics renamed the four
+          benchmark labels on 2026-09-24 to name the benchmark explicitly; they
+          read On-Track and Off-Track before. Definitions in the order the case
           tests them.
 
           Round Incomplete comes first and overrides everything else, because
@@ -123,15 +125,16 @@ models:
           those Not Tested, which is the distinction between the two words: no
           row means never sat, Round Incomplete means sat some but not all.
 
-          Meeting Aimline, On-Track is at or above both the aimline and the
-          benchmark. T&L add that a student meeting benchmark but not aimline
-          belongs here too, so the case tests the benchmark ahead of the aimline
-          verdict and the label slightly overstates what it checks — 6,844
-          AY2025 rows, of which 696 are actually below the aimline. That is
-          their wording and their rule, recorded here so nobody 'corrects' it.
+          Meeting Aimline, Meeting Benchmark is at or above both the aimline and
+          the benchmark. T&L add that a student meeting benchmark but not
+          aimline belongs here too, so the case tests the benchmark ahead of the
+          aimline verdict and the label overstates what it checks for those
+          students. Academics were asked on 2026-09-24 and chose to leave them
+          here, accepting the inaccuracy. That is their rule, recorded here so
+          nobody 'corrects' it.
 
-          Meeting Aimline, Off-Track is at or above the aimline but not the
-          benchmark. Below Aimline is below the aimline.
+          Meeting Aimline, Not Yet at Benchmark is at or above the aimline but
+          not the benchmark. Below Aimline is below both.
 
           The two No Aimline Data values cover what T&L's four do not — the
           probe was sat and Amplify published no verdict, so neither Below
@@ -139,7 +142,8 @@ models:
           the score and flag the missing target rather than hide the row. They
           split by benchmark the same way the Meeting values do, because a
           missing aimline verdict says nothing about whether the student is on
-          pace: No Aimline Data, On-Track met the benchmark, Off-Track did not.
+          pace: No Aimline Data, Meeting Benchmark met the benchmark; No Aimline
+          Data, Not Yet at Benchmark did not.
 
           Missing data is deliberately NOT folded into T&L's benchmark-wins rule
           above. That rule is about a student who missed a known aimline, and
@@ -267,13 +271,13 @@ models:
         description: >-
           The aimline verdict and the benchmark verdict answered together at
           measure name code grain — Round Incomplete, Below Aimline, No Aimline
-          Data, Meeting Aimline Off-Track, or Meeting Aimline On-Track. It
-          exists because meeting the aimline and being on course for the
-          benchmark are different questions, and a leader looking at one code
-          wants both at once.
+          Data, Meeting Aimline, Not Yet at Benchmark, or Meeting Aimline,
+          Meeting Benchmark. It exists because meeting the aimline and being on
+          course for the benchmark are different questions, and a leader looking
+          at one code wants both at once.
 
-          Precedence runs incomplete, then below, then unpublished, then
-          off-track. A student short on any standard under the code takes the
+          Precedence runs incomplete, then below, then unpublished, then not yet
+          at benchmark. A student short on any standard under the code takes the
           worse label, so the column never reports better than its worst
           component.
         config:

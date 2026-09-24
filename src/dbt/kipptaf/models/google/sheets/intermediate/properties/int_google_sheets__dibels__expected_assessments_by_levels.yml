@@ -202,8 +202,8 @@ models:
           Benchmark score the student is measured against for the at-grade-level
           half of the reporting category. Amplify supplies the aimline, which
           answers whether a student is on pace; this answers whether they are at
-          grade level yet, and the pair is what separates On Track and Meeting
-          Aimline from Meeting Aimline, Off-Track.
+          grade level yet, and the pair is what separates Meeting Aimline,
+          Meeting Benchmark from Meeting Aimline, Not Yet at Benchmark.
 
           A null means the measure was assigned outside its valid grade range
           rather than a goal being missing. dibels_goals_long is University of

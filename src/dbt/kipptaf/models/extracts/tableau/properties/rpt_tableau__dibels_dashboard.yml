@@ -696,10 +696,12 @@ models:
       - name: aimline_category
         data_type: string
         description: >-
-          T&L's reporting category -- Meeting Aimline On-Track, Meeting Aimline
-          Off-Track, Below Aimline, No Aimline Data On-Track, No Aimline Data
-          Off-Track, or Round Incomplete. Aimline rows only, and Not Tested here
-          where the student has no row in the aimline model at all.
+          T&L's reporting category -- Meeting Aimline, Meeting Benchmark;
+          Meeting Aimline, Not Yet at Benchmark; Below Aimline; No Aimline Data,
+          Meeting Benchmark; No Aimline Data, Not Yet at Benchmark; or Round
+          Incomplete. The benchmark labels read On-Track and Off-Track until
+          2026-09-24. Aimline rows only, and Not Tested here where the student
+          has no row in the aimline model at all.
 
           Round Incomplete and Not Tested are different states: Round Incomplete
           means the student sat some of the round's measures but not all, Not
@@ -939,10 +941,11 @@ models:
           It crosses the two flags directly, `met_measure_standard_goal` for the
           verdict and `met_admin_benchmark_goal` for the trajectory, and that is
           deliberate rather than reading `aimline_category`. The category
-          applies T&L's benchmark-wins rule, so 713 AY2025 rows sit in Meeting
-          Aimline, On-Track with `met_measure_standard_goal = 0` — reporting a
-          below-aimline row as meeting one. For the intervention-targeting views
-          these buckets feed, the verdict is what academics mean.
+          applies T&L's benchmark-wins rule, so 681 AY2025 rows sit in Meeting
+          Aimline, Meeting Benchmark with `met_measure_standard_goal = 0` —
+          reporting a below-aimline row as meeting one. For the
+          intervention-targeting views these buckets feed, the verdict is what
+          academics mean.
 
           It also ignores round completeness, where `aimline_category` puts
           Round Incomplete first and overrides everything. Academics' legend has
