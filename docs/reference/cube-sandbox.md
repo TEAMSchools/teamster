@@ -55,10 +55,59 @@ fabricated data would be absurd, so the rule is stated instead:
 
 ## Emulating a persona
 
-Two paths, both covering every persona the manifest fabricates. Personas are
-declared in `src/cube/sandbox/personas.yml` — hand-written, never generated,
-because `canaries.yml` names them and a persona referenced by name has to
-survive a seed change.
+Personas are declared in `src/cube/sandbox/personas.yml` — hand-written, never
+generated, because `canaries.yml` names them and a persona referenced by name
+has to survive a seed change.
+
+### The seven identities
+
+| Address                                      | Students       | Staff PII                                               |
+| -------------------------------------------- | -------------- | ------------------------------------------------------- |
+| `sheryl.swoopes@ktaf-sandbox.invalid`        | every location | every staff member                                      |
+| `ororo.munroe@ktaf-sandbox.invalid`          | her school     | her reporting chain, which has one person in it         |
+| `zydrunas.ilgauskas@ktaf-sandbox.invalid`    | his region     | teaching staff in his region                            |
+| `karl-anthony.maximoff@ktaf-sandbox.invalid` | every location | his chain, plus anyone below his rank in his department |
+| `shaquille.oquinn@ktaf-sandbox.invalid`      | his school     | **denied** — reporting chain is empty                   |
+| `aja.ogwumike@ktaf-sandbox.invalid`          | **denied**     | **denied**                                              |
+| `unresolvable@ktaf-sandbox.invalid`          | **denied**     | **denied**                                              |
+
+Every `*_scope` column of `dim_staff_cube_access`, per persona:
+
+| Scope column               | Swoopes      | Munroe          | Ilgauskas      | Ogwumike | Maximoff                      | O'Quinn         |
+| -------------------------- | ------------ | --------------- | -------------- | -------- | ----------------------------- | --------------- |
+| `student_location_scope`   | network      | school          | region         | none     | network                       | school          |
+| `staff_location_scope`     | network      | school          | region         | none     | network                       | school          |
+| `staff_department_scope`   | all          | own_group       | all            | none     | own_group                     | own_group       |
+| `staff_pii_scope`          | all_in_scope | reporting_chain | teaching_staff | none     | reporting_chain_or_below_rank | reporting_chain |
+| `staff_compensation_scope` | all_in_scope | none            | none           | none     | reporting_chain               | none            |
+| `staff_observations_scope` | none         | reporting_chain | none           | none     | all_in_scope                  | none            |
+| `staff_benefits_scope`     | all_in_scope | reporting_chain | none           | none     | none                          | none            |
+
+Reporting chains: Munroe → Ilgauskas, and Maximoff → Ogwumike. Everyone else has
+an empty chain.
+
+`staff_location_scope` and `staff_department_scope` are the remit pair, and they
+are the two a reader misses. They reach `access.js` as the parameters `locScope`
+and `deptScope`, so searching that file for `*_scope` finds five columns rather
+than seven. `hasRemit` is the AND of both resolving non-empty, so a persona that
+omits them default-denies on `staff_pii` whatever its `staff_pii_scope` says.
+
+Three of the seven deny, each for a different reason, and the differences are
+the point:
+
+- **O'Quinn** — his remit is deliberately non-empty, so a `staff_pii` refusal is
+  attributable to the empty chain alone. Production cannot reach that branch,
+  because Cube hard-errors on an `equals []` row filter instead of returning
+  zero rows ([#4269](https://github.com/TEAMSchools/teamster/issues/4269)).
+- **Ogwumike** — `none` on all seven axes: a real row that resolves to no groups
+  at all. She can still read `staff_directory`, which any resolved identity can.
+- **Unresolvable Odinson** — no `dim_staff_cube_access` row whatsoever. Denied
+  even `staff_directory`, which is the only way to distinguish "known user with
+  no access" from "unknown user".
+
+### The two paths
+
+Both cover every persona the manifest fabricates.
 
 - **SQL API** — open one connection per persona, with the persona's address as
   the connecting user and the deployment's SQL password. Identity is the
@@ -75,6 +124,47 @@ deployment with its own secret.
 
 `CUBE_IMPERSONATORS` governs the Cube Cloud web UI, which MasterBorn does not
 have, and is KTAF-only.
+
+### The canaries
+
+Ten assertions over those identities, in `src/cube/sandbox/canaries.yml`. KTAF
+CI owns the file and MasterBorn's kit suite runs it unmodified, so it carries no
+PII and names only fabricated people.
+
+| Persona      | View                                       | Expect  |
+| ------------ | ------------------------------------------ | ------- |
+| Ogwumike     | `student_attendance_enrollment_daily_view` | BLOCKED |
+| Unresolvable | `student_attendance_enrollment_daily_view` | BLOCKED |
+| Ogwumike     | `staff_pii`                                | BLOCKED |
+| Swoopes      | `student_attendance_enrollment_daily_view` | ROWS    |
+| Ilgauskas    | `staff_pii`                                | ROWS    |
+| Munroe       | `staff_pii`                                | ROWS    |
+| O'Quinn      | `staff_pii`                                | BLOCKED |
+| Maximoff     | `staff_pii`                                | ROWS    |
+| Ilgauskas    | `staff_directory`                          | ROWS    |
+| Unresolvable | `staff_directory`                          | BLOCKED |
+
+`BLOCKED` asserts the real SQL API denial text,
+`Table or CTE with name '<view>' not found`. **A quiet zero rows against a
+`BLOCKED` canary is a failure, not a pass.** That single rule is what forces
+sign-off against the deployment: a dev-mode server downgrades a hard denial to
+an empty result, so a dev-mode run would report a falsely clean suite
+([#4605](https://github.com/TEAMSchools/teamster/issues/4605)).
+
+At least one `ROWS` canary is required. A suite of denials alone goes green
+against a deployment that denies everyone, which looks identical to perfect
+isolation.
+
+Cube Cloud routes on the database name, so the runner needs the deployment name
+passed explicitly — its default suits a local Cube server and no cloud
+deployment:
+
+```bash
+uv run python scripts/cube_rls_matrix.py \
+  --expect src/cube/sandbox/canaries.yml \
+  --host <sql api host> --port <sql api port> \
+  --dbname <deployment name> --password <sql api password>
+```
 
 ## The reserved name namespace
 
@@ -173,6 +263,7 @@ with no cloud access.
 | `uv run python -m teamster.cube_sandbox.snapshot`           | Refresh the schema snapshot from production         | No (needs prod)     |
 | `uv run python -m teamster.cube_sandbox.manifest`           | Regenerate `coverage_manifest.yml`                  | No                  |
 | `uv run python -m teamster.cube_sandbox.checks`             | Assert model, snapshot and manifest agree           | No                  |
+| `uv run python -m teamster.cube_sandbox.collisions`         | Assert no reserved surname belongs to a real person | No (needs prod)     |
 | `uv run python -m teamster.cube_sandbox.generate --scale …` | Write one Avro file per table to a local directory  | No                  |
 | `uv run python -m teamster.cube_sandbox.coverage`           | Score the generated Avro against the manifest       | No                  |
 | `uv run python -m teamster.cube_sandbox.load`               | Stage to GCS, create the tables, load, verify       | Yes                 |
