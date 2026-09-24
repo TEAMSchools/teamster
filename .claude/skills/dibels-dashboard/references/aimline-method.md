@@ -627,6 +627,7 @@ reached their end-of-season goal. Those are different students, and on ORF it is
    round target was 8, the score was 13, and the grade-level benchmark was 30.
 3. The evidence above is observational, not vendor-documented. Confirming it
    with Amplify is still open. Say so rather than citing it as their spec.
+   Academics reviewed the difference and accepted this definition on 2026-09-24.
 4. Verify at the raw file, not the extract. Re-checked 2026-09-24 at every
    layer: the raw aimline file agrees on 56,265 of 56,265 rows, the SY26-27 base
    PM file on 121 of 121, the verdict model on 32,999 of 32,999. All 2,401 rows
