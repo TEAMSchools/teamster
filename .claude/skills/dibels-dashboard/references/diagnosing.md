@@ -94,13 +94,13 @@ Four rules for this class of question:
   id against enrollment rules out a rename entirely, because it never touches a
   name. That is the check that actually closes the question. Which column holds
   the id depends on the year -- see the header rename below.
-- **Reading the raw SFTP file is available and cheap.** Credentials come from
-  the pytest session fixture, so a throwaway `tests/**/test_zz_*.py` using
+- **Reading the raw SFTP file is available and cheap.** A throwaway pytest (root
+  CLAUDE.md _Tooling_) using
   `SSH_RESOURCE_AMPLIFY.process_config_and_initialize()` plus
   `setup_for_execution(build_init_resource_context())` can list the tree and
   download a file. Do not report an export as empty without it when the question
   is whether the vendor sent the data. Print aggregates only, never student
-  rows, and delete the test file afterwards.
+  rows.
 
 Two facts about the remote layout, current as of 2026-09-15: SY2025-2026 files
 live under `/25-26/BM` and `/25-26/PM` while SY2026-2027 files are at `/BM` and
@@ -173,17 +173,12 @@ academics source is a separate sheet:
 Academics replace this each year, so re-read it rather than trusting the values
 recorded here, and update this link if they move it.
 
-**Reading it needs ADC from Python -- both MCP routes fail.** Do not spend time
-rediscovering this:
-
-- The **BigQuery MCP cannot read a Sheets external at all.** Its service account
-  carries no Drive scope, so `src_google_sheets__*` returns
-  `Permission denied while getting Drive credentials`. Sharing the file with
-  anyone changes nothing -- it is a missing OAuth scope, not a file permission.
-- The **Drive MCP reads it, then `check-output.sh` redacts the whole response**
-  as containing a high-entropy string, which any real spreadsheet has somewhere.
-  `read_file_content` and `get_file_metadata` both come back as
-  `[redacted: secret material]` with no content.
+**Reading it needs ADC from Python -- both MCP routes fail.** The BigQuery MCP
+cannot read Sheets externals (`.claude/context/bigquery.md`), and the **Drive
+MCP reads it, then `check-output.sh` redacts the whole response** as containing
+a high-entropy string, which any real spreadsheet has somewhere.
+`read_file_content` and `get_file_metadata` both come back as
+`[redacted: secret material]` with no content.
 
 What works is `scripts/read_sheet_tabs.py`, which requests
 `spreadsheets.readonly` and `drive.readonly` through ADC and writes each tab to
@@ -240,23 +235,11 @@ gets, and neither name says so on its own:
   `rpt_gsheets__dibels_bm_goals_calculations` joins the two so a student is
   measured against the aggregate matching their level.
 
-`benchmark_goal_season` on the assessment side is the season a row is measured
-AGAINST, which is the next one (`BOY -> MOY`, `MOY -> EOY`, `EOY -> null`). The
-join is `a.benchmark_goal_season = f.period`, so a BOY row looks for the goal
-FOR MOY.
-
-**This is correct behaviour, not a bug.** The academics sheet sets MOY and EOY
-goals per grade, and grades 6-8 deliberately get EOY only -- K-2 and 3-5 carry
-both. K-2 is also the only band with `grade_range_goal` populated. Verified
+The missing BOY goals for grades 6-8 (above) are correct behaviour, not a bug:
+do not widen the join to reach the EOY goal early -- an EOY target is not a
+mid-year one. K-2 is the only band with `grade_range_goal` populated. Verified
 against AY2026: grades 0-5 have 6 MOY and 6 EOY rows each, grades 6-8 have 0 MOY
 and 6 EOY, and only grades 0-2 have non-null range goals.
-
-Because a BOY row is measured against the MOY goal, grades 6-8 have nothing to
-measure against at BOY, and a blank goal is the honest output. They pick up
-their goal once MOY testing lands, where `MOY -> EOY` matches their EOY row. So
-the first paste of a year covering K-5 only is expected; do not widen the join
-to reach the EOY goal early -- an EOY target is not a mid-year one, and
-academics chose not to set a mid-year target for these grades.
 
 **Do not use the AY2025 `bm_goals` tab as evidence against this.** It does
 contain grades 6-8 at `period = 'BOY'` carrying the foundation EOY goal, which
@@ -394,9 +377,7 @@ chain. Do not report a change as done on a subset.
    be the ones you intended and no others.
 6. **Column presence.** `INFORMATION_SCHEMA.COLUMNS` on the dev relation -- the
    new name present, the old name absent.
-7. **Lint.**
-   `/workspaces/teamster/.trunk/tools/trunk check --force --no-fix <changed files> </dev/null`,
-   with `trunk fmt` first if it reports formatting.
+7. **Lint** per root CLAUDE.md _Linting_.
 8. **Update this skill and the reference document in the same turn**, not later.
    Also flag any Tableau workbook exposure you could not verify -- the
    datasource is embedded and VizQL returns 500 on those, so a dropped or

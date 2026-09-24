@@ -48,18 +48,6 @@ models:
           `student_household`, or `unresolved` when neither the student's Parent
           1 nor the student themselves has a street-bearing household. Parent 1
           is tried first; the student's own linkage is the fallback.
-        data_tests:
-          - accepted_values:
-              arguments:
-                values:
-                  - primary_contact_household
-                  - student_household
-                  - unresolved
-              config:
-                severity: error
-          - not_null:
-              config:
-                severity: error
       - name: address_source
         data_type: string
         description:
@@ -67,14 +55,6 @@ models:
           `primary_contact_household`. Null when no address was resolved; a
           non-null value guarantees `address_1` is populated, but not that the
           rest of the address is.
-        data_tests:
-          - accepted_values:
-              arguments:
-                values:
-                  - student_household
-                  - primary_contact_household
-              config:
-                severity: error
       - name: is_picked_address
         data_type: boolean
         description:

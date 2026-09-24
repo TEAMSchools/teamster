@@ -78,13 +78,6 @@ apply). This satisfies "flag against Amplify's own average" -- it does NOT
 satisfy "average across our own population", which is the unresolved Round 2
 question above.
 
-**BigQuery gotcha hit while adding it**: a bare `null` in one `UNION ALL` branch
-and a real `BOOL` expression in a sibling branch fails with
-`Column N in UNION ALL has incompatible types: BOOL, INT64` -- BigQuery infers a
-bare `null` as `INT64` by default. Fix:
-`cast(null as bool) as is_above_average_growth` in the branch that doesn't
-compute it.
-
 ## Benchmark is not per data model -- it must be single-sourced
 
 `data_model` distinguishes the two **PM** methods. Benchmark has no such split:
@@ -305,8 +298,7 @@ Two bugs of this shape in one session on `int_amplify__all_assessments`:
 
 So a clean build is not evidence the branches line up. When editing either
 branch of a wide union, diff the two projected column lists by ordinal, not by
-eye. The repo convention of enumerating columns per branch (never `select *`) is
-the correctness fix here, not just the CV03 lint fix.
+eye.
 
 ## `all_assessments` carries scored rows only -- do not LEFT join the scores
 

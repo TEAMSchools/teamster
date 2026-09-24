@@ -21,7 +21,6 @@ PowerSchool data source: **dlt** (Oracle over SSH tunnel → BigQuery;
 
 ## Source Packages
 
-Package list: `packages.yml` is ground truth (see `src/dbt/CLAUDE.md`).
 District-specific notes:
 
 - `iready` uses `iready_schema: kippnj_iready`

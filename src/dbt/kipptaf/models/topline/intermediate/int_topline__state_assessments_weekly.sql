@@ -9,22 +9,10 @@ with
             week_start_monday,
             week_end_sunday,
             discipline,
-            entrydate,
-            is_enrolled_week,
         from {{ ref("int_extracts__student_enrollments_subjects_weeks") }}
         /* Miami FAST keeps every year; NJ state tests keep the reporting window */
         where
             region = 'Miami' or academic_year >= {{ var("current_academic_year") - 1 }}
-    ),
-
-    subject_weeks_deduplicate as (
-        {{
-            dbt_utils.deduplicate(
-                relation="subject_weeks",
-                partition_by="student_number, academic_year, week_start_monday, discipline",
-                order_by="is_enrolled_week desc, entrydate desc",
-            )
-        }}
     )
 
 select
@@ -38,7 +26,7 @@ select
     rt.name as test_round,
 
     fl.is_proficient_int,
-from subject_weeks_deduplicate as cw
+from subject_weeks as cw
 inner join
     {{ ref("stg_google_sheets__reporting__terms") }} as rt
     on cw.academic_year = rt.academic_year
@@ -66,7 +54,7 @@ select
     'Spring' as test_round,
 
     p.is_proficient_int,
-from subject_weeks_deduplicate as cw
+from subject_weeks as cw
 inner join
     {{ ref("int_pearson__all_assessments") }} as p
     on cw.state_studentnumber = p.statestudentidentifier

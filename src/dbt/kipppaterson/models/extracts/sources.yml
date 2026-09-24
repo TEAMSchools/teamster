@@ -19,3 +19,12 @@ sources:
                 - kipptaf
                 - extracts
                 - rpt_powerschool__autocomm_students
+      - name: rpt_powerschool__autocomm_students_iep
+        config:
+          meta:
+            dagster:
+              group: extracts
+              asset_key:
+                - kipptaf
+                - extracts
+                - rpt_powerschool__autocomm_students_iep

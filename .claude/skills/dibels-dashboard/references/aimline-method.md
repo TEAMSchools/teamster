@@ -104,10 +104,11 @@ three-in-a-row variant.
 
 Validated on AY2025 against PROD: 36,502 rows, exact grain, six tests pass, 5
 rows lost to the roster join (3 Newark students, in the yml). Measure documented
-counts against prod, never a dev build -- `--favor-state` does NOT defer a model
-that already exists in your dev schema, so a stale `zz_<user>_*` copy silently
-wins and the build looks authoritative. That is how nine figures in these docs
-were wrong for four days.
+counts against prod, never a dev build -- `--favor-state --defer` resolves
+unselected upstreams to prod, but a query against a `zz_<user>_*` relation (or a
+selected model built from stale inputs) reads whatever that dev copy holds, and
+the result looks authoritative. That is how nine figures in these docs were
+wrong for four days.
 
 ## "% meeting aimline, overall and by measure" is three grains, and all three already exist
 
@@ -190,11 +191,6 @@ condition at every grain (the round column said `No Aimline Status` until
 So a view can switch between the three aimline grains with one colour legend. A
 view mixing an aimline grain with an internal one cannot -- only `Not Tested` is
 shared.
-
-Only `Not Tested` is shared, so a combined view needs its own colour legend.
-`admin_benchmark_goal_status` reads `Met Benchmark` / `Did Not Meet Benchmark`
-on both, because the benchmark standard is the one grain that does not depend on
-method. It is the only status column whose values match across the two.
 
 They exist because `met_pm_round_overall_criteria = 0` means both "did not meet"
 and "could not be evaluated". `Round Incomplete` keys on

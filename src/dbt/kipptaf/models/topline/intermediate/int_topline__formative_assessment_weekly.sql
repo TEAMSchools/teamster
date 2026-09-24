@@ -43,9 +43,7 @@ with
             and sw.academic_year = rr.academic_year
             and sw.discipline = rr.discipline
             and rr.administered_at between sw.week_start_monday and sw.week_end_sunday
-        where
-            sw.is_enrolled_week
-            and sw.academic_year >= {{ var("current_academic_year") - 1 }}
+        where sw.academic_year >= {{ var("current_academic_year") - 1 }}
     ),
 
     assessment_weeks_scored as (

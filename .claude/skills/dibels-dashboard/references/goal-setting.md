@@ -311,12 +311,12 @@ DBT_PROFILES_DIR=.dbt uv run dbt build --select <staging_model_name> \
 ```
 
 Both are dev-schema / personal-copy operations, not classifier-blocked (see
-`src/dbt/CLAUDE.md`). `stage_external_sources` SKIPs an existing table without
-`ext_full_refresh: true` -- easy to miss, shows as a silent no-op rather than an
-error. Then query the rebuilt `zz_<user>_kipptaf_google_sheets.<model>` table
-directly to confirm row counts and spot-check values against what was pasted,
-per (academic_year, region, population) or whatever the grain is -- don't trust
-a green build alone as proof the data landed correctly.
+`src/dbt/CLAUDE.md`). Without `ext_full_refresh: true` the first is a silent
+no-op (see _Stage last_ in `sheets-and-sources.md`). Then query the rebuilt
+`zz_<user>_kipptaf_google_sheets.<model>` table directly to confirm row counts
+and spot-check values against what was pasted, per (academic_year, region,
+population) or whatever the grain is -- don't trust a green build alone as proof
+the data landed correctly.
 
 ### Step 6 -- audit before trusting it
 
@@ -613,12 +613,9 @@ happened.
 So a cancelled round leaves the season's goals slightly too gradual, and fixing
 that is a decision, not a patch: it means teaching `pm_expectations` to project
 and filter the column, which changes whether a cancelled round bounds the
-season. Watch the trap when doing it — `WHERE` is evaluated before window
-functions, so filtering in the same `SELECT` that computes `min_pm_round` /
-`max_pm_round` silently redefines the season's first and last round (measured on
-AY2025: 675 rows shifted on `min`, 1,386 on `max`). That was reverted once
-already in this PR for exactly that reason. Raise it with academics rather than
-deciding it as a side effect.
+season. Watch the `WHERE`-before-window trap in _Do not hoist a downstream
+filter into the shared gate_ in `model-architecture.md` (point 1). Raise it with academics rather
+than deciding it as a side effect.
 
 **Either way the goals sheet is rebuilt in full, never cell-edited.** Disabling
 a measure changes `min_pm_round` / `max_pm_round` for the season, which decides
