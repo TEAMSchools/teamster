@@ -1,24 +1,5 @@
 # CLAUDE.md — `tests/`
 
-## Test Categories
-
-- **Root-level `test_*.py`** — unit tests for Dagster definitions, IO managers,
-  automation conditions, utils. No external connections required.
-- **`tests/assets/`** — integration tests per source system. Require env vars
-  and external connections; not run in CI by default.
-- **`tests/sensors/`, `tests/schedules/`, `tests/ops/`, `tests/resources/`** —
-  component-level tests. Many have `archive/` subdirectories (deprecated tests
-  prefixed with `_test_`).
-
-## Running Tests
-
-```bash
-uv run pytest                                                          # all tests
-uv run pytest tests/test_dagster_definitions.py                        # single file
-uv run pytest tests/test_dagster_definitions.py::test_definitions_kipptaf  # single test
-uv run pytest tests/assets/test_assets_dbt.py                         # requires env vars
-```
-
 ## Patterns
 
 - **Definitions validation**: calls `dagster definitions validate` via
@@ -120,8 +101,10 @@ runs all of them; each `test_*.sh` covers one rule area; `helpers.sh` provides
   `check-output.sh`. Read clean ranges only, or anchor Edits on a non-fixture
   line (e.g. `print_summary`).
 - Synthetic secret fixtures: split the literal (`"sk_live""_..."`,
-  `'-----BEGIN ''PRIVATE KEY-----'`) so gitleaks' source scan misses it but bash
+  `'-----BEGIN PRIVATE'' KEY-----'`) so gitleaks' source scan misses it but bash
   rebuilds the value at run time — cleaner than a `trunk-ignore`, which trips
   `trunk/ignore-does-nothing` when gitleaks wouldn't have flagged it anyway.
+  Split inside the text `check-output.sh` matches, not beside it, or reading the
+  source file gets redacted too.
 - New detection rules: add benign outputs to `test_fp_corpus.sh` and measure
   against it — it is the false-positive back-out gauge.

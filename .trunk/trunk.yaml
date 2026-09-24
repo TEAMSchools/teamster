@@ -8,7 +8,7 @@ plugins:
       uri: https://github.com/trunk-io/plugins
 lint:
   enabled:
-    - pinact@4.1.1
+    - pinact@5.0.0
     - bandit@1.9.4
     - actionlint@1.7.12
     - git-diff-check
@@ -18,9 +18,9 @@ lint:
     - markdownlint@0.49.1
     - osv-scanner@2.6.0
     - oxipng@10.2.1
-    - prettier@3.9.6
+    - prettier@3.9.8
     - pyright@1.1.414
-    - ruff@0.16.7
+    - ruff@0.16.8
     - shellcheck@0.11.0
     - shfmt@3.14.1
     - sqlfluff@4.3.0

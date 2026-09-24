@@ -102,11 +102,11 @@ change.
 Compiles to the column SUPERSET from source-table `INFORMATION_SCHEMA.COLUMNS`,
 null-filling absent columns with `cast(null as <type>)`
 (`dbt_utils/macros/sql/union.sql`). It needs persisted relations, so it cannot
-union a local CTE — for that, BigQuery `full union all corresponding` gives the
-same superset/null-fill semantics. New columns added at package-level staging
-don't surface at kipptaf-level consumers until district projects rebuild prod.
-For single-PR refactors, add transformations at the kipptaf-level wrapper, not
-at package level.
+union a local CTE — for that, write a positional `union all` over enumerated
+columns with `cast(null as <type>)` padding (see `.claude/rules/dbt-sql.md`).
+New columns added at package-level staging don't surface at kipptaf-level
+consumers until district projects rebuild prod. For single-PR refactors, add
+transformations at the kipptaf-level wrapper, not at package level.
 
 **Value-only vs column change**: a value-only edit to a package model needs no
 staging — the column set is unchanged, so kipptaf CI compiles and corrected

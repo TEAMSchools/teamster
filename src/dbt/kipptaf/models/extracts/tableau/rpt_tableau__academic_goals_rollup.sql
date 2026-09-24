@@ -52,7 +52,7 @@ with
         from {{ ref("int_pearson__all_assessments") }}
         where
             assessment_name = 'NJSLA'
-            and not (assessmentgrade = 'Grade 8' and `subject` like 'Algebra%')
+            and not (gradelevelwhenassessed = 8 and `subject` like 'Algebra%')
 
         union all
 

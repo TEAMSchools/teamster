@@ -117,6 +117,12 @@ engineering planning.
 Naming convention: `YYYY-MM-DD-<brief-description>.md` (e.g.,
 `2026-03-20-powerschool-odbc-staleness-refactor-design.md`).
 
+Don't edit a spec or plan to track implementation after it's approved. The PR
+diff, commits and review threads record how the build diverged. Edit one only
+when the user asks, or when review changes the design itself; then add a dated
+revision section rather than rewriting. A doc-only push to a branch with dbt
+changes reruns the whole CI selection.
+
 ## When to Update Docs
 
 Update docs for engineering-level changes:

@@ -112,6 +112,17 @@ def _observes_fallback(user: dict[str, Any]) -> bool:
     )
 
 
+# A Regional Observer observes every observee at each school their scope
+# names, not only their own reports, so they get a group of their own rather
+# than a seat in anyone else's.
+REGIONAL_OBSERVER_GROUP = "Regional Observers"
+
+
+def _observes_whole_school(user: dict[str, Any]) -> bool:
+    """A Regional Observer who can anchor a group."""
+    return _can_anchor_group(user) and "Regional Observer" in user["role_names"]
+
+
 def _at_school(
     school_users: list[dict[str, Any]],
     users_by_grow_id: dict[str, dict[str, Any]],
@@ -271,13 +282,26 @@ def grow_user_sync(
             school_users, users_by_grow_id, _observes_fallback
         )
 
+        regional_observers = sorted(
+            u["user_id"]
+            for u in users
+            if u["user_id"] is not None
+            and school_id in u["regional_admin_school_ids"]
+            and _observes_whole_school(u)
+        )
+
         # Route every observee to their coach's group, or to the fallback.
+        # `observees` collects the same people again, undivided, for the
+        # Regional Observers group.
         by_coach: dict[str, list[str]] = {}
         uncoached: list[str] = []
+        observees: list[str] = []
 
         for u in school_users:
             if "observees" not in u["group_type"]:
                 continue
+
+            observees.append(u["user_id"])
 
             coach_id = u["coach_id"]
             coach = users_by_grow_id.get(coach_id) if coach_id is not None else None
@@ -298,13 +322,24 @@ def grow_user_sync(
             "Teachers": {
                 "observees": uncoached,
                 "observers": school_observers if uncoached else [],
-            }
+            },
+            # Read from the scope the extract writes, not from `school_users`,
+            # so an observer scoped past their own campus reaches every school
+            # their scope names. Both sides empty together, on the same
+            # reasoning as Teachers above.
+            REGIONAL_OBSERVER_GROUP: {
+                "observees": observees if regional_observers else [],
+                "observers": regional_observers if observees else [],
+            },
         }
         # Parenthesised employee number, so a display-name change relabels
         # the group without breaking its identity. None (e.g. Teachers) gets
         # no fallback match. Kept separate from `wanted` so it never leaks
         # into the payload sent to the Grow API.
-        match_keys: dict[str, str | None] = {"Teachers": None}
+        match_keys: dict[str, str | None] = {
+            "Teachers": None,
+            REGIONAL_OBSERVER_GROUP: None,
+        }
 
         for coach_id, observee_ids in by_coach.items():
             coach = users_by_grow_id[coach_id]

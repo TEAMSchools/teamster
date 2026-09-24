@@ -244,7 +244,7 @@ models:
         config:
           meta:
             source_system: PowerSchool
-            source_model: int_powerschool__terms
+            source_model: int_powerschool__terms_spine
             source_column: term
       - name: semester
         data_type: string
@@ -252,7 +252,7 @@ models:
         config:
           meta:
             source_system: PowerSchool
-            source_model: int_powerschool__terms
+            source_model: int_powerschool__terms_spine
             source_column: semester
       - name: quarter_start_date
         data_type: date
@@ -260,7 +260,7 @@ models:
         config:
           meta:
             source_system: PowerSchool
-            source_model: int_powerschool__terms
+            source_model: int_powerschool__terms_spine
             source_column: term_start_date
       - name: quarter_end_date
         data_type: date
@@ -268,7 +268,7 @@ models:
         config:
           meta:
             source_system: PowerSchool
-            source_model: int_powerschool__terms
+            source_model: int_powerschool__terms_spine
             source_column: term_end_date
       - name: quarter_start_date_alt
         data_type: date
@@ -296,7 +296,7 @@ models:
         config:
           meta:
             source_system: PowerSchool
-            source_model: int_powerschool__terms
+            source_model: int_powerschool__terms_spine
             source_column: is_current_term
       - name: first_day_school_year
         data_type: date

@@ -332,7 +332,12 @@ fi
 # and Dagster/dbt run launches carry free text outbound but matched no verb.
 if [[ ${tool_name} == webfetch || ${tool_name} == websearch ]] ||
 	[[ ${tool_name} =~ ^mcp__.*(create|update|write|add|comment|upload|send|post|put|delete|append|insert|merge|push|reply|share|forward|schedule|launch|trigger) ]]; then
-	if echo "${path}" | grep -qiE 'op://|-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|PRIVATE KEY-----|AIza[0-9A-Za-z_-]{35}|ya29\.[0-9A-Za-z_-]+|goog_[a-zA-Z0-9_-]+|eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}|ops_eyJ[A-Za-z0-9_-]{50,}|AKIA[0-9A-Z]{16}|(postgres(ql)?|mysql|mongodb(\+srv)?)://[^[:space:]]+:[^[:space:]]+@|"type"[[:space:]]*:[[:space:]]*"service_account"|gh[pusor]_[A-Za-z0-9_]{36,}|github_pat_[A-Za-z0-9_]{22,}|xox[baprs]-[0-9A-Za-z-]{10,}|\b(sk|rk)_(live|test)_[0-9A-Za-z]{16,}|hooks\.slack\.com/services/[A-Za-z0-9/]+|aws_secret_access_key["[:space:]:=]+[A-Za-z0-9/+]{40}'; then
+	if echo "${path}" | grep -qiE 'op://[^/{}[:space:]]+/|-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|PRIVATE KEY-----|AIza[0-9A-Za-z_-]{35}|ya29\.[0-9A-Za-z_-]+|goog_[a-zA-Z0-9_-]+|eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}|ops_eyJ[A-Za-z0-9_-]{50,}|AKIA[0-9A-Z]{16}|(postgres(ql)?|mysql|mongodb(\+srv)?)://[^[:space:]]+:[^[:space:]]+@|"type"[[:space:]]*:[[:space:]]*"service_account"|gh[pusor]_[A-Za-z0-9_]{36,}|github_pat_[A-Za-z0-9_]{22,}|xox[baprs]-[0-9A-Za-z-]{10,}|\b(sk|rk)_(live|test)_[0-9A-Za-z]{16,}|hooks\.slack\.com/services/[A-Za-z0-9/]+|aws_secret_access_key["[:space:]:=]+[A-Za-z0-9/+]{40}'; then
 		deny "check-sensitive.sh Section 4: this outbound write carries a secret-shaped value (1Password reference, private-key header, cloud token, JWT, connection string, service-account JSON). Redact it (write op-uri) before sending."
+	fi
+	# Asana PAT: 1/<gid>:<32 hex> (legacy) or 2/<gid>/<gid>:<32 hex>. Mirrors the
+	# Asana PAT branch of secret_re in check-output.sh.
+	if echo "${path}" | grep -qiE '\b[12]/[0-9]+(/[0-9]+)?:[0-9a-f]{32}\b'; then
+		deny "check-sensitive.sh Section 4: this outbound write carries an Asana personal access token. Redact it before sending."
 	fi
 fi
