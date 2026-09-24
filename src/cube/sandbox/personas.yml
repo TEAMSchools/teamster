@@ -1,0 +1,64 @@
+# Declared, not generated. canaries.yml references these by email address, so
+# they must survive a seed change and a generator refactor.
+personas:
+  - email: amara.fennworth@ktaf-sandbox.invalid
+    given_name: Amara
+    surname: Fennworth
+    purpose: Network-wide student access, full staff PII remit.
+    scopes:
+      student_location_scope: network
+      staff_pii_scope: all_in_scope
+      staff_compensation_scope: all_in_scope
+      staff_observations_scope: none
+      staff_benefits_scope: all_in_scope
+    reportees: []
+
+  - email: zoe.quillamber@ktaf-sandbox.invalid
+    given_name: Zoë
+    surname: Quillamber
+    purpose: School-scoped students; chain-scoped PII with a non-empty chain.
+    scopes:
+      student_location_scope: school
+      staff_pii_scope: reporting_chain
+      staff_compensation_scope: none
+      staff_observations_scope: reporting_chain
+      staff_benefits_scope: reporting_chain
+    reportees:
+      - soren.bramblehyde@ktaf-sandbox.invalid
+
+  - email: soren.bramblehyde@ktaf-sandbox.invalid
+    given_name: Soren
+    surname: Bramblehyde
+    purpose: Region-scoped students; teaching-staff PII. Empty chain.
+    scopes:
+      student_location_scope: region
+      staff_pii_scope: teaching_staff
+      staff_compensation_scope: none
+      staff_observations_scope: none
+      staff_benefits_scope: none
+    reportees: []
+
+  - email: mira.corvasine@ktaf-sandbox.invalid
+    given_name: Mira
+    surname: Corvasine
+    purpose: Default-deny on every axis. Resolves to a row with no groups.
+    scopes:
+      student_location_scope: none
+      staff_pii_scope: none
+      staff_compensation_scope: none
+      staff_observations_scope: none
+      staff_benefits_scope: none
+    reportees: []
+
+  - email: orrin.dunmarrow@ktaf-sandbox.invalid
+    given_name: Orrin
+    surname: Dunmarrow
+    purpose: Rank-scoped PII with both a remit and a chain.
+    scopes:
+      student_location_scope: network
+      staff_pii_scope: reporting_chain_or_below_rank
+      staff_compensation_scope: reporting_chain
+      staff_observations_scope: all_in_scope
+      staff_benefits_scope: none
+    reportees:
+      - mira.corvasine@ktaf-sandbox.invalid
