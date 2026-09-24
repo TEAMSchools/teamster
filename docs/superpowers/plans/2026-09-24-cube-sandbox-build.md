@@ -60,6 +60,61 @@ line's test is added to the task that owns the code.
 
 ---
 
+## Status — updated 2026-09-24
+
+**Resuming? Read this section, then the execution order below, then start at the
+first task not marked complete.** Trust this block and `git log` over any
+recollection. The SDD ledger under `.superpowers/` carries more detail but is
+gitignored, so it may not exist in your checkout.
+
+| Task       | State                  | Commits            |
+| ---------- | ---------------------- | ------------------ |
+| 1          | Complete, review clean | `82c68d9..3c080e0` |
+| 2          | Complete, review clean | `3c080e0..e5eadca` |
+| 3          | Complete, review clean | `e5eadca..09272d8` |
+| 7          | Complete, review clean | `09272d8..7d76082` |
+| 10         | Complete, review clean | `7d76082..84f7dd8` |
+| 4          | **Mid fix round 1**    | `84f7dd8..6b449e1` |
+| 5, 6, 8, 9 | Not started            | —                  |
+| 11–16      | Not started            | —                  |
+
+**Task 4's open finding**, if the fix round did not land: `_KEY_SUFFIXES` in
+`manifest.py` exempts any column ending `_key`/`_id`/`_identifier`/`_number`
+from needing a null cell. That wrongly exempts `state_student_identifier`,
+`district_student_identifier` and `lea_student_identifier`, which are routinely
+null for a newly enrolled student — the exact case the sandbox exists to teach.
+Replace the heuristic with a `key_columns(cube_root) -> set[tuple[str, str]]` in
+`model.py` derived from `primary_key: true` dimensions and columns named in
+`joins[].sql`, then regenerate the manifest.
+
+**Decisions taken during execution that the task text does not carry:**
+
+- Task 1's `scope_values` returns `{region, school, network}` for
+  `student_location_scope` as a documented literal. The regex in the task text
+  returns an empty set against the real `access.js`.
+- Task 1's `policy_columns` recurses into nested `or`/`and` filter blocks.
+  Without it `job_function_level` is missed and the
+  `reporting_chain_or_below_rank` persona silently resolves to nothing.
+- Task 1's `scope_values["staff_pii_scope"]` is bounded to the
+  `switch (row.staff_pii_scope)` body. The bare `case` regex in the task text
+  sweeps five spurious labels from unrelated switches.
+- Task 3 has a sixth persona, `desmond.thistlewane@ktaf-sandbox.invalid`, with
+  `reporting_chain` and an empty chain. It exercises the no-group default-deny
+  path that exists because Cube errors on an `equals []` row filter.
+- Task 4's `dbt_not_null` matches the test name exactly. A substring match also
+  catches `not_null_proportion`, which asserts a proportion rather than absence.
+- Task 7 implements all three of `avro_schema`, `bq_schema` and `write`. The
+  task's numbered steps cover only the first; Task 10 calls the other two.
+
+**Two Minors deferred for the final review to triage:**
+
+- Task 7: `test_logical_types_map_exactly` never asserts the NUMERIC
+  `precision`/`scale`. A future narrowing would pass the suite and silently
+  truncate. Likely a must-fix.
+- Task 10: the `trunk-ignore(bandit/B608)` comment states as absolute that
+  project and dataset are never user input. True of the only call site, not of
+  the signature.
+
 ## Execution order
 
 The task numbers below are stable — dependencies, reviews and the ledger all
