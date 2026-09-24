@@ -32,6 +32,31 @@ real records, carries re-identification risk, and needs a risk threshold nobody
 at KTAF has set. Fabrication carries none of that, which is what makes this days
 of work rather than a governance project.
 
+### What the sandbox reproduces, and what it does not
+
+"Teach the awkward parts loudly" is not a licence to seed defects. The audience
+is developers learning to build, and a sandbox full of dirty data teaches them
+to filter around it. In production that same instinct means a workaround instead
+of a data ticket.
+
+Test every proposed hazard against this:
+
+| Kind                | Example                                         | In the sandbox |
+| ------------------- | ----------------------------------------------- | -------------- |
+| Semantic hazard     | ISO week grouping over PowerSchool school weeks | Reproduce      |
+| Domain reality      | Diacritics in names, orphans, legitimate nulls  | Reproduce      |
+| Data-quality defect | Two unreconciled spellings of one category      | Do not         |
+
+A semantic hazard means the data is right and the query is wrong. No ticket
+exists, the model is correct and documented, and the only remedy is learning it
+— so the sandbox is the one place to meet it.
+
+A data-quality defect has a fix, in dbt, filed as a ticket. Reproducing it
+teaches the wrong layer and rewards a workaround.
+
+Domain reality is neither: it is what the world contains, it will never be
+ticketed away, and a kit that cannot handle it is broken.
+
 ## What the sandbox is, precisely
 
 A separate Cube Cloud deployment reading a separate BigQuery project. Three
@@ -159,12 +184,22 @@ deterministic from committed inputs.
 
 ### Required cells
 
-- **Every column: at least one null row and one non-null row.** Exempting two
-  classes, each derived rather than listed: join and surrogate keys, taken from
-  the join-path fixtures; and columns any `access_policy` filters on, taken from
-  parsing the views' policy blocks. A null join key breaks the fixtures the
-  manifest defines, and a null policy column makes the persona resolve to
-  nothing.
+- **A null row and a non-null row per column, except where the warehouse says
+  otherwise.** Three exemptions, each derived rather than listed: columns with a
+  dbt `not_null` test, which is the warehouse's own declaration that the column
+  is never null; join and surrogate keys, from the join-path fixtures; and
+  columns any `access_policy` filters on, from parsing the views' policy blocks.
+  A null join key breaks the fixtures the manifest defines, and a null policy
+  column makes the persona resolve to nothing.
+
+  `INFORMATION_SCHEMA` cannot drive this — every column in `kipptaf_marts`
+  reports `NULLABLE`, so it exempts nothing. The dbt tests carry the real
+  contract, and they are committed, so this needs no production read.
+
+  A column that is never null in practice but carries no `not_null` test is a
+  missing test. The sandbox nulling it surfaces that, and the fix is a dbt
+  ticket — which is the right layer.
+
 - **Every `*_scope` enum value the code handles**, as a fabricated
   `dim_staff_cube_access` row.
 - **Every derived state `buildGroups` branches on**: `hasRemit` and `hasChain`,
@@ -283,13 +318,10 @@ one.
 
 **Phones: the `555-01xx` block**, reserved for fiction.
 
-**Categorical values: several spellings per category.** Production's categorical
-columns carry unreconciled spellings from two source systems — one category
-appears both as a long parenthetical form and a short slashed form, and gender
-values mix single letters with full phrases. A generator emitting one canonical
-spelling per category would make the sandbox cleaner than production, which the
-fidelity rule forbids. Emit several spellings per category. The spellings
-themselves are invented, like every other value.
+**Categorical values: one spelling per category.** Production carries
+unreconciled spellings from two source systems in some categorical columns. The
+sandbox does not reproduce that, on the rule below: it is a data-quality defect,
+and the fix is a dbt ticket rather than kit code.
 
 **`staff_benefits_scope`: two distinct non-`none` values, plus `none`.**
 `access.js` branches on `!== "none"`, never on a value list. One non-`none`
