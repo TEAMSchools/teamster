@@ -7,40 +7,29 @@ const { CubejsHandlerError } = require("@cubejs-backend/api-gateway");
 
 const groupCache = new Map(); // email → { ctx, expiresAt }
 
-// Which dataset the IDENTITY reads come from. Defaults to prod, so an unset
-// deployment behaves exactly as before. Overriding it points resolveAccess at a
-// developer's own `zz_<user>_marts` copy of dim_staff_cube_access, which is the
-// only way to exercise a change to that mart before it is built to prod — the
-// view's shape (is_employee, additional_location_grants) has to exist for the
-// grant logic to do anything, and a `SELECT *` against an older prod copy
-// silently returns undefined for both rather than erroring.
-//
-// Scope is deliberately narrow: ONLY the two dim_staff_cube_access reads.
-// dim_locations and dim_staff_reporting_chain stay on prod, because a dev copy
-// of the location universe would silently change every viewer's resolved
-// abbreviations and make the run untrustworthy for the opposite reason.
-// Only a personal dev schema is honored, and that shape check IS the safety
-// property. There is no reliable Cube Cloud marker to gate on (see the
-// contextToGroups notes below), and NODE_ENV cannot serve as one either — the
-// documented local RLS sign-off runs NODE_ENV=production on purpose. So the
-// value itself has to be the thing that cannot point anywhere dangerous: a
-// deployment that sets this by accident, or a value naming another prod
-// dataset, falls back to kipptaf_marts instead of silently resolving identity
-// somewhere else. Dev schemas are zz_<user>_<schema> (repo .dbt/profiles.yml).
-function resolveAccessDataset(raw) {
-  const fallback = "kipptaf_marts";
-  if (!raw) return fallback;
-  if (/^zz_[a-z0-9_]+$/.test(raw)) return raw;
+// Which dataset the IDENTITY reads come from — the two dim_staff_cube_access
+// queries only. dim_locations and dim_staff_reporting_chain stay on prod: a dev
+// copy of the location universe would change every viewer's resolved
+// abbreviations and make a passing run untrustworthy for the opposite reason.
+// The gating rules live in access.resolveAccessDataset, which is unit-tested.
+const ACCESS_DATASET = access.resolveAccessDataset(
+  process.env.CUBE_ACCESS_DATASET,
+  Boolean(process.env.CUBEJS_DB_BQ_CREDENTIALS),
+);
+
+// Say so on every startup where the override is in force, not only when it is
+// rejected. A silently honored redirect of identity resolution is the thing
+// worth seeing in a log; a silently ignored one is the safe outcome.
+if (ACCESS_DATASET !== "kipptaf_marts") {
   console.warn(
     JSON.stringify({
-      event: "cube_access_dataset_ignored",
-      message: `CUBE_ACCESS_DATASET must name a zz_ dev schema; ignoring "${raw}" and reading identity from ${fallback}.`,
+      event: "cube_access_dataset_override",
+      dataset: ACCESS_DATASET,
+      message:
+        "Identity reads are resolving against a dev copy of dim_staff_cube_access, not kipptaf_marts. Expected only on a local run.",
     }),
   );
-  return fallback;
 }
-
-const ACCESS_DATASET = resolveAccessDataset(process.env.CUBE_ACCESS_DATASET);
 
 // Global (not per-email) cache of the "universes" computeAllowedAbbreviations
 // / computeAllowedDepartmentGroups need: every location abbreviation+region

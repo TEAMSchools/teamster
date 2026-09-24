@@ -251,6 +251,29 @@ for `resolveAccess failed for <email>`. Two causes, in order of likelihood: a
 stale ADC token, or the dev server is serving a checkout whose `resolveAccess`
 predates the ADC fallback — see the warning under [Local Dev](#local-dev).
 
+**Testing a change to `dim_staff_cube_access` itself.** The identity read is a
+`SELECT *` against `kipptaf_marts`, so a column the deployed view does not have
+yet comes back undefined rather than erroring — a local run then looks green
+while exercising none of the new logic. Build the mart into your dev schema and
+point the identity read at it:
+
+```bash
+CUBE_ACCESS_DATASET=zz_<you>_kipptaf_marts NODE_ENV=production CUBEJS_DEV_MODE=false npm run dev
+```
+
+Two gates govern it, and both must hold. The value must match `^zz_[a-z0-9_]+$`,
+and the BigQuery credentials variable must be unset — the local ADC path. Every
+working deployment sets those credentials, so the override cannot take effect on
+one, whatever the value. That matters because `zz_` is the prefix of every
+developer's own writable schema: honored in prod, it would let anyone resolve
+their own identity row. A honored override logs `cube_access_dataset_override`
+at startup.
+
+It redirects the two `dim_staff_cube_access` reads only. `dim_locations` stays
+on prod deliberately — a dev copy of the location universe would change every
+viewer's resolved abbreviations, and a matrix that passed against it would prove
+nothing.
+
 **The SQL API is ground truth.** It is the surface Superset/BI actually use, and
 identity resolves per connection, so one script covers every viewer. Tesseract
 (`CUBEJS_TESSERACT_SQL_PLANNER`, default `true`) is the planner on the SQL API,

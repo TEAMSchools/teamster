@@ -184,7 +184,7 @@ with
                 else 'none'
             end as location_scope,
         from {{ ref("stg_google_sheets__people__cube_access_individual_exceptions") }}
-        where is_live
+        where {{ is_live_row("status", "grant_date", "expiry_date") }}
     ),
 
     -- At most one live row per grantee should set these, which
@@ -208,7 +208,7 @@ with
     -- One struct per live location-grant row, array_agg'd per employee so this
     -- mart keeps its 1-row-per-staff_key grain while carrying however many
     -- grants that person has. access.js unions the abbreviations from every
-    -- element (see src/cube/access.js and src/cube/CLAUDE.md).
+    -- element (see src/cube/access.js and .claude/rules/cube-authoring.md).
     individual_exception_grants as (
         select
             iel.google_email,

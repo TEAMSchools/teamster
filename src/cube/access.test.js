@@ -810,3 +810,46 @@ test("buildGroups: a row missing is_employee falls to the grant check, not open 
     "staff-directory",
   ]);
 });
+
+// --- resolveAccessDataset (I1) ---------------------------------------------
+// The override redirects identity resolution, so its gates are a security
+// boundary, not a convenience. Both must hold for a value to be honored.
+
+test("resolveAccessDataset: unset reads prod", () => {
+  assert.equal(a.resolveAccessDataset(undefined, false), "kipptaf_marts");
+  assert.equal(a.resolveAccessDataset("", false), "kipptaf_marts");
+});
+
+test("resolveAccessDataset: a dev schema is honored on the local ADC path", () => {
+  assert.equal(
+    a.resolveAccessDataset("zz_someone_kipptaf_marts", false),
+    "zz_someone_kipptaf_marts",
+  );
+});
+
+test("resolveAccessDataset: deployment credentials override any value", () => {
+  // Every working deployment sets CUBEJS_DB_BQ_CREDENTIALS (#4466), so this is
+  // what makes the override unreachable on a deployment. Without it, a zz_
+  // value set in prod config would let a developer grant themselves whatever
+  // their own writable copy says.
+  assert.equal(
+    a.resolveAccessDataset("zz_someone_kipptaf_marts", true),
+    "kipptaf_marts",
+  );
+  assert.equal(
+    a.resolveAccessDataset("zz_stg_kipptaf_marts", true),
+    "kipptaf_marts",
+  );
+});
+
+test("resolveAccessDataset: a non-dev dataset is refused even locally", () => {
+  for (const raw of [
+    "kipptaf_marts_other",
+    "kipptaf_google_sheets",
+    "ZZ_UPPER_CASE",
+    "zz_bad-chars",
+    "../kipptaf_marts",
+  ]) {
+    assert.equal(a.resolveAccessDataset(raw, false), "kipptaf_marts", raw);
+  }
+});

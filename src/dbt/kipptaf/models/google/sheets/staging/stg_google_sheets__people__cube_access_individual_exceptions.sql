@@ -23,21 +23,6 @@ select
         nullif(additional_student_location_scope, 'none'),
         nullif(additional_staff_location_scope, 'none')
     ) as additional_location_scope,
-
-    -- Whether this row applies right now. Derived here so the rule has exactly
-    -- one definition: the mart, both singular tests, and four config.where
-    -- clauses all read this column instead of restating the comparison.
-    -- A null on either date reads as NOT live. That is the opposite of what a
-    -- missing bound would normally mean, and it is deliberate -- an access
-    -- grant with no stated end is the shape you want to fail closed on. Both
-    -- date columns carry an error-severity not_null, so a null here is already
-    -- a broken row; this stops it granting anything while the test reports it.
-    coalesce(
-        status = 'active'
-        and grant_date <= current_date('{{ var("local_timezone") }}')
-        and expiry_date >= current_date('{{ var("local_timezone") }}'),
-        false
-    ) as is_live,
 from
     {{
         source(

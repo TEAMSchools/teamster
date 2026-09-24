@@ -274,6 +274,31 @@ function buildSecurityContext(
   };
 }
 
+// --- Identity-read dataset override (local testing only) -------------------
+// Which dataset resolveAccess reads dim_staff_cube_access from. Defaults to
+// prod, so an unset deployment is unchanged.
+//
+// It exists because the identity read is a `SELECT *` against a hardcoded
+// dataset, so a change to that mart cannot be exercised before it is built to
+// prod: a column the deployed view lacks comes back undefined rather than
+// erroring, and a local run looks green while testing none of the new logic.
+//
+// TWO gates, because the shape check alone is not a safety property. `zz_` is
+// exactly the prefix of every personal dev schema and the shared zz_stg_*
+// copies — all of them writable by developers — so a `zz_` value set on a
+// deployment would let anyone grant themselves whatever their own copy says.
+// The credentials check is what separates local from deployed: every working
+// deployment sets CUBEJS_DB_BQ_CREDENTIALS (#4466) and local dev runs on ADC
+// without it. Honoring the override only when credentials are absent means a
+// deployment cannot honor it at all, whatever the value.
+function resolveAccessDataset(raw, hasDeploymentCredentials) {
+  const fallback = "kipptaf_marts";
+  if (!raw) return fallback;
+  if (hasDeploymentCredentials) return fallback;
+  if (/^zz_[a-z0-9_]+$/.test(raw)) return raw;
+  return fallback;
+}
+
 // --- Internal user emulation (#4526) ---------------------------------------
 // Admin-gated emulation lets a data-team caller resolve another internal user's
 // real context for RLS validation. All of the security reasoning lives in
@@ -375,6 +400,7 @@ module.exports = {
   emulationInputsFromToken,
   isImpersonator,
   parseImpersonators,
+  resolveAccessDataset,
   resolveEmulationTarget,
   unionAdditionalGrants,
   STAFF_SENSITIVE_MEMBERS,
