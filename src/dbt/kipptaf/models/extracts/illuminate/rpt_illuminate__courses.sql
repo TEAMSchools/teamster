@@ -25,6 +25,6 @@ select distinct
     null as `23 Cte Funding Provider`,
     null as `24 Tech Prep`,
 -- trunk-ignore-end(sqlfluff/RF05)
-from {{ ref("stg_powerschool__courses") }}
--- Miami left Illuminate ahead of AY2026-27
-where _dbt_source_project != 'kippmiami'
+from {{ ref("int_students__courses") }}
+-- Miami left Illuminate ahead of AY2026-27 (#4777, #5537)
+where _dbt_source_project in ('kippnewark', 'kippcamden', 'kipppaterson')

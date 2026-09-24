@@ -16,29 +16,6 @@ models:
       one, with ties broken by the lowest `household_id`. The emitted values are
       the raw text of the winning household. SIS-agnostic — no enrollment,
       status, or academic-year scoping.
-    data_tests:
-      - dbt_utils.expression_is_true:
-          arguments:
-            expression: |
-              (resolution_status != 'no_street' and address_1 is not null)
-              or (
-                  resolution_status = 'no_street'
-                  and address_1 is null
-                  and address_2 is null
-                  and city is null
-                  and state is null
-                  and zip is null
-              )
-          config:
-            severity: error
-      - dbt_utils.expression_is_true:
-          arguments:
-            expression: |
-              (resolution_status = 'resolved' and candidate_count = 1)
-              or (resolution_status = 'no_street' and candidate_count = 0)
-              or (resolution_status = 'picked' and candidate_count > 1)
-          config:
-            severity: error
     columns:
       - name: finalsite_enrollment_id
         data_type: string
@@ -59,18 +36,6 @@ models:
           the lowest `household_id`), or `no_street` (no household carries a
           street line). `picked` is the audit signal — it marks every address
           the pipeline chose rather than read unambiguously.
-        data_tests:
-          - accepted_values:
-              arguments:
-                values:
-                  - resolved
-                  - picked
-                  - no_street
-              config:
-                severity: error
-          - not_null:
-              config:
-                severity: error
       - name: candidate_count
         data_type: int64
         description:

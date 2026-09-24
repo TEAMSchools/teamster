@@ -105,6 +105,7 @@ with
             enr.region,
             enr.academic_year,
             enr.exitdate,
+            enr.exitdate as last_enrolled_date,
             enr.enroll_status,
             enr.entrycode,
             enr.exitcode,
@@ -286,6 +287,8 @@ with
 
             regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as _dbt_source_project,
 
+            date_sub(exitdate, interval 1 day) as last_enrolled_date,
+
             initcap(regexp_extract(_dbt_source_relation, r'kipp(\w+)_')) as region,
         from union_relations
     ),
@@ -304,6 +307,7 @@ with
             schoolid,
             entrydate,
             exitdate,
+            last_enrolled_date,
             entrycode,
             exitcode,
             lunchstatus,
@@ -395,6 +399,7 @@ with
             schoolid,
             entrydate,
             exitdate,
+            last_enrolled_date,
             entrycode,
             exitcode,
             lunchstatus,

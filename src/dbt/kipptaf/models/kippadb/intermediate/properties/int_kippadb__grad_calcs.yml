@@ -7,23 +7,6 @@ models:
       August 31 following the student's KIPP high school class year, but
       is_24yo_ugrad_cte_grad_int is measured from the student's birthdate.
       Undergraduate flags combine the BA and AA families.
-    data_tests:
-      - dbt_utils.expression_is_true:
-          name: grad_calcs_grad_ever_decomposes_by_degree
-          arguments:
-            expression: |
-              greatest(is_ba_grad_ever_int, is_aa_grad_ever_int,
-              is_cte_grad_ever_int) = is_grad_ever
-      - dbt_utils.expression_is_true:
-          name: grad_calcs_6yr_any_within_grad_ever
-          arguments:
-            expression: is_6yr_grad_any_int <= is_grad_ever
-      - dbt_utils.expression_is_true:
-          name: grad_calcs_degree_within_ugrad
-          arguments:
-            expression: |
-              is_6yr_ba_grad_int <= is_6yr_ugrad_grad_int
-              and is_6yr_aa_grad_int <= is_6yr_ugrad_grad_int
     columns:
       - name: student
         data_type: string

@@ -34,15 +34,8 @@ PyArrow backend. Probe-gated, same style as `powerschool/`.
   tag caps dlt's extract concurrency, same diagnostic knob as `powerschool/`
   (see its section below) — absent tag leaves dlt's default (5). No factory
   param for it: no caller passes one, so there is no precedence to resolve.
-- Tiering: `0 4 * * *` targets only the count-only tables (`co_teachers` as of
-  writing — derived from `cursor_column: null` in `config/focus.yaml`, not
-  hardcoded) and is their unconditional daily reload, because a count-only probe
-  can't see an in-place edit that leaves row count unchanged. The other 78
-  tables' `updated_at` cursor is verified reliable (99.9%+ of rows on core
-  tables show `updated_at != created_at` with a current max, measured
-  2026-08-10), so the intraday sensor's probe alone gates them — they get no
-  separate unconditional reload. The sensor still probes all 79 tables every 15
-  minutes regardless of tier.
+- Tiering (04:00 schedule vs intraday sensor): see `focus/CLAUDE.md` → _Probe
+  gating_.
 - `cursor_column` is `updated_at` for every Focus table except `co_teachers`,
   which is count-only. A new table must declare one in `config/focus.yaml`; the
   code location reads `a["cursor_column"]`, so omitting it fails at module load.
@@ -74,6 +67,12 @@ sensor, not the op.
   load via `resource_state` (dlt commits state only from extracted resources —
   post-load writes never round-trip), so a failed load keeps the old baseline
   and the table re-selects next tick.
+- **Probe cursor varies by table**: `students`/`storedgrades` use
+  `transaction_date` (no `whenmodified` column); `assignmentscore` and most
+  others use `whenmodified`. Source of truth:
+  `code_locations/kippnewark/powerschool/sis/dlt/config/assets.yaml`. Verify
+  real Oracle column names/case without a tunnel by querying the landed
+  `dagster_kippnewark_dlt_powerschool` tables via the BigQuery MCP.
 - **Signature shape is normalized**: `probe_signature` always returns
   `{"count": n, "max_cursor": value-or-None}` — a count-only dict would never
   compare equal to the run-config round-trip (which defaults `max_cursor` to
@@ -84,29 +83,20 @@ sensor, not the op.
   `sync_destination()` + probe.py's `stored_signatures`); request only changed
   tables with the probe payload in run config. Idle ticks launch nothing, so
   unchanged tables are never planned (no `ASSET_FAILED_TO_MATERIALIZE`).
-- **`DPY-4011` at ~512 MiB was a paramiko rekey bug, now fixed (not a volume
-  cap)**: a large pull (`assignmentscore` ~19M) died with `oracledb DPY-4011`
-  (connection closed) at a consistent **~8.6M rows** regardless of throughput
-  (`arraysize=10k`→245s, `50k`→158s, same rows) or `EXTRACT__WORKERS` (5→1 all
-  failed). That ~8.6M rows × ~60 B/row ≈ 512 MiB = paramiko's
-  `Packetizer.REKEY_BYTES`: at 512 MiB received, paramiko renegotiates keys, and
-  `SSHResource.get_connection` had reverted its `ssh-rsa` patch right after the
-  handshake, so the rekey KEXINIT no longer offered `ssh-rsa` and the
-  ssh-rsa-only server (GlobalSCAPE) dropped the transport. Fixed in
-  `libraries/ssh/resources.py` (`_persist_legacy_rsa`): ssh-rsa is now persisted
-  per-transport and auto-rekey disabled. **No windowing/partitioning needed** —
-  naive full-replace works at any table size; `assignmentscore` (19M) completes
-  as one query. Set dlt extract concurrency from the op via
-  `dlt_config["extract.workers"] = N` (`dlt_config` =
-  `from dlt import config as dlt_config`, a writable in-memory provider that
-  `pipeline.extract()` resolves `workers=ConfigValue` from) — preferred over the
-  `EXTRACT__WORKERS` env var so the op doesn't mutate the process environment.
-  **Do NOT write `dlt.config`** — the op's resource parameter is named `dlt`,
-  which shadows the top-level `dlt` module inside the function body, so
-  `dlt.config` resolves to `DagsterDltResource` (no `config` attribute) and
-  raises `AttributeError`. Both `powerschool/` and `focus/` (below) read a
-  `dlt_extract_workers` run tag and apply it via `dlt_config`. `pipeline.run()`
-  accepts no `workers` arg.
+- **`oracledb DPY-4011` at a consistent ~8.6M rows (≈ 512 MiB) is the paramiko
+  rekey, fixed by `_persist_legacy_rsa`** (see `libraries/ssh/CLAUDE.md`), not a
+  volume cap. **No windowing/partitioning needed** — naive full-replace works at
+  any table size; `assignmentscore` (19M) completes as one query. Set dlt
+  extract concurrency from the op via `dlt_config["extract.workers"] = N`
+  (`dlt_config` = `from dlt import config as dlt_config`, a writable in-memory
+  provider that `pipeline.extract()` resolves `workers=ConfigValue` from) —
+  preferred over the `EXTRACT__WORKERS` env var so the op doesn't mutate the
+  process environment. **Do NOT write `dlt.config`** — the op's resource
+  parameter is named `dlt`, which shadows the top-level `dlt` module inside the
+  function body, so `dlt.config` resolves to `DagsterDltResource` (no `config`
+  attribute) and raises `AttributeError`. Both `powerschool/` and `focus/`
+  (below) read a `dlt_extract_workers` run tag and apply it via `dlt_config`.
+  `pipeline.run()` accepts no `workers` arg.
 
 ## Notes
 
