@@ -403,5 +403,71 @@ def test_a_scale_score_stays_inside_its_own_assessment_range(
 
 
 def test_row_targets_are_honoured(tiny: dict[str, list[dict]]) -> None:
+    # A table whose FK must be one-to-one cannot exceed its parent pool. It
+    # is capped rather than padded, because repeating a parent to hit a row
+    # count is what put two access rows on one staff member.
+    capped = {table for table, _ in generate.UNIQUE_FK}
     for table, rows in tiny.items():
-        assert len(rows) == generate.row_target(table, "tiny")
+        target = generate.row_target(table, "tiny")
+        if table in capped:
+            assert 0 < len(rows) <= target
+        else:
+            assert len(rows) == target
+
+
+def test_a_capped_table_still_covers_almost_every_staff_member(
+    tiny: dict[str, list[dict]],
+) -> None:
+    # Capping the table to its parent pool must not quietly gut it. Three
+    # staff legitimately have no access row: the unresolvable identity, which
+    # is excluded on purpose; the row `_referenceable` holds back so an orphan
+    # has somewhere to point; and the row the planted orphan displaced.
+    #
+    # The manifest REQUIRES an orphan on this column, so exactly one access
+    # key pointing at no staff member is the contract rather than a fault.
+    staff_keys = {row["staff_key"] for row in tiny["dim_staff"]}
+    access_keys = {row["staff_key"] for row in tiny["dim_staff_cube_access"]}
+
+    assert len(access_keys - staff_keys) == 1, "expected exactly one planted orphan"
+    assert len(access_keys & staff_keys) >= len(staff_keys) - 3
+
+
+def test_each_staff_member_has_at_most_one_access_row(
+    tiny: dict[str, list[dict]],
+) -> None:
+    # dim_staff_cube_access is one row per staff member. A filler row draws
+    # its staff_key from the same dim_staff pool the personas sit in, so
+    # without a guard it adopts a persona's key and that persona gets two
+    # rows — the declared one and a mechanical one whose scope columns hold
+    # placeholder strings.
+    #
+    # resolveAccess reads ONE row and a placeholder matches no enum, so the
+    # persona then resolves to no groups and default-denies. This was live on
+    # sheryl.swoopes, whose whole purpose is full access.
+    keys = [row["staff_key"] for row in tiny["dim_staff_cube_access"]]
+    duplicated = sorted({key for key in keys if keys.count(key) > 1})
+
+    assert not duplicated, f"{len(duplicated)} staff_key(s) with several rows"
+
+
+def test_no_persona_access_row_carries_a_placeholder_scope(
+    tiny: dict[str, list[dict]],
+) -> None:
+    # The failure above is only dangerous because the duplicate row is
+    # junk. Assert the values directly too: a persona's scopes come from
+    # personas.yml verbatim, so anything shaped like a generated placeholder
+    # means a mechanical pass reached a row it should never have touched.
+    declared = {person.email for person in personas.load(generate.PERSONAS_PATH)}
+    scope_columns = [
+        column
+        for column in tiny["dim_staff_cube_access"][0]
+        if column.endswith("_scope")
+    ]
+    for row in tiny["dim_staff_cube_access"]:
+        if row.get("google_email") not in declared:
+            continue
+        for column in scope_columns:
+            assert not str(row[column]).startswith(column), (
+                f"{row['google_email']} carries the placeholder "
+                f"{row[column]!r} in {column}"
+            )

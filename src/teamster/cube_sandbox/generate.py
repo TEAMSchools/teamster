@@ -265,6 +265,17 @@ def row_target(table: str, scale: str) -> int:
 # that prefix IS the reserved range. A production md5 lands on it about once
 # in 65,536, so a sandbox key is recognisable on sight and the two sets are
 # disjoint in practice rather than by promise.
+# Columns that must map one row to one parent. Without this the FK pass
+# cycles the pool with a modulo and silently repeats a parent once the rows
+# outnumber it. On dim_staff_cube_access that is not cosmetic: resolveAccess
+# reads ONE row per staff member, so a second one makes which access a viewer
+# resolves arbitrary, and the canaries then pass or fail on which row the
+# warehouse happened to return.
+UNIQUE_FK: set[tuple[str, str]] = {
+    ("dim_staff_cube_access", "staff_key"),
+}
+
+
 KEY_NAMESPACE = "5adb"
 
 # The 555-0100 through 555-0199 block, reserved for fiction.
@@ -602,8 +613,28 @@ class _Fabricator:
                 self.persona_key[person.email]
                 for person in people
                 if not person.reportees
-            }
+            },
+            # dim_staff_cube_access is one row per staff member, and a filler
+            # row draws its staff_key from the dim_staff pool — which every
+            # persona is also in. Left alone, a filler adopts a persona's key
+            # and that persona ends up with TWO access rows: the declared one
+            # and a mechanical one whose scope columns hold placeholder
+            # strings like "staff_pii_scope-1".
+            #
+            # resolveAccess reads one row. Which one it gets is arbitrary, and
+            # a placeholder matches no enum, so the persona resolves to no
+            # groups and default-denies. Observed on sheryl.swoopes, whose
+            # entire purpose is full access, and ororo.munroe.
+            #
+            # Nothing else catches it. The canaries pass or fail on which row
+            # BigQuery happened to return, so the suite goes green on one run
+            # and red on the next with no code change between them.
+            ("dim_staff_cube_access", "staff_key"): {
+                self.persona_key[person.email] for person in people
+            },
         }
+
+        self.unique_fk: set[tuple[str, str]] = UNIQUE_FK
 
     # -- plumbing ---------------------------------------------------------
 
@@ -742,6 +773,29 @@ class _Fabricator:
             if not pool:
                 continue
             pinned = self.pinned.get((table, column), set())
+            if (table, column) in self.unique_fk:
+                # One row per parent, so the modulo below is wrong here: it
+                # wraps once the pool runs out and hands the same parent to
+                # two rows. On dim_staff_cube_access that is not a cosmetic
+                # duplicate — resolveAccess reads ONE row per staff member,
+                # so a second one makes which access a viewer resolves
+                # arbitrary.
+                #
+                # Drop the rows the pool cannot cover rather than repeating a
+                # value. A table with fewer rows than its target is honest; a
+                # table that violates its own grain is not.
+                free = [value for value in pool if value not in self.excluded]
+                for index, row in enumerate(rows):
+                    if index in pinned:
+                        continue
+                    offset = index - sum(1 for p in pinned if p < index)
+                    row[column] = free[offset] if offset < len(free) else None
+                rows[:] = [
+                    row
+                    for index, row in enumerate(rows)
+                    if index in pinned or row[column] is not None
+                ]
+                continue
             for index, row in enumerate(rows):
                 if index not in pinned:
                     row[column] = pool[index % len(pool)]
