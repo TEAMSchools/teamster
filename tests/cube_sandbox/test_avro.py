@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from typing import Any
 
@@ -29,7 +30,42 @@ def test_logical_types_map_exactly() -> None:
     by_name = {f["name"]: f["type"] for f in schema["fields"]}
     assert by_name["d"] == {"type": "int", "logicalType": "date"}
     assert by_name["t"] == {"type": "long", "logicalType": "timestamp-micros"}
-    assert by_name["n"]["logicalType"] == "decimal"
+    # The whole NUMERIC mapping, not just its logicalType. BigQuery NUMERIC
+    # is exactly DECIMAL(38, 9); a narrowing of either number passes a
+    # logicalType-only assertion, truncates silently on write, and loads
+    # clean — so the sandbox would carry wrong money and rate values with
+    # nothing red anywhere.
+    assert by_name["n"] == {
+        "type": "bytes",
+        "logicalType": "decimal",
+        "precision": 38,
+        "scale": 9,
+    }
+
+
+def test_the_snapshots_numeric_columns_all_take_that_mapping() -> None:
+    # Four NUMERIC columns in the pinned snapshot, so the precision and scale
+    # above are load-bearing rather than hypothetical.
+    snap = json.loads(
+        (
+            Path(__file__).parents[2]
+            / "src"
+            / "cube"
+            / "sandbox"
+            / "schema_snapshot.json"
+        ).read_text()
+    )
+    numeric = [
+        (table, column)
+        for table, columns in snap["tables"].items()
+        for column, meta in columns.items()
+        if meta["type"] == "NUMERIC"
+    ]
+    assert numeric
+    for table, column in numeric:
+        field = avro.avro_schema(table, {column: {"type": "NUMERIC", "nullable": True}})
+        assert field["fields"][0]["type"][1]["precision"] == avro.NUMERIC_PRECISION
+        assert field["fields"][0]["type"][1]["scale"] == avro.NUMERIC_SCALE
 
 
 def test_an_unmapped_type_fails_loudly() -> None:

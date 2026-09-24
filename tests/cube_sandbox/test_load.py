@@ -156,3 +156,41 @@ def test_main_raises_when_the_load_lands_short(monkeypatch: Any) -> None:
 
     with pytest.raises(ValueError, match="dim_y.b"):
         load.main()
+
+
+def test_an_unsafe_project_or_dataset_identifier_is_refused() -> None:
+    # INFORMATION_SCHEMA is a path element, so it cannot be passed as a query
+    # parameter and the identifiers are interpolated. The bandit suppression
+    # on that f-string is only honest if the signature enforces what the call
+    # site happens to do.
+    class _Client:
+        def query(self, sql: str):  # pragma: no cover - must never be reached
+            raise AssertionError(f"query should not have run: {sql}")
+
+    for bad in (
+        "proj`.`secret",
+        "proj; DROP TABLE x",
+        "proj.other",
+        "",
+        "pro ject",
+    ):
+        with pytest.raises(ValueError, match="unsafe BigQuery"):
+            load.loaded_columns(_Client(), bad, load.SANDBOX_DATASET)
+        with pytest.raises(ValueError, match="unsafe BigQuery"):
+            load.loaded_columns(_Client(), load.SANDBOX_PROJECT, bad)
+
+
+def test_the_real_project_and_dataset_pass_the_guard() -> None:
+    # A guard that rejected the only call site would be worse than none.
+    class _Client:
+        def query(self, sql: str):
+            assert "teamster-cube-sandbox.kipptaf_marts" in sql
+            return _Result()
+
+    class _Result:
+        def result(self):
+            return []
+
+    assert (
+        load.loaded_columns(_Client(), load.SANDBOX_PROJECT, load.SANDBOX_DATASET) == {}
+    )

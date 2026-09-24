@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 SANDBOX_PROJECT = "teamster-cube-sandbox"
@@ -28,9 +29,30 @@ def assert_complete(snap: dict[str, Any], loaded: dict[str, set[str]]) -> None:
         )
 
 
+_IDENTIFIER = re.compile(r"\A[A-Za-z0-9_-]{1,1024}\Z")
+
+
+def _checked(kind: str, value: str) -> str:
+    """A BigQuery project or dataset id, or a raise.
+
+    INFORMATION_SCHEMA cannot be reached through a query parameter — it is
+    part of the table path, not a value — so this identifier is interpolated
+    and has to be validated instead. Both are module constants at the only
+    call site today, but they are parameters, and "the caller is trustworthy"
+    is a property of a call site rather than of a signature.
+    """
+    if not _IDENTIFIER.match(value):
+        raise ValueError(f"unsafe BigQuery {kind} identifier: {value!r}")
+    return value
+
+
 def loaded_columns(client: Any, project: str, dataset: str) -> dict[str, set[str]]:
+    project = _checked("project", project)
+    dataset = _checked("dataset", dataset)
     rows = client.query(
-        # trunk-ignore(bandit/B608): project/dataset are our own module constants, never user input.
+        # trunk-ignore(bandit/B608): the two interpolated identifiers are
+        # validated against _IDENTIFIER immediately above; a path element
+        # cannot be passed as a query parameter.
         f"SELECT table_name, column_name "
         f"FROM `{project}.{dataset}.INFORMATION_SCHEMA.COLUMNS`"
     ).result()

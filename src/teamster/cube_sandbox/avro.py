@@ -15,6 +15,14 @@ from typing import Any
 import fastavro
 from google.cloud.bigquery import SchemaField
 
+# BigQuery NUMERIC is exactly DECIMAL(38, 9) — 38 digits of precision, 9 of
+# scale. These two numbers are the mapping, not decoration: narrow either and
+# fastavro silently truncates on write, the load succeeds, and the sandbox
+# carries quietly wrong money and rate values. The snapshot has four NUMERIC
+# columns today.
+NUMERIC_PRECISION = 38
+NUMERIC_SCALE = 9
+
 _LOGICAL: dict[str, Any] = {
     "STRING": "string",
     "INT64": "long",
@@ -23,7 +31,12 @@ _LOGICAL: dict[str, Any] = {
     "DATE": {"type": "int", "logicalType": "date"},
     "DATETIME": {"type": "long", "logicalType": "timestamp-micros"},
     "TIMESTAMP": {"type": "long", "logicalType": "timestamp-micros"},
-    "NUMERIC": {"type": "bytes", "logicalType": "decimal", "precision": 38, "scale": 9},
+    "NUMERIC": {
+        "type": "bytes",
+        "logicalType": "decimal",
+        "precision": NUMERIC_PRECISION,
+        "scale": NUMERIC_SCALE,
+    },
 }
 
 
