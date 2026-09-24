@@ -32,11 +32,38 @@ def test_policy_columns_are_flat_names() -> None:
     assert cols and all("." not in c for c in cols)
 
 
+def test_policy_columns_descends_into_or_and_and_blocks() -> None:
+    cols = model.policy_columns(CUBE_ROOT)
+    # staff_pii.yml's staff-pii-reporting_chain_or_below_rank policy nests its
+    # filters under `or: [{and: [...]}, {member: staff_key, ...}]`. A
+    # top-level-only read of `row_level.filters[].member` never sees inside
+    # that nesting, so job_function_level goes missing — and a later task
+    # that exempts policy columns from a null-value rule would then write a
+    # null into it, silently breaking that persona's row_level filter.
+    assert "job_function_level" in cols
+
+
 def test_scope_values_come_from_access_js() -> None:
     values = model.scope_values(CUBE_ROOT / "access.js")
     assert "staff_pii_scope" in values
     assert "all_in_scope" in values["staff_pii_scope"]
     assert "none" not in values["staff_pii_scope"], "none is the absence of a group"
+    # The four real staff_pii_scope values (the case labels of
+    # `switch (row.staff_pii_scope)`), and none of the case labels belonging
+    # to access.js's OTHER switch statements
+    # (computeAllowedAbbreviations's network/region/school,
+    # computeAllowedDepartmentGroups's all/own_group). A bare `case "..."`
+    # regex with no block boundary sweeps those in too — they are not, and
+    # never were, staff_pii_scope values, and a manifest cell generated for
+    # one is a cell no policy can ever satisfy.
+    assert values["staff_pii_scope"] == {
+        "all_in_scope",
+        "teaching_staff",
+        "reporting_chain",
+        "reporting_chain_or_below_rank",
+    }
+    for spurious in ("all", "own_group", "region", "school", "network"):
+        assert spurious not in values["staff_pii_scope"]
     # student_location_scope's values are interpolated into a template literal
     # (`student-${row.student_location_scope}`) in access.js, not enumerated as
     # string literals, so they are not statically extractable by regex. A prior

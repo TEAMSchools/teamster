@@ -18,6 +18,7 @@ _SQL_TABLE = re.compile(r"sql_table:\s*(?:['\"])?kipptaf_marts\.(\w+)")
 _CUBE_JS_REF = re.compile(r"`kipptaf_marts\.(\w+)`")
 _SCOPE_CASE = re.compile(r"case\s+[\"'](\w+)[\"']")
 _SCOPE_TIER = re.compile(r"scope:\s*[\"'](\w+_scope)[\"']")
+_STAFF_PII_SWITCH = re.compile(r"switch\s*\(\s*row\.staff_pii_scope\s*\)\s*\{")
 
 # access.js's buildGroups emits `student-${row.student_location_scope}` — the
 # scope value is interpolated into a template literal, not enumerated as a
@@ -65,6 +66,29 @@ def referenced_columns(cube_root: Path) -> dict[str, set[str]]:
     return out
 
 
+def _filter_members(filters: list) -> set[str]:
+    """Every `member` named in a row_level filter list, at any nesting depth.
+
+    A filter entry is either `{member: ..., operator: ..., values: ...}` or a
+    combinator (`{or: [...]}` / `{and: [...]}`) wrapping more filter entries —
+    see `staff_pii.yml`'s `staff-pii-reporting_chain_or_below_rank` policy,
+    whose only path to `job_function_level` is inside an `or` → `and`. A
+    shallow, top-level-only read misses it, which silently starves a Task 4
+    persona of the column its policy actually gates on.
+    """
+    out: set[str] = set()
+    for f in filters:
+        if not isinstance(f, dict):
+            continue
+        if member := f.get("member"):
+            out.add(str(member))
+        for combinator in ("or", "and"):
+            nested = f.get(combinator)
+            if isinstance(nested, list):
+                out |= _filter_members(nested)
+    return out
+
+
 def policy_columns(cube_root: Path) -> set[str]:
     """Every view member an access_policy row_level filter interpolates."""
     out: set[str] = set()
@@ -72,10 +96,45 @@ def policy_columns(cube_root: Path) -> set[str]:
         doc = yaml.safe_load(path.read_text()) or {}
         for view in doc.get("views", []):
             for policy in view.get("access_policy", []):
-                for f in policy.get("row_level", {}).get("filters", []):
-                    if member := f.get("member"):
-                        out.add(str(member))
+                out |= _filter_members(policy.get("row_level", {}).get("filters", []))
     return out
+
+
+def _balanced_block(text: str, open_brace_index: int) -> str:
+    r"""The `{...}` block starting at `open_brace_index`, brace-depth matched.
+
+    A plain non-greedy regex (`\{.*?\}`) stops at the FIRST `}`, which is
+    wrong the moment the block contains its own nested braces — the
+    `staff_pii_scope` switch does, in its `reporting_chain_or_below_rank`
+    case's `if (...) { ... }`. Counting depth is what keeps this scoped to
+    exactly the one switch statement, no more and no less.
+    """
+    depth = 0
+    for i in range(open_brace_index, len(text)):
+        if text[i] == "{":
+            depth += 1
+        elif text[i] == "}":
+            depth -= 1
+            if depth == 0:
+                return text[open_brace_index : i + 1]
+    raise ValueError("unbalanced braces starting at the given index")
+
+
+def _staff_pii_scope_values(text: str) -> set[str]:
+    """The `case` labels of the switch that branches on `row.staff_pii_scope`.
+
+    `_SCOPE_CASE` alone matches every `case "..."` in the whole file,
+    including unrelated switches in `computeAllowedAbbreviations`
+    (`network`/`region`/`school`) and `computeAllowedDepartmentGroups`
+    (`all`/`own_group`) — values that are not, and never were, staff_pii_scope
+    values. Bounding the search to the `switch (row.staff_pii_scope) { ... }`
+    block itself (not just any `case` nearby) is what keeps those out.
+    """
+    match = _STAFF_PII_SWITCH.search(text)
+    if not match:
+        return set()
+    block = _balanced_block(text, match.end() - 1)
+    return set(_SCOPE_CASE.findall(block)) - {"none"}
 
 
 def scope_values(access_js: Path) -> dict[str, set[str]]:
@@ -86,9 +145,8 @@ def scope_values(access_js: Path) -> dict[str, set[str]]:
     """
     text = access_js.read_text()
     tiers = set(_SCOPE_TIER.findall(text))
-    branched = set(_SCOPE_CASE.findall(text))
     out = {t: {"__non_none__"} for t in tiers}
-    out["staff_pii_scope"] = branched - {"none"}
+    out["staff_pii_scope"] = _staff_pii_scope_values(text)
     # See _STUDENT_LOCATION_SCOPE_VALUES above: not derivable by regex from the
     # template-literal source, so this is a documented literal instead.
     out["student_location_scope"] = set(_STUDENT_LOCATION_SCOPE_VALUES)
