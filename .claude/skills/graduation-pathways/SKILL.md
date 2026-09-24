@@ -123,10 +123,8 @@ Two coordination rules:
    failure is benign — downstream simply does not rebuild — but plan the
    sequencing.
 2. **Never judge sheet contents from the prod `stg_` table.** It is a table
-   frozen at the last build. The BigQuery MCP service account cannot read
-   Drive-backed externals at all (403, no Drive scope). Query the `src_`
-   external live through ADC with `uv run python`, per
-   `.claude/context/bigquery.md`.
+   frozen at the last build. Query the `src_` external live through ADC, per
+   `.claude/context/bigquery.md` (the BigQuery MCP cannot read it).
 
 ---
 

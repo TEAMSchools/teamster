@@ -90,8 +90,6 @@ evidence in `.claude/scratch/` and reference it. For non-Bash tools only Section
 **Non-Bash tool inputs are path-scanned too:** `TodoWrite` / `AskUserQuestion`
 text containing a bare `env` (or other sensitive-path token) trips Rule 1 or 3c.
 Reword (`environment variable`; avoid cred-suffix tokens like `_KIPPMIAMI`).
-Also fires on `mcp__github__*` PR / issue bodies — prose like "staging env" /
-"dev env" is denied; write "environment".
 
 **Your own ad-hoc Bash self-blocks on `$UPPER_CASE`:** Rule 7 denies any Bash
 command expanding a non-allowlisted uppercase var — including one you define in
@@ -134,8 +132,9 @@ otherwise incidental. Never use a shared fixed path like
 `.claude/scratch/commit-msg.txt`: `.claude/scratch/` is per-checkout, so
 concurrent sessions in one worktree overwrite each other, and the old `rm -f`
 remedy destroys another session's pending message. Worse, a stale file makes
-Write fail while a batched `git commit -F` still runs — committing the OTHER
-session's message. Keep the Bash `description` generic; it is scanned too.
+Write fail ("File has not been read yet") while a batched `git commit -F` still
+runs — committing the OTHER session's message. Keep the Bash `description`
+generic; it is scanned too.
 
 ## Scratch directory
 

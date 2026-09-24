@@ -39,15 +39,9 @@ _Linting_.
 
 ## Hooks
 
-Pre-commit runs `fmt` only; pre-push runs `check` — see root CLAUDE.md →
-_Linting_; the binary path and worktree invocation are in the `trunk-lint`
-skill. Never use `--no-verify` — fix reported issues instead.
+Pre-commit runs `fmt` only; pre-push runs `check`. Never use `--no-verify` — fix
+reported issues instead.
 
 ## Shell Style
 
 `shfmt` enforces tabs (not spaces) in shell scripts.
-
-## Protected Config
-
-`.trunk/config/` is read-only under hooks — present changes as manual
-application blocks, not diffs.

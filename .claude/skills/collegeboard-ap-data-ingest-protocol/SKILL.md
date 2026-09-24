@@ -25,12 +25,9 @@ This file is the runbook; that doc is the "why."
 
 ## PII — read this before running anything
 
-Crosswalk-matching results (Phases 4-8) include student names, DOB, and gender.
-**Never write these to any file that gets committed to git** — issue, PR, commit
-message, or any file under version control. Chat/terminal output only. The
-codes-completeness, AP-course-tagging, and downstream-lineage checks carry no
-PII (codes, course names, aggregate counts) — no special handling needed for
-those.
+Crosswalk-matching results (Phases 4-8) include student names, DOB, and gender,
+so the root CLAUDE.md PII rule applies to them; the codes, course-tagging, and
+lineage checks carry no PII.
 
 ## Why crosswalk gaps happen (say this to the user)
 

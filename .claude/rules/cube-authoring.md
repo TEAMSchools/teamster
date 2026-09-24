@@ -39,14 +39,13 @@ and diagnostics are in the `cube-ops` skill.
   (`student_attendance_enrollment_daily`,
   `student_attendance_enrollment_periods`, `student_school_enrollments`,
   `students`); staff-domain cubes start with `staff`. This is an organizational
-  convention only — RLS is no longer keyed off the cube-name prefix. Every view
-  enforces access through its own `access_policy` matching a `securityContext`
-  group (see View access policies below); a misnamed cube has no security
-  consequence, but keep the convention so the domain is legible from the name.
-  Conformed dims (`dates`, `locations`, `regions`, `terms`, `school_calendars`)
-  are deliberately unprefixed — they carry no domain access tier. Student views
-  are single, collapsed views named `<domain>_view`
-  (`student_attendance_enrollment_daily_view`,
+  convention only: every view enforces access through its own `access_policy`
+  matching a `securityContext` group (see View access policies below); a
+  misnamed cube has no security consequence, but keep the convention so the
+  domain is legible from the name. Conformed dims (`dates`, `locations`,
+  `regions`, `terms`, `school_calendars`) are deliberately unprefixed — they
+  carry no domain access tier. Student views are single, collapsed views named
+  `<domain>_view` (`student_attendance_enrollment_daily_view`,
   `student_attendance_enrollment_periods_view`,
   `student_section_enrollments_view`, `student_assessment_scores_view`) — a view
   can't share a bare name with its same-domain cube, hence the `_view` suffix.
@@ -179,13 +178,10 @@ emitted by `access.buildGroups`; a viewer holds exactly one group per domain
 axis, so exactly one policy per view is ever active — no AND/OR combination to
 reason about.
 
-- **Student views are single, collapsed views** — each student domain
-  (`student_attendance_enrollment_daily_view`,
-  `student_attendance_enrollment_periods_view`,
-  `student_section_enrollments_view`, `student_assessment_scores_view`) exposes
-  both row-level identifiers and aggregate-breakdown dimensions on the same
-  view; there is no separate detail/summary pair. Three policies, one per
-  non-`none` `student_location_scope` — `student-region` (`row_level` on the
+- **Student views are single, collapsed views** (names under _Naming_ above) —
+  each exposes both row-level identifiers and aggregate-breakdown dimensions on
+  the same view; there is no separate detail/summary pair. Three policies, one
+  per non-`none` `student_location_scope` — `student-region` (`row_level` on the
   region key), `student-school` (`row_level` on the school abbreviation),
   `student-network` (no `row_level` — every location). All three use
   `member_level: { includes: "*" }` — any viewer holding one of these groups
@@ -350,13 +346,9 @@ access policies above). `cube.js` exports exactly `driverFactory`,
   (`network` student scope + `all_in_scope` staff PII) — for them emulation is a
   viewport change, not a grant. Anyone narrower gains real access and needs its
   own decision. Those emails are PII: deployment config only, never a commit.
-- **Group taxonomy (`access.buildGroups`)**: `student-<student_location_scope>`
-  (`student-region` / `student-school` / `student-network`); `staff-directory`
-  (always, for any resolved row); `staff-pii-<staff_pii_scope>`
-  (`staff-pii-all_in_scope` / `-reporting_chain` /
-  `-reporting_chain_or_below_rank` / `-teaching_staff`); plus forward-compat
-  flat `staff-compensation` / `-observations` / `-benefits` (emitted per
-  non-`none` scope; no view consumes them yet). `none` on any axis → no group
+- **Group taxonomy (`access.buildGroups`)**: `student-<student_location_scope>`,
+  `staff-directory`, `staff-pii-<staff_pii_scope>`, and the forward-compat staff
+  tiers, each listed under _View access policies_. `none` on any axis → no group
   for that axis → default-deny on the views gated by it.
 - **`access_policy` blocks, it does not strip.** When a user requests a member
   their tier excludes, Cube denies the whole query — it does not silently drop

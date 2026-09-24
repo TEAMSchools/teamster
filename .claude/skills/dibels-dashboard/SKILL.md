@@ -425,13 +425,6 @@ apply). This satisfies "flag against Amplify's own average" -- it does NOT
 satisfy "average across our own population", which is the unresolved Round 2
 question above.
 
-**BigQuery gotcha hit while adding it**: a bare `null` in one `UNION ALL` branch
-and a real `BOOL` expression in a sibling branch fails with
-`Column N in UNION ALL has incompatible types: BOOL, INT64` -- BigQuery infers a
-bare `null` as `INT64` by default. Fix:
-`cast(null as bool) as is_above_average_growth` in the branch that doesn't
-compute it.
-
 ## Always hand over the WHOLE sheet, never a patch
 
 The Expected Assessments tabs run to thousands of rows -- V1 is 3,681, the
@@ -575,12 +568,12 @@ DBT_PROFILES_DIR=.dbt uv run dbt build --select <staging_model_name> \
 ```
 
 Both are dev-schema / personal-copy operations, not classifier-blocked (see
-`src/dbt/CLAUDE.md`). `stage_external_sources` SKIPs an existing table without
-`ext_full_refresh: true` -- easy to miss, shows as a silent no-op rather than an
-error. Then query the rebuilt `zz_<user>_kipptaf_google_sheets.<model>` table
-directly to confirm row counts and spot-check values against what was pasted,
-per (academic_year, region, population) or whatever the grain is -- don't trust
-a green build alone as proof the data landed correctly.
+`src/dbt/CLAUDE.md`). Without `ext_full_refresh: true` the first is a silent
+no-op (see _Stage last_ above). Then query the rebuilt
+`zz_<user>_kipptaf_google_sheets.<model>` table directly to confirm row counts
+and spot-check values against what was pasted, per (academic_year, region,
+population) or whatever the grain is -- don't trust a green build alone as proof
+the data landed correctly.
 
 ### Step 6 -- audit before trusting it
 
@@ -1290,13 +1283,13 @@ Four rules for this class of question:
   id against enrollment rules out a rename entirely, because it never touches a
   name. That is the check that actually closes the question. Which column holds
   the id depends on the year -- see the header rename below.
-- **Reading the raw SFTP file is available and cheap.** Credentials come from
-  the pytest session fixture, so a throwaway `tests/**/test_zz_*.py` using
+- **Reading the raw SFTP file is available and cheap.** A throwaway pytest (root
+  CLAUDE.md _Tooling_) using
   `SSH_RESOURCE_AMPLIFY.process_config_and_initialize()` plus
   `setup_for_execution(build_init_resource_context())` can list the tree and
   download a file. Do not report an export as empty without it when the question
   is whether the vendor sent the data. Print aggregates only, never student
-  rows, and delete the test file afterwards.
+  rows.
 
 Two facts about the remote layout, current as of 2026-09-15: SY2025-2026 files
 live under `/25-26/BM` and `/25-26/PM` while SY2026-2027 files are at `/BM` and
@@ -1369,17 +1362,12 @@ academics source is a separate sheet:
 Academics replace this each year, so re-read it rather than trusting the values
 recorded here, and update this link if they move it.
 
-**Reading it needs ADC from Python -- both MCP routes fail.** Do not spend time
-rediscovering this:
-
-- The **BigQuery MCP cannot read a Sheets external at all.** Its service account
-  carries no Drive scope, so `src_google_sheets__*` returns
-  `Permission denied while getting Drive credentials`. Sharing the file with
-  anyone changes nothing -- it is a missing OAuth scope, not a file permission.
-- The **Drive MCP reads it, then `check-output.sh` redacts the whole response**
-  as containing a high-entropy string, which any real spreadsheet has somewhere.
-  `read_file_content` and `get_file_metadata` both come back as
-  `[redacted: secret material]` with no content.
+**Reading it needs ADC from Python -- both MCP routes fail.** The BigQuery MCP
+cannot read Sheets externals (`.claude/context/bigquery.md`), and the **Drive
+MCP reads it, then `check-output.sh` redacts the whole response** as containing
+a high-entropy string, which any real spreadsheet has somewhere.
+`read_file_content` and `get_file_metadata` both come back as
+`[redacted: secret material]` with no content.
 
 What works is `scripts/read_sheet_tabs.py`, which requests
 `spreadsheets.readonly` and `drive.readonly` through ADC and writes each tab to
@@ -1436,23 +1424,11 @@ gets, and neither name says so on its own:
   `rpt_gsheets__dibels_bm_goals_calculations` joins the two so a student is
   measured against the aggregate matching their level.
 
-`benchmark_goal_season` on the assessment side is the season a row is measured
-AGAINST, which is the next one (`BOY -> MOY`, `MOY -> EOY`, `EOY -> null`). The
-join is `a.benchmark_goal_season = f.period`, so a BOY row looks for the goal
-FOR MOY.
-
-**This is correct behaviour, not a bug.** The academics sheet sets MOY and EOY
-goals per grade, and grades 6-8 deliberately get EOY only -- K-2 and 3-5 carry
-both. K-2 is also the only band with `grade_range_goal` populated. Verified
+The missing BOY goals for grades 6-8 (above) are correct behaviour, not a bug:
+do not widen the join to reach the EOY goal early -- an EOY target is not a
+mid-year one. K-2 is the only band with `grade_range_goal` populated. Verified
 against AY2026: grades 0-5 have 6 MOY and 6 EOY rows each, grades 6-8 have 0 MOY
 and 6 EOY, and only grades 0-2 have non-null range goals.
-
-Because a BOY row is measured against the MOY goal, grades 6-8 have nothing to
-measure against at BOY, and a blank goal is the honest output. They pick up
-their goal once MOY testing lands, where `MOY -> EOY` matches their EOY row. So
-the first paste of a year covering K-5 only is expected; do not widen the join
-to reach the EOY goal early -- an EOY target is not a mid-year one, and
-academics chose not to set a mid-year target for these grades.
 
 **Do not use the AY2025 `bm_goals` tab as evidence against this.** It does
 contain grades 6-8 at `period = 'BOY'` carrying the foundation EOY goal, which
@@ -1749,8 +1725,7 @@ Two bugs of this shape in one session on `int_amplify__all_assessments`:
 
 So a clean build is not evidence the branches line up. When editing either
 branch of a wide union, diff the two projected column lists by ordinal, not by
-eye. The repo convention of enumerating columns per branch (never `select *`) is
-the correctness fix here, not just the CV03 lint fix.
+eye.
 
 ### `all_assessments` carries scored rows only -- do not LEFT join the scores
 
@@ -2114,12 +2089,9 @@ happened.
 So a cancelled round leaves the season's goals slightly too gradual, and fixing
 that is a decision, not a patch: it means teaching `pm_expectations` to project
 and filter the column, which changes whether a cancelled round bounds the
-season. Watch the trap when doing it — `WHERE` is evaluated before window
-functions, so filtering in the same `SELECT` that computes `min_pm_round` /
-`max_pm_round` silently redefines the season's first and last round (measured on
-AY2025: 675 rows shifted on `min`, 1,386 on `max`). That was reverted once
-already in this PR for exactly that reason. Raise it with academics rather than
-deciding it as a side effect.
+season. Watch the `WHERE`-before-window trap in _Do not hoist a downstream
+filter into the shared gate_ above (point 1). Raise it with academics rather
+than deciding it as a side effect.
 
 **Either way the goals sheet is rebuilt in full, never cell-edited.** Disabling
 a measure changes `min_pm_round` / `max_pm_round` for the season, which decides
@@ -2261,9 +2233,7 @@ chain. Do not report a change as done on a subset.
    be the ones you intended and no others.
 6. **Column presence.** `INFORMATION_SCHEMA.COLUMNS` on the dev relation -- the
    new name present, the old name absent.
-7. **Lint.**
-   `/workspaces/teamster/.trunk/tools/trunk check --force --no-fix <changed files> </dev/null`,
-   with `trunk fmt` first if it reports formatting.
+7. **Lint** per root CLAUDE.md _Linting_.
 8. **Update this skill and the reference document in the same turn**, not later.
    Also flag any Tableau workbook exposure you could not verify -- the
    datasource is embedded and VizQL returns 500 on those, so a dropped or
@@ -2447,11 +2417,6 @@ condition at every grain (the round column said `No Aimline Status` until
 So a view can switch between the three aimline grains with one colour legend. A
 view mixing an aimline grain with an internal one cannot -- only `Not Tested` is
 shared.
-
-Only `Not Tested` is shared, so a combined view needs its own colour legend.
-`admin_benchmark_goal_status` reads `Met Benchmark` / `Did Not Meet Benchmark`
-on both, because the benchmark standard is the one grain that does not depend on
-method. It is the only status column whose values match across the two.
 
 They exist because `met_pm_round_overall_criteria = 0` means both "did not meet"
 and "could not be evaluated". `Round Incomplete` keys on

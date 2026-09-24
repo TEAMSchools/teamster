@@ -139,12 +139,8 @@ Standard checks, roughly in order of likelihood:
 5. **Ingestion lag**: `stg_finalsite__status_report` is sensor/file-drop
    triggered (Couchdrop SFTP), not a fixed cron — a very recent Finalsite edit
    may not have landed yet.
-6. **Stale goals table**: for a goal-value discrepancy specifically, check
-   whether the sheet was edited after the last build before assuming a code bug
-   — `stg_google_sheets__finalsite__goals` is a frozen table, not a live read
-   (see _Key facts_). Compare the sheet's Drive `modifiedTime` against that
-   table's `__TABLES__.last_modified_time`; if the sheet is newer, rebuild into
-   dev and re-check before investigating anything else.
+6. **Stale goals table**: for a goal-value discrepancy specifically, run the
+   freshness check in _Key facts_ before assuming a code bug.
 
 ## Sanity-checking the scaffold against SRE's target sheet
 
@@ -575,24 +571,13 @@ implausible magnitude before reporting it.
 Note also that `KCNA`'s lower block repeats `KHS` in a **Campus** column, so a
 school-name map will happily match it and read the wrong columns.
 
-**Pull the goals table with the BigQuery Python client, not the MCP and not
-`bq`.** A full comparison needs every sheet-sourced row at once (~700 for the
-six SRE targets, ~2,300 for the whole tab). The BigQuery MCP truncates at 50
-rows, and `bq` runs on gcloud USER credentials that expire mid-session — it
-fails with `You do not currently have an active account selected`, which is an
-auth expiry and NOT a permissions problem, so do not go hunting for grants. ADC
-is a service account and does not expire:
-
-```bash
-# then, in the script: bigquery.Client(project="teamster-332318")
-uv run --with google-cloud-bigquery python
-```
-
-Diff in Python from there. Do not set `GOOGLE_APPLICATION_CREDENTIALS` inline to
-"help" — that trips the credentials-JSON path block; default ADC discovery
-already resolves it. A compact alternative when you only need a spot check is
-one `string_agg` per `(goal_granularity, goal_name)` through the MCP, which
-returns a dozen rows instead of hundreds.
+**Pull the goals table with the BigQuery Python client on ADC** (client choice:
+`.claude/context/bigquery.md`). A full comparison needs every sheet-sourced row
+at once (~700 for the six SRE targets, ~2,300 for the whole tab). `bq` failing
+with `You do not currently have an active account selected` is its credential
+expiry, not a missing grant. For a spot check, one `string_agg` per
+`(goal_granularity, goal_name)` through the MCP returns a dozen rows instead of
+hundreds.
 
 ## Goals reconciliation — offer this at the start of FRESH work
 
@@ -759,9 +744,8 @@ discrepancies are then out of scope for whatever you find.
    Still name each change in prose next to the block, with the source cell, so
    the analyst and SRE can see what moved without diffing 2,300 lines.
 
-1. **Rebuild before re-comparing.** Their edits are NOT visible to prod —
-   `stg_google_sheets__finalsite__goals` is a frozen table and the BigQuery MCP
-   cannot read the live external. Rebuild into your dev schema, then query the
+1. **Rebuild before re-comparing.** Their edits are NOT visible to prod (see
+   _Key facts_). Rebuild into your dev schema, then query the
    `zz_<user>_kipptaf_google_sheets` copy:
 
    ```bash
@@ -1182,12 +1166,3 @@ suppression or labeling logic for it unless they come back asking.
 - `schoolid` domains fully align between `stg_powerschool__schools` (filtered)
   and `int_people__location_crosswalk` for every case that matters — verified
   during design (see the spec's "Verification" section).
-- Adding a `CROSS JOIN` to a query that previously read from a single table
-  makes every other unqualified column reference ambiguous (`sqlfluff/RF02`) — a
-  real error hit while building this project. Qualify every column with its
-  table alias when adding a cross join, not just the new filter predicates.
-- `UNION ALL` in BigQuery matches columns **positionally, not by name** —
-  reordering a column in one branch to satisfy a style convention (ST06) without
-  checking the other branches' column order can silently break a `UNION ALL`, or
-  (worse, if types happen to align) silently misalign data with no error at all.
-  Also hit and fixed while building this project.

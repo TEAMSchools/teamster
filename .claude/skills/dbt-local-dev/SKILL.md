@@ -19,13 +19,6 @@ Every `dbt` invocation appends to `<project>/logs/dbt.log` (full output, not
 truncated). When a background build's captured output is incomplete, read that
 file before re-running the build.
 
-### Fresh worktree needs `dbt deps`
-
-A newly-created worktree has no `dbt_packages/`. Run
-`uv run dbt deps --project-dir <worktree>/src/dbt/<project>` once before any
-`dbt build` / `test` / `clone` there — otherwise it errors with "N package(s)
-specified in packages.yml, but only 0 package(s) installed".
-
 ### Building a source-system package model locally
 
 Source-system package models (`focus`, `amplify`, etc.) have no resolvable vars

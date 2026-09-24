@@ -5,16 +5,8 @@ and four district projects into network-level marts, reporting, and extracts.
 
 ## Source File Conventions
 
-Each integration uses two source files with the **same `name:` under
-`sources:`** (dbt merges at parse time):
-
-| File                   | Points to                          | Schema expression                    |
-| ---------------------- | ---------------------------------- | ------------------------------------ |
-| `sources-external.yml` | GCS Avro / Google Sheets externals | dev-prefixed (env-isolated)          |
-| `sources-bigquery.yml` | Native BQ tables (Airbyte, frozen) | plain hardcoded (e.g. `kipptaf_foo`) |
-
-When both files exist for the same source, `sources-bigquery.yml` omits
-`schema:`.
+The two-file convention is in `.claude/rules/dbt-yaml.md` → Source File
+Conventions.
 
 **Archive pattern**: Disable the model (`config: enabled: false` in properties
 YAML) → add BQ-native entry in `sources-bigquery.yml` → update downstream
@@ -144,11 +136,9 @@ over per-region finalsite sources.
   (`sources-kippmiami.yml`, `sources-kippcamden.yml`, `sources-kippnewark.yml`,
   `sources-kipppaterson.yml`) carry the `staging`→`zz_stg_` branch (single-PR
   pattern — a cross-region finalsite union needs the staged copies for CI).
-  Newark gained it in #4400 (DeansList contacts) alongside a column add to
-  `int_finalsite__student_contacts`; before pushing any finalsite column-adding
-  PR, seed the staged copies per district (`dbt clone --target staging` +
-  `dbt build --select <model> --target staging`) so CI's union-wrapper rebuild
-  sees the new columns.
+  Before pushing any finalsite column-adding PR, seed the staged copies per
+  district (_Single-PR cross-project workflow_ below) so CI's union-wrapper
+  rebuild sees the new columns.
 
 ### `extracts/powerschool/` special case
 
@@ -361,12 +351,6 @@ pushing, or land them in a separate PR. Verify what a run actually built with
 `dbt_cloud_pr_<job>_<pr>%` — step duration and warning counts are both weak
 proxies.
 
-CI is scoped to the kipptaf project only. PRs touching only a district project
-(kipppaterson, kippnewark, kippcamden, kippmiami) get a no-op kipptaf CI run
-that selects no models — kipptaf CI green is not evidence the district-side
-changes are correct. Verify via local `uv run dbt build` against the district
-project.
-
 `Clone - Staging (Modified)` clones only `state:modified` models, not their
 parents. When CI fails on a stale staging defer table for an unmodified upstream
 (column missing after a recent merge), trigger the full `Clone - Staging` job —
@@ -395,9 +379,8 @@ are SELECT-only), so hand the drops to the user.
 Re-triggering Build - CI: prefer `mcp__dbt__retry_job_run(run_id=<failed run>)`
 — it retries the _existing_ run, keeping the PR-schema override
 (`trigger_job_run` loses it; that's why the fallback is empty-commit + push).
-But `dbt retry` replays the prior run's compiled SQL and re-runs only
-errored/skipped nodes — so after changing external state (dropping PR schemas,
-refreshing staging) use a fresh build (empty-commit + push), not retry.
+After changing external state, use a fresh build instead (`pr-ci-review` → dbt
+Cloud CI state comparison).
 
 ## Single-PR cross-project workflow
 
