@@ -951,15 +951,41 @@ deploy token stored somewhere, which is one more credential to manage, and it
 needs an explicit exception to a repo rule. Neither outweighs a mistaken push
 deploying to MasterBorn.
 
-### The console check no longer blocks anything
+### There is no sandbox branch
 
-The one question left for the Cube Cloud web UI is whether a Git-mode deployment
-can point its production environment at a branch other than `main`. If it
-cannot, Git mode is not available for the sandbox at all.
+Worth stating plainly, because the spec's framing invites the opposite reading.
+Three things differ between the sandbox deployment and production, and only one
+of them needs a mechanism:
 
-Either answer gives the same outcome: CLI by preference, or CLI by default. **So
-the check stops being a blocker** and becomes a note for the record. Do it when
-convenient; do not wait on it.
+| What                 | Sandbox versus production                            |
+| -------------------- | ---------------------------------------------------- |
+| Model files          | **Identical.** Forking them breaks the kit's premise |
+| Revision             | Older — a tagged commit on `main`'s own history      |
+| Deployment variables | `CUBEJS_DB_BQ_PROJECT_ID` and its credentials        |
+
+The sandbox is not a fork. Every `sql_table:` is project-unqualified, so the
+same model files read a different warehouse purely from the deployment variable
+— that single-variable repoint is what the whole design rests on. If the sandbox
+YAML ever diverged from production YAML, the kit would stop building against the
+production semantic layer.
+
+So the sandbox needs a **revision**, not a branch. `sandbox-YYYY.MM.DD` tags a
+commit that is already on `main`, and CLI mode deploys exactly that checkout.
+
+A branch appears only inside the Git-mode alternative, because Git mode tracks a
+branch head, and a long-lived branch is the only way it can express "an older
+commit of `main`." That is an artifact of the mechanism, not something the
+design wants.
+
+### The web UI check is about a mechanism we are declining
+
+The one question left for the Cube Cloud web UI — can a Git-mode deployment
+point its production environment at a branch other than `main` — only matters if
+Git mode is on the table. It is not, for the reason above and for the
+deploy-on-push reason before it.
+
+Either answer gives the same outcome: CLI by preference, or CLI by default.
+**The check is a note for the record, not a blocker.** Do it when convenient.
 
 ### One repo rule needs scoping, not breaking
 
