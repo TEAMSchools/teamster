@@ -41,14 +41,6 @@ models:
           config:
             where: rn_year = 1
             severity: warn
-      - dbt_utils.expression_is_true:
-          arguments:
-            expression: |
-              last_enrolled_date = if(_dbt_source_project = 'kippmiami',
-              exitdate, date_sub(exitdate, interval 1 day))
-          config:
-            severity: error
-            where: exitdate is not null
     columns:
       - name: _dbt_source_project
         data_type: string

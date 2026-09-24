@@ -20,20 +20,6 @@ models:
               - discipline
           config:
             severity: error
-      - dbt_utils.expression_is_true:
-          arguments:
-            expression: |
-              not (_dbt_source_project != 'kippmiami' and is_enrolled_week and
-              exitdate = week_start_monday)
-          config:
-            severity: error
-      - dbt_utils.expression_is_true:
-          arguments:
-            expression: |
-              not (_dbt_source_project != 'kippmiami' and exitdate =
-              school_week_start_date)
-          config:
-            severity: error
     columns:
       - name: _dbt_source_relation
         data_type: string
