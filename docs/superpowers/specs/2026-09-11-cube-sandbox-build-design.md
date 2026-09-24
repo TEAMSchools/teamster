@@ -124,6 +124,33 @@ BigQuery reads, queries and writes in production. A deny overrides any grant, so
 a later well-meaning grant cannot reopen the read, and it does not depend on
 where the project sits in the resource hierarchy.
 
+### Three prerequisites the IAM table does not cover
+
+Each was found by hitting it during the first load attempt on 2026-09-24, in
+this order. Two need an identity the analytics side may not hold, so check them
+before scheduling the work rather than discovering them mid-run.
+
+| Prerequisite                                                                | Needed for                | Who can do it   |
+| --------------------------------------------------------------------------- | ------------------------- | --------------- |
+| A billing account linked to the project                                     | Any GCS or BigQuery write | A billing admin |
+| The `teamster-cube-sandbox-staging` bucket                                  | Staging Avro              | Project Owner   |
+| `roles/storage.objectAdmin` on that bucket, for the sandbox service account | The upload                | Project Owner   |
+
+**Billing hides until the first write.** `INFORMATION_SCHEMA` reads are metadata
+and do not bill, so Piece 1's isolation test passes on a project with no billing
+account at all — the first load then fails with
+`the billing account for the owning project is disabled in state absent`. The
+isolation test proving the boundary is not evidence the project can hold data.
+
+**The service account's roles are BigQuery-only and grant nothing in Cloud
+Storage**, even though the load stages through GCS. That is easy to miss
+precisely because the account already reads and writes BigQuery fine.
+
+**Neither the bucket nor its binding can be created with the sandbox key** — the
+key cannot create a bucket or grant itself access. Both need the operator's own
+identity, so `unset GOOGLE_APPLICATION_CREDENTIALS` first if it is pointing at
+the key.
+
 ### The isolation test has two legs
 
 - **Negative:** the sandbox service account reading
