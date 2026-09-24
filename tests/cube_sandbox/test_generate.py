@@ -142,3 +142,34 @@ def test_dim_dates_is_bounded_in_both_profiles() -> None:
 def test_an_unknown_scale_is_rejected() -> None:
     with pytest.raises(ValueError, match="unknown scale"):
         generate.row_target("dim_students", scale="medium")
+
+
+def test_the_unresolved_slice_is_null_not_false() -> None:
+    # The manifest requires a null row for is_current_homeroom, and a
+    # generator writing False everywhere makes that cell unsatisfiable by
+    # construction. The dbt column is `(is_homeroom and homeroom_rank = 1)`,
+    # which is genuinely NULL when the rank does not resolve; its YAML claims
+    # "never null" but no dbt not_null test asserts it, so per the spec the
+    # sandbox nulls it and the fix belongs in dbt.
+    rows = generate.resolve_spine(
+        enrollments=_stints(20),
+        sections=_sections(per_stint=3, stints=20),
+        rng=random.Random(0),
+    )
+    flags = [r["is_current_homeroom"] for r in rows]
+    assert any(f is None for f in flags), "the null slice is a required cell"
+    assert any(f is True for f in flags)
+    assert any(f is False for f in flags)
+
+
+def test_the_null_slice_survives_a_tiny_run() -> None:
+    # A bare 5% coin flip can come up empty on the tiny profile, which would
+    # leave the required null cell unsatisfied at random. A flaky gate
+    # teaches nothing, so the first stint is unresolved unconditionally.
+    for seed in range(5):
+        rows = generate.resolve_spine(
+            enrollments=_stints(2),
+            sections=_sections(per_stint=2, stints=2),
+            rng=random.Random(seed),
+        )
+        assert any(r["is_current_homeroom"] is None for r in rows)

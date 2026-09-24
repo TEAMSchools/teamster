@@ -119,6 +119,17 @@ def resolve_spine(
     manifest's required cells, not sloppiness. Leaving them ALL unset is the
     silent failure: the data loads, and the homeroom-teacher join simply
     matches nothing.
+
+    That unresolved slice is written NULL, not FALSE. The dbt column is
+    `(is_homeroom and homeroom_rank = 1)`, which is NULL whenever the rank
+    does not resolve on a homeroom row; its YAML says "never null" but no
+    dbt `not_null` test asserts it, so the manifest requires a null row —
+    and a generator that writes FALSE everywhere makes that cell
+    unsatisfiable by construction. Per the spec, a column that is never null
+    in practice and carries no test is a missing test: the sandbox nulls it,
+    and the fix belongs in dbt. A nullable boolean in a join predicate is
+    also exactly what the kit must learn to handle, since NULL and FALSE
+    both fail the join but behave differently under negation.
     """
     by_stint: dict[str, list[dict[str, Any]]] = {}
     for row in sections:
@@ -126,12 +137,22 @@ def resolve_spine(
         if row.get("is_homeroom"):
             by_stint.setdefault(row["student_enrollment_key"], []).append(row)
 
-    for stint in enrollments:
-        candidates = by_stint.get(stint["student_enrollment_key"], [])
+    with_candidates = [
+        stint for stint in enrollments if by_stint.get(stint["student_enrollment_key"])
+    ]
+    for position, stint in enumerate(with_candidates):
+        candidates = by_stint[stint["student_enrollment_key"]]
+        # The first stint is unresolved unconditionally. A bare
+        # `unresolved_share` coin flip can come up empty on the tiny profile,
+        # which would leave the required null cell unsatisfied at random —
+        # a flaky gate teaches nothing.
+        if position == 0 or rng.random() < unresolved_share:
+            for row in candidates:
+                row["is_current_homeroom"] = None
+            continue
         # Exactly one, or none. The homeroom join is one_to_one, so a second
         # current homeroom on one stint fans the attendance views out.
-        if candidates and rng.random() >= unresolved_share:
-            rng.choice(candidates)["is_current_homeroom"] = True
+        rng.choice(candidates)["is_current_homeroom"] = True
 
     return sections
 
