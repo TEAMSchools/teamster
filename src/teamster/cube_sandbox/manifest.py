@@ -57,14 +57,22 @@ def dbt_not_null(marts_root: Path) -> set[tuple[str, str]]:
 
 
 def build(
+    *,
     snap: dict[str, Any],
     referenced: dict[str, set[str]],
     key_columns: set[tuple[str, str]],
-    policy_columns: set[str],
+    policy_columns: set[tuple[str, str]],
     not_null: set[tuple[str, str]],
     scopes: dict[str, set[str]],
     people: list[Persona],
 ) -> dict[str, Any]:
+    """Every cell the sandbox data must contain.
+
+    Keyword-only: all five set-shaped parameters are interchangeable
+    positionally, and a positional call that silently binds key_columns to
+    policy_columns would produce a plausible manifest with the wrong
+    exemptions.
+    """
     cells: list[dict[str, Any]] = []
 
     for table, columns in sorted(snap["tables"].items()):
@@ -86,7 +94,7 @@ def build(
             # to nothing), and a column dbt asserts is never null.
             exempt = (
                 (table, column) in key_columns
-                or column in policy_columns
+                or (table, column) in policy_columns
                 or (table, column) in not_null
             )
             if not exempt:

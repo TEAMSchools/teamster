@@ -734,6 +734,11 @@ cells:
     column: effective_start_date
     detail: at least one non-null row
     status: uncovered
+  - kind: "null"
+    table: dim_staff_work_history
+    column: effective_start_date
+    detail: at least one null row
+    status: uncovered
   - kind: non_null
     table: dim_staff_work_history
     column: full_time_equivalency
@@ -1038,6 +1043,11 @@ cells:
     table: dim_student_section_enrollments
     column: is_current_homeroom
     detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_student_section_enrollments
+    column: is_current_homeroom
+    detail: at least one null row
     status: uncovered
   - kind: non_null
     table: dim_student_section_enrollments

@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
+from typing import NamedTuple
 
 import yaml
 
@@ -105,17 +106,28 @@ def _cubes(cube_root: Path) -> dict[str, dict]:
     return out
 
 
-def _resolve(name: str, cubes: dict[str, dict]) -> tuple[str, dict[str, str]]:
-    """A cube's table and its dimension-name -> column map, following `extends`.
+class _Resolved(NamedTuple):
+    table: str
+    dimensions: dict[str, str]
+    joins: list[dict]
+
+
+def _resolve(name: str, cubes: dict[str, dict]) -> _Resolved:
+    """A cube's table, dimension-name -> column map and joins, via `extends`.
 
     A role-play cube (`staff_lead_teacher`, `staff_manager`,
     `staff_homeroom_teacher`) is `extends: staff` with no `sql_table` and no
     dimensions of its own. A join's far side names one of those aliases, so
     reading `sql_table` off the named cube alone yields "" and drops the key.
+
+    Joins are inherited too. No alias extends a cube that declares joins
+    today, so this changes nothing now — but inheriting dimensions and not
+    joins would be an inconsistency waiting for the first alias that does.
     """
     seen: set[str] = set()
     table = ""
     dimensions: dict[str, str] = {}
+    joins: list[dict] = []
     current: str | None = name
     while current and current in cubes and current not in seen:
         seen.add(current)
@@ -125,20 +137,32 @@ def _resolve(name: str, cubes: dict[str, dict]) -> tuple[str, dict[str, str]]:
         for dim in cube.get("dimensions", []):
             # The nearest definition wins, so only fill what the alias lacks.
             dimensions.setdefault(str(dim.get("name")), str(dim.get("sql", "")))
+        joins.extend(cube.get("joins", []))
         current = cube.get("extends")
-    return table, dimensions
+    return _Resolved(table, dimensions, joins)
+
+
+# A join operand: `{CUBE}.column`, optionally backticked, or `{cube.member}`.
+_OPERAND = r"(?:\{CUBE\}\.`?[a-z_][a-z0-9_]*`?|\{[a-z_][a-z0-9_]*\.[a-z_][a-z0-9_]*\})"
+_EQUALITY = re.compile(rf"({_OPERAND})\s*=\s*({_OPERAND})")
+_CUBE_COLUMN = re.compile(r"^\{CUBE\}\.`?([a-z_][a-z0-9_]*)`?$")
+_FAR_MEMBER = re.compile(r"^\{([a-z_][a-z0-9_]*)\.([a-z_][a-z0-9_]*)\}$")
 
 
 def _column_of(sql: str) -> str | None:
     """The bare column a dimension's `sql:` names, or None if it is an
     expression.
 
-    A key is always a plain column reference. `CAST(entry_date AS TIMESTAMP)`
-    and `{CUBE}.\\`type\\`` are not keys, and guessing a column out of an
-    expression would invent an exemption rather than derive one.
+    A key is always a plain column reference, though it may be written
+    `{CUBE}`-qualified or backticked — `.claude/rules/cube-authoring.md`
+    tells authors to qualify any expression-bodied dimension whose column
+    name also exists on a joined cube, and the model backticks reserved
+    words. `CAST(entry_date AS TIMESTAMP)` is not a key, and guessing a
+    column out of an expression would invent an exemption rather than derive
+    one.
     """
-    text = sql.strip()
-    return text if re.fullmatch(r"[a-z_][a-z0-9_]*", text) else None
+    match = re.fullmatch(r"(?:\{CUBE\}\.)?`?([a-z_][a-z0-9_]*)`?", sql.strip())
+    return match.group(1) if match else None
 
 
 def key_columns(cube_root: Path) -> set[tuple[str, str]]:
@@ -150,35 +174,76 @@ def key_columns(cube_root: Path) -> set[tuple[str, str]]:
     `lea_student_identifier` on `dim_students` — routinely null for a newly
     enrolled student, and exactly the case the sandbox exists to teach. Two
     structural sources instead: a dimension marked `primary_key: true`, and
-    either side of a join's `sql:` predicate.
+    the operands of an EQUALITY in a join's `sql:` predicate.
+
+    Only an equality. A join predicate can also carry a bare boolean term
+    (`... AND {student_homeroom_section.is_current_homeroom}`) and a range
+    bound (`{dates.date_key} BETWEEN {CUBE}.effective_start_date AND ...`).
+    Those columns are ordinary attributes that happen to appear in a
+    predicate, not the keys that link the rows, and exempting them is the
+    same over-exemption the name-suffix rule was deleted for. Where such a
+    column is never null in practice and carries no dbt `not_null` test,
+    that is a missing test, and the sandbox nulling it is how the spec says
+    to surface it.
     """
     cubes = _cubes(cube_root)
     out: set[tuple[str, str]] = set()
 
+    def operand(text: str, near_table: str) -> tuple[str, str] | None:
+        if match := _CUBE_COLUMN.match(text):
+            return (near_table, match.group(1))
+        if match := _FAR_MEMBER.match(text):
+            far = _resolve(match.group(1), cubes)
+            column = _column_of(far.dimensions.get(match.group(2), ""))
+            if far.table and column:
+                return (far.table, column)
+        return None
+
     for name, cube in cubes.items():
-        table, _ = _resolve(name, cubes)
-        if not table:
+        resolved = _resolve(name, cubes)
+        if not resolved.table:
             continue
 
         for dim in cube.get("dimensions", []):
             if dim.get("primary_key") and (column := _column_of(str(dim.get("sql")))):
-                out.add((table, column))
+                out.add((resolved.table, column))
 
-        for join in cube.get("joins", []):
-            sql = str(join.get("sql", ""))
-            # `{CUBE}.<column>` — the near side, a column on this cube's table.
-            for column in re.findall(r"\{CUBE\}\.([a-z_][a-z0-9_]*)", sql):
-                out.add((table, column))
-            # `{<cube>.<member>}` — the far side, a DIMENSION on another cube
-            # that has to be resolved to that cube's own table and column.
-            for other, member in re.findall(
-                r"\{([a-z_][a-z0-9_]*)\.([a-z_][a-z0-9_]*)\}", sql
-            ):
-                other_table, other_dims = _resolve(other, cubes)
-                column = _column_of(other_dims.get(member, ""))
-                if other_table and column:
-                    out.add((other_table, column))
+        for join in resolved.joins:
+            for left, right in _EQUALITY.findall(str(join.get("sql", ""))):
+                for side in (left, right):
+                    if pair := operand(side, resolved.table):
+                        out.add(pair)
 
+    return out
+
+
+def view_member_columns(cube_root: Path) -> dict[str, tuple[str, str]]:
+    """Each view member's exposed name -> the (table, column) behind it.
+
+    A view member's exposed name follows the `prefix:` setting on the
+    `includes:` block that surfaces it: `prefix: true` gives
+    `<last join_path segment>_<member>`, anything else leaves it bare. So
+    `locations_abbreviation` and a bare `abbreviation` can both mean
+    `dim_locations.abbreviation`, and a bare `staff_key` means
+    `dim_staff.staff_key` and nothing else.
+    """
+    cubes = _cubes(cube_root)
+    out: dict[str, tuple[str, str]] = {}
+    for path in (cube_root / "model" / "views").rglob("*.yml"):
+        doc = yaml.safe_load(path.read_text()) or {}
+        for view in doc.get("views", []):
+            for block in view.get("cubes", []):
+                segment = str(block.get("join_path", "")).split(".")[-1]
+                resolved = _resolve(segment, cubes)
+                includes = block.get("includes")
+                if not resolved.table or not isinstance(includes, list):
+                    continue
+                for member in includes:
+                    exposed = (
+                        f"{segment}_{member}" if block.get("prefix") else str(member)
+                    )
+                    if column := _column_of(resolved.dimensions.get(str(member), "")):
+                        out[exposed] = (resolved.table, column)
     return out
 
 
@@ -205,7 +270,7 @@ def _filter_members(filters: list) -> set[str]:
     return out
 
 
-def policy_columns(cube_root: Path) -> set[str]:
+def policy_members(cube_root: Path) -> set[str]:
     """Every view member an access_policy row_level filter interpolates."""
     out: set[str] = set()
     for path in (cube_root / "model" / "views").rglob("*.yml"):
@@ -214,6 +279,22 @@ def policy_columns(cube_root: Path) -> set[str]:
             for policy in view.get("access_policy", []):
                 out |= _filter_members(policy.get("row_level", {}).get("filters", []))
     return out
+
+
+def policy_columns(cube_root: Path) -> set[tuple[str, str]]:
+    """The (table, column) behind every access_policy row_level filter.
+
+    Resolved through the view's own `includes:` blocks rather than left as a
+    bare member name. A bare name exempts the column on EVERY table that
+    happens to carry it — `dim_staff_reporting_periods.staff_key` was exempt
+    only because the string `staff_key` is a policy member on `staff_pii`,
+    where it means `dim_staff.staff_key`. It also leaves the prefixed names
+    (`locations_abbreviation`) matching no warehouse column at all, so the
+    exemption they were meant to grant never applied. A name is not a
+    contract here either.
+    """
+    lookup = view_member_columns(cube_root)
+    return {lookup[m] for m in policy_members(cube_root) if m in lookup}
 
 
 def _balanced_block(text: str, open_brace_index: int) -> str:

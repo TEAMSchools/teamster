@@ -67,14 +67,36 @@ def test_no_referenced_column_is_absent_from_the_snapshot() -> None:
     assert missing == []
 
 
-def test_policy_columns_are_flat_names() -> None:
-    cols = model.policy_columns(CUBE_ROOT)
+def test_policy_members_are_flat_names() -> None:
+    cols = model.policy_members(CUBE_ROOT)
     # row_level filters name a flat view member, never a cube-qualified path.
     assert cols and all("." not in c for c in cols)
 
 
+def test_policy_columns_resolve_to_a_real_table_and_column() -> None:
+    snap = json.loads((CUBE_ROOT / "sandbox" / "schema_snapshot.json").read_text())
+    resolved = model.policy_columns(CUBE_ROOT)
+    assert resolved
+    for table, column in resolved:
+        assert column in snap["tables"].get(table, {}), (table, column)
+    # locations_abbreviation is a PREFIXED view member. As a bare name it
+    # matches no warehouse column anywhere, so the exemption it was meant to
+    # grant never applied to anything.
+    assert ("dim_locations", "abbreviation") in resolved
+    assert ("dim_locations", "region_key") in resolved
+    # A bare staff_key on staff_pii means dim_staff.staff_key, and only that.
+    assert ("dim_staff", "staff_key") in resolved
+
+
+def test_a_policy_member_does_not_exempt_the_same_name_on_another_table() -> None:
+    # dim_staff_reporting_periods also has a staff_key column, and nothing
+    # filters on it. Keying the exemption on the bare name exempted it too.
+    resolved = model.policy_columns(CUBE_ROOT)
+    assert ("dim_staff_reporting_periods", "staff_key") not in resolved
+
+
 def test_policy_columns_descends_into_or_and_and_blocks() -> None:
-    cols = model.policy_columns(CUBE_ROOT)
+    cols = model.policy_members(CUBE_ROOT)
     # staff_pii.yml's staff-pii-reporting_chain_or_below_rank policy nests its
     # filters under `or: [{and: [...]}, {member: staff_key, ...}]`. A
     # top-level-only read of `row_level.filters[].member` never sees inside
@@ -98,14 +120,37 @@ def test_key_columns_finds_primary_keys_and_join_columns() -> None:
     assert all("." not in t and "." not in c for t, c in keys)
 
 
-def test_key_columns_resolves_role_play_cubes_through_extends() -> None:
+def test_extends_resolves_a_role_play_cube_to_its_base() -> None:
+    # staff_lead_teacher carries no sql_table and no dimensions of its own —
+    # it is `extends: staff`. Joins name the alias
+    # (`{staff_lead_teacher.staff_key} = {CUBE}.lead_teacher_staff_key`), so
+    # without the extends walk the far side resolves to a cube with no table
+    # and contributes nothing.
+    #
+    # Asserted on _resolve directly, not via key_columns: dim_staff.staff_key
+    # is ALSO contributed by staff's own primary_key dimension, so a
+    # membership check there passes whether extends is followed or not, and
+    # would be vacuous as a guard on this mechanism.
+    cubes = model._cubes(CUBE_ROOT)
+    assert "sql_table" not in cubes["staff_lead_teacher"]
+    resolved = model._resolve("staff_lead_teacher", cubes)
+    assert resolved.table == "dim_staff"
+    assert model._column_of(resolved.dimensions["staff_key"]) == "staff_key"
+
+
+def test_a_join_predicate_term_that_is_not_an_equality_operand_is_not_a_key() -> None:
     keys = model.key_columns(CUBE_ROOT)
-    # staff_lead_teacher carries no sql_table of its own — it is
-    # `extends: staff`. student_section_enrollments joins it as
-    # `{staff_lead_teacher.staff_key} = {CUBE}.lead_teacher_staff_key`, so
-    # without resolving extends the join's far side names a cube with no
-    # table and the key silently goes missing from dim_staff.
-    assert ("dim_staff", "staff_key") in keys
+    # student_school_enrollments joins student_homeroom_section on
+    # `... = ... AND {student_homeroom_section.is_current_homeroom}`. That
+    # trailing term is a boolean filter, not a key: it links no rows, and a
+    # null on a non-homeroom row breaks nothing. Exempting every column named
+    # anywhere in a join predicate is the same over-exemption the name-suffix
+    # rule was deleted for.
+    assert ("dim_student_section_enrollments", "is_current_homeroom") not in keys
+    # Same for a BETWEEN range bound on the staff_work_history -> dates join.
+    assert ("dim_staff_work_history", "effective_start_date") not in keys
+    # The equality operands of that same set of joins are still keys.
+    assert ("dim_student_section_enrollments", "student_enrollment_key") in keys
 
 
 def test_the_student_identifiers_are_not_keys() -> None:

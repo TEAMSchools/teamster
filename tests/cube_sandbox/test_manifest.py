@@ -27,7 +27,7 @@ def test_keys_and_policy_columns_are_exempt_from_the_null_rule() -> None:
         snap=SNAP,
         referenced={"dim_x": {"student_key", "nickname", "abbreviation"}},
         key_columns={("dim_x", "student_key")},
-        policy_columns={"abbreviation"},
+        policy_columns={("dim_x", "abbreviation")},
         not_null=set(),
         scopes={},
         people=[],
