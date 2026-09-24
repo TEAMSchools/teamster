@@ -621,10 +621,12 @@ reached their end-of-season goal. Those are different students, and on ORF it is
    every aimline report Amplify has ever sent. If academics wants the
    season-goal reading, it is a second measure alongside the existing one, not a
    correction.
-2. Do not put the season goal next to the verdict on a roster without the
-   by-date target beside it. A student reading "Season Gap 0" next to "Meeting
-   Aimline, Off-Track" looks like a contradiction until you can see that the
-   round target was 8, the score was 13, and the grade-level benchmark was 30.
+2. Do not show the season goal or the season gap on the dashboard. Academics
+   asked for both to be hidden on 2026-09-24. Next to the verdict they read as a
+   contradiction: "Season Gap 0" beside "Meeting Aimline, Off-Track" makes sense
+   only once you see the round target was 8, the score 13, and the benchmark 30.
+   `aimline_season_student_goal` and its gap stay in the extract; do not bind
+   them to a view or propose them for one.
 3. The evidence above is observational, not vendor-documented. Confirming it
    with Amplify is still open. Say so rather than citing it as their spec.
    Academics reviewed the difference and accepted this definition on 2026-09-24.
