@@ -667,10 +667,11 @@ After `current_academic_year` bumps in July:
 ## Gotchas
 
 - **Never judge the current contents of either Google Sheet from the prod `stg_`
-  table.** Both are frozen at the last prod build. Rebuild into dev.
+  table.** Both are frozen at the last prod build. Read the `src_` external live
+  instead (Step 6).
 - **The BigQuery MCP cannot read either sheet's external table** — the service
-  account has no Drive scope and returns 403. Build the staging model first,
-  then query the materialized table.
+  account has no Drive scope and returns 403. Query the external through ADC
+  with `uv run python`, as in Step 6 and `.claude/context/bigquery.md`.
 - **The Tableau MCP cannot answer "what does the workbook do with this field".**
   It is read-only, returns no calculated-field text, and 500s on
   `get-datasource-metadata` for the embedded extracts this workbook uses. Use

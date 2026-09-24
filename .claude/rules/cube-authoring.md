@@ -440,10 +440,10 @@ filtering cube — route through `{joined_cube.col}` instead.
 
 ## Cube can't classify an aggregate by a data-driven range
 
-Cube has no non-equi/range (BETWEEN) join, and a dimension can't reference a
-measure (only surface one via `sub_query`). Mapping an aggregated value to a
-band via per-row threshold rows (e.g. percent_correct → performance band) can't
-be expressed in Cube — materialize that classification upstream in dbt.
+A dimension can't reference a measure (only surface one via `sub_query`), and a
+range join matches rows, not aggregates. Mapping an aggregated value to a band
+via per-row threshold rows (e.g. percent_correct → performance band) can't be
+expressed in Cube — materialize that classification upstream in dbt.
 
 ## School weeks vs ISO weeks
 

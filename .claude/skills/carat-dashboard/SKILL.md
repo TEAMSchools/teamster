@@ -1270,8 +1270,9 @@ Work outward from the student, stopping at the first layer with zero rows.
 - **`__TABLES__.row_count` is unreliable and reads 0 for views.** Confirm with
   `count(*)`.
 - **The BigQuery MCP service account cannot read Google Sheets externals** (no
-  Drive scope). Query the materialized `stg_*` table, never the `src_*`
-  external.
+  Drive scope), and the prod `stg_*` table is frozen at the last build. Query
+  the `src_*` external live through ADC with `uv run python`, per
+  `.claude/context/bigquery.md`.
 - **`rg -ril <pattern>` silently mangles output** — `-r` consumes `il` as a
   replacement string. Use plain `grep`.
 - **`WHERE` runs before window functions.** Section rows borrow their score from

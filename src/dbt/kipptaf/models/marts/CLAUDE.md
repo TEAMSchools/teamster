@@ -72,8 +72,9 @@ SELECT.
 When filing a GitHub issue from marts work (spec authoring, PR review follow-up,
 CI warning triage), add it to project board
 [#4](https://github.com/orgs/TEAMSchools/projects/4) and set `Tier`, `PR batch`,
-and `Driver`. Commands and `GITHUB_TOKEN=` prefix: see root CLAUDE.md → MCP
-Servers `gh project` bullets. `Status` auto-sets to Todo on add — skip.
+and `Driver`. `gh project` commands: `.claude/context/github.md`; the
+`GITHUB_TOKEN=` prefix: `gh-token-scopes` skill. `Status` auto-sets to Todo on
+add — skip.
 
 **Ops-tracked grouping**: file ONE `ops-tracked` issue per underlying source
 (one Google Sheet, one config file) — bullets per orphan bucket inside. Don't
@@ -134,7 +135,7 @@ avoid a join, the chain is probably already there — use it instead.
   next to its `_date_key` (R9).
 - **Nullable FK**: wrap with the
   `if(col is not null, generate_surrogate_key, cast(null as string))` pattern
-  (see `src/dbt/CLAUDE.md` → "Nullable surrogate keys") — otherwise
+  (see `.claude/rules/dbt-sql.md` → "Nullable surrogate keys") — otherwise
   relationships tests fail against the placeholder hash.
 
 ## Hash-input joins: INNER over LEFT when scope guarantees membership

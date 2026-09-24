@@ -91,8 +91,6 @@ description:
   (e.g. `libraries/dlt/`) redeploys every consuming location, not just the ones
   whose config you edited.
 
-## dbt Cloud CI selection
-
 ## dbt Cloud CI builds only kipptaf
 
 The dbt Cloud CI job (`Build - CI (Modified)`, dbt Cloud project 211862) runs

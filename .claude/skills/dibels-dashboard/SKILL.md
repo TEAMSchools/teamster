@@ -2360,10 +2360,11 @@ three-in-a-row variant.
 
 Validated on AY2025 against PROD: 36,502 rows, exact grain, six tests pass, 5
 rows lost to the roster join (3 Newark students, in the yml). Measure documented
-counts against prod, never a dev build -- `--favor-state` does NOT defer a model
-that already exists in your dev schema, so a stale `zz_<user>_*` copy silently
-wins and the build looks authoritative. That is how nine figures in these docs
-were wrong for four days.
+counts against prod, never a dev build -- `--favor-state --defer` resolves
+unselected upstreams to prod, but a query against a `zz_<user>_*` relation (or a
+selected model built from stale inputs) reads whatever that dev copy holds, and
+the result looks authoritative. That is how nine figures in these docs were
+wrong for four days.
 
 ### "% meeting aimline, overall and by measure" is three grains, and all three already exist
 

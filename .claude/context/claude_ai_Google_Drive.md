@@ -37,7 +37,7 @@ via the Drive MCP is not necessarily readable by a dbt source.
 it returns `title`, `owner`, and `modifiedTime`, which are the provenance facts
 the content itself does not carry.
 
-- **Drive MCP `read_file_content` returns only the first sheet tab** — to read a
-  specific tab of a multi-tab Google Sheet, use the Sheets API via
+- **Drive MCP `download_file_content` as CSV returns only the first sheet tab**
+  — to read a specific tab of a multi-tab Google Sheet, use the Sheets API via
   `uv run --with google-api-python-client` with `range="'Tab Name'!A1:Z"` (ADC
   has the scope), not the Drive MCP read.

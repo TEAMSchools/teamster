@@ -202,9 +202,9 @@ description:
 - **Hybrid daemon location** — sensor / asset / schedule daemons run in the
   Dagster Cloud control plane, NOT in the local agent. OSS `dagster.yaml`
   settings (`max_tick_retries`, `auto_materialize.*`, etc.) do not apply; the
-  Dagster+ full deployment settings (see Dagster+ Deployment Settings section)
-  expose no tick-retry knob. Terminal `DagsterUserCodeUnreachableError` ticks
-  remain terminal.
+  Dagster+ full deployment settings (`.k8s/CLAUDE.md` → _Dagster+ Deployment
+  Settings_) expose no tick-retry knob. Terminal
+  `DagsterUserCodeUnreachableError` ticks remain terminal.
 - **A timed-out code server deployment is TERMINAL — the agent never retries
   it.** `_should_trigger_recovery` in
   `dagster_cloud/workspace/user_code_launcher/user_code_launcher.py` returns

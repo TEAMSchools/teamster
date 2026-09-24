@@ -124,9 +124,9 @@ Two coordination rules:
    sequencing.
 2. **Never judge sheet contents from the prod `stg_` table.** It is a table
    frozen at the last build. The BigQuery MCP service account cannot read
-   Drive-backed externals at all (403, no Drive scope). Read the live sheet by
-   requesting the Drive scope explicitly from a pytest one-off, or rebuild the
-   staging model into your dev schema.
+   Drive-backed externals at all (403, no Drive scope). Query the `src_`
+   external live through ADC with `uv run python`, per
+   `.claude/context/bigquery.md`.
 
 ---
 
@@ -316,11 +316,8 @@ you are about to key a new-scale cut onto old-scale rows.
 
 The sheet is small, so replace it wholesale rather than hand-editing rows.
 
-Read the live tab — the BigQuery MCP service account **cannot** (403, no Drive
-scope) and the prod `stg_` table is frozen at the last build. Use a throwaway
-`tests/test_zz_*.py` with `google.auth.default(scopes=[".../drive.readonly"])`
-and the Sheets API, then delete it. The named range in `sources-external.yml`
-`sheet_range` tells you which tab.
+Read the live tab through the `src_` external, as in coordination rule 2 above.
+The named range in `sources-external.yml` `sheet_range` tells you which tab.
 
 Build the replacement as TSV into `.claude/scratch/` and hand the analyst the
 file to paste. Rules:
