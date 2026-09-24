@@ -126,18 +126,25 @@ every time so far**, and the failure is silent in all three cases.
 
 Every CARAT sheet change reaches the user in one shape:
 
-1. A **tab-separated** file. Google Sheets splits a paste into columns only on
+1. The **destination as a link plus tab name**. Every CARAT tab lives in one
+   workbook,
+   <https://docs.google.com/spreadsheets/d/12yqEOmyeNrvzOkmrOFnKOpsHU0L19G7zoG3b9f5cIpI>:
+   `Goals`, `Expected Assessments`, `Scale Score Conversion`, `Scaffold`.
+2. A **tab-separated** file. Google Sheets splits a paste into columns only on
    tabs; comma-separated text lands entirely in column A.
-2. Written to the **session scratchpad**, handed over as a clickable path the
+3. Written to the **session scratchpad**, handed over as a clickable path the
    user opens in VS Code, selects all, copies, and pastes. Never pasted into
    chat: the chat panel turns tabs into spaces.
-3. Covering the **whole block** being replaced, with the paste anchor named (A1
+4. Covering the **whole block** being replaced, with the paste anchor named (A1
    with a header row, A2 without one) — not a list of cells to edit by hand.
-4. Built from the **live sheet**, not a `stg_*` model: staging may be reshaped
+5. Built from the **live sheet**, not a `stg_*` model: staging may be reshaped
    (the goals model is unpivoted) or stale (it is a table that has not rebuilt).
    Read the Sheets external through ADC from Python; the BigQuery MCP cannot.
 
-After the paste, re-read the live sheet and diff it against the file.
+After the paste, re-read the live sheet and diff it against the file. A row
+count that comes back short means the paste ran past the tab's named range
+(`Goals`, `Expected Assessments` and `Scaffold` are read through named ranges),
+and the rows beyond it are silently ignored.
 
 ## Scripts
 
