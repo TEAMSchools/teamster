@@ -115,7 +115,12 @@ def test_policy_columns_resolve_to_a_real_table_and_column() -> None:
     # matches no warehouse column anywhere, so the exemption it was meant to
     # grant never applied to anything.
     assert ("dim_locations", "abbreviation") in resolved
-    assert ("dim_locations", "region_key") in resolved
+    # region_key is deliberately absent. The student views used to carry one
+    # policy per location tier, and the region tier filtered on it; they now
+    # carry a single policy filtering `abbreviation` against a precomputed
+    # allowed set, so nothing interpolates a region key any more. A tier
+    # group can only say "my whole region", never "my region plus one other
+    # school", which is what individual exception grants need.
     # A bare staff_key on staff_pii means dim_staff.staff_key, and only that.
     assert ("dim_staff", "staff_key") in resolved
 
@@ -289,3 +294,17 @@ def test_no_cube_js_column_is_absent_from_the_snapshot() -> None:
         if column not in tables.get(table, {})
     )
     assert missing == []
+
+
+def test_cube_js_columns_reads_a_template_literal_query() -> None:
+    # cube.js routes identity reads through a template expression so a local
+    # run can point them at a dev copy. An extractor that saw only
+    # double-quoted strings returned NOTHING for those queries — silently,
+    # because "no queries found" and "no columns read" are the same empty
+    # dict, and dim_staff_cube_access fell to zero covered columns while the
+    # contract still reported green.
+    snap = json.loads((CUBE_ROOT / "sandbox" / "schema_snapshot.json").read_text())
+    got = model.cube_js_columns(CUBE_ROOT, snap["tables"])
+
+    assert "dim_staff_cube_access" in got
+    assert "google_email" in got["dim_staff_cube_access"]

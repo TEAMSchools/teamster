@@ -717,6 +717,14 @@ class _Fabricator:
         if kind == "TIMESTAMP":
             day = self._target_year_date(index)
             return dt.datetime(day.year, day.month, day.day, tzinfo=dt.UTC)
+        nested = avro.struct_fields(kind)
+        if nested is not None:
+            # An empty array is the overwhelmingly common production value and
+            # is also the safe one: `unionAdditionalGrants` folds each element
+            # into the viewer's allowed set, so a fabricated grant WIDENS
+            # access. Filler staff get none, and a persona that needs one
+            # declares it in personas.yml where the widening is readable.
+            return []
         raise ValueError(f"{table}.{column}: no fabrication rule for {kind}")
 
     def _target_year_date(self, index: int) -> dt.date:

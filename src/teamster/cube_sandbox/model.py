@@ -103,11 +103,24 @@ def referenced_columns(cube_root: Path) -> dict[str, set[str]]:
 # A double-quoted JS string literal, escapes honored. `cube.js` writes every
 # identity query as one such literal on one line, so nothing here has to
 # understand JS concatenation.
-_JS_STRING = re.compile(r'"((?:[^"\\\n]|\\.)*)"')
+# Double-quoted strings AND template literals. `cube.js` moved its identity
+# queries into backtick templates when the dataset became a template
+# expression, and an extractor that saw only double quotes returned nothing
+# for them — silently, because "no queries found" and "no columns read" are
+# the same empty dict. A template literal may span lines, so no newline
+# exclusion in that branch.
+_JS_STRING = re.compile(r'"((?:[^"\\\n]|\\.)*)"' r"|`((?:[^`\\]|\\.)*)`")
 # The literal's shape: SELECT <list> FROM `kipptaf_marts.<table>` <tail>.
+# The dataset is either the literal `kipptaf_marts` or a template expression
+# — `cube.js` routes identity reads through `${ACCESS_DATASET}` so a local run
+# can point them at a dev copy. Matching only the literal silently dropped
+# every identity query the moment that indirection landed, which is the exact
+# hole `cube_js_columns` exists to close: `dim_staff_cube_access` fell to zero
+# columns and `google_email`, the key `resolveAccess` matches on, went
+# uncovered while coverage still reported green.
 _JS_QUERY = re.compile(
     r"SELECT\s+(?:DISTINCT\s+)?(?P<select>.+?)\s+FROM\s+"
-    r"`kipptaf_marts\.(?P<table>\w+)`(?P<tail>.*)",
+    r"`(?:kipptaf_marts|\$\{\w+\})\.(?P<table>\w+)`(?P<tail>.*)",
     re.IGNORECASE | re.DOTALL,
 )
 _BIND_PARAM = re.compile(r"@\w+")
@@ -141,7 +154,11 @@ def cube_js_columns(
     """
     text = (cube_root / "cube.js").read_text()
     out: dict[str, set[str]] = {}
-    for literal in _JS_STRING.findall(text):
+    for quoted, templated in _JS_STRING.findall(text):
+        # Inside a template literal the SQL's own backticks are escaped, so
+        # unescape before matching rather than teaching the query pattern
+        # about backslashes it would then have to tolerate everywhere.
+        literal = (quoted or templated).replace("\\`", "`")
         match = _JS_QUERY.search(literal)
         if not match:
             continue

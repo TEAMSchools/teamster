@@ -89,14 +89,24 @@ def build(
                     "status": "uncovered",
                 }
             )
-            # Three derived exemptions, never a name heuristic: a join or
+            # Four derived exemptions, never a name heuristic: a join or
             # surrogate key (a null one breaks the fixtures), a column an
             # access_policy filters on (a null one makes the persona resolve
-            # to nothing), and a column dbt asserts is never null.
+            # to nothing), a column dbt asserts is never null, and a column
+            # the SNAPSHOT declares NOT NULL.
+            #
+            # That last one is not redundant with the dbt test. The snapshot
+            # records the warehouse's own REQUIRED/NULLABLE mode, which is
+            # what `avro.bq_schema` builds the sandbox table from, and a
+            # column can be REQUIRED in BigQuery with no dbt not_null test on
+            # it — `additional_location_grants` is. Requiring a null there
+            # asks the generator to produce a row the sandbox table cannot
+            # physically hold, and the load fails rather than the manifest.
             exempt = (
                 (table, column) in key_columns
                 or (table, column) in policy_columns
                 or (table, column) in not_null
+                or not columns[column]["nullable"]
             )
             if not exempt:
                 cells.append(

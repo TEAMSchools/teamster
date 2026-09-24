@@ -387,6 +387,10 @@
       }
     },
     "dim_staff_cube_access": {
+      "additional_location_grants": {
+        "type": "ARRAY<STRUCT<location_scope STRING, region_key STRING, location_abbreviation STRING, includes_student_data BOOL, includes_staff_data BOOL>>",
+        "nullable": false
+      },
       "department_group": {
         "type": "STRING",
         "nullable": true
@@ -397,6 +401,10 @@
       },
       "google_email": {
         "type": "STRING",
+        "nullable": true
+      },
+      "is_employee": {
+        "type": "BOOL",
         "nullable": true
       },
       "job_function_code": {

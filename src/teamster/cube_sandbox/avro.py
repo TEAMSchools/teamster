@@ -9,6 +9,7 @@ fastavro's writer happens to pick when BigQuery infers from the file.
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import Any
 
@@ -40,9 +41,71 @@ _LOGICAL: dict[str, Any] = {
 }
 
 
+_ARRAY_STRUCT = re.compile(r"\AARRAY<STRUCT<(?P<body>.+)>>\Z", re.DOTALL)
+
+
+def struct_fields(kind: str) -> list[tuple[str, str]] | None:
+    """`(name, type)` per field of an `ARRAY<STRUCT<...>>`, or None.
+
+    Splits at depth zero so a nested `ARRAY<...>` or `STRUCT<...>` inside a
+    field's own type does not get cut at its internal commas. Nothing in the
+    snapshot nests that far today, and a split that only works for flat
+    structs would fail silently on the first column that does — producing
+    field names like `region_key STRING, location_abbreviation` rather than
+    an error.
+    """
+    match = _ARRAY_STRUCT.match(kind.strip())
+    if match is None:
+        return None
+    body, depth, current = match.group("body"), 0, []
+    parts: list[str] = []
+    for char in body:
+        if char in "<(":
+            depth += 1
+        elif char in ">)":
+            depth -= 1
+        if char == "," and depth == 0:
+            parts.append("".join(current))
+            current = []
+            continue
+        current.append(char)
+    parts.append("".join(current))
+
+    out = []
+    for part in parts:
+        name, _, field_type = part.strip().partition(" ")
+        if not name or not field_type:
+            raise ValueError(f"cannot parse struct field {part.strip()!r} in {kind}")
+        out.append((name, field_type.strip()))
+    return out
+
+
 def avro_schema(table: str, columns: dict[str, dict[str, Any]]) -> dict[str, Any]:
     fields = []
     for name, meta in columns.items():
+        nested = struct_fields(meta["type"])
+        if nested is not None:
+            # A BigQuery REPEATED field is never null — an empty array is the
+            # empty case — so this branch does not take the null union below.
+            # Wrapping it in one would let a None through to a REQUIRED
+            # BigQuery column and fail the load rather than the write.
+            fields.append(
+                {
+                    "name": name,
+                    "type": {
+                        "type": "array",
+                        "items": {
+                            "type": "record",
+                            "name": f"{table}__{name}",
+                            "fields": [
+                                {"name": field, "type": ["null", _LOGICAL[field_type]]}
+                                for field, field_type in nested
+                            ],
+                        },
+                    },
+                }
+            )
+            continue
         base = _LOGICAL.get(meta["type"])
         if base is None:
             raise ValueError(f"{table}.{name}: no Avro mapping for {meta['type']}")
@@ -67,6 +130,24 @@ def bq_schema(table: str, columns: dict[str, dict[str, Any]]) -> list[SchemaFiel
     """
     fields = []
     for name, meta in columns.items():
+        nested = struct_fields(meta["type"])
+        if nested is not None:
+            # REPEATED, not REQUIRED: BigQuery has no nullable array, and an
+            # `ARRAY<STRUCT<...>>` column is a RECORD field repeated. Passing
+            # the raw type string here, as the scalar branch does, would have
+            # BigQuery reject `ARRAY<STRUCT<...>>` as a field type.
+            fields.append(
+                SchemaField(
+                    name,
+                    "RECORD",
+                    mode="REPEATED",
+                    fields=[
+                        SchemaField(field, field_type, mode="NULLABLE")
+                        for field, field_type in nested
+                    ],
+                )
+            )
+            continue
         if meta["type"] not in _LOGICAL:
             raise ValueError(f"{table}.{name}: no BigQuery mapping for {meta['type']}")
         mode = "NULLABLE" if meta["nullable"] else "REQUIRED"

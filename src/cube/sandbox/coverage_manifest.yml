@@ -661,6 +661,11 @@ cells:
     status: uncovered
   - kind: non_null
     table: dim_staff_cube_access
+    column: additional_location_grants
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_staff_cube_access
     column: department_group
     detail: at least one non-null row
     status: uncovered
@@ -669,10 +674,25 @@ cells:
     column: entity
     detail: at least one non-null row
     status: uncovered
+  - kind: "null"
+    table: dim_staff_cube_access
+    column: entity
+    detail: at least one null row
+    status: uncovered
   - kind: non_null
     table: dim_staff_cube_access
     column: google_email
     detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_staff_cube_access
+    column: is_employee
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_staff_cube_access
+    column: is_employee
+    detail: at least one null row
     status: uncovered
   - kind: non_null
     table: dim_staff_cube_access

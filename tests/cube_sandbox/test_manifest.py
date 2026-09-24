@@ -314,3 +314,34 @@ def test_the_declared_personas_satisfy_every_variety_cell() -> None:
     result = coverage.assess(variety, {"dim_staff_cube_access": rows})
     assert coverage.uncovered(result) == []
     assert all(c["observed"] >= 2 for c in result)
+
+
+def test_a_not_null_snapshot_column_gets_no_null_cell() -> None:
+    # The snapshot records the warehouse's REQUIRED/NULLABLE mode, and
+    # avro.bq_schema builds the sandbox table from it. Asking for a null in a
+    # REQUIRED column asks the generator to produce a row the table cannot
+    # hold, and the failure lands at load time rather than here.
+    #
+    # Not redundant with the dbt not_null exemption: a column can be REQUIRED
+    # in BigQuery with no dbt test on it, which is exactly
+    # additional_location_grants.
+    snap = {
+        "tables": {
+            "dim_x": {
+                "required": {"type": "STRING", "nullable": False},
+                "optional": {"type": "STRING", "nullable": True},
+            }
+        }
+    }
+    cells = manifest.build(
+        snap=snap,
+        referenced={"dim_x": {"required", "optional"}},
+        key_columns=set(),
+        policy_columns=set(),
+        not_null=set(),
+        scopes={},
+        people=[],
+        join_paths=[],
+    )["cells"]
+
+    assert _null_columns(cells) == {"optional"}
