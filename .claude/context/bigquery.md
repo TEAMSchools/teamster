@@ -11,9 +11,10 @@ Three identities reach BigQuery here, and they differ in what they can read:
 - **ADC from Python** — carries Drive scope and does not expire. The only client
   that reads a sheet-backed external live.
 - **`bq` CLI** — gcloud USER creds that expire mid-session: SELECTs that worked
-  early fail later with "Reauthentication failed" (non-interactive can't
-  `gcloud auth login`). Switch to the MCP or ADC rather than retrying. For shell
-  contexts (Monitor poll loops) and CSV dumps only.
+  early fail later with "Reauthentication failed" or "You do not currently have
+  an active account selected" (non-interactive can't `gcloud auth login`); both
+  mean expiry, not a missing grant. Switch to the MCP or ADC rather than
+  retrying. For shell contexts (Monitor poll loops) and CSV dumps only.
 
 The MCP's 50-row truncation is silent: a 200-row query returns 50 rows with no
 marker, so never read a 50-row result as complete. When querying

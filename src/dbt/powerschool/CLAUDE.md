@@ -28,9 +28,8 @@ by default (every consuming district ingests PowerSchool via dlt); `odbc` and
 
 ## dlt staging variant (#3807)
 
-`kipppaterson` ingests PowerSchool via dlt; `staging/dlt/` is the template for
-migrating the ODBC districts. A dlt model = its **odbc** sibling minus the
-struct-unwrap: dlt lands raw Oracle scalars, so drop the
+A dlt model = its archived **odbc** sibling minus the struct-unwrap: dlt lands
+raw Oracle scalars, so drop the
 `.int_value`/`.double_value`/`coalesce(... .bytes_decimal_value ...)` accessors,
 the `_file_name`-snapshot `dbt_utils.deduplicate` (native table, no file dupes)
 — but KEEP a business-grain dedup the odbc model already had (e.g.

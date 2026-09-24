@@ -79,9 +79,6 @@ superset. Gotchas for that one: `.claude/context/dagster.md`.
     `step_key`, and the files live in Dagster's own S3 bucket. Step-pod
     stdout/stderr comes only from `mcp__dagster__get_run_compute_logs`.
 
-  Identical arguments do NOT mean identical payloads — compare the payloads
-  before flipping anything else.
-
 - **The alert route is not a substitute for reading logs.** 13 alert policies
   exist, but none fires on run failure: the run-scoped ones are `JOB_SUCCESS`
   and `JOB_LONG_RUNNING`, and the rest are asset-health, `TICK_FAILURE`,

@@ -2203,10 +2203,9 @@ chain. Do not report a change as done on a subset.
 1. **Read back what changed.** `git diff --name-only`, then `git diff` on the
    SQL. A scripted edit is not evidence it landed where intended.
 2. **Union-branch balance**, whenever `rpt_tableau__dibels_dashboard` is
-   touched:
-   `uv run python .claude/scratch/gr-diff-union-branches.py <abs path>`. All
-   three branches must report the same projection count and **0 mismatched
-   ordinals**. BigQuery binds UNION ALL by POSITION, so a column added or
+   touched: list each of the three branches' projected column names in order and
+   diff them. All three must have the same projection count and the same name at
+   every ordinal. BigQuery binds UNION ALL by POSITION, so a column added or
    removed on one branch needs the same on the other two.
 3. **Contract column count matches the SQL.**
    `grep -c "^      - name: " <properties yml>` against the projection count

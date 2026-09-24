@@ -155,11 +155,9 @@ exercise it; a plain dev server silently default-denies every gated view.
   viewers return identical rows in both modes, so only the denial shape needs
   auth on.
 - **Cube Cloud works via `contextToGroups` enrichment, not `checkAuth`
-  (#4526).** Cube Cloud injects
-  `{ cubeCloud: { username, groups, roles, userAttributes, meta, userCredentials }, iss: "cubecloud", exp }`
-  with **no top-level `email`** until a Security Context is pasted (merge
-  semantics: `.claude/rules/cube-authoring.md`). Observed on 1.7.14; do not
-  trust the shape across versions. Symptom of enrichment not running: views
+  (#4526).** The injected context has no top-level `email` until a Security
+  Context is pasted (shape and merge semantics:
+  `.claude/rules/cube-authoring.md`). Symptom of enrichment not running: views
   hidden, only source tables, `WHERE (1 = 0)` — check the deployment log for
   `resolveAccess failed for` and that the BigQuery variables are set on **that**
   environment (branch environments do not inherit them).

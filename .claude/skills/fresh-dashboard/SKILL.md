@@ -573,11 +573,9 @@ school-name map will happily match it and read the wrong columns.
 
 **Pull the goals table with the BigQuery Python client on ADC** (client choice:
 `.claude/context/bigquery.md`). A full comparison needs every sheet-sourced row
-at once (~700 for the six SRE targets, ~2,300 for the whole tab). `bq` failing
-with `You do not currently have an active account selected` is its credential
-expiry, not a missing grant. For a spot check, one `string_agg` per
-`(goal_granularity, goal_name)` through the MCP returns a dozen rows instead of
-hundreds.
+at once (~700 for the six SRE targets, ~2,300 for the whole tab). For a spot
+check, one `string_agg` per `(goal_granularity, goal_name)` through the MCP
+returns a dozen rows instead of hundreds.
 
 ## Goals reconciliation — offer this at the start of FRESH work
 

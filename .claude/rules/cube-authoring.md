@@ -292,9 +292,12 @@ access policies above). `cube.js` exports exactly `driverFactory`,
   `CUBE_SQL_DEV_EMAIL` outside prod); the presented `password` is not compared
   and is absent entirely on `SET USER` re-auth flows.
 - **`contextToGroups` owns the Cube Cloud path** (#4526). Cube Cloud bypasses
-  `checkAuth`, so this hook re-derives the context from `cubeCloud.username` and
-  **overwrites** it. **Cube Cloud MERGES a pasted Security Context into the TOP
-  LEVEL**, so every top-level value there is caller-supplied: pasting
+  `checkAuth` and injects
+  `{ cubeCloud: { username, groups, roles, userAttributes, meta, userCredentials }, iss: "cubecloud", exp }`
+  with no top-level `email` (observed on 1.7.14; re-check after upgrades), so
+  this hook re-derives the context from `cubeCloud.username` and **overwrites**
+  it. **Cube Cloud MERGES a pasted Security Context into the TOP LEVEL**, so
+  every top-level value there is caller-supplied: pasting
   `{"groups": ["staff-pii-all_in_scope"], "allowed_abbreviations": [...]}` was
   honored verbatim before the overwrite landed. Never reintroduce a
   `!securityContext.groups` guard here — that guard IS the bypass. The branch
