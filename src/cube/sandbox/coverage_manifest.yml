@@ -1,0 +1,1726 @@
+cells:
+  - kind: non_null
+    table: dim_assessment_administrations
+    column: administration_period
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_assessment_administrations
+    column: administration_period
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_assessment_administrations
+    column: assessment_administration_key
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_assessment_administrations
+    column: assessment_key
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_assessment_administrations
+    column: source_assessment_id
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_assessment_administrations
+    column: test_type
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_assessment_administrations
+    column: test_type
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_assessments
+    column: academic_subject
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_assessments
+    column: academic_subject
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_assessments
+    column: assessment_key
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_assessments
+    column: category
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_assessments
+    column: category
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_assessments
+    column: grade_level_tested
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_assessments
+    column: grade_level_tested
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_assessments
+    column: is_internal_assessment
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_assessments
+    column: is_internal_assessment
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_assessments
+    column: module_code
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_assessments
+    column: module_code
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_assessments
+    column: module_type
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_assessments
+    column: module_type
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_assessments
+    column: scope
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_assessments
+    column: scope
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_assessments
+    column: title
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_assessments
+    column: title
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_assessments
+    column: type
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_assessments
+    column: type
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_course_sections
+    column: course_key
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_course_sections
+    column: course_section_key
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_course_sections
+    column: identifier
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_course_sections
+    column: identifier
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_course_sections
+    column: location_key
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_course_sections
+    column: period
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_course_sections
+    column: period
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_courses
+    column: academic_subject
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_courses
+    column: academic_subject
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_courses
+    column: course_code
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_courses
+    column: course_key
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_courses
+    column: course_title
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_courses
+    column: course_title
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_courses
+    column: credit_type
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_courses
+    column: credit_type
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_courses
+    column: is_foundations
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_courses
+    column: is_foundations
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_dates
+    column: academic_year
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_dates
+    column: academic_year
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_dates
+    column: calendar_week_end_date
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_dates
+    column: calendar_week_end_date
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_dates
+    column: calendar_week_start_date
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_dates
+    column: calendar_week_start_date
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_dates
+    column: date_key
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_dates
+    column: date_timestamp
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_dates
+    column: date_timestamp
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_dates
+    column: day_of_week
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_dates
+    column: day_of_week
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_dates
+    column: day_of_week_name
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_dates
+    column: day_of_week_name
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_dates
+    column: fiscal_year
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_dates
+    column: fiscal_year
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_dates
+    column: is_current_academic_year
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_dates
+    column: is_current_academic_year
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_dates
+    column: is_weekday
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_dates
+    column: is_weekday
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_dates
+    column: month_name
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_dates
+    column: month_name
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_dates
+    column: month_number
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_dates
+    column: quarter_number
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_dates
+    column: school_week_end_date
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_dates
+    column: school_week_end_date
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_dates
+    column: school_week_start_date
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_dates
+    column: school_week_start_date
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_dates
+    column: year_number
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_locations
+    column: abbreviation
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_locations
+    column: campus
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_locations
+    column: campus
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_locations
+    column: city
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_locations
+    column: city
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_locations
+    column: grade_band
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_locations
+    column: grade_band
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_locations
+    column: is_campus
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_locations
+    column: is_campus
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_locations
+    column: location_key
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_locations
+    column: name
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_locations
+    column: name
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_locations
+    column: region_key
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_regions
+    column: name
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_regions
+    column: name
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_regions
+    column: region_key
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_regions
+    column: state
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_regions
+    column: state
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_regions
+    column: timezone
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_regions
+    column: timezone
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_school_calendars
+    column: date_key
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_school_calendars
+    column: is_in_session
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_school_calendars
+    column: is_in_session
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_school_calendars
+    column: is_membership_day
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_school_calendars
+    column: is_membership_day
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_school_calendars
+    column: location_key
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_staff
+    column: active_directory_username
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_staff
+    column: active_directory_username
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_staff
+    column: birth_date
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_staff
+    column: birth_date
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_staff
+    column: first_name
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_staff
+    column: first_name
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_staff
+    column: full_name
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_staff
+    column: full_name
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_staff
+    column: gender_identity
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_staff
+    column: gender_identity
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_staff
+    column: google_email
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_staff
+    column: google_email
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_staff
+    column: is_hispanic
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_staff
+    column: is_hispanic
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_staff
+    column: last_name
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_staff
+    column: last_name
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_staff
+    column: original_hire_date
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_staff
+    column: original_hire_date
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_staff
+    column: personal_cell_phone
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_staff
+    column: personal_cell_phone
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_staff
+    column: personal_email
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_staff
+    column: personal_email
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_staff
+    column: race
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_staff
+    column: race
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_staff
+    column: rehire_date
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_staff
+    column: rehire_date
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_staff
+    column: staff_key
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_staff
+    column: staff_unique_id
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_staff
+    column: work_email
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_staff
+    column: work_email
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_staff_cube_access
+    column: department_group
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_staff_cube_access
+    column: job_function_code
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_staff_cube_access
+    column: job_function_level
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_staff_cube_access
+    column: staff_key
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_staff_reporting_periods
+    column: effective_end_date
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_staff_reporting_periods
+    column: effective_start_date
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_staff_reporting_periods
+    column: manager_staff_key
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_staff_reporting_periods
+    column: staff_key
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_staff_reporting_periods
+    column: staff_reporting_periods_key
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_staff_work_history
+    column: business_unit_name
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_staff_work_history
+    column: business_unit_name
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_staff_work_history
+    column: department_name
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_staff_work_history
+    column: department_name
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_staff_work_history
+    column: effective_start_date
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_staff_work_history
+    column: effective_start_date
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_staff_work_history
+    column: full_time_equivalency
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_staff_work_history
+    column: full_time_equivalency
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_staff_work_history
+    column: is_management_position
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_staff_work_history
+    column: is_management_position
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_staff_work_history
+    column: is_primary_position
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_staff_work_history
+    column: is_primary_position
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_staff_work_history
+    column: job_code
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_staff_work_history
+    column: job_code
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_staff_work_history
+    column: position_title
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_staff_work_history
+    column: position_title
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_staff_work_history
+    column: staff_key
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_staff_work_history
+    column: staff_work_history_key
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_staff_work_history
+    column: status_name
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_staff_work_history
+    column: status_name
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_staff_work_history
+    column: status_reason
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_staff_work_history
+    column: status_reason
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_staff_work_history
+    column: work_location_key
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_staff_work_history
+    column: worker_type
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_staff_work_history
+    column: worker_type
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_student_enrollment_status
+    column: iep_classification
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_student_enrollment_status
+    column: iep_classification
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_student_enrollment_status
+    column: is_ell
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_student_enrollment_status
+    column: is_ell
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_student_enrollment_status
+    column: is_iep
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_student_enrollment_status
+    column: is_iep
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_student_enrollment_status
+    column: is_meal_eligible
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_student_enrollment_status
+    column: is_meal_eligible
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_student_enrollment_status
+    column: meal_eligibility
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_student_enrollment_status
+    column: meal_eligibility
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_student_enrollment_status
+    column: special_education_code
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_student_enrollment_status
+    column: special_education_code
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_student_enrollment_status
+    column: special_education_name
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_student_enrollment_status
+    column: special_education_name
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_student_enrollment_status
+    column: special_education_placement
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_student_enrollment_status
+    column: special_education_placement
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_student_enrollment_status
+    column: student_enrollment_key
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_student_enrollments
+    column: academic_year
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_student_enrollments
+    column: academic_year
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_student_enrollments
+    column: entry_date_key
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_student_enrollments
+    column: exit_date_key
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_student_enrollments
+    column: grade_level
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_student_enrollments
+    column: grade_level
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_student_enrollments
+    column: graduation_year
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_student_enrollments
+    column: graduation_year
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_student_enrollments
+    column: is_retained_year
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_student_enrollments
+    column: is_retained_year
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_student_enrollments
+    column: location_key
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_student_enrollments
+    column: student_enrollment_key
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_student_enrollments
+    column: student_key
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_student_enrollments
+    column: year_in_network
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_student_enrollments
+    column: year_in_network
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_student_section_enrollments
+    column: academic_year
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_student_section_enrollments
+    column: academic_year
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_student_section_enrollments
+    column: course_section_key
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_student_section_enrollments
+    column: entry_date
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_student_section_enrollments
+    column: entry_date
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_student_section_enrollments
+    column: exit_date
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_student_section_enrollments
+    column: exit_date
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_student_section_enrollments
+    column: is_current_homeroom
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_student_section_enrollments
+    column: is_current_homeroom
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_student_section_enrollments
+    column: is_current_section_enrollment
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_student_section_enrollments
+    column: is_current_section_enrollment
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_student_section_enrollments
+    column: is_dropped_course
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_student_section_enrollments
+    column: is_dropped_course
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_student_section_enrollments
+    column: is_dropped_section
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_student_section_enrollments
+    column: is_dropped_section
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_student_section_enrollments
+    column: is_homeroom
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_student_section_enrollments
+    column: is_homeroom
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_student_section_enrollments
+    column: lead_teacher_staff_key
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_student_section_enrollments
+    column: student_enrollment_key
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_student_section_enrollments
+    column: student_section_enrollment_key
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_students
+    column: birth_date
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_students
+    column: birth_date
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_students
+    column: district_student_identifier
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_students
+    column: enrollment_status
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_students
+    column: enrollment_status
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_students
+    column: full_name
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_students
+    column: full_name
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_students
+    column: gender_identity
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_students
+    column: gender_identity
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_students
+    column: is_gifted
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_students
+    column: is_gifted
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_students
+    column: lea_student_identifier
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_students
+    column: race
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_students
+    column: race
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_students
+    column: salesforce_contact_id
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_students
+    column: state_student_identifier
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_students
+    column: student_key
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_terms
+    column: academic_year
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_terms
+    column: academic_year
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_terms
+    column: end_date
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_terms
+    column: end_date
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_terms
+    column: fiscal_year
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_terms
+    column: fiscal_year
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_terms
+    column: grade_band
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_terms
+    column: grade_band
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_terms
+    column: is_current
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_terms
+    column: is_current
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_terms
+    column: location_key
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_terms
+    column: school_id
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_terms
+    column: semester
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_terms
+    column: semester
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_terms
+    column: start_date
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_terms
+    column: start_date
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_terms
+    column: term_code
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_terms
+    column: term_code
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_terms
+    column: term_key
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_terms
+    column: term_name
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_terms
+    column: term_name
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_terms
+    column: type
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_terms
+    column: type
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: fct_assessment_scores_enrollment_scoped
+    column: assessment_score_key
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: fct_assessment_scores_enrollment_scoped
+    column: enrollment_resolution
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: fct_assessment_scores_enrollment_scoped
+    column: enrollment_resolution
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: fct_assessment_scores_enrollment_scoped
+    column: is_mastery
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: fct_assessment_scores_enrollment_scoped
+    column: is_mastery
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: fct_assessment_scores_enrollment_scoped
+    column: is_replacement
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: fct_assessment_scores_enrollment_scoped
+    column: is_replacement
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: fct_assessment_scores_enrollment_scoped
+    column: percent_correct
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: fct_assessment_scores_enrollment_scoped
+    column: percent_correct
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: fct_assessment_scores_enrollment_scoped
+    column: performance_band_label_number
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: fct_assessment_scores_enrollment_scoped
+    column: proficiency_level
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: fct_assessment_scores_enrollment_scoped
+    column: proficiency_level
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: fct_assessment_scores_enrollment_scoped
+    column: response_type
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: fct_assessment_scores_enrollment_scoped
+    column: response_type_code
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: fct_assessment_scores_enrollment_scoped
+    column: response_type_code
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: fct_assessment_scores_enrollment_scoped
+    column: response_type_description
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: fct_assessment_scores_enrollment_scoped
+    column: response_type_description
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: fct_assessment_scores_enrollment_scoped
+    column: response_type_root_description
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: fct_assessment_scores_enrollment_scoped
+    column: response_type_root_description
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: fct_assessment_scores_enrollment_scoped
+    column: scale_score
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: fct_assessment_scores_enrollment_scoped
+    column: scale_score
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: fct_assessment_scores_enrollment_scoped
+    column: term_key
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: fct_assessment_scores_enrollment_scoped
+    column: test_date_key
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: fct_student_attendance_enrollment_daily
+    column: ada_tier
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: fct_student_attendance_enrollment_daily
+    column: ada_tier
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: fct_student_attendance_enrollment_daily
+    column: attendance_category
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: fct_student_attendance_enrollment_daily
+    column: attendance_category
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: fct_student_attendance_enrollment_daily
+    column: attendance_code
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: fct_student_attendance_enrollment_daily
+    column: attendance_code
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: fct_student_attendance_enrollment_daily
+    column: attendance_value
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: fct_student_attendance_enrollment_daily
+    column: attendance_value
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: fct_student_attendance_enrollment_daily
+    column: date_key
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: fct_student_attendance_enrollment_daily
+    column: is_absent
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: fct_student_attendance_enrollment_daily
+    column: is_absent
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: fct_student_attendance_enrollment_daily
+    column: is_chronically_absent
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: fct_student_attendance_enrollment_daily
+    column: is_chronically_absent
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: fct_student_attendance_enrollment_daily
+    column: is_in_session_day
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: fct_student_attendance_enrollment_daily
+    column: is_in_session_day
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: fct_student_attendance_enrollment_daily
+    column: is_iss
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: fct_student_attendance_enrollment_daily
+    column: is_iss
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: fct_student_attendance_enrollment_daily
+    column: is_ontime
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: fct_student_attendance_enrollment_daily
+    column: is_ontime
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: fct_student_attendance_enrollment_daily
+    column: is_oss
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: fct_student_attendance_enrollment_daily
+    column: is_oss
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: fct_student_attendance_enrollment_daily
+    column: is_suspended
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: fct_student_attendance_enrollment_daily
+    column: is_suspended
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: fct_student_attendance_enrollment_daily
+    column: is_tardy
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: fct_student_attendance_enrollment_daily
+    column: is_tardy
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: fct_student_attendance_enrollment_daily
+    column: is_truant
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: fct_student_attendance_enrollment_daily
+    column: is_truant
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: fct_student_attendance_enrollment_daily
+    column: membership_value
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: fct_student_attendance_enrollment_daily
+    column: membership_value
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: fct_student_attendance_enrollment_daily
+    column: n_membership_days_ytd
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: fct_student_attendance_enrollment_daily
+    column: n_membership_days_ytd
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: fct_student_attendance_enrollment_daily
+    column: n_present_days_ytd
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: fct_student_attendance_enrollment_daily
+    column: n_present_days_ytd
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: fct_student_attendance_enrollment_daily
+    column: present_weight
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: fct_student_attendance_enrollment_daily
+    column: present_weight
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: fct_student_attendance_enrollment_daily
+    column: student_day_key
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: fct_student_attendance_enrollment_periods
+    column: academic_year
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: fct_student_attendance_enrollment_periods
+    column: academic_year
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: fct_student_attendance_enrollment_periods
+    column: ada_tier
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: fct_student_attendance_enrollment_periods
+    column: ada_tier
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: fct_student_attendance_enrollment_periods
+    column: is_chronically_absent
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: fct_student_attendance_enrollment_periods
+    column: is_chronically_absent
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: fct_student_attendance_enrollment_periods
+    column: is_truant
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: fct_student_attendance_enrollment_periods
+    column: is_truant
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: fct_student_attendance_enrollment_periods
+    column: n_membership_days_ytd
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: fct_student_attendance_enrollment_periods
+    column: n_membership_days_ytd
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: fct_student_attendance_enrollment_periods
+    column: n_present_days_ytd
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: fct_student_attendance_enrollment_periods
+    column: n_present_days_ytd
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: fct_student_attendance_enrollment_periods
+    column: period_end_date_key
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: fct_student_attendance_enrollment_periods
+    column: period_start_date_key
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: fct_student_attendance_enrollment_periods
+    column: period_start_membership_date_key
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: fct_student_attendance_enrollment_periods
+    column: period_type
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: fct_student_attendance_enrollment_periods
+    column: period_type
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: fct_student_attendance_enrollment_periods
+    column: student_period_key
+    detail: at least one non-null row
+    status: uncovered
+  - kind: scope
+    table: dim_staff_cube_access
+    column: staff_pii_scope
+    detail: all_in_scope
+    status: uncovered
+  - kind: scope
+    table: dim_staff_cube_access
+    column: staff_pii_scope
+    detail: reporting_chain
+    status: uncovered
+  - kind: scope
+    table: dim_staff_cube_access
+    column: staff_pii_scope
+    detail: reporting_chain_or_below_rank
+    status: uncovered
+  - kind: scope
+    table: dim_staff_cube_access
+    column: staff_pii_scope
+    detail: teaching_staff
+    status: uncovered
+  - kind: scope
+    table: dim_staff_cube_access
+    column: student_location_scope
+    detail: network
+    status: uncovered
+  - kind: scope
+    table: dim_staff_cube_access
+    column: student_location_scope
+    detail: region
+    status: uncovered
+  - kind: scope
+    table: dim_staff_cube_access
+    column: student_location_scope
+    detail: school
+    status: uncovered
+  - kind: derived
+    table: null
+    column: hasRemit
+    detail: "true"
+    status: uncovered
+  - kind: derived
+    table: null
+    column: hasRemit
+    detail: "false"
+    status: uncovered
+  - kind: derived
+    table: null
+    column: hasChain
+    detail: "true"
+    status: uncovered
+  - kind: derived
+    table: null
+    column: hasChain
+    detail: "false"
+    status: uncovered
+  - kind: identity
+    table: null
+    column: null
+    detail: one email with no dim_staff_cube_access row
+    status: uncovered
+  - kind: divergence
+    table: null
+    column: null
+    detail: unpinned_cumulative
+    status: uncovered
+  - kind: divergence
+    table: null
+    column: null
+    detail: attendance_view_weighting
+    status: uncovered
+  - kind: divergence
+    table: null
+    column: null
+    detail: school_week_vs_iso
+    status: uncovered

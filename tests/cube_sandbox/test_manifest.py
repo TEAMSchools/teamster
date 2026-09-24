@@ -1,0 +1,153 @@
+from __future__ import annotations
+
+from pathlib import Path
+
+import pytest
+
+from teamster.cube_sandbox import manifest
+from teamster.cube_sandbox.personas import Persona
+
+SNAP = {
+    "tables": {
+        "dim_x": {
+            "student_key": {"type": "STRING", "nullable": True},
+            "nickname": {"type": "STRING", "nullable": True},
+            "abbreviation": {"type": "STRING", "nullable": True},
+        }
+    }
+}
+
+
+def _null_columns(cells) -> set[str]:
+    return {c["column"] for c in cells if c["kind"] == "null"}
+
+
+def test_keys_and_policy_columns_are_exempt_from_the_null_rule() -> None:
+    cells = manifest.build(
+        snap=SNAP,
+        referenced={"dim_x": {"student_key", "nickname", "abbreviation"}},
+        policy_columns={"abbreviation"},
+        not_null=set(),
+        scopes={},
+        people=[],
+    )["cells"]
+    # A null join key breaks the fixtures; a null policy column makes the
+    # persona resolve to nothing.
+    assert _null_columns(cells) == {"nickname"}
+
+
+def test_dbt_not_null_columns_are_exempt() -> None:
+    cells = manifest.build(
+        snap=SNAP,
+        referenced={"dim_x": {"nickname"}},
+        policy_columns=set(),
+        not_null={("dim_x", "nickname")},
+        scopes={},
+        people=[],
+    )["cells"]
+    # INFORMATION_SCHEMA reports every column NULLABLE, so dbt's not_null
+    # tests carry the real contract.
+    assert _null_columns(cells) == set()
+
+
+def test_persona_with_an_unhandled_scope_value_is_rejected() -> None:
+    rogue = Persona(
+        email="x@ktaf-sandbox.invalid",
+        given_name="X",
+        surname="Y",
+        purpose="invalid",
+        scopes={"staff_pii_scope": "made_up"},
+        reportees=[],
+    )
+    # A persona nothing branches on tests nothing, so the manifest must
+    # refuse rather than emit a cell no policy can reach.
+    with pytest.raises(ValueError, match="access.js does not handle"):
+        manifest.build(
+            snap={"tables": {}},
+            referenced={},
+            policy_columns=set(),
+            not_null=set(),
+            scopes={"staff_pii_scope": {"all_in_scope"}},
+            people=[rogue],
+        )
+
+
+def test_persona_with_a_non_none_sensitive_tier_value_is_accepted() -> None:
+    # The three sensitive tiers map to the "__non_none__" sentinel because
+    # access.js branches on `!== "none"` rather than a value list. Any
+    # non-none value a persona declares for one of them must be accepted,
+    # not just the literal values access.js happens to enumerate elsewhere.
+    persona = Persona(
+        email="x@ktaf-sandbox.invalid",
+        given_name="X",
+        surname="Y",
+        purpose="valid",
+        scopes={"staff_compensation_scope": "reporting_chain"},
+        reportees=[],
+    )
+    result = manifest.build(
+        snap={"tables": {}},
+        referenced={},
+        policy_columns=set(),
+        not_null=set(),
+        scopes={"staff_compensation_scope": {"__non_none__"}},
+        people=[persona],
+    )
+    # No exception, and the sentinel itself never becomes a scope cell.
+    assert not any(c["kind"] == "scope" for c in result["cells"])
+
+
+def test_scope_cells_skip_the_non_none_sentinel() -> None:
+    cells = manifest.build(
+        snap={"tables": {}},
+        referenced={},
+        policy_columns=set(),
+        not_null=set(),
+        scopes={
+            "staff_pii_scope": {"all_in_scope", "teaching_staff"},
+            "staff_benefits_scope": {"__non_none__"},
+        },
+        people=[],
+    )["cells"]
+    scope_cells = [c for c in cells if c["kind"] == "scope"]
+    assert {c["detail"] for c in scope_cells} == {"all_in_scope", "teaching_staff"}
+    assert "staff_benefits_scope" not in {c["column"] for c in scope_cells}
+
+
+def test_is_not_null_test_rejects_not_null_proportion() -> None:
+    # A substring match on "not_null" also matches dbt_utils.not_null_proportion,
+    # which asserts a PROPORTION of non-null rows, not the absence of nulls.
+    # Treating it as the real not-null contract would wrongly exempt a column
+    # that genuinely can contain nulls.
+    assert not manifest._is_not_null_test(
+        {"dbt_utils.not_null_proportion": {"at_least": 0.9}}
+    )
+    assert not manifest._is_not_null_test("dbt_utils.not_null_proportion")
+    assert manifest._is_not_null_test("not_null")
+    assert manifest._is_not_null_test({"not_null": {"config": {"severity": "warn"}}})
+
+
+def test_dbt_not_null_exempts_only_the_real_not_null_column(tmp_path: Path) -> None:
+    (tmp_path / "model.yml").write_text(
+        """
+models:
+  - name: dim_x
+    columns:
+      - name: strict_column
+        data_tests:
+          - not_null
+      - name: proportion_only_column
+        data_tests:
+          - dbt_utils.not_null_proportion:
+              at_least: 0.9
+      - name: legacy_key_tests
+        tests:
+          - not_null
+"""
+    )
+    result = manifest.dbt_not_null(tmp_path)
+    assert ("dim_x", "strict_column") in result
+    assert ("dim_x", "legacy_key_tests") in result
+    # A column carrying ONLY not_null_proportion must never be treated as a
+    # not-null guarantee — the manifest still needs a null cell for it.
+    assert ("dim_x", "proportion_only_column") not in result
