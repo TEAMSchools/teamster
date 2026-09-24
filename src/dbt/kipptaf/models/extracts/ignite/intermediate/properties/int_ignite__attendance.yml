@@ -1,0 +1,53 @@
+models:
+  - name: int_ignite__attendance
+    description:
+      Days present and days enrolled per student, per school, per academic year,
+      for the IGNITE R2I evaluation. Aggregated from PowerSchool's daily ADA/ADM
+      records. The grain is deliberately student-school-year rather than
+      student-year, because Mathematica asks for the counts at the school named
+      on the student's row, which matters for a student who transferred
+      mid-year. Values stay fractional here, since a half-day attendance code
+      contributes 0.5; the outbound model rounds to whole days to satisfy
+      Mathematica's "number, no decimals" format.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - academic_year
+              - schoolid
+          config:
+            severity: error
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: days_present <= days_enrolled
+          config:
+            severity: warn
+    columns:
+      - name: student_number
+        data_type: int64
+        description: KIPP student number.
+
+      - name: academic_year
+        data_type: int64
+        description:
+          Start year of the school year, derived as `yearid + 1990`. The source
+          model carries only `yearid`, and the offset is verified against
+          `int_extracts__student_enrollments`.
+
+      - name: schoolid
+        data_type: int64
+        description: PowerSchool school id the attendance was accrued at.
+
+      - name: days_present
+        data_type: float64
+        description:
+          Sum of daily attendance values. Fractional where half-day codes apply.
+
+      - name: days_enrolled
+        data_type: float64
+        description:
+          Sum of daily membership values — days the student was enrolled at this
+          school, whether present or not. The warn-level test asserting
+          `days_present <= days_enrolled` guards against an attendance
+          conversion problem upstream rather than a defect in this model.

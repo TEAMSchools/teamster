@@ -1,0 +1,245 @@
+models:
+  - name: rpt_ignite__student_level
+    description:
+      Table 1 of the IGNITE R2I evaluation submission to Mathematica. One row
+      per student per academic year for grades 9-12, carrying demographics,
+      attendance, state assessment results and iReady interim scores. Column
+      names mirror Mathematica's template rather than this project's
+      conventions, because the output is pasted into their workbook. No student
+      or state identifier appears — students are present only as the masked
+      `stu_id`. Where a student was enrolled at more than one school in a year,
+      the row reports the school they were enrolled in longest, which is the
+      tie-break Mathematica's own memo specifies. Four column families in their
+      template are deliberately absent because no source exists. The writing
+      family is omitted because New Jersey administers no separate writing
+      assessment. The `accom_code_` columns are omitted because Pearson supplies
+      only yes/no accommodation flags, not codes. The iReady typical-growth and
+      stretch-growth columns are omitted because the warehouse holds
+      score-plus-growth rather than the growth amount, and reporting one under
+      the other's name would be wrong.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - stu_id
+              - school_year
+          config:
+            severity: error
+    columns:
+      - name: stu_id
+        data_type: int64
+        description:
+          Masked student identifier. Joins to Table 2 on the same value.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+
+      - name: school_year
+        data_type: int64
+        description:
+          Four-digit year at the END of the school year, per Mathematica's
+          codebook, so 2025 is SY2024-2025. Derived as `academic_year + 1`
+          because this warehouse stores the start year.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - accepted_values:
+              arguments:
+                values: [2025, 2026]
+                quote: false
+              config:
+                severity: error
+
+      - name: school_id
+        data_type: int64
+        description:
+          NCES school identifier from `seed_ignite__school_nces_ids`, null until
+          those public Common Core of Data values are supplied. Note that if the
+          two Newark high schools share one NCES identifier, this column cannot
+          distinguish the two treatment sites and `school_name` must be used
+          instead — which matters for any school-level clustering or fixed
+          effects on Mathematica's side.
+
+      - name: school_name
+        data_type: string
+        description:
+          Name of the school the student was enrolled in longest that year.
+          Distinct per school even where the NCES identifier is not.
+
+      - name: grade_level
+        data_type: int64
+        description:
+          Grade level at the beginning of the school year, as a number.
+
+      - name: gender
+        data_type: string
+        description:
+          Reported as `M`, `F` or `X`. Mathematica asks for a codebook alongside
+          this field; those three values are the whole domain.
+
+      - name: days_present
+        data_type: int64
+        description:
+          Days present at the reported school, rounded to whole days because
+          Mathematica's template specifies a number with no decimals. Half-day
+          attendance codes make the underlying value fractional, so a rounded
+          figure can differ from the true value by up to half a day.
+
+      - name: days_enrolled
+        data_type: int64
+        description:
+          Days enrolled at the reported school, rounded on the same basis as
+          `days_present`.
+
+      - name: white
+        data_type: int64
+        description:
+          1 where race is recorded as white. KIPP stores race and ethnicity in a
+          single field, so a student recorded as Hispanic carries `hispanic` set
+          to 1 and every race flag set to 0 rather than a race plus an
+          ethnicity. Mathematica's memo permits one race field and one ethnicity
+          field with a codebook, and this is the closest faithful
+          representation.
+
+      - name: black
+        data_type: int64
+        description: 1 where race is recorded as black.
+
+      - name: asian
+        data_type: int64
+        description: 1 where race is recorded as asian.
+
+      - name: amindian
+        data_type: int64
+        description: 1 where race is recorded as American Indian.
+
+      - name: multirace
+        data_type: int64
+        description: 1 where the student is recorded as two or more races.
+
+      - name: missrace
+        data_type: int64
+        description:
+          1 where race and ethnicity are missing entirely. One student in scope.
+
+      - name: hispanic
+        data_type: int64
+        description:
+          1 where the student is recorded as Hispanic. See the note on `white`
+          for why this is mutually exclusive with the race flags here.
+
+      - name: frpl
+        data_type: int64
+        description:
+          1 where the student is eligible for free or reduced-price lunch,
+          derived from a lunch status of `F` or `R`. A status of `P` is paid.
+
+      - name: ell
+        data_type: int64
+        description:
+          1 where the student is a multilingual learner, which is the current
+          term for the English language learner status Mathematica asks for.
+
+      - name: iep
+        data_type: int64
+        description: 1 where the student has an individualized education plan.
+
+      - name: treatment_cp
+        data_type: int64
+        description:
+          1 if the student was in any co-planning class that year. Zero
+          throughout, because Mathematica confirmed only routine data cycles ran
+          at KIPP NJ.
+
+      - name: treatment_rdc
+        data_type: int64
+        description:
+          1 if the student was in any routine data cycles class that year.
+
+      - name: treatment_rr
+        data_type: int64
+        description:
+          1 if the student was in any repeated reading class that year. Zero
+          throughout, per the same confirmation as `treatment_cp`.
+
+      - name: test_score_m
+        data_type: numeric
+        description: Scale score on the math state assessment.
+
+      - name: test_grd_m
+        data_type: int64
+        description: Grade level of the math test taken.
+
+      - name: test_subj_m_eoc
+        data_type: string
+        description:
+          End-of-course math subject, null for a general administration.
+
+      - name: test_name_m
+        data_type: string
+        description: Name of the math test taken, NJSLA or NJGPA.
+
+      - name: accom_m
+        data_type: int64
+        description:
+          1 where the student had a math testing accommodation. Null for a
+          student whose only result is NJGPA, which carries no accommodation
+          fields.
+
+      - name: exemption_m
+        data_type: int64
+        description:
+          1 where the student was exempt from the math test. Zero throughout in
+          the data currently loaded.
+
+      - name: test_score_r
+        data_type: numeric
+        description:
+          Scale score on the reading and English language arts assessment.
+
+      - name: test_grd_r
+        data_type: int64
+        description: Grade level of the reading test taken.
+
+      - name: test_subj_r_eoc
+        data_type: string
+        description:
+          End-of-course reading subject. Always null, since New Jersey
+          administers no end-of-course English language arts assessment.
+
+      - name: test_name_r
+        data_type: string
+        description: Name of the reading test taken, NJSLA or NJGPA.
+
+      - name: accom_r
+        data_type: int64
+        description:
+          1 where the student had a reading testing accommodation, with the same
+          NJGPA limitation as `accom_m`.
+
+      - name: exemption_r
+        data_type: int64
+        description:
+          1 where the student was exempt from the reading test. Zero throughout
+          in the data currently loaded.
+
+      - name: iready_boy_score_r
+        data_type: int64
+        description:
+          Beginning-of-year iReady reading scale score. Populated for grades 9
+          and 10 from SY2025-2026 only; Mathematica confirmed they expect these
+          gaps.
+
+      - name: iready_eoy_score_r
+        data_type: int64
+        description: End-of-year iReady reading scale score.
+
+      - name: iready_boy_score_m
+        data_type: int64
+        description: Beginning-of-year iReady math scale score.
+
+      - name: iready_eoy_score_m
+        data_type: int64
+        description: End-of-year iReady math scale score.

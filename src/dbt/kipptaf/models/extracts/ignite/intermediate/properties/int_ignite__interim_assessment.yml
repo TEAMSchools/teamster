@@ -1,0 +1,54 @@
+models:
+  - name: int_ignite__interim_assessment
+    description:
+      iReady beginning-of-year and end-of-year diagnostic scale scores by
+      subject, one row per student per academic year. iReady is the only interim
+      assessment Mathematica's KIPP-specific template carries, which matches
+      what Newark actually administers. Coverage is partial by fact rather than
+      by defect — verified on 2026-09-16, iReady reached grades 9 and 10 only,
+      and only from SY2025-2026. Academic year 2024 holds 46 high school
+      students in total with a beginning-of-year score for exactly one of them,
+      and grades 11 and 12 carry a negligible number in either year. Mathematica
+      confirmed on 2026-09-16 that they expect these gaps.
+      `int_iready__diagnostic_results` serves school year 2025-2026 under two
+      Dagster partitions, so an unconstrained read double-counts; filtering
+      `academic_year_int` excludes the duplicate because the second copy is
+      labelled 2026. iReady's `student_id` is the KIPP student number in this
+      data, verified as a complete match, so no crosswalk is needed. Growth
+      columns are omitted deliberately — the warehouse carries
+      score-plus-growth, not the growth amount Mathematica's optional fields ask
+      for, and sending the former under the latter's name would be wrong.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - academic_year
+          config:
+            severity: error
+    columns:
+      - name: student_number
+        data_type: int64
+        description: KIPP student number, taken from iReady's `student_id`.
+
+      - name: academic_year
+        data_type: int64
+        description:
+          Start year of the school year, from `academic_year_int`. Also serves
+          as the partition guard described in the model description.
+
+      - name: iready_boy_score_r
+        data_type: int64
+        description: Beginning-of-year reading diagnostic overall scale score.
+
+      - name: iready_eoy_score_r
+        data_type: int64
+        description: End-of-year reading diagnostic overall scale score.
+
+      - name: iready_boy_score_m
+        data_type: int64
+        description: Beginning-of-year math diagnostic overall scale score.
+
+      - name: iready_eoy_score_m
+        data_type: int64
+        description: End-of-year math diagnostic overall scale score.
