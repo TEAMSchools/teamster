@@ -483,6 +483,11 @@ Before building any of it:
   shipping the rename.
 - Label renames break literal-string calcs in the workbook. Hand the user the
   old and new values when the extract changes.
+- Partial rounds are held out at Round granularity only. Never extend the
+  hold-out to Measure Standard or Measure granularity; academics want a
+  partial-round student's sat measures scored there. Join the roster's
+  `round_test_status` to find the rounds, the way `aimline_round_category`
+  already does.
 
 **Reading a roster row.** Grain is student x measure standard x season x round,
 one row per round -- "every score so far at round 3" is three stacked rows, not
