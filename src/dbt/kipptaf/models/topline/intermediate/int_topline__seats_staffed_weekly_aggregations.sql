@@ -40,6 +40,8 @@ with
             aggregation_hash,
             aggregation_display,
             goal,
+            goal_numeric,
+            goal_integer,
             layer,
             topline_indicator,
         from {{ ref("int_google_sheets__topline_aggregate_goals") }}
@@ -87,6 +89,8 @@ select
     g.aggregation_hash,
     g.aggregation_display,
     g.goal,
+    g.goal_numeric,
+    g.goal_integer,
     g.layer,
     g.topline_indicator as indicator,
 
@@ -115,6 +119,8 @@ group by
     g.aggregation_hash,
     g.aggregation_display,
     g.goal,
+    g.goal_numeric,
+    g.goal_integer,
     g.layer,
     g.topline_indicator
 
@@ -141,6 +147,8 @@ select
     g.aggregation_hash,
     g.aggregation_display,
     g.goal,
+    g.goal_numeric,
+    g.goal_integer,
     g.layer,
     g.topline_indicator as indicator,
 
@@ -163,6 +171,8 @@ group by
     g.aggregation_hash,
     g.aggregation_display,
     g.goal,
+    g.goal_numeric,
+    g.goal_integer,
     g.layer,
     g.topline_indicator
 
@@ -189,6 +199,8 @@ select
     g.aggregation_hash,
     g.aggregation_display,
     g.goal,
+    g.goal_numeric,
+    g.goal_integer,
     g.layer,
     g.topline_indicator as indicator,
 
@@ -210,5 +222,7 @@ group by
     g.aggregation_hash,
     g.aggregation_display,
     g.goal,
+    g.goal_numeric,
+    g.goal_integer,
     g.layer,
     g.topline_indicator
