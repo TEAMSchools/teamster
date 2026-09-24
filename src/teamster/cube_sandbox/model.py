@@ -43,12 +43,42 @@ def table_set(cube_root: Path) -> set[str]:
     return tables
 
 
+def member_columns(sql: str) -> set[str]:
+    """The columns ONE member's `sql:` reads from its own cube's table.
+
+    A member's `sql:` carries three kinds of `{...}` reference, and only the
+    first names a column on this cube's table:
+
+    - `{CUBE}.column` / ``{CUBE}.`column` `` — this table's column. Keep it.
+    - `{measure}` — another member of the SAME cube, by member name, as in
+      ``1.0 * {_count_tier_3} / NULLIF({count_students}, 0)``. A member name
+      is not a column.
+    - `{other_cube.member}` — a member of a JOINED cube, as in
+      `{students.student_key}`. It names no column on this table, and that
+      cube's own dimensions already contribute it.
+
+    Sweeping every bare identifier without stripping the last two is what
+    made the Task 9 check report 30 columns that do not exist — among them
+    `dim_student_attendance_enrollment_daily.count_students`, a measure, and
+    `.students`, a cube. The check could never pass, so it could never catch
+    the real thing it is for.
+
+    SQL keywords and function names are excluded by the identifier pattern
+    being lowercase-only: the model writes `CAST`, `NULLIF`, `CONCAT` and
+    `IF` in upper case throughout.
+    """
+    columns = set(re.findall(r"\{CUBE\}\.`?([a-z_][a-z0-9_]*)`?", sql))
+    bare = re.sub(r"\{[^}]*\}", " ", sql)
+    return columns | set(re.findall(r"`?\b([a-z_][a-z0-9_]*)\b`?", bare))
+
+
 def referenced_columns(cube_root: Path) -> dict[str, set[str]]:
     """Columns each table must carry, from every cube's dimensions and measures.
 
-    A dimension's `sql:` may be an expression, so take every bare identifier in
-    it. Over-collecting is safe here: a column named that does not exist fails
-    the Task 9 check loudly, which is the outcome we want.
+    A dimension's `sql:` may be an expression, so take every bare identifier
+    left after the member references are resolved. Over-collecting what
+    remains is safe: a column named that does not exist fails the Task 9
+    check loudly, which is the outcome we want.
     """
     out: dict[str, set[str]] = {}
     for path in (cube_root / "model" / "cubes").rglob("*.yml"):
@@ -59,9 +89,7 @@ def referenced_columns(cube_root: Path) -> dict[str, set[str]]:
                 continue
             names: set[str] = set()
             for member in (*cube.get("dimensions", []), *cube.get("measures", [])):
-                names |= set(
-                    re.findall(r"\b[a-z_][a-z0-9_]*\b", str(member.get("sql", "")))
-                )
+                names |= member_columns(str(member.get("sql", "")))
             out.setdefault(table, set()).update(names)
     return out
 

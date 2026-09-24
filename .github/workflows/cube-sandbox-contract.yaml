@@ -1,0 +1,38 @@
+name: cube sandbox contract
+
+on:
+  pull_request:
+    paths:
+      - src/cube/**
+      - src/teamster/cube_sandbox/**
+      - tests/cube_sandbox/**
+      - .github/workflows/cube-sandbox-contract.yaml
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contract:
+    name: contract
+    if: github.actor != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read # For repo checkout. Nothing here writes.
+
+    steps:
+      # https://github.com/actions/checkout
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # https://github.com/astral-sh/setup-uv
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+
+      # Model, snapshot and manifest are compared at the SAME commit, so this
+      # reads no moving input and cannot cry wolf. It runs before the tests
+      # because it is the cheaper failure to read.
+      - name: Check the model, snapshot and manifest agree
+        run: uv run python -m teamster.cube_sandbox.checks
+
+      - name: Run the cube sandbox tests
+        run: uv run pytest tests/cube_sandbox -v

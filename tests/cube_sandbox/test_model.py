@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from teamster.cube_sandbox import model
@@ -24,6 +25,46 @@ def test_referenced_columns_are_keyed_by_table() -> None:
     # Keys are a subset of the table set: a column cannot be referenced on a
     # table the model never reads.
     assert set(columns) <= model.table_set(CUBE_ROOT)
+
+
+def test_member_columns_keeps_the_cube_qualified_column() -> None:
+    assert model.member_columns("CAST({CUBE}.birth_date AS TIMESTAMP)") == {
+        "birth_date"
+    }
+    # Backticked, as the model writes reserved words.
+    assert model.member_columns("{CUBE}.`name`") == {"name"}
+    # Upper-case SQL keywords and function names are not columns.
+    assert model.member_columns(
+        "CONCAT(CAST({CUBE}.academic_year AS STRING), '-', "
+        "CAST({CUBE}.academic_year + 1 AS STRING))"
+    ) == {"academic_year"}
+
+
+def test_member_columns_drops_member_and_joined_cube_references() -> None:
+    # A same-cube member reference names a MEASURE, not a column.
+    assert (
+        model.member_columns("1.0 * {_count_tier_3} / NULLIF({count_students}, 0)")
+        == set()
+    )
+    # A joined-cube reference names a column on the OTHER cube's table; that
+    # cube's own dimensions already contribute it.
+    assert model.member_columns("{students.student_key}") == set()
+
+
+def test_no_referenced_column_is_absent_from_the_snapshot() -> None:
+    # The live pair, which is what the CI check asserts. Sweeping every bare
+    # identifier without resolving member references reported 30 phantom
+    # columns here — measure names and cube names — so the check could never
+    # pass and could never catch a real model change outrunning the snapshot.
+    snap = json.loads((CUBE_ROOT / "sandbox" / "schema_snapshot.json").read_text())
+    tables = snap["tables"]
+    missing = sorted(
+        f"{table}.{column}"
+        for table, columns in model.referenced_columns(CUBE_ROOT).items()
+        for column in columns
+        if column not in tables.get(table, {})
+    )
+    assert missing == []
 
 
 def test_policy_columns_are_flat_names() -> None:
