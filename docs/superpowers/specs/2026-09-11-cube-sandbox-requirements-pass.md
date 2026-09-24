@@ -1189,7 +1189,7 @@ production is a migration rather than a change.
 No decision now. An exchange service that records which client called it costs
 almost nothing and keeps both answers open.
 
-### One adjacent gap, flagged rather than solved
+### A second issue, not a section of the first
 
 MasterBorn queries the sandbox with its API secret and SQL password directly
 ([Part 2](#decision-masterborn-gets-no-cube-cloud-account-and-no-web-ui-access)).
@@ -1197,10 +1197,12 @@ KTAF internal apps in production reach Cube through the token-exchange service.
 **So the kit's production authentication path is never exercised in the
 sandbox.**
 
-That is Deliverable 1's problem, not this build's, and it is not the enforcement
-question. But it belongs in the same issue, because both are about the seam
-between the kit and the exchange service, and someone reading one will want the
-other.
+That touches the same seam as enforcement, which makes it tempting to file
+together. Do not. Enforcement is a policy decision; this is a testing hole.
+Bundling them makes the testing hole wait on the policy call — the same failure
+this part just avoided for the build, one level down.
+
+Both are Deliverable 1's, not this build's. Two issues, cross-referenced.
 
 ### Nothing here is open
 
@@ -1220,7 +1222,9 @@ Evidence: [A8](#a8--kit-enforcement-does-not-gate-the-build).
 4. Rewrite the PR body on
    [#5267](https://github.com/TEAMSchools/teamster/pull/5267), which still
    describes the removed files and says Piece 2 is built.
-5. Open the kit-enforcement issue described in Part 10.
+5. Open the two issues described in
+   [Part 10](#part-10--out-of-scope-kit-enforcement): kit enforcement, and the
+   untested production authentication path.
 
 ## Appendix — evidence
 
