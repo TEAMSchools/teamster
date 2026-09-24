@@ -1123,15 +1123,26 @@ What it holds, and why each half is shaped the way it is:
 So it is a list KTAF already made and will restore from the plan, not one still
 to be invented. Writing names is not the work left.
 
-### A namespace nobody adopted is not reserved
+### The decision: restore it, agree it once, publish it
 
-The file labels itself a starter set for review, and it is right to. Coinage
-makes a surname unique; it does not make anyone recognise it. That half needs
-the set agreed and published — in `docs/reference/` and in the partner handoff —
-so someone meeting "Bramblehyde" in a report knows what it means without asking.
+Coinage makes a surname unique; it does not make anyone recognise it. The second
+half is what is missing, and it is the only part that needs a decision.
 
-Until then the file is a list of words, not a namespace. Publishing it is the
-sign-off.
+1. **Restore the file from `aaa57b7222`.** The names are fine and the work is
+   done. Re-inventing 40 surnames would produce a different list with no more
+   authority than the one already written.
+2. **Review the set once and agree it.** This is the sign-off, and it belongs to
+   the data team rather than to whoever restores the file. A set inherited with
+   its "starter set for review" label intact stays a draft forever.
+3. **Publish it** in `docs/reference/` and in the partner handoff, and replace
+   the file's header: it stops being a proposal and becomes the reservation,
+   pointing at where it is published.
+
+**The contract goes in the spec, not only in the file.** Why the surnames are
+coined and why each given name carries a character class currently exists only
+as comments inside `reserved_names.yml` — a file that has already been deleted
+once, taking the reasoning with it. The spec carries the rule; the file carries
+the list.
 
 ### Nothing here is open
 
