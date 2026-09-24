@@ -1057,3 +1057,29 @@ data_tests:
         dagster:
           ref:
             name: rpt_tableau__dibels_dashboard
+
+  - name: rpt_illuminate__no_miami_rows
+    description: >-
+      Fails on any Miami row in the 11 Illuminate SFTP feeds. Miami left
+      Illuminate ahead of AY2026-27, and every feed carries an inclusive filter
+      naming the three New Jersey regions. Five feeds once relied on their
+      upstream holding no Miami rows instead of a filter, and resumed sending
+      Miami students and sections when those upstreams gained a Focus branch --
+      the nightly job kept succeeding, so nothing noticed. Each feed is matched
+      to Miami by its own identifier -- student number, site id, section id
+      prefix, staff employee number, or course number. Course numbers shared
+      with a New Jersey region are skipped because they cannot be attributed.
+      Roles is matched by site, not person, because network staff in Teaching
+      and Learning, Data, and Executive get a role at every New Jersey school
+      regardless of which region's office they sit in. Errors rather than warns
+      because a hit means another region's rosters are being sent to a vendor
+      they no longer use. Hosted on int_extracts__student_enrollments, an hourly
+      table the test reads directly, because the feeds are views: they never
+      rematerialize on a data change, so a check hosted on a feed would run once
+      at deploy and then go dormant.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: int_extracts__student_enrollments
