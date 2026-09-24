@@ -1,6 +1,15 @@
 from __future__ import annotations
 
+from pathlib import Path
+from typing import Any
+
+import pytest
+
 from teamster.cube_sandbox import meta_check
+
+# Long enough for HS256 and deliberately low-entropy, so no scanner reads it
+# as a real credential.
+FAKE_SECRET = "not-a-real-secret-" * 2
 
 CATALOG = {
     "cubes": [
@@ -122,3 +131,66 @@ def test_a_retype_is_its_own_category_and_fails() -> None:
     }
     assert meta_check.exit_code(diff) == 1
     assert "v.d: string -> number" in meta_check.describe(diff)
+
+
+# ---------------------------------------------------------------------------
+# The entry point
+# ---------------------------------------------------------------------------
+
+
+def test_fetch_meta_signs_the_identity_and_sends_the_raw_token(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The auth path documented in src/cube/CLAUDE.md, not a guess at one.
+
+    The entire JWT payload IS the security context, so the top-level `email`
+    claim is what `checkAuth` reads, and the header carries the raw token —
+    a `Bearer` prefix is rejected.
+    """
+    import jwt
+    import requests
+
+    captured: dict[str, Any] = {}
+
+    class _Response:
+        status_code = 200
+
+        def raise_for_status(self) -> None:
+            return None
+
+        def json(self) -> dict:
+            return {"cubes": []}
+
+    def fake_get(url: str, headers: dict, timeout: int) -> _Response:
+        captured["url"] = url
+        captured["headers"] = headers
+        return _Response()
+
+    monkeypatch.setattr(requests, "get", fake_get)
+
+    meta_check.fetch_meta("https://sandbox.example.invalid/", FAKE_SECRET)
+
+    assert captured["url"] == "https://sandbox.example.invalid/v1/meta"
+    token = captured["headers"]["Authorization"]
+    assert not token.startswith("Bearer ")
+    claims = jwt.decode(token, FAKE_SECRET, algorithms=["HS256"])
+    assert claims["email"] == meta_check.DEFAULT_VIEWER
+    # jwt.verify enforces maxAge from `iat`; a token without one is rejected.
+    assert "iat" in claims
+
+
+def test_a_missing_pinned_catalog_says_so(tmp_path: Path) -> None:
+    # Comparing against a catalog this check invented would prove only that
+    # the deployment matches itself.
+    with pytest.raises(SystemExit, match="no pinned catalog"):
+        meta_check.load_catalog(tmp_path / "absent.json")
+
+
+def test_the_check_refuses_to_guess_a_deployment(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    for name in (meta_check.REST_URL, meta_check.API_SECRET):
+        monkeypatch.delenv(name, raising=False)
+
+    with pytest.raises(SystemExit, match=meta_check.REST_URL):
+        meta_check.main([])
