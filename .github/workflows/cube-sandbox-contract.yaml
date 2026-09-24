@@ -6,6 +6,15 @@ on:
       - src/cube/**
       - src/teamster/cube_sandbox/**
       - tests/cube_sandbox/**
+      # checks.stale_manifest reads the dbt `not_null` tests under marts, so a
+      # dbt PR adding or removing one changes build()'s output. Without this
+      # path that PR never runs the check and lands a stale manifest.
+      - src/dbt/kipptaf/models/marts/**
+      # scripts/ carries the isolation and RLS-matrix runners the tests below
+      # cover.
+      - scripts/**
+      - tests/scripts/**
+      - tests/test_cube_rls_matrix.py
       - .github/workflows/cube-sandbox-contract.yaml
 
 concurrency:
@@ -34,5 +43,9 @@ jobs:
       - name: Check the model, snapshot and manifest agree
         run: uv run python -m teamster.cube_sandbox.checks
 
+      # The RLS-matrix and isolation tests live outside tests/cube_sandbox and
+      # no other workflow runs them, so about 30 tests never ran in CI.
       - name: Run the cube sandbox tests
-        run: uv run pytest tests/cube_sandbox -v
+        run: >-
+          uv run pytest tests/cube_sandbox tests/test_cube_rls_matrix.py
+          tests/scripts/test_cube_sandbox_isolation.py -v
