@@ -117,6 +117,24 @@ the two rounds — the hub's `administration_round` is derived from Illuminate's
 rounds shared a value, a student's BOY and MOY sections would sum into one
 meaningless 1600+ total.
 
+**Any later administration in the same year and scope takes the next digit:**
+`SAT3`, `PSAT892`, `PSAT102`. Read the values already used before choosing one:
+
+```sql
+select academic_year, scope, scope_round, count(distinct assessment_id) as n
+from `teamster-332318.kipptaf_google_sheets.stg_google_sheets__kippfwd__practice_scale_score_conversion`
+group by 1, 2, 3
+order by 1, 2, 3
+```
+
+A new `scope_round` also needs its own rows on the Expected Assessments tab.
+Practice rows there bind on `scope_round`, so a round the tab lacks is dropped
+from the roster-scores view with no error. As of 2026-09-24 the tab carries
+`SAT1`, `PSAT891` and `PSAT101`, and the conversion tab already holds `SAT2`
+rows, so SY26-27 MOY SAT scores will not reach roster scores until the tab is
+rebuilt. Rebuild procedure and its orphan check:
+[expected-assessments.md](expected-assessments.md).
+
 ### Step 3 — ask for the scale scores
 
 Foundation supplies these, usually as Excel. Tell the user:
@@ -223,6 +241,12 @@ empty list, which reads as "no such asset" rather than "wrong key."
 Run _Procedure: Add scaffold rows_ below. Conversion bands with no matching
 scaffold row are dropped silently by the model's inner join, so this step is not
 optional.
+
+A later administration in a year that already has one usually needs no new
+scaffold rows. The join keys on (`academic_year`, `scope`, `score_type`), not on
+`scope_round`, so `PSAT102` reuses the rows `PSAT101` added. Run that
+procedure's Step 1 query anyway and add only what it reports `MISSING`; adding a
+duplicate breaks the scaffold's uniqueness key.
 
 ### Step 8 — audit before declaring it ready
 
@@ -418,8 +442,14 @@ Work outward from the student, stopping at the first layer with zero rows.
    the assessments produce **zero rows through the entire chain** no matter how
    correct the sheet and the models are.
 
-1. **Is the assessment in the sheet?** No sheet row means no designation, which
-   means no output row.
+1. **Is the assessment on both tabs?** Check each one separately, because each
+   drops rows silently on its own:
+   - `Scale Score Conversion`: filter
+     `stg_google_sheets__kippfwd__practice_scale_score_conversion` on the
+     `assessment_id`. No row means no designation, which means no output row.
+   - `Scaffold`: run the Step 1 query of _Procedure: Add scaffold rows_. A
+     conversion row whose (`academic_year`, `scope`, `score_type`) reads
+     `MISSING` there is dropped by the inner join.
 
 1. **Do responses exist?** Check `int_illuminate__agg_student_responses` for the
    `assessment_id`. Zero means not yet administered or not yet synced.
