@@ -15,9 +15,18 @@ from __future__ import annotations
 from typing import Any
 
 
-def _members(doc: dict[str, Any]) -> set[str]:
+def _members(doc: dict[str, Any]) -> dict[str, str]:
+    """Every member's name -> declared type.
+
+    Keyed by name alone, a dimension changing `string` to `number` diffs
+    empty: the name is on both sides, so neither `added` nor `removed`
+    fires and the check goes green on a model that is not the pinned one.
+    A retype is also the change most likely to break a kit silently, since
+    the member still exists and the query still compiles. The bump procedure
+    asks for "additions, removals and retypes"; this is the third one.
+    """
     return {
-        m["name"]
+        m["name"]: str(m.get("type"))
         for cube in doc.get("cubes", [])
         for key in ("measures", "dimensions")
         for m in cube.get(key, [])
@@ -26,26 +35,37 @@ def _members(doc: dict[str, Any]) -> set[str]:
 
 def member_diff(live: dict[str, Any], catalog: dict[str, Any]) -> dict[str, list[str]]:
     a, b = _members(live), _members(catalog)
-    return {"added": sorted(a - b), "removed": sorted(b - a)}
+    return {
+        "added": sorted(set(a) - set(b)),
+        "removed": sorted(set(b) - set(a)),
+        "retyped": sorted(
+            f"{name}: {b[name]} -> {a[name]}"
+            for name in set(a) & set(b)
+            if a[name] != b[name]
+        ),
+    }
 
 
 def exit_code(diff: dict[str, list[str]]) -> int:
     """Non-zero if the deployed surface differs from the pinned catalog.
 
-    An ADDED member fails as loudly as a removed one. Both mean the deployed
-    revision is not the pinned one, and an addition is the shape a deploy
-    from the wrong checkout takes — the sandbox is pinned behind `main`, so
-    drift shows up as members the catalog has not got yet.
+    An ADDED member fails as loudly as a removed one, and a RETYPED one as
+    loudly as either. All three mean the deployed revision is not the pinned
+    one, and an addition is the shape a deploy from the wrong checkout takes
+    — the sandbox is pinned behind `main`, so drift shows up as members the
+    catalog has not got yet.
     """
-    return 1 if diff["added"] or diff["removed"] else 0
+    return 1 if any(diff.get(k) for k in ("added", "removed", "retyped")) else 0
 
 
 def describe(diff: dict[str, list[str]]) -> str:
-    if not diff["added"] and not diff["removed"]:
+    if not exit_code(diff):
         return "deployed model matches the pinned catalog member for member"
     parts = []
     if diff["removed"]:
         parts.append(f"missing from the deployment: {', '.join(diff['removed'])}")
     if diff["added"]:
         parts.append(f"not in the pinned catalog: {', '.join(diff['added'])}")
+    if diff.get("retyped"):
+        parts.append(f"retyped since the pinned catalog: {', '.join(diff['retyped'])}")
     return "; ".join(parts)

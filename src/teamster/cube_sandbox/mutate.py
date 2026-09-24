@@ -27,11 +27,31 @@ def uncaught(mutations: dict[str, bool]) -> list[str]:
 
 
 def report(mutations: dict[str, bool]) -> dict[str, Any]:
+    """The run's result, with the empty case unmistakable.
+
+    A run that mutated nothing used to print `uncaught_ratio: 0.0` — which
+    reads as a perfect score on a report nobody can tell apart from a real
+    one. `exit_code` failed it correctly, but the two travel separately: the
+    JSON is what gets attached to a kit release. So an empty run reports a
+    null ratio and says in words that nothing was measured.
+    """
     results = list(mutations.values())
+    if not results:
+        return {
+            "mutations": 0,
+            "uncaught": [],
+            "uncaught_ratio": None,
+            "verdict": (
+                "NOT MEASURED: no mutation was applied, so this run says "
+                "nothing about whether the canaries are load-bearing"
+            ),
+        }
+    ratio = uncaught_ratio(results)
     return {
         "mutations": len(results),
         "uncaught": uncaught(mutations),
-        "uncaught_ratio": uncaught_ratio(results),
+        "uncaught_ratio": ratio,
+        "verdict": f"{len(uncaught(mutations))} of {len(results)} mutations uncaught",
     }
 
 

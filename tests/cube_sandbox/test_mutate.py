@@ -48,3 +48,20 @@ def test_report_carries_both_the_count_and_the_names() -> None:
     assert result["mutations"] == 2
     assert result["uncaught"] == ["b"]
     assert result["uncaught_ratio"] == 0.5
+
+
+def test_an_empty_run_does_not_report_a_perfect_score() -> None:
+    # `uncaught_ratio: 0.0` on a run that mutated nothing reads as 100%
+    # caught. exit_code fails it, but the JSON travels separately — it is
+    # what gets attached to a kit release.
+    result = mutate.report({})
+    assert result["mutations"] == 0
+    assert result["uncaught_ratio"] is None
+    assert "NOT MEASURED" in result["verdict"]
+    assert mutate.exit_code({}) == 1
+
+
+def test_a_measured_run_states_its_verdict_in_words_too() -> None:
+    assert mutate.report({"a": True, "b": False})["verdict"] == (
+        "1 of 2 mutations uncaught"
+    )
