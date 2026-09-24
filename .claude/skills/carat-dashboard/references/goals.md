@@ -218,14 +218,14 @@ this is a sheet edit only. Follow _Handing sheet rows to the user_ in
 4. Hand the user the file path and "paste over A1 of the Goals tab".
 5. After the paste, rerun the script with no `--set` to a second file and diff
    the two. A value edit needs no `stage_external_sources`.
-6. Tell the user the paste does not reach Tableau on its own.
-   `kipptaf/google_sheets/stg_google_sheets__kippfwd__goals` materializes only
-   when its code version changes — 2026-08-18 was its last run as of 2026-09-24,
-   a month after a sheet edit — so a value edit sits in the sheet indefinitely.
-   The user materializes that asset and its downstream from the Dagster UI, then
-   refreshes the Tableau extract. Confirm with
-   `mcp__dagster__get_asset_materializations` (timestamp newer than the paste)
-   and a query of the staging model showing the new value.
+6. No manual rebuild is needed. The Google Sheets sensor
+   (`build_google_sheets_asset_sensor`) polls the workbook's Drive
+   `modifiedTime`, and an edit triggers
+   `kipptaf/google_sheets/stg_google_sheets__kippfwd__goals` — about an hour
+   after the paste on 2026-09-24. Tableau shows the value after its next extract
+   refresh. Confirm with `mcp__dagster__get_asset_materializations` (a timestamp
+   newer than the paste) and a query of the staging model. A long gap between
+   materializations means nobody edited the sheet, not that edits are ignored.
 7. Update every place that quotes a changed value, on a branch: _Authoritative
    topline goals_ above for a per-class HS Grad-Ready or College-Ready goal, and
    _What is tracked_ in the reference doc for an attempts goal.
