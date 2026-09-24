@@ -16,7 +16,10 @@ select
 -- trunk-ignore-end(sqlfluff/RF05)
 from {{ ref("int_people__staff_roster") }} as sr
 inner join
-    {{ ref("stg_powerschool__schools") }} as sch on sch.state_excludefromreporting = 0
+    {{ ref("int_students__schools") }} as sch
+    -- Miami left Illuminate ahead of AY2026-27 (#4777, #5537)
+    on sch._dbt_source_project in ('kippnewark', 'kippcamden', 'kipppaterson')
+    and sch.state_excludefromreporting = 0
 where
     sr.worker_status_code != 'Terminated'
     and sr.home_department_name in ('Teaching and Learning', 'Data', 'Executive')

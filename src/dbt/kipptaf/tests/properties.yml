@@ -1069,10 +1069,11 @@ data_tests:
       to Miami by its own identifier -- student number, site id, section id
       prefix, staff employee number, or course number. Course numbers shared
       with a New Jersey region are skipped because they cannot be attributed.
-      Roles is matched by site, not person, because a temporary-staff record can
-      place a Miami-homed staff member at a New Jersey site. Errors rather than
-      warns because a hit means another region's rosters are being sent to a
-      vendor they no longer use.
+      Roles is matched by site, not person, because network staff in Teaching
+      and Learning, Data, and Executive get a role at every New Jersey school
+      regardless of which region's office they sit in. Errors rather than warns
+      because a hit means another region's rosters are being sent to a vendor
+      they no longer use.
     config:
       severity: error
       meta:
