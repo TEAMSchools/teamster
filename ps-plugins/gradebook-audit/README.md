@@ -117,7 +117,8 @@ nice-to-have, not a prerequisite for use.
 
 > Which pages, which instances, and the exact construct are deliberately not in
 > this file: this repository is public. That detail, and the per-instance check
-> of whether the group exists, are in the Data Team's Asana task for this work.
+> of whether the group exists, are in the Data Team's Asana task:
+> https://app.asana.com/1/913513768672/project/1205971774138578/task/1218825255380883
 
 ### The actual decision
 

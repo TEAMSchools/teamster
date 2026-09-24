@@ -137,13 +137,21 @@ def test_csv_header_contract_fails_when_only_sheets_md_drifts(tmp_path):
     assert "sheets.md" in errors[0]
 
 
-def test_csv_header_contract_fails_when_a_reference_file_is_missing(tmp_path):
+@pytest.mark.parametrize(
+    ("present", "missing"),
+    [("csv-format.md", "sheets.md"), ("sheets.md", "csv-format.md")],
+)
+def test_csv_header_contract_fails_when_a_reference_file_is_missing(
+    tmp_path, present, missing
+):
+    # Neither file is the privileged one -- a reader may open either, so
+    # either going absent has to fail the build.
     references = tmp_path / "references"
     references.mkdir()
-    (references / "csv-format.md").write_text(f"Header:\n\n{HEADER_LINE}")
+    (references / present).write_text(f"Header:\n\n{HEADER_LINE}")
     errors = build_plugin.check_csv_header_contract(PLUGIN, tmp_path)
     assert len(errors) == 1
-    assert "sheets.md" in errors[0]
+    assert missing in errors[0]
 
 
 def test_csv_header_contract_fails_when_the_documented_header_has_an_extra_column(

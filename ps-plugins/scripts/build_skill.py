@@ -26,11 +26,19 @@ EXCLUDE_SUFFIXES = (".pyc", ".swp", ".swo", ".bak", ".orig", ".rej", "~")
 EXCLUDE_DIRS = {"__pycache__", ".ipynb_checkpoints"}
 
 
-def is_excluded(path: Path) -> bool:
-    """Editor and OS leftovers that must not reach an end user's install."""
-    if path.name in EXCLUDE_NAMES or path.name.endswith(EXCLUDE_SUFFIXES):
+def is_excluded(relative_path: Path) -> bool:
+    """Editor and OS leftovers that must not reach an end user's install.
+
+    Takes the path RELATIVE to the skill directory. An absolute path would
+    also test the checkout's own parent directories, so a clone living under
+    any directory named in EXCLUDE_DIRS would drop every file and ship an
+    empty zip.
+    """
+    if relative_path.name in EXCLUDE_NAMES or relative_path.name.endswith(
+        EXCLUDE_SUFFIXES
+    ):
         return True
-    return any(part in EXCLUDE_DIRS for part in path.parts)
+    return any(part in EXCLUDE_DIRS for part in relative_path.parts)
 
 
 # Accepts "1.0.0", '1.0.0', and 1.0.0 -- whatever quote style the next editor
@@ -85,8 +93,9 @@ def build(skill_dir: Path, dist: Path) -> Path:
 
     with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
         for f in sorted(skill_dir.rglob("*")):
-            if f.is_file() and not is_excluded(f):
-                z.write(f, f.relative_to(skill_dir))
+            relative_path = f.relative_to(skill_dir)
+            if f.is_file() and not is_excluded(relative_path):
+                z.write(f, relative_path)
     return out
 
 

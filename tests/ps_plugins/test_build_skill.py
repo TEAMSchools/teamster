@@ -56,3 +56,33 @@ def test_unresolved_links_ignores_a_title_after_the_path(tmp_path):
     (tmp_path / "target.md").write_text("hi\n")
     (tmp_path / "SKILL.md").write_text('[text](target.md "a title")\n')
     assert build_skill.unresolved_links(tmp_path) == []
+
+
+def test_is_excluded_catches_os_and_editor_leftovers():
+    """These would otherwise ship inside the zip sent to Teaching & Learning."""
+    for name in (".DS_Store", "SKILL.md.swp", "notes.md~", "stale.md.orig"):
+        assert build_skill.is_excluded(Path(name)), name
+    assert build_skill.is_excluded(Path("__pycache__/helper.pyc"))
+
+
+def test_is_excluded_keeps_every_real_skill_file():
+    """An over-broad rule would silently drop content instead of junk."""
+    for name in (
+        "SKILL.md",
+        "INSTALL.md",
+        "references/sheets.md",
+        "references/csv-format.md",
+        "playbooks/rollover.md",
+    ):
+        assert not build_skill.is_excluded(Path(name)), name
+
+
+def test_is_excluded_ignores_directories_above_the_skill():
+    """It takes a RELATIVE path on purpose.
+
+    Passing an absolute path would test the checkout's own parents, so a
+    clone living under a directory named __pycache__ would match every file
+    and build an empty zip.
+    """
+    assert not build_skill.is_excluded(Path("references/sheets.md"))
+    assert build_skill.is_excluded(Path("__pycache__") / "references" / "sheets.md")
