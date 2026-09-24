@@ -217,6 +217,65 @@ def key_columns(cube_root: Path) -> set[tuple[str, str]]:
     return out
 
 
+class JoinPath(NamedTuple):
+    """One equality linking a referencing table to a referenced one.
+
+    `child` is the `{CUBE}` side — the table carrying the foreign key — and
+    `parent` the joined cube's own key. `name` is stable, so a test or a
+    fixture can reference the path rather than describing it.
+    """
+
+    child: tuple[str, str]
+    parent: tuple[str, str]
+
+    @property
+    def name(self) -> str:
+        return f"{self.child[0]}.{self.child[1]}->{self.parent[0]}.{self.parent[1]}"
+
+
+def join_paths(cube_root: Path) -> list[JoinPath]:
+    """Every join equality in the model, as child -> parent column pairs.
+
+    The manifest needs these to require an orphan on each side of each path.
+    A join path with no orphan is an empty niche: a kit that assumes every
+    foreign key resolves passes against the sandbox and breaks on production,
+    where `dim_student_enrollments.location_key` is documented NULL for
+    grade_level 99 placeholder schools and
+    `dim_staff_work_history.work_location_key` NULL for an unmapped ADP
+    location.
+    """
+    cubes = _cubes(cube_root)
+    out: dict[str, JoinPath] = {}
+
+    for name in cubes:
+        resolved = _resolve(name, cubes)
+        if not resolved.table:
+            continue
+        for join in resolved.joins:
+            for left, right in _EQUALITY.findall(str(join.get("sql", ""))):
+                near = [s for s in (left, right) if _CUBE_COLUMN.match(s)]
+                far = [s for s in (left, right) if _FAR_MEMBER.match(s)]
+                if len(near) != 1 or len(far) != 1:
+                    continue
+                child_column = _CUBE_COLUMN.match(near[0]).group(1)  # type: ignore[union-attr]
+                far_match = _FAR_MEMBER.match(far[0])
+                far_cube = _resolve(far_match.group(1), cubes)  # type: ignore[union-attr]
+                parent_column = _column_of(
+                    far_cube.dimensions.get(far_match.group(2), "")  # type: ignore[union-attr]
+                )
+                if not far_cube.table or not parent_column:
+                    continue
+                path = JoinPath(
+                    child=(resolved.table, child_column),
+                    parent=(far_cube.table, parent_column),
+                )
+                # Role-play aliases resolve to the same underlying pair, so
+                # dedupe on the name rather than emitting a path twice.
+                out.setdefault(path.name, path)
+
+    return [out[k] for k in sorted(out)]
+
+
 def view_member_columns(cube_root: Path) -> dict[str, tuple[str, str]]:
     """Each view member's exposed name -> the (table, column) behind it.
 

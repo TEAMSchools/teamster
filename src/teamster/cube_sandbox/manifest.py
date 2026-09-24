@@ -65,6 +65,7 @@ def build(
     not_null: set[tuple[str, str]],
     scopes: dict[str, set[str]],
     people: list[Persona],
+    join_paths: list[model.JoinPath],
 ) -> dict[str, Any]:
     """Every cell the sandbox data must contain.
 
@@ -158,6 +159,25 @@ def build(
                 }
             )
 
+    # One orphan on each side of every join path. Symmetric on purpose: a
+    # child row whose foreign key matches no parent, and a parent row no
+    # child references. `detail` names the counterpart, which is what lets
+    # coverage evaluate the cell and what makes the path a named fixture.
+    for path in join_paths:
+        for (table, column), (other_table, other_column) in (
+            (path.child, path.parent),
+            (path.parent, path.child),
+        ):
+            cells.append(
+                {
+                    "kind": "orphan",
+                    "table": table,
+                    "column": column,
+                    "detail": f"{other_table}.{other_column}",
+                    "status": "uncovered",
+                }
+            )
+
     cells.append(
         {
             "kind": "identity",
@@ -219,6 +239,7 @@ def main() -> int:
         not_null=dbt_not_null(MARTS_ROOT),
         scopes=model.scope_values(CUBE_ROOT / "access.js"),
         people=personas.load(PERSONAS_PATH),
+        join_paths=model.join_paths(CUBE_ROOT),
     )
 
     MANIFEST_PATH.parent.mkdir(parents=True, exist_ok=True)

@@ -53,6 +53,7 @@ def stale_manifest(cube_root: Path = CUBE_ROOT) -> str | None:
             not_null=manifest.dbt_not_null(manifest.MARTS_ROOT),
             scopes=model.scope_values(cube_root / "access.js"),
             people=personas.load(manifest.PERSONAS_PATH),
+            join_paths=model.join_paths(cube_root),
         )
     )
     committed = manifest.MANIFEST_PATH.read_text()

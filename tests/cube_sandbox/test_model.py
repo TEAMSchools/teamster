@@ -67,6 +67,38 @@ def test_no_referenced_column_is_absent_from_the_snapshot() -> None:
     assert missing == []
 
 
+def test_join_paths_run_child_to_parent() -> None:
+    paths = {p.name: p for p in model.join_paths(CUBE_ROOT)}
+    # The {CUBE} side carries the foreign key; the joined cube's own key is
+    # the parent.
+    path = paths["dim_student_enrollments.location_key->dim_locations.location_key"]
+    assert path.child == ("dim_student_enrollments", "location_key")
+    assert path.parent == ("dim_locations", "location_key")
+
+
+def test_join_paths_resolve_through_a_role_play_alias() -> None:
+    names = {p.name for p in model.join_paths(CUBE_ROOT)}
+    # staff_lead_teacher extends staff, so the path lands on dim_staff.
+    assert (
+        "dim_student_section_enrollments.lead_teacher_staff_key->dim_staff.staff_key"
+        in names
+    )
+
+
+def test_join_paths_name_only_real_tables_and_columns() -> None:
+    snap = json.loads((CUBE_ROOT / "sandbox" / "schema_snapshot.json").read_text())
+    for path in model.join_paths(CUBE_ROOT):
+        for table, column in (path.child, path.parent):
+            assert column in snap["tables"].get(table, {}), path.name
+
+
+def test_join_paths_are_deduplicated_and_ordered() -> None:
+    paths = model.join_paths(CUBE_ROOT)
+    names = [p.name for p in paths]
+    assert names == sorted(names)
+    assert len(names) == len(set(names))
+
+
 def test_policy_members_are_flat_names() -> None:
     cols = model.policy_members(CUBE_ROOT)
     # row_level filters name a flat view member, never a cube-qualified path.

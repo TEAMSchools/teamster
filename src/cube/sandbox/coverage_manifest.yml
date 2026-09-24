@@ -1794,6 +1794,246 @@ cells:
     column: hasChain
     detail: "false"
     status: uncovered
+  - kind: orphan
+    table: dim_assessment_administrations
+    column: assessment_key
+    detail: dim_assessments.assessment_key
+    status: uncovered
+  - kind: orphan
+    table: dim_assessments
+    column: assessment_key
+    detail: dim_assessment_administrations.assessment_key
+    status: uncovered
+  - kind: orphan
+    table: dim_course_sections
+    column: course_key
+    detail: dim_courses.course_key
+    status: uncovered
+  - kind: orphan
+    table: dim_courses
+    column: course_key
+    detail: dim_course_sections.course_key
+    status: uncovered
+  - kind: orphan
+    table: dim_locations
+    column: region_key
+    detail: dim_regions.region_key
+    status: uncovered
+  - kind: orphan
+    table: dim_regions
+    column: region_key
+    detail: dim_locations.region_key
+    status: uncovered
+  - kind: orphan
+    table: dim_staff_work_history
+    column: manager_staff_key
+    detail: dim_staff.staff_key
+    status: uncovered
+  - kind: orphan
+    table: dim_staff
+    column: staff_key
+    detail: dim_staff_work_history.manager_staff_key
+    status: uncovered
+  - kind: orphan
+    table: dim_staff_work_history
+    column: staff_key
+    detail: dim_staff.staff_key
+    status: uncovered
+  - kind: orphan
+    table: dim_staff
+    column: staff_key
+    detail: dim_staff_work_history.staff_key
+    status: uncovered
+  - kind: orphan
+    table: dim_staff_work_history
+    column: staff_key
+    detail: dim_staff_cube_access.staff_key
+    status: uncovered
+  - kind: orphan
+    table: dim_staff_cube_access
+    column: staff_key
+    detail: dim_staff_work_history.staff_key
+    status: uncovered
+  - kind: orphan
+    table: dim_staff_work_history
+    column: work_location_key
+    detail: dim_locations.location_key
+    status: uncovered
+  - kind: orphan
+    table: dim_locations
+    column: location_key
+    detail: dim_staff_work_history.work_location_key
+    status: uncovered
+  - kind: orphan
+    table: dim_student_enrollments
+    column: location_key
+    detail: dim_locations.location_key
+    status: uncovered
+  - kind: orphan
+    table: dim_locations
+    column: location_key
+    detail: dim_student_enrollments.location_key
+    status: uncovered
+  - kind: orphan
+    table: dim_student_enrollments
+    column: student_enrollment_key
+    detail: dim_student_enrollment_status.student_enrollment_key
+    status: uncovered
+  - kind: orphan
+    table: dim_student_enrollment_status
+    column: student_enrollment_key
+    detail: dim_student_enrollments.student_enrollment_key
+    status: uncovered
+  - kind: orphan
+    table: dim_student_enrollments
+    column: student_enrollment_key
+    detail: dim_student_section_enrollments.student_enrollment_key
+    status: uncovered
+  - kind: orphan
+    table: dim_student_section_enrollments
+    column: student_enrollment_key
+    detail: dim_student_enrollments.student_enrollment_key
+    status: uncovered
+  - kind: orphan
+    table: dim_student_enrollments
+    column: student_key
+    detail: dim_students.student_key
+    status: uncovered
+  - kind: orphan
+    table: dim_students
+    column: student_key
+    detail: dim_student_enrollments.student_key
+    status: uncovered
+  - kind: orphan
+    table: dim_student_section_enrollments
+    column: course_section_key
+    detail: dim_course_sections.course_section_key
+    status: uncovered
+  - kind: orphan
+    table: dim_course_sections
+    column: course_section_key
+    detail: dim_student_section_enrollments.course_section_key
+    status: uncovered
+  - kind: orphan
+    table: dim_student_section_enrollments
+    column: lead_teacher_staff_key
+    detail: dim_staff.staff_key
+    status: uncovered
+  - kind: orphan
+    table: dim_staff
+    column: staff_key
+    detail: dim_student_section_enrollments.lead_teacher_staff_key
+    status: uncovered
+  - kind: orphan
+    table: dim_student_section_enrollments
+    column: student_enrollment_key
+    detail: dim_student_enrollments.student_enrollment_key
+    status: uncovered
+  - kind: orphan
+    table: dim_student_enrollments
+    column: student_enrollment_key
+    detail: dim_student_section_enrollments.student_enrollment_key
+    status: uncovered
+  - kind: orphan
+    table: fct_assessment_scores_enrollment_scoped
+    column: assessment_administration_key
+    detail: dim_assessment_administrations.assessment_administration_key
+    status: uncovered
+  - kind: orphan
+    table: dim_assessment_administrations
+    column: assessment_administration_key
+    detail: fct_assessment_scores_enrollment_scoped.assessment_administration_key
+    status: uncovered
+  - kind: orphan
+    table: fct_assessment_scores_enrollment_scoped
+    column: assessment_date_key
+    detail: dim_dates.date_key
+    status: uncovered
+  - kind: orphan
+    table: dim_dates
+    column: date_key
+    detail: fct_assessment_scores_enrollment_scoped.assessment_date_key
+    status: uncovered
+  - kind: orphan
+    table: fct_assessment_scores_enrollment_scoped
+    column: student_section_enrollment_key
+    detail: dim_student_section_enrollments.student_section_enrollment_key
+    status: uncovered
+  - kind: orphan
+    table: dim_student_section_enrollments
+    column: student_section_enrollment_key
+    detail: fct_assessment_scores_enrollment_scoped.student_section_enrollment_key
+    status: uncovered
+  - kind: orphan
+    table: fct_assessment_scores_enrollment_scoped
+    column: term_key
+    detail: dim_terms.term_key
+    status: uncovered
+  - kind: orphan
+    table: dim_terms
+    column: term_key
+    detail: fct_assessment_scores_enrollment_scoped.term_key
+    status: uncovered
+  - kind: orphan
+    table: fct_student_attendance_enrollment_daily
+    column: date_key
+    detail: dim_dates.date_key
+    status: uncovered
+  - kind: orphan
+    table: dim_dates
+    column: date_key
+    detail: fct_student_attendance_enrollment_daily.date_key
+    status: uncovered
+  - kind: orphan
+    table: fct_student_attendance_enrollment_daily
+    column: date_key
+    detail: dim_school_calendars.date_key
+    status: uncovered
+  - kind: orphan
+    table: dim_school_calendars
+    column: date_key
+    detail: fct_student_attendance_enrollment_daily.date_key
+    status: uncovered
+  - kind: orphan
+    table: fct_student_attendance_enrollment_daily
+    column: student_enrollment_key
+    detail: dim_student_enrollments.student_enrollment_key
+    status: uncovered
+  - kind: orphan
+    table: dim_student_enrollments
+    column: student_enrollment_key
+    detail: fct_student_attendance_enrollment_daily.student_enrollment_key
+    status: uncovered
+  - kind: orphan
+    table: fct_student_attendance_enrollment_daily
+    column: term_key
+    detail: dim_terms.term_key
+    status: uncovered
+  - kind: orphan
+    table: dim_terms
+    column: term_key
+    detail: fct_student_attendance_enrollment_daily.term_key
+    status: uncovered
+  - kind: orphan
+    table: fct_student_attendance_enrollment_periods
+    column: student_enrollment_key
+    detail: dim_student_enrollments.student_enrollment_key
+    status: uncovered
+  - kind: orphan
+    table: dim_student_enrollments
+    column: student_enrollment_key
+    detail: fct_student_attendance_enrollment_periods.student_enrollment_key
+    status: uncovered
+  - kind: orphan
+    table: fct_student_attendance_enrollment_periods
+    column: term_key
+    detail: dim_terms.term_key
+    status: uncovered
+  - kind: orphan
+    table: dim_terms
+    column: term_key
+    detail: fct_student_attendance_enrollment_periods.term_key
+    status: uncovered
   - kind: identity
     table: null
     column: null

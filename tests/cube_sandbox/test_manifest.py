@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from teamster.cube_sandbox import manifest
+from teamster.cube_sandbox import manifest, model
 from teamster.cube_sandbox.personas import Persona
 
 SNAP = {
@@ -31,6 +31,7 @@ def test_keys_and_policy_columns_are_exempt_from_the_null_rule() -> None:
         not_null=set(),
         scopes={},
         people=[],
+        join_paths=[],
     )["cells"]
     # A null join key breaks the fixtures; a null policy column makes the
     # persona resolve to nothing.
@@ -56,6 +57,7 @@ def test_key_exemption_is_per_table_not_per_column_name() -> None:
         not_null=set(),
         scopes={},
         people=[],
+        join_paths=[],
     )["cells"]
     assert {(c["table"], c["column"]) for c in cells if c["kind"] == "null"} == {
         ("dim_y", "student_key")
@@ -82,8 +84,35 @@ def test_an_identifier_suffix_alone_does_not_exempt() -> None:
         not_null=set(),
         scopes={},
         people=[],
+        join_paths=[],
     )["cells"]
     assert _null_columns(cells) == {"state_student_identifier"}
+
+
+def test_each_join_path_requires_an_orphan_on_each_side() -> None:
+    # The spec's "Every join path: one orphan on each side, as a named
+    # fixture a test can reference." Without these cells nothing requires the
+    # sandbox to contain an unmatched key, so a kit that assumes every
+    # foreign key resolves passes here and breaks on production — where
+    # dim_student_enrollments.location_key is documented NULL for
+    # grade_level 99 placeholder schools.
+    path = model.JoinPath(child=("fct_a", "b_key"), parent=("dim_b", "b_key"))
+    cells = manifest.build(
+        snap={"tables": {}},
+        referenced={},
+        key_columns=set(),
+        policy_columns=set(),
+        not_null=set(),
+        scopes={},
+        people=[],
+        join_paths=[path],
+    )["cells"]
+    orphans = [c for c in cells if c["kind"] == "orphan"]
+    assert len(orphans) == 2
+    assert {(c["table"], c["column"], c["detail"]) for c in orphans} == {
+        ("fct_a", "b_key", "dim_b.b_key"),
+        ("dim_b", "b_key", "fct_a.b_key"),
+    }
 
 
 def test_dbt_not_null_columns_are_exempt() -> None:
@@ -95,6 +124,7 @@ def test_dbt_not_null_columns_are_exempt() -> None:
         not_null={("dim_x", "nickname")},
         scopes={},
         people=[],
+        join_paths=[],
     )["cells"]
     # INFORMATION_SCHEMA reports every column NULLABLE, so dbt's not_null
     # tests carry the real contract.
@@ -121,6 +151,7 @@ def test_persona_with_an_unhandled_scope_value_is_rejected() -> None:
             not_null=set(),
             scopes={"staff_pii_scope": {"all_in_scope"}},
             people=[rogue],
+            join_paths=[],
         )
 
 
@@ -145,6 +176,7 @@ def test_persona_with_a_non_none_sensitive_tier_value_is_accepted() -> None:
         not_null=set(),
         scopes={"staff_compensation_scope": {"__non_none__"}},
         people=[persona],
+        join_paths=[],
     )
     # No exception, and the sentinel itself never becomes a scope cell.
     assert not any(c["kind"] == "scope" for c in result["cells"])
@@ -162,6 +194,7 @@ def test_scope_cells_skip_the_non_none_sentinel() -> None:
             "staff_benefits_scope": {"__non_none__"},
         },
         people=[],
+        join_paths=[],
     )["cells"]
     scope_cells = [c for c in cells if c["kind"] == "scope"]
     assert {c["detail"] for c in scope_cells} == {"all_in_scope", "teaching_staff"}

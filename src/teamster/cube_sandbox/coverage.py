@@ -16,7 +16,7 @@ from typing import Any
 # would blame the generator for something it was never asked to produce, so
 # they are reported "unproven" and still fail the run.
 _UNCOUNTABLE = {"derived", "identity", "divergence"}
-_COUNTABLE = {"null", "non_null", "scope"}
+_COUNTABLE = {"null", "non_null", "scope", "orphan"}
 
 
 def assess(manifest: dict[str, Any], tables: dict[str, list[dict]]) -> list[dict]:
@@ -38,6 +38,21 @@ def assess(manifest: dict[str, Any], tables: dict[str, list[dict]]) -> list[dict
             observed = sum(1 for r in rows if column in r and r[column] is None)
         elif kind == "non_null":
             observed = sum(1 for r in rows if r.get(column) is not None)
+        elif kind == "orphan":
+            # `detail` names the counterpart column across the join path.
+            # The test is symmetric: a child row whose key matches no parent,
+            # or a parent row no child references, is "my non-null value is
+            # absent from their value set" either way. Nulls are excluded —
+            # a missing reference is not an unmatched one.
+            other_table, _, other_column = cell["detail"].partition(".")
+            theirs = {
+                r[other_column]
+                for r in tables.get(other_table, [])
+                if r.get(other_column) is not None
+            }
+            observed = sum(
+                1 for r in rows if r.get(column) is not None and r[column] not in theirs
+            )
         else:
             observed = sum(1 for r in rows if str(r.get(column)) == cell["detail"])
 

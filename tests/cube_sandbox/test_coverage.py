@@ -116,6 +116,62 @@ def test_uncovered_cells_are_listed_for_the_operator() -> None:
     assert coverage.exit_code(result) == 1
 
 
+ORPHANS = {
+    "cells": [
+        {
+            "kind": "orphan",
+            "table": "fct_a",
+            "column": "b_key",
+            "detail": "dim_b.b_key",
+            "status": "uncovered",
+        },
+        {
+            "kind": "orphan",
+            "table": "dim_b",
+            "column": "b_key",
+            "detail": "fct_a.b_key",
+            "status": "uncovered",
+        },
+    ]
+}
+
+
+def test_an_orphan_on_each_side_is_counted() -> None:
+    result = coverage.assess(
+        ORPHANS,
+        {
+            # b3 matches no dim_b row; b2 is referenced by no fct_a row.
+            "fct_a": [{"b_key": "b1"}, {"b_key": "b3"}],
+            "dim_b": [{"b_key": "b1"}, {"b_key": "b2"}],
+        },
+    )
+    assert [c["observed"] for c in result] == [1, 1]
+    assert coverage.exit_code(result) == 0
+
+
+def test_a_fully_referential_pair_leaves_both_orphan_cells_uncovered() -> None:
+    # Perfect referential integrity is the failure here: the sandbox's job is
+    # to leave no empty niche, and a kit that assumes every key resolves must
+    # meet a row where it does not.
+    result = coverage.assess(
+        ORPHANS,
+        {"fct_a": [{"b_key": "b1"}], "dim_b": [{"b_key": "b1"}]},
+    )
+    assert [c["observed"] for c in result] == [0, 0]
+    assert coverage.exit_code(result) == 1
+
+
+def test_a_null_foreign_key_is_not_an_orphan() -> None:
+    # A null key is no reference at all, not a reference to a row that is
+    # missing. Counting it would let the generator satisfy the orphan cell
+    # without ever producing an unmatched value.
+    result = coverage.assess(
+        ORPHANS,
+        {"fct_a": [{"b_key": None}], "dim_b": [{"b_key": "b1"}]},
+    )
+    assert result[0]["observed"] == 0
+
+
 def test_an_unknown_cell_kind_is_rejected() -> None:
     # A new kind added to the manifest generator that coverage does not
     # understand must fail loudly; scoring it by the fall-through rule would
