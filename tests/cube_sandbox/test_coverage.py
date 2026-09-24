@@ -1,8 +1,11 @@
 from __future__ import annotations
 
-import pytest
+from pathlib import Path
 
-from teamster.cube_sandbox import coverage
+import pytest
+import yaml
+
+from teamster.cube_sandbox import avro, coverage, generate, personas, snapshot
 
 MANIFEST = {
     "cells": [
@@ -280,3 +283,85 @@ def test_an_unknown_cell_kind_is_rejected() -> None:
     }
     with pytest.raises(ValueError, match="unknown cell kind"):
         coverage.assess(manifest, {"dim_x": [{"a": 1}]})
+
+
+# ---------------------------------------------------------------------------
+# The entry point
+# ---------------------------------------------------------------------------
+
+
+def _manifest_file(tmp_path: Path, cells: list[dict]) -> Path:
+    path = tmp_path / "manifest.yml"
+    path.write_text(yaml.safe_dump({"cells": cells}), encoding="utf-8")
+    return path
+
+
+def _avro_file(tmp_path: Path, table: str, rows: list[dict]) -> None:
+    schema = {
+        "type": "record",
+        "name": table,
+        "fields": [{"name": "a", "type": ["null", "string"]}],
+    }
+    avro.write(tmp_path / f"{table}.avro", schema, rows)
+
+
+def test_main_exits_zero_when_every_countable_cell_is_satisfied(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    manifest = _manifest_file(
+        tmp_path,
+        [
+            {"kind": "non_null", "table": "dim_x", "column": "a", "detail": ""},
+            {"kind": "null", "table": "dim_x", "column": "a", "detail": ""},
+        ],
+    )
+    _avro_file(tmp_path, "dim_x", [{"a": "value"}, {"a": None}])
+
+    code = coverage.main(["--avro-dir", str(tmp_path), "--manifest", str(manifest)])
+
+    assert code == 0
+    assert "0 uncovered" in capsys.readouterr().out
+
+
+def test_main_exits_non_zero_and_names_the_uncovered_cell(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    # A gate that exits zero on an uncovered cell is not a gate.
+    manifest = _manifest_file(
+        tmp_path,
+        [{"kind": "null", "table": "dim_x", "column": "a", "detail": "needs a null"}],
+    )
+    _avro_file(tmp_path, "dim_x", [{"a": "value"}])
+
+    code = coverage.main(["--avro-dir", str(tmp_path), "--manifest", str(manifest)])
+
+    assert code == 1
+    assert "uncovered: null dim_x.a" in capsys.readouterr().out
+
+
+def test_main_refuses_to_assess_missing_avro(tmp_path: Path) -> None:
+    # Reporting "0 uncovered" over a directory with no files in it is the
+    # worst outcome available here: a green gate asserting nothing.
+    manifest = _manifest_file(
+        tmp_path,
+        [{"kind": "non_null", "table": "dim_x", "column": "a", "detail": ""}],
+    )
+    with pytest.raises(SystemExit, match="no Avro to assess"):
+        coverage.main(
+            ["--avro-dir", str(tmp_path / "empty"), "--manifest", str(manifest)]
+        )
+
+
+def test_the_committed_manifest_round_trips_through_avro(tmp_path: Path) -> None:
+    """Generate, write, read back, assess — the whole path the CI gate runs.
+
+    Assessing the in-memory rows would miss anything the Avro round trip
+    changes: a null that came back as an empty string, a NUMERIC that lost
+    its scale. The sandbox gets the file, not the dict.
+    """
+    snap = snapshot.load()
+    people = personas.load(generate.PERSONAS_PATH)
+    tables = generate.generate(snap, people, "tiny", generate.DEFAULT_SEED)
+    generate.write(tables, snap, tmp_path)
+
+    assert coverage.main(["--avro-dir", str(tmp_path)]) == 0

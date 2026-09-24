@@ -8,7 +8,15 @@ generated rows fail to satisfy.
 
 from __future__ import annotations
 
-from typing import Any
+import argparse
+from collections.abc import Iterable
+from pathlib import Path
+from typing import Any, cast
+
+import yaml
+
+MANIFEST_PATH = Path("src/cube/sandbox/coverage_manifest.yml")
+DEFAULT_AVRO_DIR = Path("build/cube_sandbox/tiny")
 
 # Cells that name no table are not row-countable. They are real requirements
 # (hasRemit/hasChain both ways, the unresolvable identity, the three
@@ -146,3 +154,55 @@ def exit_code(assessed: list[dict]) -> int:
     gate impossible to pass — see the note on _UNCOUNTABLE above.
     """
     return 1 if any(c["status"] == "uncovered" for c in assessed) else 0
+
+
+def read_avro(avro_dir: Path, tables: set[str]) -> dict[str, list[dict]]:
+    """Read the generated Avro back, one file per table.
+
+    Reading the written files rather than the in-memory rows is the point: a
+    value that does not survive the Avro round trip — a null that became an
+    empty string, a NUMERIC that lost its scale — is a value the sandbox will
+    not have, and an assessment against the in-memory dict would never see
+    it.
+    """
+    import fastavro
+
+    out: dict[str, list[dict]] = {}
+    missing = []
+    for table in sorted(tables):
+        path = avro_dir / f"{table}.avro"
+        if not path.exists():
+            missing.append(path)
+            continue
+        with path.open("rb") as handle:
+            # fastavro types its reader as yielding AvroMessage, a union wide
+            # enough to include a bare scalar. Every record here is a record
+            # type, because avro_schema only ever emits one.
+            records = cast("Iterable[dict[str, Any]]", fastavro.reader(handle))
+            out[table] = list(records)
+    if missing:
+        raise SystemExit(
+            "no Avro to assess — run "
+            "`uv run python -m teamster.cube_sandbox.generate` first. Missing: "
+            + ", ".join(str(path) for path in missing)
+        )
+    return out
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--avro-dir", type=Path, default=DEFAULT_AVRO_DIR)
+    parser.add_argument("--manifest", type=Path, default=MANIFEST_PATH)
+    args = parser.parse_args(argv)
+
+    manifest = yaml.safe_load(args.manifest.read_text(encoding="utf-8")) or {}
+    if not manifest.get("cells"):
+        raise SystemExit(f"{args.manifest} declares no cells")
+    wanted = {cell["table"] for cell in manifest["cells"] if cell["table"]}
+    assessed = assess(manifest, read_avro(args.avro_dir, wanted))
+    print(describe(assessed))
+    return exit_code(assessed)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
