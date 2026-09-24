@@ -36,8 +36,8 @@ Tracked in [#5266](https://github.com/TEAMSchools/teamster/issues/5266), on
 | 6   | Piece 3 — adversarial canaries            | Approved                |
 | 7   | Piece 4 — drift gate                      | Approved                |
 | 8   | Piece 5 — deploy mode and cadence         | Approved                |
-| 9   | Sign-offs — reserved names, domain        | **Drafted — needs you** |
-| 10  | Out of scope — kit enforcement            | Not drafted             |
+| 9   | Sign-offs — reserved names, domain        | Approved                |
+| 10  | Out of scope — kit enforcement            | **Drafted — needs you** |
 
 Evidence gathered so far lives in the appendix at the bottom, filed under the
 part it belongs to. You never need to read it unless a part's proposal looks
@@ -1150,8 +1150,77 @@ the list.
 
 ## Part 10 — Out of scope, kit enforcement
 
-Not drafted. Says what moves to its own issue and what that issue contains. See
-[A8](#a8--kit-enforcement-does-not-gate-the-build).
+### Why it leaves this build
+
+The spec files "should the kit be the only sanctioned path to Cube for internal
+apps?" as needing a decision before Pieces 3 to 5. It does not.
+
+It changes the `cube-sandbox` token-exchange service, which is Deliverable 1 of
+the parent spec. The generator, the coverage contract, the canaries, the drift
+checks and the deploy mechanism are all indifferent to the answer. Nothing in
+Parts 3 through 9 would be written differently either way.
+
+It is also a policy question rather than an engineering one, and holding an
+engineering build behind a policy decision is how the build stalls.
+
+### What the issue says
+
+Enough that it can be opened without re-deriving the argument:
+
+- **The problem.** The kit is a third access-control surface. Every internal app
+  inherits its defaults for token lifetime, result caching and the audit
+  `surface` value.
+- **Why a contract does not reach it.** The parent spec's 3 partner obligations
+  are contract terms because MasterBorn sits outside KTAF. In a kit world those
+  obligations move inside KTAF and multiply by the number of internal apps,
+  where no contract term applies.
+- **The alternative.** Make the kit the enforcement point: the exchange service
+  refuses any client that does not present a kit-issued app identity. That
+  scales with app count rather than degrading with it.
+- **What it would change.** Deliverable 1 only.
+
+### One thing this build must not foreclose
+
+Enforcement stays available only if the exchange service can tell a kit-issued
+client from any other. Do not build it accepting any caller that holds a valid
+credential, because retrofitting an identity requirement onto clients already in
+production is a migration rather than a change.
+
+No decision now. An exchange service that records which client called it costs
+almost nothing and keeps both answers open.
+
+### One adjacent gap, flagged rather than solved
+
+MasterBorn queries the sandbox with its API secret and SQL password directly
+([Part 2](#decision-masterborn-gets-no-cube-cloud-account-and-no-web-ui-access)).
+KTAF internal apps in production reach Cube through the token-exchange service.
+**So the kit's production authentication path is never exercised in the
+sandbox.**
+
+That is Deliverable 1's problem, not this build's, and it is not the enforcement
+question. But it belongs in the same issue, because both are about the seam
+between the kit and the exchange service, and someone reading one will want the
+other.
+
+### Nothing here is open
+
+<!-- CB: comments on Part 10 go here, or inline above. -->
+
+Evidence: [A8](#a8--kit-enforcement-does-not-gate-the-build).
+
+## When all 10 parts are approved
+
+1. Rewrite `2026-09-11-cube-sandbox-build-design.md` to match every decision
+   here, including the stale model facts in
+   [A9](#a9--the-specs-cube-model-facts-checked-against-main).
+2. Delete this file. It is repair scaffolding, and two documents holding the
+   same fact is how the spec drifted in the first place.
+3. Run `superpowers:writing-plans` to produce the implementation plan under
+   `docs/superpowers/plans/`.
+4. Rewrite the PR body on
+   [#5267](https://github.com/TEAMSchools/teamster/pull/5267), which still
+   describes the removed files and says Piece 2 is built.
+5. Open the kit-enforcement issue described in Part 10.
 
 ## Appendix — evidence
 
