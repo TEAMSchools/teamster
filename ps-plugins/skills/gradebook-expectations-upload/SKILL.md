@@ -44,6 +44,20 @@ quarters, which regions, or how far to go beyond what's needed to pick the right
 playbook; each playbook tells you how to determine the rest from the sheets
 themselves.
 
+**Not everything is one of the three.** Two common asks have no playbook, and
+neither is a bug hunt — do not route them into `troubleshoot.md`, which opens by
+interrogating the person about a problem they never reported:
+
+- **A read.** "What are the expectations for Newark MS right now?" Open
+  `Plugin Data Raw`, filter to that instance and level, and show them. Nothing
+  is built and nothing is uploaded.
+- **The next-day check** you told them to come back for. That procedure is in
+  `references/powerschool-navigation.md` under _Verify the next day_. Run it and
+  report; only if it fails does this become troubleshooting.
+
+Anything else that is genuinely none of the three: say what you can see and ask
+what they want, rather than forcing a playbook onto it.
+
 **The general rule: never ask a question the data answers.** Which quarters are
 decided, which of two blocks on a tab is the real one, which week a date belongs
 to, whether counts are cumulative — every one of those is determinable from the

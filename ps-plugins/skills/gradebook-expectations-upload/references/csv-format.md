@@ -68,16 +68,37 @@ skip them.
 
 ## Check before anything is uploaded
 
-Report each check and its result. If any fails, stop and say what failed.
+Run every check and report each result. **A failed check stops the file it
+failed on, not the whole run** — if Camden fails and Newark and Paterson pass,
+hand over Newark and Paterson and say which one is held back and why.
+
+First, one check that is not about your file at all:
+
+> 🛑 **`PS Full Calendar`'s `academic_year` must be the year you are loading.**
+> Check this on every run, not just a rollover. The tab is filtered to whatever
+> year the warehouse currently calls current, and mid-year is where a stale year
+> is hardest to notice: the weeks look ordinary, the counts look ordinary, and
+> every week number is shifted. If it shows the wrong year, stop and tell the
+> data team — nothing below can catch this.
+
+Then, on the file:
 
 1. **No blank cells** in any count column, in any file. Every `---` and every
    empty cell should have become a number per `week-matching.md`'s value-filling
    rules.
 2. **Every quarter you were told about is present**, and every week within it —
    no gaps in `Week Number`.
-3. **Week numbers start at 1** in each quarter, and every week that has a row in
-   `Template QW-Date Crosswalk` for that region got the number the template
-   gives it.
+3. **Week numbers start at 1** in each quarter and run without gaps to that
+   quarter's week count.
+
+   Where `Template QW-Date Crosswalk` has a row for a week, its number must
+   match yours. **Expect it to be empty for the weeks you are loading** — it
+   only carries weeks that have already completed, so on a rollover it covers
+   nothing in the file and on a mid-year load it covers only the past. That is
+   normal and is not a failure. It confirms nothing about the weeks ahead, so do
+   not report this check as evidence the new numbers are right;
+   `PS Full Calendar` is what they were matched against.
+
 4. **Row counts** — for each school level, the file has **one row per
    PowerSchool week in the quarter**, which is the tab's rows _plus any weeks
    the tab omits_. So Camden's file is twice its PowerSchool week count, MS +
@@ -85,12 +106,29 @@ Report each check and its result. If any fails, stop and say what failed.
    MS week count. Do not expect the file to match the tab's row count — Camden's
    Q1 tab has 10 rows and its file has 11 per level, because PowerSchool's week
    1 is not on the tab.
-5. **Sanity-check against prod.** For any week that already has a row in
-   `Plugin Data Raw` for this region and level, your computed `W/H/F/S` must
-   match it **exactly**. This is a stronger check than 1–4: it catches a wrong
-   transformation — a bad carry-forward, a week matched to the wrong date range
-   — against real, already-correct production data, not just internal
-   consistency of the new file. A mismatch here means something in the
-   week-matching or value-filling logic is wrong, and the same bug is silently
-   wrong for every later week too. Stop and find the cause before building the
-   rest of the quarter.
+5. **No count falls** as a quarter progresses. Run this after value-filling, per
+   category column, per school level, within each quarter. Counts are
+   cumulative, so a column that goes 4, 5, 3, 6 is wrong — usually a typo in the
+   planning sheet, occasionally a carry-forward that ran backwards.
+
+   Say which quarter, week and column, and what the neighbours are. If it looks
+   like a typo in Academics' own sheet, **tell the person** — they are Teaching
+   & Learning and can fix it at source. Do not route it to the data team, who
+   cannot know the intended number.
+
+6. **Sanity-check against prod — only where the number should not have
+   changed.** For a week that already has a row in `Plugin Data Raw` for this
+   region and level **and that you are not deliberately changing**, your
+   computed `W/H/F/S` must match it exactly. A mismatch there means a wrong
+   transformation — a bad carry-forward, a week matched to the wrong dates — and
+   the same bug is silently wrong for every later week.
+
+   **Skip this check for any week whose number is meant to change, and skip it
+   entirely on a rollover.** A refresh exists because T&L changed the counts, so
+   a mismatch on a changed week is the point, not a defect. And `U_EXPECTATIONS`
+   has no `academic_year` column, so last year's rows sit at the same school
+   level, quarter and week as this year's — on a rollover every row would "fail"
+   against numbers for a year you are replacing.
+
+   Say which weeks you compared and which you skipped. A check reported as
+   passing when it compared nothing is worse than one reported as skipped.

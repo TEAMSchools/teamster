@@ -65,3 +65,9 @@ still outstanding._
 - The numbers look implausible (see `../SKILL.md`'s escalation list).
 - A quarter has two blocks and **both** match the calendar, or **neither** does.
   One matching and one not is decidable without asking.
+- An Academics row's dates overlap no PowerSchool week, and the row is not a
+  break or revisions row carrying `---`. A row that overlaps two weeks is
+  decidable — see `../references/week-matching.md` — and does not belong here.
+
+Escalating stops the file it affects, not the run. Hand over the regions that
+passed and name the one you are holding back.

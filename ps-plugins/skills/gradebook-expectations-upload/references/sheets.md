@@ -54,14 +54,16 @@ distinguish those, because they only show rows PowerSchool already has. Columns
 are `academic_year`, `region`, `school_level`, `quarter`, `week_number_quarter`,
 `week_start_monday`, `week_end_friday`.
 
-> 🛑 **Before trusting this tab for a rollover, confirm the `academic_year`
-> column shows the year you are loading.** This tab is filtered to whatever
-> academic year the data warehouse currently considers "current" — and a
-> PowerSchool instance can sit in the next school year all summer while that
-> setting still points at the old one. When that happens, `PS Full Calendar`
-> shows **last year's** weeks: same columns, same shape, same quarter names,
-> nothing on screen saying so. A rollover run against it in that window produces
-> a confident, wrong upload with no error anywhere. One glance at the
+> 🛑 **Before trusting this tab for anything, confirm the `academic_year` column
+> shows the year you are loading.** Every run, not only a rollover — a mid-year
+> quarter load is where a stale year is hardest to spot, because nothing about
+> the weeks or counts looks unusual. This tab is filtered to whatever academic
+> year the data warehouse currently considers "current" — and a PowerSchool
+> instance can sit in the next school year all summer while that setting still
+> points at the old one. When that happens, `PS Full Calendar` shows **last
+> year's** weeks: same columns, same shape, same quarter names, nothing on
+> screen saying so. A rollover run against it in that window produces a
+> confident, wrong upload with no error anywhere. One glance at the
 > `academic_year` column answers it — if it isn't the year you're loading, stop
 > and tell the data team the year needs rolling over first.
 

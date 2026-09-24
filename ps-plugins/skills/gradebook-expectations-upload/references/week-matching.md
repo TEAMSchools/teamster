@@ -82,6 +82,25 @@ is what changes if a calendar changes.
    an HS row per week, and the two can diverge, so matching on region alone
    picks one of them arbitrarily.
 
+**Bracket means overlap, not containment.** A calendar week matches if any day
+of the sheet's range falls on or between that week's `week_start_monday` and
+`week_end_friday`. Containment would fail constantly and wrongly: Academics
+write ranges by hand, so a row reading 11/4–11/7 against a calendar week of
+11/2–11/4 is the same week written loosely, not a missing one.
+
+Because PowerSchool's weeks never overlap each other, overlap still gives one
+answer per row in normal data. The two ways it does not:
+
+- **No week overlaps the row.** The row's dates fall outside the quarter
+  entirely, or in a break with no school week. If the row is a break or
+  revisions row carrying `---`, that is expected — set it aside; it is not a
+  PowerSchool week and needs no number. Otherwise stop and escalate: something
+  is wrong with either the dates or the calendar year.
+- **Two weeks overlap the row.** The sheet's range spans a weekend into the next
+  week. Take the week holding the **`week_start_monday` closest to the row's
+  first date**, and say you did — a range that straddles two weeks is worth a
+  human knowing about even when the pick is obvious.
+
 `PS Full Calendar` carries the whole school year, not just weeks that have
 already loaded into PowerSchool, so this works the same way for a week that
 happened last month or one that hasn't happened yet — including a genuine

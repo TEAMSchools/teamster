@@ -8,7 +8,16 @@ ready (this year's Q1-only situation is an example, not the norm — see
 
 ## Steps
 
-1. **Read `../references/sheets.md`** if you have not already.
+1. **Read `../references/sheets.md`** if you have not already, then open
+   `PS Full Calendar` and **check its `academic_year` column shows the year you
+   are loading.** If it does not, stop here and tell the data team the year
+   needs rolling over in the warehouse first.
+
+   This is not a rollover-only check. Mid-year is where it is hardest to notice:
+   the tab still shows a full set of weeks with ordinary dates, every check
+   below still passes, and every week number is shifted. Nothing downstream
+   catches it.
+
 2. **Check what's actually decided.** Open every Academics tab you were asked
    about (or, if unspecified, every tab). Don't ask which quarters are being
    loaded — the sheet already answers it: a real, non-draft tab means it's
@@ -32,9 +41,15 @@ ready (this year's Q1-only situation is an example, not the norm — see
    > Q_n_ still has last year's expectations. It opens Monday _date_, and from
    > that Monday the audit will be wrong for Q_n_ until it is replaced.
 
-   Take the date from the first row of that quarter in the Academics tab. If the
-   tab has no rows for that quarter, or only an "under construction" draft, say
-   the deadline cannot be determined and that T&L need to fill it in.
+   **Take the date from `PS Full Calendar`** — the `week_start_monday` of that
+   quarter's week 1, for that region and school level. The calendar holds the
+   whole year, so this works for a quarter whose Academics tab is still an
+   "under construction" draft or has no rows at all. That is exactly when the
+   deadline matters most, and it is always determinable.
+
+   Never say the deadline cannot be worked out, and never ask T&L to supply it.
+   They are the person you are talking to, and the date is the one thing here
+   they need from you.
 
    **Why this matters more than it looks:** an unreplaced future quarter does
    not break anything visibly. It serves last year's counts, which look like
@@ -67,9 +82,17 @@ ready (this year's Q1-only situation is an example, not the norm — see
 ## Stop and escalate if
 
 - Any of `csv-format.md`'s checks fail and you can't see why.
-- A quarter's only tab is an "under construction" draft.
-- An Academics row's dates match no PowerSchool week, or match more than one.
-- The numbers look implausible — counts falling as the quarter progresses, or a
-  week far out of line with its neighbours.
+- A quarter you were asked to load has only an "under construction" draft tab.
+  (A quarter you are _not_ loading being a draft is normal — report its deadline
+  per step 5 and carry on.)
+- An Academics row's dates overlap no PowerSchool week, and the row is not a
+  break or revisions row carrying `---`. A row that overlaps two weeks is
+  decidable — see `../references/week-matching.md` — and does not belong here.
+- A week is far out of line with its neighbours in a way a typo does not
+  explain. A **falling** count is check 5's job, and goes to the person, not the
+  data team — they can fix their own sheet.
 - A quarter has two blocks and **both** match the calendar, or **neither** does.
   One matching and one not is decidable without asking.
+
+Escalating stops the file it affects, not the run. Hand over the regions that
+passed and name the one you are holding back.

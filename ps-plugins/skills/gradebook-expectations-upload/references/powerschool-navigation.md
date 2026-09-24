@@ -86,8 +86,9 @@ the mirror cannot show you what it was. Tell the data team instead.
 Click **Upload CSV**.
 
 - If there is any doubt about the header, download the template from the modal
-  and build from it. The header is validated positionally, and a mismatch is
-  rejected outright — nothing imports.
+  and build from it. Each header cell is matched by name, case-insensitively and
+  trimmed, in a fixed order — so the names must be right and so must the order.
+  A mismatch is rejected outright — nothing imports.
 - Download this region's CSV from the conversation, choose it here, then read
   the preview before going further:
   - **The valid row count must equal the number of rows in your file.** Invalid
@@ -232,8 +233,9 @@ at the last completed week.
 
 6. **Check the two end columns before you save.** Read the file left to right:
    the first column should hold `ES`, `MS` or `HS`, and the last column should
-   hold your note text — not a number. PowerSchool matches columns by position
-   and never by name, so if `notes` is still sitting where `W` belongs, the
-   header is accepted and then **every row** is rejected with "W must be a
-   number".
+   hold your note text — not a number. The header is checked by name, but the
+   **data rows are read purely by position**, so a header you retyped correctly
+   over columns you left in the wrong order passes the header check and then
+   fails every row. If `notes` is sitting where `W` belongs, you get "W must be
+   a number" on **every row**.
 7. **Save as `.csv`**, then load it per the steps above.
