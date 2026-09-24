@@ -42,10 +42,24 @@ ready (this year's Q1-only situation is an example, not the norm — see
    whole quarter. Nobody gets an error. A blank dashboard gets reported the same
    day; a wrong expectation can run for months.
 
-6. **Read `../references/powerschool-navigation.md`** and upload. Loading some-
-   but-not-all quarters means the manual per-quarter **delete-then-Add** path
-   (step 2's second bullet), never Replace — Replace would wipe every quarter on
-   the instance, not just the one you're updating.
+6. **Read `../references/powerschool-navigation.md`** and walk the person
+   through it. Your file holds one quarter and the others must survive, so the
+   mode is **Add**. Replace would make the file the entire table and delete the
+   quarters you are not loading.
+
+   Say that as the reason, not as a rule. Replace is the right tool when the
+   file _is_ the whole intended contents of the instance — a rollover, or a
+   deliberate mass correction built to cover every row that should remain. If
+   the person asks for Replace, find out which they have before talking them out
+   of it.
+
+   **Whether a delete comes first depends on what is already there, and step 4
+   told you.** A quarter with no rows in `Plugin Data Raw` goes straight to Add.
+   Only a quarter that already has rows needs the hand-delete, and then the
+   count to expect is the one `Plugin Data Raw` showed — not your file's row
+   count. Walking someone through deleting rows you have already reported do not
+   exist wastes their time and makes them stop on a false alarm.
+
 7. **Verify the next day**, and tell the data team.
 
 ## Stop and escalate if

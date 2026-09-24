@@ -30,19 +30,48 @@ team. Do not work around it.
 deletes _every_ row on the instance — all quarters, all school levels — not just
 the ones in your file. So which path you take depends on what is being loaded:
 
+> 🛑 **The Quarter filter scopes Delete Selected. It does nothing to Replace.**
+>
+> Filtering to a quarter and then choosing Replace does **not** replace that
+> quarter. The page loads every row on the instance when it opens, and Replace
+> deletes that whole list; the filter only hides rows on screen. Someone who
+> filters to Q2, uploads a Q2 file and picks Replace loses Q1, Q3 and Q4.
+>
+> Nothing on screen warns them. The only tell is the confirmation dialog's count
+> — "permanently delete ALL _n_ existing records" — where _n_ is the whole
+> table, not the filtered view. **Never describe filtering as a way to narrow
+> what an upload touches.** It narrows what Delete Selected touches, and that is
+> all.
+
 - **All four quarters** (`rollover.md`) → skip to step 3. **Replace** mode does
   the delete and the load in one action, and deleting everything is what you
   want.
-- **Some quarters** (`refresh.md`) → delete them by hand first, one quarter at a
-  time:
+- **A quarter that has no rows yet** → there is nothing to delete. Skip to step
+  3 and use **Add**. This is the normal case for a quarter going in for the
+  first time, and you already know which quarters those are: `Plugin Data Raw`
+  showed you what is live when you ran the sanity-check. **Do not walk someone
+  through deleting rows you have already established do not exist** — they will
+  read a count of 0 against an expected count, follow the instruction to stop,
+  and report a problem that is not there.
+
+- **A quarter that already has rows** (`refresh.md`) → delete them by hand
+  first, one quarter at a time:
 
   1. Set the **Quarter** filter to the quarter being replaced. Leave the
-     **School Level** filter on All.
+     **School Level** filter on All. This is the one place the filter does real
+     work — it is what makes the next two steps act on that quarter alone.
   2. Click the checkbox in the table header (select/deselect all visible). It
-     checks only the rows the filter is currently showing.
+     checks only the rows the filter is currently showing, and changing the
+     filter unchecks anything it hides, so the selection cannot outlive the view
+     that made it.
   3. Read the **N rows selected** count beside **Delete Selected**. It must
-     match the number of rows that quarter should have. If it does not, stop —
-     there is something in that quarter you did not expect.
+     match **what `Plugin Data Raw` showed for that quarter and instance** — the
+     rows already in there, not the number of rows you are about to load. The
+     two differ whenever a quarter's week count has changed, and quoting the
+     file's row count sends people looking for a discrepancy that is just the
+     old quarter being a different length. If the screen and `Plugin Data Raw`
+     disagree, trust the screen — it is live — and say so before deleting
+     anything.
   4. Click **Delete Selected**. The confirmation lists every row as School Level
      / Quarter / Week. Confirm only if every line is the intended quarter.
   5. Deletion runs at roughly one row per second and the page reloads when it
@@ -60,14 +89,29 @@ Click **Upload CSV**.
   the preview before going further:
   - **The valid row count must equal the number of rows in your file.** Invalid
     rows are skipped silently and the import still reports success.
-  - **No row may be flagged Duplicate**, assuming you did step 2. Add mode
-    inserts a duplicate as a genuine second record; it does not overwrite. A
-    duplicate flag here means the delete did not cover what you are loading.
-- Choose the mode: **Add** after a manual per-quarter delete (`refresh.md`);
-  **Replace** only when loading all four quarters (`rollover.md`). Replace's
-  prompt counts every existing row on the instance, not just the ones in your
-  file — read that number and make sure it is the whole table you meant to
-  clear.
+  - **No row may be flagged Duplicate.** Add mode inserts a duplicate as a
+    genuine second record; it does not overwrite. A duplicate flag means that
+    quarter already had rows after all — either the step 2 delete missed some,
+    or the quarter was not as empty as `Plugin Data Raw` suggested. Stop and go
+    back to step 2 rather than importing on top.
+- Choose the mode. The question is not how many quarters you are loading — it is
+  **whether your file is the whole intended contents of this instance.**
+
+  - **Replace** makes the file the entire table. Everything currently on the
+    instance is deleted first, across every quarter and school level, and only
+    what is in the file survives. Correct for a full-year rollover, and equally
+    correct for a deliberate mass correction — if you have built a file holding
+    every row you want the instance to end up with, Replace is the right tool
+    and the cleanest one.
+  - **Add** inserts the file's rows alongside what is already there. Correct for
+    a per-quarter load, where the other quarters must survive untouched.
+
+  The failure to avoid is **Replace with a partial file** — loading one quarter
+  in Replace mode silently deletes the other three. That is not a reason to
+  avoid Replace; it is a reason to check the file first. Replace's prompt counts
+  every existing row on the instance, not just the ones in your file: read that
+  number and confirm it is the whole table you meant to clear.
+
 - Click **Import** and leave the window alone until it says Done. The modal
   locks itself during the upload on purpose.
 
