@@ -1013,7 +1013,7 @@ test("contextToGroups: no security context at all is default-deny", async () => 
 
 // --- Structural invariant: every securityContext.<field> a policy
 // interpolates must be a key access.buildSecurityContext returns -----------
-// src/cube/CLAUDE.md states this in prose: it is what makes the Object.assign
+// .claude/rules/cube-authoring.md states this in prose: it is what makes the Object.assign
 // overwrite in contextToGroups a COMPLETE one. A new `row_level` filter that
 // interpolates a securityContext field buildSecurityContext doesn't return
 // would silently reopen the Cube Cloud paste vector for that field alone —

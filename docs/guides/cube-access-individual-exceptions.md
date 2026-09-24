@@ -77,6 +77,11 @@ reads as granting that one school while actually granting everything. An `all`
 left behind on a row that names a real school fails. So does a visibility-only
 row still claiming a location.
 
+A contradictory row also grants **nothing** in the meantime, rather than
+granting the wider of the two readings. Validation reports the mistake on the
+next pipeline run; the grant itself is dropped as soon as the sheet is read. Fix
+the row and it starts working — no cleanup needed for the window in between.
+
 ## One row per additional location
 
 Each row can grant **one** additional location — a whole network, a named
@@ -158,9 +163,17 @@ role's default — just rarely what you want.
 ## Granting staff access takes three columns, not one
 
 `additional_staff_location_scope` on its own gets someone the **staff
-directory** — the roster, employment and work-contact fields, for everyone in
-the locations you named. It does **not** get them personal emails, cell numbers,
-birth dates, or demographics. Those live behind a second gate.
+directory** — the roster, employment and work-contact fields. It does **not**
+get them personal emails, cell numbers, birth dates, or demographics. Those live
+behind a second gate.
+
+**The staff directory is not scoped to the locations you named.** It carries no
+row filter at all, so any staff-axis grant — even `school` naming one school —
+shows the whole network's roster. The location you name still scopes the
+sensitive fields below, and it still scopes student data on the other axis. This
+is deliberate: work-directory information is already internally public across
+KTAF. Treat a staff-axis grant as "this person may see the staff directory," not
+as "at this school."
 
 Sensitive staff fields need all three of these on the same person:
 
@@ -191,6 +204,30 @@ directory is open to employees because the network publishes it to staff; a
 person with no employment record reaches it only when you give them a staff
 location above.
 
+### A grant survives an employee's last day
+
+"No employment record" means no current work assignment, so someone whose
+assignment has ended reads as a contractor from that day on. Their role-based
+access stops immediately — that comes off the work assignment — but any live row
+they still have in this sheet keeps granting, until their Google account is
+suspended.
+
+Offboarding usually suspends the account days or weeks after the termination
+date, so plan for the gap rather than relying on it:
+
+- **Set `expiry_date` to the person's known end date** when you create the
+  grant. A grant that expires on its own cannot be forgotten.
+- **Revoke the row as part of offboarding** for anyone leaving sooner than their
+  `expiry_date`. Revocation is not instant — see _Lifecycle_ below for how long
+  it takes.
+- **Ask IT to suspend the Google account promptly.** For someone with no current
+  work assignment, that is what actually ends their Cube access.
+
+A pipeline warning
+(`test_cube_access_individual_exceptions_grant_reaches_a_viewer`) fires on live
+rows that reach nobody, which catches the opposite case — an account already
+suspended while the row is still marked active. It does not catch this one.
+
 ## Lifecycle: status, grant_date, expiry_date
 
 - **`status`** — `active`, `expired`, or `revoked`. Only `active` rows (that
@@ -203,8 +240,28 @@ location above.
   `9999-12-31` for a grant that never expires. Prefer a real date — access that
   expires on its own cannot be forgotten about.
 - **To end a grant early**, set `status` to `revoked` rather than deleting the
-  row — this keeps the row for audit history while making it stop applying
-  immediately.
+  row — this keeps the row for audit history while making it stop applying.
+
+**Revocation is not instant. Budget for the next midnight Eastern.** Two things
+sit between the edit and the effect:
+
+1. The sheet reaches Cube only after the pipeline rebuilds the staging table
+   that reads it. That runs on a data-change trigger, typically within minutes,
+   occasionally hours.
+2. Cube caches each viewer's resolved access until the next midnight Eastern. A
+   person who has already run a query today keeps the access they had when it
+   was resolved, even once the sheet change has landed.
+
+So a revocation reaches someone who has not queried today almost as soon as the
+pipeline runs, and someone who has by the next midnight ET at the latest.
+
+**To force it sooner**, ask the data team to redeploy Cube Cloud. The cache
+lives in the server process, so a redeploy drops it and every viewer re-resolves
+on their next query. That is the only lever — there is no per-person cache
+clear. For an urgent removal (a termination, a compromised account), have IT
+suspend the Google account as well: for a contractor it is an explicit gate in
+the model — a suspended account stops resolving to a viewer entirely — and for
+anyone it stops them signing in.
 
 **Example — a row that has already expired, alongside a still-active one:**
 

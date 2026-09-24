@@ -151,26 +151,48 @@ with
             nullif(staff_observations_scope, 'inherit') as staff_observations_scope,
             nullif(staff_benefits_scope, 'inherit') as staff_benefits_scope,
 
-            -- additional_location_scope is already constrained to
-            -- network/region/school by the staging accepted_values test, and a
-            -- null (remit-only row) is filtered out downstream (where
-            -- location_scope != 'none') before this could ever resolve to
-            -- 'none' -- a plain coalesce, not a case, is enough.
-            coalesce(additional_location_scope, 'none') as location_scope,
-
             -- Which axes this row's location reaches. Independent per axis: a
             -- row may widen students without staff, or the reverse. 'none' is
             -- the sheet's word for "not this axis"; it is never blank, so a
             -- plain inequality is the whole test.
             additional_student_location_scope != 'none' as includes_student_data,
             additional_staff_location_scope != 'none' as includes_staff_data,
+
+            -- Fails the row closed on the two contradictions staging's
+            -- error-severity tests flag but cannot block: dbt replaces that
+            -- table before its tests run, and this mart is a view, so Cube
+            -- serves the row either way. 'network' ignores
+            -- additional_location_name in access.js, so a school name typed
+            -- beside it reads as one school and grants every location; and two
+            -- axes naming different tiers share one additional_location_name
+            -- that cannot be both, so staging's coalesce hands the staff axis
+            -- the student tier. Both land on 'none', which
+            -- `where location_scope != 'none'` then drops.
+            case
+                when additional_location_scope is null
+                then 'none'
+                when
+                    additional_student_location_scope != 'none'
+                    and additional_staff_location_scope != 'none'
+                    and additional_student_location_scope
+                    != additional_staff_location_scope
+                then 'none'
+                when additional_location_scope != 'network'
+                then additional_location_scope
+                when additional_location_name = 'all'
+                then 'network'
+                else 'none'
+            end as location_scope,
         from {{ ref("stg_google_sheets__people__cube_access_individual_exceptions") }}
         where {{ is_live_row("status", "grant_date", "expiry_date") }}
     ),
 
-    -- At most one live row per grantee sets these (enforced by
-    -- test_cube_access_individual_exceptions_single_remit_row), so max() is a
-    -- safe deterministic pick, not an arbitrary one.
+    -- At most one live row per grantee should set these, which
+    -- test_cube_access_individual_exceptions_single_remit_row asserts. That
+    -- test reports the violation, it does not prevent it -- dbt replaces the
+    -- staging table before its tests run and this mart is a view -- so on a
+    -- sheet that breaks the rule, max() picks the alphabetically last value
+    -- rather than a defined one. Deterministic across runs, but not meaningful.
     individual_exception_scopes as (
         select
             google_email,

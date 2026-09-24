@@ -749,12 +749,12 @@ columns. A viewer holds at most one group per axis, and each gated view's
 `access_policy` matches exactly one of them — no group on an axis means
 default-deny for the views gated by it:
 
-| Group                                                          | Emitted when                                       |
-| -------------------------------------------------------------- | -------------------------------------------------- |
-| `student`                                                      | `allowed_student_abbreviations` resolves non-empty |
-| `staff-directory`                                              | always (every resolved viewer)                     |
-| `staff-pii-<scope>`                                            | one group per non-`none` `staff_pii_scope`         |
-| `staff-compensation` / `staff-observations` / `staff-benefits` | matching non-`none` `*_scope`                      |
+| Group                                                          | Emitted when                                                            |
+| -------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| `student`                                                      | `allowed_student_abbreviations` resolves non-empty                      |
+| `staff-directory`                                              | every employee; a non-employee only when a grant reaches the staff axis |
+| `staff-pii-<scope>`                                            | one group per non-`none` `staff_pii_scope`                              |
+| `staff-compensation` / `staff-observations` / `staff-benefits` | matching non-`none` `*_scope`                                           |
 
 There is one flat `student` group rather than one per location tier.
 `allowed_student_abbreviations` is precomputed server-side: the viewer's base

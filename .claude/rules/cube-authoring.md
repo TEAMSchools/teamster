@@ -206,10 +206,11 @@ reason about.
 - **Staff views are split.** `staff_directory` (roster/employment/work-contact
   fields — no personal or sensitive data) has one open block:
   `member_level: { includes: "*" }` under `staff-directory`, no `row_level` —
-  every resolved staff viewer gets this group. `staff_pii` (the six sensitive
-  fields — `personal_email`, `personal_cell_phone`, `birth_date`,
-  `gender_identity`, `race`, `is_hispanic` — plus the identity/remit keys needed
-  to filter on) has one policy per `staff_pii_scope`: `staff-pii-all_in_scope`
+  every employee gets this group, and a non-employee grantee gets it only when a
+  grant of theirs reached the staff axis. `staff_pii` (the six sensitive fields
+  — `personal_email`, `personal_cell_phone`, `birth_date`, `gender_identity`,
+  `race`, `is_hispanic` — plus the identity/remit keys needed to filter on) has
+  one policy per `staff_pii_scope`: `staff-pii-all_in_scope`
   (`locations_abbreviation` ∩ `department_group` remit),
   `staff-pii-teaching_staff` (that remit +
   `job_function_code IN ('TEACH', 'TIR')`), `staff-pii-reporting_chain`
@@ -364,7 +365,9 @@ access policies above). `cube.js` exports exactly `driverFactory`,
   own decision. Those emails are PII: deployment config only, never a commit.
 - **Group taxonomy (`access.buildGroups`)**: flat `student` (emitted when
   `allowed_student_abbreviations` is non-empty, not one group per tier);
-  `staff-directory` (always, for any resolved row);
+  `staff-directory` (every employee, plus a non-employee grantee whose
+  `allowed_abbreviations` is non-empty — i.e. some grant of theirs reached the
+  staff axis; an inert sheet row therefore mints a viewer with no directory);
   `staff-pii-<staff_pii_scope>` (`staff-pii-all_in_scope` / `-reporting_chain` /
   `-reporting_chain_or_below_rank` / `-teaching_staff`); plus forward-compat
   flat `staff-compensation` / `-observations` / `-benefits` (emitted per

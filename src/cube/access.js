@@ -5,8 +5,8 @@
 // caching and calls these to translate a resolved access row into the Cube
 // groups + flat securityContext that per-view access_policy interpolates.
 // Row-level security lives in the view access_policy blocks (see
-// src/cube/CLAUDE.md "View access policies"), NOT here — this file only shapes
-// identity into groups + allow-list arrays. Model:
+// .claude/rules/cube-authoring.md "View access policies"), NOT here — this
+// file only shapes identity into groups + allow-list arrays. Model:
 //   - Students are location-scoped: a single `student` group is emitted
 //     whenever the viewer's allowed_student_abbreviations array is non-empty;
 //     the matching view policy filters rows with an abbreviation IN that

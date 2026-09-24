@@ -84,6 +84,9 @@ models:
           Also the key the individual-exceptions sheet is written against, and
           the only identifier a non-employee grantee has. Cube matches it
           case-sensitively, so the sheet side is lower-cased upstream.
+        config:
+          meta:
+            contains_pii: true
         data_tests:
           - not_null:
               config:
@@ -95,20 +98,25 @@ models:
       - name: region_key
         data_type: string
         description: >-
-          Viewer's region identity key (from dim_locations). cube.js filters on
-          this for a region location scope. NULL when location does not resolve.
+          Viewer's region identity key (from dim_locations). resolveAccess
+          expands it into allowed_abbreviations and
+          allowed_student_abbreviations for a region location scope; no
+          access_policy reads it directly. NULL when location does not resolve.
 
       - name: location_abbreviation
         data_type: string
         description: >-
-          Viewer's school abbreviation (from dim_locations). cube.js filters on
-          this for a school location scope. NULL when location does not resolve.
+          Viewer's school abbreviation (from dim_locations). resolveAccess
+          expands it into allowed_abbreviations and
+          allowed_student_abbreviations for a school location scope; no
+          access_policy reads it directly. NULL when location does not resolve.
 
       - name: department_group
         data_type: string
         description: >-
-          Viewer's functional department grouping from the rollup crosswalk;
-          cube.js filters on this for an own_group department scope.
+          Viewer's functional department grouping from the rollup crosswalk.
+          resolveAccess expands it into allowed_department_groups for an
+          own_group department scope, which the staff_pii policies filter on.
 
       - name: entity
         data_type: string

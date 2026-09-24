@@ -119,11 +119,12 @@ models:
           network (every location, so additional_location_name is not needed),
           region (additional_location_name must match a
           dim_regions.legal_entity), or school (additional_location_name must
-          match a dim_locations.name). Write none to grant no student access; a
-          blank cell means the same thing, but none is preferred because it
-          distinguishes a deliberate no from an unfilled cell. There is no "all"
-          value -- network is the word for every location, and any narrower set
-          is one row per region or school.
+          match a dim_locations.name). Write none to grant no student access. A
+          blank cell is not a synonym for none -- the not_null test below is
+          error severity, so an unfilled cell fails the build rather than
+          reading as a deliberate no. There is no "all" value -- network is the
+          word for every location, and any narrower set is one row per region or
+          school.
         data_tests:
           - not_null:
               config:
