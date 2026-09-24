@@ -60,6 +60,28 @@ line's test is added to the task that owns the code.
 
 ---
 
+## Execution order
+
+The task numbers below are stable — dependencies, reviews and the ledger all
+reference them. **Execute in this order**, which front-loads the shortest path
+to a queryable table:
+
+| Order | Tasks          | Why                                                   |
+| ----- | -------------- | ----------------------------------------------------- |
+| 1st   | 1, 2, 3, 7, 10 | First load: `dim_staff_cube_access` becomes queryable |
+| 2nd   | 4, 5, 6, 8, 9  | The contract and the full dataset                     |
+| 3rd   | 11 – 16        | Checks, canaries, deploy                              |
+
+**Why `dim_staff_cube_access` first.** Until it holds rows, `resolveAccess`
+finds no match, every persona default-denies, and every query returns nothing.
+It is also the one table the generator is not needed for — personas are
+declared, so its rows come straight from `personas.yml`. Five tasks and roughly
+six rows give MasterBorn something that authenticates.
+
+That first load is not a pinned revision and is not covered by the manifest. It
+is a smoke test, and nothing downstream should treat it as the sandbox being
+built.
+
 ## Phase 1 — no cloud resources
 
 Tasks 1 to 9 run in CI and on any laptop. None needs the sandbox project, a
