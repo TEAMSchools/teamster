@@ -6,8 +6,12 @@ import importlib.util
 import sys
 from pathlib import Path
 
+import pytest
+import yaml
+
 _SCRIPT = Path(__file__).parents[1] / "scripts" / "cube_rls_matrix.py"
 _MODULE_NAME = "cube_rls_matrix"
+_UNRESOLVABLE = "unresolvable@ktaf-sandbox.invalid"
 
 
 def _load_script():
@@ -194,3 +198,114 @@ def test_main_identical_fingerprints_warns_but_stays_zero_exit(
     )
     assert mod.main() == 0
     assert "EVERY viewer returned IDENTICAL rows" in capsys.readouterr().out
+
+
+# --- canary assertions ----------------------------------------------------
+
+_CANARIES = Path(__file__).parents[1] / "src" / "cube" / "sandbox" / "canaries.yml"
+_PERSONAS = Path(__file__).parents[1] / "src" / "cube" / "sandbox" / "personas.yml"
+
+
+def test_zero_rows_does_not_satisfy_blocked() -> None:
+    mod = _load_script()
+    # This one distinction is what forces production-mode sign-off: a dev-mode
+    # runner returns zero rows where production denies, and treating that as a
+    # pass reports a falsely benign matrix.
+    assert not mod.expectation_met("BLOCKED", rows=[], error=None)
+    assert mod.expectation_met(
+        "BLOCKED", rows=[], error="Table or CTE with name 'x' not found"
+    )
+    assert mod.expectation_met("ZERO", rows=[], error=None)
+    assert not mod.expectation_met("ZERO", rows=[("a",)], error=None)
+    assert mod.expectation_met("ROWS", rows=[("a",)], error=None)
+
+
+def test_blocked_requires_the_real_denial_not_any_not_found() -> None:
+    mod = _load_script()
+    # A column- or dataset-not-found error is a broken query, not a denial.
+    # Accepting it would let a canary go green on a typo.
+    assert not mod.expectation_met(
+        "BLOCKED", rows=[], error="Column 'nope' not found in view"
+    )
+    assert not mod.expectation_met("BLOCKED", rows=[], error="connection refused")
+
+
+def test_rows_and_zero_are_failures_when_the_query_errored() -> None:
+    mod = _load_script()
+    assert not mod.expectation_met("ROWS", rows=[("a",)], error="boom")
+    assert not mod.expectation_met("ZERO", rows=[], error="boom")
+
+
+def test_an_unknown_expectation_raises() -> None:
+    mod = _load_script()
+    with pytest.raises(ValueError, match="unknown expectation"):
+        mod.expectation_met("MAYBE", rows=[], error=None)
+
+
+def test_the_committed_canaries_load_and_are_well_formed() -> None:
+    mod = _load_script()
+    canaries = mod.load_canaries(_CANARIES)
+    assert canaries
+    assert all(c.expect in mod.EXPECTATIONS for c in canaries)
+    assert all(c.why for c in canaries), "every canary states why it should hold"
+
+
+def test_a_blocked_only_suite_is_rejected(tmp_path) -> None:
+    mod = _load_script()
+    # Every view reports "not found" for everyone against an empty compiled
+    # schema (a misconfigured CUBEJS_SCHEMA_PATH does exactly that), so a
+    # BLOCKED-only suite goes green on a deployment that denies the world —
+    # which looks identical to perfect isolation.
+    path = tmp_path / "canaries.yml"
+    path.write_text(
+        "canaries:\n"
+        "  - persona: a@ktaf-sandbox.invalid\n"
+        "    query_shape: SELECT 1\n"
+        "    expect: BLOCKED\n"
+        "    why: because\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="no ROWS canary"):
+        mod.load_canaries(path)
+
+
+def test_an_unknown_expectation_in_the_file_is_rejected(tmp_path) -> None:
+    mod = _load_script()
+    path = tmp_path / "canaries.yml"
+    path.write_text(
+        "canaries:\n"
+        "  - persona: a@ktaf-sandbox.invalid\n"
+        "    query_shape: SELECT 1\n"
+        "    expect: PROBABLY\n"
+        "    why: because\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="unknown expectation"):
+        mod.load_canaries(path)
+
+
+def test_every_canary_persona_is_declared_or_deliberately_absent() -> None:
+    mod = _load_script()
+    declared = {p["email"] for p in yaml.safe_load(_PERSONAS.read_text())["personas"]}
+    for canary in mod.load_canaries(_CANARIES):
+        assert canary.persona in declared or canary.persona == _UNRESOLVABLE, (
+            f"{canary.persona} is neither declared nor the unresolvable identity"
+        )
+
+
+def test_every_declared_persona_is_exercised_by_a_canary() -> None:
+    # A persona nothing queries as tests nothing. The manifest requires each
+    # scope value to exist as a row; the canaries are what prove the policy
+    # built on it actually resolves.
+    mod = _load_script()
+    declared = {p["email"] for p in yaml.safe_load(_PERSONAS.read_text())["personas"]}
+    exercised = {c.persona for c in mod.load_canaries(_CANARIES)}
+    assert declared - exercised == set()
+
+
+def test_the_unresolvable_identity_is_never_declared() -> None:
+    # Its whole purpose is to have no dim_staff_cube_access row, which
+    # exercises clean default-deny for an identity the warehouse has never
+    # heard of.
+    declared = {p["email"] for p in yaml.safe_load(_PERSONAS.read_text())["personas"]}
+    assert _UNRESOLVABLE not in declared

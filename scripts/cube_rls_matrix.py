@@ -2,6 +2,7 @@
 # requires-python = ">=3.13"
 # dependencies = [
 #   "psycopg[binary]>=3.3",
+#   "pyyaml>=6.0",
 # ]
 # ///
 
@@ -34,10 +35,17 @@ therefore reports a falsely benign result for out-of-tier members. This is a
 mode difference, not a Cube version difference — measured identical on 1.6.59
 and 1.7.14 (#4605).
 
+With `--expect`, it stops being a human-read matrix and becomes an assertion
+runner: each entry in the canaries file names a persona, a query shape and an
+expected outcome, and any mismatch exits non-zero. The sandbox's personas are
+fabricated and committed, so that file carries no PII and both KTAF CI and
+MasterBorn's kit suite run it unmodified.
+
 Usage:
     uv run scripts/cube_rls_matrix.py --viewers a@x.org b@x.org
     uv run scripts/cube_rls_matrix.py --viewers-file .claude/scratch/viewers.txt
     uv run scripts/cube_rls_matrix.py --viewers a@x.org --query "SELECT ..."
+    uv run scripts/cube_rls_matrix.py --expect src/cube/sandbox/canaries.yml
 
 Design reference:
     docs/superpowers/specs/2026-07-23-cube-internal-user-emulation-design.md
@@ -45,11 +53,28 @@ Design reference:
 
 import argparse
 import os
+import re
 import sys
 from dataclasses import dataclass
 from pathlib import Path
 
 import psycopg
+import yaml
+
+# The SQL API's denial text. Cube reports an out-of-tier or default-denied
+# view as if the relation did not exist, so this exact shape IS the denial.
+# Matching a bare "not found" instead would also accept a column-not-found or
+# dataset-not-found error, and a canary that passes on the wrong error is
+# worse than one that fails.
+#
+# One ambiguity survives and cannot be resolved here: a misconfigured
+# CUBEJS_SCHEMA_PATH compiles an EMPTY schema, which produces this same
+# string for every view. That is why the canaries must include a ROWS
+# expectation — an empty schema fails those, where a BLOCKED-only suite would
+# report a uniformly green deny.
+_DENIED = re.compile(r"table or cte with name '.+' not found", re.IGNORECASE)
+
+EXPECTATIONS = ("BLOCKED", "ZERO", "ROWS")
 
 # Region breakdown of student enrollment. count_students is a distinct-student
 # count over whatever slice is queried, with no anchor filter, and the fact
@@ -72,6 +97,88 @@ class CubeConnection:
     query: str
 
 
+@dataclass(frozen=True)
+class Canary:
+    """One declared expectation: this persona, this query, this outcome."""
+
+    persona: str
+    query_shape: str
+    expect: str
+    why: str = ""
+
+
+def expectation_met(expect: str, rows: list[tuple], error: str | None) -> bool:
+    """Whether one viewer's result matches its declared expectation.
+
+    BLOCKED asserts a REAL denial. A quiet zero rows is a FAILURE, not a
+    pass — that one distinction is what mechanically forces production-mode
+    sign-off, because a dev-mode runner downgrades an out-of-tier member
+    request to 0 rows where production hard-fails (#4605). Treating that as a
+    pass reports a falsely benign matrix, which is the failure this whole
+    tool exists to prevent.
+    """
+    match expect:
+        case "BLOCKED":
+            return error is not None and bool(_DENIED.search(error))
+        case "ZERO":
+            return error is None and not rows
+        case "ROWS":
+            return error is None and bool(rows)
+        case _:
+            raise ValueError(f"unknown expectation {expect!r}")
+
+
+def load_canaries(path: Path) -> list[Canary]:
+    doc = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    canaries = [Canary(**entry) for entry in doc.get("canaries", [])]
+    if not canaries:
+        raise ValueError(f"{path} declares no canaries")
+    for canary in canaries:
+        if canary.expect not in EXPECTATIONS:
+            raise ValueError(
+                f"unknown expectation {canary.expect!r} for {canary.persona}; "
+                f"expected one of {', '.join(EXPECTATIONS)}"
+            )
+    # A suite of BLOCKED-only canaries goes green against an empty compiled
+    # schema, where every view reports "not found" for everyone. At least one
+    # ROWS expectation is what makes a uniformly-denying deployment fail.
+    if not any(c.expect == "ROWS" for c in canaries):
+        raise ValueError(
+            f"{path} declares no ROWS canary: a BLOCKED-only suite passes "
+            "against a deployment that denies everyone, which looks exactly "
+            "like perfect isolation"
+        )
+    return canaries
+
+
+def run_canaries(canaries: list[Canary], connection: CubeConnection) -> int:
+    """Assert every canary, reporting each. Non-zero on any mismatch."""
+    failures = 0
+    for canary in canaries:
+        rows, error = run_for_viewer(
+            canary.persona,
+            CubeConnection(
+                host=connection.host,
+                port=connection.port,
+                dbname=connection.dbname,
+                password=connection.password,
+                query=canary.query_shape,
+            ),
+        )
+        met = expectation_met(canary.expect, rows, error)
+        observed = f"error: {error}" if error else f"{len(rows)} row(s)"
+        if met:
+            print(f"PASS  {canary.persona} expected {canary.expect}, got {observed}")
+            continue
+        failures += 1
+        print(f"FAIL  {canary.persona} expected {canary.expect}, got {observed}")
+        if canary.why:
+            print(f"      why it should hold: {canary.why}")
+
+    print(f"\n{len(canaries)} canary/canaries checked, {failures} failed.")
+    return 1 if failures else 0
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
@@ -84,6 +191,12 @@ def parse_args() -> argparse.Namespace:
         "--viewers-file",
         type=Path,
         help="file with one viewer email per line (blank lines and # comments ignored)",
+    )
+    source.add_argument(
+        "--expect",
+        type=Path,
+        help="canaries YAML to assert instead of printing a matrix; "
+        "exits non-zero on any mismatch",
     )
     parser.add_argument("--query", default=DEFAULT_QUERY, help="SQL to run per viewer")
     parser.add_argument("--host", default="127.0.0.1")
@@ -163,11 +276,6 @@ def main() -> int:
         )
         return 1
 
-    viewers = load_viewers(args.viewers, args.viewers_file)
-    if not viewers:
-        print("No viewer emails to test.", file=sys.stderr)
-        return 1
-
     connection = CubeConnection(
         host=args.host,
         port=args.port,
@@ -175,6 +283,14 @@ def main() -> int:
         password=args.password,
         query=args.query,
     )
+
+    if args.expect:
+        return run_canaries(load_canaries(args.expect), connection)
+
+    viewers = load_viewers(args.viewers, args.viewers_file)
+    if not viewers:
+        print("No viewer emails to test.", file=sys.stderr)
+        return 1
 
     failures = 0
     empty = 0
