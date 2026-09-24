@@ -1202,7 +1202,10 @@ together. Do not. Enforcement is a policy decision; this is a testing hole.
 Bundling them makes the testing hole wait on the policy call — the same failure
 this part just avoided for the build, one level down.
 
-Both are Deliverable 1's, not this build's. Two issues, cross-referenced.
+Both are Deliverable 1's, not this build's. Filed 2026-09-24 as
+[#5522](https://github.com/TEAMSchools/teamster/issues/5522) for enforcement and
+[#5523](https://github.com/TEAMSchools/teamster/issues/5523) for the
+authentication path.
 
 ### Nothing here is open
 
@@ -1222,9 +1225,10 @@ Evidence: [A8](#a8--kit-enforcement-does-not-gate-the-build).
 4. Rewrite the PR body on
    [#5267](https://github.com/TEAMSchools/teamster/pull/5267), which still
    describes the removed files and says Piece 2 is built.
-5. Open the two issues described in
-   [Part 10](#part-10--out-of-scope-kit-enforcement): kit enforcement, and the
-   untested production authentication path.
+5. Done 2026-09-24 — the two issues from
+   [Part 10](#part-10--out-of-scope-kit-enforcement) are filed as
+   [#5522](https://github.com/TEAMSchools/teamster/issues/5522) and
+   [#5523](https://github.com/TEAMSchools/teamster/issues/5523).
 
 ## Appendix — evidence
 
