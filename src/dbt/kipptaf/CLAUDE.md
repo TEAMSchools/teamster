@@ -340,13 +340,6 @@ These crons become real Dagster refresh schedules
 upstream cadence decisions — check them before moving an upstream model to a
 cron automation condition (see `src/dbt/CLAUDE.md` → View→table flips).
 
-## kipptaf-Specific Variables
-
-`bigquery_external_connection_name`:
-`projects/teamster-332318/locations/us/connections/biglake-teamster-gcs`
-
-dbt Cloud project ID: `211862`.
-
 ## dbt Cloud CI
 
 CI job: `dbt build --select state:modified+ --full-refresh`, target `staging`,

@@ -14,28 +14,6 @@
 | `dbt-yaml.py`                 | **Non-functional** — shells out to `generate_model_yaml`, a `dbt-codegen` macro; that package is not in any `packages.yml`, so the run errors with "could not find a macro". Write properties YAML by hand.                                                                                                                          |
 | `reencode_avro_partitions.py` | Re-encode an asset's partitioned GCS Avro files to its current schema — homogenize writer schemas across partitions after a partial backfill so heterogeneous-schema reads don't drop new fields (nested-safe; idempotent; dry-run by default, `--execute` to write). See #4151.                                                     |
 
-## VS Code Task: dbt: Stage External Sources
-
-Replaced `dbt-sxs.py`. Run via **Terminal > Run Task > dbt: Stage External
-Sources** in VS Code.
-
-**Inputs** (prompted at run time):
-
-- **Project** (pickString): `kipptaf`, `kippnewark`, `kippcamden`, `kippmiami`,
-  `kipppaterson`
-- **Target** (pickString): `defer` (default), `dev`, `staging`
-- **Source** (promptString): dbt source selector, default `*`
-
-**Terminal equivalent:**
-
-```bash
-uv run dbt run-operation stage_external_sources \
-  --project-dir src/dbt/<project> \
-  --target <target> \
-  --vars '{"ext_full_refresh": "true", "cloud_storage_uri_base": "gs://teamster-<project>/dagster/<project>"}' \
-  --args 'select: <source>'
-```
-
 ## Prerequisites
 
 - `dbt-manifest.py` — requires `dbt parse` to have run first (reads
