@@ -27,6 +27,12 @@ This module does that for real, in two steps the API does honour:
 
 `assert_complete` then compares names AND types against the snapshot, because
 those two steps are a claim and the check is what makes it verified.
+
+Two routes get the bytes there, and both run those same two steps. The
+default stages each Avro in GCS and loads from the object. `--direct` skips
+GCS and streams the local file into the load job, because BigQuery's no-cost
+tier runs load jobs while granting nothing in Cloud Storage — so on a project
+without billing the staged route fails and the direct one works.
 """
 
 from __future__ import annotations
@@ -160,31 +166,65 @@ def create_table(client: Any, table: str, schema: list[Any]) -> None:
     client.create_table(bigquery.Table(table_id, schema=schema))
 
 
-def load_table(client: Any, table: str, gcs_uri: str) -> None:
-    """Load the Avro into the table `create_table` already shaped.
+def job_config() -> Any:
+    """The load settings that make the pre-created schema stick.
 
-    No `schema=` here. BigQuery ignores it for AVRO (see the module
-    docstring), and passing one would document a guarantee the API does not
-    give. The guarantee comes from the pre-created table plus the two
-    dispositions below.
+    One function, two call sites. The typed-table guarantee lives entirely in
+    these three settings, so `load_table` and `load_table_direct` must not
+    each spell them out — a copy is how one path silently loses
+    WRITE_TRUNCATE_DATA and starts taking its schema from the Avro again.
+
+    No `schema=`. BigQuery ignores it for AVRO (see the module docstring), and
+    passing one would document a guarantee the API does not give.
     """
     from google.cloud import bigquery
 
+    return bigquery.LoadJobConfig(
+        source_format=bigquery.SourceFormat.AVRO,
+        # Keeps the schema of the table created above. WRITE_TRUNCATE would
+        # replace it with the load job's — i.e. the Avro's.
+        write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE_DATA,
+        # Nothing may create a table here except create_table.
+        create_disposition=bigquery.CreateDisposition.CREATE_NEVER,
+        # Without this a DATE lands as INT64 and a NUMERIC as BYTES, and the
+        # load into the typed table fails — loudly, which is right.
+        use_avro_logical_types=True,
+    )
+
+
+def load_table(client: Any, table: str, gcs_uri: str) -> None:
+    """Load the staged Avro into the table `create_table` already shaped."""
     client.load_table_from_uri(
         gcs_uri,
         f"{SANDBOX_PROJECT}.{SANDBOX_DATASET}.{table}",
-        job_config=bigquery.LoadJobConfig(
-            source_format=bigquery.SourceFormat.AVRO,
-            # Keeps the schema of the table created above. WRITE_TRUNCATE
-            # would replace it with the load job's — i.e. the Avro's.
-            write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE_DATA,
-            # Nothing may create a table here except create_table.
-            create_disposition=bigquery.CreateDisposition.CREATE_NEVER,
-            # Without this a DATE lands as INT64 and a NUMERIC as BYTES, and
-            # the load into the typed table fails — loudly, which is right.
-            use_avro_logical_types=True,
-        ),
+        job_config=job_config(),
     ).result()
+
+
+def load_table_direct(client: Any, table: str, path: Path) -> None:
+    """Load a LOCAL Avro file, with no GCS in the path at all.
+
+    BigQuery's no-cost tier runs load jobs but grants nothing in Cloud
+    Storage, so on a project without billing the GCS route fails at the
+    staging step while this one succeeds. That is not a workaround for a
+    broken bucket — it is the only route that exists until billing is on, and
+    it is how the sandbox was first populated.
+
+    Same `job_config` as the staged route, so the table still takes its schema
+    from the pinned snapshot rather than from the Avro. What differs is only
+    where the bytes come from, and `assert_complete` checks the result the
+    same way either way.
+
+    Prefer `load_table` once a bucket exists: a staged load reads the object
+    server-side, while this streams every byte up through the client, so a
+    dropped connection restarts the file rather than the job.
+    """
+    with path.open("rb") as handle:
+        client.load_table_from_file(
+            handle,
+            f"{SANDBOX_PROJECT}.{SANDBOX_DATASET}.{table}",
+            job_config=job_config(),
+        ).result()
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -195,6 +235,13 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--avro-dir", type=Path, default=DEFAULT_AVRO_DIR)
     parser.add_argument("--bucket", default=STAGING_BUCKET)
+    parser.add_argument(
+        "--direct",
+        action="store_true",
+        help="upload each Avro straight to the load job instead of staging it "
+        "in GCS. Required while the sandbox project has no billing, which is "
+        "what a bucket needs",
+    )
     args = parser.parse_args(argv)
 
     snap = snapshot.load()
@@ -210,7 +257,12 @@ def main(argv: list[str] | None = None) -> int:
         )
 
     client = bigquery.Client(project=SANDBOX_PROJECT)
-    storage_client = storage.Client(project=SANDBOX_PROJECT)
+    # Only built when it is going to be used. Constructing a storage client
+    # under --direct would make the run depend on Cloud Storage being
+    # reachable, which is the exact dependency --direct exists to drop.
+    storage_client = None if args.direct else storage.Client(project=SANDBOX_PROJECT)
+    route = "direct upload" if args.direct else f"gs://{args.bucket}"
+    print(f"loading via {route}", flush=True)
 
     # Report per table. A silent run and a hung one are indistinguishable, and
     # the full profile spends a long time on the two big facts — long enough
@@ -219,12 +271,18 @@ def main(argv: list[str] | None = None) -> int:
     for index, (table, columns) in enumerate(sorted(snap["tables"].items()), start=1):
         path = args.avro_dir / f"{table}.avro"
         size_mb = path.stat().st_size / 1_048_576
-        print(f"[{index}/{total}] {table} ({size_mb:.1f} MiB) uploading", flush=True)
-        uri = upload(storage_client, path, args.bucket)
-        print(f"[{index}/{total}] {table} creating table from the snapshot", flush=True)
+        prefix = f"[{index}/{total}] {table} ({size_mb:.1f} MiB)"
+        uri = None
+        if not args.direct:
+            print(f"{prefix} staging to GCS", flush=True)
+            uri = upload(storage_client, path, args.bucket)
+        print(f"{prefix} creating table from the snapshot", flush=True)
         create_table(client, table, avro.bq_schema(table, columns))
-        print(f"[{index}/{total}] {table} loading", flush=True)
-        load_table(client, table, uri)
+        print(f"{prefix} loading", flush=True)
+        if uri is None:
+            load_table_direct(client, table, path)
+        else:
+            load_table(client, table, uri)
 
     print("verifying every column name and type against the snapshot", flush=True)
     assert_complete(snap, loaded_schema(client, SANDBOX_PROJECT, SANDBOX_DATASET))

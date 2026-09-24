@@ -94,6 +94,7 @@ class _FakeClient:
         self.deleted: list[str] = []
         self.created: list[Any] = []
         self.loads: list[tuple[Any, Any, Any]] = []
+        self.direct_loads: list[tuple[bytes, Any, Any]] = []
 
     def delete_table(self, table_id: str, not_found_ok: bool = False) -> None:
         self.deleted.append(table_id)
@@ -106,6 +107,14 @@ class _FakeClient:
         self, source_uris: Any, destination: Any, job_config: Any
     ) -> _FakeLoadJob:
         self.loads.append((source_uris, destination, job_config))
+        return _FakeLoadJob()
+
+    def load_table_from_file(
+        self, handle: Any, destination: Any, job_config: Any
+    ) -> _FakeLoadJob:
+        # Record the BYTES, not the handle: main() closes it, so a test that
+        # kept the handle could only assert that a file was opened.
+        self.direct_loads.append((handle.read(), destination, job_config))
         return _FakeLoadJob()
 
     def query(self, sql: str) -> _FakeQueryResult:
@@ -269,4 +278,89 @@ def test_the_real_project_and_dataset_pass_the_guard() -> None:
 
     assert (
         load.loaded_schema(_Client(), load.SANDBOX_PROJECT, load.SANDBOX_DATASET) == {}
+    )
+
+
+def test_the_direct_route_sends_the_local_bytes_to_the_right_table(
+    tmp_path: Path,
+) -> None:
+    # The whole point of --direct: no gs:// URI is involved anywhere, so a
+    # project with no billing (and therefore no bucket) can still be loaded.
+    client = _FakeClient()
+    local = tmp_path / "dim_x.avro"
+    local.write_bytes(b"avro-bytes")
+
+    load.load_table_direct(client, "dim_x", local)
+
+    assert client.loads == []
+    assert len(client.direct_loads) == 1
+    payload, destination, _ = client.direct_loads[0]
+    assert payload == b"avro-bytes"
+    assert destination == "teamster-cube-sandbox.kipptaf_marts.dim_x"
+
+
+def test_both_routes_load_under_identical_settings() -> None:
+    # The typed-table guarantee is these three settings and nothing else, so
+    # the two routes must not be able to drift apart. Compare the configs the
+    # routes actually pass rather than re-asserting the values, which is the
+    # assertion a copy-paste of the settings would still pass.
+    client = _FakeClient()
+    local = Path(__file__)
+
+    load.load_table(client, "dim_x", "gs://bucket/dim_x.avro")
+    load.load_table_direct(client, "dim_x", local)
+
+    staged = client.loads[0][2]
+    direct = client.direct_loads[0][2]
+    assert staged.to_api_repr() == direct.to_api_repr()
+    assert direct.write_disposition == bigquery.WriteDisposition.WRITE_TRUNCATE_DATA
+    assert direct.create_disposition == bigquery.CreateDisposition.CREATE_NEVER
+    assert direct.use_avro_logical_types is True
+    assert direct.schema is None
+
+
+def test_direct_main_never_touches_cloud_storage(
+    monkeypatch: Any, tmp_path: Path
+) -> None:
+    # Constructing a storage client would put Cloud Storage back in the
+    # dependency chain that --direct exists to drop, and it would fail on a
+    # project where the API is not enabled.
+    snap = {"tables": {"dim_x": {"a": {"type": "STRING", "nullable": True}}}}
+    monkeypatch.setattr(snapshot, "load", lambda: snap)
+    (tmp_path / "dim_x.avro").write_bytes(b"avro")
+    client = _FakeClient(
+        [SimpleNamespace(table_name="dim_x", column_name="a", data_type="STRING")]
+    )
+    monkeypatch.setattr(bigquery, "Client", lambda project=None: client)
+
+    def _refuse(project: Any = None) -> Any:
+        raise AssertionError("--direct must not build a storage client")
+
+    monkeypatch.setattr(storage, "Client", _refuse)
+
+    assert load.main(["--avro-dir", str(tmp_path), "--direct"]) == 0
+    assert client.created and client.direct_loads
+    assert client.loads == []
+
+
+def test_direct_still_creates_the_table_from_the_snapshot(
+    monkeypatch: Any, tmp_path: Path
+) -> None:
+    # Skipping GCS must not also skip the pre-created typed table, or the
+    # direct route quietly takes its schema from the Avro.
+    snap = {"tables": {"dim_x": {"a": {"type": "NUMERIC", "nullable": True}}}}
+    monkeypatch.setattr(snapshot, "load", lambda: snap)
+    (tmp_path / "dim_x.avro").write_bytes(b"avro")
+    client = _FakeClient(
+        [SimpleNamespace(table_name="dim_x", column_name="a", data_type="FLOAT64")]
+    )
+    monkeypatch.setattr(bigquery, "Client", lambda project=None: client)
+    monkeypatch.setattr(storage, "Client", lambda project=None: _FakeStorage(project))
+
+    with pytest.raises(ValueError, match="loaded as FLOAT64"):
+        load.main(["--avro-dir", str(tmp_path), "--direct"])
+
+    assert client.deleted == ["teamster-cube-sandbox.kipptaf_marts.dim_x"]
+    assert list(client.created[0].schema) == avro.bq_schema(
+        "dim_x", snap["tables"]["dim_x"]
     )
