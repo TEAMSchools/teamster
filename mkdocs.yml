@@ -51,6 +51,7 @@ nav:
       - Launch Page: guides/launch-page-guide.md
       - ADP Location Renames: guides/adp-location-renames.md
       - dbt Development: guides/dbt-development.md
+      - NSC Clearinghouse Submission: guides/nsc-clearinghouse-submission.md
       - SFTP Integration: guides/sftp-integration.md
       - Claude Code & Superpowers: guides/superpowers.md
       - Cube: guides/cube.md
