@@ -30,9 +30,15 @@ those two steps are a claim and the check is what makes it verified.
 
 Two routes get the bytes there, and both run those same two steps. The
 default stages each Avro in GCS and loads from the object. `--direct` skips
-GCS and streams the local file into the load job, because BigQuery's no-cost
-tier runs load jobs while granting nothing in Cloud Storage — so on a project
-without billing the staged route fails and the direct one works.
+GCS and streams the local file into the load job.
+
+`--direct` was written because BigQuery's no-cost tier runs load jobs while
+granting nothing in Cloud Storage, so it was the only route on a project
+without billing. It remains the only route until the staging bucket exists,
+and it is the one the sandbox was first populated with. Prefer the staged
+route once there is a bucket: it reads the object server-side, where this
+streams every byte through the client, so a dropped connection restarts the
+file rather than the job.
 """
 
 from __future__ import annotations
@@ -293,8 +299,9 @@ def main(argv: list[str] | None = None) -> int:
         "--direct",
         action="store_true",
         help="upload each Avro straight to the load job instead of staging it "
-        "in GCS. Required while the sandbox project has no billing, which is "
-        "what a bucket needs",
+        "in GCS. Required until the staging bucket exists; it is also the only "
+        "route on a project with no billing, which grants nothing in Cloud "
+        "Storage",
     )
     parser.add_argument(
         "--token-stdin",
