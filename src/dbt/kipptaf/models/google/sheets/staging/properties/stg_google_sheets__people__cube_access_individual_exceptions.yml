@@ -26,10 +26,7 @@ models:
               - additional_location_name
           config:
             severity: error
-            where: >-
-              status = 'active' and (expiry_date is null or expiry_date >=
-              current_date('{{ var("local_timezone") }}')) and (grant_date is
-              null or grant_date <= current_date('{{ var("local_timezone") }}'))
+            where: is_live
       # additional_location_name has to say the same thing as the row's tier,
       # in all three cases. A real name means the tier is region or school; the
       # word all means it is network; the word none means the row grants no
@@ -105,11 +102,7 @@ models:
                 to: ref('stg_google_directory__users')
                 field: lower(primary_email)
               config:
-                where: >-
-                  status = 'active' and (expiry_date is null or expiry_date >=
-                  current_date('{{ var("local_timezone") }}')) and (grant_date
-                  is null or grant_date <= current_date('{{
-                  var("local_timezone") }}'))
+                where: is_live
                 severity: error
       - name: additional_student_location_scope
         data_type: string
@@ -191,22 +184,14 @@ models:
                 to: ref('dim_regions')
                 field: legal_entity
               config:
-                where: >-
-                  additional_location_scope = 'region' and status = 'active' and
-                  (expiry_date is null or expiry_date >= current_date('{{
-                  var("local_timezone") }}')) and (grant_date is null or
-                  grant_date <= current_date('{{ var("local_timezone") }}'))
+                where: additional_location_scope = 'region' and is_live
                 severity: error
           - relationships:
               arguments:
                 to: ref('dim_locations')
                 field: "`name`"
               config:
-                where: >-
-                  additional_location_scope = 'school' and status = 'active' and
-                  (expiry_date is null or expiry_date >= current_date('{{
-                  var("local_timezone") }}')) and (grant_date is null or
-                  grant_date <= current_date('{{ var("local_timezone") }}'))
+                where: additional_location_scope = 'school' and is_live
                 severity: error
       - name: staff_department_scope
         data_type: string
@@ -380,3 +365,14 @@ models:
         config:
           meta:
             contains_pii: true
+
+      - name: is_live
+        data_type: boolean
+        description: >-
+          Whether this row applies right now — status is active, grant_date has
+          arrived, and expiry_date has not passed, all against today in the
+          local timezone. Not a sheet column; derived in the staging model so
+          the rule has one definition. dim_staff_cube_access and every test that
+          needs to consider only rows in force reads this rather than restating
+          the comparison. A null on either date yields false, so a row missing a
+          bound grants nothing while the not_null tests report it.

@@ -2,7 +2,7 @@ with
     live_grants as (
         select google_email,
         from {{ ref("stg_google_sheets__people__cube_access_individual_exceptions") }}
-        where {{ is_live_row("status", "grant_date", "expiry_date") }}
+        where is_live
     )
 
 select lg.google_email,
