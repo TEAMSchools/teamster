@@ -34,8 +34,8 @@ Tracked in [#5266](https://github.com/TEAMSchools/teamster/issues/5266), on
 | 4   | Piece 2 — coverage contract               | Approved                |
 | 5   | Piece 3 — generator scope and fabrication | Approved                |
 | 6   | Piece 3 — adversarial canaries            | Approved                |
-| 7   | Piece 4 — drift gate                      | **Drafted — needs you** |
-| 8   | Piece 5 — deploy mode and cadence         | Not drafted             |
+| 7   | Piece 4 — drift gate                      | Approved                |
+| 8   | Piece 5 — deploy mode and cadence         | **Drafted — needs you** |
 | 9   | Sign-offs — reserved names, domain        | Not drafted             |
 | 10  | Out of scope — kit enforcement            | Not drafted             |
 
@@ -929,8 +929,88 @@ Evidence: [A6](#a6--the-piece-4-cut-and-how-big-the-addition-is).
 
 ## Part 8 — Piece 5, deploy mode and cadence
 
-Not drafted. Decides CLI versus Git deploy mode and the bump cadence. See
-[A7](#a7--the-specs-second-reason-for-cli-mode-is-wrong).
+### Deploy with CLI, on one reason rather than two
+
+The spec gives two reasons to prefer CLI mode over Git mode. The second is
+disproven: staging environments do not auto-create from a repository connection
+or a push, so there is no per-branch noise to avoid
+([A7](#a7--the-specs-second-reason-for-cli-mode-is-wrong)).
+
+The surviving reason still decides it. **Under CLI mode nothing deploys until
+someone runs the command. Under Git mode a push to the tracked branch deploys
+immediately**, so deliberateness rests on branch discipline.
+
+That is the same trade the design has now refused three times — a templated
+dataset name, role-scoped Cube seats, and a production account writing to the
+sandbox were all rejected for replacing a structural guarantee with a procedural
+one. Branch discipline is procedural, and the surface in question is handed to
+an outside party.
+
+The costs are real and worth stating rather than minimising. CLI mode needs a
+deploy token stored somewhere, which is one more credential to manage, and it
+needs an explicit exception to a repo rule. Neither outweighs a mistaken push
+deploying to MasterBorn.
+
+### The console check no longer blocks anything
+
+The one question left for the Cube Cloud web UI is whether a Git-mode deployment
+can point its production environment at a branch other than `main`. If it
+cannot, Git mode is not available for the sandbox at all.
+
+Either answer gives the same outcome: CLI by preference, or CLI by default. **So
+the check stops being a blocker** and becomes a note for the record. Do it when
+convenient; do not wait on it.
+
+### One repo rule needs scoping, not breaking
+
+[`src/cube/CLAUDE.md`](../../../src/cube/CLAUDE.md) says "No manual deploy
+command. Production redeploys are triggered by merges to `main` in Cube Cloud;
+do not propose a deploy step." That rule is about the production deployment.
+
+Scope it to production explicitly rather than leaving the sandbox quietly
+contradicting it. A rule with a silent exception stops being followed.
+
+### Cadence: the review is scheduled, the bump is not
+
+Part 7 hands one question here: does drift distance ever compel a bump?
+
+**No.** A threshold that forces a bump is tracking `main` with extra steps, and
+it reopens the exact failure this design rejected — MasterBorn's in-flight build
+moving under them without anyone deciding. It also turns Part 7's soft signal
+into a gate, which is what Part 7 declined to make it.
+
+So split the two:
+
+- **Scheduled: read the drift report.** Monthly is enough. It says what a bump
+  would ship.
+- **Deliberate: bump.** Triggered by MasterBorn asking, or by KTAF having a
+  reason — the kit needs a member that does not exist yet, or the pin has gone
+  far enough that someone judges the repoint is getting worse.
+
+Analytics engineering owns the bump. The drift report informs that conversation;
+it never starts it on its own.
+
+### Each bump
+
+1. Move the single pin — model, snapshot and catalog together, per
+   [Part 7](#why-pinning-closes-the-data-side-hole).
+2. Regenerate the catalog and commit it, so the move is a reviewable diff.
+3. Tag the commit `sandbox-YYYY.MM.DD`.
+4. Take the member-level diff of additions, removals and retypes as the release
+   note. Part 4 makes this a by-product rather than a written document.
+5. Send that note to MasterBorn **before** deploying, not after.
+6. Deploy that checkout to the sandbox deployment.
+7. Re-run the coverage, canary and divergence suites against the new state.
+
+Step 5 moved ahead of the deploy. A release note that arrives after the surface
+changed is a changelog, not a warning, and the entire reason for not tracking
+`main` was to give warning.
+
+### Nothing here is open
+
+<!-- CB: comments on Part 8 go here, or inline above. -->
+
+Evidence: [A7](#a7--the-specs-second-reason-for-cli-mode-is-wrong).
 
 ## Part 9 — Sign-offs
 
