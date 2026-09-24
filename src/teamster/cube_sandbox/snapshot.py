@@ -28,6 +28,21 @@ def load(path: Path = SNAPSHOT_PATH) -> dict[str, Any]:
     return json.loads(path.read_text())
 
 
+def check_missing_tables(requested: set[str], found: set[str]) -> None:
+    """Fail loudly if a table the model references is absent from production.
+
+    Isolated from `main()` so it is testable without a real BigQuery client:
+    a table silently dropped from the query result would otherwise write a
+    snapshot that looks complete, and every downstream consumer would read it
+    as such.
+    """
+    missing = requested - found
+    if missing:
+        raise SystemExit(
+            f"model references tables absent from production: {sorted(missing)}"
+        )
+
+
 def main() -> int:
     from google.cloud import bigquery
 
@@ -50,11 +65,7 @@ def main() -> int:
     ]
     out = render(rows)
     found = set(out["tables"])
-    missing = set(tables) - found
-    if missing:
-        raise SystemExit(
-            f"model references tables absent from production: {sorted(missing)}"
-        )
+    check_missing_tables(set(tables), found)
     SNAPSHOT_PATH.parent.mkdir(parents=True, exist_ok=True)
     SNAPSHOT_PATH.write_text(json.dumps(out, indent=2) + "\n")
     print(f"wrote {SNAPSHOT_PATH}: {len(found)} tables")
