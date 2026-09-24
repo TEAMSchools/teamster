@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import io
+import sys
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
@@ -199,8 +201,12 @@ def test_upload_stages_the_file_and_returns_its_uri(tmp_path: Path) -> None:
 
 
 def _stub_clients(monkeypatch: Any, client: _FakeClient) -> None:
-    monkeypatch.setattr(bigquery, "Client", lambda project=None: client)
-    monkeypatch.setattr(storage, "Client", lambda project=None: _FakeStorage(project))
+    monkeypatch.setattr(
+        bigquery, "Client", lambda project=None, credentials=None: client
+    )
+    monkeypatch.setattr(
+        storage, "Client", lambda project=None, credentials=None: _FakeStorage(project)
+    )
 
 
 def test_main_uploads_creates_loads_and_verifies(
@@ -331,9 +337,11 @@ def test_direct_main_never_touches_cloud_storage(
     client = _FakeClient(
         [SimpleNamespace(table_name="dim_x", column_name="a", data_type="STRING")]
     )
-    monkeypatch.setattr(bigquery, "Client", lambda project=None: client)
+    monkeypatch.setattr(
+        bigquery, "Client", lambda project=None, credentials=None: client
+    )
 
-    def _refuse(project: Any = None) -> Any:
+    def _refuse(project: Any = None, credentials: Any = None) -> Any:
         raise AssertionError("--direct must not build a storage client")
 
     monkeypatch.setattr(storage, "Client", _refuse)
@@ -354,8 +362,12 @@ def test_direct_still_creates_the_table_from_the_snapshot(
     client = _FakeClient(
         [SimpleNamespace(table_name="dim_x", column_name="a", data_type="FLOAT64")]
     )
-    monkeypatch.setattr(bigquery, "Client", lambda project=None: client)
-    monkeypatch.setattr(storage, "Client", lambda project=None: _FakeStorage(project))
+    monkeypatch.setattr(
+        bigquery, "Client", lambda project=None, credentials=None: client
+    )
+    monkeypatch.setattr(
+        storage, "Client", lambda project=None, credentials=None: _FakeStorage(project)
+    )
 
     with pytest.raises(ValueError, match="loaded as FLOAT64"):
         load.main(["--avro-dir", str(tmp_path), "--direct"])
@@ -364,3 +376,82 @@ def test_direct_still_creates_the_table_from_the_snapshot(
     assert list(client.created[0].schema) == avro.bq_schema(
         "dim_x", snap["tables"]["dim_x"]
     )
+
+
+def test_a_token_on_stdin_becomes_the_runs_credentials() -> None:
+    credentials = load.credentials_from_token_stdin(io.StringIO("stand-in-token\n"))
+
+    assert credentials.token == "stand-in-token"
+
+
+def test_an_empty_stdin_says_how_to_pipe_a_token() -> None:
+    # The failure mode is forgetting the pipe, so the message has to carry
+    # the command rather than just naming the flag.
+    with pytest.raises(SystemExit, match="gcloud auth print-access-token"):
+        load.credentials_from_token_stdin(io.StringIO("   \n"))
+
+
+class _ForbiddenClient(_FakeClient):
+    def create_table(self, table: Any) -> Any:
+        from google.api_core import exceptions
+
+        raise exceptions.Forbidden("Permission bigquery.tables.create denied")
+
+
+def test_a_denied_create_names_the_identity_not_the_table() -> None:
+    # The 403 lands on the first table, so the raw traceback blames
+    # dim_assessment_administrations for what is a credentials problem.
+    with pytest.raises(SystemExit) as caught:
+        load.create_table(_ForbiddenClient(), "dim_x", [])
+
+    message = str(caught.value)
+    assert "read-only on purpose" in message
+    assert "--token-stdin" in message
+    # The obvious fix is the destructive one: it overwrites the ADC file the
+    # BigQuery MCP and local dbt both read.
+    assert "application-default login" in message
+
+
+def test_the_token_route_reaches_the_bigquery_client(
+    monkeypatch: Any, tmp_path: Path
+) -> None:
+    snap = {"tables": {"dim_x": {"a": {"type": "STRING", "nullable": True}}}}
+    monkeypatch.setattr(snapshot, "load", lambda: snap)
+    (tmp_path / "dim_x.avro").write_bytes(b"avro")
+    client = _FakeClient(
+        [SimpleNamespace(table_name="dim_x", column_name="a", data_type="STRING")]
+    )
+    seen: dict[str, Any] = {}
+
+    def _capture(project: Any = None, credentials: Any = None) -> Any:
+        seen["credentials"] = credentials
+        return client
+
+    monkeypatch.setattr(bigquery, "Client", _capture)
+    monkeypatch.setattr(sys, "stdin", io.StringIO("stand-in-token"))
+
+    assert load.main(["--avro-dir", str(tmp_path), "--direct", "--token-stdin"]) == 0
+    assert seen["credentials"].token == "stand-in-token"
+
+
+def test_without_the_flag_the_client_falls_back_to_default_credentials(
+    monkeypatch: Any, tmp_path: Path
+) -> None:
+    snap = {"tables": {"dim_x": {"a": {"type": "STRING", "nullable": True}}}}
+    monkeypatch.setattr(snapshot, "load", lambda: snap)
+    (tmp_path / "dim_x.avro").write_bytes(b"avro")
+    client = _FakeClient(
+        [SimpleNamespace(table_name="dim_x", column_name="a", data_type="STRING")]
+    )
+    seen: dict[str, Any] = {}
+
+    def _capture(project: Any = None, credentials: Any = None) -> Any:
+        seen["credentials"] = credentials
+        return client
+
+    monkeypatch.setattr(bigquery, "Client", _capture)
+
+    assert load.main(["--avro-dir", str(tmp_path), "--direct"]) == 0
+    # None is what makes the client discover ADC. Anything else here would
+    # silently pin every default run to one identity.
+    assert seen["credentials"] is None

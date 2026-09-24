@@ -39,6 +39,7 @@ from __future__ import annotations
 
 import argparse
 import re
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -152,6 +153,42 @@ def upload(storage_client: Any, path: Path, bucket_name: str) -> str:
     return f"gs://{bucket_name}/{path.name}"
 
 
+def credentials_from_token_stdin(stream: Any = None) -> Any:
+    """Run as the identity whose OAuth access token arrives on stdin.
+
+    The loader WRITES, and the sandbox service account deliberately cannot:
+    its only roles are `bigquery.jobUser` and `bigquery.dataViewer`, because
+    Cube Cloud reads the sandbox and never writes to it. Granting that key
+    table-create so the loader could reuse it would widen the one credential
+    that lives in Cube Cloud, which is the opposite of the point.
+
+    So the loader runs as a human admin instead. This path takes a token
+    rather than reauthenticating because the codespace's default credentials
+    are a service account file at the ADC path, and
+    `gcloud auth application-default login` would overwrite it — taking the
+    BigQuery MCP and local dbt down with it. Minting a token touches nothing:
+
+        gcloud auth print-access-token | ... --token-stdin
+
+    The token is bearer-only and expires in about an hour, with no refresh.
+    That is long enough for a load and short enough not to be a credential
+    anyone is tempted to keep.
+    """
+    from google.oauth2.credentials import Credentials
+
+    stream = sys.stdin if stream is None else stream
+    if stream.isatty():
+        print("Paste an access token, then press Ctrl-D:\n")
+    raw = stream.read().strip()
+    if not raw:
+        raise SystemExit(
+            "nothing arrived on stdin. Pipe a token in:\n\n"
+            "  gcloud auth print-access-token | uv run python -m "
+            "teamster.cube_sandbox.load --direct --token-stdin\n"
+        )
+    return Credentials(token=raw)
+
+
 def create_table(client: Any, table: str, schema: list[Any]) -> None:
     """Replace the table with one whose schema IS the pinned snapshot's.
 
@@ -159,11 +196,28 @@ def create_table(client: Any, table: str, schema: list[Any]) -> None:
     pin carries that pin's columns, and a load into it would be measured
     against the wrong contract.
     """
+    from google.api_core import exceptions
     from google.cloud import bigquery
 
     table_id = f"{SANDBOX_PROJECT}.{SANDBOX_DATASET}.{table}"
-    client.delete_table(table_id, not_found_ok=True)
-    client.create_table(bigquery.Table(table_id, schema=schema))
+    try:
+        client.delete_table(table_id, not_found_ok=True)
+        client.create_table(bigquery.Table(table_id, schema=schema))
+    except exceptions.Forbidden as err:
+        # Reads pass and the write fails, so this surfaces on the first table
+        # rather than at startup, and the traceback names a table when the
+        # problem is the identity.
+        raise SystemExit(
+            f"cannot create tables in {SANDBOX_PROJECT}.{SANDBOX_DATASET}.\n\n"
+            f"The loader writes, and the sandbox service account is read-only "
+            f"on purpose ({SERVICE_ACCOUNT} holds bigquery.jobUser and "
+            f"bigquery.dataViewer only). Run as your own account instead, "
+            f"which is the one that works in the console:\n\n"
+            f"  gcloud auth print-access-token | uv run python -m "
+            f"teamster.cube_sandbox.load --direct --token-stdin\n\n"
+            f"Do NOT run `gcloud auth application-default login` to fix this: "
+            f"it overwrites the codespace's default credentials file.\n"
+        ) from err
 
 
 def job_config() -> Any:
@@ -242,6 +296,13 @@ def main(argv: list[str] | None = None) -> int:
         "in GCS. Required while the sandbox project has no billing, which is "
         "what a bucket needs",
     )
+    parser.add_argument(
+        "--token-stdin",
+        action="store_true",
+        help="run as the identity whose OAuth access token arrives on stdin, "
+        "rather than as the default credentials. Pipe in "
+        "`gcloud auth print-access-token`",
+    )
     args = parser.parse_args(argv)
 
     snap = snapshot.load()
@@ -256,11 +317,16 @@ def main(argv: list[str] | None = None) -> int:
             "Run `uv run python -m teamster.cube_sandbox.generate --scale full` first."
         )
 
-    client = bigquery.Client(project=SANDBOX_PROJECT)
+    credentials = credentials_from_token_stdin() if args.token_stdin else None
+    client = bigquery.Client(project=SANDBOX_PROJECT, credentials=credentials)
     # Only built when it is going to be used. Constructing a storage client
     # under --direct would make the run depend on Cloud Storage being
     # reachable, which is the exact dependency --direct exists to drop.
-    storage_client = None if args.direct else storage.Client(project=SANDBOX_PROJECT)
+    storage_client = (
+        None
+        if args.direct
+        else storage.Client(project=SANDBOX_PROJECT, credentials=credentials)
+    )
     route = "direct upload" if args.direct else f"gs://{args.bucket}"
     print(f"loading via {route}", flush=True)
 
