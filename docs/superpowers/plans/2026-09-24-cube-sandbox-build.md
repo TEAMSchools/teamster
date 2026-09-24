@@ -82,18 +82,51 @@ gitignored, so it may not exist in your checkout.
 | 11–15 | Complete, not run live | `bf0f8b8..f4f2db7`  |
 | 16    | Complete               | `f4f2db7..740c09b`  |
 
-Every task in the plan is now implemented. Two follow-up commits sit between
-them, both from the Task 4 review: `f2815bd1` narrows the key and policy
-exemptions, and `4790bc4f` adds the join-path orphan cells the spec requires
-and `build()` never emitted. `bf0f8b8d` closes the two deferred Minors below.
+Every task in the plan is implemented. Two follow-up commits sit between them,
+both from the Task 4 review: `f2815bd1` narrows the key and policy exemptions,
+and `4790bc4f` adds the join-path orphan cells the spec requires and `build()`
+never emitted.
 
-**Not done, and not doable here:** no live run of anything. Task 10's `main`,
-Task 11's two scripts, Task 12's canary runner, and Tasks 13–15's live legs
-are written and unit-tested against fakes only. The generator itself (Tasks 5
-and 6) has its ordering, spine, value rules and scale profiles, but there is
-no `generate(snap, people, scale, seed)` entry point producing whole tables
-yet, and no Avro has ever been written. Coverage has never been assessed
-against real generated rows.
+### Whole-branch review and two fix waves — 2026-09-24
+
+The final review found 3 Critical, 6 Important and 3 Minor, and judged all six
+of the overnight run's rulings correct. Everything it raised is closed.
+
+**Wave A — `1876473..b48232e`.** Three Criticals, all the same failure class: a
+check that passes without verifying. `exit_code` failed on the 8 cells
+row-counting cannot score, so the generator's only gate was permanently red.
+`referenced_columns` read only cube YAML, so `dim_staff_reporting_chain` had
+**zero** cells — an empty table passed coverage in full — and
+`dim_staff_cube_access` covered 4 of 15 columns, missing `google_email`, the key
+`resolveAccess` matches. Also: an unsatisfiable `is_current_homeroom` null cell,
+no assertion of the spec's two-distinct-values rule for the sensitive tiers, a
+staleness check its own workflow never triggered, ~30 tests outside CI, a
+`/meta` diff blind to retypes.
+
+**Wave B — `66ce187..6b4342a`.** The pipeline had parts and no way to run. Added
+`generate()`, a `coverage` entry point reading real Avro, and entry points for
+divergence, mutation and `/meta`. **BigQuery ignores a load job's schema for
+AVRO** — confirmed against Google's documentation — so the spec's
+explicit-schema guarantee was not happening. `load.py` now creates the table
+from `bq_schema` first, loads with `WRITE_TRUNCATE_DATA` + `CREATE_NEVER`, and
+`assert_complete` compares types as well as names.
+
+**Verified independently on 2026-09-24**, not taken from a subagent report: a
+`tiny` generate from scratch, scored against the committed manifest, gives **421
+covered, 0 uncovered, 8 unproven** — 21 Avro files, 8,320 rows. 219 tests pass.
+Coverage against an empty directory exits 1, so it cannot pass vacuously.
+
+**Still not done:** nothing has ever been loaded and no query has been served
+from the sandbox dataset. `WRITE_TRUNCATE_DATA` is documented but unexercised
+live. The `full` profile has never been generated or timed.
+`cube-catalog-meta.json` is still absent from `main`. Mutation testing perturbs
+the model only — a persona-scope perturbation needs a regenerate, reload and
+midnight-ET cache expiry.
+
+**Gotcha when running it by hand:** `generate --out DIR` writes to
+`DIR/<scale>/`, while `coverage --avro-dir` wants the directory holding the
+Avro. Pass `build/cube_sandbox/tiny`, not `build/cube_sandbox`. The runbook in
+`docs/reference/cube-sandbox.md` has it right.
 
 **Decisions taken during execution that the task text does not carry:**
 
@@ -113,34 +146,34 @@ against real generated rows.
   catches `not_null_proportion`, which asserts a proportion rather than absence.
 - Task 7 implements all three of `avro_schema`, `bq_schema` and `write`. The
   task's numbered steps cover only the first; Task 10 calls the other two.
-- Task 4's key exemption is `model.key_columns`, derived from `primary_key:
-true` dimensions and the operands of an EQUALITY in a join's `sql:`. Not every
-  column named in a predicate: a bare boolean term
-  (`is_current_homeroom`) and a `BETWEEN` range bound
-  (`effective_start_date`) are ordinary attributes, and exempting them repeats
-  the over-exemption the name-suffix rule was deleted for.
+- Task 4's key exemption is `model.key_columns`, derived from
+  `primary_key: true` dimensions and the operands of an EQUALITY in a join's
+  `sql:`. Not every column named in a predicate: a bare boolean term
+  (`is_current_homeroom`) and a `BETWEEN` range bound (`effective_start_date`)
+  are ordinary attributes, and exempting them repeats the over-exemption the
+  name-suffix rule was deleted for.
 - Task 4's `policy_columns` returns `(table, column)`, resolved through each
   view's `includes:` blocks and its `prefix:` rule. As bare names, `staff_key`
   exempted that column on three unrelated tables and `locations_abbreviation`
   matched no warehouse column at all.
 - Task 4 emits the spec's "one orphan on each side of every join path" cells,
   which the task text omits. 24 paths, 48 cells. Without them nothing requires
-  an unmatched key, and `location_key` / `work_location_key` are documented
-  NULL in production.
+  an unmatched key, and `location_key` / `work_location_key` are documented NULL
+  in production.
 - Task 5 breaks the spine cycle at HEAD → TAIL, not TAIL → HEAD as the task's
   Step 3 code does. The plan contradicts itself here: its own Step 1 test
   asserts `dim_student_enrollments` comes first, and that test is right. The
   homeroom join is declared from the enrollment side but its foreign key lives
   on the section table.
 - Task 5's `resolve_spine` fills `is_current_homeroom` on the SECTION rows.
-  There is no `homeroom_section_key` on `dim_student_enrollments` — that
-  column does not exist in the pinned snapshot, and the relationship runs the
-  other way.
-- Task 5's `_PRODUCTION_ROWS` carries the spec's 2026-09-24 figures
-  unverified. Re-measuring needs a production `INFORMATION_SCHEMA` read.
+  There is no `homeroom_section_key` on `dim_student_enrollments` — that column
+  does not exist in the pinned snapshot, and the relationship runs the other
+  way.
+- Task 5's `_PRODUCTION_ROWS` carries the spec's 2026-09-24 figures unverified.
+  Re-measuring needs a production `INFORMATION_SCHEMA` read.
 - Task 9 required fixing `referenced_columns`: sweeping every bare identifier
-  out of a member's `sql:` attributed measure names and cube names to tables
-  as columns, so the check reported 30 phantom missing columns and could never
+  out of a member's `sql:` attributed measure names and cube names to tables as
+  columns, so the check reported 30 phantom missing columns and could never
   pass. `member_columns` now resolves `{CUBE}.col`, `{member}` and
   `{other_cube.member}` separately.
 - Task 9 also asserts the committed `coverage_manifest.yml` matches a fresh
@@ -174,28 +207,26 @@ Run everything with `uv run`. Push after each task. Leave this Status section
 updated for whoever picks it up next, and end with a list of every ruling you
 made and what it costs if wrong.
 
-**Two Minors deferred for the final review to triage:** both were real, and
-both are closed in `bf0f8b8d`. Task 7's NUMERIC precision/scale is now
-asserted whole, with the two numbers as named constants. Task 10's B608
-suppression now cites an identifier guard rather than the caller's good
-intentions.
+**Two Minors deferred for the final review to triage:** both were real, and both
+are closed in `bf0f8b8d`. Task 7's NUMERIC precision/scale is now asserted
+whole, with the two numbers as named constants. Task 10's B608 suppression now
+cites an identifier guard rather than the caller's good intentions.
 
 ### Two things a cloud agent cannot do, discovered 2026-09-24
 
-- **`uv run` cannot sync this project in the cloud container.** `dbt-core`
-  pulls `dbt-core-experimental-parser`, whose build backend downloads a wheel
-  from GitHub with `urllib`. Python 3.13 enables `ssl.VERIFY_X509_STRICT` by
-  default and the agent proxy's CA carries no `keyUsage` extension, so the
-  build fails TLS verification where Python 3.11 succeeds. Tests were run with
-  `PYTHONPATH=src uv run --no-project --python 3.13 --with pytest --with pyyaml
---with fastavro --with google-cloud-bigquery --with 'psycopg[binary]' python -m
-pytest`. Dependency versions there are not the lockfile's.
+- **`uv run` cannot sync this project in the cloud container.** `dbt-core` pulls
+  `dbt-core-experimental-parser`, whose build backend downloads a wheel from
+  GitHub with `urllib`. Python 3.13 enables `ssl.VERIFY_X509_STRICT` by default
+  and the agent proxy's CA carries no `keyUsage` extension, so the build fails
+  TLS verification where Python 3.11 succeeds. Tests were run with
+  `PYTHONPATH=src uv run --no-project --python 3.13 --with pytest --with pyyaml --with fastavro --with google-cloud-bigquery --with 'psycopg[binary]' python -m pytest`.
+  Dependency versions there are not the lockfile's.
 - **`trunk` is unavailable**: no `.trunk/tools/`, not on `PATH`, and
   `get.trunk.io` is refused by the egress policy (403). Linting was done with
-  the underlying tools at the versions `.trunk/trunk.yaml` pins — `ruff
-0.16.8` (check and format), `prettier 3.9.8`, `markdownlint-cli2` against a
-  copy of the repo's config, `yamllint 1.38.0`, `bandit 1.9.4`. Run
-  `trunk check` before merging.
+  the underlying tools at the versions `.trunk/trunk.yaml` pins — `ruff 0.16.8`
+  (check and format), `prettier 3.9.8`, `markdownlint-cli2` against a copy of
+  the repo's config, `yamllint 1.38.0`, `bandit 1.9.4`. Run `trunk check` before
+  merging.
 
 ## Execution order
 
@@ -2006,20 +2037,25 @@ divergences:
     why:
       Cumulative position is re-stamped daily, so an open range counts students
       who crossed on any day.
-    a: SELECT count_chronically_absent FROM
+    a:
+      SELECT count_chronically_absent FROM
       student_attendance_enrollment_daily_view WHERE attendance_date =
       '2026-03-02'
-    b: SELECT count_chronically_absent FROM
+    b:
+      SELECT count_chronically_absent FROM
       student_attendance_enrollment_daily_view WHERE attendance_date BETWEEN
       '2025-07-01' AND '2026-03-02'
 
   - name: school_week_vs_iso
     min_ratio: 0.05
-    why: period_type week is the PowerSchool school week, and ISO bucketing
+    why:
+      period_type week is the PowerSchool school week, and ISO bucketing
       compiles, does not throw, and returns a meaningless breakdown.
-    a: SELECT count(*) FROM student_attendance_enrollment_periods_view WHERE
+    a:
+      SELECT count(*) FROM student_attendance_enrollment_periods_view WHERE
       period_type = 'week'
-    b: SELECT count(*) FROM student_attendance_enrollment_daily_view GROUP BY
+    b:
+      SELECT count(*) FROM student_attendance_enrollment_daily_view GROUP BY
       DATE_TRUNC(attendance_date, ISOWEEK)
 ```
 
