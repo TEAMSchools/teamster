@@ -5,16 +5,18 @@ description: >-
   setting, Tableau views, or answering a question about the numbers. Not only
   code changes: invoke it before answering anything about DIBELS, because the
   reference document it points at carries decisions that are not recoverable
-  from the SQL. Triggers: the DIBELS dashboard or Literacy Dashboard, the Bright
-  Spots tracker (#4952), the PM/aimline migration (#3834), benchmark completion
-  tracking (#4902), aimline categories, foundation or benchmark or PM goal
-  setting, the Amplify DIBELS spreadsheet, or anything touching
-  int_amplify__all_assessments, int_amplify__pm_met_criteria,
-  int_amplify__pm_met_criteria_aimline, int_amplify__benchmark_student_summary,
+  from the SQL. Triggers: the DIBELS dashboard or Literacy Dashboard, Amplify or
+  mClass data, progress monitoring (PM) rounds or goals, aimline status or
+  categories (Meeting Aimline, Below Aimline, Trajectory), benchmark or
+  composite levels, DIBELS measures (ORF, NWF, PSF, WRF, Maze), the Bright Spots
+  tracker (#4952), the PM/aimline migration (#3834), benchmark completion
+  tracking (#4902), foundation, benchmark or PM goal setting, the Expected
+  Assessments sheet or LIT/PLIT rounds in reporting__terms, the Amplify DIBELS
+  spreadsheet, or any model matching *amplify*, *dibels* or *mclass*
+  (int_amplify__*, stg_amplify__*, int_google_sheets__dibels*,
+  stg_google_sheets__dibels*, int_topline__dibels_*,
   int_students__dibels_participation_roster, rpt_tableau__dibels_dashboard,
-  rpt_gsheets__dibels_bm_goals_calculations,
-  rpt_gsheets__dibels_pm_goal_setting, stg_google_sheets__dibels_* or their
-  lineage.
+  rpt_gsheets__dibels_*) or their lineage.
 ---
 
 # DIBELS Dashboard
