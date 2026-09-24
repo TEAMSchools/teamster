@@ -35,8 +35,8 @@ Tracked in [#5266](https://github.com/TEAMSchools/teamster/issues/5266), on
 | 5   | Piece 3 — generator scope and fabrication | Approved                |
 | 6   | Piece 3 — adversarial canaries            | Approved                |
 | 7   | Piece 4 — drift gate                      | Approved                |
-| 8   | Piece 5 — deploy mode and cadence         | **Drafted — needs you** |
-| 9   | Sign-offs — reserved names, domain        | Not drafted             |
+| 8   | Piece 5 — deploy mode and cadence         | Approved                |
+| 9   | Sign-offs — reserved names, domain        | **Drafted — needs you** |
 | 10  | Out of scope — kit enforcement            | Not drafted             |
 
 Evidence gathered so far lives in the appendix at the bottom, filed under the
@@ -1040,12 +1040,74 @@ Evidence: [A7](#a7--the-specs-second-reason-for-cli-mode-is-wrong).
 
 ## Part 9 — Sign-offs
 
-Not drafted. Reserved surnames and the email addresses fabricated personas use.
+Both items here exist for one property: **anyone looking at a row can tell it is
+fabricated.** The spec calls it proof by glance. It matters because fabricated
+rows and real rows will be looked at by the same people, and because a synthetic
+persona that reads as real is how a test address ends up receiving mail.
 
-Constrained by [Part 6](#the-personas-must-live-on-appsteamschoolsorg): the
-canary runner goes through the SQL API, so persona addresses must be on
-`@apps.teamschools.org` and made non-colliding by a reserved prefix. The spec's
-`ktaf-sandbox.invalid` domain cannot work for any persona a canary exercises.
+### The domain is decided for us, and it is the weaker option
+
+The spec proposes `ktaf-sandbox.invalid`. That is a good choice on its merits:
+`.invalid` is reserved by the IETF and can never resolve, so the address cannot
+collide with a real account and mail to it cannot be delivered. The guarantee is
+structural.
+
+It does not survive contact with the canary runner.
+[Part 6](#the-personas-must-live-on-appsteamschoolsorg) establishes that the
+runner goes through the SQL API, so persona switching passes `canSwitchSqlUser`,
+which accepts only `@apps.teamschools.org`. A `.invalid` address cannot be
+switched to, so every canary using one fails for the wrong reason.
+
+So personas use `@apps.teamschools.org` with a reserved prefix. Say plainly what
+that costs: the addresses now live on a **real, routable domain**, and the
+guarantee drops from structural to procedural.
+
+### Proof by glance now rests on two conventions
+
+| Convention            | Covers                 | Kind of guarantee |
+| --------------------- | ---------------------- | ----------------- |
+| The `sandbox-` prefix | Email addresses        | Policy            |
+| The reserved surnames | Name fields on any row | Policy            |
+
+Both are needed. The prefix covers addresses; the surnames cover `dim_students`
+and `dim_staff` name columns, where no address appears.
+
+The prefix is free today: **0 of 1573** addresses in `dim_staff_cube_access`
+start with `sandbox`, measured 2026-09-24. Note that 4 real addresses already
+use a hyphenated prefix, so the shape is not distinctive — the word is. Two
+commitments follow, and they are commitments rather than mechanisms:
+
+- KTAF never provisions a real account beginning `sandbox-`.
+- The generator asserts, before it writes, that no fabricated address collides
+  with a real one.
+
+### #5517 is the lever that makes this structural again
+
+[#5517](https://github.com/TEAMSchools/teamster/issues/5517) replaces
+`canSwitchSqlUser`'s single `endsWith` with an allowlist of accepted domains, so
+Miami staff can be emulated.
+
+**Make that allowlist per-deployment.** Production's list then holds the real
+network domains, and the sandbox deployment's list holds one synthetic domain
+that resolves nowhere. Personas go back to `ktaf-sandbox.invalid`, proof by
+glance returns to structural, and the routable-domain risk above disappears.
+
+This is a follow-on, not a prerequisite. The design works with the prefix; it is
+simply better with the domain.
+
+### A reserved name set nobody adopted is not reserved
+
+`reserved_names.yml` is labelled a starter set, and a starter set is a draft.
+The property it exists for only holds once the set is agreed and published — in
+`docs/reference/` and in the partner handoff — so that someone seeing one of
+those surnames knows what it means without asking.
+
+Until then the file is a list of names, not a namespace. Publishing it is the
+sign-off.
+
+### Nothing here is open
+
+<!-- CB: comments on Part 9 go here, or inline above. -->
 
 ## Part 10 — Out of scope, kit enforcement
 
