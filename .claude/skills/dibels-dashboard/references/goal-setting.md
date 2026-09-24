@@ -614,8 +614,8 @@ So a cancelled round leaves the season's goals slightly too gradual, and fixing
 that is a decision, not a patch: it means teaching `pm_expectations` to project
 and filter the column, which changes whether a cancelled round bounds the
 season. Watch the `WHERE`-before-window trap in _Do not hoist a downstream
-filter into the shared gate_ in `model-architecture.md` (point 1). Raise it with academics rather
-than deciding it as a side effect.
+filter into the shared gate_ in `model-architecture.md` (point 1). Raise it with
+academics rather than deciding it as a side effect.
 
 **Either way the goals sheet is rebuilt in full, never cell-edited.** Disabling
 a measure changes `min_pm_round` / `max_pm_round` for the season, which decides

@@ -2505,6 +2505,14 @@ How the two numbers land on the extract:
 - **`aimline_season_student_goal` is the season endpoint**, in its own column,
   with `aimline_season_student_goal_gap` beside it. It is a different quantity
   from the moving target and is deliberately not merged into `goal`.
+- **`benchmark_goal_gap` is the score minus `benchmark_goal`**, the grade-level
+  standard, positive when above it. Added 2026-09-24 for the student roster at
+  academics' request, beside Benchmark Goal, replacing the season goal and its
+  gap on that view. It populates on both PM methods; on Internal rows it is
+  measured against the unpadded standard, so its sign matches
+  `met_admin_benchmark_goal_unpadded` rather than the padded
+  `met_admin_benchmark_goal`. Verified on every AY2025 PM row: the sign agrees
+  with the matching met flag on all 35,482 scored rows per method.
 
 So the asymmetry this section used to describe is closed: an internal PM view
 and an aimline view both read "scored 30 against a target of 21" off the same

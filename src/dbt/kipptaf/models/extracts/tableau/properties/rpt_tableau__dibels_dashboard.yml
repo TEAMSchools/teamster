@@ -359,6 +359,17 @@ models:
         config:
           meta:
             contains_pii: true
+      - name: benchmark_goal_gap
+        data_type: float64
+        description:
+          Measure-standard score minus benchmark_goal -- negative when the
+          student is below the grade-level standard, positive when above it.
+          benchmark_goal on a PM row is the next benchmark's standard, so a
+          BOY->MOY round is measured against the MOY bar. Populated on both PM
+          methods; null on Benchmark rows, and wherever either input is null.
+        config:
+          meta:
+            contains_pii: true
       - name: schedule_student_number
         data_type: int64
         description:

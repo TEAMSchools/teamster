@@ -400,11 +400,18 @@ what a session needs before opening a file is here.
 **Aimline has TWO targets and they go in different extract columns. Keep them
 apart.**
 
-| Extract column                    | Internal rows             | Aimline rows                    |
-| --------------------------------- | ------------------------- | ------------------------------- |
-| `goal`                            | `cumulative_growth_words` | `aimline_value_by_date`         |
-| `aimline_season_student_goal`     | null                      | Amplify's season endpoint       |
-| `aimline_season_student_goal_gap` | null                      | score minus the season endpoint |
+| Extract column                    | Internal rows                         | Aimline rows                    |
+| --------------------------------- | ------------------------------------- | ------------------------------- |
+| `goal`                            | `cumulative_growth_words`             | `aimline_value_by_date`         |
+| `aimline_season_student_goal`     | null                                  | Amplify's season endpoint       |
+| `aimline_season_student_goal_gap` | null                                  | score minus the season endpoint |
+| `benchmark_goal_gap`              | score minus unpadded `benchmark_goal` | score minus `benchmark_goal`    |
+
+The roster shows `benchmark_goal_gap` instead of the season columns, per
+academics on 2026-09-24. The season columns stay in the extract. Its sign
+follows `met_admin_benchmark_goal` on Aimline rows and
+`met_admin_benchmark_goal_unpadded` on Internal rows, never the padded Internal
+flag.
 
 `goal` is the MOVING target -- what the verdict was computed against, climbing
 across the season -- and it is the one column both methods share, because both
