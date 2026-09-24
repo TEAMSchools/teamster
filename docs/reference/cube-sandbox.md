@@ -163,22 +163,80 @@ Each bump, in order:
 Everything except the load step and the live checks runs from committed files
 with no cloud access.
 
-| Command                                                 | Does                                                  | Needs the sandbox?  |
-| ------------------------------------------------------- | ----------------------------------------------------- | ------------------- |
-| `uv run python -m teamster.cube_sandbox.snapshot`       | Refresh the schema snapshot from production           | No (needs prod)     |
-| `uv run python -m teamster.cube_sandbox.manifest`       | Regenerate `coverage_manifest.yml`                    | No                  |
-| `uv run python -m teamster.cube_sandbox.checks`         | Assert model, snapshot and manifest agree             | No                  |
-| `uv run python -m teamster.cube_sandbox.load`           | Create the native tables and load Avro already in GCS | Yes                 |
-| `uv run scripts/cube_sandbox_isolation.py`              | Both isolation legs, as the sandbox service account   | Yes                 |
-| `uv run scripts/cube_sandbox_deny_policy.py`            | Assert `deny-sandbox-bigquery` still exists           | No (needs prod IAM) |
-| `uv run scripts/cube_rls_matrix.py --expect <canaries>` | Assert the canaries                                   | Yes                 |
+| Command                                                     | Does                                                | Needs the sandbox?  |
+| ----------------------------------------------------------- | --------------------------------------------------- | ------------------- |
+| `uv run python -m teamster.cube_sandbox.snapshot`           | Refresh the schema snapshot from production         | No (needs prod)     |
+| `uv run python -m teamster.cube_sandbox.manifest`           | Regenerate `coverage_manifest.yml`                  | No                  |
+| `uv run python -m teamster.cube_sandbox.checks`             | Assert model, snapshot and manifest agree           | No                  |
+| `uv run python -m teamster.cube_sandbox.generate --scale …` | Write one Avro file per table to a local directory  | No                  |
+| `uv run python -m teamster.cube_sandbox.coverage`           | Score the generated Avro against the manifest       | No                  |
+| `uv run python -m teamster.cube_sandbox.load`               | Stage to GCS, create the tables, load, verify       | Yes                 |
+| `uv run scripts/cube_sandbox_isolation.py`                  | Both isolation legs, as the sandbox service account | Yes                 |
+| `uv run scripts/cube_sandbox_deny_policy.py`                | Assert `deny-sandbox-bigquery` still exists         | No (needs prod IAM) |
+| `uv run scripts/cube_rls_matrix.py --expect <canaries>`     | Assert the canaries                                 | Yes                 |
+| `uv run python -m teamster.cube_sandbox.divergence`         | Assert the three query pairs still disagree         | Yes                 |
+| `uv run python -m teamster.cube_sandbox.mutate`             | Score whether the canaries are load-bearing         | Yes                 |
+| `uv run python -m teamster.cube_sandbox.meta_check`         | Assert `/meta` matches the pinned catalog           | Yes                 |
 
-It does not stage anything to GCS — the Avro has to be there already, and
-nothing writes it yet. See _Known gaps_.
+The last three read their connection details from the environment and exit with
+a message naming what is missing rather than falling back to localhost. A suite
+that quietly measures a dev server reports on a deployment nobody ships.
 
-`.github/workflows/cube-sandbox-contract.yaml` runs the consistency check and
-the unit tests on every pull request touching `src/cube/`, the toolchain,
-`scripts/`, or the dbt marts whose `not_null` tests the manifest reads.
+`.github/workflows/cube-sandbox-contract.yaml` runs the consistency check, a
+`tiny` generate-and-score, and the unit tests on every pull request touching
+`src/cube/`, the toolchain, `scripts/`, or the dbt marts whose `not_null` tests
+the manifest reads.
+
+### The first real load
+
+Everything up to the load runs anywhere. The load needs the sandbox service
+account key and nothing else; it never touches `teamster-332318`.
+
+```bash
+# 1. Both isolation legs, as the sandbox service account. A failure here
+#    blocks generation: an isolation regression must stop synthetic writes.
+uv run scripts/cube_sandbox_isolation.py
+
+# 2. Model, snapshot and manifest agree at this commit.
+uv run python -m teamster.cube_sandbox.checks
+
+# 3. Prove the generator against the contract before spending an hour on
+#    production scale. Same generator, same seed — only the multiplier differs.
+uv run python -m teamster.cube_sandbox.generate --scale tiny
+uv run python -m teamster.cube_sandbox.coverage --avro-dir build/cube_sandbox/tiny
+
+# 4. Production scale, then the load: GCS upload, CREATE OR REPLACE TABLE from
+#    the pinned snapshot, load, and a column-and-type check against it.
+uv run python -m teamster.cube_sandbox.generate --scale full
+uv run python -m teamster.cube_sandbox.load --avro-dir build/cube_sandbox/full
+
+# 5. Assert the result.
+uv run scripts/cube_rls_matrix.py --expect src/cube/sandbox/canaries.yml
+uv run python -m teamster.cube_sandbox.divergence
+```
+
+Step 4 needs `GOOGLE_APPLICATION_CREDENTIALS` pointing at the sandbox service
+account key, and the `teamster-cube-sandbox-staging` bucket to exist. Step 5
+needs `CUBE_SANDBOX_SQL_HOST` and `CUBE_SANDBOX_SQL_PASSWORD`, and runs against
+the sandbox deployment's **production** environment — never a Dev Mode one,
+which returns zero rows where production denies
+([#4605](https://github.com/TEAMSchools/teamster/issues/4605)).
+
+!!! warning "BigQuery ignores a load job's schema for AVRO"
+
+    Google's own guidance is explicit: "Specifying a schema is supported when
+    you load CSV and JSON (newline delimited) files. When you load Avro,
+    Parquet, ORC, Firestore export data, or Datastore export data, the schema
+    is automatically retrieved from the self-describing source data."
+
+    So the spec's "create each table's schema explicitly from the pinned
+    snapshot" cannot be done by passing `LoadJobConfig.schema`. `load.py`
+    creates the table from the snapshot first and then loads with
+    `WRITE_TRUNCATE_DATA`, which keeps the existing table's schema, and
+    `CREATE_NEVER`, so no load can conjure an Avro-shaped table of its own.
+    `assert_complete` then compares column names **and types** against the
+    snapshot — a `NUMERIC` that landed as `FLOAT64` is exactly the drift a
+    name-only check waves through.
 
 ### The coverage contract
 
@@ -221,14 +279,26 @@ would be a step toward the cross-project binding the design exists to prevent.
 
 ## Known gaps
 
-- **No data has ever been generated.** There is no `generate()` entry point
-  producing whole tables, so no Avro file has been written, nothing has been
-  staged to GCS, and the load step has never run against real output.
-- **Coverage has never been assessed.** `coverage.py` is unit-tested against
-  fabricated rows only; the manifest has never been scored against a generated
-  dataset, so every cell in it still reads `uncovered`.
+- **Nothing has been loaded.** The generator, the coverage gate and the load
+  step all run, and a `tiny` run scores zero uncovered cells against the
+  committed manifest — but no one has yet run the load against the sandbox
+  project, so the dataset does not exist and no query has been served from it.
+  See _The first real load_.
+- **Eight manifest cells are not scored by counting rows**: `hasRemit` and
+  `hasChain` each way, the unresolvable identity, and the three divergences. The
+  generator produces all eight, and unit tests assert the first five directly
+  against the generated rows — but proving them end to end needs a live query,
+  so `coverage.py` reports them UNPROVEN and the canary and divergence suites
+  own them, each with its own non-zero exit.
+- **Mutation testing perturbs the model only.** `mutate.py` deletes one
+  `access_policy` block at a time and requires a canary to flip red. The spec's
+  other arm — perturbing a persona's scope value — reaches a deployment only
+  through a regenerate, a reload, and the expiry of `resolveAccess`'s per-email
+  cache at the next midnight ET. That is a cycle, not a mutation run, so the
+  runner does not drive it and does not report a score for it.
 - Nothing on the analytics side holds `iam.googleapis.com/denypolicies.list` on
   `teamster-332318`, so `cube_sandbox_deny_policy.py` exits UNPROVEN rather than
   PASS.
 - `cube-catalog-meta.json` is not yet on `main`, so the `/meta` check has no
-  current pinned catalog to compare against.
+  current pinned catalog to compare against and says so rather than inventing
+  one.

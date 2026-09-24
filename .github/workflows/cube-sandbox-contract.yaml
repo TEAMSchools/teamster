@@ -43,6 +43,17 @@ jobs:
       - name: Check the model, snapshot and manifest agree
         run: uv run python -m teamster.cube_sandbox.checks
 
+      # The gate the generator's contract actually rests on: fabricate the
+      # tiny profile, write it as Avro, read it back and score every cell the
+      # manifest declares. Zero uncovered, or the generator does not satisfy
+      # its own specification. It runs the CLI rather than only the unit test
+      # so the entry points stay reachable — four of the five deliverables
+      # once had none.
+      - name: Generate the tiny profile and score it against the manifest
+        run: |
+          uv run python -m teamster.cube_sandbox.generate --scale tiny
+          uv run python -m teamster.cube_sandbox.coverage
+
       # The RLS-matrix and isolation tests live outside tests/cube_sandbox and
       # no other workflow runs them, so about 30 tests never ran in CI.
       - name: Run the cube sandbox tests
