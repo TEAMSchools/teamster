@@ -57,8 +57,11 @@ The `cube` MCP wraps Cube Cloud's REST API. Auth path that works:
 - **Never use the Cube Playground Models tab.** It overwrites YAML in
   `model/cubes/` and `model/views/` with auto-generated content, discarding
   hand-authored definitions.
-- **No manual deploy command.** Production redeploys are triggered by merges to
-  `main` in Cube Cloud; do not propose a deploy step.
+- **No manual deploy command on the production deployment.** Production
+  redeploys are triggered by merges to `main` in Cube Cloud; do not propose a
+  deploy step there. The sandbox deployment is the deliberate exception: it runs
+  in CLI mode and deploys only when someone runs `npx cubejs-cli deploy` from a
+  tagged checkout. See [`docs/reference/cube-sandbox.md`](../../docs/reference/cube-sandbox.md).
 - **`CUBEJS_API_SECRET` is deployment-wide; every OTHER variable is
   per-environment.** Confirmed in the Cube Cloud console (2026-08-06): a branch
   environment shows the SAME generated API secret as production, while
