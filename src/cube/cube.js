@@ -7,6 +7,41 @@ const { CubejsHandlerError } = require("@cubejs-backend/api-gateway");
 
 const groupCache = new Map(); // email → { ctx, expiresAt }
 
+// Which dataset the IDENTITY reads come from. Defaults to prod, so an unset
+// deployment behaves exactly as before. Overriding it points resolveAccess at a
+// developer's own `zz_<user>_marts` copy of dim_staff_cube_access, which is the
+// only way to exercise a change to that mart before it is built to prod — the
+// view's shape (is_employee, additional_location_grants) has to exist for the
+// grant logic to do anything, and a `SELECT *` against an older prod copy
+// silently returns undefined for both rather than erroring.
+//
+// Scope is deliberately narrow: ONLY the two dim_staff_cube_access reads.
+// dim_locations and dim_staff_reporting_chain stay on prod, because a dev copy
+// of the location universe would silently change every viewer's resolved
+// abbreviations and make the run untrustworthy for the opposite reason.
+// Only a personal dev schema is honored, and that shape check IS the safety
+// property. There is no reliable Cube Cloud marker to gate on (see the
+// contextToGroups notes below), and NODE_ENV cannot serve as one either — the
+// documented local RLS sign-off runs NODE_ENV=production on purpose. So the
+// value itself has to be the thing that cannot point anywhere dangerous: a
+// deployment that sets this by accident, or a value naming another prod
+// dataset, falls back to kipptaf_marts instead of silently resolving identity
+// somewhere else. Dev schemas are zz_<user>_<schema> (repo .dbt/profiles.yml).
+function resolveAccessDataset(raw) {
+  const fallback = "kipptaf_marts";
+  if (!raw) return fallback;
+  if (/^zz_[a-z0-9_]+$/.test(raw)) return raw;
+  console.warn(
+    JSON.stringify({
+      event: "cube_access_dataset_ignored",
+      message: `CUBE_ACCESS_DATASET must name a zz_ dev schema; ignoring "${raw}" and reading identity from ${fallback}.`,
+    }),
+  );
+  return fallback;
+}
+
+const ACCESS_DATASET = resolveAccessDataset(process.env.CUBE_ACCESS_DATASET);
+
 // Global (not per-email) cache of the "universes" computeAllowedAbbreviations
 // / computeAllowedDepartmentGroups need: every location abbreviation+region
 // and every distinct department_group. Same midnight-ET expiry as
@@ -55,8 +90,7 @@ async function loadUniverses(bq) {
   // is invisible to every remit-scoped PII policy (fail-closed). Zero such rows
   // today; if that changes, backfill a sentinel group upstream.
   const [deps] = await bq.query({
-    query:
-      "SELECT DISTINCT department_group FROM `kipptaf_marts.dim_staff_cube_access` WHERE department_group IS NOT NULL",
+    query: `SELECT DISTINCT department_group FROM \`${ACCESS_DATASET}.dim_staff_cube_access\` WHERE department_group IS NOT NULL`,
   });
   const data = {
     locations: locs.map((r) => ({
@@ -133,8 +167,7 @@ async function resolveAccess(email) {
     }
     const bq = new BigQuery(bqOptions);
     const [rows] = await bq.query({
-      query:
-        "SELECT * FROM `kipptaf_marts.dim_staff_cube_access` WHERE google_email = @email ORDER BY staff_key LIMIT 1",
+      query: `SELECT * FROM \`${ACCESS_DATASET}.dim_staff_cube_access\` WHERE google_email = @email ORDER BY staff_key LIMIT 1`,
       params: { email },
     });
     const row = rows[0] ?? null;
