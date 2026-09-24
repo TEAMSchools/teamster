@@ -282,6 +282,33 @@ This is the most likely place to produce a dataset that loads cleanly and fails
 at query time, because a broken cycle shows up as a join returning nothing
 rather than as an error.
 
+### Personas are declared, not generated
+
+Every other row in the sandbox comes out of the seeded generator. **Personas do
+not.** `personas.yml` declares each one explicitly — address, display name,
+every `*_scope` value, and the remit or reporting-chain shape it needs — and the
+generator writes those rows into `dim_staff_cube_access` verbatim, along with
+the supporting rows that make `hasRemit` and `hasChain` resolve as declared.
+
+Two reasons they cannot be emergent:
+
+- **`canaries.yml` names them.** A persona referenced by name has to survive a
+  seed change and a generator refactor. Seed-derived personas mean changing the
+  seed silently changes who the canaries test, and the suite stays green while
+  testing something else.
+- **A developer has to be able to be a specific person.** "Connect as this
+  address and you get school-scoped student access" is the instruction the
+  partner handoff gives. That requires a stable, documented identity, not
+  whichever row happened to land on that scope value this run.
+
+The declaration stays honest the same way everything else does: **the coverage
+manifest asserts the declared set covers every enum value the code handles.**
+Adding a scope value to `access.js` turns into an uncovered cell until a persona
+is declared for it, so the hand-written file cannot quietly fall behind the
+code.
+
+Personas are fabricated, so `personas.yml` carries no PII and is committed.
+
 ### Where invented values come from
 
 **Names: coined surnames, realistic given names.** Every fabricated person takes
