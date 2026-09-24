@@ -185,12 +185,24 @@ def main(argv: list[str] | None = None) -> int:
 
     client = bigquery.Client(project=SANDBOX_PROJECT)
     storage_client = storage.Client(project=SANDBOX_PROJECT)
-    for table, columns in snap["tables"].items():
-        uri = upload(storage_client, args.avro_dir / f"{table}.avro", args.bucket)
+
+    # Report per table. A silent run and a hung one are indistinguishable, and
+    # the full profile spends a long time on the two big facts — long enough
+    # that someone will kill a working load believing it stuck.
+    total = len(snap["tables"])
+    for index, (table, columns) in enumerate(sorted(snap["tables"].items()), start=1):
+        path = args.avro_dir / f"{table}.avro"
+        size_mb = path.stat().st_size / 1_048_576
+        print(f"[{index}/{total}] {table} ({size_mb:.1f} MiB) uploading", flush=True)
+        uri = upload(storage_client, path, args.bucket)
+        print(f"[{index}/{total}] {table} creating table from the snapshot", flush=True)
         create_table(client, table, avro.bq_schema(table, columns))
+        print(f"[{index}/{total}] {table} loading", flush=True)
         load_table(client, table, uri)
+
+    print("verifying every column name and type against the snapshot", flush=True)
     assert_complete(snap, loaded_schema(client, SANDBOX_PROJECT, SANDBOX_DATASET))
-    print(f"loaded {len(snap['tables'])} tables and verified against the snapshot")
+    print(f"loaded {total} tables and verified against the snapshot")
     return 0
 
 
