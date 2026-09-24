@@ -195,7 +195,7 @@ account key and nothing else; it never touches `teamster-332318`.
 ```bash
 # 1. Both isolation legs, as the sandbox service account. A failure here
 #    blocks generation: an isolation regression must stop synthetic writes.
-uv run scripts/cube_sandbox_isolation.py
+uv run scripts/cube_sandbox_isolation.py --key-stdin
 
 # 2. Model, snapshot and manifest agree at this commit.
 uv run python -m teamster.cube_sandbox.checks

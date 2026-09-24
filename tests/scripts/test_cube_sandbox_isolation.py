@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib.util
+import io
 import sys
 from pathlib import Path
 
@@ -179,3 +180,39 @@ def test_a_name_that_merely_ends_with_the_policy_string_does_not_match() -> None
     mod = _deny()
     code, _ = mod.verdict(200, ["policies/x/denypolicies/not-deny-sandbox-bigquery"])
     assert code == mod.FAIL
+
+
+def test_stdin_rejects_an_empty_paste() -> None:
+    mod = _isolation()
+    # Silently proceeding on an empty paste would surface later as an
+    # unrelated credentials error, sending the reader after the wrong thing.
+    with pytest.raises(SystemExit, match="nothing arrived on stdin"):
+        mod.credentials_from_stdin(io.StringIO(""))
+
+
+def test_stdin_rejects_malformed_json() -> None:
+    mod = _isolation()
+    with pytest.raises(SystemExit, match="not valid JSON"):
+        mod.credentials_from_stdin(io.StringIO("not json at all"))
+
+
+def test_stdin_builds_credentials_without_touching_disk(monkeypatch) -> None:
+    mod = _isolation()
+    seen = {}
+
+    def fake_from_info(info, scopes):
+        seen["info"] = info
+        seen["scopes"] = scopes
+        return "credentials"
+
+    # Patch at the point of use so no key file is needed and no real key
+    # material is involved.
+    import google.oauth2.service_account as sa
+
+    monkeypatch.setattr(sa.Credentials, "from_service_account_info", fake_from_info)
+
+    result = mod.credentials_from_stdin(io.StringIO('{"client_email": "x@y.invalid"}'))
+
+    assert result == "credentials"
+    assert seen["info"] == {"client_email": "x@y.invalid"}
+    assert "cloud-platform" in seen["scopes"][0]

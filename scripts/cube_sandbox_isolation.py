@@ -41,7 +41,7 @@ that needs a different identity and lives in
 Exit codes: 0 pass, 1 fail, 2 unproven.
 
 Usage:
-    uv run scripts/cube_sandbox_isolation.py --key-file <sandbox-sa-key.json>
+    uv run scripts/cube_sandbox_isolation.py --key-stdin
 
 Design reference:
     docs/superpowers/specs/2026-09-11-cube-sandbox-build-design.md, Piece 1
@@ -50,6 +50,7 @@ Design reference:
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -133,11 +134,45 @@ def decide(positive: Leg, negative: Leg) -> tuple[int, str]:
     return UNPROVEN, f"production failed for an unrecognised reason: {negative.detail}"
 
 
+_SCOPES = ["https://www.googleapis.com/auth/cloud-platform"]
+
+
+def credentials_from_info(info: dict):
+    """Build credentials from an already-parsed key.
+
+    Split out from the file and stdin readers so both paths share one place
+    where the key becomes credentials, and so a test can exercise it without
+    a key on disk.
+    """
+    from google.oauth2 import service_account
+
+    return service_account.Credentials.from_service_account_info(info, scopes=_SCOPES)
+
+
+def credentials_from_stdin(stream=None):
+    """Read the key from stdin. Preferred: it never touches the filesystem.
+
+    A downloaded key is a long-lived credential, and every copy on disk is a
+    place it can leak from or be committed by accident. This path leaves none.
+    """
+    stream = sys.stdin if stream is None else stream
+    if stream.isatty():
+        print("Paste the sandbox service account JSON, then press Ctrl-D:\n")
+    raw = stream.read().strip()
+    if not raw:
+        raise SystemExit("nothing arrived on stdin — re-run and paste the key")
+    try:
+        info = json.loads(raw)
+    except json.JSONDecodeError as err:
+        raise SystemExit(f"that is not valid JSON: {err}") from err
+    return credentials_from_info(info)
+
+
 def _credentials(key_file: Path):
     from google.oauth2 import service_account
 
     return service_account.Credentials.from_service_account_file(
-        str(key_file), scopes=["https://www.googleapis.com/auth/cloud-platform"]
+        str(key_file), scopes=_SCOPES
     )
 
 
@@ -152,7 +187,7 @@ def assert_sandbox_identity(credentials) -> None:
     if email != SERVICE_ACCOUNT:
         raise SystemExit(
             f"refusing to run as {email!r}: this test is only meaningful as "
-            f"{SERVICE_ACCOUNT}. Pass --key-file pointing at that account's own key."
+            f"{SERVICE_ACCOUNT}. Pass that account's own key."
         )
 
 
@@ -176,21 +211,32 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
-    parser.add_argument(
+    source = parser.add_mutually_exclusive_group(required=True)
+    source.add_argument(
+        "--key-stdin",
+        action="store_true",
+        help="read the sandbox service account key from stdin (preferred: "
+        "the key never touches the filesystem)",
+    )
+    source.add_argument(
         "--key-file",
         type=Path,
-        required=True,
-        help="the sandbox service account's own key file",
+        help="read the key from a file instead. Prefer --key-stdin unless a "
+        "scheduled runner mounts the key for you",
     )
     args = parser.parse_args()
 
     from google.cloud import bigquery
 
-    credentials = _credentials(args.key_file)
+    credentials = (
+        credentials_from_stdin() if args.key_stdin else _credentials(args.key_file)
+    )
     assert_sandbox_identity(credentials)
     client = bigquery.Client(project=SANDBOX_PROJECT, credentials=credentials)
 
     # Positive first, always.
+    # trunk-ignore(bandit/B608): SANDBOX_TABLE is a module constant built from
+    # two other module constants. No caller can influence it.
     positive = _read(client, f"SELECT table_name FROM `{SANDBOX_TABLE}` LIMIT 1")
     if not positive.succeeded:
         code, reason = decide(positive, Leg(ran=False, succeeded=False))
@@ -198,6 +244,8 @@ def main() -> int:
         return code
 
     print(f"positive leg: read {SANDBOX_PROJECT} successfully")
+    # trunk-ignore(bandit/B608): PRODUCTION_TABLE is a module constant. This
+    # query is meant to be refused — it is the negative leg.
     negative = _read(client, f"SELECT 1 FROM `{PRODUCTION_TABLE}` LIMIT 1")
     code, reason = decide(positive, negative)
     print(f"{['PASS', 'FAILED', 'UNPROVEN'][code]} - {reason}")
