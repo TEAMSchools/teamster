@@ -37,6 +37,11 @@ still outstanding._
    decided for all three regions" is the expected finding here. If it isn't — if
    some quarters are still drafts — say so and switch to `refresh.md`'s framing
    for what's missing; don't silently load a partial year under this playbook.
+
+   A tab holding **two blocks for the same quarter** is not a draft and not a
+   question. Resolve it against the calendar per
+   `../references/week-matching.md` and say which block you used.
+
 4. **Read `../references/week-matching.md`** and give every row in every tab a
    PowerSchool week number and a filled value, per quarter, per region.
    `PS Full Calendar` carries the whole year, including weeks that have not
@@ -58,3 +63,5 @@ still outstanding._
 - Any of `csv-format.md`'s checks fail and you can't see why.
 - A region's tabs disagree about which quarters are actually ready.
 - The numbers look implausible (see `../SKILL.md`'s escalation list).
+- A quarter has two blocks and **both** match the calendar, or **neither** does.
+  One matching and one not is decidable without asking.

@@ -24,6 +24,12 @@ date-blind, week-number-based table. The gradebook audit dashboard compares what
 teachers actually entered against these counts, so a wrong count makes the
 dashboard wrong — quietly, with no error anywhere.
 
+**PowerSchool restarts week numbers at 1 every quarter.** Academics number their
+weeks straight through the year, so their week 14 is somebody's week 4. Doing
+that translation, from dates against PowerSchool's own calendar, is the
+substance of the job — never pass a sheet's week number through. See
+`references/week-matching.md`.
+
 ## Which of these three is this?
 
 | The person is asking...                                                                      | Playbook                                                 |
@@ -37,6 +43,14 @@ phrasing already tells you (see the trigger phrases above). Don't ask which
 quarters, which regions, or how far to go beyond what's needed to pick the right
 playbook; each playbook tells you how to determine the rest from the sheets
 themselves.
+
+**The general rule: never ask a question the data answers.** Which quarters are
+decided, which of two blocks on a tab is the real one, which week a date belongs
+to, whether counts are cumulative — every one of those is determinable from the
+sheets and the calendar, and each playbook says how. Ask T&L only about things
+only T&L know. A question you could have answered yourself costs you their
+confidence on the first run, and they have no way to tell it apart from a
+question that genuinely needed them.
 
 Every playbook leans on the same shared knowledge, in `references/`:
 

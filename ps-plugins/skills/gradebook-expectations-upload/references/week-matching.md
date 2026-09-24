@@ -35,6 +35,14 @@ Counts are **cumulative within a quarter** — Camden Q1 runs `0,0,0,0` at week 
 up to `15,9,9,2` at week 11 — which is why an earlier week reads as a smaller
 expectation rather than as missing data.
 
+**Never ask whether a block's counts are cumulative or reset weekly.** They are
+cumulative; that is how the audit reads them, so a per-week reading is not one
+of the options. A rising column is the expected shape, not a question — a column
+that rises faster in full weeks than in 2-day weeks is a quarter prorated for
+short weeks, still cumulative. What does warrant stopping is a count that
+**falls** as the quarter runs, which means the block is not cumulative and
+something is wrong with it.
+
 Because the active-quarter read is the _previous_ week, intermediate weeks are
 not just an audit trail behind the final one. Each becomes the operative row in
 its turn.
@@ -42,6 +50,28 @@ its turn.
 ## Give every row a week number and a value
 
 This is the whole transformation. Do it per tab, per quarter, in date order.
+
+### PowerSchool restarts week numbers at 1 every quarter
+
+This is the fact that makes everything below decidable instead of a judgment
+call. **Every quarter starts at week 1**, in every region and at every school
+level. There is no continuous numbering across the year.
+
+| Quarter | PowerSchool weeks     |
+| ------- | --------------------- |
+| Q1      | 1–10 (1–11 in Camden) |
+| Q2      | 1–12                  |
+| Q3      | 1–9                   |
+| Q4      | 1–9                   |
+
+So a sheet whose weeks run 11, 12, 13 … 23 is **not** giving you PowerSchool
+week numbers — it is giving you T&L's own labels, which count from the start of
+the school year. Treat any number above that quarter's range as proof you are
+looking at a label, and match on dates.
+
+Do not read the table above as the answer, either. It is here so the mismatch is
+obvious at a glance; `PS Full Calendar` is still what you match against, and it
+is what changes if a calendar changes.
 
 ### Week numbers come from `PS Full Calendar`, never from the sheet
 
@@ -79,6 +109,34 @@ against the calendar the same way.
 Camden's Q1 week 1 is 8/17–8/21; Academics' Camden tab starts at 8/24. That week
 still needs a row, and Academics' first row is week **2**, not week 1. If you
 number by row order you shift every Camden week by one and every count with it.
+
+### When a tab holds two blocks for the same quarter
+
+A tab can carry more than one set of counts for one quarter — typically a plain
+Monday-to-Friday grid near the top, and a second block lower down with the real
+short weeks worked in. **Resolve this yourself. Do not ask which one is
+correct.**
+
+Match each block's dates against `PS Full Calendar` for that region and school
+level. The correct block is the one whose dates bracket the calendar's weeks:
+
+- Its row count matches the quarter's week count, once rows marked as breaks
+  with no school are set aside.
+- Every row lands inside exactly one calendar week.
+- It has no row for a period the calendar has no week for.
+
+A generic grid fails all three in the same way — every week sits a day or two
+off, and it usually carries a row for a break week that PowerSchool does not
+have at all. That is not a close call and it does not need a human.
+
+Say which block you used and why, in one line: _"Using the second Q2 block — its
+dates match PowerSchool's weeks 1–12; the first block is a plain Mon–Fri grid
+that is a day off every week and has a row for 12/28–1/1, which is not a
+PowerSchool week."_
+
+Escalate only if **both** blocks match the calendar, or **neither** does. Those
+are genuine questions for T&L. Which of a matching block and a non-matching
+block to use is not.
 
 ### Filling values
 

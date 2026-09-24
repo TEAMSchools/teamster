@@ -16,6 +16,11 @@ ready (this year's Q1-only situation is an example, not the norm — see
    Q2-4 are still drafts") and proceed with what's decided. Only ask a question
    here if the sheet is genuinely ambiguous or contradicts what the person asked
    for — e.g. they said "load Q2" but only Q1 is decided.
+
+   A tab holding **two blocks for the same quarter** is not ambiguity. Resolve
+   it against the calendar per `../references/week-matching.md` and say which
+   block you used.
+
 3. **Read `../references/week-matching.md`** and give every row in every decided
    quarter a PowerSchool week number and a filled value.
 4. **Read `../references/csv-format.md`** and build one CSV per instance,
@@ -50,3 +55,5 @@ ready (this year's Q1-only situation is an example, not the norm — see
 - An Academics row's dates match no PowerSchool week, or match more than one.
 - The numbers look implausible — counts falling as the quarter progresses, or a
   week far out of line with its neighbours.
+- A quarter has two blocks and **both** match the calendar, or **neither** does.
+  One matching and one not is decidable without asking.
