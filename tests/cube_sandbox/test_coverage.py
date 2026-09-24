@@ -83,26 +83,117 @@ def test_a_scope_cell_counts_matching_rows() -> None:
     assert result[0]["observed"] == 1
 
 
+UNPROVEN = {
+    "cells": [
+        {
+            "kind": "derived",
+            "table": None,
+            "column": "hasRemit",
+            "detail": "true",
+            "status": "uncovered",
+        },
+        {
+            "kind": "identity",
+            "table": None,
+            "column": None,
+            "detail": "one email with no dim_staff_cube_access row",
+            "status": "uncovered",
+        },
+        {
+            "kind": "divergence",
+            "table": None,
+            "column": None,
+            "detail": "school_week_vs_iso",
+            "status": "uncovered",
+        },
+    ]
+}
+
+
 def test_a_cell_with_no_table_is_reported_unproven_not_silently_zero() -> None:
     # derived / identity / divergence cells name no table, so row counting
     # cannot evaluate them. They must not be scored as covered, and the
     # report has to say they were never assessed rather than implying the
     # generator failed to produce them.
-    manifest = {
-        "cells": [
-            {
-                "kind": "derived",
-                "table": None,
-                "column": "hasRemit",
-                "detail": "true",
-                "status": "uncovered",
-            }
-        ]
-    }
-    result = coverage.assess(manifest, {})
-    assert result[0]["observed"] == 0
-    assert result[0]["status"] == "unproven"
+    result = coverage.assess(UNPROVEN, {})
+    assert [c["status"] for c in result] == ["unproven"] * 3
+    assert all(c["observed"] == 0 for c in result)
+
+
+def test_a_manifest_of_only_unproven_cells_exits_zero() -> None:
+    # The real manifest carries eight of these permanently. Failing on them
+    # made the gate unreachable: a perfect dataset still exited 1, so the
+    # exit code carried no information. They are asserted by the canary and
+    # divergence suites, each with its own non-zero exit.
+    result = coverage.assess(UNPROVEN, {})
+    assert coverage.exit_code(result) == 0
+    assert coverage.uncovered(result) == []
+    assert len(coverage.unproven(result)) == 3
+
+
+def test_one_uncovered_cell_still_exits_one_among_unproven_ones() -> None:
+    # The relaxation above must not become a general amnesty: a countable
+    # cell the generated rows do not satisfy still fails the run.
+    manifest = {"cells": [*UNPROVEN["cells"], *MANIFEST["cells"]]}
+    result = coverage.assess(manifest, {"dim_x": [{"a": "v"}]})
     assert coverage.exit_code(result) == 1
+    assert coverage.uncovered(result) == [("null", "dim_x", "a", "")]
+
+
+def test_the_report_names_the_unproven_cells_a_green_run_did_not_prove() -> None:
+    # "0 uncovered" on its own reads as "everything proved". The operator has
+    # to see that three requirements were never assessed here, and by what.
+    text = coverage.describe(coverage.assess(UNPROVEN, {}))
+    assert "3 unproven" in text
+    assert "canary and divergence" in text
+
+
+VARIETY = {
+    "cells": [
+        {
+            "kind": "scope_variety",
+            "table": "dim_staff_cube_access",
+            "column": "staff_benefits_scope",
+            "detail": "at least two distinct non-none values",
+            "status": "uncovered",
+        }
+    ]
+}
+
+
+def test_one_non_none_scope_value_does_not_satisfy_the_variety_cell() -> None:
+    # access.js branches on `!== "none"`, so a single non-none value lets a
+    # kit author write an equality check that passes every test — freezing
+    # the exact mistake the sandbox exists to expose.
+    result = coverage.assess(
+        VARIETY,
+        {
+            "dim_staff_cube_access": [
+                {"staff_benefits_scope": "all_in_scope"},
+                {"staff_benefits_scope": "all_in_scope"},
+                {"staff_benefits_scope": "none"},
+                {"staff_benefits_scope": None},
+            ]
+        },
+    )
+    assert result[0]["observed"] == 1
+    assert result[0]["status"] == "uncovered"
+    assert coverage.exit_code(result) == 1
+
+
+def test_two_distinct_non_none_scope_values_satisfy_the_variety_cell() -> None:
+    result = coverage.assess(
+        VARIETY,
+        {
+            "dim_staff_cube_access": [
+                {"staff_benefits_scope": "all_in_scope"},
+                {"staff_benefits_scope": "reporting_chain"},
+                {"staff_benefits_scope": "none"},
+            ]
+        },
+    )
+    assert result[0]["observed"] == 2
+    assert coverage.exit_code(result) == 0
 
 
 def test_covered_cells_are_marked_covered() -> None:

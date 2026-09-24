@@ -228,3 +228,64 @@ def test_scope_values_come_from_access_js() -> None:
     # would reject every valid student-location persona declaration. All three
     # values access.js's buildGroups branches on for this scope must be present.
     assert values["student_location_scope"] == {"region", "school", "network"}
+
+
+def _snap_tables() -> dict:
+    return json.loads((CUBE_ROOT / "sandbox" / "schema_snapshot.json").read_text())[
+        "tables"
+    ]
+
+
+def test_cube_js_columns_cover_the_table_no_cube_yaml_mentions() -> None:
+    # dim_staff_reporting_chain appears in no cube YAML, so the cube-YAML-only
+    # derivation gave it ZERO cells — an empty table passed coverage in full,
+    # and reporting-chain identity resolution silently resolved to nobody.
+    columns = model.cube_js_columns(CUBE_ROOT, _snap_tables())
+    assert columns["dim_staff_reporting_chain"] == {
+        "reportee_staff_key",
+        "manager_staff_key",
+    }
+
+
+def test_cube_js_columns_cover_the_key_resolve_access_matches() -> None:
+    # google_email is the exact key resolveAccess matches on. It is named in
+    # no cube YAML, so it had no cell: the sandbox could ship without a single
+    # resolvable identity and coverage would still be green.
+    columns = model.cube_js_columns(CUBE_ROOT, _snap_tables())["dim_staff_cube_access"]
+    assert "google_email" in columns
+    # SELECT * reads the whole row, and resolveAccess hands all of it to
+    # buildSecurityContext, so every scope column is read on that path.
+    assert {
+        c for c in _snap_tables()["dim_staff_cube_access"] if c.endswith("_scope")
+    } <= columns
+    assert {"entity", "region_key", "location_abbreviation", "staff_key"} <= columns
+
+
+def test_cube_js_columns_carries_no_star_sentinel() -> None:
+    # A `*` reaching the manifest would become a cell for a column named `*`,
+    # which no generated row can ever satisfy.
+    for columns in model.cube_js_columns(CUBE_ROOT, _snap_tables()).values():
+        assert "*" not in columns
+
+
+def test_the_referenced_union_adds_the_cube_js_columns() -> None:
+    yaml_only = model.referenced_columns(CUBE_ROOT)
+    union = model.all_referenced_columns(CUBE_ROOT, _snap_tables())
+    assert "dim_staff_reporting_chain" not in yaml_only
+    assert union["dim_staff_reporting_chain"]
+    # The union never loses a cube-YAML column.
+    for table, columns in yaml_only.items():
+        assert columns <= union[table]
+
+
+def test_no_cube_js_column_is_absent_from_the_snapshot() -> None:
+    # Over-collection here would fail the CI consistency check on a column
+    # that does not exist — a false alarm, not a caught defect.
+    tables = _snap_tables()
+    missing = sorted(
+        f"{table}.{column}"
+        for table, columns in model.cube_js_columns(CUBE_ROOT, tables).items()
+        for column in columns
+        if column not in tables.get(table, {})
+    )
+    assert missing == []

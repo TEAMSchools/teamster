@@ -44,10 +44,11 @@ def stale_manifest(cube_root: Path = CUBE_ROOT) -> str | None:
     asserted against this contract, so a stale one makes every later pass
     meaningless.
     """
+    snap = snapshot.load()
     fresh = manifest._dump(
         manifest.build(
-            snap=snapshot.load(),
-            referenced=model.referenced_columns(cube_root),
+            snap=snap,
+            referenced=model.all_referenced_columns(cube_root, snap["tables"]),
             key_columns=model.key_columns(cube_root),
             policy_columns=model.policy_columns(cube_root),
             not_null=manifest.dbt_not_null(manifest.MARTS_ROOT),
@@ -74,7 +75,9 @@ def run(cube_root: Path = CUBE_ROOT) -> list[str]:
     ]
     problems += [
         f"column absent from snapshot: {c}"
-        for c in missing_columns(model.referenced_columns(cube_root), snap)
+        for c in missing_columns(
+            model.all_referenced_columns(cube_root, snap["tables"]), snap
+        )
     ]
     if stale := stale_manifest(cube_root):
         problems.append(stale)

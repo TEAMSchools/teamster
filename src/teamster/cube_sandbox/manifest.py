@@ -113,8 +113,8 @@ def build(
     # (staff_compensation_scope, staff_observations_scope,
     # staff_benefits_scope) map to the sentinel "__non_none__" because
     # access.js branches on `!== "none"` rather than a value list for them —
-    # any non-none value is valid, and no single value stands in for the
-    # domain, so no scope cell is emitted for them below.
+    # any non-none value is valid, so they get a `scope_variety` cell below
+    # (two distinct non-none values) rather than one cell per value.
     declared = {
         (name, value)
         for p in people
@@ -125,6 +125,21 @@ def build(
     for name, values in sorted(scopes.items()):
         for value in sorted(values):
             if value == "__non_none__":
+                # No single value stands in for the domain, so no per-value
+                # cell. What the spec DOES require here is two distinct
+                # non-none values, so a kit author's equality check against
+                # one of them fails. Emit that instead of nothing: skipping
+                # the sentinel outright left the rule unasserted, and
+                # personas.yml satisfying it today is luck, not a contract.
+                cells.append(
+                    {
+                        "kind": "scope_variety",
+                        "table": "dim_staff_cube_access",
+                        "column": name,
+                        "detail": "at least two distinct non-none values",
+                        "status": "uncovered",
+                    }
+                )
                 continue
             cells.append(
                 {
@@ -231,9 +246,10 @@ def _dump(data: dict[str, Any]) -> str:
 
 
 def main() -> int:
+    snap = snapshot.load()
     result = build(
-        snap=snapshot.load(),
-        referenced=model.referenced_columns(CUBE_ROOT),
+        snap=snap,
+        referenced=model.all_referenced_columns(CUBE_ROOT, snap["tables"]),
         key_columns=model.key_columns(CUBE_ROOT),
         policy_columns=model.policy_columns(CUBE_ROOT),
         not_null=dbt_not_null(MARTS_ROOT),

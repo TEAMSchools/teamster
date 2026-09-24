@@ -238,3 +238,79 @@ models:
     # A column carrying ONLY not_null_proportion must never be treated as a
     # not-null guarantee — the manifest still needs a null cell for it.
     assert ("dim_x", "proportion_only_column") not in result
+
+
+SENTINEL_SCOPES = (
+    "staff_benefits_scope",
+    "staff_compensation_scope",
+    "staff_observations_scope",
+)
+
+
+def _variety_columns(cells) -> set[str]:
+    return {c["column"] for c in cells if c["kind"] == "scope_variety"}
+
+
+def test_a_sentinel_scope_requires_two_distinct_non_none_values() -> None:
+    # access.js branches on `!== "none"` for the sensitive tiers, so the
+    # manifest emitted NO cell for them at all and the spec's two-value rule
+    # was unasserted. personas.yml happens to satisfy it; nothing would catch
+    # an edit that stops.
+    cells = manifest.build(
+        snap={"tables": {}},
+        referenced={},
+        key_columns=set(),
+        policy_columns=set(),
+        not_null=set(),
+        scopes={name: {"__non_none__"} for name in SENTINEL_SCOPES},
+        people=[],
+        join_paths=[],
+    )["cells"]
+    assert _variety_columns(cells) == set(SENTINEL_SCOPES)
+    # No per-value cell: no single value stands in for the domain.
+    assert not [
+        c for c in cells if c["kind"] == "scope" and c["detail"] == "__non_none__"
+    ]
+
+
+def test_an_enumerated_scope_gets_per_value_cells_not_a_variety_cell() -> None:
+    cells = manifest.build(
+        snap={"tables": {}},
+        referenced={},
+        key_columns=set(),
+        policy_columns=set(),
+        not_null=set(),
+        scopes={"staff_pii_scope": {"all_in_scope", "teaching_staff"}},
+        people=[],
+        join_paths=[],
+    )["cells"]
+    assert _variety_columns(cells) == set()
+    assert {c["detail"] for c in cells if c["kind"] == "scope"} == {
+        "all_in_scope",
+        "teaching_staff",
+    }
+
+
+def test_the_declared_personas_satisfy_every_variety_cell() -> None:
+    # The personas are written into dim_staff_cube_access verbatim, so they
+    # ARE the rows this cell is scored against. Asserting it here is what
+    # turns "personas.yml happens to satisfy the rule" into a contract.
+    from teamster.cube_sandbox import coverage, personas
+
+    people = personas.load(manifest.PERSONAS_PATH)
+    built = manifest.build(
+        snap={"tables": {}},
+        referenced={},
+        key_columns=set(),
+        policy_columns=set(),
+        not_null=set(),
+        scopes=model.scope_values(manifest.CUBE_ROOT / "access.js"),
+        people=people,
+        join_paths=[],
+    )
+    variety = {"cells": [c for c in built["cells"] if c["kind"] == "scope_variety"]}
+    assert _variety_columns(variety["cells"]) == set(SENTINEL_SCOPES)
+    rows = [dict(person.scopes) for person in people]
+    result = coverage.assess(variety, {"dim_staff_cube_access": rows})
+    assert coverage.uncovered(result) == []
+    assert all(c["observed"] >= 2 for c in result)

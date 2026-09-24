@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
-from typing import NamedTuple
+from typing import Any, NamedTuple
 
 import yaml
 
@@ -92,6 +92,85 @@ def referenced_columns(cube_root: Path) -> dict[str, set[str]]:
             for member in (*cube.get("dimensions", []), *cube.get("measures", [])):
                 names |= member_columns(str(member.get("sql", "")))
             out.setdefault(table, set()).update(names)
+    return out
+
+
+# A double-quoted JS string literal, escapes honored. `cube.js` writes every
+# identity query as one such literal on one line, so nothing here has to
+# understand JS concatenation.
+_JS_STRING = re.compile(r'"((?:[^"\\\n]|\\.)*)"')
+# The literal's shape: SELECT <list> FROM `kipptaf_marts.<table>` <tail>.
+_JS_QUERY = re.compile(
+    r"SELECT\s+(?:DISTINCT\s+)?(?P<select>.+?)\s+FROM\s+"
+    r"`kipptaf_marts\.(?P<table>\w+)`(?P<tail>.*)",
+    re.IGNORECASE | re.DOTALL,
+)
+_BIND_PARAM = re.compile(r"@\w+")
+# Lowercase-only, like member_columns: the queries write every SQL keyword
+# (SELECT, FROM, WHERE, IS, NOT, NULL, ORDER BY, LIMIT) in upper case, so a
+# lowercase identifier in the tail is a column and nothing else.
+_LOWER_IDENTIFIER = re.compile(r"`?\b([a-z_][a-z0-9_]*)\b`?")
+
+
+def cube_js_columns(
+    cube_root: Path, snap_tables: dict[str, Any]
+) -> dict[str, set[str]]:
+    """Columns `cube.js` reads directly, as table -> columns.
+
+    `referenced_columns` sees only cube-YAML dimensions and measures, so
+    everything the identity path reads was invisible to the coverage
+    contract. Two consequences, both real:
+    `dim_staff_reporting_chain` appears in no cube YAML at all and so got
+    ZERO cells — an empty table passed coverage in full — and
+    `dim_staff_cube_access` got cells for four of its fifteen columns,
+    leaving `google_email`, the exact key `resolveAccess` matches, uncovered.
+
+    `SELECT *` expands to every column the snapshot carries for that table,
+    because that is what the query reads: `resolveAccess` hands the whole row
+    to `access.buildSecurityContext`, so any column left empty in the sandbox
+    is an empty niche on the identity path itself.
+
+    `snap_tables` is the snapshot's `tables` mapping. Passing it rather than
+    returning a `"*"` sentinel keeps the sentinel out of the manifest, where
+    it would become a cell for a column named `*`.
+    """
+    text = (cube_root / "cube.js").read_text()
+    out: dict[str, set[str]] = {}
+    for literal in _JS_STRING.findall(text):
+        match = _JS_QUERY.search(literal)
+        if not match:
+            continue
+        table = match.group("table")
+        columns: set[str] = set()
+        for item in match.group("select").split(","):
+            item = item.strip().strip("`")
+            if item == "*":
+                columns |= set(snap_tables.get(table, {}))
+            elif re.fullmatch(r"[a-z_][a-z0-9_]*", item):
+                columns.add(item)
+        # WHERE / ORDER BY / LIMIT: the filtered and ordered columns are read
+        # too, and a null one makes the identity resolve to nobody.
+        tail = _BIND_PARAM.sub(" ", match.group("tail"))
+        columns |= set(_LOWER_IDENTIFIER.findall(tail))
+        out.setdefault(table, set()).update(columns)
+    return out
+
+
+def all_referenced_columns(
+    cube_root: Path, snap_tables: dict[str, Any]
+) -> dict[str, set[str]]:
+    """Every column the model reads, from the cube YAML AND from `cube.js`.
+
+    The union, for the same reason `table_set` is a union: either source
+    alone leaves a hole, and the hole in the cube-YAML-only read was the
+    whole identity path. Every consumer of the coverage contract reads this,
+    not `referenced_columns`.
+    """
+    out = {
+        table: set(columns) for table, columns in referenced_columns(cube_root).items()
+    }
+    for table, columns in cube_js_columns(cube_root, snap_tables).items():
+        out.setdefault(table, set()).update(columns)
     return out
 
 

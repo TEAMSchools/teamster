@@ -666,6 +666,16 @@ cells:
     status: uncovered
   - kind: non_null
     table: dim_staff_cube_access
+    column: entity
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_staff_cube_access
+    column: google_email
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_staff_cube_access
     column: job_function_code
     detail: at least one non-null row
     status: uncovered
@@ -676,7 +686,72 @@ cells:
     status: uncovered
   - kind: non_null
     table: dim_staff_cube_access
+    column: location_abbreviation
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_staff_cube_access
+    column: location_abbreviation
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_staff_cube_access
+    column: region_key
+    detail: at least one non-null row
+    status: uncovered
+  - kind: "null"
+    table: dim_staff_cube_access
+    column: region_key
+    detail: at least one null row
+    status: uncovered
+  - kind: non_null
+    table: dim_staff_cube_access
+    column: staff_benefits_scope
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_staff_cube_access
+    column: staff_compensation_scope
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_staff_cube_access
+    column: staff_department_scope
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_staff_cube_access
     column: staff_key
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_staff_cube_access
+    column: staff_location_scope
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_staff_cube_access
+    column: staff_observations_scope
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_staff_cube_access
+    column: staff_pii_scope
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_staff_cube_access
+    column: student_location_scope
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_staff_reporting_chain
+    column: manager_staff_key
+    detail: at least one non-null row
+    status: uncovered
+  - kind: non_null
+    table: dim_staff_reporting_chain
+    column: reportee_staff_key
     detail: at least one non-null row
     status: uncovered
   - kind: non_null
@@ -1738,6 +1813,21 @@ cells:
     table: fct_student_attendance_enrollment_periods
     column: student_period_key
     detail: at least one non-null row
+    status: uncovered
+  - kind: scope_variety
+    table: dim_staff_cube_access
+    column: staff_benefits_scope
+    detail: at least two distinct non-none values
+    status: uncovered
+  - kind: scope_variety
+    table: dim_staff_cube_access
+    column: staff_compensation_scope
+    detail: at least two distinct non-none values
+    status: uncovered
+  - kind: scope_variety
+    table: dim_staff_cube_access
+    column: staff_observations_scope
+    detail: at least two distinct non-none values
     status: uncovered
   - kind: scope
     table: dim_staff_cube_access
