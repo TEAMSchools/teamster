@@ -54,7 +54,7 @@ specifics live there.
 - With an issue: `gh issue develop <number> --name <branch>` (add `--checkout`
   for a branch switch), then
   `git worktree add /workspaces/teamster/.worktrees/<branch> <branch>`. The path
-  must be absolute.
+  must be absolute; a relative one nests one worktree inside another.
 - Without an issue (user declined):
   `git worktree add -b <branch> <abs-path> origin/main` or
   `git checkout -b <branch>`. Name `origin/main`; local `main` is often behind.

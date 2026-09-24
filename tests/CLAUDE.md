@@ -19,14 +19,9 @@
   (`kipptaf/<folder>/<model>`) and `materialize()` raises on a missing one. Not
   run in CI, so it rots unnoticed. Grep it before removing a model, and check
   the neighbouring keys are still enabled while you're there.
-- **`EnvVar` in integration tests**: Use `EnvVar("X")` for `str` fields and
-  `EnvVar.int("X")` for `int` fields (e.g. ports) inside `build_resources()` —
-  both resolve lazily at resource init and never read the environment at
-  construction. Prefer these over `int(EnvVar("X").get_value())`: `.get_value()`
-  reads eagerly, which is harmless when a test always sets the var but crashes
-  module-load construction in production `resources.py` when it is unset (e.g. a
-  codespace) — so never copy that idiom there. Plain `int(EnvVar("X"))` casts
-  the marker object, not the value.
+- **`EnvVar` in integration tests**: `EnvVar("X")` / `EnvVar.int("X")` inside
+  `build_resources()`, per `src/teamster/CLAUDE.md` _Int env-var config_. Plain
+  `int(EnvVar("X"))` casts the marker object, not the value.
 - **Worktree tests**: VS Code doesn't discover tests in worktrees. Run from the
   CLI: `cd <abs-worktree> && uv run pytest ...` (conftest reads the token file
   itself). Invocation details: `.claude/rules/worktrees.md`.
@@ -49,11 +44,6 @@
   `Cls.method.retry_with(wait=wait_none())(instance)` — it returns a copy, so no
   class mutation to undo, and `stop=stop_after_attempt(1)` collapses it per
   test.
-- **SSH `test`**: vestigial config. It formerly switched the sshpass tunnel's
-  password source (secret file vs. the `password` field); that tunnel was
-  removed in #4442, so no method on `SSHResource` reads it now.
-  `tests/resources/test_resource_ssh_rekey.py` still sets `test=True` —
-  harmless, pending a later cleanup once fixtures drop it.
 - **SSH-tunnel / powerschool-odbc suites take ~2-3 min** (loopback ssh-rsa
   servers in `test_ssh_paramiko_tunnel.py` / `test_resource_ssh_rekey.py`) —
   they exceed the 120s Bash timeout; run them with `run_in_background`. Do NOT
@@ -68,14 +58,8 @@
 - **Cross-file conftest imports fail** (`tests/` has no `__init__.py`). For
   fixture-injected param types, skip the annotation or use `TYPE_CHECKING` with
   a string forward-ref.
-- **Secrets ARE available to Claude inside pytest**: the autouse `conftest.py`
-  fixture bootstraps 1Password per run, so credentialed work (live API pulls,
-  asset `materialize()`, BigQuery) is runnable via `uv run pytest`. Wrap a
-  credentialed one-off as a throwaway `tests/**/test_zz_*.py` and delete it
-  after — a plain `uv run python script.py` is NOT bootstrapped. ADC
-  (BigQuery/GCS) auth is independent of 1Password and always works (dbt CLI, BQ
-  client). `dagster definitions validate` likewise relies on the conftest
-  bootstrap.
+- **ADC (BigQuery/GCS) auth is independent of 1Password** and always works (dbt
+  CLI, BQ client), inside or outside pytest.
 - **Mixed live + mocked test files**:
   `tests/resources/test_resource_google_directory.py` interleaves mocked unit
   tests with **live-API** integration tests (bare names —

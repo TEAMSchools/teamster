@@ -25,9 +25,11 @@ Rules that follow:
 (`codespaces@teamster-332318.iam.gserviceaccount.com`) is a different principal
 and is often not shared on KIPP Forward planning docs — a Sheets API call for
 those returns 403 while the Drive MCP read succeeds. The Sheets API is the only
-way to get tab names and cell addresses, so when a doc will not be shared with
-the service account, tab-level precision is simply unavailable; plan around it
-rather than retrying.
+way to get tab names, cell addresses, or one specific tab
+(`download_file_content` as CSV returns only the first tab): run it under ADC
+via `uv run --with google-api-python-client` with `range="'Tab Name'!A1:Z"`.
+When a doc will not be shared with the service account, tab-level precision is
+simply unavailable; plan around it rather than retrying.
 
 Distinct identity again for dbt: a BigQuery Sheets **external table** reads
 under the BigLake connection, not under either of the above. A sheet readable
@@ -36,8 +38,3 @@ via the Drive MCP is not necessarily readable by a dbt source.
 `get_file_metadata` is worth calling before quoting anything from a shared doc —
 it returns `title`, `owner`, and `modifiedTime`, which are the provenance facts
 the content itself does not carry.
-
-- **Drive MCP `download_file_content` as CSV returns only the first sheet tab**
-  — to read a specific tab of a multi-tab Google Sheet, use the Sheets API via
-  `uv run --with google-api-python-client` with `range="'Tab Name'!A1:Z"` (ADC
-  has the scope), not the Drive MCP read.

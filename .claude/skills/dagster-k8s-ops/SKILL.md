@@ -67,13 +67,10 @@ description:
   as regression. Count `Scheduled` events on `dagster-run-` / `dagster-step-`
   pods for the same window and discard readings below ~25 per 15 min. Two zero
   readings during the #4921 investigation were load artifacts, not fixes.
-- **Run/step pods and code servers both run at priority 0** (no PriorityClass).
-  Run pods carried `dagster-run` (1000) until 2026-09-08. A run pod preempted
-  the kippcamden code server while the agent re-uploaded its metadata; the
-  single gRPC UNAVAILABLE wrote `ERROR` to the control plane and the location
-  stayed down for four days (#5187). Equal priority means a run pod that fits
-  nowhere waits for NAP instead of preempting. A `Preempted` event on a code
-  server now points at a GKE system-critical pod, not a run pod.
+- **Run/step pods and code servers both run at priority 0** (why:
+  `.k8s/CLAUDE.md`). A run pod that fits nowhere waits for NAP instead of
+  preempting, so a `Preempted` event on a code server points at a GKE
+  system-critical pod, not a run pod.
 - **PriorityClass `dagster-agent`** (value 1000) on agent pods — above run/step
   and code server pods, so nothing in the namespace preempts the agent. The
   agent pins to amd64 and the others to arm64, so it never preempts them either.

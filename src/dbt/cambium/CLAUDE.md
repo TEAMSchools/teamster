@@ -3,7 +3,6 @@
 Source-system staging project for **Cambium TIDE** New Jersey state assessments.
 New Jersey moved NJGPA, NJSLA and NJSLA Science score reporting from Pearson
 Access Next to Cambium TIDE with the Spring 2026 administration. Staging-only.
-Consumers: `grep -l 'local: ../cambium' src/dbt/*/packages.yml`.
 
 Paterson imports the package for NJSLA only and disables `stg_cambium__njgpa`,
 `stg_cambium__eoc` and their sources — Paterson does not sit for NJGPA and has

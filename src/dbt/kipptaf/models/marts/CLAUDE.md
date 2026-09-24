@@ -10,9 +10,8 @@ Intra-mart refs are permitted (e.g. `bridge_survey_expectations → dim_surveys`
 dimensions via a many-to-many relationship and carry no measures. They live in
 `marts/bridges/`. Naming follows `bridge_<entity>_<entity>` or
 `bridge_<concept>` when the linked entities are obvious from context. Like dims
-and facts, bridges inherit `contract: enforced: true` and `materialized: view`,
-and require an explicit uniqueness test on their PK. Bridges follow the same
-strict-chain rule as facts — no diamond paths to a shared ancestor dim.
+and facts, bridges need a uniqueness test on their PK and follow the
+strict-chain rule — no diamond paths to a shared ancestor dim.
 
 ## Column-naming rubric
 
@@ -133,10 +132,7 @@ avoid a join, the chain is probably already there — use it instead.
 - **Date FK** (`_date_key`): raw DATE value matching `dim_dates.date_key`,
   **not** a hash. Never also expose the same date as a degenerate `_date` column
   next to its `_date_key` (R9).
-- **Nullable FK**: wrap with the
-  `if(col is not null, generate_surrogate_key, cast(null as string))` pattern
-  (see `.claude/rules/dbt-sql.md` → "Nullable surrogate keys") — otherwise
-  relationships tests fail against the placeholder hash.
+- **Nullable FK**: see `.claude/rules/dbt-sql.md` → "Nullable surrogate keys".
 
 ## Hash-input joins: INNER over LEFT when scope guarantees membership
 
@@ -193,15 +189,9 @@ the upstream CTE that aliases the source. Compile fails with
 
 ## `_dbt_source_project` joins and hashes
 
-When a marts fix touches joins or surrogate-key composition involving
-`_dbt_source_project` (or `_dbt_source_relation`), promote the
-`extract_source_project()` call up to the union model itself rather than
-applying it at each consumer
-([#3142](https://github.com/TEAMSchools/teamster/issues/3142)). Downstream
-consumers should join and hash on the materialized `_dbt_source_project` column,
-not re-derive it from `_dbt_source_relation` per-call. This counts as an
-additive upstream edit under "Spec authoring context" and does not require a
-separate refactor PR.
+Promoting `extract_source_project()` to the union model (`kipptaf/CLAUDE.md` →
+`_dbt_source_project` is pass-through) counts as an additive upstream edit under
+"Spec authoring context" and needs no separate refactor PR.
 
 ## Removing a mart-level `qualify row_number() = 1`
 
@@ -245,24 +235,14 @@ Source-system internal field names (`cc_dateleft`, `WorkAssignment.jobTitle`,
 `powerschool_student_number`, etc.) belong in `config.meta.source_column`, not
 in the user-visible `description:`.
 
-## Stale metadata from copy-paste
+## Table-materialized marts
 
-A copy-pasted column block usually keeps the old `description:` and
-`config.meta.source_*` pointing at the wrong source table. Update both after
-every paste.
-
-## Contract + uniqueness inherited
-
-Marts inherit `contract: enforced: true` and `materialized: view` from
-`dbt_project.yml`. Don't restate them per model. Every model still needs an
-explicit uniqueness test on its PK (`unique` on a single column, or
-`dbt_utils.unique_combination_of_columns` for composite).
-
-Exception: `dim_assessments`, `dim_courses`, `dim_dates`, `dim_regions`,
-`dim_staff`, `dim_students`, the six assessment-star marts, and the four
-assessment intermediates are `materialized: table`. All seven assessment marts
-share `int_assessments__response_rollup`'s `0 0,10,13,15,17 * * *` tick — Cube
-is their only consumer and its `proficiency_rollup` pre-aggregation refreshes
+Marts default to `materialized: view`. Exception: `dim_assessments`,
+`dim_courses`, `dim_dates`, `dim_regions`, `dim_staff`, `dim_students`, the six
+assessment-star marts, and the four assessment intermediates are
+`materialized: table`. All seven assessment marts share
+`int_assessments__response_rollup`'s `0 0,10,13,15,17 * * *` tick — Cube is
+their only consumer and its `proficiency_rollup` pre-aggregation refreshes
 daily, so intraday rebuilds are invisible
 ([#4559](https://github.com/TEAMSchools/teamster/issues/4559),
 [#4821](https://github.com/TEAMSchools/teamster/issues/4821)).
@@ -364,14 +344,9 @@ Constraint metadata still lands in `manifest.json` for downstream tooling (Cube)
 
 ## Exposures are the consumer contract
 
-Every external consumer (Tableau, Google Sheets, Cube, AppSheet, etc.) that
-reads a mart must have a dbt exposure under `src/dbt/kipptaf/models/exposures/`.
-Without one, column renames and removals silently break downstream — dbt has no
-other signal.
-
-Before removing a column from any `dim_*` / `fct_*`, grep `src/cube/model/` for
-`sql: <col>` and bare `<col>` — Cube YAML reads by name and dbt has no exposure
-to surface the dep.
+Exposure requirements: `kipptaf/CLAUDE.md` → Exposures. Before removing a column
+from any `dim_*` / `fct_*`, grep `src/cube/model/` for `sql: <col>` and bare
+`<col>` — Cube YAML reads by name and dbt has no exposure to surface the dep.
 
 Every mart must appear in `cube.yml`'s `cube_semantic_layer.depends_on`; other
 exposures reference `rpt_*` / staging / intermediate models, not marts.
