@@ -86,3 +86,24 @@ def test_is_excluded_ignores_directories_above_the_skill():
     """
     assert not build_skill.is_excluded(Path("references/sheets.md"))
     assert build_skill.is_excluded(Path("__pycache__") / "references" / "sheets.md")
+
+
+def test_build_survives_a_checkout_under_an_excluded_directory_name(tmp_path):
+    """The regression itself: the bug lived in the caller, not is_excluded.
+
+    is_excluded's body never changed. build() used to hand it an ABSOLUTE
+    path, so every ancestor segment was tested too and a checkout under a
+    directory named __pycache__ excluded every file -- producing an empty
+    zip with no error. Driving build() from such a layout is the only test
+    here that fails against that bug.
+    """
+    skill = tmp_path / "__pycache__" / "repo" / "skill"
+    (skill / "references").mkdir(parents=True)
+    (skill / "SKILL.md").write_text("---\nname: x\nversion: 1.0.0\n---\n")
+    (skill / "references" / "sheets.md").write_text("header\n")
+
+    out = build_skill.build(skill, tmp_path / "dist")
+
+    with zipfile.ZipFile(out) as z:
+        names = {n for n in z.namelist() if not n.endswith("/")}
+    assert names == {"SKILL.md", "references/sheets.md"}
