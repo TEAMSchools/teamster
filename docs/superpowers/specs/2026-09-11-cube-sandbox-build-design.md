@@ -303,18 +303,20 @@ length, character set, and check-digit shape, so client code works unchanged at
 repoint. Drawn from a reserved range, so a sandbox identifier cannot collide
 with a real one.
 
-**Emails: on `@apps.teamschools.org`, with a `sandbox-` prefix.**
-`canSwitchSqlUser` only switches to that suffix, and the canary runner goes
-through the SQL API, so personas must live on the real domain. Fold addresses to
-ASCII before deriving them from a name: `google_email` is the key
-`resolveAccess` matches exactly, so a non-ASCII address is a realistic-looking
-identity that silently resolves to nobody.
+**Emails: on a domain under `.invalid`.** RFC 2606 reserves `.invalid` and
+guarantees it never resolves, so a fabricated address cannot collide with a real
+account and no mail can reach a synthetic person even by accident. Non-collision
+is then structural rather than a promise anyone has to keep.
 
-The prefix keeps fabricated addresses from colliding with real accounts, which
-makes non-collision a commitment rather than a mechanism. Two commitments
-follow: KTAF never provisions a real account beginning `sandbox-`, and the
-generator asserts before writing that no fabricated address collides with a real
-one.
+Nothing in the access path restricts the domain. `checkSqlAuth` resolves
+identity from the connecting user, and `checkAuth` from the signed `email`
+claim; neither checks a suffix. `canSwitchSqlUser` does check one, but it gates
+only in-session `SET USER`, which is the Superset path and not how personas are
+emulated here.
+
+Fold addresses to ASCII before deriving them from a name: `google_email` is the
+key `resolveAccess` matches exactly, so a non-ASCII address is a
+realistic-looking identity that silently resolves to nobody.
 
 **Phones: the `555-01xx` block**, reserved for fiction.
 
@@ -432,9 +434,25 @@ Both tiers run the same files. KTAF CI owns them, because KTAF owns the dbt
 marts and the `access_policy` blocks and must break first when a policy changes.
 MasterBorn's kit suite runs them unmodified as its acceptance gate.
 
-Until [#5517](https://github.com/TEAMSchools/teamster/issues/5517) lands,
-`canSwitchSqlUser` rejects `@kippmiami.org` and no Miami persona can be emulated
-at all, so a green suite means less than it appears to.
+### How a developer emulates a persona
+
+Two paths, both covering every persona the manifest fabricates:
+
+- **SQL API** — open one connection per persona, with the persona's address as
+  the connecting user and the deployment's SQL password. Identity is the
+  connecting user, so the connection _is_ the switch; there is no in-session
+  swap and none is needed. This is what the matrix runner already does.
+- **REST** — mint a token carrying the persona's `email` claim, signed with the
+  sandbox deployment's API secret. `checkAuth` verifies the signature and
+  resolves that identity.
+
+Holding a deployment's API secret therefore means being able to become any
+persona on it. On the sandbox that is the point, and it is safe because every
+row is fabricated. It is also exactly why the sandbox is a separate deployment
+with its own secret.
+
+`CUBE_IMPERSONATORS` is not part of this. It governs the Cube Cloud web UI,
+which MasterBorn does not have.
 
 ### Divergence assertions, in their own file
 
@@ -620,4 +638,6 @@ The contract — why surnames are coined, why given names carry character classe
   — the parent design
 - [#5266](https://github.com/TEAMSchools/teamster/issues/5266) — this work
 - [#5517](https://github.com/TEAMSchools/teamster/issues/5517) —
-  `canSwitchSqlUser` rejects `@kippmiami.org`
+  `canSwitchSqlUser` rejects `@kippmiami.org`. Blocks Superset from
+  impersonating Miami staff; does not affect this build, which never switches in
+  session.
