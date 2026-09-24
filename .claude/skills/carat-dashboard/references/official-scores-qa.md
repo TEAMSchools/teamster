@@ -88,7 +88,31 @@ demographic, and mark any cell under 10 students so the user can decide whether
 to combine or drop it before sharing; the repo has no automated small-cell
 suppression (#4237).
 
+### Performance preview
+
+Show how the load moved the metrics the `_current` view tracks, network-wide and
+by school:
+
+```bash
+uv run dbt compile --select rpt_tableau__college_assessment_dashboard_current \
+    --project-dir src/dbt/kipptaf --target prod
+uv run python .claude/skills/carat-dashboard/scripts/current_metrics_before_after.py \
+    "<paste time> America/New_York" [--by-school]
+```
+
+It runs the view's own SQL twice, once with the scores table read as of the
+paste, and prints each metric's percent met before and now, the change, and the
+goal. Goals, thresholds and the roster are read as of now in both runs, so any
+change comes from the load. The attempts metrics (`*_1_attempt`,
+`*_2_plus_attempts`) are the share of test takers meeting the expected test
+count; the ready metrics are the share at HS Grad-Ready or College-Ready.
+
+Report only the tests the load touched, lead with the attempts metrics, and put
+each metric beside its goal. A metric with no goal (`None`) is tracked but not
+targeted; say so rather than printing an empty goal.
+
 Hand it over as a short message written for KIPP Forward: which tests and
-administrations, how many students and scores were added, when they reached the
-data, and when the dashboard will show them (the next Tableau refresh). State
-that it is internal to the network. No student names or ids.
+administrations, how many students and scores were added, the performance
+preview, when they reached the data, and when the dashboard will show them (the
+next Tableau refresh). State that it is internal to the network. No student
+names or ids.
