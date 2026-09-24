@@ -86,6 +86,10 @@ DEFAULT_QUERY = (
 )
 
 
+# The local dev server ignores the database name; Cube Cloud does not.
+LOCAL_DBNAME = "cube"
+
+
 @dataclass(frozen=True)
 class CubeConnection:
     """Local Cube SQL API connection settings, shared across every viewer."""
@@ -151,8 +155,52 @@ def load_canaries(path: Path) -> list[Canary]:
     return canaries
 
 
+# Cube Cloud routes on the database name: it selects the deployment, and a
+# name it does not recognise is refused before any query runs. The local dev
+# server ignores it, so `cube` works there and nowhere else.
+CLOUD_DBNAME_REFUSAL = "db is required and must be in one of the following formats"
+
+
+def preflight(connection: CubeConnection, viewer: str) -> None:
+    """Fail once on a setup error, instead of ten times on the same one.
+
+    Every canary opens its own connection, so a wrong host, password or
+    database name produces one identical multi-line FATAL per canary and
+    buries the single thing that is actually wrong. Worse, each of those
+    reads as `expected BLOCKED, got error` — which is the shape of a real
+    denial, and the runner exists to keep those two apart.
+    """
+    _, error = run_for_viewer(
+        viewer,
+        CubeConnection(
+            host=connection.host,
+            port=connection.port,
+            dbname=connection.dbname,
+            password=connection.password,
+            query="SELECT 1",
+        ),
+    )
+    if error is None:
+        return
+    if CLOUD_DBNAME_REFUSAL in error:
+        raise SystemExit(
+            f"Cube Cloud refused the database name {connection.dbname!r}.\n\n"
+            f"It routes on that name: it has to be the DEPLOYMENT's name, as "
+            f"Cube Cloud shows it, not a schema you choose. The default here "
+            f"is {LOCAL_DBNAME!r}, which is right for the local dev server and "
+            f"wrong for every Cube Cloud deployment.\n\n"
+            f"  --dbname <deployment-name>\n"
+        )
+    if error.startswith("connection failed"):
+        raise SystemExit(
+            f"cannot reach the SQL API at {connection.host}:{connection.port} "
+            f"-- {error}\n\nNo canary ran, so nothing was proven either way.\n"
+        )
+
+
 def run_canaries(canaries: list[Canary], connection: CubeConnection) -> int:
     """Assert every canary, reporting each. Non-zero on any mismatch."""
+    preflight(connection, canaries[0].persona)
     failures = 0
     for canary in canaries:
         rows, error = run_for_viewer(
@@ -201,7 +249,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--query", default=DEFAULT_QUERY, help="SQL to run per viewer")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=15432)
-    parser.add_argument("--dbname", default="cube")
+    parser.add_argument(
+        "--dbname",
+        default=LOCAL_DBNAME,
+        help="the database to connect to. Cube Cloud routes on this and "
+        "requires the DEPLOYMENT's name; the default suits the local dev "
+        "server only",
+    )
     parser.add_argument(
         "--password",
         default=os.environ.get("CUBEJS_SQL_PASSWORD"),

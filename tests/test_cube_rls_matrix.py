@@ -309,3 +309,80 @@ def test_the_unresolvable_identity_is_never_declared() -> None:
     # heard of.
     declared = {p["email"] for p in yaml.safe_load(_PERSONAS.read_text())["personas"]}
     assert _UNRESOLVABLE not in declared
+
+
+# --- preflight ------------------------------------------------------------
+
+
+def test_preflight_turns_the_cloud_dbname_refusal_into_the_fix(monkeypatch) -> None:
+    # Cube Cloud routes on the database name and refuses an unknown one
+    # before running anything, so every canary reports the same FATAL and
+    # none of them tested the access model.
+    mod = _load_script()
+    refusal = (
+        'connection failed: connection to server at "10.0.0.1", port 5432 '
+        "failed: FATAL:  db is required and must be in one of the following "
+        "formats: <deployment-name>"
+    )
+    monkeypatch.setattr(mod, "run_for_viewer", lambda viewer, conn: ([], refusal))
+
+    with pytest.raises(SystemExit) as caught:
+        mod.preflight(_connection(host="10.0.0.1", dbname="cube"), "a@x.org")
+
+    message = str(caught.value)
+    assert "--dbname <deployment-name>" in message
+    assert "DEPLOYMENT" in message
+
+
+def test_preflight_reports_an_unreachable_api_once(monkeypatch) -> None:
+    mod = _load_script()
+    monkeypatch.setattr(
+        mod,
+        "run_for_viewer",
+        lambda viewer, conn: ([], "connection failed: no route to host"),
+    )
+
+    with pytest.raises(SystemExit, match="nothing was proven"):
+        mod.preflight(_connection(host="10.0.0.1"), "a@x.org")
+
+
+def test_preflight_passes_a_query_error_through_to_the_canaries(monkeypatch) -> None:
+    # A denial is what the suite is FOR. Only connection-level failures are
+    # setup errors; anything the server answers belongs to the canary that
+    # asked for it.
+    mod = _load_script()
+    monkeypatch.setattr(
+        mod,
+        "run_for_viewer",
+        lambda viewer, conn: ([], "Table or CTE with name 'staff_pii' not found"),
+    )
+
+    mod.preflight(_connection(), "a@x.org")
+
+
+def test_preflight_runs_before_any_canary(monkeypatch) -> None:
+    # Ten identical FATALs, each reading "expected BLOCKED, got error", is
+    # the exact confusion between a setup failure and a real denial that
+    # this runner exists to prevent.
+    mod = _load_script()
+    refusal = "connection failed: FATAL:  db is required and must be in one of the following formats: <deployment-name>"
+    calls: list[str] = []
+
+    def _record(viewer, conn):
+        calls.append(conn.query)
+        return [], refusal
+
+    monkeypatch.setattr(mod, "run_for_viewer", _record)
+    canaries = [
+        mod.Canary(
+            persona="a@x.org",
+            query_shape="SELECT count(*) FROM staff_pii",
+            expect="ROWS",
+            why="",
+        )
+    ]
+
+    with pytest.raises(SystemExit):
+        mod.run_canaries(canaries, _connection(host="10.0.0.1"))
+
+    assert calls == ["SELECT 1"]
