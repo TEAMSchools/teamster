@@ -1,8 +1,21 @@
 models:
   - name: int_powerschool__gpa_term
+    description:
+      Term and year-to-date GPA, one row per student, academic year, and term,
+      per district. GPA spans every school where the student earned GPA-eligible
+      grades that year, so join on studentid, yearid, and _dbt_source_project,
+      not schoolid.
     config:
       meta:
         contains_pii: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - studentid
+              - yearid
+              - term_name
+              - _dbt_source_project
     columns:
       - name: _dbt_source_relation
         data_type: string
@@ -21,12 +34,10 @@ models:
             column_role: foreign_key
       - name: schoolid
         data_type: int64
-        description: The School_Number of the associated Schools record.
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__students
-            source_column: schoolid
+        description:
+          The school where the student earned the most GPA credit hours that
+          year, ties broken by the higher school number. A label for the row,
+          not a join key.
       - name: yearid
         data_type: int64
         description:
