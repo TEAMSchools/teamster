@@ -4,10 +4,12 @@ For the Teaching & Learning / Academics team. No technical background needed.
 
 ## What this is
 
-A skill that turns the weekly assignment counts you decide (W/H/F/S) into what
-PowerSchool's Gradebook Audit plugin needs — and walks you through it, whether
-you're starting a new year, updating a quarter, or trying to figure out why the
-dashboard looks wrong.
+A skill that turns the weekly assignment counts you decide (W/H/F/S) into files
+PowerSchool's Gradebook Audit plugin will accept, then walks you through loading
+them — whether you're starting a new year, updating a quarter, or trying to
+figure out why the dashboard looks wrong.
+
+It does the arithmetic and the checking. You do everything inside PowerSchool.
 
 The gradebook audit dashboard compares what teachers actually entered against
 those counts. If the counts are wrong, the dashboard is wrong — quietly, with no
@@ -70,36 +72,47 @@ Audit Template** sheet, stop it and tell the data team.
 
 ## What it does, and where it stops
 
+**The skill never connects to PowerSchool.** It reads two Google Sheets, does
+the arithmetic, and hands you files plus step-by-step directions. Every click
+inside PowerSchool is yours.
+
 For loading counts in (new year or mid-year update), it reads the grid, fills in
 any blank counts using the rule the data team agreed, and builds **one CSV per
 region** — Camden, Newark, Paterson — because each region is a separate
 PowerSchool instance. You download each one straight from the conversation.
 
-It shows you every file as a table in the conversation before anything is
-uploaded. **Read those tables.** They are how a wrong repeated week gets caught
-while it is still cheap to fix.
+It shows you every file as a table in the conversation first. **Read those
+tables.** They are how a wrong repeated week gets caught while it is still cheap
+to fix — once a file is in PowerSchool, finding it costs a lot more.
 
-Then it runs several checks, including comparing its own math against what's
-already correctly in PowerSchool. If any check fails it stops and tells you what
-failed instead of uploading.
+Then it runs several checks on its own output. If any check fails it tells you
+what failed and does not hand you the file.
 
-For "something looks wrong," it doesn't build or upload anything by default — it
-compares what's in PowerSchool against what Academics decided and tells you what
-it finds. Most of the time the fix, if there is one, is a single row, not a
-whole reload.
+Once the files pass, it walks you through the PowerSchool plugin screen by
+screen: where to log in for your region, what to delete first, where to upload,
+and how to tell the load worked. You are doing the upload; the skill is reading
+you the directions and telling you what each screen should look like.
 
-## ⚠️ You need PowerSchool access for the actual upload
+For "something looks wrong," it produces no files at all. It compares what
+Academics decided against what you tell it PowerSchool is showing, and tells you
+what it finds. Most of the time the fix is a single row, not a whole reload.
+
+## ⚠️ You need PowerSchool access to do the upload
 
 Building and checking the files needs nothing but Claude and the spreadsheets.
+Anyone on the team can get that far.
 
-**Actually uploading needs a PowerSchool admin account that is a member of the
-`Gradebook Group` security group, on each region's instance.**
+**The upload itself needs a PowerSchool admin account that is a member of the
+`Gradebook Group` security group, on each region's instance.** That is your
+account, not the skill's — the skill has no way into PowerSchool at all.
 
-If you don't have that, the skill will stop before touching PowerSchool and say
-so. That is the correct outcome, not a bug. Send the files it produced to the
-data team and let them do the load. **Do not try to work around it** — the
-upload involves deleting existing rows, and getting that wrong takes the
-dashboard down for every school in a region.
+If you don't have that access, you will find out when you try to reach the
+plugin screen and it isn't there. Stop at that point. Send the files the skill
+produced to the data team and let them do the load.
+
+**Do not try to work around it.** The upload starts by deleting the existing
+rows for that region, and getting that wrong takes the dashboard down for every
+school in the region.
 
 ## Two things not to skip
 
