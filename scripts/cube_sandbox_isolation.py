@@ -235,8 +235,8 @@ def main() -> int:
     client = bigquery.Client(project=SANDBOX_PROJECT, credentials=credentials)
 
     # Positive first, always.
-    # trunk-ignore(bandit/B608): SANDBOX_TABLE is a module constant built from
-    # two other module constants. No caller can influence it.
+    # SANDBOX_TABLE is built from module constants; no caller can influence it.
+    # trunk-ignore(bandit/B608): module constant, not caller input
     positive = _read(client, f"SELECT table_name FROM `{SANDBOX_TABLE}` LIMIT 1")
     if not positive.succeeded:
         code, reason = decide(positive, Leg(ran=False, succeeded=False))
@@ -244,8 +244,8 @@ def main() -> int:
         return code
 
     print(f"positive leg: read {SANDBOX_PROJECT} successfully")
-    # trunk-ignore(bandit/B608): PRODUCTION_TABLE is a module constant. This
-    # query is meant to be refused — it is the negative leg.
+    # PRODUCTION_TABLE is a module constant, and this query is meant to fail.
+    # trunk-ignore(bandit/B608): module constant, not caller input
     negative = _read(client, f"SELECT 1 FROM `{PRODUCTION_TABLE}` LIMIT 1")
     code, reason = decide(positive, negative)
     print(f"{['PASS', 'FAILED', 'UNPROVEN'][code]} - {reason}")
