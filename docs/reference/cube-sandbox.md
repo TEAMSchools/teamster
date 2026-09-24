@@ -375,11 +375,18 @@ would be a step toward the cross-project binding the design exists to prevent.
 
 ## Known gaps
 
-- **Nothing has been loaded.** The generator, the coverage gate and the load
-  step all run, and a `tiny` run scores zero uncovered cells against the
-  committed manifest — but no one has yet run the load against the sandbox
-  project, so the dataset does not exist and no query has been served from it.
-  See _The first real load_.
+- **The loaded profile is `tiny`.** 21 tables, roughly 8,300 rows, verified
+  column-for-column against the pinned snapshot, with all ten canaries passing
+  against the deployment. A production-scale profile is a `--scale` argument and
+  no code change, but until it runs, nothing here supports a conclusion about
+  pagination, timeouts or query cost.
+- **No persona holds an individual exception grant.** Every generated
+  `additional_location_grants` is an empty array, so the branch that grant
+  column exists for — "my region plus one specific other school" — is never
+  exercised. The manifest cannot catch it either: its `non_null` cell is
+  satisfied by `[]`, and it has no cell kind meaning "non-empty array". A kit
+  built against this sandbox will not meet that viewer shape before production
+  does.
 - **Eight manifest cells are not scored by counting rows**: `hasRemit` and
   `hasChain` each way, the unresolvable identity, and the three divergences. The
   generator produces all eight, and unit tests assert the first five directly
