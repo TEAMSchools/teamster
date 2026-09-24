@@ -255,12 +255,13 @@ def test_has_remit_and_has_chain_each_resolve_both_ways(
 ) -> None:
     """The supporting rows, not just the declared ones.
 
-    `personas.yml` declares neither `staff_location_scope` nor
-    `staff_department_scope`, and declares reportees rather than chain rows.
-    buildGroups reads the derived states, so the generator has to make both
-    resolve true for some persona and false for another — otherwise the
-    branch production cannot reach (reporting_chain with an empty chain) is
-    not in the sandbox either.
+    `personas.yml` declares the two remit scopes, but hasRemit also depends
+    on rows the generator supplies — the locations universe, and this row's
+    own region_key / location_abbreviation / department_group — and the chain
+    is declared as reportees rather than as chain rows. Both states have to
+    come out true for some persona and false for another, or the branch
+    production cannot reach (reporting_chain with an empty chain) is not in
+    the sandbox either.
     """
     people = personas.load(generate.PERSONAS_PATH)
     by_email = {row["google_email"]: row for row in tiny["dim_staff_cube_access"]}

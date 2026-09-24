@@ -1824,6 +1824,31 @@ cells:
     column: staff_compensation_scope
     detail: at least two distinct non-none values
     status: uncovered
+  - kind: scope
+    table: dim_staff_cube_access
+    column: staff_department_scope
+    detail: all
+    status: uncovered
+  - kind: scope
+    table: dim_staff_cube_access
+    column: staff_department_scope
+    detail: own_group
+    status: uncovered
+  - kind: scope
+    table: dim_staff_cube_access
+    column: staff_location_scope
+    detail: network
+    status: uncovered
+  - kind: scope
+    table: dim_staff_cube_access
+    column: staff_location_scope
+    detail: region
+    status: uncovered
+  - kind: scope
+    table: dim_staff_cube_access
+    column: staff_location_scope
+    detail: school
+    status: uncovered
   - kind: scope_variety
     table: dim_staff_cube_access
     column: staff_observations_scope

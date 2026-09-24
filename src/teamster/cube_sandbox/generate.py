@@ -366,8 +366,10 @@ def required_orphans(cells: list[dict[str, Any]]) -> set[tuple[str, str]]:
 # allowed_department_groups both resolve non-empty, so a persona declaring one
 # needs a staff_location_scope and staff_department_scope wide enough to
 # resolve — otherwise its declared ROWS canary silently becomes a BLOCKED one.
-# `personas.yml` declares neither column, so the generator derives both from
-# the scope the persona DID declare.
+# `personas.yml` declares both columns, so this is a check on the declaration,
+# never a substitute for it: the generator used to fill the pair in itself,
+# which made the persona file's silence on them survivable and hid that the
+# declared set was two columns short.
 REMIT_PII_SCOPES = frozenset(
     {"all_in_scope", "teaching_staff", "reporting_chain_or_below_rank"}
 )
@@ -375,6 +377,19 @@ REMIT_PII_SCOPES = frozenset(
 
 def needs_remit(person: Persona) -> bool:
     return person.scopes.get("staff_pii_scope") in REMIT_PII_SCOPES
+
+
+def declares_remit(person: Persona, scopes: dict[str, set[str]]) -> bool:
+    """Whether both remit axes name a value access.js resolves non-empty.
+
+    `scopes` is `model.scope_values`, so "none" and a typo are both rejected
+    for the same reason: neither is a `case` label in the helper's switch,
+    and the helper's `default` branch returns [].
+    """
+    return all(
+        person.scopes.get(column) in scopes.get(column, set())
+        for column in ("staff_location_scope", "staff_department_scope")
+    )
 
 
 # --------------------------------------------------------------------------
@@ -515,6 +530,8 @@ class _Fabricator:
         self.seed = seed
         self.null_required = required_nulls(cells)
         self.orphan_required = required_orphans(cells)
+        # Checked against, never filled from: see `_special_dim_staff_cube_access`.
+        self.scopes = model.scope_values(cube_root / "access.js")
 
         self.tables = set(self.columns)
         primary = model.primary_key_columns(cube_root)
@@ -871,23 +888,26 @@ class _Fabricator:
         Personas are declared and not generated because `canaries.yml` names
         them: a seed-derived persona means changing the seed silently changes
         who the canaries test, and the suite stays green while testing
-        something else. Only the columns `personas.yml` does not declare are
-        chosen here, and each is chosen to make `hasRemit` and `hasChain`
-        resolve the way the persona's declaration needs.
+        something else. Every scope column comes from the declaration — none
+        is chosen here — so a persona's resolved access is readable from
+        `personas.yml` alone.
         """
         if index >= len(self.people):
             return {}
         person = self.people[index]
-        remit = needs_remit(person)
+        if needs_remit(person) and not declares_remit(person, self.scopes):
+            raise ValueError(
+                f"{person.email} declares staff_pii_scope "
+                f"{person.scopes.get('staff_pii_scope')!r}, whose policy ANDs "
+                "the location ∩ department remit, but its "
+                "staff_location_scope / staff_department_scope resolve empty "
+                "— buildGroups would emit no staff-pii group and the persona "
+                "would silently default-deny"
+            )
         return {
             "google_email": person.email,
             "staff_key": self.persona_key[person.email],
             **person.scopes,
-            # Both axes wide open, or both shut. hasRemit is the AND of the
-            # two, so a persona needing one gets a location scope and a
-            # department scope that each resolve non-empty.
-            "staff_location_scope": "network" if remit else "none",
-            "staff_department_scope": "all" if remit else "none",
             "job_function_code": "TEACH" if index % 2 else "LEAD",
             "job_function_level": 3 + index % 4,
         }

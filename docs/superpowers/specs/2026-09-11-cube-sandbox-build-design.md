@@ -228,7 +228,11 @@ deterministic from committed inputs.
   ticket — which is the right layer.
 
 - **Every `*_scope` enum value the code handles**, as a fabricated
-  `dim_staff_cube_access` row.
+  `dim_staff_cube_access` row. The COLUMN set comes from the snapshot —
+  `dim_staff_cube_access` has seven `*_scope` columns — and only the VALUES come
+  from `access.js`. Deriving the column set from `access.js` instead undercounts
+  by two (see _Enum domains_ below), which is how `personas.yml` first shipped
+  declaring five of the seven.
 - **Every derived state `buildGroups` branches on**: `hasRemit` and `hasChain`,
   each true and false. An empty remit or chain takes the no-group default-deny
   path, because Cube throws on an `equals []` row filter
@@ -275,6 +279,21 @@ production row that reaches them. A sandbox wider than production here is
 correct: the rule against a sandbox wider than production covers data, not the
 code's own domain.
 
+**A name grep of `access.js` undercounts the scope columns by two.**
+`staff_location_scope` and `staff_department_scope` never appear in `access.js`
+as strings: they arrive as the bare parameters `locationScope` and `deptScope`
+of `computeAllowedAbbreviations` and `computeAllowedDepartmentGroups`, and the
+binding from column to parameter lives at the
+[`cube.js`](../../../src/cube/cube.js) call site. So the derivation is in two
+parts — the column name from the call site, the legal values (`network` /
+`region` / `school`, and `all` / `own_group`) from the helper's own `switch` —
+and neither part is written down in the toolchain. Grepping for `*_scope` finds
+the other five and looks complete, which cost a whole persona set: both missed
+columns feed `hasRemit`, so every persona resolved an empty remit and silently
+default-denied on `staff_pii`, the opposite of what each declared. Same rule as
+the table count above — assert against the data, do not hard-code, and do not
+derive a set from names when the names are not there.
+
 ## Piece 3 — the generator
 
 ### Two steps, two identities, two systems
@@ -312,10 +331,14 @@ rather than as an error.
 ### Personas are declared, not generated
 
 Every other row in the sandbox comes out of the seeded generator. **Personas do
-not.** `personas.yml` declares each one explicitly — address, display name,
-every `*_scope` value, and the remit or reporting-chain shape it needs — and the
+not.** `personas.yml` declares each one explicitly — address, display name, all
+seven `*_scope` values, and the reporting-chain shape it needs — and the
 generator writes those rows into `dim_staff_cube_access` verbatim, along with
-the supporting rows that make `hasRemit` and `hasChain` resolve as declared.
+the supporting rows that make `hasRemit` and `hasChain` resolve as declared. The
+remit is part of the declaration, not something the generator supplies: a
+generator that filled in `staff_location_scope` / `staff_department_scope`
+itself is what let the declared set stay two columns short with nothing going
+red.
 
 Two reasons they cannot be emergent:
 
@@ -333,6 +356,13 @@ manifest asserts the declared set covers every enum value the code handles.**
 Adding a scope value to `access.js` turns into an uncovered cell until a persona
 is declared for it, so the hand-written file cannot quietly fall behind the
 code.
+
+That catches a new scope VALUE. A new scope COLUMN is caught one layer up, by
+`tests/cube_sandbox/test_personas.py`, which reads the `*_scope` columns off the
+committed snapshot and requires every persona to declare all of them. The
+manifest cannot be that check: its cells come from `access.js`, so a column
+`access.js` does not name produces no cell at all, and an absent cell looks
+exactly like a satisfied one.
 
 Personas are fabricated, so `personas.yml` carries no PII and is committed.
 

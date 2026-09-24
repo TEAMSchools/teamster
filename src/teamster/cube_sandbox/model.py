@@ -21,6 +21,11 @@ _SCOPE_CASE = re.compile(r"case\s+[\"'](\w+)[\"']")
 _SCOPE_TIER = re.compile(r"scope:\s*[\"'](\w+_scope)[\"']")
 _STAFF_PII_SWITCH = re.compile(r"switch\s*\(\s*row\.staff_pii_scope\s*\)\s*\{")
 
+# The two access.js helpers that take a scope column as a bare parameter.
+# Named here, not their scope columns: the column each one carries is read
+# off the cube.js call site by `_remit_scope_values`.
+_REMIT_HELPERS = ("computeAllowedAbbreviations", "computeAllowedDepartmentGroups")
+
 # access.js's buildGroups emits `student-${row.student_location_scope}` — the
 # scope value is interpolated into a template literal, not enumerated as a
 # string literal, so it is not statically extractable by regex the way
@@ -475,6 +480,44 @@ def _balanced_block(text: str, open_brace_index: int) -> str:
     raise ValueError("unbalanced braces starting at the given index")
 
 
+def _function_body(text: str, name: str) -> str:
+    """The brace-matched body of `function <name>(...) { ... }`."""
+    match = re.search(rf"function\s+{re.escape(name)}\s*\([^)]*\)\s*\{{", text)
+    if not match:
+        raise ValueError(f"access.js declares no function {name}")
+    return _balanced_block(text, match.end() - 1)
+
+
+def _remit_scope_values(access_text: str, cube_text: str) -> dict[str, set[str]]:
+    """The two remit scopes, from the call site plus the helper's own switch.
+
+    These are the columns a name grep of access.js cannot find. They reach it
+    as bare parameters — `locationScope` and `deptScope` — so the string
+    `staff_location_scope` / `staff_department_scope` appears nowhere in the
+    file. The binding from column to helper lives at the cube.js call site
+    (`access.computeAllowedAbbreviations(row?.staff_location_scope, ...)`),
+    and the legal values are the `case` labels of the helper's own switch. So
+    the column names come from cube.js and the values from access.js, and
+    neither is written down here — the omission that produced five-of-seven
+    personas is not expressible.
+
+    Raises rather than returning an empty set on a miss: an empty set would
+    drop the column from the manifest silently, which is the original bug.
+    """
+    out: dict[str, set[str]] = {}
+    for helper in _REMIT_HELPERS:
+        call = re.search(rf"access\.{helper}\(\s*row\??\.(\w+_scope)", cube_text)
+        if not call:
+            raise ValueError(f"cube.js has no row-scoped call to {helper}")
+        values = set(_SCOPE_CASE.findall(_function_body(access_text, helper))) - {
+            "none"
+        }
+        if not values:
+            raise ValueError(f"{helper} branches on no scope value")
+        out[call.group(1)] = values
+    return out
+
+
 def _staff_pii_scope_values(text: str) -> set[str]:
     """The `case` labels of the switch that branches on `row.staff_pii_scope`.
 
@@ -492,16 +535,26 @@ def _staff_pii_scope_values(text: str) -> set[str]:
     return set(_SCOPE_CASE.findall(block)) - {"none"}
 
 
-def scope_values(access_js: Path) -> dict[str, set[str]]:
+def scope_values(access_js: Path, cube_js: Path | None = None) -> dict[str, set[str]]:
     """Scope enum values the code branches on, by scope column.
 
     Sourced from access.js because production is a subset of the domain the
-    code handles — several policy branches have no production row.
+    code handles — several policy branches have no production row. The two
+    remit scopes additionally need cube.js, which is where the column names
+    are bound to the helpers that consume them (see `_remit_scope_values`);
+    it defaults to access.js's neighbour.
+
+    The result must cover every `*_scope` column of dim_staff_cube_access.
+    `tests/cube_sandbox/test_personas.py` asserts that against the committed
+    snapshot, because "every scope the code branches on" and "every scope
+    column the table has" drifted apart once already.
     """
     text = access_js.read_text()
+    cube_text = (cube_js or access_js.with_name("cube.js")).read_text()
     tiers = set(_SCOPE_TIER.findall(text))
     out = {t: {"__non_none__"} for t in tiers}
     out["staff_pii_scope"] = _staff_pii_scope_values(text)
+    out.update(_remit_scope_values(text, cube_text))
     # See _STUDENT_LOCATION_SCOPE_VALUES above: not derivable by regex from the
     # template-literal source, so this is a documented literal instead.
     out["student_location_scope"] = set(_STUDENT_LOCATION_SCOPE_VALUES)
