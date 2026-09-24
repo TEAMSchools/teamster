@@ -409,8 +409,8 @@ are simply absent.
 
 All current rows are AY2026. Attempts are tracked at 95% for one attempt across
 PSAT 8/9, PSAT10, PSAT NMSQT and SAT; only SAT carries a two-or-more target, at
-80% official and 95% practice. Practice is higher because a practice
-administration is scheduled rather than something a student registers for.
+95% for both official and practice. The Foundation raised the official SAT
+two-or-more target from 80% in September 2026.
 
 ### The attempt count is now measured on distinct dates
 
@@ -1323,7 +1323,7 @@ credits one sitting once. Almost all are Camden class of 2027 on the April 2026
 school-day SAT.
 
 This is the change most likely to be questioned, because that cohort's SAT
-`2+ Attempts` rate is measured against an 0.80 goal and a student sitting
+`2+ Attempts` rate is measured against an 0.95 goal and a student sitting
 exactly on the one-versus-two boundary flips from meeting it to not. The rate
 falls because double-counting stopped, not because participation dropped.
 
@@ -1775,7 +1775,7 @@ remaining one is a 2019 sitting. The other 32 students from that April
 administration have a single clean record each, so the load hit a subset.
 
 That concentration matters for reading the numbers. Camden 2027 is the senior
-cohort, and their SAT 2+ attempts rate is measured against an 0.80 goal, so 86
+cohort, and their SAT 2+ attempts rate is measured against an 0.95 goal, so 86
 double-counted sittings inflate a board-reported figure for one cohort rather
 than adding noise everywhere.
 

@@ -5,9 +5,9 @@ description: >-
   Readiness Assessments Tracker) or its lineage. Triggers: adding Illuminate
   practice SAT/ACT assessments for a new administration, generating or auditing
   raw-to-scale-score rows for the practice conversion or scaffold sheets, a
-  practice score not appearing on the dashboard, goal thresholds not matching,
-  academic-year rollover, or working on
-  int_assessments__college_assessment_practice,
+  practice score not appearing on the dashboard, goal thresholds not matching, a
+  request to change a goal percentage or target line, academic-year rollover, or
+  working on int_assessments__college_assessment_practice,
   int_tableau__college_assessment_roster_scores,
   rpt_tableau__college_assessment_dashboard_current, or _benchmark_calcs and
   their upstream models.
@@ -38,10 +38,14 @@ Also relevant:
   total, and which pre-existing defects were deliberately left unfixed
 - Exposure: `college_admission_readiness_assessments_tracker_carat`
 
-### Routing "why did this number change" questions
+### Routing common requests
 
-These come up most often and each has a documented answer with measured figures.
-Cite the doc rather than re-deriving:
+A request to change a goal ("the Foundation moved the target to 95%, update
+Tableau") is a sheet edit, not a code change: run _Procedure: Change a goal
+value_ below. Its output is the whole Goals tab as a TSV file.
+
+"Why did this number change" questions each have a documented answer with
+measured figures. Cite the doc rather than re-deriving:
 
 | Question                                               | Section                                              |
 | ------------------------------------------------------ | ---------------------------------------------------- |
@@ -171,6 +175,23 @@ and the legacy rows are inconsistent about it.
 grade 11. Use them as the template for any new grade-11 practice SAT. They have
 zero responses (created, never administered), so they are a format precedent
 only.
+
+## Handing sheet rows to the user
+
+Every CARAT sheet change reaches the user in one shape:
+
+1. A **tab-separated** file. Google Sheets splits a paste into columns only on
+   tabs; comma-separated text lands entirely in column A.
+2. Written to the **session scratchpad**, handed over as a clickable path the
+   user opens in VS Code, selects all, copies, and pastes. Never pasted into
+   chat: the chat panel turns tabs into spaces.
+3. Covering the **whole block** being replaced, with the paste anchor named (A1
+   with a header row, A2 without one) — not a list of cells to edit by hand.
+4. Built from the **live sheet**, not a `stg_*` model: staging may be reshaped
+   (the goals model is unpivoted) or stale (it is a table that has not rebuilt).
+   Read the Sheets external through ADC from Python; the BigQuery MCP cannot.
+
+After the paste, re-read the live sheet and diff it against the file.
 
 ## Procedure: Add practice assessments for a new administration
 
@@ -1085,6 +1106,44 @@ Pin `sheet_range:` to the exact tab name. That is what makes a dbt source immune
 to a neighbouring `DO NOT USE THESE` tab. Note the shared-trigger cost: every
 Sheets source on one URI re-triggers together, so editing the goals tab also
 refreshes the conversion and scaffold tabs.
+
+## Procedure: Change a goal value
+
+For a new target from the Foundation or KIPP Forward: a percentage on the Goals
+tab (`src_google_sheets__kippfwd_goals_v3`, A:K). No model hardcodes a goal, so
+this is a sheet edit only. Follow _Handing sheet rows to the user_.
+
+1. Read _The rebuilt goals tab — what shipped_ above and _What is tracked_ in
+   the reference doc. They say which cells are blank on purpose and which values
+   are provisional.
+2. Map the request to cells. A cell already at the new value needs nothing; say
+   so. A blank cell stays blank unless the request explicitly adds a goal there
+   — every PSAT `pct_2_plus_attempts` is blank because PSAT is given once, and
+   UNPIVOT turns a filled blank into a new goal row.
+3. Generate the whole tab with the edits applied:
+
+   ```bash
+   uv run python .claude/skills/carat-dashboard/scripts/dump_goals_tab.py \
+       <scratchpad>/goals_tab.tsv \
+       --set test_type=Official,score_type=sat_total_score pct_2_plus_attempts=0.95
+   ```
+
+   It prints every cell it changed, old to new. Check that list against the
+   request before handing over the file.
+
+4. Hand the user the file path and "paste over A1 of the Goals tab".
+5. After the paste, rerun the script with no `--set` to a second file and diff
+   the two. A value edit needs no `stage_external_sources`.
+6. Tell the user the paste does not reach Tableau on its own.
+   `kipptaf/google_sheets/stg_google_sheets__kippfwd__goals` materializes only
+   when its code version changes — 2026-08-18 was its last run as of 2026-09-24,
+   a month after a sheet edit — so a value edit sits in the sheet indefinitely.
+   The user materializes that asset and its downstream from the Dagster UI, then
+   refreshes the Tableau extract. Confirm with
+   `mcp__dagster__get_asset_materializations` (timestamp newer than the paste)
+   and a query of the staging model showing the new value.
+7. If a value quoted in the reference doc changed (_What is tracked_), update
+   the doc on a branch.
 
 ## Procedure: Audit sheet rows after an update
 
