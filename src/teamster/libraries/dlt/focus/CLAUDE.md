@@ -112,13 +112,20 @@ of them a run carries. A table is loaded only when its probed signature
 (`COUNT(*)` + `MAX(updated_at)`) differs from the one the last successful load
 wrote to dlt `resource_state`.
 
-- **Gating cannot move into the op.** A `replace` resource that yields zero rows
-  truncates its table, so a skip has to be an exclusion from the run. Probing in
-  the op would also plan all 79 assets every tick and emit
-  `ASSET_FAILED_TO_MATERIALIZE` for the skipped ones.
-- **The signature is written inside the extracted resource.** dlt commits state
-  only from resources that reached the load package, so a failed load keeps the
-  old baseline and the table re-selects on the next tick — failures self-heal.
+- **Tiering**: `0 4 * * *` targets only the count-only tables (`co_teachers` as
+  of writing — derived from `cursor_column: null` in `config/focus.yaml`, not
+  hardcoded) and is their unconditional daily reload, because a count-only probe
+  can't see an in-place edit that leaves row count unchanged. The other 78
+  tables' `updated_at` cursor is verified reliable (99.9%+ of rows on core
+  tables show `updated_at != created_at` with a current max, measured
+  2026-08-10), so the intraday sensor's probe alone gates them — they get no
+  separate unconditional reload. The sensor probes all 79 tables every 15
+  minutes regardless of tier.
+- **Gating cannot move into the op**: a zero-row `replace` truncates (see
+  `../CLAUDE.md`), and probing in the op would plan all 79 assets every tick and
+  emit `ASSET_FAILED_TO_MATERIALIZE` for the skipped ones. Signature state
+  follows the `powerschool/` contract in `../CLAUDE.md` — a failed load keeps
+  the old baseline and the table re-selects next tick.
 - **A 0-row table** carries `{count: 0, max_cursor: null}` and gates out after
   its first load, so the empty-table materialization runs once, not every tick.
   Verified: dlt does commit resource_state for a table that yields only
@@ -132,18 +139,15 @@ wrote to dlt `resource_state`.
   (see the design spec's _Partially resolved risk_ section).
 - **Enable order matters.** The sensor selects any table with no stored
   signature, so enabling it before every table has a seeded baseline makes the
-  first tick select all 79 tables at once. The `0 4 * * *` schedule now only
-  seeds the count-only tables (`co_teachers`) — it is no longer a full-79-table
-  refresh, so it cannot be relied on to seed the other 78 by itself. Seed all 79
-  with a manual launch of the Focus asset job first, then enable the sensor.
+  first tick select all 79 tables at once. The 04:00 schedule seeds only the
+  count-only tables, so seed all 79 with a manual launch of the Focus asset job
+  first, then enable the sensor.
 
 ## Testing Constraints
 
 Focus uses an IP allowlist. Codespace cannot reach the database. Connection
 verification requires a branch deployment (GKE has static egress IP).
 
-Branch-deployment dlt runs write to the **prod** BQ dataset
-(`dagster_<district>_dlt_focus`) — dlt has no branch-deployment redirect (unlike
-the GCS IO managers). A newly-configured table can be materialized in the branch
-deployment and then queried directly via BigQuery MCP to verify the load; note
-it is not isolated from prod for that source.
+Branch-deployment dlt runs write to the prod `dagster_<district>_dlt_focus`
+dataset (see `../CLAUDE.md`), so a newly-configured table materialized in a
+branch deployment can be queried directly via BigQuery MCP to verify the load.

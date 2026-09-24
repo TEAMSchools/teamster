@@ -21,7 +21,6 @@ dlt models its PowerSchool instance does not populate — see the
 
 ## Source Packages
 
-Package list: `packages.yml` is ground truth (see `src/dbt/CLAUDE.md`).
 Endpoint-level notes:
 
 - `cambium` — `stg_cambium__njsla` only. `stg_cambium__njgpa`,

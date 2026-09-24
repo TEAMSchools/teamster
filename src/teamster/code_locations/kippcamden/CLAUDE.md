@@ -7,8 +7,6 @@ CODE_LOCATION = "kippcamden"
 LOCAL_TIMEZONE = ZoneInfo("America/New_York")
 ```
 
-GCS bucket: `teamster-kippcamden`
-
 ## Active Integrations
 
 | Module        | Type              | Trigger                                                               |

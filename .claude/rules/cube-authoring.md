@@ -39,14 +39,13 @@ and diagnostics are in the `cube-ops` skill.
   (`student_attendance_enrollment_daily`,
   `student_attendance_enrollment_periods`, `student_school_enrollments`,
   `students`); staff-domain cubes start with `staff`. This is an organizational
-  convention only — RLS is no longer keyed off the cube-name prefix. Every view
-  enforces access through its own `access_policy` matching a `securityContext`
-  group (see View access policies below); a misnamed cube has no security
-  consequence, but keep the convention so the domain is legible from the name.
-  Conformed dims (`dates`, `locations`, `regions`, `terms`, `school_calendars`)
-  are deliberately unprefixed — they carry no domain access tier. Student views
-  are single, collapsed views named `<domain>_view`
-  (`student_attendance_enrollment_daily_view`,
+  convention only: every view enforces access through its own `access_policy`
+  matching a `securityContext` group (see View access policies below); a
+  misnamed cube has no security consequence, but keep the convention so the
+  domain is legible from the name. Conformed dims (`dates`, `locations`,
+  `regions`, `terms`, `school_calendars`) are deliberately unprefixed — they
+  carry no domain access tier. Student views are single, collapsed views named
+  `<domain>_view` (`student_attendance_enrollment_daily_view`,
   `student_attendance_enrollment_periods_view`,
   `student_section_enrollments_view`, `student_assessment_scores_view`) — a view
   can't share a bare name with its same-domain cube, hence the `_view` suffix.
@@ -179,13 +178,10 @@ emitted by `access.buildGroups`; a viewer holds exactly one group per domain
 axis, so exactly one policy per view is ever active — no AND/OR combination to
 reason about.
 
-- **Student views are single, collapsed views** — each student domain
-  (`student_attendance_enrollment_daily_view`,
-  `student_attendance_enrollment_periods_view`,
-  `student_section_enrollments_view`, `student_assessment_scores_view`) exposes
-  both row-level identifiers and aggregate-breakdown dimensions on the same
-  view; there is no separate detail/summary pair. **One flat `student` policy**,
-  `row_level` on
+- **Student views are single, collapsed views** (names under _Naming_ above) —
+  each exposes both row-level identifiers and aggregate-breakdown dimensions on
+  the same view; there is no separate detail/summary pair. **One flat `student`
+  policy**, `row_level` on
   `abbreviation IN { securityContext.allowed_student_abbreviations }` (the
   view's own flat member name — `locations_abbreviation` on three of the four;
   bare `abbreviation` on `student_assessment_scores_view`, whose `locations`
@@ -198,10 +194,9 @@ reason about.
   `dim_staff_cube_access.additional_location_grants` element that has
   `includes_student_data` true. An empty array → no `student` group emitted →
   default-deny (zero rows) — same empty-array guard as `staff-pii-*` below (Cube
-  hard-errors on `equals []` rather than compiling to zero rows). This replaced
-  an earlier three-policy design (`student-region`/`student-school`/
-  `student-network`, one tier-group each) that could only express "my whole
-  region/network" — never "my region plus one specific other school," which
+  hard-errors on `equals []` rather than compiling to zero rows). Keep it one
+  array-based policy: a per-tier group can express only "my whole
+  region/network," never "my region plus one specific other school," which
   individual-exception grants require.
 - **Staff views are split.** `staff_directory` (roster/employment/work-contact
   fields — no personal or sensitive data) has one open block:
@@ -262,8 +257,8 @@ a `conditions.if` branch.
 When adding a sensitive staff field, decide PII status per
 `.claude/rules/ferpa-pii.md`. If PII, add it to `staff_pii.yml` (not
 `staff_directory.yml`) and wire its per-field scope in `access.js`'s
-`STAFF_SENSITIVE_SCOPE_BY_MEMBER`. Student views have no PII split — any
-scope-specific `student-*` group sees every field.
+`STAFF_SENSITIVE_SCOPE_BY_MEMBER`. Student views have no PII split — the
+`student` group sees every field.
 
 ## `cube.js` security model
 
@@ -309,9 +304,12 @@ access policies above). `cube.js` exports exactly `driverFactory`,
   `CUBE_SQL_DEV_EMAIL` outside prod); the presented `password` is not compared
   and is absent entirely on `SET USER` re-auth flows.
 - **`contextToGroups` owns the Cube Cloud path** (#4526). Cube Cloud bypasses
-  `checkAuth`, so this hook re-derives the context from `cubeCloud.username` and
-  **overwrites** it. **Cube Cloud MERGES a pasted Security Context into the TOP
-  LEVEL**, so every top-level value there is caller-supplied: pasting
+  `checkAuth` and injects
+  `{ cubeCloud: { username, groups, roles, userAttributes, meta, userCredentials }, iss: "cubecloud", exp }`
+  with no top-level `email` (observed on 1.7.14; re-check after upgrades), so
+  this hook re-derives the context from `cubeCloud.username` and **overwrites**
+  it. **Cube Cloud MERGES a pasted Security Context into the TOP LEVEL**, so
+  every top-level value there is caller-supplied: pasting
   `{"groups": ["staff-pii-all_in_scope"], "allowed_abbreviations": [...]}` was
   honored verbatim before the overwrite landed. Never reintroduce a
   `!securityContext.groups` guard here — that guard IS the bypass. The branch
@@ -363,16 +361,10 @@ access policies above). `cube.js` exports exactly `driverFactory`,
   (`network` student scope + `all_in_scope` staff PII) — for them emulation is a
   viewport change, not a grant. Anyone narrower gains real access and needs its
   own decision. Those emails are PII: deployment config only, never a commit.
-- **Group taxonomy (`access.buildGroups`)**: flat `student` (emitted when
-  `allowed_student_abbreviations` is non-empty, not one group per tier);
-  `staff-directory` (every employee, plus a non-employee grantee whose
-  `allowed_abbreviations` is non-empty — i.e. some grant of theirs reached the
-  staff axis; an inert sheet row therefore mints a viewer with no directory);
-  `staff-pii-<staff_pii_scope>` (`staff-pii-all_in_scope` / `-reporting_chain` /
-  `-reporting_chain_or_below_rank` / `-teaching_staff`); plus forward-compat
-  flat `staff-compensation` / `-observations` / `-benefits` (emitted per
-  non-`none` scope; no view consumes them yet). `none` on any axis → no group
-  for that axis → default-deny on the views gated by it.
+- **Group taxonomy (`access.buildGroups`)**: `student`, `staff-directory`,
+  `staff-pii-<staff_pii_scope>`, and the forward-compat staff tiers, each listed
+  under _View access policies_. `none` on any axis → no group for that axis →
+  default-deny on the views gated by it.
 - **`access_policy` blocks, it does not strip.** When a user requests a member
   their tier excludes, Cube denies the whole query — it does not silently drop
   the column and return the rest. BI tools connected via the SQL API (Superset)
@@ -455,10 +447,10 @@ filtering cube — route through `{joined_cube.col}` instead.
 
 ## Cube can't classify an aggregate by a data-driven range
 
-Cube has no non-equi/range (BETWEEN) join, and a dimension can't reference a
-measure (only surface one via `sub_query`). Mapping an aggregated value to a
-band via per-row threshold rows (e.g. percent_correct → performance band) can't
-be expressed in Cube — materialize that classification upstream in dbt.
+A dimension can't reference a measure (only surface one via `sub_query`), and a
+range join matches rows, not aggregates. Mapping an aggregated value to a band
+via per-row threshold rows (e.g. percent_correct → performance band) can't be
+expressed in Cube — materialize that classification upstream in dbt.
 
 ## School weeks vs ISO weeks
 
