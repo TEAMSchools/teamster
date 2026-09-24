@@ -112,8 +112,11 @@ accept a subagent's self-report without the checks there.
 - Issue refs (`Refs #N`, `Closes #N`) in the body put the PR on project boards.
   Never `gh project item-add` a PR.
 - Invoke `superpowers:receiving-code-review` before processing `claude-review`
-  findings, and post a per-finding verdict as a PR comment. Everything else
-  about review and CI: invoke `pr-ci-review`.
+  findings, then post the per-finding verdict as ONE new PR comment whose body
+  starts with `@claude`. The bot fires on that mention and reads nothing else,
+  so an untagged verdict reaches nobody — and posting the verdict untagged and
+  then a tagged duplicate says the same thing twice on a public PR. Everything
+  else about review and CI: invoke `pr-ci-review`.
 
 ## Tooling
 
