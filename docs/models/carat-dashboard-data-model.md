@@ -1029,14 +1029,34 @@ is reverse-chronological — 1 is the most recent — so ordering `desc` walks a
 student's history forwards in time and `lag()` reads the earlier season.
 
 Practice administrations are ordinary links in that chain. The grade 11 practice
-SAT sits at order 17, the far end of the SAT sequence, so a grade 11 Winter
-score's change is measured against it. Nothing in the model treats practice
-specially; it follows from binding `test_type` correctly.
+SAT1 sits at the far end of the SAT sequence, so a grade 11 Winter score's
+change is measured against it. Nothing in the model treats practice specially;
+it follows from binding `test_type` correctly.
+
+#### "Is official growth measured official to official?" — no
+
+The window partitions on `student_number` and `expected_scope` only, and the
+omission of `expected_test_type` is deliberate: the growth chain runs through
+official and practice administrations alike. Two consequences, raised 2026-09-24
+and left as designed:
+
+- An **official** grade 11 Winter change is measured from practice SAT1 for
+  every student who sat it, not from that student's previous official SAT.
+- A **practice** grade 11 Spring change (SAT2, 2027-03-15) is measured from an
+  official Winter sitting when the student has one, not from practice SAT1.
+
+Official-to-official growth does exist, just not on this view.
+`int_assessments__college_assessment` carries `previous_total_score_change`, the
+change from the previous official sitting of the same scope by test date, and
+`rpt_gsheets__college_assessments_wide` carries official-only columns such as
+`g12_sat_total_fall_growth_from_first_sat`. Splitting this view's growth by test
+type means adding `expected_test_type` to the partition, a reversal of a
+decision, so confirm with KIPP Forward before changing it.
 
 It stays restricted to SAT totals because those are the only administrations the
-tab carries a Growth row for — grade 11 Winter and Spring, grade 12 Fall and
-Winter. Subject growth becomes available the moment KIPP Forward adds those
-rows.
+tab carries a Growth row for — grade 11 practice Spring and official Winter and
+Spring, and grade 12 Fall and Winter. Subject growth becomes available the
+moment KIPP Forward adds those rows.
 
 The hub's own `previous_score_change` is deliberately **not** used here. It
 chains every administration a student has, including the ones the tab lists
