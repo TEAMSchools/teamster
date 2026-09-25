@@ -24,6 +24,10 @@ where
     sr.worker_status_code != 'Terminated'
     and sr.home_department_name in ('Teaching and Learning', 'Data', 'Executive')
     and sr.home_business_unit_name = 'KIPP TEAM and Family Schools Inc.'
+    -- same office filter as rpt_illuminate__users, so every role has a user
+    -- (#5539)
+    and sr.home_work_location_dagster_code_location
+    in ('kippnewark', 'kippcamden', 'kipppaterson')
 
 union all
 

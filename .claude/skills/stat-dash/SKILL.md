@@ -169,8 +169,8 @@ Almost always an unresolved `localstudentidentifier`.
 Use this instead of resolving rows one at a time when the detector has a batch
 outstanding. The logic lives in
 [`src/dbt/kipptaf/analyses/state_assessment_tiered_crosswalk_match.sql`](../../../src/dbt/kipptaf/analyses/state_assessment_tiered_crosswalk_match.sql);
-this is the runbook. It is modelled on `collegeboard-ap-data-ingest-protocol`,
-which solves the same problem for AP.
+this is the runbook. It is modelled on `collegeboard-id-crosswalk`, which solves
+the same problem for AP.
 
 **PII.** Output carries names, dates of birth and student numbers. Terminal and
 local scratch only -- never a PR, issue, commit or any file under version

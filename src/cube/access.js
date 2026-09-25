@@ -263,7 +263,10 @@ function buildSecurityContext(
       allowedStudentAbbreviations,
     ),
     staff_pii_scope: row?.staff_pii_scope ?? "none",
-    region_key: row?.region_key ?? null,
+    // The EMPLOYING legal entity's region, not the desk's. resolveAccess has
+    // already expanded it into both allow-lists; region maps 1:1 to legal
+    // entity, so the value is still a region key.
+    legal_entity_region_key: row?.legal_entity_region_key ?? null,
     location_abbreviation: row?.location_abbreviation ?? null,
     department_group: row?.department_group ?? null,
     job_function_level: row?.job_function_level ?? null,

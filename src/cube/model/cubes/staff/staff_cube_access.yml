@@ -9,10 +9,10 @@ cubes:
     # `staff` because the manager alias staff_manager extends `staff` and would
     # inherit a staff-level join, creating an ambiguous second path to
     # staff_cube_access in staff_directory (which joins both). The scope columns
-    # (staff_*_scope, region_key, location_abbreviation, ...) are NOT exposed
-    # here — resolveAccess reads those directly from dim_staff_cube_access to
-    # build the securityContext; only these three role attributes need to be
-    # queryable dimensions.
+    # (staff_*_scope, legal_entity_region_key, location_abbreviation, ...) are
+    # NOT exposed here — resolveAccess reads those directly from
+    # dim_staff_cube_access to build the securityContext; only these three role
+    # attributes need to be queryable dimensions.
     sql_table: kipptaf_marts.dim_staff_cube_access
 
     dimensions:

@@ -198,6 +198,16 @@ reason about.
   array-based policy: a per-tier group can express only "my whole
   region/network," never "my region plus one specific other school," which
   individual-exception grants require.
+  - **A `region` scope expands against the viewer's EMPLOYING legal entity**
+    (`dim_staff_cube_access.legal_entity_region_key`), never their desk's
+    region. FERPA binds student records to the employing LEA, and region maps
+    1:1 to legal entity, so the value is still a region key.
+  - **A KTAF employee is always network-scoped on student data.** KTAF's own
+    legal entity enrolls no students and all 149 of its staff sit in a per-city
+    office room, so a role-mapped `region` or `school` scope resolved to an
+    empty allow-list and denied outright. `dim_staff_cube_access` resolves any
+    granted KTAF scope to `network`; a KTAF viewer mapped to `none` stays
+    `none`.
 - **Staff views are split.** `staff_directory` (roster/employment/work-contact
   fields — no personal or sensitive data) has one open block:
   `member_level: { includes: "*" }` under `staff-directory`, no `row_level` —

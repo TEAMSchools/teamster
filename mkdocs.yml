@@ -78,6 +78,8 @@ nav:
       - HS Early Warning Data Model: models/hs-early-warning-data-model.md
       - DIBELS Dashboard Data Model: models/dibels-dashboard-data-model.md
       - STAT Dashboard Data Model: models/stat-dashboard-data-model.md
+      - Athletic Eligibility Data Model:
+          models/athletic-eligibility-data-model.md
   - Automations: reference/automations.md
 
 markdown_extensions:

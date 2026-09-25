@@ -15,17 +15,17 @@ models:
 
       Three row types. Group rows carry the per-response-group detail, one per
       response group per student per assessment. Subject rows carry one row per
-      student per assessment at the section grain the official hub uses, with
+      student per assessment at the section grain the official model uses, with
       points and percent_correct nulled. Total rows carry one row per student
       administration, with scale_score gated on actual_total_subjects_tested =
       expected_total_subjects_tested and a null assessment_id.
 
 
       assessment_id is canonical_assessment_id, since response_rollup is
-      canonical-grain. Every sheet id currently equals its canonical id because
-      practice assessments have not been grouped into multi-member canonicals.
-      If a multipart practice administration is ever created, the sheet must
-      reference the canonical (lowest) id.
+      canonical-grain. Practice assessments are not grouped into multi-member
+      canonicals, so each sheet id equals its canonical id. A multipart practice
+      administration would need the sheet to reference the canonical (lowest)
+      id.
 
 
       See docs/models/carat-dashboard-data-model.md.
@@ -81,12 +81,12 @@ models:
       - name: scope
         data_type: string
         description: >-
-          The test itself — SAT, ACT, PSAT 8/9, or PSAT10 — from the conversion
-          sheet, which is authoritative because Illuminate's own scope reads
-          Benchmark or null on externally created assessments and is never read
-          here. Matches int_assessments__college_assessment, so the two hubs
-          union on this column. Every predicate keying on the test uses it,
-          including the total row's score_type and the ACT average.
+          The test itself, such as SAT, ACT, PSAT 8/9, or PSAT10, from the
+          conversion sheet, which is authoritative because Illuminate's own
+          scope reads Benchmark or null on externally created assessments and is
+          never read here. Matches int_assessments__college_assessment, so the
+          two models union on this column. Every predicate keying on the test
+          uses it, including the total row's score_type and the ACT average.
       - name: scope_round
         data_type: string
         description: >-
@@ -99,8 +99,8 @@ models:
           Always Practice, from the scaffold's expected_test_type, which the
           conversion join filters to that value. Mirrors
           int_assessments__college_assessment, where test_type is the constant
-          Official and scope holds the test, so both hubs use one vocabulary and
-          union without translation.
+          Official and scope holds the test, so both models use one vocabulary
+          and union without translation.
       - name: grade_level
         data_type: int64
         description: >-
@@ -176,9 +176,9 @@ models:
       - name: points
         data_type: numeric
         description: >-
-          Raw score for the response group, meaning questions answered
-          correctly. Group rows only — null on Subject rows, and summed across
-          sections on Total rows.
+          Raw points, meaning questions answered correctly. On Group rows, the
+          response group's points. Null on Subject rows. On Total rows, the sum
+          of the sections' overall points.
       - name: percent_correct
         data_type: numeric
         description: >-
@@ -209,12 +209,13 @@ models:
         data_type: numeric
         description: >-
           Converted scale score, read from the sheet's aligned_scale_score so no
-          rescaling happens here. On Total rows it is the average of sections
-          for ACT and the sum for everything else, and null when the student did
-          not sit every expected section — which is how an incomplete attempt
-          stays visible rather than being dropped. Numeric because the
-          conversion CTE casts aligned_scale_score once; left as int64 the ACT
-          average would return float64 and coerce the whole union up.
+          rescaling happens here. Group rows carry their section's score. On
+          Total rows it is the average of sections for ACT and the sum for
+          everything else, and null when the student did not sit every expected
+          section — which is how an incomplete attempt stays visible rather than
+          being dropped. Numeric because the conversion CTE casts
+          aligned_scale_score once; left as int64 the ACT average would return
+          float64 and coerce the whole union up.
       - name: aligned_scope
         data_type: string
         description: >-
@@ -237,8 +238,8 @@ models:
         data_type: int64
         description: >-
           Flags a total score rather than a section. Keyed on response_type
-          rather than on subject_area as the official hub does, because that hub
-          has no group rows to exclude.
+          rather than on subject_area as the official model does, because that
+          model has no group rows to exclude.
       - name: is_subject_score
         data_type: int64
         description: >-
@@ -249,9 +250,9 @@ models:
         data_type: string
         description: >-
           Which score shapes the administration produced, using the same labels
-          the official hub assigns — Case 2 for sections without a total, Case 3
-          for both. Derived from whether the student sat every expected section,
-          since a total is scored only when they did.
+          the official model assigns — Case 2 for sections without a scored
+          total, Case 3 for both. Derived from whether the student sat every
+          expected section, since a total is scored only when they did.
 
 
           Case 1, a total with no sections, cannot occur here. The total is
@@ -260,7 +261,7 @@ models:
           which is correct rather than missing data.
 
 
-          The unit differs from the official hub's by one dimension. There the
+          The unit differs from the official model's by one dimension. There the
           counts partition by student, scope, and test date, so the label
           describes a single sitting. Here actual_total_subjects_tested is
           counted per academic year, student, scope_round, and grade, so the
@@ -289,20 +290,18 @@ models:
 
 
           Total rows drive it and every row of that administration carries the
-          result, matching how the official hub spreads it across a sitting. A
+          result, matching how the official model spreads it across a sitting. A
           section's own change is not computed — the roster reports growth at
           the total grain, and the goals sheet has no section growth score type.
 
 
           Keyed on the administration rather than the date, because two
           administrations can share a date where a school splits its testing
-          across days. Reads null everywhere today: no student yet holds two
-          practice administrations of one test, ACT1 being AY2023 only and SAT1
-          AY2026 only.
+          across days.
       - name: rn_highest
         data_type: int64
         description: >-
           Ranks a student's scores highest-first within scope and score_type,
-          matching the official hub's convention so the two union without
+          matching the official model's convention so the two union without
           translation. Null on group rows, which are response-group detail and
           are not ranked — only subject and total rows carry a rank.
