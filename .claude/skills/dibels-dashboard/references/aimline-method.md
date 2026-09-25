@@ -297,9 +297,9 @@ the definition, not the old decision, if someone reopens it.
 `On Track to Benchmark`, which appears in some of their screenshots but in no
 definitions table, comes from a separate wishlist line -- "Meeting Aimline,
 Below Benchmark Trajectory, could be a swap view". That is the origin of
-`aimline_trajectory_category`. It is a different ask, not drift, so do not
-retire that column as a duplicate without checking whether the swap view is
-still wanted.
+`aimline_trajectory_category`. That check was made on 2026-09-24: once
+academics' rules were applied the swap view duplicated Aimline and Benchmark,
+and Trajectory is being dropped.
 
 **Three pads exist, and the doc's "PADDING UPDATE (K-8)" block governs two of
 them -- not the PM one.** Read against the PM chain the block looks like a
@@ -484,11 +484,11 @@ confirmed it 2026-09-22. Do not reopen it or offer to reverse it.
 is in the reference doc under "Academics' answers on labels and the roster".
 Before building any of it:
 
-- The Trajectory rule is open. Academics want benchmark as the only indicator,
-  and nobody has defined what separates On Track from Off Track without the
-  aimline. Do not implement it by keeping the aimline as a hidden tiebreaker,
-  and do not implement benchmark-first plus aimline: measured, that makes
-  Trajectory an exact copy of Aimline and Benchmark.
+- Trajectory is being dropped (2026-09-24). Under academics' rules it duplicates
+  Aimline and Benchmark exactly, and a benchmark-only version could not judge a
+  student's first round. Do not rebuild or relabel its three columns; retire
+  them once the workbook stops using them, and record that here and in the
+  reference doc.
 - The 490 students below aimline but at benchmark (681 AY2025 rows) sit in
   `Meeting Aimline, Meeting Benchmark`, so the label is false for them.
   Academics knew and chose that on 2026-09-24. Do not move them.

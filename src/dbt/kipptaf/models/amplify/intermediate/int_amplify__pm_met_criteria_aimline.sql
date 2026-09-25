@@ -443,6 +443,8 @@ select
     end as measure_name_code_benchmark_status,
 
     case
+        when not completed_test_round
+        then 'Round Incomplete'
         when round_bm_min_met = 0
         then 'Did Not Meet Benchmark'
         when n_round_bm_unpublished > 0

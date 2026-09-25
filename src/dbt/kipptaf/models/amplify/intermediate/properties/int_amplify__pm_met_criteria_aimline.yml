@@ -261,6 +261,12 @@ models:
           measure_name_code_benchmark_status one grain coarser, so strictly the
           stricter of the two, and null where any verdict is unpublished.
 
+          A round the student did not finish reads Round Incomplete, checked
+          first, so a partial round is never judged on the measures sat so far.
+          Academics' decision on 2026-09-24, the same hold-out the Aimline
+          pm_round_status applies. The internal sibling's column still scores
+          partial rounds, so the two differ there by design.
+
           Broadcasts across every row of the round. Count students on it only
           with a measure filter, or it multiplies by the measure count.
         config:

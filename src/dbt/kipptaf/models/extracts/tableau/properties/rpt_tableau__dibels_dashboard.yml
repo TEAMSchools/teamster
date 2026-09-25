@@ -834,7 +834,9 @@ models:
         description: >-
           Whether the student met the benchmark standard on EVERY measure
           standard the round expected -- Met Benchmark, Did Not Meet Benchmark,
-          or Not Tested. Populated on both PM methods.
+          or Not Tested, plus Round Incomplete on Aimline rows for a round the
+          student did not finish (since 2026-09-24; Internal rows still score
+          partial rounds). Populated on both PM methods.
 
           Not Tested carries two states that the extract's coalesce flattens
           into one. A LEFT JOIN miss means the student sat nothing. An explicit
