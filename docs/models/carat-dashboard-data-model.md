@@ -734,6 +734,11 @@ test, and date. Tracked in #4871.
 When hunting duplicates in kippadb, key on subject too, because students
 legitimately sit several AP exams in one day.
 
+A warn-level uniqueness test on `int_kippadb__standardized_test_unpivot`
+(student, test, score type, AP course, and date) already flags these. Once the
+PSAT and AP records are cleaned up, raise it to `error` so a new double entry
+fails the build.
+
 ### `rn_highest = 1` hides some students' best scores
 
 When a student's highest score for a score type has no test date, the official
@@ -743,6 +748,11 @@ their next score. `benchmark_aligned_scope_max_score` keeps that filter, so a
 few dozen historical SAT students read `No Data` in `_benchmark_calcs`, while
 `_over_time`, which has no such filter, shows their scores. The fixes are
 backfilling the dates in kippadb, or ranking after the null-date filter.
+
+No test catches a null date yet: the date test on
+`int_kippadb__standardized_test_unpivot` lets nulls through. Add a warn-level
+`not_null` on `date` alongside the kippadb cleanup, so the count can be driven
+to zero and held there.
 
 ## Yearly upkeep
 
