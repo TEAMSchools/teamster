@@ -18,7 +18,7 @@
   a bulk launch into per-partition runs to dodge the classifier is not allowed;
   hand a partition-range backfill to the Dagster UI.
 - **Touch a worktree through the main-checkout path.** Use `git -C <worktree>`
-  and `/workspaces/teamster/.worktrees/<branch>/<path>` on every call.
+  and `/workspaces/teamster/.claude/worktrees/<branch>/<path>` on every call.
 - **Run bare `python`, `dbt`, or `dagster`.** Always `uv run`.
 
 ## Read the nearest CLAUDE.md first
@@ -54,8 +54,10 @@ specifics live there.
   `log`, `auth`, or `secret`: rename and retry.
 - Create, with an issue: `gh issue develop <number> --name <branch>` (add
   `--checkout` for a branch switch), then
-  `git worktree add /workspaces/teamster/.worktrees/<branch> <branch>`. The path
-  must be absolute; a relative one nests one worktree inside another.
+  `git worktree add /workspaces/teamster/.claude/worktrees/<branch> <branch>`.
+  The path must be absolute; a relative one nests one worktree inside another.
+  Keep worktrees under `.claude/worktrees/`: `EnterWorktree` prompts on every
+  path outside it, and no allow rule or auto mode suppresses that prompt.
 - Create, without an issue (user declined):
   `git worktree add -b <branch> <abs-path> origin/main` or
   `git checkout -b <branch>`. Name `origin/main`; local `main` is often behind.
@@ -64,10 +66,10 @@ specifics live there.
   dbt Cloud CI; only Trunk runs (see `pr-ci-review`). Unset the upstream right
   after, per `.claude/rules/worktrees.md`.
 - Enter: after any `git worktree add`, call `EnterWorktree` `path=<abs-path>`,
-  then Read `.claude/rules/worktrees.md`. Inside a worktree its `.worktrees/**`
-  trigger never fires (rules resolve against the worktree root). Never
-  `EnterWorktree` `name`: it creates its own branch in `.claude/worktrees/`,
-  with no issue link.
+  then Read `.claude/rules/worktrees.md`. Inside a worktree its
+  `.claude/worktrees/**` trigger never fires (rules resolve against the worktree
+  root). Never `EnterWorktree` `name`: it creates its own branch with no issue
+  link.
 - Linking an existing remote branch to an issue: `mcp__github__create_branch`
   and GraphQL `createLinkedBranch` both no-op. Deleting the remote branch is
   classifier-blocked even with consent. Create the branch under a NEW name and
