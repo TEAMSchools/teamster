@@ -124,7 +124,7 @@ handover is the whole tab, pasted over A1 — never a partial patch.
   `PowerSchool_Course_Name`, `Illuminate_Subject_Area`, `Is_Foundations`,
   `Is_Advanced_Math`, `Discipline`, `Duplicate_Audit`, `SIS`,
   `Standard_Course_Name`, `Core_Subject`; named range
-  `src_assessments__course_subject_crosswalk_v3` over `A:J`.
+  `src_google_sheets__assessments__course_subject_crosswalk_v3` over `A:J`.
 
 - [ ] **Step 1: Write the generator.**
 
@@ -284,8 +284,9 @@ handover is the whole tab, pasted over A1 — never a partial patch.
 - [ ] **Step 3: Owner pastes and names the range.** The owner opens the tab,
       selects A1, pastes `crosswalk_v3.tsv` over the whole tab, and confirms 426
       rows and 10 columns. Pasted `=COUNTIFS` text becomes formulas. Then the
-      owner adds the named range `src_assessments__course_subject_crosswalk_v3`
-      = `'PowerSchool Course/Subject Crosswalk'!A:J` (column-bounded,
+      owner adds the named range
+      `src_google_sheets__assessments__course_subject_crosswalk_v3` =
+      `'PowerSchool Course/Subject Crosswalk'!A:J` (column-bounded,
       row-unbounded; the tab grid is 7 columns wide today, and the paste widens
       it) and leaves `_v2` in place: prod reads `_v2` until PR A merges.
 
@@ -309,8 +310,9 @@ handover is the whole tab, pasted over A1 — never a partial patch.
 
 - [ ] **Step 1: Edit the source block only.** Bound the edit to this source's
       block (per the DIBELS skill: never a forward-scanning regex). Change
-      `sheet_range: src_assessments__course_subject_crosswalk_v2` to `..._v3`,
-      and append after the `Duplicate_Audit` column entry:
+      `sheet_range: src_assessments__course_subject_crosswalk_v2` to
+      `src_google_sheets__assessments__course_subject_crosswalk_v3`, and append
+      after the `Duplicate_Audit` column entry:
 
   ```yaml
   - name: SIS
