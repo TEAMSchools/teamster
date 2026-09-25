@@ -1,0 +1,1026 @@
+{
+  "tables": {
+    "dim_assessment_administrations": {
+      "_dbt_source_project": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "administered_date_key": {
+        "type": "DATE",
+        "nullable": true
+      },
+      "administration_period": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "assessment_administration_key": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "assessment_key": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "source_assessment_id": {
+        "type": "INT64",
+        "nullable": true
+      },
+      "test_type": {
+        "type": "STRING",
+        "nullable": true
+      }
+    },
+    "dim_assessments": {
+      "academic_subject": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "aligned_academic_subject": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "assessment_key": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "category": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "combined_academic_subject": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "credit_category": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "grade_level_tested": {
+        "type": "INT64",
+        "nullable": true
+      },
+      "is_internal_assessment": {
+        "type": "BOOL",
+        "nullable": true
+      },
+      "module_code": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "module_type": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "scope": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "source_assessment_id": {
+        "type": "INT64",
+        "nullable": true
+      },
+      "test_type": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "title": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "type": {
+        "type": "STRING",
+        "nullable": true
+      }
+    },
+    "dim_course_sections": {
+      "course_key": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "course_section_key": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "identifier": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "location_key": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "period": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "room": {
+        "type": "STRING",
+        "nullable": true
+      }
+    },
+    "dim_courses": {
+      "academic_subject": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "course_code": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "course_key": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "course_title": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "credit_type": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "credits": {
+        "type": "FLOAT64",
+        "nullable": true
+      },
+      "is_foundations": {
+        "type": "BOOL",
+        "nullable": true
+      }
+    },
+    "dim_dates": {
+      "academic_year": {
+        "type": "INT64",
+        "nullable": true
+      },
+      "calendar_week_end_date": {
+        "type": "DATE",
+        "nullable": true
+      },
+      "calendar_week_start_date": {
+        "type": "DATE",
+        "nullable": true
+      },
+      "date_key": {
+        "type": "DATE",
+        "nullable": true
+      },
+      "date_timestamp": {
+        "type": "TIMESTAMP",
+        "nullable": true
+      },
+      "day_of_month": {
+        "type": "INT64",
+        "nullable": true
+      },
+      "day_of_week": {
+        "type": "INT64",
+        "nullable": true
+      },
+      "day_of_week_name": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "day_of_year": {
+        "type": "INT64",
+        "nullable": true
+      },
+      "fiscal_year": {
+        "type": "INT64",
+        "nullable": true
+      },
+      "is_current_academic_year": {
+        "type": "BOOL",
+        "nullable": true
+      },
+      "is_weekday": {
+        "type": "BOOL",
+        "nullable": true
+      },
+      "month_name": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "month_number": {
+        "type": "INT64",
+        "nullable": true
+      },
+      "quarter_number": {
+        "type": "INT64",
+        "nullable": true
+      },
+      "school_week_end_date": {
+        "type": "DATE",
+        "nullable": true
+      },
+      "school_week_start_date": {
+        "type": "DATE",
+        "nullable": true
+      },
+      "week_of_year": {
+        "type": "INT64",
+        "nullable": true
+      },
+      "year_number": {
+        "type": "INT64",
+        "nullable": true
+      }
+    },
+    "dim_locations": {
+      "abbreviation": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "address": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "campus": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "city": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "grade_band": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "is_campus": {
+        "type": "BOOL",
+        "nullable": true
+      },
+      "location_key": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "name": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "postal_code": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "region_key": {
+        "type": "STRING",
+        "nullable": true
+      }
+    },
+    "dim_regions": {
+      "business_unit_code": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "dagster_code_location": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "legal_entity": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "name": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "region_key": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "state": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "state_district_id": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "timezone": {
+        "type": "STRING",
+        "nullable": true
+      }
+    },
+    "dim_school_calendars": {
+      "date_key": {
+        "type": "DATE",
+        "nullable": true
+      },
+      "is_in_session": {
+        "type": "BOOL",
+        "nullable": true
+      },
+      "is_membership_day": {
+        "type": "BOOL",
+        "nullable": true
+      },
+      "location_key": {
+        "type": "STRING",
+        "nullable": true
+      }
+    },
+    "dim_staff": {
+      "active_directory_username": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "birth_date": {
+        "type": "DATE",
+        "nullable": true
+      },
+      "first_name": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "full_name": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "gender_identity": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "google_email": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "is_hispanic": {
+        "type": "BOOL",
+        "nullable": true
+      },
+      "last_name": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "original_hire_date": {
+        "type": "DATE",
+        "nullable": true
+      },
+      "personal_cell_phone": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "personal_email": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "race": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "rehire_date": {
+        "type": "DATE",
+        "nullable": true
+      },
+      "staff_key": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "staff_unique_id": {
+        "type": "INT64",
+        "nullable": true
+      },
+      "work_email": {
+        "type": "STRING",
+        "nullable": true
+      }
+    },
+    "dim_staff_cube_access": {
+      "additional_location_grants": {
+        "type": "ARRAY<STRUCT<location_scope STRING, region_key STRING, location_abbreviation STRING, includes_student_data BOOL, includes_staff_data BOOL>>",
+        "nullable": false
+      },
+      "department_group": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "entity": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "google_email": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "is_employee": {
+        "type": "BOOL",
+        "nullable": true
+      },
+      "job_function_code": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "job_function_level": {
+        "type": "INT64",
+        "nullable": true
+      },
+      "location_abbreviation": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "region_key": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "staff_benefits_scope": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "staff_compensation_scope": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "staff_department_scope": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "staff_key": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "staff_location_scope": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "staff_observations_scope": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "staff_pii_scope": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "student_location_scope": {
+        "type": "STRING",
+        "nullable": true
+      }
+    },
+    "dim_staff_reporting_chain": {
+      "depth": {
+        "type": "INT64",
+        "nullable": true
+      },
+      "manager_staff_key": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "reportee_staff_key": {
+        "type": "STRING",
+        "nullable": true
+      }
+    },
+    "dim_staff_reporting_periods": {
+      "effective_end_date": {
+        "type": "DATE",
+        "nullable": true
+      },
+      "effective_start_date": {
+        "type": "DATE",
+        "nullable": true
+      },
+      "manager_staff_key": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "staff_key": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "staff_reporting_periods_key": {
+        "type": "STRING",
+        "nullable": true
+      }
+    },
+    "dim_staff_work_history": {
+      "business_unit_name": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "department_name": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "effective_end_date": {
+        "type": "DATE",
+        "nullable": true
+      },
+      "effective_start_date": {
+        "type": "DATE",
+        "nullable": true
+      },
+      "full_time_equivalency": {
+        "type": "FLOAT64",
+        "nullable": true
+      },
+      "is_management_position": {
+        "type": "BOOL",
+        "nullable": true
+      },
+      "is_primary_position": {
+        "type": "BOOL",
+        "nullable": true
+      },
+      "job_code": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "manager_staff_key": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "position_title": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "staff_key": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "staff_work_history_key": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "status_name": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "status_reason": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "work_assignment_key": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "work_location_key": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "worker_type": {
+        "type": "STRING",
+        "nullable": true
+      }
+    },
+    "dim_student_enrollment_status": {
+      "iep_classification": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "is_ell": {
+        "type": "BOOL",
+        "nullable": true
+      },
+      "is_iep": {
+        "type": "BOOL",
+        "nullable": true
+      },
+      "is_meal_eligible": {
+        "type": "BOOL",
+        "nullable": true
+      },
+      "meal_eligibility": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "special_education_code": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "special_education_name": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "special_education_placement": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "student_enrollment_key": {
+        "type": "STRING",
+        "nullable": true
+      }
+    },
+    "dim_student_enrollments": {
+      "academic_year": {
+        "type": "INT64",
+        "nullable": true
+      },
+      "entry_date_key": {
+        "type": "DATE",
+        "nullable": true
+      },
+      "exit_date_key": {
+        "type": "DATE",
+        "nullable": true
+      },
+      "grade_level": {
+        "type": "INT64",
+        "nullable": true
+      },
+      "graduation_year": {
+        "type": "INT64",
+        "nullable": true
+      },
+      "is_retained_year": {
+        "type": "BOOL",
+        "nullable": true
+      },
+      "location_key": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "student_enrollment_key": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "student_key": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "year_in_network": {
+        "type": "INT64",
+        "nullable": true
+      }
+    },
+    "dim_student_section_enrollments": {
+      "academic_year": {
+        "type": "INT64",
+        "nullable": true
+      },
+      "course_section_key": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "entry_date": {
+        "type": "DATE",
+        "nullable": true
+      },
+      "exit_date": {
+        "type": "DATE",
+        "nullable": true
+      },
+      "is_current_homeroom": {
+        "type": "BOOL",
+        "nullable": true
+      },
+      "is_current_section_enrollment": {
+        "type": "BOOL",
+        "nullable": true
+      },
+      "is_dropped_course": {
+        "type": "BOOL",
+        "nullable": true
+      },
+      "is_dropped_section": {
+        "type": "BOOL",
+        "nullable": true
+      },
+      "is_homeroom": {
+        "type": "BOOL",
+        "nullable": true
+      },
+      "lead_teacher_staff_key": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "student_enrollment_key": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "student_section_enrollment_key": {
+        "type": "STRING",
+        "nullable": true
+      }
+    },
+    "dim_students": {
+      "birth_date": {
+        "type": "DATE",
+        "nullable": true
+      },
+      "district_student_identifier": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "enrollment_status": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "full_name": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "gender_identity": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "is_gifted": {
+        "type": "BOOL",
+        "nullable": true
+      },
+      "lea_student_identifier": {
+        "type": "INT64",
+        "nullable": true
+      },
+      "race": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "salesforce_contact_id": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "state_student_identifier": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "student_key": {
+        "type": "STRING",
+        "nullable": true
+      }
+    },
+    "dim_terms": {
+      "academic_year": {
+        "type": "INT64",
+        "nullable": true
+      },
+      "data_freeze_date": {
+        "type": "DATE",
+        "nullable": true
+      },
+      "end_date": {
+        "type": "DATE",
+        "nullable": true
+      },
+      "fiscal_year": {
+        "type": "INT64",
+        "nullable": true
+      },
+      "grade_band": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "is_current": {
+        "type": "BOOL",
+        "nullable": true
+      },
+      "location_key": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "school_id": {
+        "type": "INT64",
+        "nullable": true
+      },
+      "semester": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "start_date": {
+        "type": "DATE",
+        "nullable": true
+      },
+      "term_code": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "term_key": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "term_name": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "type": {
+        "type": "STRING",
+        "nullable": true
+      }
+    },
+    "fct_assessment_scores_enrollment_scoped": {
+      "assessment_administration_key": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "assessment_date_key": {
+        "type": "DATE",
+        "nullable": true
+      },
+      "assessment_score_key": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "enrollment_resolution": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "is_mastery": {
+        "type": "BOOL",
+        "nullable": true
+      },
+      "is_replacement": {
+        "type": "BOOL",
+        "nullable": true
+      },
+      "national_percentile": {
+        "type": "NUMERIC",
+        "nullable": true
+      },
+      "percent_correct": {
+        "type": "NUMERIC",
+        "nullable": true
+      },
+      "performance_band_label_number": {
+        "type": "NUMERIC",
+        "nullable": true
+      },
+      "proficiency_level": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "response_type": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "response_type_code": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "response_type_description": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "response_type_root_description": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "scale_score": {
+        "type": "NUMERIC",
+        "nullable": true
+      },
+      "student_section_enrollment_key": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "term_key": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "test_date_key": {
+        "type": "DATE",
+        "nullable": true
+      }
+    },
+    "fct_student_attendance_enrollment_daily": {
+      "academic_year": {
+        "type": "INT64",
+        "nullable": true
+      },
+      "ada_tier": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "attendance_category": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "attendance_code": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "attendance_value": {
+        "type": "FLOAT64",
+        "nullable": true
+      },
+      "date_key": {
+        "type": "DATE",
+        "nullable": true
+      },
+      "is_absent": {
+        "type": "INT64",
+        "nullable": true
+      },
+      "is_chronically_absent": {
+        "type": "BOOL",
+        "nullable": true
+      },
+      "is_in_session_day": {
+        "type": "BOOL",
+        "nullable": true
+      },
+      "is_iss": {
+        "type": "INT64",
+        "nullable": true
+      },
+      "is_ontime": {
+        "type": "INT64",
+        "nullable": true
+      },
+      "is_oss": {
+        "type": "INT64",
+        "nullable": true
+      },
+      "is_suspended": {
+        "type": "INT64",
+        "nullable": true
+      },
+      "is_tardy": {
+        "type": "INT64",
+        "nullable": true
+      },
+      "is_truant": {
+        "type": "BOOL",
+        "nullable": true
+      },
+      "location_key": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "membership_value": {
+        "type": "FLOAT64",
+        "nullable": true
+      },
+      "n_membership_days_ytd": {
+        "type": "FLOAT64",
+        "nullable": true
+      },
+      "n_present_days_ytd": {
+        "type": "FLOAT64",
+        "nullable": true
+      },
+      "present_weight": {
+        "type": "FLOAT64",
+        "nullable": true
+      },
+      "student_day_key": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "student_enrollment_key": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "term_key": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "week_start_monday": {
+        "type": "DATE",
+        "nullable": true
+      }
+    },
+    "fct_student_attendance_enrollment_periods": {
+      "academic_year": {
+        "type": "INT64",
+        "nullable": true
+      },
+      "ada_tier": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "is_chronically_absent": {
+        "type": "BOOL",
+        "nullable": true
+      },
+      "is_truant": {
+        "type": "BOOL",
+        "nullable": true
+      },
+      "n_membership_days_ytd": {
+        "type": "FLOAT64",
+        "nullable": true
+      },
+      "n_present_days_ytd": {
+        "type": "FLOAT64",
+        "nullable": true
+      },
+      "period_end_date_key": {
+        "type": "DATE",
+        "nullable": true
+      },
+      "period_start_date_key": {
+        "type": "DATE",
+        "nullable": true
+      },
+      "period_start_membership_date_key": {
+        "type": "DATE",
+        "nullable": true
+      },
+      "period_type": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "student_enrollment_key": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "student_period_key": {
+        "type": "STRING",
+        "nullable": true
+      },
+      "term_key": {
+        "type": "STRING",
+        "nullable": true
+      }
+    }
+  }
+}

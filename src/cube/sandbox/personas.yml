@@ -1,0 +1,121 @@
+# Declared, not generated. canaries.yml references these by email address, so
+# they must survive a seed change and a generator refactor.
+#
+# Every persona declares every `*_scope` column of dim_staff_cube_access, and
+# `tests/cube_sandbox/test_personas.py` asserts that against the committed
+# schema_snapshot.json rather than against a list written here. Two of the
+# seven — staff_location_scope and staff_department_scope — reach access.js as
+# bare parameters (`locationScope`, `deptScope`) of computeAllowedAbbreviations
+# and computeAllowedDepartmentGroups, so a grep of access.js for `*_scope`
+# names does not find them. They are the remit pair: buildGroups withholds the
+# staff-pii group unless BOTH resolve non-empty, so a persona missing them
+# default-denies on staff_pii no matter what its staff_pii_scope says.
+personas:
+  - email: sheryl.swoopes@ktaf-sandbox.invalid
+    given_name: Sheryl
+    surname: Swoopes
+    purpose: Network-wide student access, full staff PII remit.
+    scopes:
+      student_location_scope: network
+      # "Full" remit: every location, every department group. The widest pair
+      # access.js can resolve, which is what makes all_in_scope mean all.
+      staff_location_scope: network
+      staff_department_scope: all
+      staff_pii_scope: all_in_scope
+      staff_compensation_scope: all_in_scope
+      staff_observations_scope: none
+      staff_benefits_scope: all_in_scope
+    reportees: []
+
+  - email: ororo.munroe@ktaf-sandbox.invalid
+    given_name: Ororo
+    surname: Munroe
+    purpose: School-scoped students; chain-scoped PII with a non-empty chain.
+    scopes:
+      student_location_scope: school
+      # A school-based manager: her own school, her own department group. The
+      # chain is what carries her staff_pii access, but the remit still has to
+      # resolve — the narrow pair is the one that would break first if
+      # computeAllowedAbbreviations stopped honouring "school".
+      staff_location_scope: school
+      staff_department_scope: own_group
+      staff_pii_scope: reporting_chain
+      staff_compensation_scope: none
+      staff_observations_scope: reporting_chain
+      staff_benefits_scope: reporting_chain
+    reportees:
+      - zydrunas.ilgauskas@ktaf-sandbox.invalid
+
+  - email: zydrunas.ilgauskas@ktaf-sandbox.invalid
+    given_name: Žydrūnas
+    surname: Ilgauskas
+    purpose: Region-scoped students; teaching-staff PII. Empty chain.
+    scopes:
+      student_location_scope: region
+      # His region, every department group. `all` and not `own_group`: the
+      # teaching_staff policy ANDs the remit with
+      # job_function_code IN ('TEACH','TIR'), and teachers do not all sit in
+      # one department group — an own_group remit would leave his ROWS canary
+      # depending on which group the generator happened to give him.
+      staff_location_scope: region
+      staff_department_scope: all
+      staff_pii_scope: teaching_staff
+      staff_compensation_scope: none
+      staff_observations_scope: none
+      staff_benefits_scope: none
+    reportees: []
+
+  - email: aja.ogwumike@ktaf-sandbox.invalid
+    given_name: A'ja
+    surname: Ogwumike
+    purpose: Default-deny on every axis. Resolves to a row with no groups.
+    scopes:
+      student_location_scope: none
+      # The only persona with an empty remit, and deliberately so: hasRemit
+      # false has to be reachable, and this is the row that reaches it.
+      staff_location_scope: none
+      staff_department_scope: none
+      staff_pii_scope: none
+      staff_compensation_scope: none
+      staff_observations_scope: none
+      staff_benefits_scope: none
+    reportees: []
+
+  - email: karl-anthony.maximoff@ktaf-sandbox.invalid
+    given_name: Karl-Anthony
+    surname: Maximoff
+    purpose: Rank-scoped PII with both a remit and a chain.
+    scopes:
+      student_location_scope: network
+      # "Both a remit and a chain": network locations intersected with his own
+      # department group. Non-empty, so the OR's remit-plus-rank branch is
+      # live rather than carried entirely by the chain.
+      staff_location_scope: network
+      staff_department_scope: own_group
+      staff_pii_scope: reporting_chain_or_below_rank
+      staff_compensation_scope: reporting_chain
+      staff_observations_scope: all_in_scope
+      staff_benefits_scope: none
+    reportees:
+      - aja.ogwumike@ktaf-sandbox.invalid
+
+  - email: shaquille.oquinn@ktaf-sandbox.invalid
+    given_name: Shaquille
+    surname: O'Quinn
+    purpose:
+      Chain-scoped PII with an EMPTY chain. Exercises the no-group default-deny
+      path that exists because Cube errors on an equals-[] row filter, and that
+      production cannot reach. The remit is deliberately NON-empty so the deny
+      is attributable to the empty chain alone.
+    scopes:
+      student_location_scope: school
+      # Non-empty on both axes. reporting_chain does not read the remit, so
+      # this persona would still be BLOCKED with an empty one — and then it
+      # would prove nothing about the chain.
+      staff_location_scope: school
+      staff_department_scope: own_group
+      staff_pii_scope: reporting_chain
+      staff_compensation_scope: none
+      staff_observations_scope: none
+      staff_benefits_scope: none
+    reportees: []

@@ -8,7 +8,12 @@ plugins:
       uri: https://github.com/trunk-io/plugins
 lint:
   enabled:
-    - pinact@5.0.0
+    # Held at 4.x: trunk's plugin definition (plugins ref v1.11.0) still
+    # invokes pinact with the v4 single-dash `-format`, which v5 rejects
+    # outright — so every PR touching a workflow file fails Trunk Check with
+    # `pinact/config-error` and no file to fix. Move to 5.x once the plugin
+    # definition passes `--format`.
+    - pinact@4.1.1
     - bandit@1.9.4
     - actionlint@1.7.12
     - git-diff-check
