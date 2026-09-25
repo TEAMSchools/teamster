@@ -81,6 +81,13 @@ the text, no fallback text is written: the drafts name C2 to C5 members
 directly, and the reference file loses its band-set table outright. The revision
 notes above keep their PR numbers as history.
 
+**Revision, 2026-09-25, fifth pass — #5495 carries the build and closes #5236.**
+The one PR is #5495 itself: the spec and its implementation merge together. Two
+additions. Step 0 under _Eval extension_ tests `ai_context` on the `dates`
+academic-year members against the crosswalk eval before any other `ai_context`
+is written, so its result can size the rest. The production-monitor section
+gains a definition of done, scoped to the checkable facts.
+
 ## Decision
 
 The Claude + Cube working group runs on two markdown files uploaded by hand to a
@@ -750,6 +757,34 @@ The eval runs once the descriptions, docstrings and model changes are all on the
 branch. Arm B must beat arm A on the trap rate for the family, or the
 description text is revised before the PR merges.
 
+### Step 0: does `ai_context` move the crosswalk eval?
+
+This runs first, before any other `ai_context` value is written, because its
+result sizes all of them. `ai_context` has zero uses in `src/cube/model/` today,
+so this is the first measurement of the channel here.
+
+- Add `meta.ai_context` to `dates.academic_year` and `dates.academic_year_label`
+  in `src/cube/model/cubes/conformed/dates.yml`. The value is agent-only
+  crosswalk guidance: filter on the label, and read the integer as the start
+  year. `dates` is conformed, so the value reaches every view that includes it —
+  the attendance views the crosswalk eval uses, and the assessment view, which
+  carries both members.
+- The crosswalk eval does not read YAML; `arms.py` holds a hand-written
+  `META_STUB`. Add arm C: arm B plus the same `ai_context` strings on the stub's
+  `dates_academic_year` and `dates_academic_year_label` members, as the `meta`
+  key `/meta` returns them in.
+- Run families 1 to 3 on arms B and C, and report the wrong-answer rate per arm
+  with Wilson intervals.
+
+Done when the spec records whether the wrong-answer rate moved. A null or
+negative result is kept and written down, not rerun until it passes. If arm C
+does not beat arm B, the per-member `ai_context` drafts are re-decided before
+they are written.
+
+Step 0 breaks the one-home rule on purpose. The crosswalk already lives in the
+`load` docstring (sieve step 3), so arm C measures the channel, not a placement.
+If arm C wins, the crosswalk picks one home before the PR merges.
+
 ### Why family 4 stops at eight
 
 Eight traps against ~50 facts looks like a sample. It is closer to the whole
@@ -804,6 +839,11 @@ not on what people actually ask or on whether they still work in November.
 The only obligation this spec takes on is keeping the trap predicates importable
 rather than inlined in the scorer's main loop.
 
+Once those monitors exist, each checkable fact has a definition of done: its
+trap stops firing. That holds only for the malformed-query third above. A
+correct query that is misread leaves nothing to detect, so those facts stay
+documentation.
+
 ## Project-knowledge trim
 
 - The PR deletes every fact it moved from `assessment-cube-reference.md`.
@@ -819,20 +859,22 @@ rather than inlined in the scorer's main loop.
 
 ## PR and validation
 
-One PR carries all of it: the descriptions and their dbt twins, the `ai_context`
-values, the `cube-authoring.md` rule, the `load` and `meta` docstrings, the
-reference trim, C2 to C5, the schema test, eval family 4 and the pre-drain
-fixture. Partitioning the fact table is not in it; that is #5557.
+#5495 carries all of it, this spec included, and closes #5236: Step 0, the
+descriptions and their dbt twins, the `ai_context` values, the
+`cube-authoring.md` rule, the `load` and `meta` docstrings, the reference trim,
+C2 to C5, the schema test, eval family 4 and the pre-drain fixture. Partitioning
+the fact table is not in it; that is #5557.
 
-| Change                                              | Validation                                                                                                                                       |
-| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Descriptions, `ai_context`, rule, trim, schema test | `uv run pytest tests/cube/`; Cube Cloud branch staging validates the model                                                                       |
-| `load` and `meta` docstrings                        | `uv run pytest tests/cube/`                                                                                                                      |
-| C2: canonical standard code                         | dbt build; pre-agg partition count unchanged on branch staging                                                                                   |
-| C3: `count_assessments`                             | branch staging query returns quartile-shaped counts                                                                                              |
-| C4: `assessment_family`                             | `uv run dbt build --select dim_assessments+`                                                                                                     |
-| C5: band-set columns                                | `uv run dbt build --select dim_assessments+`; `assessment_key` still unique; `mastery_cut_score` matches the band-set model for a sample of sets |
-| All of it                                           | eval run; arm B beats arm A                                                                                                                      |
+| Change                                                    | Validation                                                                                                                                       |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Step 0: `ai_context` on the `dates` academic-year members | crosswalk eval families 1 to 3, arm C against arm B; result recorded either way                                                                  |
+| Descriptions, `ai_context`, rule, trim, schema test       | `uv run pytest tests/cube/`; Cube Cloud branch staging validates the model                                                                       |
+| `load` and `meta` docstrings                              | `uv run pytest tests/cube/`                                                                                                                      |
+| C2: canonical standard code                               | dbt build; pre-agg partition count unchanged on branch staging                                                                                   |
+| C3: `count_assessments`                                   | branch staging query returns quartile-shaped counts                                                                                              |
+| C4: `assessment_family`                                   | `uv run dbt build --select dim_assessments+`                                                                                                     |
+| C5: band-set columns                                      | `uv run dbt build --select dim_assessments+`; `assessment_key` still unique; `mastery_cut_score` matches the band-set model for a sample of sets |
+| All of it                                                 | eval run; arm B beats arm A                                                                                                                      |
 
 The PR body carries the markdown lines it deleted, so a reviewer can see each
 fact beside its new wording.
