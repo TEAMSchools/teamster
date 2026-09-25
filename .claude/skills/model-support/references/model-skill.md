@@ -32,7 +32,12 @@ assessment is issue #5434) inside the repo convention:
   scripts list. Nothing else.
 - `references/*.md`: one file per task area. Always `references/`, never
   `reference/`.
-- `scripts/*.py`: helpers the procedures run.
+- `scripts/*.py`: helpers the procedures run. Inputs that change every cycle (a
+  year's calendar, a roster, a paste, a generated TSV) go in the session
+  scratchpad. The repo gets at most a generic `*.example.*` file showing each
+  kind of entry once. When a Google Sheet is the record, the skill names it and
+  does not copy it: on CARAT, a committed `expected_assessments_2026_27.json`
+  duplicated a sheet tab and went stale each year.
 
 Worked example: `.claude/skills/tableau-workbook-xml/`.
 

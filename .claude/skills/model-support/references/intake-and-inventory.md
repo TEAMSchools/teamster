@@ -93,6 +93,9 @@ the user to confirm or edit it.
   awk '/^#{2,4} /{if(h)print n"\t"h; h=$0; n=0} {n++} END{print n"\t"h}' <file>
   ```
 
+- Every non-code file under the family skill (json, csv, tsv): a generic example
+  or one cycle's data? Year-stamped names (`2026_27`, `sy26`, `fall`) are the
+  tell. Cycle data is a cut candidate (`model-skill.md` → Shape).
 - Cut candidates: one-time checks, change logs, "Resolved —" notes, counts that
   go stale.
 - Note every dashboard view or process step the doc does not explain.
