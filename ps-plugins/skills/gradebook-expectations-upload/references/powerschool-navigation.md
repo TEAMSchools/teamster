@@ -32,9 +32,11 @@ you which permission is missing. Either way it is the data team's to sort out.
 ## 2. Decide the path before you describe it
 
 **Work this out before you say a word to the person.** `Plugin Data Raw` shows
-you what is live on this instance right now, per quarter and school level. Read
-it first, then walk them down one path only. Never present the branches and ask
-them which applies — they cannot see the table, and you can.
+what was live on this instance as of the overnight refresh, per quarter and
+school level — up to a day behind, which is why the Replace path below asks
+whether anyone has touched it since. Read it first, then walk them down one path
+only. Never present the branches and ask them which applies — they cannot see
+the table, and you can.
 
 Filter `Plugin Data Raw` to this instance and the quarter you are loading:
 
@@ -94,15 +96,27 @@ Click **Upload CSV**.
   and build from it. Each header cell is matched by name, case-insensitively and
   trimmed, in a fixed order — so the names must be right and so must the order.
   A mismatch is rejected outright — nothing imports.
-- Download this region's CSV from the conversation, choose it here, then read
-  the preview before going further:
+- Download the right file for this region from the conversation — the
+  **per-quarter** file if you are adding a quarter that had no rows, the
+  **whole-instance** file if you are replacing one that did. They have different
+  names for this reason. Choose it here, then read the preview before going
+  further:
   - **The valid row count must equal the number of rows in your file.** Invalid
     rows are skipped silently and the import still reports success.
-  - **No row may be flagged Duplicate.** Add mode inserts a duplicate as a
-    genuine second record; it does not overwrite. A duplicate flag means that
-    quarter already had rows after all — either the step 2 delete missed some,
-    or the quarter was not as empty as `Plugin Data Raw` suggested. Stop and go
-    back to step 2 rather than importing on top.
+  - **Duplicate flags mean different things in the two modes. Read the mode
+    first.**
+    - **Add mode: no row may be flagged Duplicate.** Add inserts a duplicate as
+      a genuine second record; it does not overwrite. A flag here means the
+      quarter was not as empty as `Plugin Data Raw` suggested — the mirror is up
+      to a day behind, so someone may have loaded it since. Stop, and treat the
+      quarter as one that already has rows: it needs the whole-instance file and
+      Replace, not this file.
+    - **Replace mode: every row already on the instance flags Duplicate, and
+      that is expected.** The check compares your file against every row
+      currently rendered, and a whole-instance file deliberately contains them
+      all. The plugin's own banner says so — duplicates create duplicates _in
+      Add mode_, and Replace clears the table first. Do not stop on these. What
+      matters in Replace mode is the row count, below.
 - Choose the mode. The question is not how many quarters you are loading — it is
   **whether your file is the whole intended contents of this instance.**
 
@@ -126,11 +140,21 @@ Click **Upload CSV**.
 
 ## 4. Confirm what landed
 
-The page has no total-row counter, so check each quarter you loaded: set the
-**Quarter** filter to it, click the header select-all checkbox, and read the **N
-rows selected** count. It must equal that quarter's row count in the file you
-built. Click the header checkbox again to clear the selection, then **Clear
-Filters**. Spot-check one week's W/H/F/S against the file.
+**Reload the page in your browser before you do this.** The import re-renders
+the table without re-applying the filter, so the dropdown can still show a
+quarter while every row is visible. Picking the quarter it already shows changes
+nothing and fires nothing, and the select-all checkbox below then ticks the
+whole instance — next to a Delete Selected button. A reload puts the filter back
+to its default so picking a quarter actually filters.
+
+The page has no total-row counter, so check each quarter you loaded: after the
+reload, set the **Quarter** filter to it, click the header select-all checkbox,
+and read the **N rows selected** count. It must equal that quarter's row count
+in the file you built. **If it reads much higher — close to the whole table —
+the filter did not apply. Clear the selection immediately, reload, and try
+again. Do not click Delete Selected.** Otherwise click the header checkbox again
+to clear the selection, then **Clear Filters**. Spot-check one week's W/H/F/S
+against the file.
 
 Write down the row count per region and quarter — the next-day check below
 reports it.
@@ -194,9 +218,13 @@ morning, after 3 AM**, open `Plugin Data Raw`, and check:
 2. **No counts came through empty.**
 3. **The counts match the file you uploaded.** Spot-check the first and last
    week of each quarter.
-4. **`whocreated` and `whencreated` are yours, and from this upload.** If a row
-   shows someone else, or an older timestamp, it was not replaced — the delete
-   in step 2 missed it.
+4. **For the rows you loaded, `whocreated` and `whencreated` are yours and from
+   this upload.** Check this on the quarter you loaded, not on the whole table.
+
+   On an **Add** the other quarters were never touched, so their older names and
+   timestamps are correct and expected. On a **Replace** every row was
+   rewritten, so all of them should be yours — an older one there means the
+   import did not cover what you thought it did.
 
 Then message the data team with which regions and quarters you loaded, when, and
 what the next-day check showed. They run verification you cannot — that week

@@ -32,10 +32,24 @@ ready (this year's Q1-only situation is an example, not the norm — see
 
 3. **Read `../references/week-matching.md`** and give every row in every decided
    quarter a PowerSchool week number and a filled value.
-4. **Read `../references/csv-format.md`** and build one CSV per instance,
-   covering only the decided quarter(s). Run every check, including the prod
-   sanity-check — for a refresh there will usually be existing `Plugin Data Raw`
-   rows to check against; use them.
+4. **Read `../references/csv-format.md`** and build one CSV per instance. Run
+   every check, including the prod sanity-check — for a refresh there will
+   usually be existing `Plugin Data Raw` rows to check against; use them.
+
+   **Which file you build depends on what is already live**, and
+   `Plugin Data Raw` tells you per instance:
+
+   - **The quarter has no rows there** → the per-quarter file. It goes in with
+     Add.
+   - **The quarter already has rows** → the whole-instance file described under
+     _When the quarter already has rows_: the new quarter plus every row the
+     other quarters currently have, copied across. It goes in with Replace, and
+     Replace makes that file the entire table.
+
+   Build only the file the instance needs, and say which one it is when you hand
+   it over. Handing over both invites the wrong one being uploaded in the wrong
+   mode, which deletes the quarters you were not touching.
+
 5. **Say clearly, for every quarter NOT being loaded:**
 
    > Q_n_ still has last year's expectations. It opens Monday _date_, and from

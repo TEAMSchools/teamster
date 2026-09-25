@@ -57,9 +57,11 @@ still outstanding._
 5. **Read `../references/csv-format.md`** and build one CSV per instance
    (Camden, Newark, Paterson), covering all four quarters. Run every check in
    it, including the prod sanity-check.
-6. **Read `../references/powerschool-navigation.md`** and upload. For a full
-   four-quarter load, this is the **Replace** path (step 2's first bullet) — one
-   action does the delete and the load together for that instance.
+6. **Read `../references/powerschool-navigation.md`** and upload. A full
+   four-quarter load is the **Replace** path — your file is the whole intended
+   contents of the instance, so one action does the clearing and the load
+   together. In Replace mode the preview flags every row already on the instance
+   as a duplicate; that is expected and is not a reason to stop.
 7. **Verify the next day** as that same reference describes, and tell the data
    team what you loaded.
 

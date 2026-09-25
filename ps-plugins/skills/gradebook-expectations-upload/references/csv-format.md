@@ -67,6 +67,36 @@ through Drive risks it being converted to a Google Sheet.
 Name files so the region and period are obvious, e.g.
 `gradebook_expectations_newark_SY2026-27_Q2.csv`.
 
+### When the quarter already has rows, the file is the whole instance
+
+A quarter with no rows live goes in with **Add**, and the per-quarter file above
+is the file. A quarter that **already has rows** is replaced instead, and
+Replace makes the file the entire table — so the file has to hold every row the
+instance should end up with, not just the quarter you changed.
+
+Build it as one file per instance:
+
+1. The new quarter's rows, as built above.
+2. Plus every row `Plugin Data Raw` shows for that instance in the quarters you
+   are **not** changing, copied across unchanged — same school levels, same week
+   numbers, same counts, same notes.
+
+Name it for what it is, so nobody confuses it with the per-quarter file:
+`gradebook_expectations_newark_SY2026-27_FULL.csv`.
+
+**Two checks on this file specifically**, both before it is handed over:
+
+- **Its row count equals the instance's current total, plus or minus the change
+  in that one quarter's week count.** Get the current total from
+  `Plugin Data Raw` for that instance and say both numbers out loud. A combined
+  file that is merely the size of one quarter is the per-quarter file wearing
+  the wrong name, and uploading it in Replace mode deletes the other quarters.
+- **Every quarter that should survive is present**, with the week count it had.
+  List the quarters and their row counts in the conversation.
+
+Say which file is which when you hand them over, and say plainly that the
+per-quarter file must never be uploaded in Replace mode.
+
 ## Show the tables
 
 Show each file as a table in the conversation as well. The tables are how a
@@ -131,9 +161,15 @@ Then, on the file:
    in that region as far behind. Treat a value over 20 the same way as a falling
    count: name it and ask, rather than loading it.
 
-   A legitimate number above 20 means the policy changed, which is worth hearing
-   about before it reaches the dashboard. Tell the data team so the ceiling can
-   move.
+   **If the person confirms the number is intended, load it.** The ceiling is a
+   tripwire, not a rule about what Teaching & Learning may decide — say you are
+   proceeding on their confirmation, and tell the data team afterwards so the
+   ceiling in this file can move. Never hold a file back over a number its owner
+   has just confirmed.
+
+   The maxima above are what is live today, which is a single quarter's worth. A
+   quarter with more weeks reaches higher totals honestly, so expect the
+   headroom to shrink as the year fills in.
 
 6. **Sanity-check against prod — only where the number should not have
    changed.** For a week that already has a row in `Plugin Data Raw` for this

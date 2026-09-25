@@ -91,9 +91,15 @@ Regardless of which playbook you're in, stop and contact the data team if:
   that region. Rebuild the missing rows by hand (`powerschool-navigation.md`,
   single-row fix) rather than leaving the region wrong overnight, and do not
   re-run Replace.
-- The numbers look implausible — counts falling as a quarter progresses, or a
-  week far out of line with its neighbours. These are counts a person typed, and
-  a typo here misreports every teacher in a region.
+- A week is far out of line with its neighbours in a way a typo does not
+  explain. These are counts a person typed, and a mistake here misreports every
+  teacher in a region.
+
+  **A count that falls, or one over the ceiling, goes to the person instead** —
+  see `references/csv-format.md` check 5. They are Teaching & Learning, it is
+  their sheet, and they are the only ones who know the number that was meant.
+  The data team cannot.
+
 - A troubleshooting session (`playbooks/troubleshoot.md`) turns up something
   systemic rather than a one-off.
 
