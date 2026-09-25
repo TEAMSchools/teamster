@@ -14,17 +14,12 @@ models/
 
 PowerSchool (pre-Focus SIS) is retired. `kippmiami_powerschool` is an archive
 built from the frozen `src_powerschool__*` externals (final ODBC pull
-2026-07-01). It was rebuilt on 2026-09-09 (#5012). It was rebuilt again after
-#5231 merged, adding identity and school columns to the GPA, final grades,
-calendar day, and student enrollment models, and a third time after #5250 to
-carry calendar-week fields on `int_powerschool__ps_adaadm_daily_ctod` (#5193),
-and a fourth time to add `int_powerschool__section_teachers`, the
-section-teacher join, for #5260, and a fifth time to add `int_powerschool__gpa`
-and widen storedgrades, the two GPA models, attendance streak, and calendar day,
-for #5413. The recipe is the `dbt_project.yml` `powerschool:` block: re-include
-the package with the ODBC staging variant and 16 post-hooks — the 8400 Focus
-prefix on `student_number` (`stg_powerschool__students`), 14 staging models with
-`yearid` dropping rows past AY2025 (`yearid > 35`), and
+2026-07-01). It is rebuilt whenever a consumer needs a new archive model or
+column (latest: #5397, 97 tables, with `int_powerschool__terms_spine` built on
+its own afterwards). The recipe is the `dbt_project.yml` `powerschool:` block:
+re-include the package with the ODBC staging variant and 16 post-hooks — the
+8400 Focus prefix on `student_number` (`stg_powerschool__students`), 14 staging
+models with `yearid` dropping rows past AY2025 (`yearid > 35`), and
 `stg_powerschool__calendar_day` deleting `date_value >= '2026-07-01'`. The
 package is re-included for each rebuild and removed after.
 `int_fldoe__all_assessments` resolves `student_number` from
@@ -33,6 +28,5 @@ source. Do not drop the dataset or the GCS files.
 
 ## Source Packages
 
-Package list: `packages.yml` is ground truth (see `src/dbt/CLAUDE.md`). `focus`
-— `focus_schema` points to `dagster_kippmiami_dlt_focus`. Miami does not use
-`edplan`, `overgrad`, `pearson`, `powerschool`, or `titan`.
+`focus` — `focus_schema` points to `dagster_kippmiami_dlt_focus`. Miami does not
+use `edplan`, `overgrad`, `pearson`, `powerschool`, or `titan`.

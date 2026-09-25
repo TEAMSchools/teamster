@@ -37,5 +37,8 @@ select
     null as `14 Annual Number Of Weeks Of Instruction`,
     null as `15 Parent Site ID`,
 -- trunk-ignore-end(sqlfluff/RF05)
-from {{ ref("stg_powerschool__schools") }}
-where state_excludefromreporting = 0
+from {{ ref("int_students__schools") }}
+-- Miami left Illuminate ahead of AY2026-27 (#4777, #5537)
+where
+    _dbt_source_project in ('kippnewark', 'kippcamden', 'kipppaterson')
+    and state_excludefromreporting = 0

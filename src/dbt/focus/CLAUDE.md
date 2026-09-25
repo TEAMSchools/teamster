@@ -19,11 +19,6 @@ the Focus import column order is contract-fixed. ST06 firing is
 expression-shape-dependent, so keep the ignore even when a diff makes it look
 vestigial.
 
-## Data Flow
-
-Focus Postgres → dlt `sql_database` → BigQuery (`dagster_<project>_dlt_focus`) →
-dbt staging models → dbt intermediate models
-
 ## Focus field value codes
 
 A Focus custom field's allowed value codes live in
@@ -146,39 +141,15 @@ whole district build on a teacher saving an assignment mid-load.
 
 ## Model Structure
 
-```text
-models/
-  staging/
-    sources-bigquery.yml          # BQ-native sources (dlt-loaded, not external)
-    stg_focus__<table>.sql        # one contract-enforced model per source table
-    properties/
-      stg_focus__<table>.yml      # contract columns, tests, descriptions
-```
-
-Staging models are contract-enforced (`contract: enforced: true`, set at the
-`staging` directory level in `dbt_project.yml`): every projected column is
-declared with a `data_type` in `properties/`, with a `unique` + `not_null` PK
-test at `severity: error`. Each model selects from a
-`{{ source("focus", ...) }}` relation, drops dlt bookkeeping (`_dlt_*`) and the
-audit-quad, and applies the soft-delete filter where the table has one. Data
-comes from dlt (not external tables), so sources use `sources-bigquery.yml` with
-a plain schema var. Intermediate (`int_focus__*`) models layer on top.
-
-## Key Variables
-
-| Variable                | Default                            | Notes                           |
-| ----------------------- | ---------------------------------- | ------------------------------- |
-| `focus_schema`          | `dagster_<project_name>_dlt_focus` | BQ dataset with dlt-loaded data |
-| `current_academic_year` | `0`                                | Overridden per district         |
-| `current_fiscal_year`   | `0`                                | Overridden per district         |
-| `local_timezone`        | `UTC`                              | Overridden per district         |
+Staging models declare every projected column with a `data_type` in
+`properties/`, plus a `unique` + `not_null` PK test at `severity: error`. Each
+model selects from a `{{ source("focus", ...) }}` relation, drops dlt
+bookkeeping (`_dlt_*`) and the audit-quad, and applies the soft-delete filter
+where the table has one. Data comes from dlt (not external tables), so sources
+use `sources-bigquery.yml` with a plain schema var. Intermediate
+(`int_focus__*`) models layer on top.
 
 ## Cross-Project Usage
-
-This project is never run standalone in production. District projects reference
-it as a dbt package and override variables. `{{ project_name }}` in source
-definitions resolves to the consuming district project name, enabling correct
-Dagster asset key lineage.
 
 To add a NEW kipptaf dependency on Focus data in a single PR, declare the dlt
 landing dataset (`dagster_kippmiami_dlt_focus`) as a BQ-native

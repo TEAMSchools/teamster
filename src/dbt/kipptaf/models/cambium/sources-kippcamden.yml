@@ -22,3 +22,12 @@ sources:
                 - kippcamden
                 - cambium
                 - stg_cambium__njsla
+      - name: stg_cambium__eoc
+        config:
+          meta:
+            dagster:
+              group: cambium
+              asset_key:
+                - kippcamden
+                - cambium
+                - stg_cambium__eoc
