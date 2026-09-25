@@ -72,8 +72,7 @@ with
             ) as is_first_time_ninth,
 
             if(
-                date_diff(date({{ var("current_academic_year") }}, 09, 01), e.dob, year)
-                > 19,
+                e.dob < date({{ var("current_academic_year") - 19 }}, 09, 01),
                 false,
                 true
             ) as is_age_eligible,
@@ -224,6 +223,8 @@ select
             and cy_q1_gpa between 2.2 and 2.49
             and (met_py_credits or is_first_time_ninth)
         then 'Probation - ADA and GPA'
+        when grade_level >= 5 and `ada` < 0.9 and cy_y1_gpa between 2.2 and 2.49
+        then 'Probation - ADA and GPA'
     end as q2_ae_status,
 
     case
@@ -265,6 +266,8 @@ select
             and cy_weighted_s1_ada < 0.9
             and cy_s1_gpa between 2.2 and 2.49
         then 'Probation - ADA and GPA'
+        when grade_level >= 5 and `ada` < 0.9 and cy_y1_gpa between 2.2 and 2.49
+        then 'Probation - ADA and GPA'
     end as q3_ae_status,
 
     case
@@ -305,6 +308,8 @@ select
             and met_cy_credits
             and cy_weighted_s1_ada < 0.9
             and cy_s1_gpa between 2.2 and 2.49
+        then 'Probation - ADA and GPA'
+        when grade_level >= 5 and `ada` < 0.9 and cy_y1_gpa between 2.2 and 2.49
         then 'Probation - ADA and GPA'
     end as q4_ae_status,
 

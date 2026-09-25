@@ -163,3 +163,93 @@ models:
           simply copies the students'current grade level in to this field.
           Indexed. Categorical mapping of ada, cy_s1_gpa, cy_weighted_s1_ada,
           cy_y1_gpa, grade_level, is_age_eligible, met_cy_credits.
+
+unit_tests:
+  - name: test_athletic_eligibility_age_cutoff_and_ms_dual_probation
+    description:
+      Two policy rules. Age — a student whose 19th birthday falls before
+      September 1 of the academic year is ineligible, and one who turns 19 on
+      September 1 is not. Middle school — below 90 percent attendance together
+      with a 2.2 to 2.49 GPA is probation on both counts in Q2 through Q4, never
+      a blank status.
+    model: int_students__athletic_eligibility
+    overrides:
+      vars:
+        current_academic_year: 2026
+    given:
+      - input: ref('int_extracts__student_enrollments')
+        rows:
+          - student_number: 1
+            studentid: 1
+            yearid: 36
+            academic_year: 2026
+            grade_level: 10
+            grade_level_prev: 9
+            dob: 2007-08-31
+            rn_year: 1
+            enroll_status: 0
+            region: Newark
+            _dbt_source_project: kippnewark
+          - student_number: 2
+            studentid: 2
+            yearid: 36
+            academic_year: 2026
+            grade_level: 10
+            grade_level_prev: 9
+            dob: 2007-09-01
+            rn_year: 1
+            enroll_status: 0
+            region: Newark
+            _dbt_source_project: kippnewark
+          - student_number: 3
+            studentid: 3
+            yearid: 36
+            academic_year: 2026
+            grade_level: 7
+            grade_level_prev: 6
+            dob: 2013-01-01
+            ada: 0.85
+            rn_year: 1
+            enroll_status: 0
+            region: Newark
+            _dbt_source_project: kippnewark
+      - input: ref('int_powerschool__gpa_term_pivot')
+        rows:
+          - studentid: 3
+            yearid: 36
+            gpa_term_q1: 2.3
+            gpa_y1_q2: 2.3
+            gpa_y1_cur: 2.3
+            _dbt_source_project: kippnewark
+      - input: ref('stg_powerschool__storedgrades')
+        rows:
+          - studentid: 99
+            yearid: 35
+            academic_year: 2025
+            storecode: Y1
+            earnedcrhrs: 5
+            _dbt_source_project: kippnewark
+      - input: ref('base_powerschool__final_grades')
+        rows:
+          - studentid: 99
+            yearid: 36
+            storecode: Q2
+            y1_letter_grade_adjusted: A
+            _dbt_source_project: kippnewark
+    expect:
+      rows:
+        - student_number: 1
+          is_age_eligible: false
+          q2_ae_status: Ineligible - Age
+          q3_ae_status: Ineligible - Age
+          q4_ae_status: Ineligible - Age
+        - student_number: 2
+          is_age_eligible: true
+          q2_ae_status: null
+          q3_ae_status: null
+          q4_ae_status: null
+        - student_number: 3
+          is_age_eligible: true
+          q2_ae_status: Probation - ADA and GPA
+          q3_ae_status: Probation - ADA and GPA
+          q4_ae_status: Probation - ADA and GPA
