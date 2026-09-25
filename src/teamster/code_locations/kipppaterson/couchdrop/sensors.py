@@ -1,25 +1,15 @@
 from teamster.code_locations.kipppaterson import CODE_LOCATION, LOCAL_TIMEZONE
 from teamster.code_locations.kipppaterson.cambium.assets import njsla as cambium_njsla
 from teamster.code_locations.kipppaterson.finalsite.assets import status_report
-from teamster.code_locations.kipppaterson.pearson.assets import (
-    njsla,
-    njsla_science,
-    student_list_report,
-)
 from teamster.libraries.couchdrop.sensors import build_couchdrop_sftp_sensor
 
 couchdrop_sftp_sensor = build_couchdrop_sftp_sensor(
     code_location=CODE_LOCATION,
     local_timezone=LOCAL_TIMEZONE,
-    asset_selection=[
-        cambium_njsla,
-        njsla,
-        njsla_science,
-        status_report,
-        student_list_report,
-    ],
+    asset_selection=[cambium_njsla, status_report],
     minimum_interval_seconds=(60 * 10),
     folder_id="1vsh02kpWEGJedLNa0VcbwRSUUOWTtrUd",
+    exclude_dirs=[f"/data-team/{CODE_LOCATION}/pearson"],
 )
 
 sensors = [
