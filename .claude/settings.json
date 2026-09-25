@@ -22,7 +22,6 @@
       "mcp__claude_ai_Google_Cloud_BigQuery__get_table_info",
       "mcp__claude_ai_Google_Cloud_BigQuery__list_dataset_ids",
       "mcp__claude_ai_Google_Cloud_BigQuery__list_table_ids",
-      "mcp__claude_ai_Cube__meta",
       "mcp__context7__query-docs",
       "mcp__context7__resolve-library-id",
       "mcp__dagster__get_asset_check_executions",
