@@ -2,6 +2,142 @@
 
 Refs [#5518](https://github.com/TEAMSchools/teamster/issues/5518)
 
+## Revision 2026-09-25: after PR review
+
+GabyRangelB and cbini reviewed the spec on #5519, and the owner settled the open
+questions on 2026-09-25. This revision supersedes the _Decisions_, _Design_ and
+_Verification_ sections below wherever they conflict. _Findings_ still stand,
+and the Florida code table under _Design_ is still the content of the Focus
+sheet rows.
+
+### What changed
+
+| Original                                         | Revised                                                                                    | From         |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------ | ------------ |
+| New model `int_students__primary_sections`       | Fill the Focus columns in `int_students__course_enrollments`, plus 1 new row-number column | cbini        |
+| Florida code crosswalk inline in SQL             | New columns and Focus rows on the existing course-subject crosswalk sheet                  | cbini, Gaby  |
+| NJ-style labels built in SQL                     | A `Standard_Course_Name` column on that sheet                                              | cbini        |
+| `course_grade_level` and a grade-match tie-break | No course grade (see _Grade_ below)                                                        | cbini, owner |
+| Tie-break: latest enrollment date, then section  | Term already started, latest enrollment date, larger roster, then section                  | Gaby, cbini  |
+| 1 PR                                             | 2 PRs: shared model first, DIBELS dashboard second                                         | owner        |
+
+Settled by the owner: the data team maintains the sheet; math is included; Miami
+`teacherid` is the Focus staff id.
+
+### Grade
+
+No SIS course grade is usable or has ever been used. Focus fills
+`courses.grade_level` on 1 of 246 AY2026 courses, PowerSchool
+`sections.grade_level` is not carried in the shared model, and about 20% of
+Newark ELA sections read `0`. cbini's fallback, the student's enrolled grade,
+would compare the enrolled grade with itself, so a grade-match step would do
+nothing. The tie-break drops it. When Ops fills SIS grades, bring the grade
+through and put it first in the ranking.
+
+`schedule_student_grade_level` on the dashboard keeps `right(course_name, 1)`,
+now reading `Standard_Course_Name`. It still parses a grade from a name, which
+cbini's rule forbids, but the column exists to show students scheduled off-grade
+(2-7 a year), and the enrolled-grade fallback would erase that.
+
+### PR A: the sheet and the shared model
+
+**Sheet.** The tab behind
+`src_google_sheets__assessments__course_subject_crosswalk` (named range
+`src_assessments__course_subject_crosswalk_v2`) gains 3 columns:
+
+- `SIS` — `PowerSchool` or `Focus`. Every existing row is `PowerSchool`.
+- `Standard_Course_Name` — the SIS-independent display name. Existing rows take
+  their `PowerSchool_Course_Name`, so NJ names do not change.
+- `Core_Subject` — `ELA` or `Math` when the course is a student's main class in
+  that subject; blank otherwise, including Intensive Reading, Foundational ELA,
+  ELA Skills and Foundation Skills Math.
+
+Focus rows are added for the Florida codes in the table under _Design_, with
+`Standard_Course_Name` set to the label in that table. Their
+`Illuminate_Subject_Area`, `Is_Foundations`, `Is_Advanced_Math` and `Discipline`
+stay blank, so nothing that reads those columns changes. The key becomes `SIS`
+plus `PowerSchool_Course_Number`. The column keeps its name, because renaming a
+Sheets header rebuilds the external table. `Duplicate_Audit` must count on the
+pair. The staging uniqueness test becomes `unique_combination_of_columns` on the
+pair, and both consumers — the shared model and `dim_courses` — add the `SIS`
+match to their joins.
+
+The source `columns:` and the staging contract declare the 3 new columns in the
+same change. The external is re-staged in dev; the `--target staging` re-stage
+needs the owner's authorization.
+
+**Shared model.** `int_students__course_enrollments`:
+
+- The Focus branch fills:
+
+  | Column                  | Source                                                          |
+  | ----------------------- | --------------------------------------------------------------- |
+  | `courses_course_name`   | `trim(int_focus__schedule.course_title)`                        |
+  | `cc_section_number`     | `int_focus__schedule.course_period_short_name`                  |
+  | `cc_teacherid`          | `int_focus__schedule.teacher_id` (the Focus staff id, INT64)    |
+  | `teacher_lastfirst`     | `last_name, first_name` from `int_focus__users`, already joined |
+  | `rn_course_number_year` | PowerSchool's definition without `cc_termid`, which Focus lacks |
+
+- `rn_credittype_year` and `rn_student_year_illuminate_subject_desc` stay null
+  on Focus rows: Focus has no credit type, and its Illuminate subject is blank.
+- Both branches carry `standard_course_name` and `core_subject` from the sheet.
+- New column `rn_core_subject_year`: one section per `_dbt_source_project`,
+  `cc_academic_year`, `cc_schoolid`, `students_student_number` and
+  `core_subject`. It ranks only rows with a `core_subject` that are not
+  `is_dropped_section`, and is null on every other row, so it avoids the defect
+  cbini measured in the existing row numbers (row 1 a dropped section on 188 NJ
+  student-years). Order:
+  1. term already started (`cc_dateenrolled <= current_date`) first
+  2. latest `cc_dateenrolled`
+  3. larger roster (non-dropped rows per section and year)
+  4. `cc_section_number`
+- The final `full union all corresponding` stays. The PowerSchool branch is
+  `a.*` over about 240 columns, and converting it to an enumerated union is its
+  own change.
+- Column semantics go in the properties yml, not SQL comments.
+
+**Test.** A warn-level singular test: for the current academic year, the share
+of K-8 students in `int_extracts__student_enrollments` with an
+`rn_core_subject_year = 1` row, per region and subject, is at least 95%. It is
+the guard Gaby asked for — a Focus or PowerSchool course missing from the sheet
+shows up as a warning instead of a silent drop.
+
+**Consumers.** 20 models filter on `rn_course_number_year = 1` or
+`rn_credittype_year = 1`, and Focus rows now pass the first. The 3 Miami
+dashboards among them (`rpt_tableau__miami_fast`,
+`rpt_tableau__miami_k2_iready`, `rpt_tableau__miami_k2_star`) have their
+refreshes off, per the owner. For the rest, NJ rows must not change, and every
+Miami row a consumer gains is listed before merge.
+
+### PR B: the DIBELS dashboard
+
+PR B branches from PR A and is stacked on it until PR A merges; a stacked PR
+runs only Trunk, so its dbt verification is local.
+
+- Each of the 3 branches joins `int_students__course_enrollments` directly on
+  `academic_year`, `_dbt_source_project`, `schoolid`, `student_number`,
+  `core_subject = 'ELA'`, `rn_core_subject_year = 1` and
+  `cc_section_number not like '%SC%'`.
+- `course_name` comes from `standard_course_name`; the other schedule columns
+  from the matching shared-model columns.
+- `and not s.is_self_contained` becomes `and s.is_self_contained is not true`.
+- The `teacherid` description changes to name both SIS ids.
+- Docs and skill updates as in _Verification_ step 8.
+
+### Expected effect, revised
+
+NJ dashboard rows match prod except where the new pick differs from the old
+filters, and verification lists each case:
+
+- the 6 duplicated student-years collapse to 1 row;
+- about 55 Paterson AY2023 students in `English Language Arts 5th` gain
+  `ELA Gr5`, because that course shares `ENG01033G1` with `ELA Gr5`;
+- students whose `rn_course_number_year = 1` row was a dropped section gain
+  their live section.
+
+Intensive Reading stays out of core ELA. 1 Miami AY2026 student (grade 6) holds
+it with no main ELA course; the owner raises that student with Miami.
+
 ## Goal
 
 Miami students appear on the Literacy Dashboard
