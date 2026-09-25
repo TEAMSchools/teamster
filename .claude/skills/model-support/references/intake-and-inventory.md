@@ -31,12 +31,12 @@ Source material explains intent. The SQL decides what the doc claims.
 Grep `src/dbt/*/models/exposures/*.yml` for every model name in the lineage.
 Reading exposure YAML is local; do not open Tableau.
 
-| Exposures found                 | Doc outline (`reference-doc.md`)                 |
-| ------------------------------- | ------------------------------------------------ |
-| Tableau (`kinds: [tableau]`)    | Dashboard: one section per view                  |
-| Google Sheet, extract, or other | Process: trigger, inputs, steps, outputs, owner  |
-| Both                            | Both middles, one section per consumer           |
-| None                            | Ask who consumes it; suggest adding the exposure |
+| Exposures found                      | Doc outline (`reference-doc.md`)                 |
+| ------------------------------------ | ------------------------------------------------ |
+| Tableau (`- tableau` under `kinds:`) | Dashboard: one section per view                  |
+| Google Sheet, extract, or other      | Process: trigger, inputs, steps, outputs, owner  |
+| Both                                 | Both middles, one section per consumer           |
+| None                                 | Ask who consumes it; suggest adding the exposure |
 
 Every external consumer needs an exposure (`src/dbt/kipptaf/CLAUDE.md` →
 Exposures). A missing one is a finding, not a reason to guess the branch.

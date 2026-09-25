@@ -6,12 +6,11 @@ should not change them.
 If the family skill has its own QA procedure, read that reference file directly
 and follow it instead of everything below; it already knows the grains and
 ranges. Do not open the family's `SKILL.md` first: that costs a read the
-procedure does not need. CARAT's is
-`.claude/skills/carat-dashboard/references/official-scores-qa.md`. Find one with
-`ls .claude/skills/<family>/references/`. If there is none, or the family skill
-is a single long `SKILL.md` with no `references/`, do not read that file: use
-the reference doc and the generic checks below, and suggest restructuring the
-skill afterwards (`model-skill.md`).
+procedure does not need. Find one with `ls .claude/skills/<family>/references/`
+(for CARAT, `official-scores-qa.md` once PR #5542 has split that skill). If
+there is none, or the family skill is a single long `SKILL.md` with no
+`references/`, do not read that file: use the reference doc and the generic
+checks below, and suggest restructuring the skill afterwards (`model-skill.md`).
 
 Otherwise, read the family's reference doc for grains, keys, accepted ranges,
 and known issues. Find it with `rg -l '<model>' docs/models`, list its headings

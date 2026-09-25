@@ -24,22 +24,26 @@ config, contains_pii, contract, data_type, or column names. The SQL is the
 source of truth over any doc. Never change a test to match a description
 or the reverse: flag the disagreement instead. Remove change-log narration,
 stale counts, TODOs, and issue refs (#1234) from descriptions. Then run,
-from <worktree>, trunk check --force --no-fix on each edited file and
-uv run dbt parse --no-partial-parse --project-dir <worktree>/src/dbt/<project>.
+with cwd <worktree>,
+/workspaces/teamster/.trunk/tools/trunk check --force --no-fix <edited files> </dev/null
+and uv run dbt parse --no-partial-parse --project-dir <worktree>/src/dbt/<project>.
 Report: per file a one-line summary; FLAGS with file:line evidence (column
 lists that don't match the SQL, missing uniqueness tests, wrong grains);
 lint and parse results verbatim.
 ```
 
-A subagent's report is not evidence. Check that only descriptions moved:
+A subagent's report is not evidence. Check that only descriptions moved, per
+edited file, against main (so staged and committed edits count too):
 
 ```bash
-git -C <worktree> diff -U0 -- '*.yml' \
-  | rg '^[+-].*(data_type|data_tests|severity|combination_of_columns|contains_pii|materialized|- name:)'
+git -C <worktree> show origin/main:<path.yml> > <scratchpad>/old.yml
+uv run python <worktree>/.claude/skills/model-support/scripts/yaml_description_diff.py <scratchpad>/old.yml <worktree>/<path.yml>
 ```
 
-Every line this prints must be an intentional change, and each one goes in the
-commit message. Then run
+It prints `description-only`, or every non-description path that changed (a
+dropped test, a trimmed `accepted_values` list, a new column)
+([yaml_description_diff.py](../scripts/yaml_description_diff.py)). Every path it
+prints must be an intentional change, listed in the commit message. Then run
 `uv run dbt parse --no-partial-parse --project-dir <worktree>/src/dbt/<project>`.
 
 Flags are the audit's most valuable output: a YAML column list that does not
@@ -54,7 +58,8 @@ dedupe partition, the join keys) and propose:
 
 - Uniqueness on the grain: `unique` on a single key, or
   `dbt_utils.unique_combination_of_columns`. Required on every staging,
-  intermediate, and `rpt_` model (`.claude/rules/dbt-models.md`).
+  intermediate, and `rpt_` model (`.claude/rules/dbt-models.md`), except thin
+  district `extracts/` wrappers over a kipptaf view, which carry no tests.
 - `not_null` on key columns, never on `generate_surrogate_key` output (it cannot
   return null).
 - `accepted_values` on low-cardinality categories: status, region, test type,
@@ -95,7 +100,21 @@ Every oddity you suspect is harmless gets checked, not argued:
 - Rows a consumer should never see are harmless only if the consumer's output
   never contains them: group by the consumer's grain and count.
 
-Record each check and its result in the commit message.
+Record each check and its result in the commit message, as aggregates without
+small cells (`.claude/rules/ferpa-pii.md`); git history is permanent.
+
+## Tiered matches
+
+When a model matches records in tiers (exact ID, then name and birth date, and
+so on), check both of these; three CARAT and state-testing match queries have
+shipped with one or the other:
+
+- Tier conditions compare normalized values, not raw strings. Exact string
+  equality misses case, whitespace, and leading zeros. Count the records that
+  match only after `lower(trim(...))` or the ID's zero-padding on both sides.
+- A record with more than one candidate at a tier comes out labeled ambiguous,
+  never falling through to "no match". Count candidates per source record per
+  tier; any count above 1 must reach the ambiguous label.
 
 ## SQL comments
 
@@ -104,7 +123,7 @@ edit is comment-only:
 
 ```bash
 git -C <worktree> show origin/main:<path.sql> > <scratchpad>/old.sql
-uv run python .claude/skills/model-support/scripts/comment_only_diff.py <scratchpad>/old.sql <worktree>/<path.sql>
+uv run python <worktree>/.claude/skills/model-support/scripts/comment_only_diff.py <scratchpad>/old.sql <worktree>/<path.sql>
 ```
 
 It prints `comment-only` or `LOGIC CHANGE`

@@ -24,12 +24,21 @@ def _md_files(paths: list[Path]) -> list[Path]:
 def find_broken_links(paths: list[Path]) -> list[tuple[Path, int, str]]:
     broken: list[tuple[Path, int, str]] = []
     for md in _md_files(paths):
-        in_fence = False
+        fence: str | None = None
         for number, line in enumerate(md.read_text().splitlines(), start=1):
-            if FENCE.match(line):
-                in_fence = not in_fence
+            match = FENCE.match(line)
+            if match:
+                marker = match.group(1)
+                if fence is None:
+                    fence = marker
+                elif (
+                    marker[0] == fence[0]
+                    and len(marker) >= len(fence)
+                    and not line.strip()[len(marker) :].strip()
+                ):
+                    fence = None
                 continue
-            if in_fence:
+            if fence is not None:
                 continue
             for target in LINK.findall(line):
                 if target.startswith(SKIP):

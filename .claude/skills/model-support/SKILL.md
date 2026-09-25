@@ -30,8 +30,13 @@ the request; if it is unclear, ask.
   never from a timestamp.
 - Read the whole block before flagging a bug in it.
 - No doc claim ships without the cold review; no skill edit ships without a walk
-  test. Ask before each dispatch.
-- Student-level rows stay in the terminal and the session scratchpad.
+  test. Ask before each dispatch; the user may skip one for a trivial edit.
+- Student-level rows stay in the terminal and the session scratchpad. Commit
+  messages and PRs get aggregates without small cells.
+- Relative paths in commands (`docs/models`, `.claude/skills`) mean the checkout
+  being edited. In a worktree, run them with `cd <worktree> &&` in the same
+  command; from the main checkout they read stale copies and report a false
+  clean.
 
 ## Route by step
 
@@ -68,8 +73,8 @@ family-skill file a walk test (rules above).
 
 ## Step 8: close out
 
-Run trunk on every changed file
-(`/workspaces/teamster/.trunk/tools/trunk check --force --no-fix <files> </dev/null`)
+Run trunk on every changed file, with cwd in the edited checkout
+(`/workspaces/teamster/.trunk/tools/trunk check --force --no-fix <files> </dev/null`),
 and
 `uv run dbt parse --no-partial-parse --project-dir <worktree>/src/dbt/<project>`.
 Commit with messages that state what was verified, push, and open the PR. Tell
@@ -82,6 +87,8 @@ the user every judgment call they might disagree with.
 - [check_links.py](scripts/check_links.py): relative links that do not resolve.
 - [comment_only_diff.py](scripts/comment_only_diff.py): prove a SQL edit is
   comment-only.
+- [yaml_description_diff.py](scripts/yaml_description_diff.py): prove a YAML
+  edit changed descriptions only.
 
 ## Acceptance for a run
 

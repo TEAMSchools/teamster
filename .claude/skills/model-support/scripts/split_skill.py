@@ -31,6 +31,7 @@ def split_sections(
     out: dict[str, list[str]] = {}
     dest = default
     fence: str | None = None
+    used: set[str] = set()
     for line in text.splitlines(keepends=True):
         match = FENCE.match(line)
         if match:
@@ -44,7 +45,13 @@ def split_sections(
             if heading not in mapping:
                 raise KeyError(f"unmapped heading: {heading}")
             dest = mapping[heading]
+            used.add(heading)
         out.setdefault(dest, []).append(line)
+    if fence is not None:
+        raise ValueError(f"unclosed fence {fence!r}: later headings were swallowed")
+    unused = sorted(set(mapping) - used)
+    if unused:
+        raise KeyError(f"mapping keys never matched a heading: {unused}")
     return out
 
 
@@ -54,12 +61,14 @@ def main(argv: list[str]) -> int:
     default = mapping.pop("_default", "SKILL.md")
     text = source.read_text()
     out = split_sections(text, mapping, default)
+    written: set[Path] = set()
     for dest, lines in out.items():
-        path = outdir / dest
+        path = (outdir / dest).resolve()
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text("".join(lines))
+        written.add(path)
     lines_in = len(text.splitlines(keepends=True))
-    lines_out = sum(len(v) for v in out.values())
+    lines_out = sum(len(p.read_text().splitlines(keepends=True)) for p in written)
     print(f"lines in: {lines_in}, lines out: {lines_out}")
     return 0 if lines_in == lines_out else 1
 

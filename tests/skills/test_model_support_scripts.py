@@ -122,3 +122,83 @@ def test_dashes_inside_strings_are_not_comments():
     new = "select '-' as sep, \"a -- b\" as label from t"
     assert "'--'" in diff.strip_comments(old)
     assert not diff.is_comment_only(old, new)
+
+
+def test_split_rejects_unclosed_fence():
+    split = _load("split_skill")
+    with pytest.raises(ValueError, match="unclosed fence"):
+        split.split_sections("## A\n```\n## B\n", {"A": "a.md"}, default="S.md")
+
+
+def test_split_rejects_unused_mapping_key():
+    split = _load("split_skill")
+    with pytest.raises(KeyError, match="Missing"):
+        split.split_sections("## A\n", {"A": "a.md", "Missing": "m.md"}, "S.md")
+
+
+def test_split_main_recounts_from_disk(tmp_path):
+    split = _load("split_skill")
+    source = tmp_path / "SKILL.md"
+    source.write_text("intro\n## A\na\n## B\nb\n")
+    mapping = tmp_path / "map.json"
+    mapping.write_text('{"A": "references/x.md", "B": "./references/x.md"}')
+    out = tmp_path / "out"
+    assert split.main(["split_skill.py", str(source), str(mapping), str(out)]) == 1
+
+
+def test_check_links_mixed_and_nested_fences(tmp_path):
+    links = _load("check_links")
+    (tmp_path / "SKILL.md").write_text(
+        "```markdown\n~~~\n[in fence](a.md)\n~~~\n```\n"
+        "````text\n```\n[in fence](b.md)\n```\n````\n"
+        "[broken](c.md)\n"
+    )
+    broken = links.find_broken_links([tmp_path])
+    assert broken == [(tmp_path / "SKILL.md", 11, "c.md")]
+
+
+def test_whitespace_inside_strings_is_logic():
+    diff = _load("comment_only_diff")
+    assert not diff.is_comment_only("select 'a  b' from t", "select 'a b' from t")
+
+
+def test_triple_quoted_string_is_one_literal():
+    diff = _load("comment_only_diff")
+    old = "select '''it's -- x''' as s from t"
+    new = "select '''it's -- y''' as s from t"
+    assert not diff.is_comment_only(old, new)
+
+
+YAML_OLD = """version: 2
+models:
+  - name: m
+    description: Old words.
+    columns:
+      - name: k
+        description: Key.
+        data_tests:
+          - not_null
+      - name: s
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [a, b]
+"""
+
+
+def test_yaml_description_edit_is_clean():
+    ydiff = _load("yaml_description_diff")
+    new = YAML_OLD.replace("Old words.", "New words.").replace("Key.", "The key.")
+    assert ydiff.non_description_changes(YAML_OLD, new) == []
+
+
+def test_yaml_dropped_test_is_flagged():
+    ydiff = _load("yaml_description_diff")
+    new = YAML_OLD.replace("        data_tests:\n          - not_null\n", "")
+    assert ydiff.non_description_changes(YAML_OLD, new)
+
+
+def test_yaml_trimmed_accepted_values_is_flagged():
+    ydiff = _load("yaml_description_diff")
+    new = YAML_OLD.replace("values: [a, b]", "values: [a]")
+    assert ydiff.non_description_changes(YAML_OLD, new)

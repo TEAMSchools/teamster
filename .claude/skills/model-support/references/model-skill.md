@@ -48,7 +48,7 @@ Worked example: `.claude/skills/tableau-workbook-xml/`.
 3. Split verbatim:
 
    ```bash
-   uv run python .claude/skills/model-support/scripts/split_skill.py <SKILL.md> <mapping.json> <skill dir>
+   uv run python <worktree>/.claude/skills/model-support/scripts/split_skill.py <SKILL.md> <mapping.json> <skill dir>
    ```
 
    It must print equal `lines in` and `lines out`; an unmapped heading stops it
@@ -56,7 +56,7 @@ Worked example: `.claude/skills/tableau-workbook-xml/`.
 
 4. Fix cross-file `_Section_` pointers and relative links (`../scripts/`,
    `../../../../docs/`), then run
-   `uv run python .claude/skills/model-support/scripts/check_links.py <skill dir>`.
+   `uv run python <worktree>/.claude/skills/model-support/scripts/check_links.py <skill dir>`.
 5. Trim the entry file to routing.
 
 ## Walk test

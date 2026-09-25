@@ -73,7 +73,7 @@ After renaming sections, find pointers to the old names and fix them:
 
 ```bash
 rg -n '_<Old section name>_|reference doc' .claude/skills
-uv run python .claude/skills/model-support/scripts/check_links.py <skill dir> docs/models/<doc>.md
+uv run python <worktree>/.claude/skills/model-support/scripts/check_links.py <skill dir> docs/models/<doc>.md
 ```
 
 The link checker is [check_links.py](../scripts/check_links.py).
