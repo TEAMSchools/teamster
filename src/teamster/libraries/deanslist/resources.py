@@ -152,10 +152,10 @@ class DeansListResource(ConfigurableResource):
             response.raise_for_status()
         except HTTPError as e:
             # `str(e)` is "<status> <Client|Server> Error: <reason> for url:
-            # <url>" -- the rendered URL, api key and all
+            # <url>" -- the rendered URL, api key and all. Not logged here: the
+            # INFO line above carries the school, and Dagster logs the raised
+            # exception on step failure, so an ERROR here would be a duplicate.
             message = redact_api_keys(text=str(e), api_keys=api_keys)
-
-            self._log.error(msg=f"{message}\nSCHOOL_ID:\t{school_id}")
 
             http_error = HTTPError(message, response=response)
 
@@ -208,7 +208,7 @@ class DeansListResource(ConfigurableResource):
         avro_schema: fastavro.types.Schema | None = None,
         *args,
         **kwargs,
-    ):
+    ) -> tuple[int, pathlib.Path | list[dict]]:
         page: int = 1
         total_pages: int = 2
         total_count: int = 0

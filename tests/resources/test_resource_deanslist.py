@@ -1,3 +1,4 @@
+import json
 import logging
 import pathlib
 import traceback
@@ -29,7 +30,9 @@ class _FakeSession:
         self._status_codes = list(status_codes)
         self.sent_params: list[dict] = []
 
-    def request(self, method: str, url: str, params: dict, timeout: float, **kwargs):
+    def request(
+        self, method: str, url: str, params: dict, timeout: float, **kwargs
+    ) -> Response:
         self.sent_params.append(dict(params))
 
         prepared = PreparedRequest()
@@ -55,7 +58,9 @@ class _FakeConnectionErrorSession:
     def __init__(self) -> None:
         self.sent_params: list[dict] = []
 
-    def request(self, method: str, url: str, params: dict, timeout: float, **kwargs):
+    def request(
+        self, method: str, url: str, params: dict, timeout: float, **kwargs
+    ) -> Response:
         self.sent_params.append(dict(params))
 
         prepared = PreparedRequest()
@@ -71,7 +76,7 @@ class _FakeConnectionErrorSession:
         raise error
 
 
-def _build_offline_resource(session, logger_name: str):
+def _build_offline_resource(session, logger_name: str) -> DeansListResource:
     """Instantiate the resource without the secret-volume setup path."""
     resource = DeansListResource(api_key_dir="/etc/deanslist")
 
@@ -169,13 +174,16 @@ def test_request_error_never_logs_or_raises_the_api_key(
     assert PLACEHOLDER_KEY not in str(exc_info.value)
     assert PLACEHOLDER_KEY not in rendered_traceback
 
-    # what survives is still enough to debug: status, endpoint, school, and a
-    # masked URL keeping the non-secret query params
-    assert "500 Server Error" in caplog.text
+    # what survives is still enough to debug: the INFO request line names the
+    # endpoint and school, and the raised message (which Dagster logs on step
+    # failure) keeps the status and a masked URL with the non-secret params.
+    # Only that one record: no duplicate ERROR from inside `_request`.
     assert "/api/v1/students" in caplog.text
-    assert "IncludeInactive=Y" in caplog.text
-    assert "apikey=***" in caplog.text
     assert "SCHOOL_ID:\t121" in caplog.text
+    assert not [r for r in caplog.records if r.levelno >= logging.ERROR]
+    assert "500 Server Error" in str(exc_info.value)
+    assert "IncludeInactive=Y" in str(exc_info.value)
+    assert "apikey=***" in str(exc_info.value)
 
     # the same exception type still propagates, with the response attached
     assert exc_info.value.response is not None
@@ -260,3 +268,59 @@ def test_request_does_not_retain_the_api_key_in_the_caller_params(
     assert response.status_code == 200
     assert PLACEHOLDER_KEY not in caplog.text
     assert params == {"IncludeInactive": "Y"}
+
+
+class _FakePageSession:
+    """Serves a single-page ``list()`` response offline."""
+
+    def __init__(self) -> None:
+        self.sent_params: list[dict] = []
+
+    def request(
+        self, method: str, url: str, params: dict, timeout: float, **kwargs
+    ) -> Response:
+        self.sent_params.append(dict(params))
+
+        response = Response()
+
+        response.status_code = 200
+        response._content = json.dumps(
+            {"total_count": 1, "total_pages": 1, "data": [{"id": 1}]}
+        ).encode()
+
+        return response
+
+
+def test_list_does_not_add_paging_params_to_the_caller_params(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
+):
+    """``list()`` sends page_size/page from a copy, like ``_request`` does the key.
+
+    The paginated asset reuses one params dict across partitions, so paging
+    params written into it would leak into every later request.
+    """
+    # list() opens its data file under the working directory
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "env" / "deanslist" / "behavior" / "2024-07-01" / "121").mkdir(
+        parents=True
+    )
+
+    session = _FakePageSession()
+    resource = _build_offline_resource(session, "test_deanslist_list")
+    object.__setattr__(resource, "_base_url", "https://x/api")
+    params = {"UpdatedSince": "2024-07-01"}
+
+    total_count, data = resource.list(
+        api_version="v1", endpoint="behavior", school_id=121, params=params
+    )
+
+    assert (total_count, data) == (1, [{"id": 1}])
+    assert params == {"UpdatedSince": "2024-07-01"}
+    assert session.sent_params == [
+        {
+            "UpdatedSince": "2024-07-01",
+            "page_size": 250000,
+            "page": 1,
+            "apikey": PLACEHOLDER_KEY,
+        }
+    ]
