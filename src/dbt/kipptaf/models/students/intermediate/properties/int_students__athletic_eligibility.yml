@@ -30,11 +30,12 @@ models:
         data_type: string
         description:
           Fall eligibility status from the previous year's credits, Y1 GPA, and
-          unweighted ADA. Age is checked first. First-time 9th graders and grade
-          5 are Eligible. High school students also need 30 previous-year
-          credits. Below 2.2 GPA is Ineligible, 2.2 to 2.49 is GPA probation,
-          and below 90 percent ADA is ADA probation. Null when the student has
-          no previous-year GPA or ADA.
+          whole-year ADA, weighted for high school and unweighted for middle
+          school. Age is checked first. First-time 9th graders and grade 5 are
+          Eligible. High school students also need 30 previous-year credits.
+          Below 2.2 GPA is Ineligible, 2.2 to 2.49 is GPA probation, and below
+          90 percent ADA is ADA probation. Null when the student has no
+          previous-year GPA or ADA.
         data_tests:
           - accepted_values:
               arguments:
@@ -345,3 +346,74 @@ unit_tests:
           q2_ae_status: Probation - ADA and GPA
           q3_ae_status: Probation - ADA and GPA
           q4_ae_status: Probation - ADA and GPA
+
+  - name: test_athletic_eligibility_q1_hs_weighted_ms_unweighted_ada
+    description:
+      Q1 reads last year's weighted ADA for high school and unweighted ADA for
+      middle school. Both students below have a 2.6 GPA, 95 percent unweighted
+      ADA, and 85 percent weighted ADA, so the high schooler is on ADA probation
+      and the middle schooler is eligible.
+    model: int_students__athletic_eligibility
+    overrides:
+      vars:
+        current_academic_year: 2026
+    given:
+      - input: ref('int_extracts__student_enrollments')
+        rows:
+          - student_number: 10
+            studentid: 10
+            yearid: 36
+            academic_year: 2026
+            grade_level: 10
+            grade_level_prev: 9
+            dob: 2010-01-01
+            ada_unweighted_year_prev: 0.95
+            ada_weighted_year_prev: 0.85
+            rn_year: 1
+            enroll_status: 0
+            region: Newark
+            _dbt_source_project: kippnewark
+          - student_number: 11
+            studentid: 11
+            yearid: 36
+            academic_year: 2026
+            grade_level: 7
+            grade_level_prev: 6
+            dob: 2013-01-01
+            ada_unweighted_year_prev: 0.95
+            ada_weighted_year_prev: 0.85
+            rn_year: 1
+            enroll_status: 0
+            region: Newark
+            _dbt_source_project: kippnewark
+      - input: ref('int_powerschool__gpa_term_pivot')
+        rows:
+          - studentid: 10
+            yearid: 35
+            gpa_y1_cur: 2.6
+            _dbt_source_project: kippnewark
+          - studentid: 11
+            yearid: 35
+            gpa_y1_cur: 2.6
+            _dbt_source_project: kippnewark
+      - input: ref('stg_powerschool__storedgrades')
+        rows:
+          - studentid: 10
+            yearid: 35
+            academic_year: 2025
+            storecode: Y1
+            earnedcrhrs: 30
+            _dbt_source_project: kippnewark
+      - input: ref('base_powerschool__final_grades')
+        rows:
+          - studentid: 99
+            yearid: 36
+            storecode: Q2
+            y1_letter_grade_adjusted: A
+            _dbt_source_project: kippnewark
+    expect:
+      rows:
+        - student_number: 10
+          q1_ae_status: Probation - ADA
+        - student_number: 11
+          q1_ae_status: Eligible

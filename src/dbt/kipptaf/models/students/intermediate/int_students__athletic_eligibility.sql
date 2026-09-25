@@ -147,38 +147,44 @@ select
         when
             grade_level >= 9
             and met_py_credits
-            and py_y1_unweighted_ada >= 0.9
+            and py_y1_weighted_ada >= 0.9
             and py_y1_gpa >= 2.5
         then 'Eligible'
-        when grade_level >= 6 and py_y1_unweighted_ada >= 0.9 and py_y1_gpa >= 2.5
+        when
+            grade_level between 6 and 8
+            and py_y1_unweighted_ada >= 0.9
+            and py_y1_gpa >= 2.5
         then 'Eligible'
         when
             grade_level >= 9
             and met_py_credits
+            and py_y1_weighted_ada >= 0.9
+            and py_y1_gpa between 2.2 and 2.49
+        then 'Probation - GPA'
+        when
+            grade_level between 6 and 8
             and py_y1_unweighted_ada >= 0.9
             and py_y1_gpa between 2.2 and 2.49
         then 'Probation - GPA'
         when
-            grade_level >= 6
-            and py_y1_unweighted_ada >= 0.9
-            and py_y1_gpa between 2.2 and 2.49
-        then 'Probation - GPA'
-        when
             grade_level >= 9
             and met_py_credits
+            and py_y1_weighted_ada < 0.9
+            and py_y1_gpa >= 2.5
+        then 'Probation - ADA'
+        when
+            grade_level between 6 and 8
             and py_y1_unweighted_ada < 0.9
             and py_y1_gpa >= 2.5
         then 'Probation - ADA'
-        when grade_level >= 6 and py_y1_unweighted_ada < 0.9 and py_y1_gpa >= 2.5
-        then 'Probation - ADA'
         when
             grade_level >= 9
             and met_py_credits
-            and py_y1_unweighted_ada < 0.9
+            and py_y1_weighted_ada < 0.9
             and py_y1_gpa between 2.2 and 2.49
         then 'Probation - ADA and GPA'
         when
-            grade_level >= 6
+            grade_level between 6 and 8
             and py_y1_unweighted_ada < 0.9
             and py_y1_gpa between 2.2 and 2.49
         then 'Probation - ADA and GPA'

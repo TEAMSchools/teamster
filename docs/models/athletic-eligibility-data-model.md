@@ -93,7 +93,7 @@ What changes by quarter is which values are read:
 
 | Quarter            | High school reads                                                                  | Middle school reads                                 |
 | ------------------ | ---------------------------------------------------------------------------------- | --------------------------------------------------- |
-| Q1 (fall)          | Last year's credits (30 needed), final Y1 GPA, unweighted whole-year ADA           | Last year's final Y1 GPA, unweighted whole-year ADA |
+| Q1 (fall)          | Last year's credits (30 needed), final Y1 GPA, weighted whole-year ADA             | Last year's final Y1 GPA, unweighted whole-year ADA |
 | Q2 (winter)        | Last year's credits (30 needed), Q1 term GPA, Q1 weighted ADA                      | Current Y1 GPA, running ADA                         |
 | Q3 and Q4 (spring) | No failing Y1 grade as of Q2, Y1 GPA at end of semester 1, semester 1 weighted ADA | Current Y1 GPA, running ADA                         |
 
@@ -167,10 +167,11 @@ schools.
   answer with Teaching and Learning, then change the Q2 through Q4 high school
   rules for that region.
 - **A high school student missing a high school input falls through to the
-  middle school rules.** A missing credit record (Q1), Q1 weighted ADA (Q2), or
-  semester 1 ADA or Q2 grades (Q3 and Q4) skips every high school branch, so the
-  status comes from the running ADA and current Y1 GPA instead. Fix: end the
-  high school branches with an explicit status for missing data.
+  middle school rules in Q2 through Q4.** A missing Q1 weighted ADA (Q2), or
+  semester 1 ADA or Q2 grades (Q3 and Q4), skips every high school branch, so
+  the status comes from the running ADA and current Y1 GPA instead. In Q1 a high
+  school student with no credit record gets no status. Fix: end the high school
+  branches with an explicit status for missing data.
 
 ## Open questions
 
