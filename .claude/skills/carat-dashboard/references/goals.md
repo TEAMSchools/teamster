@@ -213,11 +213,15 @@ this is a sheet edit only. Follow _Handing sheet rows to the user_ in
    A class's goal is on the tab only while that class is in a grade the tab
    lists for this year; the topline per-class table is a strategy target, not
    tab rows. Read the dumped tab first and find the row. If the request names a
-   class with no row this year, say so rather than inventing one. Key `--set` on
-   the columns that name the goal: `test_type`, `score_type`, and `cohort` or
-   `grade_level` for a per-class goal (they pair one-to-one within a year). It
-   prints every cell it changed, old to new, and aborts when nothing matches.
-   Check that list against the request before handing over the file.
+   class with no row this year, say so rather than inventing one. A request
+   phrased as a class's topline goal ("class of 2029 HS Grad-Ready to 65%") is
+   ambiguous when that class isn't in grade 11 or 12: ask whether KIPP Forward
+   means the SAT strategy target (a topline table edit only) or this year's goal
+   on the class's current test (its PSAT row). Key `--set` on the columns that
+   name the goal: `test_type`, `score_type`, and `cohort` or `grade_level` for a
+   per-class goal (they pair one-to-one within a year). It prints every cell it
+   changed, old to new, and aborts when nothing matches. Check that list against
+   the request before handing over the file.
 
 4. Hand the user the file path and "paste over A1 of the Goals tab".
 5. After the paste, rerun the script with no `--set` to a second file and diff
