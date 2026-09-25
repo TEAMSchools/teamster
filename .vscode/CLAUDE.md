@@ -21,6 +21,6 @@ setup docs are in `docs/guides/codespaces.md`.
 
 ## File Watcher
 
-- **`.worktrees/` and file watcher**: do not add `.worktrees/` to
+- **`.claude/worktrees/` and file watcher**: do not add `.claude/worktrees/` to
   `files.watcherExclude` — the worktree workflow expects IDE features (explorer
   updates, git decorations, diagnostics) to work from the main workspace
