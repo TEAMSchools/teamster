@@ -1,0 +1,2120 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Move the PowerSchool course-grade joins behind rpt_tableau__student_course_grades into the package - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#move-the-powerschool-course-grade-joins-behind-rpt_tableau__student_course_grades-into-the-package" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Move the PowerSchool course-grade joins behind rpt_tableau__student_course_grades into the package
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/fresh-dashboard-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/launch-page-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Launch Page
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube-access-individual-exceptions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube Access - Individual Exceptions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/fresh-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FRESH Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/carat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CARAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/csgf-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CSGF Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/hs-early-warning-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HS Early Warning Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/dibels-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DIBELS Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/stat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/athletic-eligibility-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Athletic Eligibility Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#decision" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Decision
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#why-the-issues-easy-paths-do-not-work" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why the issue's easy paths do not work
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/specs/2026-09-14-powerschool-student-course-grades-design.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="move-the-powerschool-course-grade-joins-behind-rpt_tableau__student_course_grades-into-the-package">Move the PowerSchool course-grade joins behind <code>rpt_tableau__student_course_grades</code> into the package</h1>
+<p>Refs #5285. Refs #5260. Refs #5012.</p>
+<p>Covers row 1 of #5285: <code>rpt_tableau__student_course_grades</code>, the last kipptaf
+extract that rebuilds PowerSchool-to-PowerSchool joins at course grain. Row 2
+shipped in #5306.</p>
+<p>Follows the pattern set by
+<code>docs/superpowers/specs/2026-09-11-powerschool-section-teachers-design.md</code> and
+<code>docs/superpowers/specs/2026-09-11-powerschool-gradebook-assignment-scores-design.md</code>:
+one package model carrying every PowerSchool-internal join, a kipptaf
+<code>union_relations</code> wrapper above it, and the kipptaf-only joins left in kipptaf.</p>
+<h2 id="decision">Decision</h2>
+<p>Build one new package model, <code>int_powerschool__student_course_grades_spine</code>, at
+the consumer's own grain: one row per student, term, course, and gradebook
+category, for the current and prior academic year. It absorbs every course-grain
+CTE the consumer holds today, including the temporary #4687 prior-year
+reconstruction. kipptaf reads it through a bare <code>union_relations</code> wrapper, and
+<code>rpt_tableau__student_course_grades</code> becomes the student roster joined once to
+that wrapper plus its 2 kipptaf enrichment joins. One PR. No Miami, no archive
+rebuild.</p>
+<p>The bar, set on 2026-09-14: every PowerSchool-to-PowerSchool join leaves
+kipptaf. Not "the consumer reads a wrapper somewhere", and not "row-identical is
+enough".</p>
+<h2 id="why-the-issues-easy-paths-do-not-work">Why the issue's easy paths do not work</h2>
+<h1 id="5260s-table-said-base_powerschool__final_grades-already-carries-enrollment">5260's table said <code>base_powerschool__final_grades</code> "already carries enrollment</h1>
+<p>attributes", so the move was a swap. Re-measured against prod on 2026-09-14 in
+all 3 NJ districts:</p>
+<ul>
+<li><code>base_powerschool__final_grades</code> has no <code>sections_dcid</code>,
+  <code>sections_section_number</code>, <code>sections_external_expression</code>, or
+  <code>rn_course_number_year</code>. All 4 exist on
+  <code>base_powerschool__course_enrollments</code>.</li>
+<li>It filters to <code>cc_academic_year = current_academic_year</code> at line 56. The
+  consumer reads the prior year at lines 104, 306, and 362.</li>
+</ul>
+<p>Widening <code>base_powerschool__final_grades</code> to 2 years would change cost and
+semantics for every other consumer, and it is term-grain, so it still could not
+carry the category rows.</p>
+<h3 id="what-the-dashboard-actually-reads">What the dashboard actually reads</h3>
+<p>The Academic &amp; Gradebook Health Suite workbook (LUID
+<code>b3c14d67-3130-46ac-82a0-0637a5cc2da5</code>, pulled 2026-09-14 08:17 UTC, 94
+worksheets) was parsed for per-worksheet <code>datasource-dependencies</code> on the
+<code>rpt_tableau__student_course_grades</code> datasource. Tableau lists every view column
+in datasource metadata, so a bare name match proves nothing; the counts below
+are worksheets that depend on the column or a calculation over it.</p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th style="text-align: right;">Worksheets</th>
+<th>Note</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>sections_dcid</code></td>
+<td style="text-align: right;">0</td>
+<td>dead in Tableau</td>
+</tr>
+<tr>
+<td><code>section_number</code></td>
+<td style="text-align: right;">0</td>
+<td>feeds <code>section_or_period</code></td>
+</tr>
+<tr>
+<td><code>external_expression</code></td>
+<td style="text-align: right;">0</td>
+<td>feeds <code>section_or_period</code></td>
+</tr>
+<tr>
+<td><code>section_or_period</code></td>
+<td style="text-align: right;">6</td>
+<td>includes the DeansList export and office-hours roster</td>
+</tr>
+<tr>
+<td><code>credit_type</code></td>
+<td style="text-align: right;">16</td>
+<td></td>
+</tr>
+<tr>
+<td><code>course_name</code></td>
+<td style="text-align: right;">6</td>
+<td></td>
+</tr>
+<tr>
+<td><code>teacher_name</code></td>
+<td style="text-align: right;">7</td>
+<td></td>
+</tr>
+<tr>
+<td><code>manager</code></td>
+<td style="text-align: right;">10</td>
+<td></td>
+</tr>
+<tr>
+<td><code>is_current_academic_year</code></td>
+<td style="text-align: right;">13</td>
+<td>gates the landing-page tile calculations</td>
+</tr>
+<tr>
+<td><code>academic_year</code></td>
+<td style="text-align: right;">26</td>
+<td></td>
+</tr>
+<tr>
+<td><code>teacher_tableau_username</code></td>
+<td style="text-align: right;">0</td>
+<td>10 references outside worksheets: row-level security</td>
+</tr>
+<tr>
+<td><code>school_leader_tableau_username</code></td>
+<td style="text-align: right;">0</td>
+<td>15 references outside worksheets: row-level security</td>
+</tr>
+</tbody>
+</table>
+<p>Zero worksheets read <code>date_enrolled</code>, <code>exclude_from_gpa</code>, <code>teacher_number</code>,
+<code>report_to_sam_account_name</code>, <code>tutoring_nj</code>, <code>nj_student_tier</code>, or
+<code>academic_year_display</code>. They stay in the contract; dropping them is a separate
+decision.</p>
+<p>So 3 of the 4 missing columns are load-bearing through <code>section_or_period</code>, and
+the prior year is load-bearing through 13 worksheets. <code>rn_course_number_year</code> is
+a model-internal pick.</p>
+<h2 id="the-package-model">The package model</h2>
+<p><code>src/dbt/powerschool/models/sis/intermediate/int_powerschool__student_course_grades_spine.sql</code></p>
+<p>Grain: one row per <code>studentid</code>, <code>yearid</code>, <code>quarter</code>, <code>course_number</code>,
+<code>category_name_code</code>, where <code>quarter</code> is Q1 to Q4 or Y1 and Y1 rows carry a null
+category. Years: <code>current_academic_year - 1</code> and <code>current_academic_year</code>, from
+the district var, the same way <code>base_powerschool__final_grades</code> filters at
+line 56.</p>
+<p>Inputs, all package refs, all already in the package:</p>
+<table>
+<thead>
+<tr>
+<th>Ref</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>base_powerschool__course_enrollments</code></td>
+<td>drives the model; one row per enrollment</td>
+</tr>
+<tr>
+<td><code>base_powerschool__final_grades</code></td>
+<td>current-year live term and Y1 grades</td>
+</tr>
+<tr>
+<td><code>stg_powerschool__storedgrades</code></td>
+<td>stored Y1, prior-year term grades, #4687</td>
+</tr>
+<tr>
+<td><code>int_powerschool__category_grades</code></td>
+<td>category term and running percents</td>
+</tr>
+<tr>
+<td><code>int_powerschool__gradescaleitem_lookup</code></td>
+<td>#4687 banding and the whole-letter ladder</td>
+</tr>
+</tbody>
+</table>
+<p>The SQL is the consumer's course-grain CTEs moved verbatim. Moved:
+<code>course_enrollments</code> (minus its 2 kipptaf left joins), <code>y1_final_grades</code>,
+<code>backfill_quarter_running</code>, <code>backfill_y1_stored_raw</code>, <code>backfill_y1_stored</code>,
+<code>backfill_course_anchored</code>, <code>backfill_running_course</code>, <code>quarter_grades</code>,
+<code>grade_scale_rungs</code>, <code>grade_scale_ladder</code>, <code>category_grades</code>, <code>category_ranked</code>,
+<code>category_drivers</code>, <code>course_priority</code>. The final select drives from
+<code>course_enrollments</code> and left-joins the rest on the same keys the consumer uses
+today, so an enrollment with no grade row survives with null grade columns.</p>
+<p>Deletions, and nothing else:</p>
+<table>
+<thead>
+<tr>
+<th>Deletion</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>every <code>_dbt_source_project</code> column, partition key, and predicate</td>
+<td>one project is one region inside the package</td>
+</tr>
+<tr>
+<td>every <code>_dbt_source_relation</code> pass-through</td>
+<td>the wrapper re-adds it</td>
+</tr>
+</tbody>
+</table>
+<p>Everything else survives as written: the lunch, study-hall, and advisory course
+exclusion list, the <code>rn_course_number_year = 1</code> and <code>cc_sectionid &gt; 0</code> picks,
+the <code>not is_dropped_section</code> guards, the <code>termbin_start_date &lt;= current_date</code>
+gates, the <code>(x is null) asc</code> orderings in <code>category_ranked</code>, the 3
+<code>quarter_grades</code> branches, and every <code>TODO(#4687)</code> comment. The #4687 code is
+scheduled to die; after this move it dies in one place, the package.</p>
+<h3 id="output-columns">Output columns</h3>
+<p>Every column the consumer takes today from <code>ce</code>, <code>y1f</code>, <code>qg</code>, <code>c</code>, <code>cd</code>, <code>gsl</code>,
+and <code>cp</code>, under the same names, plus:</p>
+<ul>
+<li><code>studentid</code>, <code>yearid</code>, <code>quarter</code>: the join keys to the kipptaf roster.</li>
+<li><code>courses_gradescaleid</code>: carried for the ladder join, which now happens inside
+  the model.</li>
+<li><code>teachernumber</code> and <code>teacher_lastfirst</code>, so kipptaf can join
+  <code>int_people__staff_roster</code>.</li>
+<li><code>need_next</code>: a pure function of <code>need_60</code>, <code>need_70</code>, and
+  <code>need_next_cutoff_percent</code>, all package columns, so it moves.</li>
+</ul>
+<p><code>students_student_number</code> is not projected. The consumer takes <code>student_number</code>
+from the roster, and the model carries no PII beyond what
+<code>base_powerschool__final_grades</code> already holds at this layer: student-level
+grades keyed by surrogate <code>studentid</code>, tagged <code>contains_pii</code> in its properties
+yml.</p>
+<h3 id="section_or_period-stays-in-kipptaf"><code>section_or_period</code> stays in kipptaf</h3>
+<p>The consumer computes
+<code>if(s.grade_level &lt; 9, ce.section_number, ce.external_expression)</code> from the
+roster's grade level for the year. The only grade level on the enrollment row is
+<code>students_grade_level</code>, which <code>base_powerschool__course_enrollments</code> takes from
+<code>stg_powerschool__students.grade_level</code>, the student's CURRENT grade. Measured
+against prod on 2026-09-14 for the 2-year window, <code>rn_course_number_year = 1</code>,
+<code>cc_sectionid &gt; 0</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Region</th>
+<th>Year</th>
+<th style="text-align: right;">Rows</th>
+<th style="text-align: right;">Grade differs</th>
+<th style="text-align: right;">Crosses the grade 9 line</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Newark</td>
+<td>2025</td>
+<td style="text-align: right;">41,111</td>
+<td style="text-align: right;">35,354</td>
+<td style="text-align: right;">2,144</td>
+</tr>
+<tr>
+<td>Newark</td>
+<td>2026</td>
+<td style="text-align: right;">42,153</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr>
+<td>Camden</td>
+<td>2025</td>
+<td style="text-align: right;">13,311</td>
+<td style="text-align: right;">10,980</td>
+<td style="text-align: right;">613</td>
+</tr>
+<tr>
+<td>Camden</td>
+<td>2026</td>
+<td style="text-align: right;">14,033</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr>
+<td>Paterson</td>
+<td>2025</td>
+<td style="text-align: right;">3,924</td>
+<td style="text-align: right;">3,665</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr>
+<td>Paterson</td>
+<td>2026</td>
+<td style="text-align: right;">3,826</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+</tr>
+</tbody>
+</table>
+<p>The prior year differs on every promoted student, and 2,757 rows would flip
+between section number and period. So the package model exports <code>section_number</code>
+and <code>external_expression</code>, and <code>section_or_period</code> stays where it is in the
+consumer's select list, reading the roster's <code>grade_level</code>.</p>
+<h3 id="uniqueness-test">Uniqueness test</h3>
+<p><code>dbt_utils.unique_combination_of_columns</code> on the 5 grain columns, at
+<code>severity: warn</code> with the same <code>TODO(#3915)</code> comment the consumer carries: the
+prior-year storedgrades double-write duplicates move with the data. Restoring
+<code>severity: error</code> belongs to #3915.</p>
+<h2 id="the-kipptaf-wrapper">The kipptaf wrapper</h2>
+<p><code>src/dbt/kipptaf/models/powerschool/intermediate/int_powerschool__student_course_grades_spine.sql</code></p>
+<p>A bare <code>union_relations</code> over <code>kippnewark_powerschool</code>,
+<code>kippcamden_powerschool</code>, and <code>kipppaterson_powerschool</code> plus
+<code>extract_source_project()</code>, the same shape as
+<code>int_powerschool__gradebook_assignments</code> in that directory. Miami is absent and
+stays absent: the dashboard hard-excludes it at line 366 of the consumer, and
+<code>kippmiami</code> does not consume the package.</p>
+<p>The wrapper's properties yml re-declares <code>config.meta.contains_pii: true</code> at
+model level, since the tag does not travel through <code>source()</code>, and carries the
+6-column uniqueness test (the 5 grain columns plus <code>_dbt_source_project</code>) at
+<code>severity: warn</code>, <code>TODO(#3915)</code>.</p>
+<p>One source entry is added to each of <code>sources-kippnewark.yml</code>,
+<code>sources-kippcamden.yml</code>, and <code>sources-kipppaterson.yml</code>, with the
+<code>staging</code>-to-<code>zz_stg_</code> schema branch the neighbors already carry.</p>
+<h2 id="the-consumer-rewrite">The consumer rewrite</h2>
+<p><code>src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__student_course_grades.sql</code></p>
+<p>Keeps: <code>term</code>, <code>prior_year_gpa_rollup</code>, <code>prior_year_gpa</code>,
+<code>prior_year_cumulative</code>, <code>backfill_running_gpa</code>, <code>student_roster</code>. All are
+student-grain or roster-driven, and read kipptaf cross-SIS models
+(<code>int_students__terms</code>, <code>int_extracts__student_enrollments</code>) or the
+student-grain GPA wrappers. The GPA joins hang off the kipptaf roster, so they
+are not PowerSchool-to-PowerSchool and are out of scope.</p>
+<p>Deletes: every CTE from <code>course_enrollments</code> down through <code>course_priority</code>.</p>
+<p>The final select becomes <code>student_roster</code> left-joined once to the wrapper on
+<code>studentid</code>, <code>yearid</code>, <code>quarter</code>, and <code>_dbt_source_project</code>, then the 2
+enrichment joins that used to sit inside <code>course_enrollments</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="k">left</span><span class="w"> </span><span class="k">join</span>
+<span class="w">    </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"int_extracts__student_enrollments_subjects"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">f</span>
+<span class="w">    </span><span class="k">on</span><span class="w"> </span><span class="k">g</span><span class="p">.</span><span class="n">studentid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">f</span><span class="p">.</span><span class="n">studentid</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="k">g</span><span class="p">.</span><span class="n">academic_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">f</span><span class="p">.</span><span class="n">academic_year</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="k">g</span><span class="p">.</span><span class="n">credit_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">f</span><span class="p">.</span><span class="n">powerschool_credittype</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="k">g</span><span class="p">.</span><span class="n">_dbt_source_project</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">f</span><span class="p">.</span><span class="n">_dbt_source_project</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">f</span><span class="p">.</span><span class="n">rn_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span>
+<span class="k">left</span><span class="w"> </span><span class="k">join</span>
+<span class="w">    </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"int_people__staff_roster"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">r</span>
+<span class="w">    </span><span class="k">on</span><span class="w"> </span><span class="k">g</span><span class="p">.</span><span class="n">teachernumber</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">r</span><span class="p">.</span><span class="n">powerschool_teacher_number</span>
+</code></pre></div>
+<p>The select list, column order, and contract do not change. <code>section_or_period</code>,
+the 2 GPA-band deltas, <code>is_gpa_band_slide</code>, and
+<code>y1_course_letter_grade_adjusted</code> stay as written in the select list, reading
+roster columns and wrapper columns by the same names as today. The
+<code>where s.quarter_start_date &lt;= current_date</code> filter stays.</p>
+<p>Today the enrichment joins run on the enrollment row before any grade join, so a
+course with no grade row still gets <code>tutoring_nj</code> and <code>manager</code>. In the rewrite
+they run on the wrapper row, which carries every enrollment because the package
+model drives from <code>course_enrollments</code>. Same result; proved in verification, not
+asserted.</p>
+<h2 id="verification">Verification</h2>
+<p>Against production relations only. No dev build, and no <code>zz_stg</code> copy: kipptaf
+<code>source()</code> resolves to personal <code>zz_&lt;user&gt;_*</code> copies under <code>target=dev</code>, and a
+<code>zz_stg</code> comparison measures staging staleness, not the change (the false alarm
+on #5281).</p>
+<ol>
+<li>Compile the package model at <code>--target prod</code> per NJ district. Run the
+   compiled SQL as a CTE against that district's prod
+   <code>kipp&lt;district&gt;_powerschool</code> relations. Record the row count and slot time
+   per district; Newark is the largest input and the cost goes in the PR body.</li>
+<li>Run the rewritten consumer the same way, with the wrapper replaced by a
+   <code>union all</code> of the 3 district CTEs plus a literal <code>_dbt_source_project</code>.</li>
+<li>Compare to prod <code>kipptaf_tableau.rpt_tableau__student_course_grades</code> with
+   <code>except distinct</code> in both directions, chunked by <code>academic_year</code> and
+   <code>_dbt_source_project</code>, over every contract column. Fingerprint each chunk
+   with <code>sum(cast(farm_fingerprint(...) as bignumeric))</code>; a plain <code>sum</code>
+   overflows.</li>
+<li>Expected: 0 differences, except rows whose only cause is the #3915
+   storedgrades tie-break, proved the way #5306 proved it: every differing row
+   sits on a
+   <code>(student_number, academic_year, schoolname, course_number, course_name)</code> key
+   with 2 or more stored rows carrying different values.</li>
+<li>Named checks: <code>section_or_period</code> is byte-identical (it did not move);
+   <code>tutoring_nj</code>, <code>nj_student_tier</code>, <code>manager</code>, and <code>teacher_tableau_username</code>
+   are identical on rows with null <code>quarter_course_percent_grade</code> (the
+   enrichment-ordering claim).</li>
+<li>The package model's uniqueness test runs in all 3 districts and reports the
+   same duplicate count as the consumer's test does today for that region.</li>
+</ol>
+<h2 id="ci-cost">CI cost</h2>
+<p>A new package model has no <code>zz_stg_*</code> copy, so kipptaf CI cannot resolve the new
+source until one exists. Seed it with
+<code>dbt build --select int_powerschool__student_course_grades_spine --target staging</code>
+in <code>kippnewark</code>, <code>kippcamden</code>, and <code>kipppaterson</code>, one at a time; parallel runs
+across projects exhaust BigQuery's <code>INFORMATION_SCHEMA.simple_rate.user</code> quota.
+That writes shared staging tables and needs direct user authorization in the
+turn before each call.</p>
+<h2 id="documentation">Documentation</h2>
+<p>No published page in the <code>mkdocs.yml</code> nav describes this model's internals. The
+package model gets a full properties yml with a description for every column,
+sourced from the consumer's yml where the column already exists there. The
+consumer's yml keeps its descriptions unchanged, since its contract is
+unchanged.
+<code>docs/superpowers/plans/2026-07-07-gradebook-grades-gpa-tableau-rebuild.md</code> and
+<code>docs/superpowers/plans/2026-08-01-prior-year-backfill-and-category-drivers.md</code>
+name the moved CTEs; they are historical plans and stay as written.</p>
+<h2 id="not-in-scope">Not in scope</h2>
+<ul>
+<li>Dropping the 7 contract columns no worksheet reads. Contract change, separate
+  decision.</li>
+<li>Exposure drift: the workbook also reads <code>rpt_tableau__gradebook_audit</code> and
+  <code>rpt_tableau__gpa_goal_progress</code>, which the <code>academic_gradebook_health_suite</code>
+  exposure does not list. One-line yml fix, separate PR.</li>
+<li>The student-grain GPA joins in <code>student_roster</code>.</li>
+<li>Deleting the #4687 reconstruction. It moves; it does not die here.</li>
+<li>The <code>base_powerschool__*</code> compatibility passthroughs and the #3999 wrapper
+  sweep.</li>
+<li>Miami, in any form. Ratified on #4996.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

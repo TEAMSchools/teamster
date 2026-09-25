@@ -1,0 +1,3262 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+        <link rel="prev" href="../dibels-dashboard-data-model/">
+      
+      
+        <link rel="next" href="../athletic-eligibility-data-model/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>STAT Dashboard Data Model - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#stat-dashboard-data-model" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              STAT Dashboard Data Model
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../fresh-dashboard-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/launch-page-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Launch Page
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/cube-access-individual-exceptions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube Access - Individual Exceptions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../fresh-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FRESH Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../carat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CARAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../csgf-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CSGF Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../hs-early-warning-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HS Early Warning Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dibels-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DIBELS Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-is-stat" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What is STAT?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-workbook" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The workbook
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scores-the-nj-dual-vendor-union" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scores: the NJ dual-vendor union
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Scores: the NJ dual-vendor union">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-dashboard-publishes-a-rolling-window-not-all-history" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The dashboard publishes a rolling window, not all history
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#repairing-a-student-number-that-does-not-resolve" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Repairing a student number that does not resolve
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Repairing a student number that does not resolve">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#failure-modes-and-they-are-modes-not-vendors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Failure modes -- and they are modes, not vendors
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-third-category-no-enrollment-in-the-year-the-test-was-taken" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The third category: no enrollment in the year the test was taken
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-state-id-is-not-a-substitute-for-the-local-id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The state id is not a substitute for the local id
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#comparisons-two-independent-paths" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Comparisons: two independent paths
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Comparisons: two independent paths">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#interim-comps-from-media-before-the-official-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Interim comps from media, before the official files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#every-comps-group-is-one-source-row-and-the-percentage-falls-back" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Every comps group is one source row, and the percentage falls back
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reading-the-sheets-adc-not-the-bigquery-mcp" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reading the sheets: ADC, not the BigQuery MCP
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a-missing-value-means-the-state-did-not-provide-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A missing value means the state did not provide it
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#comparison-entities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Comparison entities
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#controlled-vocabulary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Controlled vocabulary
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#known-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Known issues
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Known issues">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#resolved-the-subgroup-vocabulary-was-split-and-comparisons-read-false" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Resolved — the subgroup vocabulary was split, and comparisons read false
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Resolved — the subgroup vocabulary was split, and comparisons read false">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#exactly-what-moved" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Exactly what moved
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#known-4032-comparisons-have-no-counterpart-and-the-filters-conflate-that-with-a-loss" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Known — 4,032 comparisons have no counterpart, and the filters conflate that with a loss
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#open-comparison-data-stops-at-academic-year-2024" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open — comparison data stops at academic year 2024
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deferred-work-on-the-crosswalk" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deferred work on the crosswalk
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#open-the-crosswalk-sheet-holds-13-rows-that-do-not-hold-up" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open — the crosswalk sheet holds 13 rows that do not hold up
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-exposure-needs-the-lsid-not-a-url" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The exposure needs the LSID, not a url
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../athletic-eligibility-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Athletic Eligibility Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-is-stat" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What is STAT?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-workbook" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The workbook
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scores-the-nj-dual-vendor-union" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scores: the NJ dual-vendor union
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Scores: the NJ dual-vendor union">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-dashboard-publishes-a-rolling-window-not-all-history" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The dashboard publishes a rolling window, not all history
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#repairing-a-student-number-that-does-not-resolve" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Repairing a student number that does not resolve
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Repairing a student number that does not resolve">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#failure-modes-and-they-are-modes-not-vendors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Failure modes -- and they are modes, not vendors
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-third-category-no-enrollment-in-the-year-the-test-was-taken" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The third category: no enrollment in the year the test was taken
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-state-id-is-not-a-substitute-for-the-local-id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The state id is not a substitute for the local id
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#comparisons-two-independent-paths" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Comparisons: two independent paths
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Comparisons: two independent paths">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#interim-comps-from-media-before-the-official-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Interim comps from media, before the official files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#every-comps-group-is-one-source-row-and-the-percentage-falls-back" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Every comps group is one source row, and the percentage falls back
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reading-the-sheets-adc-not-the-bigquery-mcp" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reading the sheets: ADC, not the BigQuery MCP
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a-missing-value-means-the-state-did-not-provide-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A missing value means the state did not provide it
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#comparison-entities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Comparison entities
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#controlled-vocabulary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Controlled vocabulary
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#known-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Known issues
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Known issues">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#resolved-the-subgroup-vocabulary-was-split-and-comparisons-read-false" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Resolved — the subgroup vocabulary was split, and comparisons read false
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Resolved — the subgroup vocabulary was split, and comparisons read false">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#exactly-what-moved" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Exactly what moved
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#known-4032-comparisons-have-no-counterpart-and-the-filters-conflate-that-with-a-loss" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Known — 4,032 comparisons have no counterpart, and the filters conflate that with a loss
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#open-comparison-data-stops-at-academic-year-2024" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open — comparison data stops at academic year 2024
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deferred-work-on-the-crosswalk" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deferred work on the crosswalk
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#open-the-crosswalk-sheet-holds-13-rows-that-do-not-hold-up" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open — the crosswalk sheet holds 13 rows that do not hold up
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-exposure-needs-the-lsid-not-a-url" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The exposure needs the LSID, not a url
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/models/stat-dashboard-data-model.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="stat-dashboard-data-model">STAT Dashboard Data Model</h1>
+<p>Reference for the <strong>State Testing Analysis Tool (STAT)</strong> — the Tableau workbook
+KTAF uses to read state assessment results across Newark, Camden, Miami and
+Paterson.</p>
+<p>Row counts and other measurements in this document were taken against production
+on 2026-09-16. They are here to make a claim checkable, not because they stay
+true; re-run the query beside a number before relying on it.</p>
+<h2 id="what-is-stat">What is STAT?</h2>
+<p>One workbook, two reporting models, and a Google Sheet of hand-entered
+comparison figures. It answers two different questions that people routinely
+confuse:</p>
+<ul>
+<li><strong>How did our students do?</strong> Student-level scores, proficiency bands, growth
+  year over year, and teacher rosters.</li>
+<li><strong>How did we do against everyone else?</strong> KTAF proficiency next to the host
+  city, the state, and (in Miami) a named set of neighborhood schools.</li>
+</ul>
+<p>The second question has no warehouse source. Nobody publishes comparison
+proficiency in a form we can ingest, so it is typed into a sheet by hand. Most
+of the surprises in this pipeline come from that fact.</p>
+<h2 id="the-workbook">The workbook</h2>
+<p>Exposure <code>state_testing_analysis_tool</code> in
+<code>src/dbt/kipptaf/models/exposures/tableau.yml</code>. Tableau LSID
+<code>31b6a4a9-e0ca-479b-8f44-0daaa52e109b</code>, project <code>Production</code>.</p>
+<p>Six published views and one hidden dashboard, drawing on two embedded extracts:</p>
+<table>
+<thead>
+<tr>
+<th>View</th>
+<th>Datasource</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Landing Page</td>
+<td><code>rpt_tableau__state_assessments_dashboard</code></td>
+</tr>
+<tr>
+<td>Overview</td>
+<td><code>rpt_tableau__state_assessments_dashboard</code></td>
+</tr>
+<tr>
+<td>Demographics</td>
+<td><code>rpt_tableau__state_assessments_dashboard</code></td>
+</tr>
+<tr>
+<td>Teacher/Student Roster</td>
+<td><code>rpt_tableau__state_assessments_dashboard</code></td>
+</tr>
+<tr>
+<td>Proficiency YoY</td>
+<td><code>rpt_tableau__state_assessments_dashboard</code></td>
+</tr>
+<tr>
+<td><strong>Advanced Comps</strong></td>
+<td><code>rpt_tableau__state_assessments_dashboard_comps</code></td>
+</tr>
+<tr>
+<td><em>Sarba's Report</em> (hidden)</td>
+<td><code>rpt_tableau__state_assessments_dashboard</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Only Advanced Comps reads the comps model.</strong> Three worksheets sit on it —
+<code>Advanced Comps - 3-Column</code>, <code>- 5-column</code> and <code>- Header</code> — plus an orphan
+worksheet <code>Sheet 52</code> that is bound to the comps datasource but placed on no
+dashboard. A change confined to <code>rpt_tableau__state_assessments_dashboard_comps</code>
+cannot move any number on the other five views.</p>
+<p>Both datasources are <strong>embedded extracts</strong>. The Tableau MCP cannot read
+calculated-field text and returns HTTP 500 on <code>get-datasource-metadata</code> for an
+embedded extract, so any question about what the workbook does with a field is
+answered by downloading the <code>.twb</code> — see the <code>tableau-workbook-xml</code> skill.</p>
+<h2 id="scores-the-nj-dual-vendor-union">Scores: the NJ dual-vendor union</h2>
+<p>The NJ DOE has <strong>changed vendors for all state testing</strong>, from <strong>Pearson Access
+Next</strong> to <strong>Cambium TIDE</strong>. The cutover is a date, not a per-assessment rollout:</p>
+<table>
+<thead>
+<tr>
+<th>administration</th>
+<th>vendor</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>through <strong>December 2025</strong></td>
+<td>Pearson</td>
+</tr>
+<tr>
+<td><strong>Spring 2026</strong> and everything after</td>
+<td>Cambium</td>
+</tr>
+</tbody>
+</table>
+<p>December 2025 was the last Pearson data KTAF implemented. Every NJ
+administration from Spring 2026 onward is Cambium.</p>
+<p>Two consequences worth stating plainly. The Pearson relations in the union are
+<strong>history</strong>, not a live feed -- they will not accrue new rows, so a gap in one
+of them is a gap in the past and cannot be fixed by a re-pull. And
+<code>stg_pearson__njgpa</code> is <strong>moot</strong>: the Pearson form of that test is retired.</p>
+<p><a href="https://github.com/TEAMSchools/teamster/blob/main/src/dbt/cambium/CLAUDE.md"><code>src/dbt/cambium/CLAUDE.md</code></a>
+covers the Cambium side. From Spring 2026, NJSLA, NJSLA Science and the Algebra
+I, Algebra II and Geometry end-of-course tests arrive from Cambium as well as
+NJGPA.</p>
+<p>The union happens at kipptaf <code>int_pearson__all_assessments</code>:</p>
+<div class="highlight"><pre><span></span><code>kippnewark_pearson.int_pearson__all_assessments    ]
+kippcamden_pearson.int_pearson__all_assessments    ]  Pearson, already aligned
+kipppaterson_pearson.int_pearson__all_assessments  ]
+
+stg_cambium__njsla  (Newark, Camden, Paterson)     ]
+stg_cambium__eoc    (Newark, Camden)               ]  Cambium, mapped here
+stg_cambium__njgpa  (Newark, Camden)               ]
+</code></pre></div>
+<p><strong>The model's name is a misnomer and a rename is pending.</strong> It carries two
+vendors. Anything reading it should not assume Pearson.</p>
+<p>Cambium ships a completely different schema — snake_case headers against
+Pearson's camel case, with only 11 of 225 column names in common. The cambium
+package staging models keep Cambium's names, and kipptaf
+<code>int_pearson__all_assessments</code> maps them into the Pearson-shaped columns. The
+two vendors' aligned columns are computed in two different places and have to be
+kept in step by hand:</p>
+<table>
+<thead>
+<tr>
+<th>Vendor</th>
+<th>Where the aligned columns are computed</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Pearson</td>
+<td><code>int_pearson__all_assessments</code> in the <strong>pearson</strong> package</td>
+</tr>
+<tr>
+<td>Cambium</td>
+<td><code>int_pearson__all_assessments</code> in <strong>kipptaf</strong></td>
+</tr>
+</tbody>
+</table>
+<p>A kipptaf model cannot call into the pearson package, so the race, IEP and ML
+mappings are deliberately restated rather than shared. If you change one, change
+the other.</p>
+<p><code>assessment_version</code> is what tells the two apart downstream: <code>NJGPA</code> is the
+retired Pearson form, <code>NJGPA-A</code> the Cambium adaptive form. They use different
+score scales and therefore different graduation cut scores, which is why the
+cut-score sheet joins on <code>assessment_version</code> and not on <code>assessment_name</code>.</p>
+<p>Production distribution:</p>
+<table>
+<thead>
+<tr>
+<th><code>assessment_version</code></th>
+<th style="text-align: right;">kippnewark</th>
+<th style="text-align: right;">kippcamden</th>
+<th style="text-align: right;">kipppaterson</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PARCC</td>
+<td style="text-align: right;">12,637</td>
+<td style="text-align: right;">2,988</td>
+<td style="text-align: right;">—</td>
+</tr>
+<tr>
+<td>NJSLA</td>
+<td style="text-align: right;">32,278</td>
+<td style="text-align: right;">11,931</td>
+<td style="text-align: right;">324</td>
+</tr>
+<tr>
+<td>NJSLA Science</td>
+<td style="text-align: right;">4,985</td>
+<td style="text-align: right;">1,819</td>
+<td style="text-align: right;">116</td>
+</tr>
+<tr>
+<td>NJGPA (Pearson)</td>
+<td style="text-align: right;">3,081</td>
+<td style="text-align: right;">1,049</td>
+<td style="text-align: right;">—</td>
+</tr>
+<tr>
+<td>NJGPA-A (Cambium)</td>
+<td style="text-align: right;">564</td>
+<td style="text-align: right;">249</td>
+<td style="text-align: right;">—</td>
+</tr>
+</tbody>
+</table>
+<p>Paterson does not sit for NJGPA and has <code>stg_pearson__njgpa</code> and
+<code>stg_cambium__njgpa</code> disabled. It has no end-of-course file yet, so
+<code>stg_cambium__eoc</code> is disabled too.</p>
+<p>Florida is a separate leg entirely — <code>int_fldoe__all_assessments</code>, unioned in at
+the reporting view rather than here.</p>
+<h3 id="the-dashboard-publishes-a-rolling-window-not-all-history">The dashboard publishes a rolling window, not all history</h3>
+<p><code>rpt_tableau__state_assessments_dashboard</code> filters scores to
+<code>academic_year &gt;= current_academic_year - 7</code>, so roughly the last seven years
+reach the workbook while the models underneath retain everything back to PARCC.</p>
+<p>This is worth checking before spending effort on an old defect. A flagged score
+or an unrepaired identifier in a year that has rolled out of the window is not
+visible to anyone and does not need fixing — the 8 unmatchable rows below are
+all academic year 2017 or 2018 and fall into exactly that category. Confirm the
+filter rather than trusting this sentence; the constant is in the model.</p>
+<h2 id="repairing-a-student-number-that-does-not-resolve">Repairing a student number that does not resolve</h2>
+<p>Assessment rows arrive keyed on the vendor's <code>localstudentidentifier</code>, which is
+supposed to be the network <code>student_number</code>. Sometimes it isn't, and the
+assessment row then fails to join to an enrollment and disappears from the
+dashboard silently.</p>
+<p>The repair chain, in kipptaf <code>int_pearson__all_assessments</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="k">coalesce</span><span class="p">(</span><span class="n">x</span><span class="p">.</span><span class="n">student_number</span><span class="p">,</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">localstudentidentifier</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">localstudentidentifier</span>
+<span class="c1">-- x = stg_google_sheets__pearson__student_crosswalk, on student_test_uuid</span>
+</code></pre></div>
+<p><strong>The repair is applied after the union, so it already covers every vendor.</strong>
+There is no Pearson-specific and Cambium-specific version of this: one sheet,
+one join, keyed on the test UUID. A Cambium correction goes in the same sheet as
+a Pearson one and works with no code change, because the Cambium mapping aliases
+<code>student_test_uuid</code> to <code>studenttestuuid</code> before the join.</p>
+<p>The sheet is named for Pearson only because Pearson was the sole vendor when it
+was built. Renaming it is deferred, not forgotten -- see <em>Deferred work</em> below.</p>
+<p><code>test_incorrect_student_number_pearson</code> is the detector. It returns any row from
+2017 onward whose <code>localstudentidentifier</code> is null or fails to resolve to an
+enrollment, and its failure rows carry the <code>studenttestuuid</code> you paste into the
+sheet. It reads the unioned model, so it covers Cambium as well. Its own name is
+still Pearson-flavoured; renaming it, and renaming
+<code>int_pearson__all_assessments</code>, remain open.</p>
+<p><strong>The detector is non-blocking, and that is deliberate.</strong> It sets no <code>severity</code>,
+so it inherits kipptaf's project default of <code>warn</code>. A failing row does not fail
+a build or CI.</p>
+<p>Leave it that way. Some of what it flags cannot be fixed at all — a test whose
+student has no enrollment that year, or an identifier no evidence resolves. An
+<code>error</code> severity would block every deploy on a condition nobody can clear, which
+trains people to ignore it or to route around it. A warning that sometimes goes
+unread is the accepted cost of a check that flags genuinely unfixable things.</p>
+<p>Its failure rows contain <code>firstname</code> and <code>lastorsurname</code>. <strong>Those are student
+PII — never paste them into a PR, an issue, or Slack.</strong> Quote the UUID and the
+count.</p>
+<h3 id="failure-modes-and-they-are-modes-not-vendors">Failure modes -- and they are modes, not vendors</h3>
+<p>The distinction that matters is how the identifier is broken, not who sent it.</p>
+<ul>
+<li><strong>Absent.</strong> The identifier arrives null, so the join has nothing to match on.
+  Mechanically recoverable: <code>statestudentidentifier</code> resolves to the same
+  student. No human judgement required.</li>
+<li><strong>Present but wrong.</strong> No rule recovers the intended student, so a person has
+  to decide who the test belongs to. The crosswalk sheet is the only mechanism
+  for this, and it is permanent.</li>
+</ul>
+<p>The second mode is the dangerous one. A wrong identifier that happens to be a
+<em>valid</em> <code>student_number</code> resolves to the wrong student silently, and the
+detector never fires because the join succeeds. That is not hypothetical: the
+Paterson rows in the spec below FK'd into Newark students and passed every test
+until someone went looking.</p>
+<p><strong>Do not read these modes as vendor properties.</strong> As of the Spring 2026
+administration all 11 outstanding Pearson failures are the wrong mode and all 9
+Cambium failures are the absent mode, so the two currently look like vendor
+traits. They are not. That Cambium reading comes from a single file -- 850 rows,
+one administration -- against eight years and ~71,000 rows of Pearson history.
+Cambium's <code>local_student_identifier</code> in that file is clean where populated (zero
+non-numeric values, 804 of 804 non-null values resolving 1:1, only 5- and
+6-digit widths), but one file is no basis for assuming the next one will be.
+Triage by mode; never conclude a vendor cannot produce a mode.</p>
+<h3 id="the-third-category-no-enrollment-in-the-year-the-test-was-taken">The third category: no enrollment in the year the test was taken</h3>
+<p>Some failing rows are neither mode, and <strong>the crosswalk cannot repair them.</strong>
+Check for this before entering anything in the sheet.</p>
+<p>The repair only overrides <code>localstudentidentifier</code>. The join still needs
+<code>student_number</code>, <code>academic_year</code> and <code>_dbt_source_project</code> to land together on
+an enrollment with <code>rn_year = 1</code>. When the student has no enrollment in that
+year and district, no value in the sheet makes the join succeed -- the row stays
+flagged and the sheet gains an entry that does nothing and never expires.</p>
+<p>As of 2026-09-17 this is 8 of what were 20 outstanding rows -- the other 12 have
+been repaired -- and they are 4 NJSLA and 4 PARCC, 6 Newark and 2 Camden,
+<strong>every one of them academic year 2017 or 2018</strong>. All 8 match exactly one
+student by name somewhere in PowerSchool -- a different year, a different
+district, or both -- and none of them match in the year the test belongs to.
+Four also match a single student by state id on that widened search.</p>
+<p>That a name resolves on the widened search is what makes this category
+deceptive: it looks solvable right up to the point where you notice the year
+does not line up. The remaining explanations are an Ops or enrollment-history
+question, not an identifier question:</p>
+<ul>
+<li>the student genuinely was not at that region that year, so the test row is
+  filed to the wrong district;</li>
+<li>the enrollment record for 2017 or 2018 is missing, a gap in the PARCC-era
+  history rather than a broken id;</li>
+<li>the name match is a different person who shares the name.</li>
+</ul>
+<p>The concentration in the two oldest years points at the second. Compare with the
+8 Paterson orphans in
+<a href="https://github.com/TEAMSchools/teamster/issues/3956">#3956</a>, which are the same
+shape: rows no model-side join can resolve, tracked as an Ops item rather than
+repaired in dbt.</p>
+<h3 id="the-state-id-is-not-a-substitute-for-the-local-id">The state id is not a substitute for the local id</h3>
+<p><strong><code>statestudentidentifier</code> is not reliable.</strong> That is the reason identity
+resolution runs on <code>localstudentidentifier</code> in the first place, and it is not a
+hunch -- <a href="https://github.com/TEAMSchools/teamster/issues/3954">#3954</a>,
+<code>fix(powerschool): state_studentnumber collisions across distinct students</code>, is
+open on exactly this.</p>
+<p>So a bare fallback like this is <strong>unsafe</strong> and should not be built:</p>
+<div class="highlight"><pre><span></span><code><span class="c1">-- DO NOT DO THIS</span>
+<span class="k">coalesce</span><span class="p">(</span><span class="n">x</span><span class="p">.</span><span class="n">student_number</span><span class="p">,</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">localstudentidentifier</span><span class="p">,</span><span class="w"> </span><span class="n">sid</span><span class="p">.</span><span class="n">student_number</span><span class="p">)</span>
+</code></pre></div>
+<p>A naked state-id join attaches a score to whatever student happens to share that
+id. It fails silently, because the join succeeds and the resulting row looks
+entirely normal.</p>
+<p>Resolving from the state id is acceptable <strong>only when it carries the same
+corroboration the local-id path carries</strong>: an enrollment in the test's own
+academic year and district, a first and last name match, a date of birth match
+where the feed supplies one, and a grade check where the test code encodes a
+grade. That is precisely what
+<a href="https://github.com/TEAMSchools/teamster/blob/main/src/dbt/kipptaf/analyses/state_assessment_tiered_crosswalk_match.sql"><code>analyses/state_assessment_tiered_crosswalk_match.sql</code></a>
+already does -- Tier A is state id plus both names plus date of birth, and Tier
+B drops only the date of birth. Note Tier B fires on <strong>any</strong> row without a
+usable date of birth, not only on a feed that structurally lacks one: a
+malformed or unexpectedly-formatted value lands there too, silently. Since Tier
+B then rests on a state id, and #3954 says those are unreliable, it is the
+weakest tier that still auto-resolves.</p>
+<p>Which is why the fallback has not been built. Done safely it is not a
+<code>coalesce</code>; it is the whole matcher embedded in an intermediate, for a
+population a person can clear in a few minutes. The matcher stays where it is,
+proposing rows for a human to accept.</p>
+<p>The evidence that started this is still worth keeping: all 9 Cambium rows that
+were failing carried a populated <code>statestudentidentifier</code> resolving 1:1 to an
+enrollment, and all 9 also matched on first and last name. That is what made
+them safe to repair -- the name agreement, not the state id on its own.</p>
+<h2 id="comparisons-two-independent-paths">Comparisons: two independent paths</h2>
+<p>The single most common mistake in this pipeline is assuming there is one comps
+calculation. There are two, they read different things, and they disagree by
+design.</p>
+<div class="highlight"><pre><span></span><code>                    stg_google_sheets__state_test_comparison_demographics
+                    (hand-entered City / State / Neighborhood figures)
+                              |                          |
+                              |                          |
+         +--------------------+                          +------------------+
+         |                                                                  |
+         v                                                                  v
+  rpt_tableau__state_assessments_dashboard                 rpt_tableau__state_assessments_dashboard_comps
+  `state_comps` CTE                                        `appended` CTE, third branch
+         |                                                                  ^
+         | filters to Total / All Students                                  |
+         | pivots to 3 wide columns                                         | unions with
+         v                                                                  |
+  proficiency_city / _state /                              int_tableau__state_assessments_demographic_comps
+  _neighborhood_schools                                    (KTAF's OWN results, aggregated from student rows)
+         |                                                                  |
+         v                                                                  v
+  five views                                                        Advanced Comps
+</code></pre></div>
+<p><strong>Path one — embedded in the score view.</strong> The <code>state_comps</code> CTE inside
+<code>rpt_tableau__state_assessments_dashboard</code> reads the sheet directly, filters to
+<code>comparison_demographic_group = 'Total'</code> and
+<code>comparison_demographic_subgroup = 'All Students'</code>, and pivots the three
+comparison entities into three wide columns (<code>proficiency_city</code>,
+<code>proficiency_state</code>, <code>proficiency_neighborhood_schools</code>). No demographic
+breakdown, no KTAF-derived rows. This is what most views show.</p>
+<p><strong>Path two — the long comps model.</strong>
+<code>rpt_tableau__state_assessments_dashboard_comps</code> unions the sheet rows with
+KTAF's own results computed from student-level scores in
+<code>int_tableau__state_assessments_demographic_comps</code>, keeps every demographic
+subgroup, and emits one row per comparison. Only Advanced Comps reads it.</p>
+<p>A number that differs between Overview and Advanced Comps is usually these two
+paths, not a bug.</p>
+<p>The sheet is also a <strong>metadata</strong> source, separately from being a comps source:
+<code>int_tableau__state_assessments_demographic_comps</code> reads it in its
+<code>test_code_metadata</code> CTE purely to look up <code>school_level</code>, <code>grade_range_band</code>
+and <code>discipline</code> per test code. A test code absent from the sheet loses that
+metadata for KTAF's own rows.</p>
+<h3 id="interim-comps-from-media-before-the-official-files">Interim comps from media, before the official files</h3>
+<p>Official comparison files do not arrive in usable form until roughly November.
+In the meantime the state's headline results circulate through press coverage
+and district decks, and those figures are entered as interim comps so the
+dashboard is not blank for the current year. The rule of thumb is that <strong>we do
+not make rules of comparison, we report what the state reports</strong> -- an interim
+figure is loaded as published, not adjusted or withheld because a year-over-year
+comparison would be awkward.</p>
+<p>Three things are always true of a media-sourced figure, and they constrain what
+it can do.</p>
+<p><strong>There is no denominator.</strong> Press figures give a percentage and nothing else,
+so <code>total_students</code> is left empty. That used to destroy the figure on its way to
+Advanced Comps; the model now falls back to the reported percentage, so an
+interim comp populates all six views. The counts stay empty, which is the honest
+representation of what a press figure contains. See <em>Every comps group is one
+source row</em> below.</p>
+<p><strong>Only <code>Total</code> / <code>All Students</code>.</strong> Media reporting carries no demographic
+breakouts, so an interim load fills exactly one demographic row per test code
+and region. Every subgroup row waits for the official file.</p>
+<p><strong>ALG01 arrives mixed.</strong> Media figures never separate Algebra I taken in middle
+school from Algebra I taken in high school; one combined number is published.
+The interim convention is to write that same figure to <strong>both</strong> the MS and the
+HS <code>school_level</code> rows, with <code>remove_row = FALSE</code> on both. This is deliberately
+imprecise and known to be so -- the weighted MS/HS rollup that <code>remove_row</code>
+exists to build needs counts, which an interim load does not have. It is
+corrected when the official file lands.</p>
+<h3 id="every-comps-group-is-one-source-row-and-the-percentage-falls-back">Every comps group is one source row, and the percentage falls back</h3>
+<p><code>grouped_comps</code> in <code>rpt_tableau__state_assessments_dashboard_comps</code> re-derives
+<code>percent_proficient</code> as <code>safe_divide(sum(proficient), sum(total))</code> rather than
+carrying the source value through. The intent is weighting: a group assembled
+from several rows should be sized, not averaged.</p>
+<p><strong>Measured 2026-09-17: it never assembles more than one row.</strong> All 13,897 groups
+have <code>source_rows = 1</code>, and none mixes a row that has a denominator with one
+that does not. The re-derivation aggregates a single row every time.</p>
+<p>That is harmless where a denominator exists and destructive where one does not
+-- <code>safe_divide</code> returns null, so a percentage the sheet actually carried
+arrived blank. Every denominator-less row behaved that way, which is what made
+interim media comps unusable in Advanced Comps while working fine in the other
+five views, since the <code>state_comps</code> CTE reads <code>avg(percent_proficient)</code> directly
+and never recomputes.</p>
+<p>The model now falls back:</p>
+<div class="highlight"><pre><span></span><code><span class="k">if</span><span class="p">(</span>
+<span class="w">    </span><span class="n">weighted_percent_proficient</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">source_rows</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">    </span><span class="n">reported_percent_proficient</span><span class="p">,</span>
+<span class="w">    </span><span class="n">weighted_percent_proficient</span>
+<span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">percent_proficient</span>
+</code></pre></div>
+<p>The <code>source_rows = 1</code> guard is the part that matters. One-row groups are a
+property of today's grain, not a guarantee -- so if the grain ever changes and a
+group gains rows, this degrades to null rather than silently averaging two
+percentages unweighted, which would be wrong in a way nobody would notice.</p>
+<p>Measured against production before shipping: 13,897 rows before and after, 12
+rows move from null to a value, <strong>zero</strong> existing values change,
+<code>total_students</code> unchanged, and 2 <code>region_outperformed</code> booleans flip because a
+recovered percentage can now participate in the Region self-join.</p>
+<p><strong>A flag on the sheet was considered and rejected for this job.</strong> A
+<code>preliminary</code> boolean would be a second, hand-maintained source of truth for
+something the data already states -- <code>total_students is null</code> identifies exactly
+these rows -- and the two can disagree, with no test to catch it. Provenance is
+a fair reason to add such a column later; driving the arithmetic is not.</p>
+<p>The counts remain null on these rows: Advanced Comps shows the percentage with
+blank <code>total_students</code> and <code>total_proficient_students</code>, which is the honest
+representation of what a press figure contains.</p>
+<h3 id="reading-the-sheets-adc-not-the-bigquery-mcp">Reading the sheets: ADC, not the BigQuery MCP</h3>
+<p>Both Google Sheets sources behind this dashboard are Drive-backed externals. The
+BigQuery MCP's OAuth token has no Drive scope and returns Access Denied on them.
+<strong>ADC does have Drive scope</strong>, so a Python client reads the external directly
+and sees the sheet live — which is the only way to answer "did that paste land"
+without waiting on a build.</p>
+<p>Do not reach for a <code>--target staging</code> build to inspect rows. It is a shared
+write that needs authorization, and the table it produces is frozen at build
+time, so it answers a different question than the one usually being asked. Build
+only when something downstream has to read the result.</p>
+<p>The same applies to the prod <code>stg_*</code> table: it is a table, not a live read, so
+it reports pre-edit values indefinitely. Judging current sheet contents from it
+is a standing trap.</p>
+<h3 id="a-missing-value-means-the-state-did-not-provide-it">A missing value means the state did not provide it</h3>
+<p>That is the whole rule. <code>total_students</code> empty does not mark a row as
+provisional, second-rate or media-sourced — it means the state published a
+percentage and no count for that cell. It happens in press figures, which almost
+never carry counts, and it happens in official files, which sometimes omit them
+for a particular subgroup. Same cause, one rule.</p>
+<p>So do not infer provenance from a null. The AY2024 rows missing a denominator
+for one subgroup in two regions are official data with a gap, not a press
+figure, and nothing in the row distinguishes them.</p>
+<p><strong>To see which rows are affected, ask the sheet rather than trusting a list:</strong></p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="n">academic_year</span><span class="p">,</span><span class="w"> </span><span class="n">region</span><span class="p">,</span><span class="w"> </span><span class="n">comparison_entity</span><span class="p">,</span>
+<span class="w">       </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">rows_affected</span><span class="p">,</span>
+<span class="w">       </span><span class="k">count</span><span class="p">(</span><span class="k">distinct</span><span class="w"> </span><span class="n">aligned_test_code</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">test_codes</span><span class="p">,</span>
+<span class="w">       </span><span class="n">string_agg</span><span class="p">(</span><span class="k">distinct</span><span class="w"> </span><span class="n">comparison_demographic_subgroup</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">subgroups</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="o">`</span><span class="p">.</span><span class="n">kipptaf_google_sheets</span><span class="p">.</span><span class="n">src_google_sheets__state_test_comparison_demographics</span>
+<span class="k">where</span><span class="w"> </span><span class="n">total_students</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">percent_proficient</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span>
+<span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">desc</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span>
+</code></pre></div>
+<p>Read it through ADC, not the BigQuery MCP — see above. This is derived, so it is
+never out of date, which a written inventory of loads cannot promise.</p>
+<h3 id="comparison-entities">Comparison entities</h3>
+<table>
+<thead>
+<tr>
+<th><code>comparison_entity</code></th>
+<th>Origin</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>City</code></td>
+<td>sheet</td>
+<td>the host city LEA</td>
+</tr>
+<tr>
+<td><code>State</code></td>
+<td>sheet</td>
+<td>statewide</td>
+</tr>
+<tr>
+<td><code>Neighborhood Schools</code></td>
+<td>sheet</td>
+<td>a named comparison set, <strong>Miami only</strong></td>
+</tr>
+<tr>
+<td><code>Region</code></td>
+<td>derived</td>
+<td>KTAF in that region</td>
+</tr>
+<tr>
+<td><code>KTAF NJ</code></td>
+<td>derived</td>
+<td>all NJ regions combined</td>
+</tr>
+<tr>
+<td><code>KTAF FL</code></td>
+<td>derived</td>
+<td>Miami</td>
+</tr>
+</tbody>
+</table>
+<p><code>region_matched</code>, <code>region_outperformed</code> and <code>region_matched_or_outperformed</code> are
+computed by self-joining each row to its <code>comparison_entity = 'Region'</code> partner
+on ten columns, including <code>comparison_demographic_subgroup</code>. <strong>A row whose
+subgroup string has no Region partner gets <code>false</code>, not null</strong> — the join yields
+null and <code>if(null, true, false)</code> collapses it. A missing comparison and a lost
+comparison are indistinguishable on the dashboard.</p>
+<h3 id="controlled-vocabulary">Controlled vocabulary</h3>
+<p><code>comparison_demographic_subgroup</code>, after the normalization in
+<code>stg_google_sheets__state_test_comparison_demographics</code>:</p>
+<p><code>African American</code> · <code>All Students</code> · <code>American Indian</code> · <code>Asian</code> ·
+<code>Economically Disadvantaged</code> · <code>Female</code> · <code>Hispanic</code> · <code>Male</code> · <code>ML</code> ·
+<code>Native Hawaiian</code> · <code>Non Economically Disadvantaged</code> · <code>Other</code> ·
+<code>SE Accommodation</code> · <code>Students With Disabilities</code> · <code>White</code></p>
+<p>Guarded by an <code>accepted_values</code> test at <code>severity: error</code>. Extend it
+deliberately when a genuinely new subgroup appears — never to make a build pass.</p>
+<p>Test codes carried by the sheet: <code>ELA03</code>–<code>ELA10</code>, <code>ELAGP</code>, <code>MAT03</code>–<code>MAT08</code>,
+<code>MATGP</code>, <code>ALG01</code>, <code>ALG02</code>, <code>GEO01</code>, <code>SCI05</code>, <code>SCI08</code>, <code>SCI11</code>, <code>SOC08</code>.</p>
+<p><code>ALG01</code> is the awkward one. Overall comparisons split MS from HS, but official
+sources publish demographic breakdowns only for grades 8+ combined. The sheet
+therefore carries HS-only ALG01 rows flagged <code>remove_row = true</code>, which the
+staging model filters out of the main branch and re-aggregates in a second
+branch into a single weighted <code>Total</code> / <code>All Students</code> row. <code>ALG02</code> totals are
+10th grade only and <code>GEO01</code> follows the same pattern for grades 9 and 10, while
+their demographic rows include every student who took the test.</p>
+<h2 id="known-issues">Known issues</h2>
+<h3 id="resolved-the-subgroup-vocabulary-was-split-and-comparisons-read-false">Resolved — the subgroup vocabulary was split, and comparisons read false</h3>
+<p>Fixed in this model. Recorded because the shape recurs.</p>
+<p>The sheet used two spellings that the KTAF-derived rows never use, and the
+self-join above matches on that exact string:</p>
+<table>
+<thead>
+<tr>
+<th>Sheet side</th>
+<th>Derived side</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Black Or African American</code></td>
+<td><code>African American</code></td>
+</tr>
+<tr>
+<td><code>Non-Econ. Disadvantaged</code></td>
+<td><code>Non Economically Disadvantaged</code></td>
+</tr>
+</tbody>
+</table>
+<p>The effect was total and silent: <strong>0 of 337</strong> <code>Black Or African American</code> rows
+and <strong>0 of 671</strong> <code>Non-Econ. Disadvantaged</code> rows ever read
+<code>region_outperformed = true</code>, while spelling-matched <code>Hispanic</code> read true on 145
+of 296. Normalizing flips 239 rows to true and none to false.</p>
+<p>The two labels broke differently, and one has a date:</p>
+<ul>
+<li><code>African American</code> was used by the NJ regions for <strong>AY2018–2023</strong>.</li>
+<li><code>Black Or African American</code> appears in NJ for <strong>AY2024 only</strong>, and in Miami
+  for AY2020–2024.</li>
+<li><code>Non-Econ. Disadvantaged</code> is used everywhere, every year.</li>
+</ul>
+<p>So the NJ Black/African American comparison <strong>worked through AY2023 and broke
+when AY2024 was entered</strong>, which would have read as "the 2024 comps look worse."
+Miami's never worked. The economic-disadvantage comparison has never worked
+anywhere, in any year.</p>
+<p>Normalizing changes no aggregate — 13,897 rows before, 13,897 distinct grouping
+keys after, so nothing merges and <code>percent_proficient</code>, <code>total_students</code> and
+<code>total_proficient_students</code> are byte-identical. It also fixes a sort: the
+workbook carries a <code>&lt;manual-sort&gt;</code> dictionary on this field listing the derived
+vocabulary, so the two sheet spellings previously fell to the end of the axis.</p>
+<h4 id="exactly-what-moved">Exactly what moved</h4>
+<p>Measured against production on 2026-09-16 by simulating the normalization on the
+live view, before the fix shipped. Kept here so the change stays auditable after
+the pull request is closed.</p>
+<p>Only the three comparison booleans move. <code>Black Or African American</code> gains 85 of
+337 rows; <code>Non-Econ. Disadvantaged</code> gains 154 of 671. One row additionally gains
+<code>region_matched</code>. Nothing flips the other way.</p>
+<p><code>Black Or African American</code>, 85 flips:</p>
+<table>
+<thead>
+<tr>
+<th>academic year</th>
+<th>region</th>
+<th style="text-align: right;">rows</th>
+<th style="text-align: right;">flips</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2020</td>
+<td>Miami</td>
+<td style="text-align: right;">45</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr>
+<td>2021</td>
+<td>Miami</td>
+<td style="text-align: right;">45</td>
+<td style="text-align: right;">4</td>
+</tr>
+<tr>
+<td>2022</td>
+<td>Miami</td>
+<td style="text-align: right;">45</td>
+<td style="text-align: right;">7</td>
+</tr>
+<tr>
+<td>2023</td>
+<td>Miami</td>
+<td style="text-align: right;">45</td>
+<td style="text-align: right;">8</td>
+</tr>
+<tr>
+<td>2024</td>
+<td>Camden</td>
+<td style="text-align: right;">38</td>
+<td style="text-align: right;">19</td>
+</tr>
+<tr>
+<td>2024</td>
+<td>Miami</td>
+<td style="text-align: right;">45</td>
+<td style="text-align: right;">13</td>
+</tr>
+<tr>
+<td>2024</td>
+<td>Newark</td>
+<td style="text-align: right;">38</td>
+<td style="text-align: right;">31</td>
+</tr>
+<tr>
+<td>2024</td>
+<td>Paterson</td>
+<td style="text-align: right;">36</td>
+<td style="text-align: right;">3</td>
+</tr>
+</tbody>
+</table>
+<p><code>Non-Econ. Disadvantaged</code>, 154 flips:</p>
+<table>
+<thead>
+<tr>
+<th>academic year</th>
+<th>region</th>
+<th style="text-align: right;">rows</th>
+<th style="text-align: right;">flips</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2018</td>
+<td>Camden</td>
+<td style="text-align: right;">38</td>
+<td style="text-align: right;">12</td>
+</tr>
+<tr>
+<td>2018</td>
+<td>Newark</td>
+<td style="text-align: right;">38</td>
+<td style="text-align: right;">18</td>
+</tr>
+<tr>
+<td>2020</td>
+<td>Miami</td>
+<td style="text-align: right;">45</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr>
+<td>2021</td>
+<td>Camden</td>
+<td style="text-align: right;">33</td>
+<td style="text-align: right;">14</td>
+</tr>
+<tr>
+<td>2021</td>
+<td>Miami</td>
+<td style="text-align: right;">45</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr>
+<td>2021</td>
+<td>Newark</td>
+<td style="text-align: right;">38</td>
+<td style="text-align: right;">17</td>
+</tr>
+<tr>
+<td>2022</td>
+<td>Camden</td>
+<td style="text-align: right;">35</td>
+<td style="text-align: right;">11</td>
+</tr>
+<tr>
+<td>2022</td>
+<td>Miami</td>
+<td style="text-align: right;">45</td>
+<td style="text-align: right;">2</td>
+</tr>
+<tr>
+<td>2022</td>
+<td>Newark</td>
+<td style="text-align: right;">38</td>
+<td style="text-align: right;">17</td>
+</tr>
+<tr>
+<td>2023</td>
+<td>Camden</td>
+<td style="text-align: right;">36</td>
+<td style="text-align: right;">14</td>
+</tr>
+<tr>
+<td>2023</td>
+<td>Miami</td>
+<td style="text-align: right;">45</td>
+<td style="text-align: right;">3</td>
+</tr>
+<tr>
+<td>2023</td>
+<td>Newark</td>
+<td style="text-align: right;">38</td>
+<td style="text-align: right;">19</td>
+</tr>
+<tr>
+<td>2023</td>
+<td>Paterson</td>
+<td style="text-align: right;">38</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr>
+<td>2024</td>
+<td>Camden</td>
+<td style="text-align: right;">38</td>
+<td style="text-align: right;">10</td>
+</tr>
+<tr>
+<td>2024</td>
+<td>Miami</td>
+<td style="text-align: right;">45</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr>
+<td>2024</td>
+<td>Newark</td>
+<td style="text-align: right;">38</td>
+<td style="text-align: right;">16</td>
+</tr>
+<tr>
+<td>2024</td>
+<td>Paterson</td>
+<td style="text-align: right;">38</td>
+<td style="text-align: right;">1</td>
+</tr>
+</tbody>
+</table>
+<p>Newark 2024 is the largest single cell, 31 of 38 rows. The pre-2024
+<code>Black Or African American</code> rows are all Miami, because the NJ regions only
+switched to that spelling at 2024.</p>
+<p><strong>A zero-flip cell is not a failed match.</strong> Miami 2020 and 2021 do find their
+Region partner; KTAF Miami simply did not outperform in those cells. Flip count
+and match count are different things.</p>
+<p>To re-check after a rebuild, group
+<code>rpt_tableau__state_assessments_dashboard_comps</code> by year, region and subgroup
+for the sheet-sourced entities (<code>City</code>, <code>State</code>, <code>Neighborhood Schools</code>) and
+count <code>region_outperformed</code>. The old spellings should return no rows at all. A
+subgroup still reading zero across every test code is the signature of a
+vocabulary mismatch, not of poor performance.</p>
+<h3 id="known-4032-comparisons-have-no-counterpart-and-the-filters-conflate-that-with-a-loss">Known — 4,032 comparisons have no counterpart, and the filters conflate that with a loss</h3>
+<p>Measured 2026-09-17 with both of this branch's fixes applied: <strong>4,032 rows, 36%
+of all non-Region comparison rows, find no <code>Region</code> partner</strong>, and 4,022 of them
+carry a real percentage of their own.</p>
+<p>These are not key mismatches. Relaxing the join one column at a time attributes
+<strong>0%</strong> to <code>school_level</code>, <code>grade_range_band</code>, <code>discipline</code> or
+<code>comparison_demographic_group</code>. They are genuine absences: the state or city
+reports a subgroup, test, year and region where KTAF has no comparable row,
+because KTAF had no students in that cell. <code>Asian</code> (513) and <code>White</code> (350) are
+the largest, exactly the shape that explanation predicts. No single column
+accounts for it -- relaxing <code>region</code> recovers 51%, <code>subgroup</code> 40%,
+<code>academic_year</code> 33% and <code>test_code</code> 22%, and those overlap.</p>
+<p><strong>They do not display as losses.</strong> Advanced Comps lays the comparison entities
+out as columns, so a row with no Region counterpart renders with an empty Region
+cell and the other entities intact -- which is the correct representation. The
+three boolean columns are not drawn as marks anywhere in the workbook.</p>
+<p>What they are is <strong>quick filters</strong> on <code>Advanced Comps - 3-Column</code>, all three set
+to <code>level-members</code> with <code>ui-enumeration="all"</code>, so nothing is excluded today.
+The defect lives there:</p>
+<div class="highlight"><pre><span></span><code><span class="k">if</span><span class="p">(</span><span class="n">b</span><span class="p">.</span><span class="n">percent_proficient</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">a</span><span class="p">.</span><span class="n">percent_proficient</span><span class="p">,</span><span class="w"> </span><span class="k">true</span><span class="p">,</span><span class="w"> </span><span class="k">false</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">region_outperformed</span>
+</code></pre></div>
+<p><code>b.percent_proficient &gt; a.percent_proficient</code> already evaluates to NULL with no
+partner; the <code>if(x, true, false)</code> wrapper collapses it to <code>false</code>. So picking
+<code>False</code> in that dropdown returns every row KTAF genuinely lost <strong>plus</strong> 4,032
+where there was nothing to compare, with no way to tell them apart. Dropping the
+three wrappers would give the filter an honest third state.</p>
+<p>Not done here, deliberately. It is a filter-usability problem rather than a
+wrong number on a dashboard, and it would drop 4,032 rows out of the <code>False</code>
+bucket for anyone holding a saved selection. That is the workbook owner's call.</p>
+<p>An earlier version of this page put the figure at 195, blamed <code>school_level</code> /
+<code>grade_range_band</code> reaching derived rows through <code>any_value()</code>, and said the
+rows displayed as losses. All three were wrong. The 195 counted only the two
+relabelled subgroups; the <code>any_value</code> hypothesis measures at 0%; and the display
+claim was made without reading the workbook.</p>
+<h3 id="open-comparison-data-stops-at-academic-year-2024">Open — comparison data stops at academic year 2024</h3>
+<p>The sheet carries nothing for AY2025 or later, for any region. Official
+comparison files do not arrive until roughly November, so the intervening months
+are covered by transcribing figures out of whatever NJDOE and district
+presentations circulate. See the <code>stat-dash</code> skill for that procedure.</p>
+<p>Coverage is also uneven historically — NJ has no 2019 or 2020 rows (COVID), and
+Paterson begins at 2023.</p>
+<h3 id="deferred-work-on-the-crosswalk">Deferred work on the crosswalk</h3>
+<p>All of this was considered and deliberately postponed in September 2026. The
+sheet is used as-is meanwhile, with Cambium corrections going into the existing
+tab alongside the Pearson ones.</p>
+<ol>
+<li><strong>Rename it off the Pearson name.</strong> It serves every NJ vendor. A rename
+   touches the spreadsheet, the named range, the source entry, <code>sheet_range</code>,
+   the staging model and its properties, the Dagster asset key, and the one
+   <code>ref()</code> in <code>int_pearson__all_assessments</code> -- and leaves two orphaned
+   relations in <code>kipptaf_google_sheets</code> that dbt will not drop. The August 2026
+   Cambium ingestion spec logged this first.</li>
+<li><strong>Add a vendor column.</strong> Provenance only; no UUID appears under both vendors
+   (72,021 rows, 72,021 distinct UUIDs), so it would never be part of the join
+   key.</li>
+<li><strong>Move the per-localid corrections into district intermediates and retire the
+   sheet.</strong> This is the endpoint the Paterson ID-translation spec names: <em>"File
+   a follow-up issue to move the per-localid corrections to kippnewark /
+   kippcamden intermediates analogous to the Paterson pattern; then the
+   crosswalk can be retired."</em> No such issue was found open as of 2026-09-16.
+   Note that this only works for corrections with a derivable rule -- the
+   present-but-wrong mode has none, so some manual surface survives any version
+   of this.</li>
+<li><strong>Close two staging-layer gaps.</strong> The model has no uniqueness test and no
+   column descriptions, which the staging-layer rule requires.</li>
+</ol>
+<p>The relevant precedent for (3) is that this repo fixes <em>systematic</em> identifier
+problems structurally and <em>one-off</em> ones with a sheet row. Paterson's 440 rows
+all carried district SIS IDs, and the fix was a join against
+<code>stg_powerschool__studentcorefields.prevstudentid</code> at the kipppaterson layer,
+not 440 sheet entries. The 69 rows in this sheet are the one-off kind: raw
+values span 4 to 9 digits correcting to 5 or 6, which is scattered data entry
+error, not one translatable id space.</p>
+<h3 id="open-the-crosswalk-sheet-holds-13-rows-that-do-not-hold-up">Open — the crosswalk sheet holds 13 rows that do not hold up</h3>
+<p>Audited 2026-09-17: all 81 crosswalk rows were replayed through the matching
+rules in
+<a href="https://github.com/TEAMSchools/teamster/blob/main/src/dbt/kipptaf/analyses/state_assessment_tiered_crosswalk_match.sql"><code>analyses/state_assessment_tiered_crosswalk_match.sql</code></a>
+using each row's raw pre-repair identifier, and the rules' pick was compared
+against what a human had entered.</p>
+<table>
+<thead>
+<tr>
+<th>outcome</th>
+<th style="text-align: right;">rows</th>
+<th>meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>agrees</td>
+<td style="text-align: right;">66</td>
+<td>the rules independently reach the same student</td>
+</tr>
+<tr>
+<td>ambiguous</td>
+<td style="text-align: right;">2</td>
+<td>tiers fire on more than one student; needs a person</td>
+</tr>
+<tr>
+<td><code>no_pick_identity</code></td>
+<td style="text-align: right;">7</td>
+<td>enrolled that year, but no tier is satisfied</td>
+</tr>
+<tr>
+<td><code>no_pick_not_enrolled</code></td>
+<td style="text-align: right;">6</td>
+<td>the entered student has no enrollment in the test's year</td>
+</tr>
+<tr>
+<td><strong>disagrees</strong></td>
+<td style="text-align: right;"><strong>0</strong></td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Zero disagreements across 81 hand-entered rows</strong> is the headline: the rules
+never contradict a human judgement, which is what makes them safe to run as a
+proposer rather than an authority.</p>
+<p><strong>The 13 that do not reproduce are left alone, deliberately.</strong> They are recorded
+here rather than repaired. Nothing about them is urgent — the rows already in
+the sheet are doing whatever they do today, and changing them without knowing
+why they were entered risks breaking a repair that was correct for a reason the
+fields do not carry. Read this section before touching any of them; do not treat
+the list as a work queue.</p>
+<p>They are two different problems:</p>
+<ul>
+<li><strong>The 6 <code>no_pick_not_enrolled</code> rows are inert.</strong> They are the unmatchable
+  category described above, already sitting in the sheet. The crosswalk
+  overrides the identifier, but the downstream join still fails on academic year
+  and district, so these entries do nothing at all. They are candidates for
+  removal, not repair -- but confirm against the enrollment history first, since
+  an enrollment record added later would make them live.</li>
+<li><strong>The 7 <code>no_pick_identity</code> rows are unexplained.</strong> The student is enrolled in
+  the right year and district, but name, date of birth and state id do not
+  satisfy any tier. Either the person entering had context the fields do not
+  carry, or a name changed between the vendor file and PowerSchool. These need a
+  human to look, not a rule change -- resist adding a tier to absorb them until
+  a deterministic, generalizable pattern is actually visible, which is the same
+  discipline the AP protocol applies to its own no-match bucket.</li>
+</ul>
+<p>At least one of them is a <strong>date-of-birth disagreement</strong>: an NJSLA row whose
+  entered <code>Student_Number</code> belongs to a student whose date of birth does not
+  match the vendor file. That is the shape worth checking first on the other
+  six, because a DOB mismatch alongside a name match is what a wrong-student
+  repair looks like.</p>
+<p>The 2 ambiguous rows are working as designed: more than one student satisfies
+the tiers, so the rules decline rather than guess. Note that figure comes from
+the <strong>audit-replay</strong> procedure, which is separate code from the analysis itself.
+The analysis gained its own <code>ambiguous</code> bucket only after a review caught that
+it had been dropping such rows from every bucket -- so an older run of it will
+undercount.</p>
+<p>Re-run the audit after any batch of sheet entries. The procedure is in the
+<code>stat-dash</code> skill; it writes per-row detail to a local file and reports only
+counts, because the per-row output carries student identifiers.</p>
+<h3 id="the-exposure-needs-the-lsid-not-a-url">The exposure needs the LSID, not a <code>url</code></h3>
+<p><code>state_testing_analysis_tool</code> omits <code>url:</code> and that is fine —
+<code>config.meta.dagster.asset.metadata.id</code>, the Tableau LSID, is what identifies
+the workbook. Do not add a <code>url</code> to make the exposure look complete.</p>
+<p><a href="https://github.com/TEAMSchools/teamster/blob/main/src/dbt/kipptaf/CLAUDE.md"><code>src/dbt/kipptaf/CLAUDE.md</code></a>
+lists <code>url</code> among required exposure fields, which is what prompted an earlier
+attempt to fill it in. The value invented for it pointed at an internal hostname
+that does not resolve. Several sibling exposures carry a literal <code>TBD</code> with an
+open TODO, which is the better signal: the field is not load-bearing, and a
+fabricated one is worse than an absent one.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

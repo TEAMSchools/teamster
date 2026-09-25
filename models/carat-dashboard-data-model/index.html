@@ -1,0 +1,3857 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+        <link rel="prev" href="../fresh-dashboard-data-model/">
+      
+      
+        <link rel="next" href="../gradebook-audit-data-model/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>CARAT Dashboard Data Model - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#carat-dashboard-data-model" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              CARAT Dashboard Data Model
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../fresh-dashboard-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/launch-page-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Launch Page
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/cube-access-individual-exceptions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube Access - Individual Exceptions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../fresh-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FRESH Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CARAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CARAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-is-carat" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What is CARAT?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-it-fits-together" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How it fits together
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#terms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Terms
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-the-data-comes-from" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where the data comes from
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Where the data comes from">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#how-official-sat-reaches-the-dashboard" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How official SAT reaches the dashboard
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#key-ideas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key ideas
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Key ideas">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#test_type-and-scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        test_type and scope
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#official-and-practice-share-one-vocabulary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Official and practice share one vocabulary
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#attempts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Attempts
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#benchmarks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Benchmarks
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Goals
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#seasons-and-the-expected-assessments-tab" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Seasons and the Expected Assessments tab
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#growth" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Growth
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#two-graduating-class-fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Two graduating-class fields
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dashboard-views" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dashboard views
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Dashboard views">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_scores-average-scores" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        _scores: average scores
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_current-this-year-against-goal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        _current: this year against goal
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_over_time-attainment-by-graduating-class" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        _over_time: attainment by graduating class
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_benchmark_calcs-percent-meeting-each-benchmark" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        _benchmark_calcs: percent meeting each benchmark
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_roster-student-roster" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        _roster: student roster
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_de-dual-enrollment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        _de: dual enrollment
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rpt_tableau__ap_assessment_dashboard-ap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rpt_tableau__ap_assessment_dashboard: AP
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#not-part-of-carat" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Not part of CARAT
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#supporting-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Supporting models
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Supporting models">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-official-model-int_assessments__college_assessment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The official model: int_assessments__college_assessment
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-practice-model-int_assessments__college_assessment_practice" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The practice model: int_assessments__college_assessment_practice
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-hub-int_assessments__all_college_assessments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The hub: int_assessments__all_college_assessments
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#goals-with-thresholds-int_google_sheets__kippfwd__goals_unpivot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Goals with thresholds: int_google_sheets__kippfwd__goals_unpivot
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#roster-scores-int_tableau__college_assessment_roster_scores" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Roster scores: int_tableau__college_assessment_roster_scores
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#participation-int_students__college_assessment_participation_roster" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Participation: int_students__college_assessment_participation_roster
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-kipp-forward-google-sheets-extracts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The KIPP Forward Google Sheets extracts
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-google-sheets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Google Sheets
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The Google Sheets">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#scale-score-conversion-and-scaffold" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scale Score Conversion and Scaffold
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-the-sheets-are-read" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How the sheets are read
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#decisions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Decisions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Decisions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ay2023-grade-9-and-10-sat-is-not-reported" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        AY2023 grade 9 and 10 SAT is not reported
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#some-practice-sat-in-illuminate-is-not-reported" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Some practice SAT in Illuminate is not reported
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#one-published-scale-score-is-corrected" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        One published scale score is corrected
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#known-issues-need-to-fix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Known issues, need to fix
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Known issues, need to fix">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_over_time-duplicates-some-rows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        _over_time duplicates some rows
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_de-duplicates-some-stored-grades" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        _de duplicates some stored grades
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pre-2016-sat-is-on-the-old-2400-scale" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pre-2016 SAT is on the old 2400 scale
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#duplicate-kippadb-test-records" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Duplicate kippadb test records
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rn_highest-1-hides-some-students-best-scores" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rn_highest = 1 hides some students' best scores
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#possible-improvements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Possible improvements
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#yearly-upkeep" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Yearly upkeep
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../csgf-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CSGF Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../hs-early-warning-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HS Early Warning Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dibels-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DIBELS Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../athletic-eligibility-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Athletic Eligibility Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-is-carat" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What is CARAT?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-it-fits-together" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How it fits together
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#terms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Terms
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-the-data-comes-from" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where the data comes from
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Where the data comes from">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#how-official-sat-reaches-the-dashboard" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How official SAT reaches the dashboard
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#key-ideas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key ideas
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Key ideas">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#test_type-and-scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        test_type and scope
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#official-and-practice-share-one-vocabulary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Official and practice share one vocabulary
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#attempts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Attempts
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#benchmarks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Benchmarks
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Goals
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#seasons-and-the-expected-assessments-tab" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Seasons and the Expected Assessments tab
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#growth" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Growth
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#two-graduating-class-fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Two graduating-class fields
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dashboard-views" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dashboard views
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Dashboard views">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_scores-average-scores" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        _scores: average scores
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_current-this-year-against-goal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        _current: this year against goal
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_over_time-attainment-by-graduating-class" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        _over_time: attainment by graduating class
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_benchmark_calcs-percent-meeting-each-benchmark" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        _benchmark_calcs: percent meeting each benchmark
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_roster-student-roster" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        _roster: student roster
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_de-dual-enrollment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        _de: dual enrollment
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rpt_tableau__ap_assessment_dashboard-ap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rpt_tableau__ap_assessment_dashboard: AP
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#not-part-of-carat" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Not part of CARAT
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#supporting-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Supporting models
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Supporting models">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-official-model-int_assessments__college_assessment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The official model: int_assessments__college_assessment
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-practice-model-int_assessments__college_assessment_practice" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The practice model: int_assessments__college_assessment_practice
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-hub-int_assessments__all_college_assessments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The hub: int_assessments__all_college_assessments
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#goals-with-thresholds-int_google_sheets__kippfwd__goals_unpivot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Goals with thresholds: int_google_sheets__kippfwd__goals_unpivot
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#roster-scores-int_tableau__college_assessment_roster_scores" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Roster scores: int_tableau__college_assessment_roster_scores
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#participation-int_students__college_assessment_participation_roster" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Participation: int_students__college_assessment_participation_roster
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-kipp-forward-google-sheets-extracts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The KIPP Forward Google Sheets extracts
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-google-sheets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Google Sheets
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The Google Sheets">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#scale-score-conversion-and-scaffold" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scale Score Conversion and Scaffold
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-the-sheets-are-read" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How the sheets are read
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#decisions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Decisions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Decisions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ay2023-grade-9-and-10-sat-is-not-reported" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        AY2023 grade 9 and 10 SAT is not reported
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#some-practice-sat-in-illuminate-is-not-reported" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Some practice SAT in Illuminate is not reported
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#one-published-scale-score-is-corrected" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        One published scale score is corrected
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#known-issues-need-to-fix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Known issues, need to fix
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Known issues, need to fix">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_over_time-duplicates-some-rows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        _over_time duplicates some rows
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_de-duplicates-some-stored-grades" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        _de duplicates some stored grades
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pre-2016-sat-is-on-the-old-2400-scale" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pre-2016 SAT is on the old 2400 scale
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#duplicate-kippadb-test-records" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Duplicate kippadb test records
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rn_highest-1-hides-some-students-best-scores" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rn_highest = 1 hides some students' best scores
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#possible-improvements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Possible improvements
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#yearly-upkeep" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Yearly upkeep
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/models/carat-dashboard-data-model.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="carat-dashboard-data-model">CARAT Dashboard Data Model</h1>
+<p>How the College Admission Readiness Assessments Tracker (CARAT) works: where its
+data comes from, how the dbt models turn it into the dashboard, what each view
+shows, and what to know before changing any of it.</p>
+<h2 id="what-is-carat">What is CARAT?</h2>
+<p>CARAT is KIPP Forward's dashboard for college-entrance testing: SAT, PSAT 8/9,
+PSAT 10, PSAT NMSQT, historical ACT, and AP. KIPP Forward is the KTAF team that
+supports students' paths to and through college. For current high school
+students and past graduating classes, CARAT reports how many students tested,
+what they scored, how many reached readiness benchmarks, and how the network is
+tracking against the goals KIPP Forward sets each year.</p>
+<p>It reports two kinds of results side by side:</p>
+<ul>
+<li><strong>Official</strong> scores are real College Board and ACT results.</li>
+<li><strong>Practice</strong> scores come from practice tests students take in school, recorded
+  in Illuminate and converted to the official scale.</li>
+</ul>
+<p>The Tableau workbook is declared in dbt as the exposure
+<code>college_admission_readiness_assessments_tracker_carat</code>, and Dagster refreshes
+its extracts daily at 6 AM Eastern. The data team maintains it with two Claude
+Code skills: <code>carat-dashboard</code> for the dashboard's pipeline and
+<code>collegeboard-id-crosswalk</code> for matching College Board score files to students.
+The skills hold the step-by-step procedures; this page explains the model.</p>
+<h2 id="how-it-fits-together">How it fits together</h2>
+<div class="highlight"><pre><span></span><code> Official                               Practice
+ kippadb: SAT, ACT                      Illuminate responses
+ College Board files: PSAT             + Scale Score Conversion tab
+   (matched to students by the          + Scaffold tab
+    College Board ID crosswalk)           │
+   │                                      │
+   ▼                                      ▼
+ official model                          practice model
+ int_assessments__college_assessment     int_assessments__college_assessment_practice
+   └──────────────────┬───────────────────┘
+                      ▼
+      the hub: int_assessments__all_college_assessments
+                      │
+   ┌──────────┬───────┴───────┬───────────────┬─────────────────────┐
+   ▼          ▼               ▼               ▼                     ▼
+ _scores   _current      _over_time     _benchmark_calcs     roster scores ─► _roster
+              ▲               ▲                                     ▲
+              └─── goals ─────┘                                     └── Expected Assessments tab
+</code></pre></div>
+<p>Official and practice results stay in separate models until the hub, which
+unions them into one shape. From there down, <code>test_type</code> (<code>Official</code> or
+<code>Practice</code>) is what tells them apart. Enrollment data (school, grade, graduation
+year) joins in at each view from <code>int_extracts__student_enrollments</code>.</p>
+<p>Not everything reads the hub. <code>_roster</code> also reads the official model directly
+for SAT highlights, and the wide KIPP Forward sheet reads some College Board and
+kippadb models directly. Two views sit outside this pipeline entirely: <code>_de</code>
+reads PowerSchool grades, and AP has its own path (see <em>Dashboard views</em>).</p>
+<h2 id="terms">Terms</h2>
+<table>
+<thead>
+<tr>
+<th>Term</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>_scores</code>, <code>_current</code>, …</td>
+<td>Short names for the views <code>rpt_tableau__college_assessment_dashboard_scores</code>, <code>…_current</code>, and so on</td>
+</tr>
+<tr>
+<td>kippadb</td>
+<td>The network's Salesforce instance, where official SAT and ACT scores are recorded</td>
+</tr>
+<tr>
+<td>Official model</td>
+<td><code>int_assessments__college_assessment</code>: official scores</td>
+</tr>
+<tr>
+<td>Practice model</td>
+<td><code>int_assessments__college_assessment_practice</code>: practice scores</td>
+</tr>
+<tr>
+<td>The hub</td>
+<td><code>int_assessments__all_college_assessments</code>: both, unioned</td>
+</tr>
+<tr>
+<td><code>scope</code></td>
+<td>The test: <code>SAT</code>, <code>ACT</code>, <code>PSAT 8/9</code>, <code>PSAT10</code>, <code>PSAT NMSQT</code></td>
+</tr>
+<tr>
+<td><code>score_type</code></td>
+<td>One score on one test: <code>sat_total_score</code>, <code>sat_math</code>, <code>psat89_ebrw</code>, …</td>
+</tr>
+<tr>
+<td><code>scope_round</code></td>
+<td>Which practice administration within a year: <code>SAT1</code>, <code>SAT2</code>, <code>PSAT891</code>, <code>PSAT101</code></td>
+</tr>
+<tr>
+<td><code>rn_highest</code></td>
+<td>A score's rank among the student's scores of that type; 1 is their best</td>
+</tr>
+<tr>
+<td>Superscore</td>
+<td>A student's best section scores across sittings, summed</td>
+</tr>
+<tr>
+<td><code>rn_year</code></td>
+<td><code>1</code> on a student's primary enrollment row for a year; views filter on it for one row per student</td>
+</tr>
+<tr>
+<td>IEP-exempt</td>
+<td>Students exempt from the graduation assessment requirement under their IEP</td>
+</tr>
+</tbody>
+</table>
+<h2 id="where-the-data-comes-from">Where the data comes from</h2>
+<table>
+<thead>
+<tr>
+<th>Source</th>
+<th>What it provides</th>
+<th>Owner</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>kippadb (Salesforce)</td>
+<td>Official SAT and ACT scores</td>
+<td>KIPP Forward</td>
+</tr>
+<tr>
+<td>College Board files, via SFTP</td>
+<td>Official PSAT and AP scores</td>
+<td>College Board</td>
+</tr>
+<tr>
+<td>College Board ID crosswalk sheets</td>
+<td>Each College Board ID's PowerSchool <code>student_number</code></td>
+<td>Data team</td>
+</tr>
+<tr>
+<td>Illuminate</td>
+<td>Practice test responses (raw scores)</td>
+<td>Schools and KIPP Forward</td>
+</tr>
+<tr>
+<td>KIPP Forward workbook (four tabs)</td>
+<td>Practice conversions, test vocabulary, goals, seasons</td>
+<td>KIPP Forward, entered by the data team</td>
+</tr>
+<tr>
+<td>PowerSchool, via enrollments</td>
+<td>Student, school, grade, graduation year</td>
+<td>Schools</td>
+</tr>
+</tbody>
+</table>
+<p>The four KIPP Forward tabs are described under <em>The Google Sheets</em>. Edits to
+them reach the warehouse on their own: a Dagster sensor watches the workbook's
+modified time and rebuilds the staging models, usually within an hour of an
+edit. Tableau shows the change after its next daily refresh.</p>
+<h3 id="how-official-sat-reaches-the-dashboard">How official SAT reaches the dashboard</h3>
+<p>College Board also sends SAT files, but CARAT never reads them. Official SAT on
+the dashboard comes from kippadb only. The files reach kippadb by a round trip
+the data team runs:</p>
+<ol>
+<li>The SAT files land and are matched to students through the SAT/PSAT crosswalk
+   (<code>int_collegeboard__sat_unpivot</code>).</li>
+<li>Two extracts, <code>rpt_gsheets__kippfwd_sfsat</code> and <code>rpt_gsheets__kippfwd_ogsat</code>,
+   list every College Board SAT score that kippadb doesn't have yet, matching on
+   student, score type, and exact test date. They feed the Unified KFWD
+   Processes Document, a Google Sheet.</li>
+<li>The data team loads those rows into Salesforce. Once a score is in kippadb it
+   drops off the sheet, and it reaches CARAT through the official model.</li>
+</ol>
+<p>So for years with College Board files, which start in spring 2022 and are nearly
+complete from school year 2024-25, kippadb and the College Board tables should
+agree score for score. A score still on the sheet hasn't been loaded yet.</p>
+<p>kippadb also holds SAT scores with no College Board record: sittings before the
+files began, sittings whose reports never came to the school, and scores entered
+by hand. Scores entered by hand, including by the KIPP Foundation, have been
+wrong before. When someone asks why CARAT disagrees with a College Board report,
+compare the two sources first (the <code>carat-dashboard</code> skill has the query). A
+score in both with different values, or a College Board score that isn't in
+kippadb on the same date, points to a Salesforce entry. A different date is
+enough to break the match.</p>
+<h2 id="key-ideas">Key ideas</h2>
+<h3 id="test_type-and-scope"><code>test_type</code> and <code>scope</code></h3>
+<p>Every score row carries two labels: <code>test_type</code> (<code>Official</code> or <code>Practice</code>) and
+<code>scope</code> (the test). Anything selecting a specific test reads <code>scope</code>.
+<code>test_type</code> is constant within the official and practice models, so a predicate
+like <code>test_type = 'SAT'</code> is never true and fails silently.</p>
+<h3 id="official-and-practice-share-one-vocabulary">Official and practice share one vocabulary</h3>
+<p>A <code>score_type</code> is spelled the same way for official and practice results. That
+keeps the views simple, but it means the same <code>score_type</code> names a different
+sitting depending on <code>test_type</code>. <strong>Rankings, deduplication, and joins carry
+<code>test_type</code></strong>, so a practice score can never outrank, replace, or be counted as
+an official one. When adding a <code>partition by</code> or a join, include <code>test_type</code>
+unless the calculation is meant to span both.</p>
+<p>Two calculations are meant to span both, and leave <code>test_type</code> out on purpose:
+the roster's growth (see <em>Growth</em>) and the hub's <code>previous_score_change</code>.</p>
+<h3 id="attempts">Attempts</h3>
+<p>An attempt is one sitting of a test, recorded on the total row. The hub counts
+attempts as distinct test dates per student, test type, and score type:
+<code>attempt_lifetime</code> across all years and <code>yearly_attempts_totals</code> per year.
+Counting rows instead would credit a sitting entered twice in kippadb as two
+attempts.</p>
+<p>The attempts metrics ask what share of students took a test at least once, or at
+least twice. On the dashboard, <strong>every metric's denominator is every student in
+the group, whether or not they tested</strong>: the workbook filters <code>_current</code> to
+currently enrolled students who aren't IEP-exempt, then divides the students who
+met the bar (<code>met_min_score_int = 1</code>) by all rows. A student with no score has
+<code>met_min_score_int = 0</code>, so they count as not meeting it. Checked against the
+published Landing Page, where every bar's count matches this calculation.</p>
+<p>Attempt counts are lifetime: "1+ attempts" means the student has ever sat the
+test, in any year, so a grade's rate climbs through the year as its first
+official sitting arrives (grade 11 SAT reads near zero in the fall).</p>
+<p><code>score</code> itself reads 0 on an Attempts row for a student who holds results of
+that test type but never sat this test, and null for a student with no results
+of that type. That distinction matters only when averaging <code>score</code>; the
+percentages don't depend on it.</p>
+<h3 id="benchmarks">Benchmarks</h3>
+<p>Benchmarks are two score thresholds per test, set by KIPP Forward: <strong>HS
+Grad-Ready</strong>, the New Jersey graduation bar, and <strong>College-Ready</strong>.</p>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Score</th>
+<th>HS Grad-Ready</th>
+<th>College-Ready</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SAT</td>
+<td>Total</td>
+<td>890</td>
+<td>1010</td>
+</tr>
+<tr>
+<td>SAT</td>
+<td>EBRW / Math</td>
+<td>450 / 440</td>
+<td>480 / 530</td>
+</tr>
+<tr>
+<td>PSAT 10 / NMSQT</td>
+<td>Total</td>
+<td>840</td>
+<td>910</td>
+</tr>
+<tr>
+<td>PSAT 10 / NMSQT</td>
+<td>EBRW / Math</td>
+<td>420 / 420</td>
+<td>430 / 480</td>
+</tr>
+<tr>
+<td>PSAT 8/9</td>
+<td>Total</td>
+<td>790</td>
+<td>860</td>
+</tr>
+<tr>
+<td>PSAT 8/9</td>
+<td>EBRW / Math</td>
+<td>400 / 400</td>
+<td>410 / 450</td>
+</tr>
+<tr>
+<td>ACT</td>
+<td>Composite</td>
+<td>17</td>
+<td>21</td>
+</tr>
+<tr>
+<td>ACT</td>
+<td>Math / Reading</td>
+<td>17</td>
+<td>22</td>
+</tr>
+</tbody>
+</table>
+<p>The thresholds live on the Scaffold tab, not in SQL. Four score types have no
+thresholds, by design: <code>act_english</code>, <code>act_science</code>, <code>sat_reading_test_score</code>,
+and <code>sat_writing_and_language_test_score</code>.</p>
+<p>Benchmark results combine tests in two ways:</p>
+<ul>
+<li><strong>PSAT 10 and PSAT NMSQT fold together for scores.</strong> College Board treats them
+  as one test offered in two windows, on a compatible scale, so a student's best
+  is taken across both (<code>benchmark_aligned_scope</code>).</li>
+<li><strong>ACT and SAT fold together for attainment only</strong>: "met the bar by any route"
+  (<code>expected_aligned_scope = 'ACT/SAT'</code>). Their scores are never compared, since
+  ACT Math is 1-36 and SAT Math is 200-800.</li>
+</ul>
+<p>The two columns look alike and are not interchangeable. A max score taken across
+<code>ACT/SAT</code> would rate an ACT 36 against a 1010 threshold.</p>
+<h3 id="goals">Goals</h3>
+<p>KIPP Forward sets goals as the percent of students meeting each metric, per
+graduating class: one attempt, two or more attempts, HS Grad-Ready, and
+College-Ready. They are entered on the Goals tab.</p>
+<ul>
+<li><strong>Goals don't vary by region or school.</strong> Every school shows the same goal
+  line for a given grade and metric.</li>
+<li><strong>Grade pairs one-to-one with graduating class</strong> within a year. In SY26-27,
+  grade 12 is the class of 2027 and grade 11 the class of 2028, so the two SAT
+  goal rows are goals for two classes.</li>
+<li><strong>The Goals tab holds percentages only</strong>; thresholds come from the Scaffold
+  tab. <code>int_google_sheets__kippfwd__goals_unpivot</code> pairs them.</li>
+</ul>
+<p>The topline table below is KIPP Forward's strategy target per class, by the end
+of junior year. The Goals tab doesn't hold it as-is: the tab has one row per
+current grade and test for this school year, so a class's SAT goal appears on
+the tab only while that class is in grade 11 or 12. In SY26-27 the class of 2029
+is in grade 10, so its only row is PSAT 10.</p>
+<p>Topline goals, by the end of junior year:</p>
+<table>
+<thead>
+<tr>
+<th>Class of</th>
+<th>College-Ready (1010+)</th>
+<th>HS Grad-Ready (890+)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2027</td>
+<td>22%</td>
+<td>45%</td>
+</tr>
+<tr>
+<td>2028</td>
+<td>28%</td>
+<td>55%</td>
+</tr>
+<tr>
+<td>2029</td>
+<td>34%</td>
+<td>60%</td>
+</tr>
+<tr>
+<td>2030</td>
+<td>40%</td>
+<td>70%</td>
+</tr>
+<tr>
+<td>2031</td>
+<td>47%</td>
+<td>80%</td>
+</tr>
+</tbody>
+</table>
+<p>Attempts goals are 95% for one attempt on every PSAT and the SAT, and 95% for
+two or more attempts on the SAT, official and practice. PSAT has no two-or-more
+goal because it is given once a year.</p>
+<p><code>_over_time</code> reports on neither grade nor class, so it needs one goal per
+metric. The Goals tab carries two columns for it, <code>pct_hs_grad_ready_over_time</code>
+and <code>pct_college_ready_over_time</code>. <strong>Their values are placeholders</strong> that hold
+the dashboard's goal lines steady until KIPP Forward states a goal that doesn't
+depend on class. Don't reconcile them against the topline table.</p>
+<h3 id="seasons-and-the-expected-assessments-tab">Seasons and the Expected Assessments tab</h3>
+<p>The roster shows each student's progression across the tests they are expected
+to take in high school. The Expected Assessments tab defines those
+administrations: for each region, grade, and test, the season (Fall, Winter,
+Spring) and the months that belong to it. An official score lands in a season by
+matching its month; a score from a month the tab doesn't list has nowhere to go.</p>
+<p>Practice tests match on their round instead. Schools choose their own practice
+dates, so one practice administration can span several months; practice rows on
+the tab list the <code>scope_round</code> where official rows list a month.</p>
+<p>Months marked <code>Not Official</code> record tests that happen but are deliberately not
+reported, such as grade 11 SAT in the fall. Seasons are ordered by one sequence
+across all grades, so the tab is regenerated whole, never edited by hand; the
+<code>carat-dashboard</code> skill has the generator and an example spec.</p>
+<h3 id="growth">Growth</h3>
+<p>The roster's growth rows (<code>Score Change</code>) measure the change from a student's
+previous season, in the order the tab defines. The chain runs through official
+and practice administrations alike: an official grade 11 Winter change is
+measured from practice SAT1 when the student sat it, and a practice SAT2 change
+is measured from an official Winter sitting when there is one. Growth is
+computed for SAT totals only; the model restricts it to them.</p>
+<p>For official-to-official growth, use <code>previous_total_score_change</code> on the
+official model (the change from the previous official sitting of the same test)
+or the official-only growth columns on the wide KIPP Forward sheet. Splitting
+the roster's growth by test type would mean adding <code>test_type</code> to its partition;
+confirm with KIPP Forward before changing it.</p>
+<h3 id="two-graduating-class-fields">Two graduating-class fields</h3>
+<p><code>int_extracts__student_enrollments</code> carries both <code>graduation_year</code> and
+<code>ktc_cohort</code>, and they differ for a few percent of students, such as a retained
+student. <strong>Both are correct</strong>: KIPP Forward uses one and the KIPP Foundation the
+other. <code>_benchmark_calcs</code> carries <code>graduation_year</code> and drops students without
+one; the other views carry both. Don't unify them. A goal should say which basis
+it is measured on.</p>
+<h2 id="dashboard-views">Dashboard views</h2>
+<p>The published workbook has five tabs. Each view feeds one of them:</p>
+<table>
+<thead>
+<tr>
+<th>Tab</th>
+<th>What's on it</th>
+<th>View</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Landing Page</td>
+<td>Average scores by graduating class (left)</td>
+<td><code>_scores</code></td>
+</tr>
+<tr>
+<td>Landing Page</td>
+<td>Grades 11 and 12 against goal, by school, region, and NJ (right)</td>
+<td><code>_current</code></td>
+</tr>
+<tr>
+<td>Over Time</td>
+<td>Attainment by graduating class</td>
+<td><code>_over_time</code></td>
+</tr>
+<tr>
+<td>Roster</td>
+<td>Each current student's expected tests and scores (the default tab)</td>
+<td><code>_roster</code></td>
+</tr>
+<tr>
+<td>AP Overview</td>
+<td>AP enrollment, attempts, and scores</td>
+<td><code>rpt_tableau__ap_assessment_dashboard</code></td>
+</tr>
+<tr>
+<td>DE Overview</td>
+<td>Dual-enrollment results</td>
+<td><code>_de</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>_benchmark_calcs</code> has no tab of its own. The Landing Page's "Met Benchmark" and
+"CY Board Report" buttons open pop-ups, and the benchmark view most likely sits
+behind the first; confirm in Tableau before relying on that.</p>
+<h3 id="_scores-average-scores"><code>_scores</code>: average scores</h3>
+<p><strong>What it shows:</strong> the landing page. Average scores over time by graduating
+class; rows are <code>test_type</code> then <code>graduation_year</code>, columns are the tests. The
+Score Category filter switches between each sitting's own score (<code>scale_score</code>)
+and the student's best (<code>max_scale_score</code>).</p>
+<p><strong>Grain:</strong> one row per student, test type, score type, test date, and score,
+official and practice. Reads the hub and enrollments.</p>
+<p><strong>Worth knowing:</strong></p>
+<ul>
+<li>Both Score Category options average over every sitting, so a student who
+  tested twice counts twice either way. That's by design; filtering to each
+  student's best would empty the per-sitting option.</li>
+<li>Region and school come from the student's most recent high school enrollment,
+  so a student's whole score history moves with them when they transfer, and a
+  graduate shows their last high school.</li>
+<li>Six sub-test score types are excluded by name. Any new score type added
+  upstream appears automatically.</li>
+<li>It deduplicates on its grain to remove kippadb's double-entered SAT sittings
+  (see <em>Known issues, need to fix</em>), and a uniqueness test guards the key.</li>
+</ul>
+<h3 id="_current-this-year-against-goal"><code>_current</code>: this year against goal</h3>
+<p><strong>What it shows:</strong> this school year's progress against goal by school, region,
+and network: the attempts metrics and each student's benchmark tier.</p>
+<p><strong>Grain:</strong> one row per current high school student per goal. Reads the hub,
+enrollments, and the goals model (<code>By Grade</code> branch). The workbook aggregates
+rows up to school, region, and network (<code>KTAF</code>, every region with current high
+school students).</p>
+<p><strong>Worth knowing:</strong></p>
+<ul>
+<li>ACT goals are excluded.</li>
+<li>Only a total-level benchmark is grade-specific. Attempts and section
+  thresholds apply to every student regardless of grade: a grade 9 student has
+  taken the SAT zero times, which is a reportable answer.</li>
+<li><code>score</code> holds an attempt count on Attempts rows and the best scale score on
+  Benchmark rows. Every percentage divides by all students in the group (see
+  <em>Attempts</em>).</li>
+<li><code>benchmark_tier</code> bands each student as College-Ready, HS Grad-Ready, or No
+  Benchmark Met.</li>
+<li>To reproduce a dashboard total, filter the goal side,
+  <code>expected_aligned_subject_area = 'Total'</code>. The score side's <code>subject_area</code>
+  shares its values (<code>Combined</code>, <code>EBRW</code>, <code>Math</code>) but is null for students who
+  haven't tested, so filtering on it drops them from the denominator. Leaving
+  the filter off blends section rows into the totals; a numerator larger than
+  the denominator is the tell. Section rows carry thresholds but no goals.</li>
+<li>It follows the <code>current_academic_year</code> dbt variable, so it rolls over each
+  July without a code change.</li>
+</ul>
+<h3 id="_over_time-attainment-by-graduating-class"><code>_over_time</code>: attainment by graduating class</h3>
+<p><strong>What it shows:</strong> each graduating class's attempts and benchmark attainment,
+across years.</p>
+<p><strong>Grain:</strong> one row per student per goal, for every high school student the
+network has enrolled, current and past, official and practice. Reads the hub,
+enrollments, and the goals model (<code>All Grades</code> branch, with the over-time goal
+columns). Its uniqueness test currently warns; see <em>Known issues, need to fix</em>.</p>
+<p><strong>Worth knowing:</strong></p>
+<ul>
+<li><code>met_min_score_int</code> is the row-level flag. Three <code>met_min_score_int_overall_*</code>
+  flags take its max over wider partitions: per score type, per aligned subject,
+  and per aligned test and subject (which spans ACT and SAT). Two <code>alt_met_*</code>
+  flags do the same with the one-attempt rule read as "exactly one." Pick the
+  flag matching the question. One SAT score can flip the ACT row's cross-test
+  flag, so count students, not rows.</li>
+<li>It reads each student's best score with no <code>rn_highest = 1</code> filter, so it
+  shows a few historical students whom <code>_benchmark_calcs</code> reads as <code>No Data</code>
+  (see <em>Known issues, need to fix</em>).</li>
+<li><code>strategy_case</code> labels a student's testing pattern, computed on the official
+  and practice models; <code>No testing history</code> where there is none.</li>
+</ul>
+<h3 id="_benchmark_calcs-percent-meeting-each-benchmark"><code>_benchmark_calcs</code>: percent meeting each benchmark</h3>
+<p><strong>What it shows:</strong> the share of students meeting each readiness benchmark.</p>
+<p><strong>Grain:</strong> one row per student per test type, aligned test, subject, and
+benchmark tier, for each student's most recent high school enrollment, current
+and past, including students with no qualifying score so they count in the
+denominator. <code>met_benchmark_goal</code> reads <code>Met</code>, <code>Not Met</code>, or <code>No Data</code>. Reads
+the hub, enrollments, and the Scaffold tab.</p>
+<p><strong>Worth knowing:</strong></p>
+<ul>
+<li>Thresholds come from the current year's Scaffold rows, with ACT and growth
+  rows excluded. It doesn't read the Goals tab, despite the name.</li>
+<li>Scores are each student's all-time best, picked in the hub, with official and
+  practice kept apart.</li>
+<li>It excludes IEP-exempt students and students without a graduation year.</li>
+<li>Its scaffold join folds <code>ACT/SAT</code> to <code>SAT</code> and joins on the aligned scope.
+  That works because the fold matches the hub's value; joining on
+  <code>expected_scope</code> would state the intent directly.</li>
+</ul>
+<h3 id="_roster-student-roster"><code>_roster</code>: student roster</h3>
+<p><strong>What it shows:</strong> current students graduating this year or later: each expected
+administration's score and growth, lifetime official attempt counts per test,
+SAT highlights (superscore, best EBRW, best Math), and the student's
+college-readiness course section.</p>
+<p><strong>Grain:</strong> one row per student per expected administration and score category,
+guarded by a uniqueness test.</p>
+<p><strong>Worth knowing:</strong></p>
+<ul>
+<li>It starts from the Expected Assessments tab joined on region, and left joins
+  scores from <code>int_tableau__college_assessment_roster_scores</code>, so an expected
+  administration with no score still appears, empty.</li>
+<li>Miami has no rows on the Expected Assessments tab, so it drops out at that
+  join. That is intentional: Miami has no college-testing cohort yet.</li>
+<li>Attempt counts come from the participation roster, official only.</li>
+<li>The course section comes from <code>int_students__ccr_schedule</code>, the student's
+  college-and-career-readiness class.</li>
+</ul>
+<h3 id="_de-dual-enrollment"><code>_de</code>: dual enrollment</h3>
+<p><strong>What it shows:</strong> dual-enrollment course results: the college course, pass or
+fail, score, semester, and institution.</p>
+<p><strong>Grain:</strong> one row per student per dual-enrollment course grade, from
+PowerSchool stored grades (store codes <code>Y1</code> and <code>Q2</code>) and the dual-enrollment
+extension table. It doesn't touch the assessment pipeline. Its uniqueness test
+currently warns; see <em>Known issues, need to fix</em>.</p>
+<h3 id="rpt_tableau__ap_assessment_dashboard-ap"><code>rpt_tableau__ap_assessment_dashboard</code>: AP</h3>
+<p><strong>What it shows:</strong> the AP Overview tab: AP course enrollment against AP exam
+results, by school and subject.</p>
+<p><strong>Grain:</strong> one row per high school student per academic year per AP subject
+code. The subject list is the union of the student's AP courses and the AP exams
+they sat, so a course with no exam and an exam with no course both appear. It
+doesn't read the hub.</p>
+<p><strong>Where the scores come from:</strong> <code>int_assessments__ap_assessments</code> takes kippadb
+for academic years 2010-2017 and College Board files
+(<code>int_collegeboard__ap_unpivot</code>) from 2018, the first year of files.
+Irregularity codes exist only in the files, so they are null before 2018. Its
+crosswalk and checks are covered by the <code>collegeboard-id-crosswalk</code> skill.</p>
+<p><strong>Worth knowing:</strong></p>
+<ul>
+<li>A College Board ID missing from the AP crosswalk drops out silently:
+  <code>int_assessments__ap_assessments</code> keeps only rows with a PowerSchool
+  <code>student_number</code>. Count gaps from staging, as the crosswalk skill does.</li>
+<li>The population is students enrolled in high school on May 1 of the school
+  year, roughly exam time.</li>
+<li><code>Calculus BC: AB Subscore</code> is excluded, so a BC exam counts once.</li>
+<li>A student in a main AP course and its recitation section gets two rows for one
+  subject. Both sections are real; the model leaves them in on purpose.</li>
+<li><code>rn_highest</code> ranks a student's scores per subject, but nothing filters on it,
+  so a retaken exam shows both attempts.</li>
+<li><code>test_subject_area</code> reads <code>Took course, but not AP exam.</code>,
+  <code>Took AP exam, not enrolled in course.</code>, <code>Not applicable</code>, or the AP course
+  name when the student did both.</li>
+<li><code>expected_scope</code> and <code>expected_test_type</code> are literals (<code>AP</code> and <code>Official</code>
+  when the student took the course, otherwise <code>Not applicable</code>), set so the tab
+  can share filters with the other views.</li>
+</ul>
+<h3 id="not-part-of-carat">Not part of CARAT</h3>
+<p><code>rpt_tableau__college_assessment_dashboard</code>,
+<code>rpt_tableau__college_assessment_dashboard_historic</code>, and
+<code>rpt_tableau__college_assessment_qc_report</code> sit in the same folder but are
+disabled (<code>enabled: false</code>) and feed nothing.</p>
+<h2 id="supporting-models">Supporting models</h2>
+<h3 id="the-official-model-int_assessments__college_assessment">The official model: <code>int_assessments__college_assessment</code></h3>
+<p>Official scores from kippadb (SAT, ACT) and College Board files (PSAT), one row
+per student per score type per sitting. It computes <code>rn_highest</code>, superscores,
+<code>strategy_case</code>, and <code>previous_total_score_change</code>. College Board rows reach it
+only when their College Board ID is in the crosswalk sheet; AP and SAT/PSAT IDs
+are separate ID spaces with separate crosswalk tabs.</p>
+<h3 id="the-practice-model-int_assessments__college_assessment_practice">The practice model: <code>int_assessments__college_assessment_practice</code></h3>
+<p>Converts Illuminate practice responses to scale scores. An Illuminate assessment
+counts as a reportable practice test only if it has rows on the Scale Score
+Conversion tab; Illuminate's own labels aren't used.</p>
+<table>
+<thead>
+<tr>
+<th><code>response_type</code></th>
+<th>Grain</th>
+<th>Built from</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Group</code></td>
+<td>one per response group</td>
+<td>Illuminate <code>group</code> rows</td>
+</tr>
+<tr>
+<td><code>Subject</code></td>
+<td>one per student per assessment</td>
+<td>Illuminate <code>overall</code> rows</td>
+</tr>
+<tr>
+<td><code>Total</code></td>
+<td>one per student administration</td>
+<td>the student's <code>Subject</code> rows</td>
+</tr>
+</tbody>
+</table>
+<p>Each Illuminate assessment is one subject, so totals don't exist upstream; the
+model builds them. <strong>A total is scored only when the student sat every section</strong>
+the administration expects (<code>expected_total_subjects_tested</code> on the conversion
+tab); otherwise the row appears with a null score, so an incomplete sitting
+stays visible. ACT averages its sections; everything else sums them. Sections
+are grouped per academic year, student, <code>scope_round</code>, and grade, so two test
+forms given in one round can't pool into one total.</p>
+<p>Two things bite when editing it. Section rows borrow their score from their
+<code>overall</code> sibling through a window function that must run in the CTE where both
+row types are present; filtering first makes it return null everywhere,
+silently. And <code>grouping</code> is a BigQuery reserved word, so aliasing the scaffold's
+<code>expected_grouping</code> to it needs backticks.</p>
+<h3 id="the-hub-int_assessments__all_college_assessments">The hub: <code>int_assessments__all_college_assessments</code></h3>
+<p>Unions the official and practice models (practice at <code>Subject</code> and <code>Total</code>
+grain) and computes, once for both:</p>
+<ul>
+<li><code>attempt_lifetime</code> and <code>yearly_attempts_totals</code> (see <em>Attempts</em>).</li>
+<li>The benchmark pick. <code>is_benchmark_eligible</code> excludes ACT and the sub-test
+  score types; <code>rn_highest_benchmark_aligned_scope</code> tags each student's best
+  row; <code>benchmark_aligned_scope_max_score</code> carries the same value on every row,
+  and keeps an <code>rn_highest = 1</code> filter that <code>_benchmark_calcs</code> inherits (see
+  <em>Known issues, need to fix</em>). Both partition on <code>subject_area</code>, so PSAT 10 and
+  NMSQT fold, and on <code>test_type</code>, so practice never competes with official.</li>
+<li><code>aligned_month_round</code>: the month on official rows and the <code>scope_round</code> on
+  practice rows, so the Expected Assessments tab joins both with one predicate.</li>
+<li><code>previous_score_change</code>: the change from the student's previous sitting of the
+  same score type, official or practice. Nothing reads it yet.</li>
+</ul>
+<p>Some columns are official-only and read null on practice rows: <code>salesforce_id</code>,
+<code>aligned_subject</code>, the score-shape counts, <code>surrogate_key</code>, and the superscore
+fields.</p>
+<h3 id="goals-with-thresholds-int_google_sheets__kippfwd__goals_unpivot">Goals with thresholds: <code>int_google_sheets__kippfwd__goals_unpivot</code></h3>
+<p>Pairs each goal on the Goals tab with its threshold from the Scaffold tab. It
+has two branches, and a reader filters <code>goal_branch</code>:</p>
+<table>
+<thead>
+<tr>
+<th><code>goal_branch</code></th>
+<th>Grade handling</th>
+<th>Read by</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>By Grade</code></td>
+<td>grade from the Goals tab</td>
+<td><code>_current</code>, and the participation roster (attempts goals only)</td>
+</tr>
+<tr>
+<td><code>All Grades</code></td>
+<td>no grade; uses the over-time goals</td>
+<td><code>_over_time</code>, the long KIPP Forward sheet</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>A score type with goals at two grades appears once per grade. Grouping a
+  benchmark metric by <code>expected_metric_label</code> alone averages two classes into
+  one wrong number; keep <code>grade_level</code> in the grouping.</li>
+<li>Section thresholds carry no grade, which is what applies them to every
+  student.</li>
+<li>Attempts exist only on total rows; the model drops attempts rows for sections.</li>
+<li>A goal whose score type has no Scaffold row doesn't appear;
+  <code>test_kippfwd_goals_resolve_to_scaffold</code> flags it.</li>
+<li><code>expected_metric_label</code> (<code>sat_1_attempt</code>) is the pivot token;
+  <code>expected_metric_name</code> is the display label <code>_over_time</code> shows.</li>
+</ul>
+<h3 id="roster-scores-int_tableau__college_assessment_roster_scores">Roster scores: <code>int_tableau__college_assessment_roster_scores</code></h3>
+<p>Each expected administration a current student has a score for, across their
+high school history, feeding <code>_roster</code> and the wide KIPP Forward sheet. Each row
+carries a <code>Scale Score</code>, and SAT rows also carry a <code>Score Change</code> (see
+<em>Growth</em>). A reader shows the change only where the tab has a Growth row for
+that administration.</p>
+<p>It inner joins enrollments to the Expected Assessments tab on region and grade,
+then to the hub on <code>test_type</code>, <code>score_type</code>, <code>aligned_month_round</code>, and, for
+SAT only, academic year. SAT needs the year because grades 11 and 12 both have a
+Winter season covering December and January. The PSATs stay unbound on purpose:
+PSAT NMSQT is usually sat in grade 11, but the tab carries it at grade 10 only,
+and leaving the year unbound is what lets those scores land on the grade 10 row.
+A student who sat NMSQT in both grades shows only their best score there
+(<code>TODO(#4658)</code>).</p>
+<h3 id="participation-int_students__college_assessment_participation_roster">Participation: <code>int_students__college_assessment_participation_roster</code></h3>
+<p>Lifetime and yearly attempt counts per student and test type, from the hub's
+attempt fields, with the attempts goals attached. Its grain includes
+<code>test_type</code>, so a reader wanting official counts filters <code>test_type</code> as well as
+<code>rn_lifetime = 1</code>.</p>
+<h3 id="the-kipp-forward-google-sheets-extracts">The KIPP Forward Google Sheets extracts</h3>
+<p><code>rpt_gsheets__college_assessments_long</code> and
+<code>rpt_gsheets__college_assessments_wide</code> feed sheets KIPP Forward reads directly.
+Both keep practice separate from official.</p>
+<ul>
+<li><strong>Long:</strong> <code>administration_type</code> is <code>Official</code> or <code>Practice</code>. Its <code>test_type</code>
+  column holds the test (<code>scope as test_type</code>), so filtering <code>test_type</code> for
+  official versus practice returns nothing.</li>
+<li><strong>Wide:</strong> every score column without <code>practice</code> in its name is official.
+  Practice has its own score columns and attempt counts. Adding an
+  administration to the Expected Assessments tab means adding its practice
+  column here too, or practice scores for it have nowhere to appear.</li>
+</ul>
+<h2 id="the-google-sheets">The Google Sheets</h2>
+<p>The four KIPP Forward tabs are in one workbook; ask the data team for access.
+Changes from KIPP Forward are entered by the data team, and the
+<code>carat-dashboard</code> skill generates each paste as a whole tab or block in
+tab-separated form, because hand edits are how mistakes get in.</p>
+<table>
+<thead>
+<tr>
+<th>Tab</th>
+<th>Staging model</th>
+<th>Holds</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Scale Score Conversion</code></td>
+<td><code>stg_google_sheets__kippfwd__practice_scale_score_conversion</code></td>
+<td>Raw-to-scale bands per practice assessment</td>
+</tr>
+<tr>
+<td><code>Scaffold</code></td>
+<td><code>stg_google_sheets__kippfwd__scaffold</code></td>
+<td>Every valid test and score type per year, with thresholds</td>
+</tr>
+<tr>
+<td><code>Goals</code></td>
+<td><code>stg_google_sheets__kippfwd__goals</code></td>
+<td>Goal percentages per year, test type, grade, class</td>
+</tr>
+<tr>
+<td><code>Expected Assessments</code></td>
+<td><code>stg_google_sheets__kippfwd__expected_assessments</code></td>
+<td>Seasons and months per region, grade, and test</td>
+</tr>
+</tbody>
+</table>
+<p>The College Board ID crosswalks are in a separate workbook, covered by the
+<code>collegeboard-id-crosswalk</code> skill.</p>
+<h3 id="scale-score-conversion-and-scaffold">Scale Score Conversion and Scaffold</h3>
+<p>The practice model splits its reference data across these two tabs. The rule of
+thumb: a value that repeats across every band of an assessment is vocabulary and
+belongs on Scaffold; a value that varies band to band belongs on Scale Score
+Conversion. <code>score_type</code> is on both, because it's what joins them.</p>
+<p>Adding a practice administration touches both. Conversion bands with no matching
+Scaffold row are dropped by an inner join, with no error. That join keys on
+academic year, test, and score type, not grade, so <strong>deleting a Scaffold row
+excludes that score type for every grade that year</strong>. That is how AY2023's grade
+9-10 SAT is excluded.</p>
+<p>Scale Score Conversion:</p>
+<ul>
+<li>Scale scores come from the <code>LOWER</code> column of the published tables, so a
+  perfect digital SAT section reads 790, not 800.</li>
+<li><code>aligned_scale_score</code> puts a score on its section's reporting scale. It
+  differs only for legacy grade 9-10 SAT Reading and Writing, which are 10-40
+  test scores multiplied by 10.</li>
+<li><code>expected_total_subjects_tested</code> is how many sections an administration has: 4
+  for ACT, 3 for the legacy grade 9-10 SAT, 2 otherwise.</li>
+<li><code>scope_round</code> must differ between two administrations of one test in one year,
+  or their sections sum into one total.</li>
+</ul>
+<p>Scaffold:</p>
+<ul>
+<li>The key is (<code>academic_year</code>, <code>expected_test_type</code>, <code>expected_scope</code>,
+  <code>expected_grade_level</code>, <code>expected_score_type</code>). Grade is in it because AY2023
+  ran two SAT forms at once.</li>
+<li><code>expected_grade_level</code> is a string that can hold a list (<code>11,12</code>).</li>
+<li>The three alignment columns fold differently and aren't interchangeable:</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>ACT Reading vs EBRW</th>
+<th>Growth vs Total</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>expected_subject_area</code></td>
+<td>separate</td>
+<td>merged</td>
+</tr>
+<tr>
+<td><code>expected_aligned_subject_area</code></td>
+<td>merged</td>
+<td>merged</td>
+</tr>
+<tr>
+<td><code>expected_grouping</code></td>
+<td>separate</td>
+<td>separate</td>
+</tr>
+</tbody>
+</table>
+<h3 id="how-the-sheets-are-read">How the sheets are read</h3>
+<ul>
+<li><strong>Columns map by position.</strong> Each source declares its columns and skips the
+  header row, so the Nth sheet column is the Nth declared column. Inserting a
+  column mid-tab shifts every value after it, silently; renaming a header needs
+  no dbt change.</li>
+<li><strong>Named ranges bound what's read.</strong> Goals, Scaffold, and Expected Assessments
+  are read through named ranges, and a paste that runs past a range's end is
+  ignored. Scale Score Conversion is read by tab name.</li>
+<li><strong>A column change needs <code>stage_external_sources</code></strong> with
+  <code>ext_full_refresh: true</code>. A value edit doesn't.</li>
+</ul>
+<h2 id="decisions">Decisions</h2>
+<h3 id="ay2023-grade-9-and-10-sat-is-not-reported">AY2023 grade 9 and 10 SAT is not reported</h3>
+<p>KIPP Forward ruled those administrations invalid: grades 9 and 10 should have
+taken PSAT 8/9 and PSAT 10, not a full SAT form. They are excluded by the
+absence of AY2023 SAT Practice rows on the Scaffold tab. Their conversion bands
+remain and are inert. AY2023 grade 11 ACT is valid and reports.</p>
+<h3 id="some-practice-sat-in-illuminate-is-not-reported">Some practice SAT in Illuminate is not reported</h3>
+<p>Illuminate holds practice SAT from SY24-25 and SY25-26 that has no conversion
+rows, so it doesn't reach CARAT. KIPP Forward hasn't asked for it; reporting it
+would need the scale-score tables for those forms.</p>
+<h3 id="one-published-scale-score-is-corrected">One published scale score is corrected</h3>
+<p>College Board's PSAT 8/9 Practice Test 1 guide converts a perfect Reading and
+Writing raw score (66) to 700, below raw 65's 710. For assessment 226308, raw 66
+is entered as 720. A PSAT 8/9 Reading and Writing 720 is ours; the guide
+says 700. PSAT 8/9 can't reach 1440 regardless: its sections top out at 710
+and 690.</p>
+<h2 id="known-issues-need-to-fix">Known issues, need to fix</h2>
+<p>Each of these has a test or a documented symptom, and none is fixed yet.</p>
+<h3 id="_over_time-duplicates-some-rows"><code>_over_time</code> duplicates some rows</h3>
+<p><code>_over_time</code> groups by <code>strategy_case</code>, and a student whose <code>strategy_case</code>
+differs between two rows of one score type appears twice for that goal. The
+uniqueness test on (<code>student_number</code>, <code>expected_test_type</code>,
+<code>expected_score_type</code>, <code>expected_metric_name</code>) warns on those rows. A percentage
+the workbook computes over rows counts those students twice. The fix is to
+settle <code>strategy_case</code> to one value per student and score type before the group
+by, or to drop it from the grain if the workbook doesn't use it; the Over Time
+tab's visible filters don't include it. Tracked in #4871.</p>
+<h3 id="_de-duplicates-some-stored-grades"><code>_de</code> duplicates some stored grades</h3>
+<p>Two separate problems, and the test catches only the first.</p>
+<ul>
+<li><strong>Extension-table fan-out.</strong> Some PowerSchool stored grades match more than
+  one row in the dual-enrollment extension table, with different course, score,
+  or semester values, so the view carries two or three rows for one grade. The
+  uniqueness test on (<code>student_number</code>, <code>storedgrades_dcid</code>) warns on them.</li>
+<li><strong><code>Q2</code> and <code>Y1</code> for the same course.</strong> Institutions submit grades twice a
+  year, and it has already happened that fall's <code>Q2</code> and spring's <code>Y1</code> both land
+  for one course in one year. The student then has two stored grades, so two
+  rows, and the test doesn't see it because the <code>storedgrades_dcid</code> values
+  differ. The view has more rows than student-course-years, and a <code>TODO</code> in the
+  model marks where a priority rule would go.</li>
+</ul>
+<p>Also, about four in ten rows have no match in the extension table, so their
+course, score, and institution are empty. <code>unique_identifier</code> is not a key; use
+<code>storedgrades_dcid</code>. The fix is to decide which extension row wins for a stored
+grade and which store code wins for a course-year.</p>
+<h3 id="pre-2016-sat-is-on-the-old-2400-scale">Pre-2016 SAT is on the old 2400 scale</h3>
+<p>SAT sittings before March 2016 are on the 2400 scale (three sections), but every
+threshold is on the 1600 scale. Those scores rate high against the benchmarks,
+which inflates attainment for graduating classes through about 2017 in
+<code>_over_time</code> and <code>_scores</code>. They're separable by <code>test_date &lt; '2016-03-01'</code>. The
+fix is to exclude or rescale them; ACT is unaffected.</p>
+<h3 id="duplicate-kippadb-test-records">Duplicate kippadb test records</h3>
+<p>Some scores are entered twice in kippadb, as two records with the same student,
+test, and date. Tracked in #4871. Counted by record, grouped on student, test,
+date, and subject:</p>
+<ul>
+<li><strong>SAT:</strong> the double-entered spring 2026 school-day load was cleaned up in
+  Salesforce. One October 2015 sitting remains, with 2 records whose scores
+  differ on every section, so one of them is wrong. <code>_scores</code> still
+  deduplicates, as a guard against a repeat, and attempt counts use distinct
+  dates either way.</li>
+<li><strong>PSAT 2024:</strong> 478 sittings were imported twice with identical scores. They
+  don't reach CARAT, which takes PSAT from College Board files.</li>
+<li><strong>AP:</strong> no duplicates. Students often sit several AP exams on one day, so AP
+  records only look duplicated when grouped without subject.</li>
+</ul>
+<p>Count duplicates by record, not on the unpivot. The unpivot has one row per
+score type, so one duplicated sitting shows up once per score type: a SAT
+sitting with 4 scores looks like 4 duplicates.</p>
+<p>A warn-level uniqueness test on <code>int_kippadb__standardized_test_unpivot</code>
+(student, test, score type, AP course, and date) already flags these. Once the
+PSAT and SAT records are cleaned up, raise it to <code>error</code> so a new double entry
+fails the build.</p>
+<h3 id="rn_highest-1-hides-some-students-best-scores"><code>rn_highest = 1</code> hides some students' best scores</h3>
+<p>When a student's highest score for a score type has no test date, the official
+model drops that row after ranks were assigned, leaving no rank-1 row. Anything
+filtering <code>rn_highest = 1</code> then loses the student instead of falling back to
+their next score. <code>benchmark_aligned_scope_max_score</code> keeps that filter, so a
+few dozen historical SAT students read <code>No Data</code> in <code>_benchmark_calcs</code>, while
+<code>_over_time</code>, which has no such filter, shows their scores. The fixes are
+backfilling the dates in kippadb, or ranking after the null-date filter.</p>
+<p>No test catches a null date yet: the date test on
+<code>int_kippadb__standardized_test_unpivot</code> lets nulls through. Add a warn-level
+<code>not_null</code> on <code>date</code> alongside the kippadb cleanup, so the count can be driven
+to zero and held there.</p>
+<h2 id="possible-improvements">Possible improvements</h2>
+<p>Ideas that have been asked for, but not designed or built. None is a defect.</p>
+<ul>
+<li><strong>AP and dual enrollment metrics.</strong> Participation, AP scores of 3 or higher,
+  and DE grades of B or better, tracked against goals. AP is ready to build on;
+  DE first needs the fixes under <em>Known issues, need to fix</em>. Tracked in #5546.</li>
+<li><strong>College Board standards.</strong> Show the knowledge-and-skills results next to
+  each official SAT. They exist only in the College Board files, from spring
+  2022, so the work is a join from each kippadb sitting to its College Board
+  record on student and test date (see <em>How official SAT reaches the
+  dashboard</em>).</li>
+<li><strong>Flag students who didn't test with KTAF.</strong> Mark official scores from a
+  school year in which the student had no KTAF enrollment record, so results
+  earned elsewhere can be told apart from results earned here.</li>
+<li><strong>AP course grades against AP exam scores.</strong> A scatterplot per subject. The AP
+  view has course enrollment and exam scores but no course grades, so this needs
+  the stored grades joined in.</li>
+<li><strong>Percent met by CCR teacher.</strong> <code>_roster</code> already carries the student's
+  college-and-career-readiness course, section, and teacher from
+  <code>int_students__ccr_schedule</code>. <code>_current</code> and <code>_benchmark_calcs</code> don't, so the
+  met-benchmark tabs can't be cut by CCR teacher yet.</li>
+<li><strong>Results by student group.</strong> The views carry IEP, 504, and English learner
+  status, but not gender, race, or free and reduced-price lunch status. Adding
+  them makes small groups likely, and the repo has no automatic small-cell
+  suppression (#4237), so decide how to suppress before building.</li>
+<li><strong>AP Potential.</strong> College Board's AP Potential report, which predicts AP
+  success from PSAT results, isn't ingested.</li>
+<li><strong>A guide for dashboard users.</strong> This manual is for the people who maintain
+  CARAT. A short user guide or walkthrough video for the landing page was
+  planned and not made.</li>
+</ul>
+<h2 id="yearly-upkeep">Yearly upkeep</h2>
+<table>
+<thead>
+<tr>
+<th>Who</th>
+<th>Does what</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>KIPP Forward</td>
+<td>Decides goals, thresholds, the testing calendar, and which practice tests are given</td>
+</tr>
+<tr>
+<td>KIPP Forward</td>
+<td>Supplies practice-test scale scores (or the College Board scoring guide) and Illuminate links</td>
+</tr>
+<tr>
+<td>Data team</td>
+<td>Turns those into sheet rows with the skill, pastes them, and verifies the rebuild</td>
+</tr>
+<tr>
+<td>Data team</td>
+<td>Matches new College Board IDs, runs the pipeline check, and sends KIPP Forward a summary</td>
+</tr>
+<tr>
+<td>Automatic</td>
+<td>Sheet edits rebuild staging; <code>current_academic_year</code> rolls over in July; Tableau refreshes daily</td>
+</tr>
+</tbody>
+</table>
+<p>Each school year, with KIPP Forward:</p>
+<ol>
+<li><strong>Practice assessments.</strong> For each new practice administration, add
+   conversion rows and Scaffold rows. The skill derives the details from the
+   Illuminate assessment and generates the rows.</li>
+<li><strong>Seasons.</strong> Add new administrations, including new practice rounds, to the
+   Expected Assessments spec and regenerate the tab.</li>
+<li><strong>Goals.</strong> Enter the year's goals on the Goals tab.</li>
+<li><strong>Rollover.</strong> <code>current_academic_year</code> rolls over each July, network-wide, and
+   <code>_current</code>, <code>_benchmark_calcs</code>, and <code>_roster</code> follow it. Before that, the new
+   year's Illuminate sessions must exist, which is owned outside the data team;
+   a missing Scaffold year also fails silently, as empty rows. After rollover,
+   check that <code>_current</code> has rows for the new year:</li>
+</ol>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="n">academic_year</span><span class="p">,</span><span class="w"> </span><span class="n">expected_test_type</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">goal_rows</span><span class="p">,</span>
+<span class="k">from</span>
+<span class="w">    </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kipptaf_tableau</span><span class="p">.</span><span class="n">rpt_tableau__college_assessment_dashboard_current</span><span class="o">`</span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">academic_year</span><span class="p">,</span><span class="w"> </span><span class="n">expected_test_type</span>
+</code></pre></div>
+<ol>
+<li><strong>Official scores.</strong> When College Board files arrive, match new College Board
+   IDs with the <code>collegeboard-id-crosswalk</code> skill. It then runs the CARAT
+   pipeline check and drafts a summary for KIPP Forward.</li>
+</ol>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

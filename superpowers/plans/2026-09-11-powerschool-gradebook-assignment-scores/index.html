@@ -1,0 +1,3014 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>PowerSchool Gradebook Assignment Scores Implementation Plan - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#powerschool-gradebook-assignment-scores-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              PowerSchool Gradebook Assignment Scores Implementation Plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/fresh-dashboard-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/launch-page-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Launch Page
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube-access-individual-exceptions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube Access - Individual Exceptions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/fresh-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FRESH Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/carat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CARAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/csgf-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CSGF Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/hs-early-warning-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HS Early Warning Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/dibels-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DIBELS Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/stat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/athletic-eligibility-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Athletic Eligibility Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#global-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Global Constraints
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#file-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        File Structure
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-1-the-package-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1: The package model
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-2-the-kipptaf-wrapper-and-its-nj-sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2: The kipptaf wrapper and its NJ sources
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-3-prove-behavior-preservation-against-production" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 3: Prove behavior preservation against production
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-4-seed-staging-then-push-and-open-the-pr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 4: Seed staging, then push and open the PR
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-5-documentation-audit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 5: Documentation audit
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/plans/2026-09-11-powerschool-gradebook-assignment-scores.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="powerschool-gradebook-assignment-scores-implementation-plan">PowerSchool Gradebook Assignment Scores Implementation Plan</h1>
+<blockquote>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use
+superpowers:subagent-driven-development (recommended) or
+superpowers:executing-plans to implement this plan task-by-task. Steps use
+checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+</blockquote>
+<p><strong>Goal:</strong> Move <code>int_powerschool__gradebook_assignments_scores</code> out of kipptaf
+into the <code>powerschool</code> package, dropping the <code>region</code> and <code>credit_type</code> columns,
+with a kipptaf <code>union_relations</code> wrapper over the three NJ regions above it.</p>
+<p><strong>Architecture:</strong> The package model carries every join internal to PowerSchool —
+<code>int_powerschool__gradebook_assignments</code> to
+<code>base_powerschool__course_enrollments</code> to <code>stg_powerschool__assignmentscore</code> —
+and all 39 derived columns. All three refs already have a package copy, so the
+<code>from</code> and <code>join</code> clause text is unchanged; only the resolution target moves.
+The kipptaf model becomes a bare <code>union_relations</code> wrapper plus
+<code>extract_source_project()</code>, matching <code>int_powerschool__gradebook_assignments</code>
+one layer up in the same directory. All three enabled consumers read the wrapper
+at the same name and need no edit.</p>
+<p><strong>Tech Stack:</strong> dbt (BigQuery), <code>dbt_utils</code>, <code>uv</code> for every dbt invocation,
+trunk for lint, BigQuery MCP for verification.</p>
+<h2 id="global-constraints">Global Constraints</h2>
+<ul>
+<li>Spec:
+  <code>docs/superpowers/specs/2026-09-11-powerschool-gradebook-assignment-scores-design.md</code>.
+  Read it before Task 1.</li>
+<li>Worktree:
+  <code>/workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-gradebook-scores</code>.
+  Every path in this plan is relative to it. Every <code>git</code> call is
+  <code>git -C &lt;worktree&gt;</code>.</li>
+<li>Never run bare <code>python</code>, <code>dbt</code>, or <code>dagster</code>. Always <code>uv run</code>.</li>
+<li>dbt from a worktree:
+  <code>uv run dbt &lt;cmd&gt; --project-dir &lt;worktree&gt;/src/dbt/&lt;project&gt;</code>. Never
+  <code>uv --directory &lt;worktree&gt; run dbt</code> — that sets cwd to the worktree root,
+  where no <code>dbt_project.yml</code> exists.</li>
+<li>The <code>powerschool</code> project is never run standalone. Parse and compile it
+  through a consuming district: <code>kippnewark</code>, <code>kippcamden</code>, or <code>kipppaterson</code>.
+  <code>kippmiami</code> does not consume the package and is not involved in this change.</li>
+<li>Open every file under <code>src/dbt/</code> with Read/Edit/Write, never <code>cat</code> — the
+  path-scoped rule files load on a Read match and not on a Bash string.</li>
+<li>Lint before every push:
+  <code>/workspaces/teamster/.trunk/tools/trunk check --force --no-fix &lt;files&gt; &lt;/dev/null</code>
+  with cwd inside the worktree. MD060 on a widened markdown table clears when
+  the commit fmt hook re-pads it; do not hand-align.</li>
+<li>Column order in the moved SQL must not change. sqlfluff ST06 passes on the
+  current order and the five deletions do not disturb it.</li>
+<li><strong><code>if(&lt;condition&gt;, true, false)</code> is load-bearing, not redundant.</strong> Never
+  simplify one to the bare condition. <code>score_entered</code> is null on 1,834,662 prod
+  rows, and <code>if(null, true, false)</code> is <code>false</code> while the bare expression is
+  <code>null</code> — verified 2026-09-11: on every one of those rows
+  <code>assign_score_above_max</code> reads <code>false</code> and never null. Dropping a wrapper
+  flips 1.8M values from <code>false</code> to <code>null</code>.</li>
+<li><strong>The six <code>assign_*</code> category flags are not duplication.</strong> They are six
+  distinct business rules producing six separately-named output columns, and
+  <code>int_powerschool__gradebook_assignment_scores_rollup</code> sums all six by name.
+  There is no consolidation available that preserves the output contract. Leave
+  them as six blocks.</li>
+<li>Improving the carried-over column DESCRIPTIONS is in scope and expected —
+  ruled on 2026-09-11. Improving the carried-over SQL is not, for the two
+  reasons above.</li>
+<li><code>git add -u</code> for tracked files. A NEW file must be named explicitly on
+  <code>git add</code> — <code>-u</code> does not stage untracked paths.</li>
+<li>Commit messages end with:
+  <code>Co-Authored-By: Claude Opus 5 (1M context) &lt;noreply@anthropic.com&gt;</code></li>
+<li>If a <code>git commit -m</code> is hook-blocked, <code>rm -f .claude/scratch/commit-msg.txt</code>,
+  Write the message there, then <code>git commit -F .claude/scratch/commit-msg.txt</code>.</li>
+<li>PII tags carry over from the kipptaf model exactly as they are:
+  <code>contains_pii: true</code> on <code>student_number</code> and <code>teacher_name</code>, nothing else.
+  Widening to the full tier-3 set in <code>.claude/rules/ferpa-pii.md</code> (the score and
+  grade columns) is a separate decision and is out of scope for a move.</li>
+</ul>
+<h2 id="file-structure">File Structure</h2>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Responsibility</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>src/dbt/powerschool/models/sis/intermediate/int_powerschool__gradebook_assignments_scores.sql</code></td>
+<td>Create. The PowerSchool-internal join and all 39 derived columns.</td>
+</tr>
+<tr>
+<td><code>src/dbt/powerschool/models/sis/intermediate/properties/int_powerschool__gradebook_assignments_scores.yml</code></td>
+<td>Create. Column types, descriptions, and the composite uniqueness test.</td>
+</tr>
+<tr>
+<td><code>src/dbt/kipptaf/models/powerschool/intermediate/int_powerschool__gradebook_assignments_scores.sql</code></td>
+<td>Replace. 200 lines become a <code>union_relations</code> wrapper.</td>
+</tr>
+<tr>
+<td><code>src/dbt/kipptaf/models/powerschool/intermediate/properties/int_powerschool__gradebook_assignments_scores.yml</code></td>
+<td>Modify. Add <code>_dbt_source_project</code> and the columns it never declared.</td>
+</tr>
+<tr>
+<td><code>src/dbt/kipptaf/models/powerschool/sources-kippnewark.yml</code></td>
+<td>Modify. Add the table entry.</td>
+</tr>
+<tr>
+<td><code>src/dbt/kipptaf/models/powerschool/sources-kippcamden.yml</code></td>
+<td>Modify. Add the table entry.</td>
+</tr>
+<tr>
+<td><code>src/dbt/kipptaf/models/powerschool/sources-kipppaterson.yml</code></td>
+<td>Modify. Add the table entry.</td>
+</tr>
+<tr>
+<td><code>docs/models/gradebook-audit-data-model.md</code></td>
+<td>Audit only. Correct any claim about which project the model lives in.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="task-1-the-package-model">Task 1: The package model</h2>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create:
+  <code>src/dbt/powerschool/models/sis/intermediate/int_powerschool__gradebook_assignments_scores.sql</code></li>
+<li>Create:
+  <code>src/dbt/powerschool/models/sis/intermediate/properties/int_powerschool__gradebook_assignments_scores.yml</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: <code>int_powerschool__gradebook_assignments</code> (<code>assignmentsectionid</code>,
+  <code>sectionsdcid</code>, <code>assignmentid</code>, <code>name</code>, <code>duedate</code>, <code>scoretype</code>,
+  <code>totalpointvalue</code>, <code>category_name</code>, <code>category_code</code>, <code>iscountedinfinalgrade</code>),
+  <code>base_powerschool__course_enrollments</code> (<code>sections_dcid</code>, <code>cc_dateenrolled</code>,
+  <code>cc_dateleft</code>, <code>is_dropped_section</code>, <code>cc_academic_year</code>, <code>students_dcid</code>,
+  <code>students_student_number</code>, <code>courses_course_name</code>, <code>teacher_lastfirst</code>,
+  <code>cc_schoolid</code>, <code>sections_grade_level</code>, <code>school_level</code>),
+  <code>stg_powerschool__assignmentscore</code> (<code>assignmentsectionid</code>, <code>studentsdcid</code>,
+  <code>scorepoints</code>, <code>actualscoreentered</code>, <code>islate</code>, <code>isexempt</code>, <code>ismissing</code>).</li>
+<li>
+<p>Produces: a relation with 39 columns, grain one row per
+  <code>(assignmentsectionid, students_dcid)</code>. Tasks 2 and 3 depend on these exact
+  names. The full ordered list is in Step 2's yml.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the model SQL</strong></p>
+</li>
+</ul>
+<p>This is the current kipptaf SQL with five deletions and nothing else changed.
+Write
+<code>src/dbt/powerschool/models/sis/intermediate/int_powerschool__gradebook_assignments_scores.sql</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="k">with</span>
+<span class="w">    </span><span class="n">scores</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">a</span><span class="p">.</span><span class="n">assignmentsectionid</span><span class="p">,</span>
+<span class="w">            </span><span class="n">a</span><span class="p">.</span><span class="n">sectionsdcid</span><span class="p">,</span>
+<span class="w">            </span><span class="n">a</span><span class="p">.</span><span class="n">assignmentid</span><span class="p">,</span>
+<span class="w">            </span><span class="n">a</span><span class="p">.</span><span class="n">name</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">assignment_name</span><span class="p">,</span>
+<span class="w">            </span><span class="n">a</span><span class="p">.</span><span class="n">duedate</span><span class="p">,</span>
+<span class="w">            </span><span class="n">a</span><span class="p">.</span><span class="n">scoretype</span><span class="p">,</span>
+<span class="w">            </span><span class="n">a</span><span class="p">.</span><span class="n">totalpointvalue</span><span class="p">,</span>
+<span class="w">            </span><span class="n">a</span><span class="p">.</span><span class="n">category_name</span><span class="p">,</span>
+<span class="w">            </span><span class="n">a</span><span class="p">.</span><span class="n">category_code</span><span class="p">,</span>
+<span class="w">            </span><span class="n">a</span><span class="p">.</span><span class="n">iscountedinfinalgrade</span><span class="p">,</span>
+
+<span class="w">            </span><span class="n">s</span><span class="p">.</span><span class="n">scorepoints</span><span class="p">,</span>
+<span class="w">            </span><span class="n">s</span><span class="p">.</span><span class="n">actualscoreentered</span><span class="p">,</span>
+
+<span class="w">            </span><span class="n">e</span><span class="p">.</span><span class="n">cc_academic_year</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">academic_year</span><span class="p">,</span>
+<span class="w">            </span><span class="n">e</span><span class="p">.</span><span class="n">students_dcid</span><span class="p">,</span>
+<span class="w">            </span><span class="n">e</span><span class="p">.</span><span class="n">students_student_number</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">student_number</span><span class="p">,</span>
+<span class="w">            </span><span class="n">e</span><span class="p">.</span><span class="n">courses_course_name</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">course_name</span><span class="p">,</span>
+<span class="w">            </span><span class="n">e</span><span class="p">.</span><span class="n">teacher_lastfirst</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">teacher_name</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">coalesce</span><span class="p">(</span><span class="n">s</span><span class="p">.</span><span class="n">islate</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">is_late</span><span class="p">,</span>
+<span class="w">            </span><span class="k">coalesce</span><span class="p">(</span><span class="n">s</span><span class="p">.</span><span class="n">isexempt</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">is_exempt</span><span class="p">,</span>
+<span class="w">            </span><span class="k">coalesce</span><span class="p">(</span><span class="n">s</span><span class="p">.</span><span class="n">ismissing</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">is_missing</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">case</span>
+<span class="w">                </span><span class="k">when</span><span class="w"> </span><span class="k">coalesce</span><span class="p">(</span><span class="n">s</span><span class="p">.</span><span class="n">isexempt</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span>
+<span class="w">                </span><span class="k">then</span><span class="w"> </span><span class="k">false</span>
+<span class="w">                </span><span class="k">when</span><span class="w"> </span><span class="n">a</span><span class="p">.</span><span class="n">iscountedinfinalgrade</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span>
+<span class="w">                </span><span class="k">then</span><span class="w"> </span><span class="k">false</span>
+<span class="w">                </span><span class="k">else</span><span class="w"> </span><span class="k">true</span>
+<span class="w">            </span><span class="k">end</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">is_expected</span><span class="p">,</span>
+
+<span class="w">            </span><span class="cm">/* hardcoding year while we look for a better solution to custom grade</span>
+<span class="cm">               level vs school level */</span>
+<span class="w">            </span><span class="k">if</span><span class="p">(</span>
+<span class="w">                </span><span class="n">e</span><span class="p">.</span><span class="n">cc_academic_year</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mi">2025</span>
+<span class="w">                </span><span class="k">and</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">cc_schoolid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">179905</span>
+<span class="w">                </span><span class="k">and</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">sections_grade_level</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span>
+<span class="w">                </span><span class="s1">'MS'</span><span class="p">,</span>
+<span class="w">                </span><span class="n">e</span><span class="p">.</span><span class="n">school_level</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">school_level_alt</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">if</span><span class="p">(</span>
+<span class="w">                </span><span class="n">a</span><span class="p">.</span><span class="n">scoretype</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'POINTS'</span><span class="p">,</span>
+<span class="w">                </span><span class="n">s</span><span class="p">.</span><span class="n">scorepoints</span><span class="p">,</span>
+<span class="w">                </span><span class="n">safe_cast</span><span class="p">(</span><span class="n">s</span><span class="p">.</span><span class="n">actualscoreentered</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nb">numeric</span><span class="p">)</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">score_entered</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">if</span><span class="p">(</span><span class="n">a</span><span class="p">.</span><span class="n">scoretype</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'POINTS'</span><span class="p">,</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">scorepoints</span><span class="p">,</span><span class="w"> </span><span class="k">null</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">points_earned</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">if</span><span class="p">(</span>
+<span class="w">                </span><span class="n">a</span><span class="p">.</span><span class="n">scoretype</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span><span class="s1">'PERCENT'</span><span class="p">,</span><span class="w"> </span><span class="s1">'GRADESCALE'</span><span class="p">,</span><span class="w"> </span><span class="s1">'COLLECTED'</span><span class="p">),</span>
+<span class="w">                </span><span class="n">safe_cast</span><span class="p">(</span><span class="n">s</span><span class="p">.</span><span class="n">actualscoreentered</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">float64</span><span class="p">),</span>
+<span class="w">                </span><span class="k">null</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">numeric_grade_earned</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">if</span><span class="p">(</span>
+<span class="w">                </span><span class="n">a</span><span class="p">.</span><span class="n">scoretype</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'POINTS'</span><span class="p">,</span>
+<span class="w">                </span><span class="n">round</span><span class="p">(</span><span class="n">safe_divide</span><span class="p">(</span><span class="n">s</span><span class="p">.</span><span class="n">scorepoints</span><span class="p">,</span><span class="w"> </span><span class="n">a</span><span class="p">.</span><span class="n">totalpointvalue</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">100</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">),</span>
+<span class="w">                </span><span class="n">safe_cast</span><span class="p">(</span><span class="n">s</span><span class="p">.</span><span class="n">actualscoreentered</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nb">numeric</span><span class="p">)</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">assign_final_score_percent</span><span class="p">,</span>
+
+<span class="w">            </span><span class="p">(</span><span class="n">a</span><span class="p">.</span><span class="n">totalpointvalue</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">half_total_point_value</span><span class="p">,</span>
+
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"int_powerschool__gradebook_assignments"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">a</span>
+<span class="w">        </span><span class="cm">/* PS automatically assigns ALL assignments to a student when they enroll into</span>
+<span class="cm">        a section, including those from before their enrollment date. This join ensures</span>
+<span class="cm">        assignments are only matched to valid student enrollments */</span>
+<span class="w">        </span><span class="k">inner</span><span class="w"> </span><span class="k">join</span>
+<span class="w">            </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"base_powerschool__course_enrollments"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">e</span>
+<span class="w">            </span><span class="k">on</span><span class="w"> </span><span class="n">a</span><span class="p">.</span><span class="n">sectionsdcid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">sections_dcid</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">a</span><span class="p">.</span><span class="n">duedate</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">cc_dateenrolled</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">a</span><span class="p">.</span><span class="n">duedate</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">cc_dateleft</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">is_dropped_section</span>
+<span class="w">        </span><span class="k">left</span><span class="w"> </span><span class="k">join</span>
+<span class="w">            </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"stg_powerschool__assignmentscore"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">s</span>
+<span class="w">            </span><span class="k">on</span><span class="w"> </span><span class="n">a</span><span class="p">.</span><span class="n">assignmentsectionid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">assignmentsectionid</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">students_dcid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">studentsdcid</span>
+<span class="w">    </span><span class="p">),</span>
+
+<span class="w">    </span><span class="n">assignment_coding</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">assignmentsectionid</span><span class="p">,</span>
+<span class="w">            </span><span class="n">sectionsdcid</span><span class="p">,</span>
+<span class="w">            </span><span class="n">assignmentid</span><span class="p">,</span>
+<span class="w">            </span><span class="n">assignment_name</span><span class="p">,</span>
+<span class="w">            </span><span class="n">duedate</span><span class="p">,</span>
+<span class="w">            </span><span class="n">scoretype</span><span class="p">,</span>
+<span class="w">            </span><span class="n">totalpointvalue</span><span class="p">,</span>
+<span class="w">            </span><span class="n">category_name</span><span class="p">,</span>
+<span class="w">            </span><span class="n">category_code</span><span class="p">,</span>
+<span class="w">            </span><span class="n">iscountedinfinalgrade</span><span class="p">,</span>
+<span class="w">            </span><span class="n">scorepoints</span><span class="p">,</span>
+<span class="w">            </span><span class="n">actualscoreentered</span><span class="p">,</span>
+<span class="w">            </span><span class="n">academic_year</span><span class="p">,</span>
+<span class="w">            </span><span class="n">students_dcid</span><span class="p">,</span>
+<span class="w">            </span><span class="n">student_number</span><span class="p">,</span>
+<span class="w">            </span><span class="n">course_name</span><span class="p">,</span>
+<span class="w">            </span><span class="n">teacher_name</span><span class="p">,</span>
+<span class="w">            </span><span class="n">is_late</span><span class="p">,</span>
+<span class="w">            </span><span class="n">is_exempt</span><span class="p">,</span>
+<span class="w">            </span><span class="n">is_missing</span><span class="p">,</span>
+<span class="w">            </span><span class="n">is_expected</span><span class="p">,</span>
+<span class="w">            </span><span class="n">school_level_alt</span><span class="p">,</span>
+<span class="w">            </span><span class="n">score_entered</span><span class="p">,</span>
+<span class="w">            </span><span class="n">points_earned</span><span class="p">,</span>
+<span class="w">            </span><span class="n">numeric_grade_earned</span><span class="p">,</span>
+<span class="w">            </span><span class="n">assign_final_score_percent</span><span class="p">,</span>
+<span class="w">            </span><span class="n">half_total_point_value</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">if</span><span class="p">(</span><span class="n">is_expected</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">score_entered</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">is_expected_zero</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">if</span><span class="p">(</span>
+<span class="w">                </span><span class="n">is_expected</span>
+<span class="w">                </span><span class="k">and</span><span class="w"> </span><span class="n">score_entered</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span>
+<span class="w">                </span><span class="k">and</span><span class="w"> </span><span class="n">school_level_alt</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'HS'</span>
+<span class="w">                </span><span class="k">and</span><span class="w"> </span><span class="n">is_missing</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<span class="w">                </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">                </span><span class="mi">0</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">is_expected_academic_dishonesty</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">if</span><span class="p">(</span><span class="n">is_expected</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">score_entered</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">is_expected_null</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">if</span><span class="p">(</span><span class="n">is_expected</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">is_late</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">is_expected_late</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">if</span><span class="p">(</span><span class="n">is_expected</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">is_missing</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">is_expected_missing</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">if</span><span class="p">(</span>
+<span class="w">                </span><span class="n">is_expected</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">score_entered</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"> </span><span class="k">true</span><span class="p">,</span><span class="w"> </span><span class="k">false</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">is_expected_scored</span><span class="p">,</span>
+
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="n">scores</span>
+<span class="w">    </span><span class="p">)</span>
+
+<span class="k">select</span>
+<span class="w">    </span><span class="o">*</span><span class="p">,</span>
+
+<span class="w">    </span><span class="k">if</span><span class="p">(</span>
+<span class="w">        </span><span class="n">is_expected</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">score_entered</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">totalpointvalue</span><span class="p">,</span><span class="w"> </span><span class="k">true</span><span class="p">,</span><span class="w"> </span><span class="k">false</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">assign_score_above_max</span><span class="p">,</span>
+
+<span class="w">    </span><span class="k">if</span><span class="p">(</span>
+<span class="w">        </span><span class="n">category_code</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span><span class="s1">'H'</span><span class="p">,</span><span class="w"> </span><span class="s1">'W'</span><span class="p">,</span><span class="w"> </span><span class="s1">'F'</span><span class="p">)</span>
+<span class="w">        </span><span class="k">and</span><span class="w"> </span><span class="n">is_expected</span>
+<span class="w">        </span><span class="k">and</span><span class="w"> </span><span class="n">is_missing</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span>
+<span class="w">        </span><span class="k">and</span><span class="w"> </span><span class="n">score_entered</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span>
+<span class="w">        </span><span class="k">true</span><span class="p">,</span>
+<span class="w">        </span><span class="k">false</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">assign_mh_hwf_score_less_5</span><span class="p">,</span>
+
+<span class="w">    </span><span class="k">if</span><span class="p">(</span>
+<span class="w">        </span><span class="n">category_code</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span><span class="s1">'H'</span><span class="p">,</span><span class="w"> </span><span class="s1">'W'</span><span class="p">,</span><span class="w"> </span><span class="s1">'F'</span><span class="p">)</span>
+<span class="w">        </span><span class="k">and</span><span class="w"> </span><span class="n">school_level_alt</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'MS'</span>
+<span class="w">        </span><span class="k">and</span><span class="w"> </span><span class="n">is_expected_missing</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span>
+<span class="w">        </span><span class="k">and</span><span class="w"> </span><span class="n">score_entered</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span>
+<span class="w">        </span><span class="k">true</span><span class="p">,</span>
+<span class="w">        </span><span class="k">false</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">assign_ms_hwf_missing_score_not_5</span><span class="p">,</span>
+
+<span class="w">    </span><span class="k">if</span><span class="p">(</span>
+<span class="w">        </span><span class="n">category_code</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span><span class="s1">'H'</span><span class="p">,</span><span class="w"> </span><span class="s1">'W'</span><span class="p">,</span><span class="w"> </span><span class="s1">'F'</span><span class="p">,</span><span class="w"> </span><span class="s1">'S'</span><span class="p">)</span>
+<span class="w">        </span><span class="k">and</span><span class="w"> </span><span class="n">school_level_alt</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'HS'</span>
+<span class="w">        </span><span class="k">and</span><span class="w"> </span><span class="n">is_expected_missing</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span>
+<span class="w">        </span><span class="k">and</span><span class="w"> </span><span class="n">score_entered</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<span class="w">        </span><span class="k">true</span><span class="p">,</span>
+<span class="w">        </span><span class="k">false</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">assign_hs_hwfs_missing_score_not_0</span><span class="p">,</span>
+
+<span class="w">    </span><span class="k">if</span><span class="p">(</span>
+<span class="w">        </span><span class="n">category_code</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'S'</span>
+<span class="w">        </span><span class="k">and</span><span class="w"> </span><span class="n">school_level_alt</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'MS'</span>
+<span class="w">        </span><span class="k">and</span><span class="w"> </span><span class="n">is_expected</span>
+<span class="w">        </span><span class="k">and</span><span class="w"> </span><span class="n">score_entered</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">half_total_point_value</span><span class="p">,</span>
+<span class="w">        </span><span class="k">true</span><span class="p">,</span>
+<span class="w">        </span><span class="k">false</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">assign_ms_s_score_less_50p</span><span class="p">,</span>
+
+<span class="w">    </span><span class="k">if</span><span class="p">(</span>
+<span class="w">        </span><span class="n">category_code</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'S'</span>
+<span class="w">        </span><span class="k">and</span><span class="w"> </span><span class="n">school_level_alt</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'HS'</span>
+<span class="w">        </span><span class="k">and</span><span class="w"> </span><span class="n">is_expected</span>
+<span class="w">        </span><span class="k">and</span><span class="w"> </span><span class="n">is_missing</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span>
+<span class="w">        </span><span class="k">and</span><span class="w"> </span><span class="n">score_entered</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">half_total_point_value</span><span class="p">,</span>
+<span class="w">        </span><span class="k">true</span><span class="p">,</span>
+<span class="w">        </span><span class="k">false</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">assign_hs_s_score_less_50p</span><span class="p">,</span>
+
+<span class="k">from</span><span class="w"> </span><span class="n">assignment_coding</span>
+</code></pre></div>
+<p>Diff this against the kipptaf original before moving on. Exactly five things are
+gone and nothing else: <code>a._dbt_source_project</code> from the <code>scores</code> select list,
+<code>_dbt_source_project</code> from the <code>assignment_coding</code> select list,
+<code>and a._dbt_source_project = e._dbt_source_project</code>,
+<code>and a._dbt_source_project = s._dbt_source_project</code>, and the two <code>region</code> /
+<code>credit_type</code> pairs (<code>{{ extract_region("a") }} as region</code> plus
+<code>e.courses_credittype as credit_type</code> in <code>scores</code>, and the bare <code>region</code> and
+<code>credit_type</code> entries in <code>assignment_coding</code>). The two inline comments stay
+verbatim — they explain the enrollment join and the <code>school_level_alt</code> hardcode,
+which a reader of those lines cannot otherwise see.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Write the properties yml</strong></li>
+</ul>
+<p>Write
+<code>src/dbt/powerschool/models/sis/intermediate/properties/int_powerschool__gradebook_assignments_scores.yml</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">models</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int_powerschool__gradebook_assignments_scores</span>
+<span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">      </span><span class="no">One row per PowerSchool gradebook assignment per student expected to have</span>
+<span class="w">      </span><span class="no">a score for it, with the score itself where one was entered and a set of</span>
+<span class="w">      </span><span class="no">derived flags describing whether the score is present, late, missing,</span>
+<span class="w">      </span><span class="no">exempt, or out of range for its gradebook category.</span>
+
+
+<span class="w">      </span><span class="no">Assignments are matched to students through the course enrollment active</span>
+<span class="w">      </span><span class="no">when the assignment was due, on a half-open date range. PowerSchool</span>
+<span class="w">      </span><span class="no">assigns every assignment in a section to a student on enrollment,</span>
+<span class="w">      </span><span class="no">including assignments due before they arrived, so the range join is what</span>
+<span class="w">      </span><span class="no">scopes each assignment to a real enrollment. Dropped sections are</span>
+<span class="w">      </span><span class="no">excluded. The score join is a left join, so a row exists for an expected</span>
+<span class="w">      </span><span class="no">assignment with no score entered, and the score columns are null there.</span>
+<span class="w">    </span><span class="nt">data_tests</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">dbt_utils.unique_combination_of_columns</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">arguments</span><span class="p">:</span>
+<span class="w">            </span><span class="nt">combination_of_columns</span><span class="p">:</span>
+<span class="w">              </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">assignmentsectionid</span>
+<span class="w">              </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">students_dcid</span>
+<span class="w">    </span><span class="nt">columns</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">assignmentsectionid</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int64</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">          </span><span class="l l-Scalar l-Scalar-Plain">Primary key. Unique sequential number generated by the application.</span>
+<span class="w">          </span><span class="l l-Scalar l-Scalar-Plain">Required. Indexed.</span>
+<span class="w">        </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">meta</span><span class="p">:</span>
+<span class="w">            </span><span class="nt">source_system</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PowerSchool</span>
+<span class="w">            </span><span class="nt">source_model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">stg_powerschool__assignmentsection</span>
+<span class="w">            </span><span class="nt">source_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">assignmentsectionid</span>
+<span class="w">            </span><span class="nt">column_role</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">primary_key</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sectionsdcid</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int64</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">          </span><span class="l l-Scalar l-Scalar-Plain">Foreign key. Internal number for the associated sections.DCID record.</span>
+<span class="w">          </span><span class="l l-Scalar l-Scalar-Plain">Required. Indexed.</span>
+<span class="w">        </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">meta</span><span class="p">:</span>
+<span class="w">            </span><span class="nt">source_system</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PowerSchool</span>
+<span class="w">            </span><span class="nt">source_model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">stg_powerschool__assignmentsection</span>
+<span class="w">            </span><span class="nt">source_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sectionsdcid</span>
+<span class="w">            </span><span class="nt">column_role</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">foreign_key</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">assignmentid</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int64</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">          </span><span class="l l-Scalar l-Scalar-Plain">Foreign key. Internal number for the associated Assignment.ID record.</span>
+<span class="w">          </span><span class="l l-Scalar l-Scalar-Plain">Required. Indexed.</span>
+<span class="w">        </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">meta</span><span class="p">:</span>
+<span class="w">            </span><span class="nt">source_system</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PowerSchool</span>
+<span class="w">            </span><span class="nt">source_model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">stg_powerschool__assignmentsection</span>
+<span class="w">            </span><span class="nt">source_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">assignmentid</span>
+<span class="w">            </span><span class="nt">column_role</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">foreign_key</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">assignment_name</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Name the teacher gave the assignment in the gradebook.</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">duedate</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">date</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">          </span><span class="l l-Scalar l-Scalar-Plain">The date the assignment is due. Defaults to Default is the system date</span>
+<span class="w">          </span><span class="l l-Scalar l-Scalar-Plain">+ 1 day. Indexed.</span>
+<span class="w">        </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">meta</span><span class="p">:</span>
+<span class="w">            </span><span class="nt">source_system</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PowerSchool</span>
+<span class="w">            </span><span class="nt">source_model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">stg_powerschool__assignmentsection</span>
+<span class="w">            </span><span class="nt">source_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">duedate</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">scoretype</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Indicates if this score is a letter grade or percent.</span>
+<span class="w">        </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">meta</span><span class="p">:</span>
+<span class="w">            </span><span class="nt">source_system</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PowerSchool</span>
+<span class="w">            </span><span class="nt">source_model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">stg_powerschool__assignmentsection</span>
+<span class="w">            </span><span class="nt">source_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">scoretype</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">totalpointvalue</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">float64</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">          </span><span class="l l-Scalar l-Scalar-Plain">This is the total weighted points that the assignment is worth. If the</span>
+<span class="w">          </span><span class="l l-Scalar l-Scalar-Plain">entry points are 25, and theweight is 4, then the total point value is</span>
+<span class="w">          </span><span class="l l-Scalar l-Scalar-Plain">100.</span>
+<span class="w">        </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">meta</span><span class="p">:</span>
+<span class="w">            </span><span class="nt">source_system</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PowerSchool</span>
+<span class="w">            </span><span class="nt">source_model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">stg_powerschool__assignmentsection</span>
+<span class="w">            </span><span class="nt">source_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">totalpointvalue</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">category_name</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">          </span><span class="no">Name of the gradebook category the assignment belongs to, resolved</span>
+<span class="w">          </span><span class="no">from the district category where one exists and the teacher category</span>
+<span class="w">          </span><span class="no">otherwise.</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">category_code</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">          </span><span class="no">First letter of the category name, upper-cased. The flag logic reads</span>
+<span class="w">          </span><span class="no">it rather than the full name, with H, W, F and S carrying the</span>
+<span class="w">          </span><span class="no">category-specific score rules.</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">iscountedinfinalgrade</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int64</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">          </span><span class="s">"Indicates</span><span class="nv"> </span><span class="s">if</span><span class="nv"> </span><span class="s">the</span><span class="nv"> </span><span class="s">assignment</span><span class="nv"> </span><span class="s">will</span><span class="nv"> </span><span class="s">count</span><span class="nv"> </span><span class="s">toward</span><span class="nv"> </span><span class="s">the</span><span class="nv"> </span><span class="s">final</span><span class="nv"> </span><span class="s">grade.</span><span class="nv"> </span><span class="s">Valid</span>
+<span class="w">          </span><span class="s">values:</span><span class="nv"> </span><span class="s">0=Does</span><span class="nv"> </span><span class="s">not</span><span class="nv"> </span><span class="s">count</span><span class="nv"> </span><span class="s">towardfinal</span><span class="nv"> </span><span class="s">grade,</span><span class="nv"> </span><span class="s">1=Counts</span><span class="nv"> </span><span class="s">toward</span><span class="nv"> </span><span class="s">final</span>
+<span class="w">          </span><span class="s">grade.</span><span class="nv"> </span><span class="s">Defaults</span><span class="nv"> </span><span class="s">to</span><span class="nv"> </span><span class="s">1.</span><span class="nv"> </span><span class="s">Required."</span>
+<span class="w">        </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">meta</span><span class="p">:</span>
+<span class="w">            </span><span class="nt">source_system</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PowerSchool</span>
+<span class="w">            </span><span class="nt">source_model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">stg_powerschool__assignmentsection</span>
+<span class="w">            </span><span class="nt">source_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">iscountedinfinalgrade</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">scorepoints</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">float64</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Indicates the number of points for a score.</span>
+<span class="w">        </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">meta</span><span class="p">:</span>
+<span class="w">            </span><span class="nt">source_system</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PowerSchool</span>
+<span class="w">            </span><span class="nt">source_model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">stg_powerschool__assignmentscore</span>
+<span class="w">            </span><span class="nt">source_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">scorepoints</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">actualscoreentered</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">          </span><span class="l l-Scalar l-Scalar-Plain">Identifies the score entered for this assignment. This field may be</span>
+<span class="w">          </span><span class="l l-Scalar l-Scalar-Plain">Null.</span>
+<span class="w">        </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">meta</span><span class="p">:</span>
+<span class="w">            </span><span class="nt">source_system</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PowerSchool</span>
+<span class="w">            </span><span class="nt">source_model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">stg_powerschool__assignmentscore</span>
+<span class="w">            </span><span class="nt">source_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">actualscoreentered</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">academic_year</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int64</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">          </span><span class="no">Academic year of the course enrollment the assignment was matched to,</span>
+<span class="w">          </span><span class="no">expressed as the starting calendar year.</span>
+<span class="w">        </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">meta</span><span class="p">:</span>
+<span class="w">            </span><span class="nt">source_system</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PowerSchool</span>
+<span class="w">            </span><span class="nt">source_model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">base_powerschool__course_enrollments</span>
+<span class="w">            </span><span class="nt">source_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">cc_academic_year</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">students_dcid</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int64</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">          </span><span class="no">Durable internal key of the student the row belongs to, and the second</span>
+<span class="w">          </span><span class="no">half of this model's grain.</span>
+<span class="w">        </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">meta</span><span class="p">:</span>
+<span class="w">            </span><span class="nt">source_system</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PowerSchool</span>
+<span class="w">            </span><span class="nt">source_model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">base_powerschool__course_enrollments</span>
+<span class="w">            </span><span class="nt">source_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">students_dcid</span>
+<span class="w">            </span><span class="nt">column_role</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">foreign_key</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">student_number</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int64</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">          </span><span class="l l-Scalar l-Scalar-Plain">Student number of the student the assignment row belongs to. Carried</span>
+<span class="w">          </span><span class="l l-Scalar l-Scalar-Plain">through from the course-enrollment join so consumers do not re-derive</span>
+<span class="w">          </span><span class="l l-Scalar l-Scalar-Plain">it.</span>
+<span class="w">        </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">meta</span><span class="p">:</span>
+<span class="w">            </span><span class="nt">source_system</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PowerSchool</span>
+<span class="w">            </span><span class="nt">source_model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">base_powerschool__course_enrollments</span>
+<span class="w">            </span><span class="nt">source_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">students_student_number</span>
+<span class="w">            </span><span class="nt">contains_pii</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">course_name</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Name of the course the assignment's section belongs to.</span>
+<span class="w">        </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">meta</span><span class="p">:</span>
+<span class="w">            </span><span class="nt">source_system</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PowerSchool</span>
+<span class="w">            </span><span class="nt">source_model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">base_powerschool__course_enrollments</span>
+<span class="w">            </span><span class="nt">source_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">courses_course_name</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">teacher_name</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Teacher of record for the assignment's section, last-first.</span>
+<span class="w">        </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">meta</span><span class="p">:</span>
+<span class="w">            </span><span class="nt">source_system</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PowerSchool</span>
+<span class="w">            </span><span class="nt">source_model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">base_powerschool__course_enrollments</span>
+<span class="w">            </span><span class="nt">source_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">teacher_lastfirst</span>
+<span class="w">            </span><span class="nt">contains_pii</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">is_late</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int64</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">          </span><span class="no">The gradebook's late marker, zero-filled where no score row exists.</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">is_exempt</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int64</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">          </span><span class="no">The gradebook's exempt marker, zero-filled where no score row exists.</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">is_missing</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int64</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">          </span><span class="no">The gradebook's missing marker, zero-filled where no score row exists.</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">is_expected</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">boolean</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;</span>
+<span class="w">          </span><span class="no">True when the student is expected to have a score for this assignment:</span>
+<span class="w">          </span><span class="no">not exempt and counted in final grade. False otherwise.</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">school_level_alt</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">          </span><span class="no">School level of the enrollment, overridden to MS for grade 5 and above</span>
+<span class="w">          </span><span class="no">at one Camden school from academic year 2025 forward, where the custom</span>
+<span class="w">          </span><span class="no">grade level and the school level disagree. Every other row carries the</span>
+<span class="w">          </span><span class="no">school level unchanged.</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">score_entered</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">float64</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">          </span><span class="no">The score as a number, whatever the score type. Points-scored for</span>
+<span class="w">          </span><span class="no">POINTS assignments and the entered value cast to numeric otherwise.</span>
+<span class="w">          </span><span class="no">Null when no score was entered.</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">points_earned</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">float64</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">          </span><span class="no">Raw points scored, populated only when source `scoretype = POINTS`</span>
+<span class="w">          </span><span class="no">(NULL for PERCENT/GRADESCALE/COLLECTED). Ed-Fi studentGradebookEntry</span>
+<span class="w">          </span><span class="no">`points_earned`.</span>
+<span class="w">        </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">meta</span><span class="p">:</span>
+<span class="w">            </span><span class="nt">source_system</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PowerSchool</span>
+<span class="w">            </span><span class="nt">source_model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">stg_powerschool__assignmentscore</span>
+<span class="w">            </span><span class="nt">source_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">scorepoints</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">numeric_grade_earned</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">float64</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">          </span><span class="no">Numeric grade scored (0-100 percent or letter-grade equivalent),</span>
+<span class="w">          </span><span class="no">populated only when source `scoretype` is `PERCENT`, `GRADESCALE`, or</span>
+<span class="w">          </span><span class="no">`COLLECTED` (NULL for POINTS). Ed-Fi studentGradebookEntry</span>
+<span class="w">          </span><span class="no">`numeric_grade_earned`.</span>
+<span class="w">        </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">meta</span><span class="p">:</span>
+<span class="w">            </span><span class="nt">source_system</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PowerSchool</span>
+<span class="w">            </span><span class="nt">source_model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">stg_powerschool__assignmentscore</span>
+<span class="w">            </span><span class="nt">source_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">actualscoreentered</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">assign_final_score_percent</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">float64</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">          </span><span class="no">The score as a percentage of the total point value for POINTS</span>
+<span class="w">          </span><span class="no">assignments, rounded to two places, and the entered value cast to</span>
+<span class="w">          </span><span class="no">numeric for every other score type.</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">half_total_point_value</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">float64</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">          </span><span class="no">Half the assignment's total point value, the threshold the two</span>
+<span class="w">          </span><span class="no">fifty-percent category flags compare against.</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">is_expected_zero</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int64</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">          </span><span class="no">One where the student was expected to have a score and the score</span>
+<span class="w">          </span><span class="no">entered is exactly zero, zero otherwise. A null score does not count —</span>
+<span class="w">          </span><span class="no">is_expected_null covers that case.</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">is_expected_academic_dishonesty</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int64</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">          </span><span class="no">One where an expected high-school assignment scored zero without being</span>
+<span class="w">          </span><span class="no">marked missing, zero otherwise. A zero that is not a missing-work zero</span>
+<span class="w">          </span><span class="no">is the signal the gradebook audit reads as a possible integrity</span>
+<span class="w">          </span><span class="no">penalty.</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">is_expected_null</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int64</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">          </span><span class="no">One where the student was expected to have a score and no score was</span>
+<span class="w">          </span><span class="no">entered, zero otherwise. This is the ungraded-work counter the percent</span>
+<span class="w">          </span><span class="no">graded calculation is built from.</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">is_expected_late</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int64</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">          </span><span class="no">One where the student was expected to have a score and the gradebook</span>
+<span class="w">          </span><span class="no">marks the work late, zero otherwise.</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">is_expected_missing</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int64</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">          </span><span class="no">One where the student was expected to have a score and the gradebook</span>
+<span class="w">          </span><span class="no">marks the work missing, zero otherwise. The three category</span>
+<span class="w">          </span><span class="no">missing-score flags below all gate on it.</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">is_expected_scored</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">boolean</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">          </span><span class="no">True where the student was expected to have a score and one was</span>
+<span class="w">          </span><span class="no">entered, whatever its value. The complement of is_expected_null within</span>
+<span class="w">          </span><span class="no">the expected population.</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">assign_score_above_max</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">boolean</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">          </span><span class="no">True where an expected score exceeds the assignment's total point</span>
+<span class="w">          </span><span class="no">value. False rather than null when no score was entered.</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">assign_mh_hwf_score_less_5</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">boolean</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">          </span><span class="no">H, W, or F category assignment where is_expected_missing = 0 and</span>
+<span class="w">          </span><span class="no">score_entered &lt; 5. Consolidates the three per-category flags</span>
+<span class="w">          </span><span class="no">assign_w_score_less_5, assign_h_score_less_5, and</span>
+<span class="w">          </span><span class="no">assign_f_score_less_5.</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">assign_ms_hwf_missing_score_not_5</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">boolean</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">          </span><span class="no">H, W, or F category MS assignment marked missing where score_entered</span>
+<span class="w">          </span><span class="no">!= 5. Consolidates assign_w_missing_score_not_5,</span>
+<span class="w">          </span><span class="no">assign_h_missing_score_not_5, and assign_f_missing_score_not_5.</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">assign_hs_hwfs_missing_score_not_0</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">boolean</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">          </span><span class="no">H, W, F, or S category HS assignment marked missing where</span>
+<span class="w">          </span><span class="no">score_entered != 0. Consolidates assign_w_missing_score_not_0,</span>
+<span class="w">          </span><span class="no">assign_h_missing_score_not_0, assign_f_missing_score_not_0, and</span>
+<span class="w">          </span><span class="no">assign_s_missing_score_not_0.</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">assign_ms_s_score_less_50p</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">boolean</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">          </span><span class="no">S category MS assignment where score_entered &lt; half_total_point_value.</span>
+<span class="w">          </span><span class="no">Renamed from assign_s_score_less_50p, now explicitly MS-scoped.</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">assign_hs_s_score_less_50p</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">boolean</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">          </span><span class="no">S category HS assignment, not missing, where score_entered &lt;</span>
+<span class="w">          </span><span class="no">half_total_point_value. Renamed from assign_s_hs_score_less_50p.</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Confirm no district disables any input</strong></li>
+</ul>
+<p>The new model needs all three inputs enabled in every NJ district. Run:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-gradebook-scores<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="se">\</span>
+grep<span class="w"> </span>-nE<span class="w"> </span><span class="s1">'gradebook_assignments|assignmentscore|assignmentsection|assignmentcategoryassoc|teachercategory|districtteachercategory|course_enrollments'</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kippnewark/dbt_project.yml<span class="w"> </span>src/dbt/kippcamden/dbt_project.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipppaterson/dbt_project.yml<span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">"NONE DISABLED — correct"</span>
+</code></pre></div>
+<p>Expected: <code>NONE DISABLED — correct</code>. Any hit means that input is disabled in
+that district and the model cannot build there — stop and report it.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Verify it parses</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>parse<span class="w"> </span>--no-partial-parse<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-gradebook-scores/src/dbt/kippnewark
+</code></pre></div>
+<p>Expected: <code>Performance info</code> and no error. A <code>Compilation Error</code> naming
+<code>int_powerschool__gradebook_assignments_scores</code> means a <code>ref()</code> typo.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Verify it compiles, and that the refs resolved to the package</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>compile<span class="w"> </span>--select<span class="w"> </span>int_powerschool__gradebook_assignments_scores<span class="w"> </span>--target<span class="w"> </span>dev<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-gradebook-scores/src/dbt/kippnewark
+</code></pre></div>
+<p>Expected: <code>Compiled node 'int_powerschool__gradebook_assignments_scores'</code>. Read
+the compiled SQL and confirm all three relations resolved inside a
+<code>kippnewark_powerschool</code>-shaped dataset, and that no <code>_dbt_source_project</code>
+reference and no <code>region</code> or <code>credit_type</code> column survive:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-gradebook-scores<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="se">\</span>
+grep<span class="w"> </span>-cE<span class="w"> </span><span class="s1">'_dbt_source_project|extract_region| as region,| as credit_type,'</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kippnewark/target/compiled/powerschool/models/sis/intermediate/int_powerschool__gradebook_assignments_scores.sql
+</code></pre></div>
+<p>Expected: <code>0</code>. A non-zero count means a deletion was missed.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Lint</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-gradebook-scores<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="se">\</span>
+/workspaces/teamster/.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span>--no-fix<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/powerschool/models/sis/intermediate/int_powerschool__gradebook_assignments_scores.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/powerschool/models/sis/intermediate/properties/int_powerschool__gradebook_assignments_scores.yml<span class="w"> </span>&lt;/dev/null
+</code></pre></div>
+<p>Expected: <code>No issues</code>. An ST06 failure means Step 1's column order was changed —
+restore it rather than reordering to satisfy the linter.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-gradebook-scores<span class="w"> </span>add<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/powerschool/models/sis/intermediate/int_powerschool__gradebook_assignments_scores.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/powerschool/models/sis/intermediate/properties/int_powerschool__gradebook_assignments_scores.yml
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-gradebook-scores<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"feat(powerschool): add int_powerschool__gradebook_assignments_scores</span>
+
+<span class="s2">Carries the gradebook assignment to course enrollment to assignment score</span>
+<span class="s2">join that kipptaf rebuilt, plus all 39 derived columns. The region and</span>
+<span class="s2">credit_type columns are dropped; neither had an enabled reader.</span>
+
+<span class="s2">Refs #5260</span>
+
+<span class="s2">Co-Authored-By: Claude Opus 5 (1M context) &lt;noreply@anthropic.com&gt;"</span>
+</code></pre></div>
+<hr />
+<h2 id="task-2-the-kipptaf-wrapper-and-its-nj-sources">Task 2: The kipptaf wrapper and its NJ sources</h2>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Replace:
+  <code>src/dbt/kipptaf/models/powerschool/intermediate/int_powerschool__gradebook_assignments_scores.sql</code></li>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/powerschool/intermediate/properties/int_powerschool__gradebook_assignments_scores.yml</code></li>
+<li>Modify: <code>src/dbt/kipptaf/models/powerschool/sources-kippnewark.yml</code></li>
+<li>Modify: <code>src/dbt/kipptaf/models/powerschool/sources-kippcamden.yml</code></li>
+<li>Modify: <code>src/dbt/kipptaf/models/powerschool/sources-kipppaterson.yml</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: Task 1's package model, materialized per district.</li>
+<li>
+<p>Produces: <code>int_powerschool__gradebook_assignments_scores</code> in kipptaf, carrying
+  all 39 Task 1 columns plus <code>_dbt_source_project STRING</code>. The three enabled
+  consumers already read exactly these names and are not edited.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Replace the kipptaf model with the wrapper</strong></p>
+</li>
+</ul>
+<p>Overwrite
+<code>src/dbt/kipptaf/models/powerschool/intermediate/int_powerschool__gradebook_assignments_scores.sql</code>
+entirely with:</p>
+<div class="highlight"><pre><span></span><code><span class="k">with</span>
+<span class="w">    </span><span class="n">union_relations</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="err">{{</span>
+<span class="w">            </span><span class="n">dbt_utils</span><span class="p">.</span><span class="n">union_relations</span><span class="p">(</span>
+<span class="w">                </span><span class="n">relations</span><span class="o">=</span><span class="p">[</span>
+<span class="w">                    </span><span class="k">source</span><span class="p">(</span><span class="ss">"kippnewark_powerschool"</span><span class="p">,</span><span class="w"> </span><span class="n">model</span><span class="p">.</span><span class="n">name</span><span class="p">),</span>
+<span class="w">                    </span><span class="k">source</span><span class="p">(</span><span class="ss">"kippcamden_powerschool"</span><span class="p">,</span><span class="w"> </span><span class="n">model</span><span class="p">.</span><span class="n">name</span><span class="p">),</span>
+<span class="w">                    </span><span class="k">source</span><span class="p">(</span><span class="ss">"kipppaterson_powerschool"</span><span class="p">,</span><span class="w"> </span><span class="n">model</span><span class="p">.</span><span class="n">name</span><span class="p">),</span>
+<span class="w">                </span><span class="p">]</span>
+<span class="w">            </span><span class="p">)</span>
+<span class="w">        </span><span class="err">}}</span>
+<span class="w">    </span><span class="p">)</span>
+
+<span class="k">select</span><span class="w"> </span><span class="n">ur</span><span class="p">.</span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="n">extract_source_project</span><span class="p">(</span><span class="ss">"ur"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">_dbt_source_project</span><span class="p">,</span>
+
+<span class="k">from</span><span class="w"> </span><span class="n">union_relations</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">ur</span>
+</code></pre></div>
+<p>Two siblings in this directory supply the shape.
+<code>int_powerschool__gradebook_assignments.sql</code> is where the aliased <code>ur</code> form of
+the <code>select</code> and the macro call comes from;
+<code>int_powerschool__section_teachers.sql</code> is where the shorter <code>model.name</code>
+relation form comes from. Both forms are in the repo and both are correct — the
+wrapper above uses one of each. Miami is deliberately absent and stays absent:
+<code>kippmiami</code> does not consume the <code>powerschool</code> package and this model is NJ-only
+by design.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Update the wrapper's properties yml</strong></li>
+</ul>
+<p>The existing yml declares 39 of the model's columns but is missing
+<code>academic_year</code> and <code>_dbt_source_project</code>, and declares no <code>region</code> or
+<code>credit_type</code> (which is why dropping them needs no yml edit). Make three changes
+and leave everything else alone:</p>
+<ol>
+<li>Keep the model-level <code>data_tests:</code> block exactly as it is — the composite
+   <code>dbt_utils.unique_combination_of_columns</code> on <code>_dbt_source_project</code>,
+   <code>assignmentsectionid</code>, <code>students_dcid</code> is still correct for the union.</li>
+<li>Replace the model <code>description:</code> with one that says what the wrapper is:</li>
+</ol>
+<div class="highlight"><pre><span></span><code><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">  </span><span class="no">Union of the per-region PowerSchool gradebook assignment-score models. One</span>
+<span class="w">  </span><span class="no">row per assignment per student expected to have a score for it, with the</span>
+<span class="w">  </span><span class="no">score where one was entered and the derived presence, timeliness and</span>
+<span class="w">  </span><span class="no">category flags.</span>
+
+
+<span class="w">  </span><span class="no">NJ-only by design: this unions the district PowerSchool packages, and</span>
+<span class="w">  </span><span class="no">Miami's gradebook is in Focus, not PowerSchool. No PowerSchool gradebook</span>
+<span class="w">  </span><span class="no">history for Miami is kept. The Focus gradebook branch is #5010. Ratified on</span>
+<span class="w">  </span><span class="no">#4996.</span>
+</code></pre></div>
+<ol>
+<li>Add an <code>academic_year</code> entry and a <code>_dbt_source_project</code> entry. Put
+   <code>academic_year</code> directly after <code>actualscoreentered</code>, matching the package
+   model's order, and <code>_dbt_source_project</code> last:</li>
+</ol>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">academic_year</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int64</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">    </span><span class="no">Academic year of the course enrollment the assignment was matched to,</span>
+<span class="w">    </span><span class="no">expressed as the starting calendar year.</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">_dbt_source_project</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">District code location derived from _dbt_source_relation.</span>
+</code></pre></div>
+<p>The file currently opens its <code>columns:</code> list with a bare
+   <code>- name: _dbt_source_project</code> / <code>data_type: string</code> pair and no
+   <code>description:</code>. Delete that leading entry when you add the documented one at
+   the end, so the column is declared once.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Add the source entry to all three NJ source files</strong></li>
+</ul>
+<p>In each of <code>sources-kippnewark.yml</code>, <code>sources-kippcamden.yml</code>, and
+<code>sources-kipppaterson.yml</code>, add this block under <code>tables:</code> directly AFTER the
+existing <code>int_powerschool__gradebook_assignments</code> entry, so the new model sits
+beside its sibling. These files are not alphabetically sorted, so match the
+neighbours rather than re-sorting. Substitute the district name on the
+<code>asset_key</code> line — <code>kippnewark</code>, <code>kippcamden</code>, <code>kipppaterson</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int_powerschool__gradebook_assignments_scores</span>
+<span class="w">  </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">meta</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">dagster</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">group</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">powerschool</span>
+<span class="w">        </span><span class="nt">asset_key</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">kippnewark</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">powerschool</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int_powerschool__gradebook_assignments_scores</span>
+</code></pre></div>
+<p>In <code>sources-kippnewark.yml</code> the insertion point is after line 808. Locate the
+equivalent point in the other two files by searching for
+<code>int_powerschool__gradebook_assignments</code>; do not assume the same line number.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Verify kipptaf parses</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>parse<span class="w"> </span>--no-partial-parse<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-gradebook-scores/src/dbt/kipptaf
+</code></pre></div>
+<p>Expected: success.
+<code>Compilation Error ... depends on a source named ... which was not found</code> means
+a source entry is missing or misnamed.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Confirm the three consumers still resolve</strong></li>
+</ul>
+<p>No consumer file changes, so this is a check, not an edit:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>ls<span class="w"> </span>--select<span class="w"> </span>int_powerschool__gradebook_assignments_scores+1<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-gradebook-scores/src/dbt/kipptaf
+</code></pre></div>
+<p>Expected: the model plus <code>int_powerschool__gradebook_assignment_scores_rollup</code>,
+<code>int_students__gradebook_assignments_scores</code>, and
+<code>rpt_deanslist__missing_assignments</code>, and the model's own test. The three
+disabled audit models must NOT appear — if one does, its <code>enabled: false</code> was
+changed and the <code>region</code> / <code>credit_type</code> drop needs re-deciding before going
+further.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Confirm the wrapper's column list resolves</strong></li>
+</ul>
+<p>A dev-target compile expands to nothing because no <code>zz_&lt;user&gt;_*</code> copy of a new
+package model exists. Compile against staging, which reads the same <code>zz_stg_*</code>
+relations dbt Cloud CI does. This is a read, not a warehouse write, so it needs
+no authorization.</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>compile<span class="w"> </span>--select<span class="w"> </span>int_powerschool__gradebook_assignments_scores<span class="w"> </span>--target<span class="w"> </span>staging<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-gradebook-scores/src/dbt/kipptaf
+</code></pre></div>
+<p>Expected before Task 4's seed: an EMPTY expansion, which still compiles clean.
+That is why Task 4 exists. Re-run this step after Task 4 and confirm all 39
+columns are listed across three union branches.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Lint and commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-gradebook-scores<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="se">\</span>
+/workspaces/teamster/.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span>--no-fix<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/powerschool/intermediate/int_powerschool__gradebook_assignments_scores.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/powerschool/intermediate/properties/int_powerschool__gradebook_assignments_scores.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/powerschool/sources-kippnewark.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/powerschool/sources-kippcamden.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/powerschool/sources-kipppaterson.yml<span class="w"> </span>&lt;/dev/null
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-gradebook-scores<span class="w"> </span>add<span class="w"> </span>-u<span class="w"> </span>src/dbt/kipptaf
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-gradebook-scores<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"refactor(kipptaf): union the NJ gradebook assignment-score package models</span>
+
+<span class="s2">Replaces 200 lines of PowerSchool join and flag logic with a</span>
+<span class="s2">union_relations wrapper. All three consumers read the same name and are</span>
+<span class="s2">unchanged. The region and credit_type columns are gone; neither was</span>
+<span class="s2">declared in the properties yml and neither had an enabled reader.</span>
+
+<span class="s2">Refs #5260</span>
+
+<span class="s2">Co-Authored-By: Claude Opus 5 (1M context) &lt;noreply@anthropic.com&gt;"</span>
+</code></pre></div>
+<hr />
+<h2 id="task-3-prove-behavior-preservation-against-production">Task 3: Prove behavior preservation against production</h2>
+<p><strong>Files:</strong> none modified. This task runs comparisons.</p>
+<p><strong>Interfaces:</strong></p>
+<ul>
+<li>Consumes: Task 1's package model, compiled but not built.</li>
+<li>Produces: evidence for the PR's Reviewer Notes. Nothing downstream depends on
+  it, but a mismatch here blocks Task 4.</li>
+</ul>
+<p>Why this shape: there is no <code>target/prod</code> manifest in any district checkout
+(verified 2026-09-11 — all three are absent), so a <code>--defer --favor-state</code> build
+is not available. And a dev build would be wrong anyway: kipptaf <code>source()</code>
+resolves to personal <code>zz_&lt;user&gt;_*</code> copies under <code>target=dev</code>, and
+<code>--favor-state</code> governs <code>ref()</code> but not <code>source()</code>. So compile the new model
+against prod and run its SQL directly. <code>dbt compile --target prod</code> performs no
+warehouse write and is not classifier-blocked.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Compile the package model against prod, per district</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">for</span><span class="w"> </span>d<span class="w"> </span><span class="k">in</span><span class="w"> </span>kippnewark<span class="w"> </span>kippcamden<span class="w"> </span>kipppaterson<span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">  </span>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>compile<span class="w"> </span>--select<span class="w"> </span>int_powerschool__gradebook_assignments_scores<span class="w"> </span>--target<span class="w"> </span>prod<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-gradebook-scores/src/dbt/<span class="si">${</span><span class="nv">d</span><span class="si">}</span>
+<span class="k">done</span>
+</code></pre></div>
+<p>Expected: three successful compiles. The compiled file for each district is at
+<code>src/dbt/&lt;district&gt;/target/compiled/powerschool/models/sis/intermediate/int_powerschool__gradebook_assignments_scores.sql</code>.
+Read each one and confirm every relation is a <code>&lt;district&gt;_powerschool</code>
+production path with no <code>zz_</code> prefix.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Fingerprint both sides per district per academic year</strong></li>
+</ul>
+<p>For each district, run this through the BigQuery MCP, pasting that district's
+compiled SQL into the <code>new_form</code> CTE and substituting the district name in the
+<code>_dbt_source_project</code> filter. The 39 columns are enumerated in a fixed order on
+both sides so the row fingerprint is comparable; <code>to_json_string(struct(...))</code>
+is NULL-safe, unlike <code>concat()</code>.</p>
+<div class="highlight"><pre><span></span><code><span class="k">with</span>
+<span class="w">    </span><span class="n">new_form</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="c1">-- paste the district's compiled SQL here, unchanged</span>
+<span class="w">    </span><span class="p">),</span>
+
+<span class="w">    </span><span class="n">new_fp</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">academic_year</span><span class="p">,</span>
+<span class="w">            </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n_rows</span><span class="p">,</span>
+<span class="w">            </span><span class="k">sum</span><span class="p">(</span>
+<span class="w">                </span><span class="n">farm_fingerprint</span><span class="p">(</span>
+<span class="w">                    </span><span class="n">to_json_string</span><span class="p">(</span>
+<span class="w">                        </span><span class="n">struct</span><span class="p">(</span>
+<span class="w">                            </span><span class="n">assignmentsectionid</span><span class="p">,</span><span class="w"> </span><span class="n">sectionsdcid</span><span class="p">,</span><span class="w"> </span><span class="n">assignmentid</span><span class="p">,</span>
+<span class="w">                            </span><span class="n">assignment_name</span><span class="p">,</span><span class="w"> </span><span class="n">duedate</span><span class="p">,</span><span class="w"> </span><span class="n">scoretype</span><span class="p">,</span><span class="w"> </span><span class="n">totalpointvalue</span><span class="p">,</span>
+<span class="w">                            </span><span class="n">category_name</span><span class="p">,</span><span class="w"> </span><span class="n">category_code</span><span class="p">,</span><span class="w"> </span><span class="n">iscountedinfinalgrade</span><span class="p">,</span>
+<span class="w">                            </span><span class="n">scorepoints</span><span class="p">,</span><span class="w"> </span><span class="n">actualscoreentered</span><span class="p">,</span><span class="w"> </span><span class="n">students_dcid</span><span class="p">,</span>
+<span class="w">                            </span><span class="n">student_number</span><span class="p">,</span><span class="w"> </span><span class="n">course_name</span><span class="p">,</span><span class="w"> </span><span class="n">teacher_name</span><span class="p">,</span><span class="w"> </span><span class="n">is_late</span><span class="p">,</span>
+<span class="w">                            </span><span class="n">is_exempt</span><span class="p">,</span><span class="w"> </span><span class="n">is_missing</span><span class="p">,</span><span class="w"> </span><span class="n">is_expected</span><span class="p">,</span><span class="w"> </span><span class="n">school_level_alt</span><span class="p">,</span>
+<span class="w">                            </span><span class="n">score_entered</span><span class="p">,</span><span class="w"> </span><span class="n">points_earned</span><span class="p">,</span><span class="w"> </span><span class="n">numeric_grade_earned</span><span class="p">,</span>
+<span class="w">                            </span><span class="n">assign_final_score_percent</span><span class="p">,</span><span class="w"> </span><span class="n">half_total_point_value</span><span class="p">,</span>
+<span class="w">                            </span><span class="n">is_expected_zero</span><span class="p">,</span><span class="w"> </span><span class="n">is_expected_academic_dishonesty</span><span class="p">,</span>
+<span class="w">                            </span><span class="n">is_expected_null</span><span class="p">,</span><span class="w"> </span><span class="n">is_expected_late</span><span class="p">,</span>
+<span class="w">                            </span><span class="n">is_expected_missing</span><span class="p">,</span><span class="w"> </span><span class="n">is_expected_scored</span><span class="p">,</span>
+<span class="w">                            </span><span class="n">assign_score_above_max</span><span class="p">,</span><span class="w"> </span><span class="n">assign_mh_hwf_score_less_5</span><span class="p">,</span>
+<span class="w">                            </span><span class="n">assign_ms_hwf_missing_score_not_5</span><span class="p">,</span>
+<span class="w">                            </span><span class="n">assign_hs_hwfs_missing_score_not_0</span><span class="p">,</span>
+<span class="w">                            </span><span class="n">assign_ms_s_score_less_50p</span><span class="p">,</span>
+<span class="w">                            </span><span class="n">assign_hs_s_score_less_50p</span>
+<span class="w">                        </span><span class="p">)</span>
+<span class="w">                    </span><span class="p">)</span>
+<span class="w">                </span><span class="p">)</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">fp</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="n">new_form</span>
+<span class="w">        </span><span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">academic_year</span>
+<span class="w">    </span><span class="p">),</span>
+
+<span class="w">    </span><span class="n">old_fp</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">academic_year</span><span class="p">,</span>
+<span class="w">            </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n_rows</span><span class="p">,</span>
+<span class="w">            </span><span class="k">sum</span><span class="p">(</span>
+<span class="w">                </span><span class="n">farm_fingerprint</span><span class="p">(</span>
+<span class="w">                    </span><span class="n">to_json_string</span><span class="p">(</span>
+<span class="w">                        </span><span class="n">struct</span><span class="p">(</span>
+<span class="w">                            </span><span class="n">assignmentsectionid</span><span class="p">,</span><span class="w"> </span><span class="n">sectionsdcid</span><span class="p">,</span><span class="w"> </span><span class="n">assignmentid</span><span class="p">,</span>
+<span class="w">                            </span><span class="n">assignment_name</span><span class="p">,</span><span class="w"> </span><span class="n">duedate</span><span class="p">,</span><span class="w"> </span><span class="n">scoretype</span><span class="p">,</span><span class="w"> </span><span class="n">totalpointvalue</span><span class="p">,</span>
+<span class="w">                            </span><span class="n">category_name</span><span class="p">,</span><span class="w"> </span><span class="n">category_code</span><span class="p">,</span><span class="w"> </span><span class="n">iscountedinfinalgrade</span><span class="p">,</span>
+<span class="w">                            </span><span class="n">scorepoints</span><span class="p">,</span><span class="w"> </span><span class="n">actualscoreentered</span><span class="p">,</span><span class="w"> </span><span class="n">students_dcid</span><span class="p">,</span>
+<span class="w">                            </span><span class="n">student_number</span><span class="p">,</span><span class="w"> </span><span class="n">course_name</span><span class="p">,</span><span class="w"> </span><span class="n">teacher_name</span><span class="p">,</span><span class="w"> </span><span class="n">is_late</span><span class="p">,</span>
+<span class="w">                            </span><span class="n">is_exempt</span><span class="p">,</span><span class="w"> </span><span class="n">is_missing</span><span class="p">,</span><span class="w"> </span><span class="n">is_expected</span><span class="p">,</span><span class="w"> </span><span class="n">school_level_alt</span><span class="p">,</span>
+<span class="w">                            </span><span class="n">score_entered</span><span class="p">,</span><span class="w"> </span><span class="n">points_earned</span><span class="p">,</span><span class="w"> </span><span class="n">numeric_grade_earned</span><span class="p">,</span>
+<span class="w">                            </span><span class="n">assign_final_score_percent</span><span class="p">,</span><span class="w"> </span><span class="n">half_total_point_value</span><span class="p">,</span>
+<span class="w">                            </span><span class="n">is_expected_zero</span><span class="p">,</span><span class="w"> </span><span class="n">is_expected_academic_dishonesty</span><span class="p">,</span>
+<span class="w">                            </span><span class="n">is_expected_null</span><span class="p">,</span><span class="w"> </span><span class="n">is_expected_late</span><span class="p">,</span>
+<span class="w">                            </span><span class="n">is_expected_missing</span><span class="p">,</span><span class="w"> </span><span class="n">is_expected_scored</span><span class="p">,</span>
+<span class="w">                            </span><span class="n">assign_score_above_max</span><span class="p">,</span><span class="w"> </span><span class="n">assign_mh_hwf_score_less_5</span><span class="p">,</span>
+<span class="w">                            </span><span class="n">assign_ms_hwf_missing_score_not_5</span><span class="p">,</span>
+<span class="w">                            </span><span class="n">assign_hs_hwfs_missing_score_not_0</span><span class="p">,</span>
+<span class="w">                            </span><span class="n">assign_ms_s_score_less_50p</span><span class="p">,</span>
+<span class="w">                            </span><span class="n">assign_hs_s_score_less_50p</span>
+<span class="w">                        </span><span class="p">)</span>
+<span class="w">                    </span><span class="p">)</span>
+<span class="w">                </span><span class="p">)</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">fp</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span>
+<span class="w">            </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="o">`</span><span class="p">.</span><span class="n">kipptaf_powerschool</span><span class="p">.</span><span class="n">int_powerschool__gradebook_assignments_scores</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">_dbt_source_project</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'kippnewark'</span>
+<span class="w">        </span><span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">academic_year</span>
+<span class="w">    </span><span class="p">)</span>
+
+<span class="k">select</span>
+<span class="w">    </span><span class="k">coalesce</span><span class="p">(</span><span class="n">n</span><span class="p">.</span><span class="n">academic_year</span><span class="p">,</span><span class="w"> </span><span class="n">o</span><span class="p">.</span><span class="n">academic_year</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">academic_year</span><span class="p">,</span>
+<span class="w">    </span><span class="n">n</span><span class="p">.</span><span class="n">n_rows</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">new_rows</span><span class="p">,</span>
+<span class="w">    </span><span class="n">o</span><span class="p">.</span><span class="n">n_rows</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">old_rows</span><span class="p">,</span>
+<span class="w">    </span><span class="n">n</span><span class="p">.</span><span class="n">fp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">o</span><span class="p">.</span><span class="n">fp</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">fp_match</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="n">new_fp</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n</span>
+<span class="k">full</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="n">old_fp</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">o</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="n">n</span><span class="p">.</span><span class="n">academic_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">o</span><span class="p">.</span><span class="n">academic_year</span>
+<span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">academic_year</span>
+</code></pre></div>
+<p>Two corrections, both found by executing this step on 2026-09-11:</p>
+<p><strong><code>sum(farm_fingerprint(...))</code> overflows.</strong> At these row counts it fails with
+<code>Error in SUM aggregation: integer overflow</code>. Accumulate in a wider type on both
+branches —
+<code>sum(cast(farm_fingerprint(to_json_string(struct(...))) as bignumeric))</code>.
+Comparison strength is unchanged.</p>
+<p><strong>The prod model's enrollment input named below is one level off.</strong> The prod
+kipptaf model is a VIEW, and its enrollment input is
+<code>kipptaf_powerschool.base_powerschool__course_enrollments</code>, which is a
+passthrough resolving to the physical
+<code>kipptaf_students.int_students__course_enrollments</code>. The
+<code>int_powerschool__course_enrollments_union</code> table sits further up that chain and
+is not read directly. Check <code>last_modified_time</code> on
+<code>kipptaf_students.int_students__course_enrollments</code> for the staleness question
+below, not on the union table.</p>
+<p>Expected: one row per academic year, <code>new_rows</code> equal to <code>old_rows</code>, and
+<code>fp_match</code> true on every row. The <code>struct(...)</code> lists 38 columns, not 39:
+<code>academic_year</code> is the <code>group by</code> key, so it is compared by the join rather than
+inside the fingerprint. 38 plus <code>academic_year</code> covers all 39.</p>
+<p>A row-count match with <code>fp_match</code> false means a value changed. A row-count
+mismatch means the join changed. Either one blocks Task 4 — go to Step 3.</p>
+<p>If the query fails with <code>Resources exceeded ... query is too complex</code> or the
+nested-view limit, add <code>and academic_year = &lt;year&gt;</code> to both branches and run one
+year at a time.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Drill into any mismatching year</strong></li>
+</ul>
+<p>Only if Step 2 reported a mismatch. For the failing district and year, replace
+the final <code>select</code> with a two-directional set difference over the same 39
+columns:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="s1">'new_minus_old'</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">direction</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n</span>
+<span class="k">from</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="k">select</span><span class="w"> </span><span class="o">&lt;</span><span class="n">the</span><span class="w"> </span><span class="mi">39</span><span class="w"> </span><span class="n">columns</span><span class="o">&gt;</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">new_form</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">academic_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="k">year</span><span class="o">&gt;</span>
+<span class="w">    </span><span class="k">except</span><span class="w"> </span><span class="k">distinct</span>
+<span class="w">    </span><span class="k">select</span><span class="w"> </span><span class="o">&lt;</span><span class="n">the</span><span class="w"> </span><span class="mi">39</span><span class="w"> </span><span class="n">columns</span><span class="o">&gt;</span>
+<span class="w">    </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="o">`</span><span class="p">.</span><span class="n">kipptaf_powerschool</span><span class="p">.</span><span class="n">int_powerschool__gradebook_assignments_scores</span>
+<span class="w">    </span><span class="k">where</span><span class="w"> </span><span class="n">_dbt_source_project</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'&lt;district&gt;'</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">academic_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="k">year</span><span class="o">&gt;</span>
+<span class="p">)</span>
+
+<span class="k">union</span><span class="w"> </span><span class="k">all</span>
+
+<span class="k">select</span><span class="w"> </span><span class="s1">'old_minus_new'</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span>
+<span class="k">from</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="k">select</span><span class="w"> </span><span class="o">&lt;</span><span class="n">the</span><span class="w"> </span><span class="mi">39</span><span class="w"> </span><span class="n">columns</span><span class="o">&gt;</span>
+<span class="w">    </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="o">`</span><span class="p">.</span><span class="n">kipptaf_powerschool</span><span class="p">.</span><span class="n">int_powerschool__gradebook_assignments_scores</span>
+<span class="w">    </span><span class="k">where</span><span class="w"> </span><span class="n">_dbt_source_project</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'&lt;district&gt;'</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">academic_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="k">year</span><span class="o">&gt;</span>
+<span class="w">    </span><span class="k">except</span><span class="w"> </span><span class="k">distinct</span>
+<span class="w">    </span><span class="k">select</span><span class="w"> </span><span class="o">&lt;</span><span class="n">the</span><span class="w"> </span><span class="mi">39</span><span class="w"> </span><span class="n">columns</span><span class="o">&gt;</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">new_form</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">academic_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="k">year</span><span class="o">&gt;</span>
+<span class="p">)</span>
+</code></pre></div>
+<p>Then sample 20 differing rows and diagnose. Do not proceed to Task 4 with an
+unexplained difference.</p>
+<p>One difference is expected and is NOT a defect: the prod kipptaf model reads
+<code>int_powerschool__course_enrollments_union</code>, a TABLE that can lag the district
+<code>base_powerschool__course_enrollments</code> relations. Measured 2026-09-11, that
+staleness accounted for 23 Camden and 8 Paterson rows in the enrollment model
+itself. If a small mismatch appears, check
+<code>kipptaf_powerschool.__TABLES__.last_modified_time</code> for
+<code>int_powerschool__course_enrollments_union</code> against the district base relation's
+before treating it as a defect.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Record the numbers</strong></li>
+</ul>
+<p>Write the per-district, per-year table to
+<code>.claude/scratch/gradebook-scores-verification.md</code> for the PR body. No commit —
+<code>.claude/scratch/</code> is gitignored.</p>
+<hr />
+<h2 id="task-4-seed-staging-then-push-and-open-the-pr">Task 4: Seed staging, then push and open the PR</h2>
+<p><strong>Files:</strong> none modified.</p>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: Tasks 1 through 3.</li>
+<li>
+<p>Produces:
+  <code>zz_stg_&lt;district&gt;_powerschool.int_powerschool__gradebook_assignments_scores</code>
+  in the three NJ districts, so dbt Cloud CI can resolve the new source.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Get authorization for the staging seed</strong></p>
+</li>
+</ul>
+<p>This writes shared <code>zz_stg_*</code> tables other developers and CI read. Ask the user
+in plain text for explicit go-ahead in the immediately-preceding turn, and do
+not proceed without it. The consent classifier reads only the assistant message
+before the tool call, never an <code>AskUserQuestion</code> answer.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Seed the three NJ districts</strong></li>
+</ul>
+<p>Run serially, not in parallel — parallel runs across projects exhaust BigQuery's
+<code>INFORMATION_SCHEMA.simple_rate.user</code> quota:</p>
+<div class="highlight"><pre><span></span><code><span class="k">for</span><span class="w"> </span>d<span class="w"> </span><span class="k">in</span><span class="w"> </span>kippnewark<span class="w"> </span>kippcamden<span class="w"> </span>kipppaterson<span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">  </span>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span>--select<span class="w"> </span>int_powerschool__gradebook_assignments_scores<span class="w"> </span>--target<span class="w"> </span>staging<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-gradebook-scores/src/dbt/<span class="si">${</span><span class="nv">d</span><span class="si">}</span>
+<span class="k">done</span>
+</code></pre></div>
+<p>Expected: three successful builds, each with its
+<code>dbt_utils.unique_combination_of_columns</code> test passing. A build that fails on a
+missing upstream column means that district's <code>zz_stg_*</code> copies are stale;
+<code>dbt clone --select &lt;upstream&gt; --target staging</code> for that district first, which
+also needs authorization.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Re-run Task 2 Step 6 and confirm the columns resolve</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>compile<span class="w"> </span>--select<span class="w"> </span>int_powerschool__gradebook_assignments_scores<span class="w"> </span>--target<span class="w"> </span>staging<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-gradebook-scores/src/dbt/kipptaf
+</code></pre></div>
+<p>Expected: the compiled SQL now lists all 39 columns across three union branches.
+An empty expansion means Step 2 did not land.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Confirm the three consumers compile against the wrapper</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>compile<span class="w"> </span>--target<span class="w"> </span>staging<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--select<span class="w"> </span>int_powerschool__gradebook_assignment_scores_rollup<span class="w"> </span>int_students__gradebook_assignments_scores<span class="w"> </span>rpt_deanslist__missing_assignments<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-gradebook-scores/src/dbt/kipptaf
+</code></pre></div>
+<p>Expected: three compiles, no error. A <code>Name &lt;col&gt; not found</code> here means the
+wrapper dropped a column a consumer reads — stop and diagnose rather than
+editing the consumer.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Push</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-gradebook-scores<span class="w"> </span>push<span class="w"> </span>-u<span class="w"> </span>origin<span class="w"> </span>cbini/refactor/claude-powerschool-gradebook-scores
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Open the PR</strong></li>
+</ul>
+<p>Open it with <code>mcp__github__create_pull_request</code>, body from
+<code>.github/pull_request_template.md</code>, <code>Refs #5260</code> in the body. Write one line per
+paragraph — GitHub renders every newline as a break, so do not hard-wrap.</p>
+<p>Record in Reviewer Notes: the Task 3 per-district fingerprint results, the
+staging seed that was run, that <code>region</code> and <code>credit_type</code> were dropped with
+zero enabled readers, and that row 6 of #5260 closed by inspection with no code
+change.</p>
+<p>Then verify the stored body matches intent — a malformed parameter succeeds with
+the wrong payload:</p>
+<div class="highlight"><pre><span></span><code>gh<span class="w"> </span>api<span class="w"> </span>repos/TEAMSchools/teamster/pulls/&lt;n&gt;<span class="w"> </span>--jq<span class="w"> </span>.body
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Watch CI</strong></li>
+</ul>
+<p>Invoke <code>pr-ci-review</code>. Arm the Monitor in the same turn you say you will watch.
+Expect <code>state:modified+</code> to pull the whole descendant graph of the wrapper into
+CI, so budget for pre-existing warn-test noise unrelated to this change.</p>
+<hr />
+<h2 id="task-5-documentation-audit">Task 5: Documentation audit</h2>
+<p>Severable. It changes no dbt model and can ship as its own commit on this branch
+or be dropped.</p>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>Audit, and modify only if wrong: <code>docs/models/gradebook-audit-data-model.md</code></li>
+<li>
+<p>Modify: <code>.claude/rules/dbt-yaml.md</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Audit the published data-model page</strong></p>
+</li>
+</ul>
+<p><code>docs/models/gradebook-audit-data-model.md</code> is in the <code>mkdocs.yml</code> nav, so a
+wrong claim there is a bug, not an expected stale spec. Its
+<code>int_powerschool__gradebook_assignments_scores</code> sections are at lines 291 and
+1031, with cross-references at 136, 370, 800, 808, 1087, 1099 and 1129.</p>
+<p>The joins it describes do not change, and it never mentions <code>credit_type</code>; its
+<code>region</code> mentions are all the grain of OTHER models, not a column of this one.
+So the only thing that can be stale is a claim about which project the model
+lives in. Read those sections and correct only that.</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-gradebook-scores<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="se">\</span>
+grep<span class="w"> </span>-nE<span class="w"> </span><span class="s1">'kipptaf|powerschool package|package'</span><span class="w"> </span>docs/models/gradebook-audit-data-model.md<span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>sed<span class="w"> </span>-n<span class="w"> </span><span class="s1">'1,40p'</span>
+</code></pre></div>
+<p>If no section attributes the model to a project, make no edit and say so.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Correct the stale classifier claim in the dbt YAML rule</strong></li>
+</ul>
+<p><code>.claude/rules/dbt-yaml.md</code> carries a claim that is wrong: with authorization in
+the immediately-preceding turn, a <code>--target prod</code> build ran successfully during
+the #5278 work. Replace this exact sentence:</p>
+<div class="highlight"><pre><span></span><code>`--target prod` runs (`dbt build` / `run`) are blocked by the auto-mode
+classifier as production deploys even with verbal approval — hand prod runs to
+the user.
+</code></pre></div>
+<p>with:</p>
+<div class="highlight"><pre><span></span><code>`--target prod` runs (`dbt build` / `run`) need direct user authorization in
+the immediately-preceding turn, the same standard as
+`stage_external_sources --target staging` below; without it, hand prod runs to
+the user.
+</code></pre></div>
+<p>The source sentence is one wrapped line in the file, so match on a distinctive
+fragment rather than the whole thing. Leave the neighbouring sentence about
+<code>dbt compile</code> / <code>parse --target prod</code> NOT being blocked exactly as it is — this
+plan's Task 3 relies on it and it is correct.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Lint and commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-gradebook-scores<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="se">\</span>
+/workspaces/teamster/.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span>--no-fix<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>.claude/rules/dbt-yaml.md<span class="w"> </span>docs/models/gradebook-audit-data-model.md<span class="w"> </span>&lt;/dev/null
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-gradebook-scores<span class="w"> </span>add<span class="w"> </span>-u
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-gradebook-scores<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"docs: correct the prod-target claim in the dbt YAML rule</span>
+
+<span class="s2">A --target prod build is not unconditionally classifier-blocked; it needs</span>
+<span class="s2">direct user authorization in the immediately-preceding turn, the same</span>
+<span class="s2">standard the file already applies to stage_external_sources.</span>
+
+<span class="s2">Refs #5260</span>
+
+<span class="s2">Co-Authored-By: Claude Opus 5 (1M context) &lt;noreply@anthropic.com&gt;"</span>
+</code></pre></div>
+<p>If Step 1 found nothing to correct, drop
+<code>docs/models/gradebook-audit-data-model.md</code> from the lint list and the commit.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

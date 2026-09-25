@@ -1,0 +1,2797 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Plan: Cube Access — Individual Exceptions Redesign (Additive Location Grants) - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#plan-cube-access-individual-exceptions-redesign-additive-location-grants" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Plan: Cube Access — Individual Exceptions Redesign (Additive Location Grants)
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/fresh-dashboard-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/launch-page-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Launch Page
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube-access-individual-exceptions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube Access - Individual Exceptions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/fresh-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FRESH Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/carat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CARAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/csgf-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CSGF Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/hs-early-warning-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HS Early Warning Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/dibels-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DIBELS Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/stat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/athletic-eligibility-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Athletic Eligibility Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-problem-statement" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Problem statement
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. Problem statement">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#11-current-state-bug" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.1 Current-state bug
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#12-why-a-redesign-not-just-wiring-the-existing-columns-in" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.2 Why a redesign, not just wiring the existing columns in
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-design-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Design summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-trade-offs-considered" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Trade-offs considered
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. Trade-offs considered">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31-additive-grant-vs-full-override" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.1 Additive grant vs. full override
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#32-student-rls-keep-3-tier-groups-vs-collapse-to-1-array-based-group" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.2 Student RLS: keep 3 tier-groups vs. collapse to 1 array-based group
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#33-all-was-removed-entirely-not-just-made-asymmetric" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.3 'All' was removed entirely — not just made asymmetric
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#34-pr-scope-full-stack-vs-dbt-only-now-cube-follow-up-later" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.4 PR scope — full stack vs. dbt-only now, Cube follow-up later
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#35-statusexpirygrant-date-gating-enforced-in-dbt-vs-sheet-only-governance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.5 Status/expiry/grant-date gating — enforced in dbt vs. sheet-only governance
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#36-where-the-abbreviation-set-union-is-computed-dbt-vs-accessjs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.6 Where the abbreviation-set union is computed — dbt vs. access.js
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#37-why-one-row-per-employee-originally-and-what-changes-to-allow-more" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.7 Why one row per employee originally, and what changes to allow more
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-schema-changes-before-after" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Schema changes — before / after
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. Schema changes — before / after">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#41-sheet-source-sources-externalyml" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.1 Sheet &amp; source (sources-external.yml)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#42-staging-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.2 Staging model
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#43-dim_staff_cube_access-mart-new-column" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.3 dim_staff_cube_access mart — new column
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#44-accessjs-cubejs-securitycontext-shape-change" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.4 access.js / cube.js securityContext — shape change
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#45-view-access_policy-student-views-4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.5 View access_policy — student views (×4)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-column-reference-possible-values-resolution-rules" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Column reference — possible values &amp; resolution rules
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. Column reference — possible values &amp; resolution rules">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#51-resolving-each-live-row-into-a-grant-struct" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.1 Resolving each live row into a grant struct
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-worked-examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Worked examples
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-decisions-finalized-this-revision" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Decisions finalized this revision
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-implementation-task-list" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Implementation task list
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-validation-plan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. Validation plan
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10-rollout-sequencing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. Rollout / sequencing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#11-user-guide-ops-facing-new-task" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11. User guide (Ops-facing) — new task
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/plans/2026-07-29-cube-access-individual-exceptions-redesign.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="plan-cube-access-individual-exceptions-redesign-additive-location-grants">Plan: Cube Access — Individual Exceptions Redesign (Additive Location Grants)</h1>
+<p><strong>Branch:</strong> <code>kverhoff/feat/cube-individual-access-layer</code> (building directly on
+this branch — no tracking issue opened, per author's direction).</p>
+<p><strong>Related spec:</strong>
+<a href="../../specs/2026-06-03-cube-security-redesign/"><code>2026-06-03-cube-security-redesign.md</code></a>
+— this plan implements a redesign of that spec's "individual exception" tier
+only. The role crosswalk (<code>cube_access_role</code>) and department override
+(<code>cube_access_department_override</code>) sheets, and their coalesce mechanism, are
+<strong>unchanged</strong>.</p>
+<p><strong>Date:</strong> 2026-07-29 (revised same-day: multiple rows per employee now allowed,
+the <code>'All'</code> sentinel removed entirely — see §3.3 and §3.7 below, which supersede
+the initial draft's single-row / <code>'All'</code>-supporting design).</p>
+<h2 id="1-problem-statement">1. Problem statement</h2>
+<h3 id="11-current-state-bug">1.1 Current-state bug</h3>
+<p><code>dim_staff_cube_access.sql</code> already left-joins
+<code>stg_google_sheets__people__cube_access_individual_exceptions</code> as <code>exc</code>, but the
+<code>coalesce()</code> chain that resolves each scope column never references <code>exc.*</code> —
+only <code>ovr</code> (department override) and <code>rl</code>/<code>rp</code> (role). <strong>Individual exceptions
+currently have zero effect.</strong> This plan fixes that as part of the redesign.</p>
+<h3 id="12-why-a-redesign-not-just-wiring-the-existing-columns-in">1.2 Why a redesign, not just wiring the existing columns in</h3>
+<p>The sheet's current columns (<code>student_location_scope</code>, <code>staff_location_scope</code> as
+full-value overrides) can only ever <strong>replace</strong> a person's location scope with a
+single new tier. That can't express the actual request: "give this one person
+access to <em>one or more extra</em> schools/regions on top of whatever their role
+already grants, without touching anyone else's role-based access or downgrading
+anything." The new column set
+(<code>additional_location_type</code>/<code>additional_location_name</code>/<code>include_student_data</code>)
+plus an approval-workflow audit trail
+(<code>business_justification</code>/<code>requested_by</code>/<code>approved_by</code>/<code>grant_date</code>/<code>expiry_date</code>/<code>status</code>)
+replaces the override mechanism for location only; the five <code>staff_*_scope</code>
+remit columns keep the existing override/coalesce mechanism.</p>
+<h2 id="2-design-summary">2. Design summary</h2>
+<p><code>cube_access_individual_exceptions</code> is keyed on <code>employee_number</code>, but <strong>an
+employee may now have more than one row.</strong> Each row grants <strong>one</strong> additional
+location (a network, a named region, or a named school); a person who needs
+access to two schools gets <strong>two rows</strong>, one per school — not one row with a
+combined value. This is a deliberate change from the initial draft of this plan
+(which assumed one row per employee); see §3.7 for why the original design was
+one row, and what changed to allow more.</p>
+<p>Each live row (<code>status = 'active'</code>, not past <code>expiry_date</code>, not before
+<code>grant_date</code> — see §3.5) can do two independent things:</p>
+<ol>
+<li><strong>Override</strong> any of the five staff sensitive-field scopes
+   (<code>staff_department_scope</code>, <code>staff_pii_scope</code>, <code>staff_compensation_scope</code>,
+   <code>staff_observations_scope</code>, <code>staff_benefits_scope</code>) — same mechanism as
+   today, same vocabulary, now actually wired into the coalesce chain as the
+   highest-priority tier. <strong>At most one live row per employee may set these</strong>
+   (enforced by a new test — see §3.7); they describe the person, not a specific
+   location, so they don't multiply across rows the way location grants do.</li>
+<li><strong>Grant</strong> one additional location (a network, a named region, or a named
+   school) that is <strong>unioned into</strong> — not substituted for — the person's
+   existing location remit. <code>include_student_data</code> decides whether that specific
+   grant also widens student-data visibility, or is staff-only — this flag is
+   <strong>per-row</strong>, so one person's two location grants can differ (e.g., staff-only
+   for one school, staff+student for another).</li>
+</ol>
+<p>The union requires Cube's row-level security to move from a single per-viewer
+tier (today: <code>network</code>/<code>region</code>/<code>school</code>, always "mine") to an
+<strong>array-of-allowed-locations</strong> remit — a pattern that already exists for
+<code>staff_pii</code> (<code>securityContext.allowed_abbreviations</code>) but does not yet exist for
+students. This plan generalizes it to cover both, and additionally generalizes
+it to accept <strong>N</strong> location grants per person, not just one.</p>
+<p>There is no <code>'All'</code> value anywhere in <code>additional_location_name</code>. To grant
+literally everything, use <code>additional_location_type = network</code> (one row —
+<code>network</code> already means "the whole network," no enumeration needed). To grant
+several specific regions or schools, add one row per region/school. See §3.3 for
+why the <code>'All'</code> shortcut was removed, and §11 for the user-guide task that will
+document this for the data team.</p>
+<h2 id="3-trade-offs-considered">3. Trade-offs considered</h2>
+<p>Each of these was surfaced during planning and confirmed with the branch author
+before writing this document.</p>
+<h3 id="31-additive-grant-vs-full-override">3.1 Additive grant vs. full override</h3>
+<ul>
+<li><strong>Chosen: additive</strong> (union with existing scope).</li>
+<li><strong>Alternative:</strong> override — same coalesce pattern as the five remit columns,
+  reusing <code>student_location_scope</code>/<code>staff_location_scope</code> as-is.</li>
+<li><strong>Why additive:</strong> an override can only replace a person's whole location scope
+  with one new tier — it cannot express "your normal region scope, PLUS one
+  specific other school," which is the actual ask (a temporary or cross-region
+  project grant that doesn't touch the person's home-region access).</li>
+<li><strong>Cost:</strong> override would have been a same-shape column swap with no
+  architecture change. Additive requires generalizing Cube's row-level security
+  (see 3.2) — a materially larger change (<code>access.js</code>, <code>cube.js</code>, 4 view YAML
+  files, unit tests).</li>
+</ul>
+<h3 id="32-student-rls-keep-3-tier-groups-vs-collapse-to-1-array-based-group">3.2 Student RLS: keep 3 tier-groups vs. collapse to 1 array-based group</h3>
+<ul>
+<li><strong>Chosen: collapse</strong> <code>student-region</code>/<code>student-school</code>/<code>student-network</code> into
+  a single <code>student</code> group whose <code>row_level</code> filters on
+  <code>abbreviation IN { securityContext.allowed_student_abbreviations }</code> —
+  mirroring the <code>staff_pii</code> precedent exactly.</li>
+<li><strong>Alternative:</strong> keep the 3 tier-groups; additive grants only take effect when
+  they resolve to a whole tier the existing groups already support (i.e.,
+  <code>network</code>-wide grants work, but "add this one specific extra school" silently
+  no-ops for students).</li>
+<li><strong>Why collapse:</strong> the tier-group model has no way to express "my region, plus
+  one named school in a different region" — tiers are single-valued. An
+  array-based remit is the only mechanism that supports an arbitrary extra
+  location, and it's already proven (staff_pii ships it today).</li>
+<li><strong>Cost:</strong> this is the largest single piece of this plan. It changes
+  <code>buildGroups</code>'s emitted group set (breaking change to <code>access.js</code> and its unit
+  tests), requires a new <code>allowed_student_abbreviations</code> field on
+  <code>securityContext</code>, and touches <strong>all 4 student views</strong>
+  (<code>student_enrollments_view</code>, <code>student_section_enrollments_view</code>,
+  <code>student_attendance_view</code>, <code>student_assessment_scores_view</code>). It also changes
+  runtime behavior for <strong>every</strong> viewer, not just those with exceptions: a
+  <code>network</code>-scope viewer's query now compiles with an <code>IN (...)</code> filter over the
+  full location universe instead of no filter at all. Functionally equivalent,
+  non-zero but immaterial compile/perf cost.</li>
+<li><strong>Now must also handle N grants per person, not 1</strong> — see §3.7's mart-shape
+  change. <code>access.js</code> doesn't call the union logic once per viewer; it loops
+  over every live grant row for that viewer and unions all of them, per-grant
+  <code>includes_student_data</code> deciding whether each one also feeds the student
+  array.</li>
+</ul>
+<h3 id="33-all-was-removed-entirely-not-just-made-asymmetric">3.3 <code>'All'</code> was removed entirely — not just made asymmetric</h3>
+<p>The initial draft of this plan gave <code>additional_location_name</code> an <code>'All'</code>
+sentinel value (<code>region + All</code> → network-wide; <code>school + All</code> → all schools in
+the viewer's own region) to cover "grant everything at this tier." <strong>That value
+is removed.</strong> If a TEAM (Newark) employee needs access to all three other
+regions, the data team adds <strong>three rows</strong> — one per region — not one row with
+<code>additional_location_name = 'All'</code>.</p>
+<ul>
+<li><strong>Chosen: no <code>'All'</code> value; list every additional location as its own row.</strong></li>
+<li><strong>Alternative (the initial draft):</strong> keep <code>'All'</code>, with the asymmetric
+  resolution described above.</li>
+<li><strong>Why removed:</strong> two reasons.</li>
+<li><strong>It was a genuine UX trap.</strong> <code>region + All</code> and <code>school + All</code> looked
+     parallel but resolved to very different breadths (every region vs. only the
+     viewer's own region) — exactly the kind of asymmetry that gets misread by
+     whoever is filling in the sheet, with a security consequence if misread
+     toward the broader reading.</li>
+<li><strong>It bought no expressiveness once multiple rows are allowed (§3.7).</strong>
+     <code>region + All</code> (network-wide) is already fully covered by
+     <code>additional_location_type = network</code> on a single row. <code>school + All</code> (all
+     schools in one's own region) is already fully covered by
+     <code>additional_location_type = region</code> naming that same region by its
+     <code>legal_entity</code> — which was already a supported case, "All" was never
+     required to reach it. So removing <code>'All'</code> loses nothing; it only removes a
+     shortcut that was more confusing than it was worth.</li>
+<li><strong>Cost:</strong> the data team must enumerate multiple rows for a multi-region grant
+  instead of writing one row with <code>'All'</code>. This is more sheet rows for the
+  (presumably rare) "give this person several specific regions" case, traded for
+  zero ambiguity about what any single row means. A user guide (§11) will
+  document this explicitly, including the "just use <code>network</code>" shortcut for the
+  true "everything" case.</li>
+<li><strong>Resolution logic simplification</strong>: removing <code>'All'</code> also removes the
+  self-referential "join to the viewer's own region" case entirely — see the
+  simplified §5.1 (the initial draft's <code>school + All → e.region_key</code> branch is
+  gone).</li>
+</ul>
+<h3 id="34-pr-scope-full-stack-vs-dbt-only-now-cube-follow-up-later">3.4 PR scope — full stack vs. dbt-only now, Cube follow-up later</h3>
+<ul>
+<li><strong>Chosen: full stack, one PR</strong> — sheet, staging, mart, <code>access.js</code>, <code>cube.js</code>,
+  and all 4 view YAML files land together.</li>
+<li><strong>Alternative:</strong> ship the dbt/mart side first; defer <code>cube.js</code>/view changes to
+  a follow-up.</li>
+<li><strong>Why full stack:</strong> a dbt-only PR would leave the mart's new columns fully
+  resolved but <strong>completely unenforced</strong> — any exception the data team adds in
+  the interim silently does nothing, which is worse than the current
+  dead-<code>exc</code>-join bug because it would look configured and live.</li>
+<li><strong>Cost:</strong> one larger PR spanning two projects (<code>src/dbt/kipptaf</code>, <code>src/cube</code>)
+  instead of two smaller reviewable ones.</li>
+</ul>
+<h3 id="35-statusexpirygrant-date-gating-enforced-in-dbt-vs-sheet-only-governance">3.5 Status/expiry/grant-date gating — enforced in dbt vs. sheet-only governance</h3>
+<ul>
+<li><strong>Chosen: enforce <code>status</code>, <code>expiry_date</code>, AND <code>grant_date</code> in dbt.</strong> The join
+  predicate to the exceptions staging model requires:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="n">status</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'active'</span>
+<span class="k">and</span><span class="w"> </span><span class="p">(</span><span class="n">expiry_date</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">or</span><span class="w"> </span><span class="n">expiry_date</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="k">current_date</span><span class="p">(</span><span class="s1">'America/New_York'</span><span class="p">))</span>
+<span class="k">and</span><span class="w"> </span><span class="p">(</span><span class="n">grant_date</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">or</span><span class="w"> </span><span class="n">grant_date</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="k">current_date</span><span class="p">(</span><span class="s1">'America/New_York'</span><span class="p">))</span>
+</code></pre></div>
+<p>A <code>revoked</code> row, a past-<code>expiry_date</code> row, or a <strong>future-dated</strong> <code>grant_date</code>
+  row is excluded from the live set — a grant does not take effect before its
+  <code>grant_date</code>, and stops applying once past <code>expiry_date</code>, regardless of
+  <code>status</code> still saying <code>active</code> (both conditions gate independently; either one
+  failing excludes the row).</p>
+<ul>
+<li><strong>This revises the initial draft</strong>, which treated <code>grant_date</code> as audit-only
+  (matching <code>notes</code>/<code>business_justification</code>). The branch author confirmed:
+  <strong>future grant dates take effect on the grant date, not before</strong> — so
+  <code>grant_date</code> is now a real gate, symmetric with <code>expiry_date</code> (both default to
+  "no constraint" when blank: a null <code>grant_date</code> means "already in effect"; a
+  null <code>expiry_date</code> means "never expires").</li>
+<li><strong>Why enforce:</strong> a revocation/scheduling workflow that doesn't actually gate
+  on dates until someone manually flips <code>status</code> is a real gap — a row entered
+  ahead of time for a grant starting next month would otherwise apply
+  immediately.</li>
+<li><strong>Cost:</strong> two extra join predicates (now <code>status</code> + <code>expiry_date</code> +
+  <code>grant_date</code>, all three gating the same live-row set); negligible.</li>
+</ul>
+<h3 id="36-where-the-abbreviation-set-union-is-computed-dbt-vs-accessjs">3.6 Where the abbreviation-set union is computed — dbt vs. <code>access.js</code></h3>
+<ul>
+<li><strong>Chosen: <code>access.js</code>.</strong> <code>dim_staff_cube_access</code> only resolves <strong>scalars per
+  grant</strong> (a scope tier + <code>region_key</code>/<code>abbreviation</code> identity + a per-grant
+  <code>includes_student_data</code> flag), packaged as an array of structs (one struct per
+  live grant row — see §3.7); <code>resolveAccess</code> loops over that array and calls
+  the existing pure <code>computeAllowedAbbreviations</code> helper once per grant,
+  unioning the results.</li>
+<li><strong>Alternative:</strong> precompute the final unioned array of abbreviations in dbt.</li>
+<li><strong>Why <code>access.js</code>:</strong> the "universe" of all locations
+  (<code>loadUniverses</code>/<code>computeAllowedAbbreviations</code>) is already a single source of
+  truth living in <code>access.js</code>, refreshed independent of dbt builds. Duplicating
+  it in dbt would mean re-materializing <code>dim_staff_cube_access</code> every time a
+  location is added/renamed just to keep the array current, and would fork the
+  "what does <code>network</code> mean" logic across two languages. This isn't a live open
+  question — it's documented here because it's the reason the mart's new column
+  is an array of small scalar structs, not a precomputed abbreviation array.</li>
+</ul>
+<h3 id="37-why-one-row-per-employee-originally-and-what-changes-to-allow-more">3.7 Why one row per employee originally, and what changes to allow more</h3>
+<p><strong>Why the initial draft assumed one row per employee:</strong> the original design
+carried the additive grant as four scalar columns
+(<code>additional_location_scope</code>/<code>additional_region_key</code>/
+<code>additional_location_abbreviation</code>/<code>grants_student_data</code>) on
+<code>dim_staff_cube_access</code>, joined via a plain <code>LEFT JOIN</code> to the exceptions
+staging model. A plain scalar <code>LEFT JOIN</code> assumes at most one matching row per
+join key — if two rows matched the same <code>employee_number</code>, the join would fan
+out <code>dim_staff_cube_access</code> to more than one row per <code>staff_key</code>, breaking its
+<code>unique</code>/<code>not_null</code> primary-key contract (every mart consumer, including the
+Cube <code>staff</code> cube's join, assumes exactly one row per <code>staff_key</code>). The staging
+model's <code>unique</code> test on <code>employee_number</code> existed specifically to guarantee
+that scalar join stayed safe.</p>
+<p><strong>Confirmed: multiple rows per employee are now allowed</strong> — e.g., an
+expired/superseded grant kept as history alongside a current one, or two
+simultaneous grants to two different schools/regions. This requires:</p>
+<ol>
+<li><strong>Drop the <code>unique</code> test on <code>employee_number</code></strong> in the staging model's
+   properties YAML (keep <code>not_null</code>).</li>
+<li><strong>Add a new data-quality test</strong>: at most one <em>live</em> row per employee may set
+   a non-null value in any of the five <code>staff_*_scope</code> remit columns. Without
+   this, two live rows disagreeing on (say) <code>staff_pii_scope</code> would need an
+   arbitrary precedence rule — the test instead makes that ambiguity a caught
+   data-entry error rather than a silent pick. See the illustrative singular
+   test in §8.</li>
+<li><strong>Restructure <code>dim_staff_cube_access</code>'s join</strong> from a single scalar
+   <code>LEFT JOIN</code> to two aggregations, both grouped by <code>employee_number</code>:</li>
+<li>one that resolves the (at-most-one) remit-override row per employee (safe
+     to pick via <code>max()</code> once the test in step 2 holds — see §5.1);</li>
+<li>one that <code>ARRAY_AGG</code>s every live location-grant row into a struct array,
+     preserving <code>dim_staff_cube_access</code>'s 1-row-per-<code>staff_key</code> grain while
+     carrying however many grants that person has.</li>
+<li><strong>Change the mart's exposed column shape</strong> from four scalars to one
+   <code>additional_location_grants ARRAY&lt;STRUCT&lt;...&gt;&gt;</code> column (§4.3).</li>
+<li><strong><code>access.js</code> iterates the array</strong> instead of reading one grant — calling
+   <code>computeAllowedAbbreviations</code> once per element and unioning everything;
+   <code>includes_student_data</code> is read per-element, not once per viewer.</li>
+</ol>
+<h2 id="4-schema-changes-before-after">4. Schema changes — before / after</h2>
+<h3 id="41-sheet-source-sources-externalyml">4.1 Sheet &amp; source (<code>sources-external.yml</code>)</h3>
+<div class="highlight"><pre><span></span><code>BEFORE (src_google_sheets__people__cube_access_individual_exceptions):
+  employee_number          STRING
+  student_location_scope   STRING   &lt;- removed
+  staff_location_scope     STRING   &lt;- removed
+  staff_department_scope   STRING
+  staff_pii_scope          STRING
+  staff_compensation_scope STRING
+  staff_observations_scope STRING
+  staff_benefits_scope     STRING
+  notes                    STRING
+
+AFTER:
+  employee_number           STRING
+  additional_location_type  STRING    &lt;- new
+  additional_location_name  STRING    &lt;- new
+  include_student_data      BOOLEAN   &lt;- new
+  staff_department_scope    STRING    (unchanged)
+  staff_pii_scope           STRING    (unchanged)
+  staff_compensation_scope  STRING    (unchanged)
+  staff_observations_scope  STRING    (unchanged)
+  staff_benefits_scope      STRING    (unchanged)
+  business_justification    STRING    &lt;- new
+  requested_by              STRING    &lt;- new
+  approved_by                STRING   &lt;- new
+  grant_date                DATE      &lt;- new
+  expiry_date                DATE     &lt;- new
+  status                    STRING    &lt;- new
+  notes                     STRING    (unchanged)
+</code></pre></div>
+<h3 id="42-staging-model">4.2 Staging model</h3>
+<p>SQL unchanged
+(<code>select *, from {{ source(...) }} where employee_number is not null</code>).
+Properties YAML gains the new columns; <code>not_null</code> stays on <code>employee_number</code> but
+<strong><code>unique</code> is dropped</strong> (§3.7); adds <code>not_null</code>/ <code>accepted_values</code> on <code>status</code>,
+<code>accepted_values</code> on <code>additional_location_type</code>, a new singular test for "at
+most one live remit-override row per employee" (§3.7, §8), a warn-level
+<code>expiry_date &gt;= grant_date</code> check, a check that <code>additional_location_name</code> is
+populated whenever <code>additional_location_type</code> is <code>region</code> or <code>school</code>, and
+<code>config.meta.contains_pii: true</code> (see §1 — <code>requested_by</code>/<code>approved_by</code> are
+employee numbers, a direct identifier under FERPA per root <code>CLAUDE.md</code>'s PII
+reference).</p>
+<h3 id="43-dim_staff_cube_access-mart-new-column">4.3 <code>dim_staff_cube_access</code> mart — new column</h3>
+<div class="highlight"><pre><span></span><code>additional_location_grants   ARRAY&lt;STRUCT&lt;
+    location_scope             STRING,   -- network / region / school
+    region_key                 STRING,   -- populated only when location_scope = 'region'
+    location_abbreviation      STRING,   -- populated only when location_scope = 'school'
+    includes_student_data      BOOL
+&gt;&gt;
+</code></pre></div>
+<p>One struct per <strong>live</strong> location-grant row for that person (empty array, never
+NULL, when they have none). This supersedes the initial draft's four scalar
+columns (<code>additional_location_scope</code>/<code>additional_region_key</code>/
+<code>additional_location_abbreviation</code>/<code>grants_student_data</code>) — those assumed
+exactly one grant per person; an array is required now that a person can have
+any number (§3.7).</p>
+<p>The existing <code>student_location_scope</code> / <code>staff_location_scope</code> columns are
+<strong>unchanged</strong> — they still resolve from department override → role only
+(exceptions no longer participate in that coalesce; they participate in the new
+additive column instead). The five <code>staff_*_scope</code> remit columns keep their
+existing coalesce chain, with the individual-exception tier now actually wired
+in (the bug fix), sourced from the at-most-one live remit-override row per
+employee (§3.7).</p>
+<h3 id="44-accessjs-cubejs-securitycontext-shape-change">4.4 <code>access.js</code> / <code>cube.js</code> <code>securityContext</code> — shape change</h3>
+<div class="highlight"><pre><span></span><code>BEFORE:
+  allowed_abbreviations        -- staff remit array (role/dept ∩ location)
+  student_location_scope       -- single tier, consumed by 3 view groups
+
+AFTER:
+  allowed_abbreviations         -- staff remit array, now UNIONED with the
+                                   abbreviations from EVERY live grant in
+                                   row.additional_location_grants (always,
+                                   regardless of includes_student_data)
+  allowed_student_abbreviations -- NEW: base student-scope array, UNIONED
+                                   with the abbreviations from only the
+                                   grants where includes_student_data = true
+  (student_location_scope removed from securityContext — superseded by the
+   array)
+</code></pre></div>
+<h3 id="45-view-access_policy-student-views-4">4.5 View <code>access_policy</code> — student views (×4)</h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># BEFORE (student_enrollments_view.yml, and identically in the other 3):</span>
+<span class="nt">access_policy</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">group</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">student-region</span>
+<span class="w">    </span><span class="nt">row_level</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">filters</span><span class="p">:</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">member</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">locations_region_key</span>
+<span class="w">          </span><span class="nt">operator</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">equals</span>
+<span class="w">          </span><span class="nt">values</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">"{</span><span class="nv"> </span><span class="s">securityContext.region_key</span><span class="nv"> </span><span class="s">}"</span><span class="p p-Indicator">]</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">group</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">student-school</span>
+<span class="w">    </span><span class="nt">row_level</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">filters</span><span class="p">:</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">member</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">locations_abbreviation</span>
+<span class="w">          </span><span class="nt">operator</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">equals</span>
+<span class="w">          </span><span class="nt">values</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">"{</span><span class="nv"> </span><span class="s">securityContext.location_abbreviation</span><span class="nv"> </span><span class="s">}"</span><span class="p p-Indicator">]</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">group</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">student-network</span>
+<span class="w">    </span><span class="c1"># no row_level</span>
+
+<span class="c1"># AFTER:</span>
+<span class="nt">access_policy</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">group</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">student</span>
+<span class="w">    </span><span class="nt">member_level</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">includes</span><span class="p">:</span><span class="w"> </span><span class="s">"*"</span>
+<span class="w">    </span><span class="nt">row_level</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">filters</span><span class="p">:</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">member</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">locations_abbreviation</span>
+<span class="w">          </span><span class="nt">operator</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">equals</span>
+<span class="w">          </span><span class="nt">values</span><span class="p">:</span><span class="w"> </span><span class="s">"{</span><span class="nv"> </span><span class="s">securityContext.allowed_student_abbreviations</span><span class="nv"> </span><span class="s">}"</span>
+</code></pre></div>
+<p>Each view's actual flat member name for the abbreviation
+(<code>locations_abbreviation</code> vs. an unprefixed <code>abbreviation</code>, etc.) must be
+verified per-view from its own <code>includes:</code>/<code>prefix:</code> block before writing the
+filter — do not assume it matches <code>student_enrollments_view</code>.</p>
+<h2 id="5-column-reference-possible-values-resolution-rules">5. Column reference — possible values &amp; resolution rules</h2>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Type</th>
+<th>Possible values</th>
+<th>Enforced in dbt?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>employee_number</code></td>
+<td>STRING</td>
+<td>any valid staff ID (repeatable — an employee may have multiple rows)</td>
+<td><code>not_null</code> (error); <strong>no longer <code>unique</code></strong> (§3.7)</td>
+</tr>
+<tr>
+<td><code>additional_location_type</code></td>
+<td>STRING</td>
+<td><code>network</code>, <code>region</code>, <code>school</code>, or blank (no grant on this row)</td>
+<td><code>accepted_values</code> (error) when present</td>
+</tr>
+<tr>
+<td><code>additional_location_name</code></td>
+<td>STRING</td>
+<td>any entry from the <code>Region</code>/<code>Name</code> values on the locations sheet, or blank when <code>type</code> is blank/<code>network</code>. For <code>additional_location_type</code> = <code>school</code> the value must match the <code>name</code> from <code>kipptaf_marts.dim_locations</code>. For <code>additional_location_type</code> = <code>region</code> the value must match the <code>legal_entity</code> from <code>kipptaf_marts.dim_regions</code></td>
+<td>no enum test; required (not-null) when <code>type</code> is <code>region</code> or <code>school</code>; matched against <code>dim_regions</code>/<code>dim_locations</code></td>
+</tr>
+<tr>
+<td><code>include_student_data</code></td>
+<td>BOOLEAN</td>
+<td><code>true</code>, <code>false</code>, blank (→ <code>false</code>)</td>
+<td>none — read per-row</td>
+</tr>
+<tr>
+<td><code>staff_department_scope</code></td>
+<td>STRING</td>
+<td><code>all</code>, <code>own_group</code>, <code>none</code>, blank</td>
+<td><code>accepted_values</code> (error) — unchanged from today</td>
+</tr>
+<tr>
+<td><code>staff_pii_scope</code></td>
+<td>STRING</td>
+<td><code>none</code>, <code>all_in_scope</code>, <code>reporting_chain_or_below_rank</code>, <code>reporting_chain</code>, <code>teaching_staff</code>, blank</td>
+<td><code>accepted_values</code> (error) — unchanged</td>
+</tr>
+<tr>
+<td><code>staff_compensation_scope</code></td>
+<td>STRING</td>
+<td>same 5-value vocabulary as <code>staff_pii_scope</code></td>
+<td><code>accepted_values</code> (error) — unchanged</td>
+</tr>
+<tr>
+<td><code>staff_observations_scope</code></td>
+<td>STRING</td>
+<td>same 5-value vocabulary</td>
+<td><code>accepted_values</code> (error) — unchanged</td>
+</tr>
+<tr>
+<td><code>staff_benefits_scope</code></td>
+<td>STRING</td>
+<td>same 5-value vocabulary</td>
+<td><code>accepted_values</code> (error) — unchanged</td>
+</tr>
+<tr>
+<td><code>business_justification</code></td>
+<td>STRING</td>
+<td>free text</td>
+<td>none — audit only, never read by <code>dim_staff_cube_access</code></td>
+</tr>
+<tr>
+<td><code>requested_by</code></td>
+<td>STRING</td>
+<td>any valid staff ID</td>
+<td>none — audit only</td>
+</tr>
+<tr>
+<td><code>approved_by</code></td>
+<td>STRING</td>
+<td>any valid staff ID</td>
+<td>none — audit only</td>
+</tr>
+<tr>
+<td><code>grant_date</code></td>
+<td>DATE</td>
+<td>any date, or blank (→ already in effect)</td>
+<td>gates whether the row is live (§3.5); warn: <code>expiry_date &gt;= grant_date</code></td>
+</tr>
+<tr>
+<td><code>expiry_date</code></td>
+<td>DATE</td>
+<td>any date, or blank (→ never expires)</td>
+<td>gates whether the row is live (§3.5); warn: <code>expiry_date &gt;= grant_date</code></td>
+</tr>
+<tr>
+<td><code>status</code></td>
+<td>STRING</td>
+<td><code>active</code>, <code>expired</code>, <code>revoked</code></td>
+<td><code>accepted_values</code> + <code>not_null</code> (error) — gates whether the row is live</td>
+</tr>
+<tr>
+<td><code>notes</code></td>
+<td>STRING</td>
+<td>free text</td>
+<td>none — audit only, unchanged from today</td>
+</tr>
+</tbody>
+</table>
+<h3 id="51-resolving-each-live-row-into-a-grant-struct">5.1 Resolving each live row into a grant struct</h3>
+<div class="highlight"><pre><span></span><code><span class="c1">-- illustrative; final column/join names settle at implementation time.</span>
+<span class="c1">-- No 'All' branch anymore (§3.3) -- each type maps to exactly one scope.</span>
+<span class="k">case</span>
+<span class="w">    </span><span class="k">when</span><span class="w"> </span><span class="n">exc</span><span class="p">.</span><span class="n">additional_location_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'network'</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="s1">'network'</span>
+<span class="w">    </span><span class="k">when</span><span class="w"> </span><span class="n">exc</span><span class="p">.</span><span class="n">additional_location_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'region'</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="s1">'region'</span>
+<span class="w">    </span><span class="k">when</span><span class="w"> </span><span class="n">exc</span><span class="p">.</span><span class="n">additional_location_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'school'</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="s1">'school'</span>
+<span class="w">    </span><span class="k">else</span><span class="w"> </span><span class="s1">'none'</span>
+<span class="k">end</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">location_scope</span><span class="p">,</span>
+
+<span class="k">case</span>
+<span class="w">    </span><span class="k">when</span><span class="w"> </span><span class="n">exc</span><span class="p">.</span><span class="n">additional_location_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'region'</span>
+<span class="w">        </span><span class="k">then</span><span class="w"> </span><span class="n">reg</span><span class="p">.</span><span class="n">region_key</span><span class="w">                 </span><span class="c1">-- dim_regions.legal_entity match</span>
+<span class="w">    </span><span class="k">else</span><span class="w"> </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span>
+<span class="k">end</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">region_key</span><span class="p">,</span>
+
+<span class="k">case</span>
+<span class="w">    </span><span class="k">when</span><span class="w"> </span><span class="n">exc</span><span class="p">.</span><span class="n">additional_location_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'school'</span>
+<span class="w">        </span><span class="k">then</span><span class="w"> </span><span class="n">loc</span><span class="p">.</span><span class="n">abbreviation</span><span class="w">               </span><span class="c1">-- dim_locations.name match</span>
+<span class="w">    </span><span class="k">else</span><span class="w"> </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span>
+<span class="k">end</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">location_abbreviation</span><span class="p">,</span>
+
+<span class="k">coalesce</span><span class="p">(</span><span class="n">exc</span><span class="p">.</span><span class="n">include_student_data</span><span class="p">,</span><span class="w"> </span><span class="k">false</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">includes_student_data</span>
+</code></pre></div>
+<p>Join targets: <code>reg</code> = <code>dim_regions</code> on
+<code>exc.additional_location_name = reg.legal_entity</code> (matches values like
+<code>TEAM Academy Charter School</code>, <code>KIPP Cooper Norcross Academy</code>, <code>KIPP Miami</code>,
+<code>KIPP TEAM and Family Schools Inc.</code>). <code>loc</code> = <code>dim_locations</code> on
+<code>exc.additional_location_name = loc.name</code> (matches individual school/campus/room
+names like <code>KIPP Rise Academy</code>, <code>Room 9</code>, <code>18th Ave Campus</code>). Rows where
+<code>additional_location_type</code> is blank are excluded before this resolution runs
+(they contribute no grant — see Example F in §6) and are handled purely through
+the remit-override aggregation instead.</p>
+<h2 id="6-worked-examples">6. Worked examples</h2>
+<p><strong>A — Network-wide grant</strong> (e.g., a central Data Team analyst staffed on a
+cross-region project — one row, no enumeration needed):</p>
+<div class="highlight"><pre><span></span><code>employee_number=012345, additional_location_type=network,
+additional_location_name=(blank), include_student_data=TRUE,
+staff_pii_scope=all_in_scope, status=active, expiry_date=2026-12-31
+
+→ location_scope = network, includes_student_data = true
+→ allowed_abbreviations         = every abbreviation in the network
+→ allowed_student_abbreviations = every abbreviation in the network
+</code></pre></div>
+<p><strong>B — Named region grant, staff-only</strong> (a Newark-based coach picking up a Camden
+project, no student-data need):</p>
+<div class="highlight"><pre><span></span><code>employee_number=023456, additional_location_type=region,
+additional_location_name='KIPP Cooper Norcross Academy',
+include_student_data=FALSE, status=active, expiry_date=2026-09-01
+
+→ location_scope = region, region_key = &lt;Camden's region_key&gt;,
+  includes_student_data = false
+→ allowed_abbreviations         = base (their own Newark-region set) ∪ every Camden abbreviation
+→ allowed_student_abbreviations = base only (Camden students NOT added)
+</code></pre></div>
+<p><strong>C — Named school grant, both staff and student data</strong>:</p>
+<div class="highlight"><pre><span></span><code>employee_number=034567, additional_location_type=school,
+additional_location_name='KIPP Life Academy', include_student_data=TRUE,
+status=active
+
+→ location_scope = school, location_abbreviation = &lt;KIPP Life Academy's abbreviation&gt;,
+  includes_student_data = true
+→ allowed_abbreviations and allowed_student_abbreviations both gain
+  exactly that one school's abbreviation, on top of the person's base scope
+</code></pre></div>
+<p><strong>D — Two additional schools for the same employee</strong> (demonstrates the multi-row
+model — no combined value on one row; one row per school):</p>
+<div class="highlight"><pre><span></span><code>Row 1: employee_number=045678, additional_location_type=school,
+       additional_location_name='KIPP BOLD Academy', include_student_data=TRUE,
+       status=active
+Row 2: employee_number=045678, additional_location_type=school,
+       additional_location_name='KIPP THRIVE Academy', include_student_data=FALSE,
+       status=active
+
+→ additional_location_grants = [
+      { location_scope: school, location_abbreviation: &lt;BOLD's abbreviation&gt;,   includes_student_data: true  },
+      { location_scope: school, location_abbreviation: &lt;THRIVE's abbreviation&gt;, includes_student_data: false }
+  ]
+→ allowed_abbreviations         = base ∪ {BOLD's abbreviation} ∪ {THRIVE's abbreviation}
+→ allowed_student_abbreviations = base ∪ {BOLD's abbreviation}      (THRIVE excluded — includes_student_data=false on that row)
+</code></pre></div>
+<p><strong>E — Multiple regions instead of <code>'All'</code></strong> (a TEAM/Newark employee needing
+access to every other region — three rows, since <code>'All'</code> no longer exists; see
+§3.3):</p>
+<div class="highlight"><pre><span></span><code>Row 1: employee_number=056789, additional_location_type=region,
+       additional_location_name='KIPP Cooper Norcross Academy', status=active
+Row 2: employee_number=056789, additional_location_type=region,
+       additional_location_name='KIPP Miami', status=active
+Row 3: employee_number=056789, additional_location_type=region,
+       additional_location_name='KIPP TEAM and Family Schools Inc.', status=active
+
+→ three grant structs, one per named region
+→ allowed_abbreviations = base (Newark) ∪ every Camden abbreviation
+                                ∪ every Miami abbreviation
+                                ∪ every KTAF/central-office abbreviation
+(Note: if this person actually needs literally everything, a single
+ additional_location_type=network row is simpler than enumerating every
+ region — this example is for "several specific regions," not "everything.")
+</code></pre></div>
+<p><strong>F — Remit-only row, no location grant</strong> (demonstrates the two mechanisms are
+independent):</p>
+<div class="highlight"><pre><span></span><code>employee_number=067890, additional_location_type=(blank),
+staff_compensation_scope=reporting_chain_or_below_rank, status=active
+
+→ this row contributes NOTHING to additional_location_grants (excluded —
+  additional_location_type is blank)
+→ staff_compensation_scope IS overridden to reporting_chain_or_below_rank
+  (via the now-fixed coalesce chain), independent of the (absent) location grant
+</code></pre></div>
+<p><strong>G — Expired grant (no effect)</strong>:</p>
+<div class="highlight"><pre><span></span><code>employee_number=078901, additional_location_type=school,
+additional_location_name='KIPP Truth Academy', status=active,
+expiry_date=2026-01-01   -- already past
+
+→ excluded from the live-row set entirely (expiry_date &lt; current_date)
+→ contributes nothing to additional_location_grants
+→ if this employee has no OTHER live rows, they fall through to
+  department override → role exactly as if this row never existed
+</code></pre></div>
+<p><strong>H — Revoked grant (no effect)</strong>:</p>
+<div class="highlight"><pre><span></span><code>employee_number=089012, additional_location_type=network, status=revoked
+
+→ excluded from the live-row set (status != 'active'), regardless of
+  expiry_date/grant_date
+→ contributes nothing, same as G
+</code></pre></div>
+<p><strong>I — One expired row and one active row for the same employee</strong> (demonstrates
+that rows are evaluated independently — an old grant rolling off doesn't affect
+a separate current one):</p>
+<div class="highlight"><pre><span></span><code>Row 1 (historical): employee_number=090123, additional_location_type=school,
+                     additional_location_name='KIPP Sunrise Academy',
+                     status=active, expiry_date=2025-06-30   -- expired
+Row 2 (current):     employee_number=090123, additional_location_type=school,
+                     additional_location_name='KIPP Seek Academy',
+                     status=active, expiry_date=2026-12-31   -- still live
+
+→ Row 1 excluded (past expiry_date); Row 2 included
+→ additional_location_grants = [ { location_scope: school,
+     location_abbreviation: &lt;Seek's abbreviation&gt;, includes_student_data: ... } ]
+  (Sunrise is NOT present — its row is retained in the sheet for audit
+  history, but contributes nothing once expired)
+</code></pre></div>
+<h2 id="7-decisions-finalized-this-revision">7. Decisions finalized this revision</h2>
+<ol>
+<li><strong>§3.7 — multiple rows per employee: RESOLVED, allowed.</strong> The
+   <code>employee_number</code> uniqueness test is dropped; the mart moves to an
+   array-of-structs column; <code>access.js</code> unions across all live grants. See §3.7
+   for the full "why one row originally, what changes" answer and §8 for the
+   concrete task list.</li>
+<li><strong>§3.5 — <code>grant_date</code>: RESOLVED, enforced.</strong> A future <code>grant_date</code> now delays
+   the grant — it does not apply before that date, reversing the initial draft's
+   "audit-only" treatment.</li>
+<li><strong>§3.3 — <code>'All'</code>: RESOLVED, removed entirely</strong> (not just made asymmetric, as
+   the initial draft proposed). Sheet instructions (the user guide, §11) will
+   tell the data team to list every additional location as its own row;
+   <code>additional_location_type = network</code> remains the one-row path for "grant
+   literally everything."</li>
+<li>
+<p><strong>Sheet migration: DONE.</strong> The data team has already migrated the live sheet
+   to the new header set / re-authored existing rows. No outstanding migration
+   task in §10.</p>
+</li>
+<li>
+<p><strong>§7 (prior revision) — remit-column conflict across multiple rows: RESOLVED,
+   confirmed.</strong> At most one <em>live</em> row per employee may set any of the five
+   <code>staff_*_scope</code> remit columns; a dbt test hard-fails (<code>severity: error</code>,
+   matching repo convention for staging-layer tests) if two live rows for the
+   same employee disagree. The mental model this matches: remit-scope overrides
+   are a per-person setting entered once (on whichever one row the data team
+   chooses); every other row for that same person is purely a location grant.
+   The alternatives considered and rejected — a "most recent <code>grant_date</code> wins"
+   precedence rule, and splitting remit overrides and location grants into two
+   separate row-types or sheets — are documented in §3.7 for context but are not
+   being pursued.</p>
+</li>
+</ol>
+<h2 id="8-implementation-task-list">8. Implementation task list</h2>
+<ol>
+<li><code>models/google/sheets/sources-external.yml</code> — column set change (§4.1).</li>
+<li><code>models/google/sheets/staging/stg_google_sheets__people__cube_access_individual_exceptions.sql</code>
+   — no change expected; confirm after columns land.</li>
+<li><code>models/google/sheets/staging/properties/stg_google_sheets__people__cube_access_individual_exceptions.yml</code>
+   — new column docs/tests; <strong>drop <code>unique</code> on <code>employee_number</code></strong> (keep
+   <code>not_null</code>); <code>status</code>/<code>additional_location_type</code> <code>accepted_values</code>;
+   <code>expiry_date &gt;= grant_date</code> warn check; <code>additional_location_name</code> required
+   when <code>additional_location_type</code> in (<code>region</code>, <code>school</code>);
+   <code>contains_pii: true</code>; and the new singular test (illustrative SQL below)
+   enforcing "at most one live row per employee sets a remit-override column":</li>
+</ol>
+<div class="highlight"><pre><span></span><code><span class="c1">-- tests/test_cube_access_individual_exceptions_single_remit_row.sql</span>
+<span class="k">select</span><span class="w"> </span><span class="n">employee_number</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n_remit_rows</span>
+<span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="s1">'stg_google_sheets__people__cube_access_individual_exceptions'</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="k">where</span><span class="w"> </span><span class="n">status</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'active'</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="p">(</span><span class="n">expiry_date</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">or</span><span class="w"> </span><span class="n">expiry_date</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="k">current_date</span><span class="p">(</span><span class="s1">'America/New_York'</span><span class="p">))</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="p">(</span><span class="n">grant_date</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">or</span><span class="w"> </span><span class="n">grant_date</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="k">current_date</span><span class="p">(</span><span class="s1">'America/New_York'</span><span class="p">))</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="n">staff_department_scope</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">        </span><span class="k">or</span><span class="w"> </span><span class="n">staff_pii_scope</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">        </span><span class="k">or</span><span class="w"> </span><span class="n">staff_compensation_scope</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">        </span><span class="k">or</span><span class="w"> </span><span class="n">staff_observations_scope</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">        </span><span class="k">or</span><span class="w"> </span><span class="n">staff_benefits_scope</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">    </span><span class="p">)</span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">employee_number</span>
+<span class="k">having</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">1</span>
+</code></pre></div>
+<ol>
+<li><code>models/marts/dimensions/dim_staff_cube_access.sql</code> — gate the exceptions
+   join on <code>status</code>/<code>expiry_date</code>/<code>grant_date</code> (§3.5); restructure into two
+   aggregations grouped by <code>employee_number</code> (§3.7): one resolving the
+   at-most-one remit-override row (wire into the five coalesce chains — the bug
+   fix), one <code>ARRAY_AGG</code>-ing every live location-grant row into the
+   <code>additional_location_grants</code> struct array (§5.1), joining <code>dim_regions</code> and
+   <code>dim_locations</code>.</li>
+<li><code>models/marts/dimensions/properties/dim_staff_cube_access.yml</code> — document the
+   new <code>additional_location_grants</code> array column (pull the exact
+   <code>ARRAY&lt;STRUCT&lt;...&gt;&gt;</code> contract syntax from a real build's
+   <code>INFORMATION_SCHEMA.COLUMNS</code>, per <code>src/dbt/CLAUDE.md</code>'s guidance on large
+   struct types — don't hand-transcribe).</li>
+<li><code>src/cube/access.js</code> — extend <code>buildSecurityContext</code> to iterate
+   <code>row.additional_location_grants</code>, calling <code>computeAllowedAbbreviations</code> once
+   per grant and unioning into <code>allowed_abbreviations</code> (always) and
+   <code>allowed_student_abbreviations</code> (only for grants where
+   <code>includes_student_data</code> is true); collapse <code>buildGroups</code>'s student tiers into
+   a single <code>student</code> group with the same empty-array guard used for
+   <code>staff-pii-*</code>.</li>
+<li><code>src/cube/access.test.js</code> — update unit tests for the new <code>buildGroups</code> /
+   <code>buildSecurityContext</code> shapes, including a multi-grant case (mirroring
+   Example D).</li>
+<li><code>src/cube/cube.js</code> — <code>resolveAccess</code> selects the new mart column and calls
+   the extended <code>access.js</code> helpers.</li>
+<li><code>src/cube/cube.test.js</code> — update as needed.</li>
+<li>Four student view YAMLs — collapse 3-group policy to 1 (§4.5), verifying each
+   view's own <code>prefix:</code>/member-name convention before writing the filter:</li>
+<li><code>model/views/students/student_enrollments_view.yml</code></li>
+<li><code>model/views/students/student_section_enrollments_view.yml</code></li>
+<li><code>model/views/student_attendance/student_attendance_view.yml</code></li>
+<li><code>model/views/student_assessments/student_assessment_scores_view.yml</code></li>
+<li><code>src/cube/CLAUDE.md</code> — update the "View access policies" section's
+   description of student RLS (3 tier-groups → 1 array-based group), matching
+   the existing <code>staff_pii</code> description style.</li>
+<li><strong>User guide (new — Ops-facing)</strong>: see §11.</li>
+<li><code>docs/superpowers/specs/2026-06-03-cube-security-redesign.md</code> — optionally
+   append a dated revision-history entry pointing to this plan (existing
+   convention in that file); not required to implement the code change.</li>
+</ol>
+<h2 id="9-validation-plan">9. Validation plan</h2>
+<ol>
+<li><code>node --test src/cube/access.test.js</code> (and <code>cube.test.js</code>) after the JS
+   changes, including a multi-grant test case.</li>
+<li><code>uv run dbt build --select stg_google_sheets__people__cube_access_individual_exceptions+ dim_staff_cube_access --target dev --defer --state src/dbt/kipptaf/target/prod</code>
+   — the sheet has already been migrated (§7.4), so this should be runnable
+   directly.</li>
+<li>Confirm <code>dim_staff_cube_access</code> stays 1:1 on <code>staff_key</code> (the array column
+   must not fan out the grain) and every <code>accepted_values</code>/<code>not_null</code> test
+   passes, including the new single-remit-row singular test.</li>
+<li>Cube Dev Mode / SQL API RLS validation per <code>src/cube/CLAUDE.md</code>'s "Testing
+   row-level security locally" section, across a viewer matrix: no exception
+   (baseline unchanged), network grant, named-region grant (staff-only and
+   staff+student), named-school grant, two simultaneous school grants (Example
+   D), several-regions-via-multiple-rows (Example E), expired / revoked /
+   not-yet-granted rows (confirm no effect), and the expired+active-together
+   case (Example I). Requires the local dev server, which must be run by the
+   branch author — not runnable from this session.</li>
+</ol>
+<h2 id="10-rollout-sequencing">10. Rollout / sequencing</h2>
+<ol>
+<li>~~Ship the header change to the Google Sheet~~ — <strong>done</strong> (§7.4); the data
+   team has already migrated the sheet to the new schema.</li>
+<li>Re-stage: <code>stage_external_sources --target staging</code> / <code>--target dev</code> as
+   appropriate (classifier-blocked for <code>staging</code> — needs direct user
+   authorization).</li>
+<li>Land this plan's code changes on this branch.</li>
+<li>Publish the user guide (§11) so the data team has the "no <code>'All'</code>, one row
+   per location, <code>network</code> for everything" convention documented before they add
+   further exception rows.</li>
+<li>Validate end-to-end per §9, then merge.</li>
+</ol>
+<h2 id="11-user-guide-ops-facing-new-task">11. User guide (Ops-facing) — new task</h2>
+<p>A short guide for whoever maintains the sheet (the data team / Ops), separate
+from this engineering plan. Recommend a new file,
+<code>docs/guides/cube-access-individual-exceptions.md</code> (added to <code>mkdocs.yml</code>
+<code>nav:</code>, per <code>docs/CLAUDE.md</code>), rather than folding it into the existing
+<code>docs/guides/google-sheets.md</code> — this sheet has enough dedicated structure (two
+independent mechanisms, a lifecycle) to warrant its own page, cross-linked from
+the general Google Sheets guide.</p>
+<p>Must cover, in plain non-engineering language:</p>
+<ul>
+<li><strong>One row per additional location.</strong> Need access to two schools? Two rows,
+  same <code>employee_number</code>, one <code>additional_location_name</code> each — never combine
+  two locations into one row.</li>
+<li><strong>No <code>'All'</code> option.</strong> List every additional region/school you're granting,
+  one row each. If someone genuinely needs the whole network, use
+  <code>additional_location_type = network</code> on a single row instead of listing every
+  region.</li>
+<li><strong>The two independent things a row can do</strong>: grant a location (additive — on
+  top of the person's normal access, never replacing it) and/or override one of
+  the five sensitive-field visibility settings (replaces their normal setting
+  for that field). A row can do either, both, or neither meaningfully (a row
+  with neither is inert).</li>
+<li><strong>Lifecycle columns</strong>: <code>status</code> (<code>active</code>/<code>expired</code>/<code>revoked</code>), <code>grant_date</code>
+  (starts applying on this date, blank = immediately), <code>expiry_date</code> (stops
+  applying after this date, blank = never). To revoke early, set
+  <code>status = revoked</code> rather than deleting the row (keeps the audit trail).</li>
+<li><strong>Audit columns</strong> (<code>business_justification</code>, <code>requested_by</code>, <code>approved_by</code>,
+  <code>notes</code>) are for the data team's own record-keeping — worked examples should
+  show a filled-in row so the expectation is clear.</li>
+<li>Worked examples mirroring §6 (A–I), in plain language rather than SQL.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,2515 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Attendance period snapshot and chronic absence definition - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#attendance-period-snapshot-and-chronic-absence-definition" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Attendance period snapshot and chronic absence definition
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/fresh-dashboard-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/launch-page-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Launch Page
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube-access-individual-exceptions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube Access - Individual Exceptions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/fresh-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FRESH Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/carat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CARAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/csgf-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CSGF Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/hs-early-warning-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HS Early Warning Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/dibels-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DIBELS Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/stat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/athletic-eligibility-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Athletic Eligibility Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-we-got-here" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How we got here
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-definition" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The definition
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The definition">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-tier-boundary-has-to-move-with-the-threshold" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The tier boundary has to move with the threshold
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The model
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The model">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#build-from-the-intermediate-model-not-the-fact-plus-a-dim-join" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Build from the intermediate model, not the fact plus a dim join
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#grain-is-student-and-school-not-the-enrollment-stint" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Grain is student and school, not the enrollment stint
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#materialize-it-as-a-table" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Materialize it as a table
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#daily-fact-or-period-snapshot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Daily fact or period snapshot
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#enrollments-that-do-not-span-the-period" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Enrollments that do not span the period
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#truancy-rides-along-enrollment-headcount-does-not" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Truancy rides along; enrollment headcount does not
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#documentation-surfaces" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Documentation surfaces
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cube-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cube changes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#impact" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Impact
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#out-of-scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Out of scope
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#open-question-for-kipp-foundation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open question for KIPP Foundation
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/specs/2026-08-26-attendance-period-snapshot-design.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="attendance-period-snapshot-and-chronic-absence-definition">Attendance period snapshot and chronic absence definition</h1>
+<p>Refs <a href="https://github.com/TEAMSchools/teamster/issues/4994">#4994</a>. Follow-up:
+<a href="https://github.com/TEAMSchools/teamster/issues/5015">#5015</a>.</p>
+<p>Supersedes <code>2026-08-26-chronic-absence-definition-alignment-design.md</code>, which
+scoped only the definition fix and assumed the Cube measure families would stay.</p>
+<h2 id="summary">Summary</h2>
+<p>Two problems, one fix.</p>
+<p>The chronic absence definition in <code>fct_student_attendance_daily</code> diverges from
+every authority KTAF answers to. Separately, the Cube layer carries 30 duplicate
+measures and 165 lines of <code>queryRewrite</code> to pick a period-end row out of a daily
+fact.</p>
+<p>Both dissolve if dbt publishes a <strong>periodic snapshot</strong> at period grain instead
+of stamping period-end flags onto 12.8M daily rows.</p>
+<h2 id="how-we-got-here">How we got here</h2>
+<p>We started by asking where Tesseract's new features could replace hand-written
+<code>cube.js</code> logic. Most of them could not. Recording the dead ends with their
+numbers, so they are not relitigated.</p>
+<table>
+<thead>
+<tr>
+<th>Approach</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>rolling_window</code> with <code>trailing: unbounded</code></td>
+<td>Emitted <strong>zero</strong> window functions and silently discarded the query's date range lower bound. Counted all enrollments in history.</td>
+</tr>
+<tr>
+<td><code>rolling_window</code> with <code>type: to_date</code> plus <code>grain.include</code></td>
+<td>Generated SQL that BigQuery rejects: <code>rolling_source... is neither grouped nor aggregated</code>.</td>
+</tr>
+<tr>
+<td>Custom granularity via <code>origin</code></td>
+<td><strong>Silently ignored.</strong> Two different origin values both bucketed on the calendar year. No error.</td>
+</tr>
+<tr>
+<td>Custom granularity via <code>offset: -6 months</code></td>
+<td><strong>Works.</strong> Correct July-anchored academic year buckets.</td>
+</tr>
+<tr>
+<td>Multi-stage <code>rank</code> for period-end selection</td>
+<td>Correct SQL once <code>keep_only</code> was added, but <strong>timed out past 150s</strong>, and stayed slow scoped to a single month. Structural, not volume.</td>
+</tr>
+<tr>
+<td>Multi-stage <code>grain.include</code> with no window</td>
+<td><strong>Works and is fast</strong>, roughly a two-level <code>GROUP BY</code>.</td>
+</tr>
+</tbody>
+</table>
+<p>Measured against the real view, with RLS and joins, cold and with no
+pre-aggregation:</p>
+<table>
+<thead>
+<tr>
+<th>Query</th>
+<th>Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Plain additive aggregate by academic year</td>
+<td>14.3s</td>
+</tr>
+<tr>
+<td>Multi-stage <code>grain.include</code>, no window</td>
+<td>14.9s to 30.6s</td>
+</tr>
+<tr>
+<td>Legacy <code>_year_end</code>, 3 academic years</td>
+<td>38.4s</td>
+</tr>
+<tr>
+<td>Legacy <code>_week_end</code>, one academic year</td>
+<td>51.6s</td>
+</tr>
+<tr>
+<td>Multi-stage <code>rank</code></td>
+<td>timeout past 150s</td>
+</tr>
+</tbody>
+</table>
+<p>Two conclusions. Window functions at query time do not scale on this fact. And
+the legacy anchor-flag path is itself slow — 51.6s sits inside the Cube MCP
+server's 55 second poll deadline, which is the same failure
+<a href="https://github.com/TEAMSchools/teamster/issues/4333">#4333</a> fixed for the
+assessment cubes. Nothing has hit it only because nothing consumes this view
+yet.</p>
+<p>Two mechanics to carry forward regardless of design:</p>
+<ul>
+<li><code>keep_only</code> is mandatory on any multi-stage measure that orders by a
+  dimension, or the ordering column lands in <code>PARTITION BY</code> and every row ranks
+  first. It must name the base time dimension (<code>dates.date_day</code>), not a derived
+  one, or a <code>granularity</code> query partitions too coarse and <strong>silently</strong> returns
+  the wrong number.</li>
+<li><code>attendance_date</code> must be <code>CAST({CUBE}.date_key AS TIMESTAMP)</code>. Unqualified,
+  any multi-stage reference to it fails with
+  <code>Column name date_key is ambiguous</code>.</li>
+</ul>
+<h2 id="the-definition">The definition</h2>
+<p>Every authority agrees on the comparison and on including mid-year leavers, and
+differs only on the minimum-days threshold.</p>
+<table>
+<thead>
+<tr>
+<th>Authority</th>
+<th>Chronically absent when</th>
+<th>Minimum days</th>
+<th>Leavers</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>New Jersey, state accountability</td>
+<td>absent 10% or more of days in membership</td>
+<td>45 at a school</td>
+<td>included</td>
+</tr>
+<tr>
+<td>New Jersey, federal EDFacts</td>
+<td>absent 10% or more</td>
+<td>10</td>
+<td>included</td>
+</tr>
+<tr>
+<td>Florida, covering Miami</td>
+<td>absent 10% or more of school days at the school</td>
+<td>10</td>
+<td>included</td>
+</tr>
+<tr>
+<td>KIPP Foundation</td>
+<td>ADA at or below 90.0%</td>
+<td>10 at that individual school</td>
+<td>included</td>
+</tr>
+</tbody>
+</table>
+<p>Decisions:</p>
+<ol>
+<li>Chronically absent when ADA is <strong>at or below 90.0%</strong>.</li>
+<li>Eligible at <strong>10 or more membership days at the individual school</strong>, counted
+   cumulatively across the year, not per period.</li>
+<li>Mid-year leavers are <strong>included</strong>.</li>
+<li><strong>Tier 2 starts strictly above 90.0%</strong>, so Tier 3 covers 80% through 90.0%
+   inclusive. See below.</li>
+<li>The New Jersey 45-day threshold is out of scope
+   (<a href="https://github.com/TEAMSchools/teamster/issues/5015">#5015</a>).</li>
+</ol>
+<p>Three defects this corrects, sized on AY2025:</p>
+<table>
+<thead>
+<tr>
+<th>Defect</th>
+<th>Enrollments affected</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>_running_ada &lt; 0.90</code> excludes students at exactly 90.0%</td>
+<td>198, and <strong>all 198</strong> are missed. IEEE division is correctly rounded, so <code>avg()</code> over an exact 9/10 ratio always yields the same double as the literal <code>0.90</code>, and <code>0.9 &lt; 0.9</code> is false every time. An earlier draft claimed 79 were caught by float scatter; there is no scatter, and they do not exist</td>
+</tr>
+<tr>
+<td>No minimum-days threshold</td>
+<td>147 student-school pairs under 10 cumulative days, of which 100 were counted chronically absent. An earlier draft paired 147 with 116, mixing pair grain and stint grain in one figure</td>
+</tr>
+<tr>
+<td>Year-end anchor drops mid-year leavers</td>
+<td>136 pairs restored, 61 of them chronically absent at pair grain. An earlier draft said 180 and 72, both stint-grain</td>
+</tr>
+</tbody>
+</table>
+<p><code>rpt_tableau__okrts_referrals</code> already uses <code>unweighted_ada &lt;= 0.90</code>. The repo
+currently ships two definitions that disagree; this makes them agree.</p>
+<h3 id="the-tier-boundary-has-to-move-with-the-threshold">The tier boundary has to move with the threshold</h3>
+<p><code>ada_tier</code> currently assigns Tier 2 at <code>_running_ada &gt;= 0.90</code>, so exactly 90.0%
+lands in Tier 2. Once chronic absence is <code>at or below 90.0%</code>, the same <strong>198
+AY2025 enrollments</strong> are Tier 2 — which <code>pct_tier_1_2</code> reports as on track — and
+chronically absent at the same time.</p>
+<p>KIPP Foundation's criteria carry this contradiction themselves, so there is no
+authority to defer to. Moving Tier 2's lower bound to strictly above 90.0% makes
+Tier 1 plus Tier 2 mean exactly "not chronically absent", which is what a reader
+of the dashboard will assume. The cost is a hair's deviation from KIPP
+Foundation's stated Tier 2 range of 90 to 94%, which goes in the note to them.</p>
+<p>Derive both from one expression, so they cannot drift apart again. With Tier 2
+starting strictly above 90.0%, chronic absence is exactly Tier 3 plus Tier 4:</p>
+<div class="highlight"><pre><span></span><code><span class="k">case</span>
+<span class="w">    </span><span class="k">when</span><span class="w"> </span><span class="n">ytd_membership</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="k">null</span>
+<span class="w">    </span><span class="k">when</span><span class="w"> </span><span class="n">ytd_present</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">100</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="n">ytd_membership</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">95</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="s1">'Tier 1'</span>
+<span class="w">    </span><span class="k">when</span><span class="w"> </span><span class="n">ytd_present</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">10</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">ytd_membership</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">9</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="s1">'Tier 2'</span>
+<span class="w">    </span><span class="k">when</span><span class="w"> </span><span class="n">ytd_present</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">10</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="n">ytd_membership</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">8</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="s1">'Tier 3'</span>
+<span class="w">    </span><span class="k">else</span><span class="w"> </span><span class="s1">'Tier 4'</span>
+<span class="k">end</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">ada_tier</span><span class="p">,</span>
+
+<span class="n">ada_tier</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span><span class="s1">'Tier 3'</span><span class="p">,</span><span class="w"> </span><span class="s1">'Tier 4'</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">is_chronically_absent</span>
+</code></pre></div>
+<p>Integer comparison rather than a threshold on the averaged float, so the 198
+enrollments at exactly 90.0% land in Tier 3 deterministically. The
+<code>ytd_membership = 0</code> guard is load-bearing: without it <code>0 &gt;= 0</code> makes an
+enrollment with no membership days Tier 3.</p>
+<p>Cube computes nothing. Its measures stay <code>count_distinct</code> filtered on
+<code>ada_tier</code>, as they are today.</p>
+<h2 id="the-model">The model</h2>
+<p>A new dbt model, one row per enrollment per period.</p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>student_key</code></td>
+<td>The student</td>
+</tr>
+<tr>
+<td><code>location_key</code></td>
+<td>The school the threshold applies at</td>
+</tr>
+<tr>
+<td><code>period_type</code></td>
+<td><code>year</code>, <code>month</code>, or <code>week</code></td>
+</tr>
+<tr>
+<td><code>period_start_date_key</code></td>
+<td>Bucket start; <code>week</code> uses the PowerSchool school week</td>
+</tr>
+<tr>
+<td><code>period_end_date_key</code></td>
+<td>The enrollment's <strong>own</strong> last membership day in the bucket</td>
+</tr>
+<tr>
+<td><code>n_membership_days_ytd</code></td>
+<td>Cumulative membership days at this school through <code>period_end_date_key</code></td>
+</tr>
+<tr>
+<td><code>ytd_ada</code></td>
+<td>Cumulative ADA through <code>period_end_date_key</code></td>
+</tr>
+<tr>
+<td><code>is_ca_eligible</code></td>
+<td><code>n_membership_days_ytd &gt;= 10</code></td>
+</tr>
+<tr>
+<td><code>is_chronically_absent</code></td>
+<td><code>ytd_ada &lt;= 0.90</code>, computed on accumulated counts, not the float</td>
+</tr>
+<tr>
+<td><code>ada_tier</code></td>
+<td>Tier 1 to 4; <code>is_chronically_absent</code> derives from it</td>
+</tr>
+<tr>
+<td><code>is_truant</code></td>
+<td>Truancy status as of <code>period_end_date_key</code></td>
+</tr>
+</tbody>
+</table>
+<p>Measured size, not estimated: <strong>3.6M rows against the daily fact's 12.8M</strong>, a
+3.5x reduction. One academic year is about 546K rows — roughly 11,200
+student-school pairs times the 51 periods in a year. The model carries the full
+history the daily fact carries, with no academic-year floor, matching its sister
+mart <code>fct_student_attendance_daily</code>.</p>
+<p>An earlier draft of this spec put the total at under 750K. That was one year's
+worth mistaken for the whole model. The reduction is real but smaller than first
+claimed, so the pre-aggregation question stays genuinely open rather than being
+settled by row count alone.</p>
+<h3 id="build-from-the-intermediate-model-not-the-fact-plus-a-dim-join">Build from the intermediate model, not the fact plus a dim join</h3>
+<p>Source the snapshot from <code>int_students__attendance_daily</code>, which carries
+<code>schoolid</code> directly. Measured on AY2025: zero null <code>schoolid</code>, and 11,333
+distinct stints against the fact's 11,333 distinct <code>student_enrollment_key</code>
+values. Complete coverage, nothing dropped.</p>
+<p>Do <strong>not</strong> resolve school by joining the fact to <code>dim_student_enrollments</code>. That
+join is lossy: 960 of the 11,333 AY2025 attendance enrollment keys, or 8.5%,
+have no row in that dim at all. Cube reaches school through
+<code>student_school_enrollments</code> on the same key, so those rows already carry a null
+location, region, and grade level today, and are invisible to any
+location-scoped <code>access_policy</code> filter, because <code>location IN (...)</code> never
+matches null. That is a pre-existing defect, tracked separately, and not
+something this model should inherit.</p>
+<p>The daily fact needs no school column. Cube's existing traversal is adequate for
+day-level queries, and the snapshot gets school from upstream.</p>
+<p>That gap is <a href="https://github.com/TEAMSchools/teamster/issues/4803">#4803</a>, a
+sub-issue of the Focus modeling backlog
+(<a href="https://github.com/TEAMSchools/teamster/issues/4985">#4985</a>). It reports 961
+orphaned keys, essentially all Miami AY2025: #4775 made Focus the sole source of
+Miami enrollment, and Focus dates a returning student's stint to the real first
+day of school where PowerSchool used a July 1 rollover, so <code>entrydate</code> and
+therefore the surrogate key differ. Sourcing the snapshot from upstream means
+Miami AY2025 attendance is attributed to its schools correctly, which the
+dimension path currently cannot do.</p>
+<h3 id="grain-is-student-and-school-not-the-enrollment-stint">Grain is student and school, not the enrollment stint</h3>
+<p><code>student_enrollment_key</code> is keyed on entry date, so a student who exits and
+re-enrolls at the same school becomes two stints with two separate
+accumulations. In AY2025 that is <strong>32 of 11,243 student-school pairs</strong>.</p>
+<p>That would break the eligibility rule above. A student with 6 membership days
+before leaving and 6 after returning has 12 days at that school and is eligible,
+but as two stints each falls under 10 and both are excluded.</p>
+<p>So the snapshot aggregates across stints, keyed on <code>student_key</code> and
+<code>location_key</code>. A student who attends two different schools in one year gets a
+row per school, which is what every authority describes: the threshold applies
+per school, not per district. 29 AY2025 students attended more than one school.</p>
+<p>Compute <code>is_chronically_absent</code> from the accumulated counts rather than by
+comparing the averaged float:</p>
+<div class="highlight"><pre><span></span><code><span class="c1">-- 198 AY2025 enrollments sit at exactly 90.0%. IEEE division is correctly</span>
+<span class="c1">-- rounded, so the float average lands on the same double as the literal</span>
+<span class="c1">-- 0.90 for all 198 -- there is no scatter. Accumulated integer counts keep</span>
+<span class="c1">-- the at-or-below boundary exact regardless.</span>
+<span class="n">cumulative_present</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">10</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="n">cumulative_membership</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">9</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">is_chronically_absent</span>
+</code></pre></div>
+<h3 id="materialize-it-as-a-table">Materialize it as a table</h3>
+<p>Materialize as a table, ticking <code>0 6,15 * * *</code> — the same tick as
+<code>fct_student_attendance_daily</code>, not the midnight cron this section used to name.
+Both facts are tables off the same upstream, <code>int_students__attendance_daily</code>,
+so split ticks would let them disagree on the same attendance values by up to
+~15 hours a day, and this spec asserts elsewhere that they agree on attendance
+values. Matching ticks is what makes that claim true. Nightly refresh is a floor
+the 06:00 and 15:00 ticks clear, not a ceiling: the KIPP Foundation criteria
+require a nightly refresh and a visible refresh timestamp, not intra-day
+freshness. <code>0 6,15 * * *</code> is also the tick the implementation plan's Global
+Constraints name.</p>
+<div class="highlight"><pre><span></span><code><span class="nt">config</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">materialized</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">table</span>
+<span class="w">  </span><span class="nt">meta</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">dagster</span><span class="p">:</span>
+<span class="w">      </span><span class="c1"># Table, not the marts-default view: the kipptaf marts block sets only</span>
+<span class="w">      </span><span class="c1"># +schema and +contract, and 7 of the 10 attendance-star models are</span>
+<span class="w">      </span><span class="c1"># views in prod today, so a Cube query re-expands the whole chain.</span>
+<span class="w">      </span><span class="c1"># That is the #4333 defect #4468 fixed for the assessment star.</span>
+<span class="w">      </span><span class="c1">#</span>
+<span class="w">      </span><span class="c1"># Cron, not eager: the upstreams are eager and would drive repeated</span>
+<span class="w">      </span><span class="c1"># rebuilds of a 3.6M row model for freshness nobody consumes.</span>
+<span class="w">      </span><span class="c1">#</span>
+<span class="w">      </span><span class="c1"># 06:00 and 15:00 match the attendance dashboard's own measured</span>
+<span class="w">      </span><span class="c1"># cadence, verified from 12 consecutive materializations. These are</span>
+<span class="w">      </span><span class="c1"># LOCAL hours, not UTC — the dbt translator passes the code</span>
+<span class="w">      </span><span class="c1"># location's LOCAL_TIMEZONE (America/New_York), so this is 6am and</span>
+<span class="w">      </span><span class="c1"># 3pm Eastern.</span>
+<span class="w">      </span><span class="nt">automation_condition</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">cron_schedule</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0 6,15 * * *</span>
+</code></pre></div>
+<p>Eager is not the option here for the same reason it was not for assessments: the
+upstreams are eager and would drive repeated rebuilds of a 3.6M row model for
+freshness no consumer uses. The kipptaf <code>marts:</code> block in <code>dbt_project.yml</code> sets
+only <code>+schema</code> and <code>+contract</code>, so a mart defaults to a view, and prod confirms
+the consequence: <code>fct_student_attendance_daily</code>,
+<code>fct_student_attendance_streaks</code>, and <code>dim_student_enrollments</code> are all views,
+while <code>fct_assessment_scores_enrollment_scoped</code> is a table because
+<a href="https://github.com/TEAMSchools/teamster/pull/4468">#4468</a> materialized the
+assessment star for Cube performance under
+<a href="https://github.com/TEAMSchools/teamster/issues/4333">#4333</a>.</p>
+<p>This also revises the performance claim earlier in this spec. The 38.4s and
+51.6s Cube timings are substantially view re-expansion across the attendance
+star, not the inherent cost of selecting a period-end row. Materializing that
+star is a separate, cheaper fix with direct precedent, and it does not replace
+this work — the definition defects and the 30-measure duplication are
+independent of it — but it may deliver most of the speed benefit on its own.</p>
+<h2 id="daily-fact-or-period-snapshot">Daily fact or period snapshot</h2>
+<p>Both stay. They answer different questions.</p>
+<p>Use <strong><code>fct_student_attendance_daily</code></strong> when the question is about a <em>day</em>:</p>
+<ul>
+<li>Was this student absent on 14 October?</li>
+<li>The daily calendar heatmap, which the KIPP Foundation criteria require.</li>
+<li>Attendance by day of week.</li>
+<li>Any per-day drill-down or student-level daily list.</li>
+</ul>
+<p>Use the <strong>period snapshot</strong> when the question is about a <em>rate as of a point in
+time</em>:</p>
+<ul>
+<li>Chronic absence rate, at any grain.</li>
+<li>ADA tier distribution.</li>
+<li>Year-over-year and month-over-month trends.</li>
+<li>Anything that today needs an anchor flag.</li>
+</ul>
+<p>The rule: "on this day" reads the daily fact, "as of this period" reads the
+snapshot. Both derive from <code>int_students__attendance_daily</code>, so they agree on
+attendance values.</p>
+<p>They do <strong>not</strong> agree on school attribution until
+<a href="https://github.com/TEAMSchools/teamster/issues/4803">#4803</a> is fixed. The
+snapshot carries <code>schoolid</code> from upstream and attributes every stint; a
+day-level query reaching school through <code>dim_student_enrollments</code> loses the 961
+orphaned Miami AY2025 keys to a null location. So a per-school breakdown of the
+daily fact and of the snapshot will differ for Miami AY2025. Document that on
+the snapshot's properties file rather than papering over it.</p>
+<h2 id="enrollments-that-do-not-span-the-period">Enrollments that do not span the period</h2>
+<p>A student enrolled 1 September and withdrawn 10 October is the case that breaks
+naive designs, and it is worth stating exactly.</p>
+<ul>
+<li>They get a <strong>September row</strong> and an <strong>October row</strong>. The October row's
+  <code>period_end_date_key</code> is 10 October, their own last membership day, not the
+  school's month end. <code>ytd_ada</code> is their cumulative rate through that date.</li>
+<li>They get <strong>no November row and none after</strong>. A period with no membership day
+  produces no row. Nothing is carried forward, so a withdrawn student never
+  becomes a stale ghost in later periods.</li>
+<li>They <strong>are</strong> in the year row, with ADA over their ~28 enrolled days, subject
+  to the 10-day minimum. This is the leaver fix: it is what all four authorities
+  require, and what the current year-end anchor gets wrong.</li>
+<li>Eligibility is evaluated on <strong>cumulative</strong> membership days, not the period's
+  own. A student with 6 days in October but 40 days year-to-date is eligible in
+  October. Applying the threshold per period would exclude anyone in a short
+  month.</li>
+</ul>
+<p>This matches what the existing per-stint <code>is_month_end_record</code> anchor already
+does, so the leaver mechanism itself contributes zero movement at month and week
+grain — only the year figure moves from leavers, restoring the 136 pairs
+described above. Month and week numbers still move overall, driven by the two
+definition changes (cumulative eligibility and the exact-90.0% fix), which apply
+at every grain; see the Impact section below for the sizing.</p>
+<p>One property to document for consumers: because a withdrawn student stops
+producing rows, a month-over-month CA trend has a shifting denominator. That is
+correct — they are not enrolled — but the composition changes between points, so
+the series is not a fixed cohort.</p>
+<h2 id="truancy-rides-along-enrollment-headcount-does-not">Truancy rides along; enrollment headcount does not</h2>
+<p><code>queryRewrite</code>'s snapshot guard covers four measure stems on
+<code>student_attendance</code> — <code>chronically_absent</code>, <code>tier_1_2</code>, <code>tier_3</code>, and <code>truant</code>
+— and one on <code>student_enrollments</code>, <code>count_students</code>. Removing the block means
+answering for all of them, not only chronic absence.</p>
+<p><strong>Truancy moves to this snapshot.</strong> Same fact, same grain, same anchor
+semantics, so it needs one more column, <code>is_truant</code>, resolved at
+<code>period_end_date_key</code>. The criteria stay regional and stay in
+<code>int_students__attendance_daily</code> where they already are: Miami uses 15 or more
+absences in a 90 day rolling window, the New Jersey regions use a projected 50
+or more for the year. This model does not change that logic, only where the
+period-end value is read from. That retires the 9 truancy measures in the three
+anchor families.</p>
+<p><strong>Enrollment headcount does not, and does not need a snapshot either.</strong>
+<code>student_enrollments.count_students</code> is <code>count_distinct</code> on
+<code>student_school_enrollments.student_key</code> over the same fact. A distinct count is
+idempotent, so a student appearing on 180 days still counts once — there is no
+duplication to correct. The <code>cube.js</code> comment claiming an unanchored count
+overcounts because a student "appears in N rows" states the wrong mechanism.</p>
+<p>What actually differs is the metric. Unanchored, a date range returns every
+student enrolled at any point in it; the measure is documented as a
+point-in-time headcount. The anchor pins the as-of date.</p>
+<p>Enrollment headcount has no cumulative accumulation — no year-to-date rate, no
+eligibility threshold, no period-end value to reconstruct — so a snapshot is
+disproportionate. Three named measures filtering flags the cube already exposes
+as dimensions cover it:</p>
+<table>
+<thead>
+<tr>
+<th>measure</th>
+<th>filter</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>count_students_year_end</code></td>
+<td><code>is_current_record</code></td>
+</tr>
+<tr>
+<td><code>count_students_month_end</code></td>
+<td><code>is_enrollment_month_end_record</code></td>
+</tr>
+<tr>
+<td><code>count_students_week_end</code></td>
+<td><code>is_enrollment_week_end_record</code></td>
+</tr>
+</tbody>
+</table>
+<p>No dbt change, no new model. With those in place the <code>count_students</code> stem comes
+out of the guard, and once the attendance stems go too the <code>queryRewrite</code>
+snapshot block is empty and deletes cleanly.</p>
+<h2 id="documentation-surfaces">Documentation surfaces</h2>
+<p>Three places encode the anchor rules for consumers, and all three reach an LLM
+through the Cube MCP's <code>meta</code> tool, so a stale one silently teaches the wrong
+query.</p>
+<ol>
+<li><strong><code>student_attendance_view</code> description.</strong> Its second paragraph documents the
+   entire anchor contract: base measures defaulting to year-end, a single
+   <code>date_day</code> equality filter for point-in-time, <code>_month_end</code> and <code>_week_end</code>
+   for trends. Every sentence becomes wrong. Replace with routing — this view
+   answers day-level questions, the snapshot answers rates as of a period.</li>
+<li><strong>The new snapshot view's own description.</strong> State that <code>period_type</code> selects
+   the grain, that no anchor filter is needed or accepted, and that a row exists
+   only for a period in which the enrollment had a membership day.</li>
+<li><strong>The MCP <code>meta</code> docstring in <code>src/cube/mcp/server.py</code>.</strong> It names the
+   analyst-facing views by example and carries the grain and scope rules, but
+   has no rule for choosing between two views of one domain. Add the new view to
+   the examples and state the routing rule there, since that docstring reaches
+   the model on every client.</li>
+</ol>
+<p>Nothing else in <code>mcp/server.py</code> references anchors, snapshots, or chronic
+absence, so there is nothing to remove there.</p>
+<h2 id="cube-changes">Cube changes</h2>
+<ul>
+<li><code>student_attendance</code> keeps only day-level measures and dimensions.</li>
+<li>A new cube reads the period snapshot. <code>period_type</code> is an ordinary dimension,
+  so one measure family serves all three grains.</li>
+<li>The 30 <code>_year_end</code>, <code>_month_end</code>, and <code>_week_end</code> measures are removed.</li>
+<li>The <code>queryRewrite</code> snapshot block is removed: <code>SNAPSHOT_CUBES</code>,
+  <code>SNAPSHOT_MEASURE_STEMS</code>, <code>SNAPSHOT_ANCHOR_DIMENSIONS</code>,
+  <code>SNAPSHOT_ANCHOR_OVERRIDES</code>, and the granularity validation. <code>cube.js</code> keeps
+  only authentication, access, and emulation.</li>
+</ul>
+<p>No Tesseract feature is required. The <code>offset: -6 months</code> academic-year
+granularity remains useful for day-level year bucketing and is worth adding
+independently.</p>
+<h2 id="impact">Impact</h2>
+<p>AY2025 chronic absence moves from <strong>24.76% to 26.04%</strong>. The current defects
+partly cancel, so the headline moves less than the composition does.</p>
+<p>Nothing consumes <code>fct_student_attendance_daily</code> today except three dbt tests and
+the <code>cube.yml</code> exposure, so no published figure moves on merge. That will not be
+true later; land this before the dashboards do.</p>
+<h2 id="testing">Testing</h2>
+<p>Boundary unit tests, since every defect here is a boundary defect:</p>
+<ul>
+<li>ADA of exactly 90.0% is chronically absent; 90.01% is not.</li>
+<li>Exactly 10 cumulative membership days is eligible; 9 is not.</li>
+<li>Membership days count per school: 6 days at one school plus 6 at another is
+  eligible at neither.</li>
+<li>A student withdrawn 10 October has an October row dated 10 October, no
+  November row, and appears in the year row.</li>
+<li>A student with 6 days in October but 40 year-to-date is eligible in October.</li>
+<li>A student with 6 membership days before exiting and 6 after re-enrolling at
+  the same school is eligible, on 12 combined days.</li>
+<li>A student at two schools in one year gets one row per school per period, and
+  each school's threshold is evaluated on that school's days alone.</li>
+<li>An enrollment at exactly 90.0% ADA is chronically absent AND in Tier 3, never
+  Tier 2.</li>
+<li>Truancy at period end matches the current <code>_month_end</code> and <code>_week_end</code> truancy
+  measures per region, since the regional criteria are unchanged.</li>
+</ul>
+<p>Reconciliation against the figures on
+<a href="https://github.com/TEAMSchools/teamster/issues/4994">#4994</a>: 11,153 counted
+today, 136 pairs restored (61 chronically absent), 198 added at exactly 90.0%,
+147 excluded under 10 days (100 of them counted chronically absent).</p>
+<p><strong>Month and week DO move, and an earlier draft of this spec was wrong to predict
+otherwise.</strong> The anchor semantics genuinely do not move — the row population is
+identical apart from the stint-months collapsed by combining re-enrollments, and
+the leaver mechanism contributes exactly zero at month and week grain because
+<code>is_month_end_record</code> already requires a membership day. What moves is the two
+DEFINITION changes, which apply at every grain rather than only at the year:</p>
+<table>
+<thead>
+<tr>
+<th>Grain</th>
+<th>CA movement</th>
+<th>Buckets moved</th>
+<th>Unexplained</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>month</td>
+<td>-1,530</td>
+<td>11 of 11</td>
+<td>0</td>
+</tr>
+<tr>
+<td>week</td>
+<td>-3,493</td>
+<td>44 of 44</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+<p>Month attribution: -1,984 from cumulative eligibility, +437 from the exact-90.0%
+fix, +17 from combined stints. Week: -5,159, +1,543, +123. Zero unexplained in
+every bucket at both grains.</p>
+<p>The concentration matters more than the totals. <strong>The first month of school
+collapses</strong>: in 2025-08 only 1,317 of 10,513 enrollments are eligible, 12.5%,
+because the 10-day threshold is cumulative. The rate barely moves, 19.49% to
+18.53%, but the count falls 88%. That is arguably correct — a student cannot be
+chronically absent on day five — but a month-over-month series then starts from
+a denominator an eighth the size of the next point's. KIPP Foundation criteria
+item 1 already requires displaying the number of students in each ADA and CA
+calculation, which makes the small early denominator visible rather than
+misleading; that requirement is what makes accepting this behaviour defensible.</p>
+<p><strong>Decision: accept this behaviour.</strong> No model change, no row suppression, no
+extra flag. Three reasons. It is what New Jersey, Florida, and KIPP Foundation
+all specify — a student cannot be chronically absent on day five. Every row
+already carries <code>is_ca_eligible</code>, so a consumer can report eligible against
+total without new columns. And KIPP Foundation criteria item 1 already requires
+displaying the number of students in each ADA and CA calculation, so an August
+count of 1,317 beside the rate reads as thin rather than broken.</p>
+<p>What this obliges: the early-period behaviour must be documented where consumers
+meet it — the snapshot view's description and the properties file — not left for
+someone to rediscover from an August tile. That belongs with the other
+documentation surfaces.</p>
+<p>Two later months move on the exact-90.0% fix rather than eligibility: 2025-10 by
++1.20pp and 2026-06 by +2.07pp, because both tend to land cumulative membership
+days on a multiple of 10, which is where an exact 9/10 ratio occurs.</p>
+<h2 id="out-of-scope">Out of scope</h2>
+<ul>
+<li>The New Jersey 45-day figure
+  (<a href="https://github.com/TEAMSchools/teamster/issues/5015">#5015</a>).</li>
+<li>Pre-aggregations. Measured 2026-08-31 and the answer is no. 3.62M rows, but
+  every query filters <code>period_type</code>, so the effective scan is 2.77M at week
+  grain, 767K at month, 84K at year. A cold week-grain query over three academic
+  years with the three dim joins and three <code>count_distinct</code> measures ran 1.27s,
+  0.36 GiB, 9.1 slot-seconds — 43x inside the 55 second MCP deadline the legacy
+  path nearly breached at 51.6s. Materializing the accumulation in dbt is what
+  bought this; there is no view re-expansion and no query-time window function
+  left to optimize. A pre-agg would add the #4460 unbounded-partition risk for
+  no gain.</li>
+</ul>
+<h2 id="open-question-for-kipp-foundation">Open question for KIPP Foundation</h2>
+<p>Their criteria contradict themselves. Item 1 calls Tier 1 and Tier 2 on track at
+90% or above ADA. Item 8 says chronic absence is ADA at or below 90.0%. A
+student at exactly 90.0% is both.</p>
+<p>We resolve it by starting Tier 2 strictly above 90.0%, so Tier 1 plus Tier 2
+means not chronically absent. That deviates from their stated Tier 2 range of 90
+to 94% for students sitting exactly on the line, 198 of them in AY2025. Ask them
+which way they intend it before the figure is reported upward, because the
+answer changes both the tier distribution and the chronic absence count.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>
