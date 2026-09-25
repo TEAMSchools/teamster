@@ -698,6 +698,32 @@ edits and exports as the CSV they upload through the plugin. Because it is
 driven by the same toggled year filter as the audit models, check the summer
 toggle's state before reading it as the new year's grid.
 
+That sheet exists as a pair — a source copy the data team edits, whose tabs are
+named after the models, and a report copy T&L open, whose tabs have friendly
+names. A change to either has to be made in both; nothing in the pipeline
+creates a tab or widens an `IMPORTRANGE` range, and a new column fails silently.
+Three tabs on the report copy matter here:
+
+- **`PS Full Calendar`** (`rpt_gsheets__gradebook_audit_all_weeks`) — every
+  school week of the year with its PowerSchool quarter and week number. This is
+  what dates are matched against. It runs a year ahead, which is what makes a
+  rollover possible before any of it has happened.
+- **`Plugin Data Raw`** (`rpt_gsheets__gradebook_audit_current_expectations`) —
+  what is actually live in `U_EXPECTATIONS`, with who changed each row and when.
+  Refreshed overnight, so it is up to a day behind.
+- **`Template QW-Date Crosswalk`** (`rpt_gsheets__gradebook_audit_template`) —
+  how a week number gets tagged to the week it belongs to, translating between
+  Academics' own week numbering and PowerSchool's. **It stops at the last
+  completed week**, so it is empty for anything about to be loaded. That is
+  expected, and it means the tab cannot confirm the week numbers on a new
+  quarter.
+
+A fourth report tab, `PS Plugin CSV Template`, is typed by hand and has no model
+behind it.
+
+The per-change procedure for the pair is in
+[the Google Sheets guide](../guides/google-sheets.md).
+
 Plugin source and update instructions:
 [`ps-plugins/gradebook-audit/`](https://github.com/TEAMSchools/teamster/tree/main/ps-plugins/gradebook-audit)
 
