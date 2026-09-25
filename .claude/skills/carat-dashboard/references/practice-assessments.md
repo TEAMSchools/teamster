@@ -129,8 +129,7 @@ order by 1, 2, 3
 
 A new `scope_round` also needs its own rows on the Expected Assessments tab.
 Practice rows there bind on `scope_round`, so a round the tab lacks is dropped
-from the roster-scores view with no error. Add the round to
-`scripts/expected_assessments_2026_27.json` (or that year's spec) and
+from the roster-scores view with no error. Add the round to the year's spec and
 regenerate. Rebuild procedure and its orphan check:
 [expected-assessments.md](expected-assessments.md).
 

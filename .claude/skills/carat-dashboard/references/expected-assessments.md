@@ -125,12 +125,17 @@ procedure exists to prevent.
 
 ### Step 4 — generate every row
 
-Write the spec and run
+Write the year's spec in the session scratchpad, not the repo: the live tab is
+the record, and a committed copy goes stale every year. Start from
+[`scripts/expected_assessments_spec.example.json`](../scripts/expected_assessments_spec.example.json),
+which shows each kind of entry once (a practice round, an official test with and
+without growth, and a `not_reported` block), and fill it from the calendar
+confirmed in step 3. Then run
 [`scripts/build_expected_assessment_rows.py`](../scripts/build_expected_assessment_rows.py):
 
 ```bash
 uv run python .claude/skills/carat-dashboard/scripts/build_expected_assessment_rows.py \
-    spec.json out.tsv
+    <scratchpad>/spec.json <scratchpad>/out.tsv
 ```
 
 It computes the order sequence, emits one row per score type per month, emits a
@@ -309,5 +314,5 @@ Cross-check anything else against the `Not Official` list before adding it — i
 may be a deliberate exclusion rather than a gap.
 
 **The `Not Official` rows are invisible to all five checks**, because the
-staging model filters them out. Count them on the sheet itself; the SY26-27 spec
+staging model filters them out. Count them on the sheet itself; the SY26-27 tab
 carries 42. A paste that dropped them looks perfectly healthy here.

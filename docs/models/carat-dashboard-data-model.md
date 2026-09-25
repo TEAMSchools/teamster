@@ -253,7 +253,7 @@ the tab list the `scope_round` where official rows list a month.
 Months marked `Not Official` record tests that happen but are deliberately not
 reported, such as grade 11 SAT in the fall. Seasons are ordered by one sequence
 across all grades, so the tab is regenerated whole, never edited by hand; the
-`carat-dashboard` skill has the generator and the saved spec.
+`carat-dashboard` skill has the generator and an example spec.
 
 ### Growth
 
