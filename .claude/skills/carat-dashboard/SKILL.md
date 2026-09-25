@@ -1267,10 +1267,10 @@ Work outward from the student, stopping at the first layer with zero rows.
   spanning score types, so one restored SAT score also flips that student's
   `act_composite` row inside the same ACT/SAT-and-Total partition. 13 students
   read as 26 moved rows. Count distinct students, never rows.
-- **The BigQuery MCP service account cannot read Google Sheets externals** (no
-  Drive scope), and the prod `stg_*` table is frozen at the last build. Query
-  the `src_*` external live through ADC with `uv run python`, per
-  `.claude/context/bigquery.md`.
+- **The BigQuery MCP cannot read Google Sheets externals** (no Drive scope), and
+  the prod `stg_*` table is frozen at the last build. Query the `src_*` external
+  live through ADC with `uv run python`, per
+  `.claude/context/claude_ai_Google_Cloud_BigQuery.md`.
 - **`rg -ril <pattern>` silently mangles output** — `-r` consumes `il` as a
   replacement string. Use plain `grep`.
 - **`WHERE` runs before window functions.** Section rows borrow their score from
