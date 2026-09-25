@@ -1,6 +1,51 @@
-# Tests and known issues
+# YAML descriptions, tests, and known issues
 
-Document mode steps 5-6, and update mode for columns and grain changes.
+Document mode steps 4-6, and update mode for columns, grain changes, and SQL
+comments. The SQL is the source of truth over the reference doc and over source
+material. `.claude/rules/dbt-yaml.md` loads on the first YAML read; its
+description rules (no stats, no TODOs, no issue refs) apply.
+
+## YAML audit
+
+Edit descriptions only. For a new column in update mode, the column entry itself
+(`- name:`, `data_type` on a contracted model) is an intentional change; list it
+in the commit message.
+
+- About five models or fewer: audit inline.
+- More: split the family into groups of about six (staging, intermediate, views)
+  and dispatch one Opus subagent per group, all in one message, with this prompt
+  (change only the placeholders):
+
+```text
+Audit dbt YAML descriptions against the SQL for these models: <list, each
+with its absolute .sql and properties .yml path under <worktree>>. Do the
+edits yourself; no sub-agents. Edit descriptions only: never SQL, tests,
+config, contains_pii, contract, data_type, or column names. The SQL is the
+source of truth over any doc. Never change a test to match a description
+or the reverse: flag the disagreement instead. Remove change-log narration,
+stale counts, TODOs, and issue refs (#1234) from descriptions. Then run,
+from <worktree>, trunk check --force --no-fix on each edited file and
+uv run dbt parse --no-partial-parse --project-dir <worktree>/src/dbt/<project>.
+Report: per file a one-line summary; FLAGS with file:line evidence (column
+lists that don't match the SQL, missing uniqueness tests, wrong grains);
+lint and parse results verbatim.
+```
+
+A subagent's report is not evidence. Check that only descriptions moved:
+
+```bash
+git -C <worktree> diff -U0 -- '*.yml' \
+  | rg '^[+-].*(data_type|data_tests|severity|combination_of_columns|contains_pii|materialized|- name:)'
+```
+
+Every line this prints must be an intentional change, and each one goes in the
+commit message. Then run
+`uv run dbt parse --no-partial-parse --project-dir <worktree>/src/dbt/<project>`.
+
+Flags are the audit's most valuable output: a YAML column list that does not
+match the SQL, a missing uniqueness test, real duplicates, a wrong grain in a
+description. Each flag becomes a test (next section) or a line under "Known
+issues, need to fix" in the reference doc.
 
 ## Propose tests from the model
 

@@ -34,9 +34,18 @@ Worked example: `.claude/skills/tableau-workbook-xml/`.
 
 ## Restructuring an oversized skill
 
-1. Write a mapping JSON: each `## ` heading text → destination file, plus
+1. Measure the skill's `## ` sections:
+
+   ```bash
+   awk '/^#{2,4} /{if(h)print n"\t"h; h=$0; n=0} {n++} END{print n"\t"h}' .claude/skills/<name>/SKILL.md
+   ```
+
+   Group sections by the task that needs them; sections every task needs go
+   together. `###` and deeper headings move with their `## ` parent.
+
+2. Write a mapping JSON: each `## ` heading text → destination file, plus
    `"_default": "SKILL.md"` for lines before the first heading.
-2. Split verbatim:
+3. Split verbatim:
 
    ```bash
    uv run python .claude/skills/model-support/scripts/split_skill.py <SKILL.md> <mapping.json> <skill dir>
@@ -45,16 +54,18 @@ Worked example: `.claude/skills/tableau-workbook-xml/`.
    It must print equal `lines in` and `lines out`; an unmapped heading stops it
    with the heading's name ([split_skill.py](../scripts/split_skill.py)).
 
-3. Fix cross-file `_Section_` pointers and relative links (`../scripts/`,
+4. Fix cross-file `_Section_` pointers and relative links (`../scripts/`,
    `../../../../docs/`), then run
    `uv run python .claude/skills/model-support/scripts/check_links.py <skill dir>`.
-4. Trim the entry file to routing.
+5. Trim the entry file to routing.
 
 ## Walk test
 
 Required for a new skill and for every edited skill file, on a task that uses
-the edit. Ask the user before dispatching. One cold Sonnet subagent per task,
-planning only, with this prompt:
+the edit. For a new or restructured skill, write one realistic task per row of
+its route table; for an edit, one task that reaches the edited file. Ask the
+user before dispatching. One cold Sonnet subagent per task, planning only, with
+this prompt:
 
 ```text
 Walk test of a Claude Code skill. Entry file: <abs path>. Read it with the
@@ -65,8 +76,9 @@ in order, with line ranges; (2) your concrete steps; (3) anything unclear,
 missing, or mis-pointed.
 ```
 
-Pass: the entry file plus at most two more reads. Every read counts, including
-files in another skill. Fixes that worked on CARAT: merge references that every
-task needed together; add an explicit "this overrides step N of X" link; name
-where a doc section stops ("read X and Y, stop at heading Z"); link a reference
-file directly instead of another skill's entry file. Re-run until it passes.
+Pass: the entry file plus at most two more files read. Every file counts,
+including files in another skill; several `offset` reads of one file count as
+one. Fixes that worked on CARAT: merge references that every task needed
+together; add an explicit "this overrides step N of X" link; name where a doc
+section stops ("read X and Y, stop at heading Z"); link a reference file
+directly instead of another skill's entry file. Re-run until it passes.

@@ -3,14 +3,23 @@
 Check prod values for one family: after new data lands, or after a refactor that
 should not change them.
 
-Start from the family's reference doc for grains, keys, and known issues. If
-there is none, run `intake-and-inventory.md` first (consumers and boundary),
-then continue here.
-
 If the family skill has its own QA procedure, read that reference file directly
-and follow it instead of the generic checks below. Do not open the family's
-`SKILL.md` first: that costs a read the procedure does not need. CARAT's is
-`.claude/skills/carat-dashboard/references/official-scores-qa.md`.
+and follow it instead of everything below; it already knows the grains and
+ranges. Do not open the family's `SKILL.md` first: that costs a read the
+procedure does not need. CARAT's is
+`.claude/skills/carat-dashboard/references/official-scores-qa.md`. Find one with
+`ls .claude/skills/<family>/references/`. If there is none, or the family skill
+is a single long `SKILL.md` with no `references/`, do not read that file: use
+the reference doc and the generic checks below, and suggest restructuring the
+skill afterwards (`model-skill.md`).
+
+Otherwise, read the family's reference doc for grains, keys, accepted ranges,
+and known issues. Find it with `rg -l '<model>' docs/models`, list its headings
+with `rg -n '^#{2,3} ' <doc>`, and Read only the sections for the views or steps
+being checked, any section on accepted ranges or benchmarks, and every heading
+containing "Known issue" (Read with `offset` and `limit`; long docs truncate).
+If there is no doc, run `intake-and-inventory.md` first (consumers and
+boundary), then continue here.
 
 ## New data landed
 
@@ -59,9 +68,11 @@ Label every finding "expected" (with the reason) or "needs a look".
 
 3. On matched keys, count differing rows per column
    (`countif(d.<col> is distinct from p.<col>)`), grouped by school and term.
-4. Tie each difference to the hunk of the SQL diff that explains it, and label
-   it a regression or an intended change. A difference no hunk explains is a
-   regression until shown otherwise.
+4. Read the refactor's hunks
+   (`git -C <worktree> diff origin/main...HEAD -- <model>.sql`), tie each
+   difference to the hunk that explains it, and label it a regression or an
+   intended change. A difference no hunk explains is a regression until shown
+   otherwise.
 5. Extend the diff to every `rpt_` consumer downstream of the changed model.
 
 ## Tableau (opt-in)
