@@ -120,6 +120,11 @@ def _batch_by_distinct_org_unit(
         yield from chunk(obj=[item for item in round_ if item is not None], size=size)
 
 
+def _user_error(user: dict, exception: Exception) -> dict:
+    """Redacted per-user error: primaryEmail plus the API message, never the payload."""
+    return {"primaryEmail": user["primaryEmail"], "error": str(exception)}
+
+
 class GoogleDirectoryResource(ConfigurableResource):
     """Google Admin SDK Directory API resource.
 
@@ -614,8 +619,7 @@ class GoogleDirectoryResource(ConfigurableResource):
             )
 
             exceptions.extend(
-                {"primaryEmail": item["primaryEmail"], "error": str(e)}
-                for item, e in failures
+                _user_error(user=item, exception=e) for item, e in failures
             )
 
             if i < len(batches) - 1:
@@ -679,16 +683,9 @@ class GoogleDirectoryResource(ConfigurableResource):
                     try:
                         self._retry_update_user(user)
                     except errors.HttpError as retry_e:
-                        exceptions.append(
-                            {
-                                "primaryEmail": user["primaryEmail"],
-                                "error": str(retry_e),
-                            }
-                        )
+                        exceptions.append(_user_error(user=user, exception=retry_e))
                 else:
-                    exceptions.append(
-                        {"primaryEmail": user["primaryEmail"], "error": str(e)}
-                    )
+                    exceptions.append(_user_error(user=user, exception=e))
 
             if i < len(batches) - 1:
                 time.sleep(1)

@@ -393,41 +393,28 @@ def test_batch_update_users_collects_exception_when_409_retry_also_fails():
     assert exceptions[0]["primaryEmail"] == "a@b.com"
 
 
-def test_batch_update_users_error_dict_omits_user_payload():
+@pytest.mark.parametrize(
+    "status, content, stub_retry",
+    [
+        (400, b"Bad Request", False),
+        (409, b"Conflicting requests. Please try again", True),
+    ],
+)
+def test_batch_update_users_error_dict_omits_user_payload(
+    status: int, content: bytes, stub_retry: bool
+):
     # The returned error must not carry the update payload (e.g. the password
-    # hash) into logs / asset-check metadata — only the email and the message.
+    # hash) into logs / asset-check metadata — only the email and the message —
+    # on both the batch path and the single-user 409 retry path, which formats
+    # its own error entry.
     resource, mock_api = _make_resource()
-    err = _http_error(400, b"Bad Request")
     mock_api.new_batch_http_request.side_effect = _make_batch_side_effect(
-        [[(None, err)]]
+        [[(None, _http_error(status, content))]]
     )
-    user = {
-        "primaryEmail": "a@b.com",
-        "password": "deadbeefsecrethash",
-        "hashFunction": "SHA-1",
-    }
-    exceptions = resource.batch_update_users([user])
-    assert len(exceptions) == 1
-    assert set(exceptions[0].keys()) == {"primaryEmail", "error"}
-    assert exceptions[0]["primaryEmail"] == "a@b.com"
-    assert "deadbeefsecrethash" not in str(exceptions[0])
-    # the diagnostic the redaction is meant to preserve must actually survive:
-    # an empty "error" would satisfy every assertion above
-    assert "400" in exceptions[0]["error"]
-    assert "Bad Request" in exceptions[0]["error"]
-
-
-def test_batch_update_users_409_retry_error_dict_omits_user_payload():
-    # Same guarantee on the single-user 409 retry path, which formats its own
-    # error entry.
-    resource, mock_api = _make_resource()
-    err = _http_error(409, b"Conflicting requests. Please try again")
-    mock_api.new_batch_http_request.side_effect = _make_batch_side_effect(
-        [[(None, err)]]
-    )
-    mock_api.users.return_value.update.return_value.execute.side_effect = _http_error(
-        409, b"Conflicting requests. Please try again"
-    )
+    if stub_retry:
+        mock_api.users.return_value.update.return_value.execute.side_effect = (
+            _http_error(status, content)
+        )
     user = {
         "primaryEmail": "a@b.com",
         "password": "deadbeefsecrethash",
@@ -439,6 +426,10 @@ def test_batch_update_users_409_retry_error_dict_omits_user_payload():
     assert set(exceptions[0].keys()) == {"primaryEmail", "error"}
     assert exceptions[0]["primaryEmail"] == "a@b.com"
     assert "deadbeefsecrethash" not in str(exceptions[0])
+    # the diagnostic the redaction is meant to preserve must actually survive:
+    # an empty "error" would satisfy every assertion above
+    assert str(status) in exceptions[0]["error"]
+    assert content.decode() in exceptions[0]["error"]
 
 
 def test_batch_update_users_retries_transient_subrequest_and_succeeds():
