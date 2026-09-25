@@ -1,0 +1,120 @@
+# QA mode
+
+Check prod values for one family: after new data lands, or after a refactor that
+should not change them.
+
+If the family skill has its own QA procedure, read that reference file directly
+and follow it instead of everything below; it already knows the grains and
+ranges. Do not open the family's `SKILL.md` first: that costs a read the
+procedure does not need. Find the family skill with
+`rg -l '<model>' .claude/skills`, then `ls .claude/skills/<family>/references/`
+(for CARAT, `official-scores-qa.md` once PR #5542 has split that skill). If
+there is none, or the family skill is a single long `SKILL.md` with no
+`references/`, do not read that file: use the reference doc and the generic
+checks below, and suggest restructuring the skill afterwards (`model-skill.md`).
+
+Otherwise, read the family's reference doc for grains, keys, accepted ranges,
+and known issues. Find it with `rg -l '<model>' docs/models`, list its headings
+with `rg -n '^#{2,3} ' <doc>`, and Read only the sections for the views or steps
+being checked, any section on accepted ranges or benchmarks, and every heading
+containing "Known issue" (Read with `offset` and `limit`; long docs truncate).
+If there is no doc, run `intake-and-inventory.md` first (consumers and
+boundary), then continue here.
+
+## New data landed
+
+Compare prod against the previous load and against the same point last year:
+
+| Check                                    | Query shape                                                 |
+| ---------------------------------------- | ----------------------------------------------------------- |
+| Rows by grain dimension                  | `count(*)` grouped by school, grade, term, test type        |
+| Null rates                               | `countif(<col> is null) / count(*)` per column              |
+| Out of range                             | `countif(<col> not between <lo> and <hi>)`; accepted values |
+| Categories appeared or gone              | distinct values now vs before                               |
+| Schools or students appeared or vanished | key set now `except distinct` key set before, both ways     |
+
+Count duplicates and gaps on the source-grain model with its full natural key,
+including columns that repeat within a day such as subject; label any unpivoted
+count as secondary (`yaml-and-tests.md` → A test that fails today has the case
+where the wrong key would have deleted real AP results).
+
+### Two sources that should agree
+
+When a vendor file and the system it is loaded into should hold the same
+records, reconcile them with a full outer join on the record's natural key and
+report four counts with the date of the run: in both and the same, in both but
+different, only in A, only in B. Name both sides as models before querying; if
+the user's words do not map to one, ask. For SAT, the College Board file is
+`int_collegeboard__sat_unpivot` and the system it is loaded into is kippadb
+(`int_kippadb__standardized_test_unpivot`). The worked example is CARAT's
+"CARAT's SAT is kippadb's SAT" in
+`.claude/skills/carat-dashboard/references/gotchas.md` (on the branch of PR
+#5542 until it merges).
+
+Previous load:
+`for system_time as of timestamp_sub(current_timestamp(), interval <n> hour)`.
+Time travel reaches 7 days back, and one query can reference a table at only one
+timestamp, so run "before" and "now" as separate queries. Same point last year:
+filter `academic_year = <current> - 1` at the matching term.
+
+Label every finding "expected" (with the reason) or "needs a look".
+
+Every check, here or in a family skill, reports what it compared:
+
+- A check whose comparison set was empty reports "skipped" and why, never
+  "passed". On gradebook audit, a crosswalk check passed for every week being
+  loaded because the crosswalk carries only completed weeks.
+- A check against prod names when a difference is expected. "Must match exactly"
+  is wrong when the run exists to change those values (a mid-year refresh), or
+  when last year's rows share the same keys (a rollover into a table with no
+  `academic_year`).
+
+## Refactor parity
+
+1. Build the changed `rpt_` views on the dev target. Invoke `dbt-local-dev`
+   first: `--defer` and stale dev tables give false differences. Never build
+   `--target staging` without the user's explicit go-ahead; it writes shared
+   `zz_stg_*` relations. On a PR, the CI schema (`dbt_cloud_pr_<job>_<pr>_*`) is
+   a read-only alternative.
+2. Diff on each view's key, both directions:
+
+   ```sql
+   select 'only_in_dev' as side, count(*) as n,
+   from (
+       select <key cols>, from `<dev relation>`
+       except distinct
+       select <key cols>, from `<prod relation>`
+   )
+   union all
+   select 'only_in_prod' as side, count(*) as n,
+   from (
+       select <key cols>, from `<prod relation>`
+       except distinct
+       select <key cols>, from `<dev relation>`
+   )
+   ```
+
+3. On matched keys, count differing rows per column
+   (`countif(d.<col> is distinct from p.<col>)`), grouped by school and term.
+   For a status or tier column, count old → new transitions instead, and report
+   the ones that make things worse for the student (eligible to ineligible, on
+   track to off track) as their own number. The dev build can be the compiled
+   SQL inlined as a CTE, run under ADC, when a dev build is not worth it.
+4. Read the refactor's hunks
+   (`git -C <worktree> diff origin/main...HEAD -- <model>.sql`), tie each
+   difference to the hunk that explains it, and label it a regression or an
+   intended change. A difference no hunk explains is a regression until shown
+   otherwise.
+5. Extend the diff to every `rpt_` consumer downstream of the changed model.
+
+## Tableau (opt-in)
+
+Only when the warehouse diff is clean and the user needs proof the dashboard
+itself matches, because workbook calculations or filters can still differ. Tell
+the user it costs a lot of tokens, and wait for a yes before any Tableau MCP
+call or loading `tableau-workbook-xml`.
+
+## Where results go
+
+Student-level rows stay in the terminal and the session scratchpad. GitHub gets
+aggregates without small cells (`.claude/rules/ferpa-pii.md`).
