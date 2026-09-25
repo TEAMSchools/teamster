@@ -1,75 +1,164 @@
 models:
   - name: rpt_gsheets__athletic_eligibility
+    description:
+      The athletic eligibility tracker's Google Sheet extract. One row per
+      student enrolled this academic year in grade 5 or above in Newark, Camden,
+      or Paterson, excluding out-of-district placements, with roster details
+      from int_extracts__student_enrollments and the eligibility inputs and
+      quarterly statuses from int_students__athletic_eligibility. See that model
+      for how each status is decided.
     columns:
-      - name: _dbt_source_relation
-        data_type: string
-      - name: academic_year
-        data_type: int64
-      - name: academic_year_display
-        data_type: string
-      - name: region
-        data_type: string
-      - name: schoolid
-        data_type: int64
-      - name: school
-        data_type: string
       - name: student_number
         data_type: int64
+        description: Student Number assigned by the school.
+        data_tests:
+          - unique
+          - not_null
+        config:
+          meta:
+            contains_pii: true
+      - name: _dbt_source_relation
+        data_type: string
+        description: The regional enrollment relation the row came from.
+      - name: academic_year
+        data_type: int64
+        description:
+          The current academic year, named by the calendar year it starts in.
+      - name: academic_year_display
+        data_type: string
+        description: The academic year as displayed, such as 2026-27.
+      - name: region
+        data_type: string
+        description: Newark, Camden, or Paterson.
+      - name: schoolid
+        data_type: int64
+        description: PowerSchool school number of the student's school.
+      - name: school
+        data_type: string
+        description: The student's school.
       - name: studentid
         data_type: int64
+        description: PowerSchool internal key for the student record.
       - name: student_last_name
         data_type: string
+        description: Student last name.
+        config:
+          meta:
+            contains_pii: true
       - name: student_first_name
         data_type: string
+        description: Student first name.
+        config:
+          meta:
+            contains_pii: true
       - name: student_name
         data_type: string
+        description: Student full name.
+        config:
+          meta:
+            contains_pii: true
       - name: grade_level
         data_type: int64
+        description: The student's grade level this academic year.
       - name: gender
         data_type: string
+        description: Student gender as recorded in the SIS.
+        config:
+          meta:
+            contains_pii: true
       - name: ethnicity
         data_type: string
+        description: Student ethnicity as recorded in the SIS.
+        config:
+          meta:
+            contains_pii: true
       - name: cohort
         data_type: int64
+        description: The student's graduation cohort year.
       - name: student_email
         data_type: string
+        description: Student school email address.
+        config:
+          meta:
+            contains_pii: true
       - name: grade_level_prev
         data_type: int64
+        description:
+          The student's grade level last academic year. Null for a student new
+          to the network.
       - name: dob
         data_type: date
+        description: Date of birth.
+        config:
+          meta:
+            contains_pii: true
       - name: cy_unweighted_term_q1
         data_type: float64
+        description: Unweighted ADA for Q1 of this year.
       - name: cy_weighted_term_q1
         data_type: float64
+        description:
+          Weighted ADA for Q1 of this year, where a tardy counts as 0.67 of a
+          day present.
       - name: cy_unweighted_s1_ada
         data_type: float64
+        description: Unweighted ADA for semester 1 of this year.
       - name: cy_weighted_s1_ada
         data_type: float64
+        description:
+          Weighted ADA for semester 1 of this year, where a tardy counts as 0.67
+          of a day present.
       - name: py_y1_unweighted_ada
         data_type: float64
+        description: Unweighted ADA for the whole previous academic year.
       - name: py_y1_weighted_ada
         data_type: float64
+        description:
+          Weighted ADA for the whole previous academic year, where a tardy
+          counts as 0.67 of a day present.
       - name: cy_q1_gpa
         data_type: float64
+        description: Term GPA for Q1 of this year.
       - name: cy_s1_gpa
         data_type: float64
+        description: Y1 GPA as of the end of Q2, the end of semester 1.
       - name: py_y1_gpa
         data_type: float64
+        description: Final Y1 GPA for the previous academic year.
       - name: py_credits
         data_type: float64
+        description:
+          Credit hours earned on the previous academic year's Y1 stored grades.
       - name: met_py_credits
         data_type: boolean
+        description:
+          True when the student earned at least 30 credits in the previous
+          academic year.
       - name: met_cy_credits
         data_type: boolean
+        description:
+          True when the student has no failing Y1 grade as of Q2, the tracker's
+          test for being on track to earn 30 credits this year.
       - name: is_first_time_ninth
         data_type: boolean
+        description: True for a 9th grader who was not in 9th grade last year.
       - name: is_age_eligible
         data_type: boolean
+        description:
+          False when the student turned 19 before September 1 of this academic
+          year.
       - name: q1_ae_status
         data_type: string
+        description:
+          Fall eligibility status. Blank for a student with no previous-year GPA
+          or ADA.
       - name: q2_ae_status
         data_type: string
+        description: Winter eligibility status.
       - name: q3_ae_status
         data_type: string
+        description:
+          Spring eligibility status after the February 1 credit check.
       - name: q4_ae_status
         data_type: string
+        description: Spring eligibility status for Q4, computed exactly as Q3.
