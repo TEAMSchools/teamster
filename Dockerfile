@@ -1,3 +1,7 @@
+# https://docs.astral.sh/uv/guides/integration/docker/
+# named stage so Dependabot's docker ecosystem can bump the pin
+FROM ghcr.io/astral-sh/uv:0.12.19 AS uv
+
 # https://hub.docker.com/_/python
 FROM python:3.13-slim
 ARG CODE_LOCATION
@@ -8,15 +12,10 @@ ENV PYTHONUNBUFFERED=1
 ENV PATH="/app/.venv/bin:${PATH}"
 ENV UV_LINK_MODE=copy
 ENV UV_COMPILE_BYTECODE=1
+ENV UV_NO_CACHE=1
 
-# install system deps & create non-root user
-# trunk-ignore(hadolint/DL3008)
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-        build-essential git \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* \
-    && groupadd -g 1234 teamster \
+# create non-root user
+RUN groupadd -g 1234 teamster \
     && useradd -m -u 1234 -g teamster teamster
 
 # switch to the non-root user
@@ -26,20 +25,17 @@ USER 1234:1234
 WORKDIR /app
 
 # install uv
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/
+COPY --from=uv /uv /bin/
 
 # copy & install python deps
 COPY --chown=1234:1234 uv.lock pyproject.toml /app/
-RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev --no-install-project --no-editable
+RUN uv sync --frozen --no-dev --no-install-project --no-editable
 
 # copy & install dagster project
 COPY --chown=1234:1234 src/teamster/ /app/src/teamster/
-RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev --no-editable
+RUN uv sync --frozen --no-dev --no-editable
 
 # copy & install dbt project
 COPY --chown=1234:1234 src/dbt/ /app/src/dbt/
-RUN --mount=type=cache,target=/root/.cache/uv \
-    dagster-dbt project prepare-and-package \
-        --file "src/teamster/code_locations/${CODE_LOCATION}/__init__.py"
+RUN dagster-dbt project prepare-and-package \
+    --file "src/teamster/code_locations/${CODE_LOCATION}/__init__.py"
