@@ -228,4 +228,4 @@ this is a sheet edit only. Follow _Handing sheet rows to the user_ in
    materializations means nobody edited the sheet, not that edits are ignored.
 7. Update every place that quotes a changed value, on a branch: _Authoritative
    topline goals_ above for a per-class HS Grad-Ready or College-Ready goal, and
-   _What is tracked_ in the reference doc for an attempts goal.
+   _Goals_ in the reference doc (its topline table and attempts paragraph).

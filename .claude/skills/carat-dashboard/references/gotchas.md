@@ -48,7 +48,8 @@
   `benchmark_aligned_scope_max_score`, which keeps the filter, so the same
   students still read `No Data` there. This is expected until the benchmark view
   is repointed — do not "fix" either side to make them match without reading
-  _Known issue — `rn_highest = 1` discards scores_ in the reference doc first.
+  _`rn_highest = 1` hides some students' best scores_ in the reference doc
+  first.
 - **Two different causes move over-time percent-met, and they never overlap.**
   Restored scores land only on grad years 2014, 2015 and 2022; the PSAT 8/9
   800-to-790 threshold lands only on 2028 and 2029. Before explaining a moved
@@ -81,7 +82,7 @@
 - `course_discipline` comes from the scaffold (Math is `MATH`, Science `SCI`),
   and the composite is built with `group by`, so ACT composite rows are 1:1 (379
   rows). Older notes flag `NA` math rows and duplicated composites (1,094 rows);
-  both are resolved, per the reference doc's impact section.
+  both are resolved, per [rebuild-2026-changes.md](rebuild-2026-changes.md).
 - **AY2023 grade 9-10 SAT is excluded on purpose — do not re-add it.** KIPP
   Forward ruled those administrations invalid (grades 9-10 should have sat PSAT,
   not a full SAT form). The exclusion lives in the scaffold sheet: all three

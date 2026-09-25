@@ -458,3 +458,19 @@ Work outward from the student, stopping at the first layer with zero rows.
 
 1. **Is the raw score covered?** A `points` value outside every
    `Raw_Score_Low`/`Raw_Score_High` range yields a null `scale_score`.
+
+## Unreported practice SAT administrations in Illuminate
+
+Illuminate holds seven practice SAT assessments with no conversion rows, so they
+never reach CARAT. KIPP Forward has not asked for them; a backfill needs the
+scale-score tables for those forms from the KIPP Foundation.
+
+| Year | `assessment_id` | Title                                          | Students |
+| ---- | --------------- | ---------------------------------------------- | -------- |
+| 2024 | 178628          | `SAT-24-25-BOY SAT-11th Grade-Math`            | 369      |
+| 2024 | 178629          | `SAT-24-25-BOY SAT-11th Grade-ReadingWriting`  | 378      |
+| 2024 | 187284          | `11th Grade - Practice SAT 2 EBRW`             | 386      |
+| 2024 | 187287          | `11th Grade Practice SAT 2 MATH`               | 378      |
+| 2024 | 187816          | `11th Grade Practice SAT 2 MATH (w/ Grid Ins)` | 374      |
+| 2025 | 204089          | `SAT-25-26-BOY SAT-11th Grade-Math`            | 342      |
+| 2025 | 204090          | `SAT-25-26-BOY SAT-11th Grade-ReadingWriting`  | 347      |

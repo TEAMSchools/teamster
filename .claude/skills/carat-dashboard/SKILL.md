@@ -20,18 +20,17 @@ description: >-
 
 **Read the first two sections of
 [`docs/models/carat-dashboard-data-model.md`](../../../docs/models/carat-dashboard-data-model.md)
-before answering anything** — _What is CARAT?_ and _Models behind the workbook_.
-Stop at the third `##` heading (about line 74; find it with
-`grep -n '^## ' docs/models/carat-dashboard-data-model.md`). Not optional, and
-not only for deep questions. Read further into the doc when a route below names
-a section. Those two sections establish what the dashboard actually reports, who
-reads it, and which models feed which view. Without that, it is easy to answer
-confidently about the wrong pipeline: CARAT has two, official and practice, and
-confusing them is the most common source of wrong answers.
+before answering anything** — _What is CARAT?_ and _How it fits together_,
+stopping at `## Terms`. Not optional, and not only for deep questions. They
+establish what the dashboard reports and which models feed it. Without that, it
+is easy to answer confidently about the wrong pipeline: CARAT has two, official
+and practice, and confusing them is the most common source of wrong answers.
 
-It is also authoritative for the shipped models, which the design spec is not —
-several things landed differently from the spec, and the doc records the
-deviations.
+The doc is the manual for the shipped models: key ideas (attempts, benchmarks,
+goals, seasons, growth), what each dashboard view shows, the supporting models,
+the Google Sheets, and decisions and known issues. Read the section a route
+below names. It is authoritative over the design spec, which several things
+landed differently from.
 
 Also relevant:
 
@@ -62,34 +61,35 @@ rows to the user_, below.
 
 ### Why did this number change
 
-These questions each have a documented answer in the reference doc with measured
-figures. Cite the doc rather than re-deriving:
+The 2026 rebuild's measured before/after figures are in
+[references/rebuild-2026-changes.md](references/rebuild-2026-changes.md) (RC);
+standing explanations are in the reference doc (doc). Cite them rather than
+re-deriving:
 
-| Question                                               | Section                                                   |
-| ------------------------------------------------------ | --------------------------------------------------------- |
-| An attempt count is lower than it was                  | _Why participation attempt counts change_                 |
-| A student's SAT attempts dropped by one                | same — 86 students, the Camden 2027 duplicate load        |
-| An attempt count is higher than it was                 | same — counts are no longer scoped to enrolled years      |
-| The roster returns two rows for one student            | same — `test_type` is in the grain                        |
-| A percent-met or benchmark total moved                 | _Why the benchmark dashboard's totals change_             |
-| Two records for one sitting, or an inflated row count  | _Known issue — duplicate kippadb test records_            |
-| A goal line moved, or does not match the strategy doc  | _The rebuilt goals tab — what shipped_                    |
-| `_over_time` shows two rows per student for one goal   | same — resolved by the `_over_time` goal columns          |
-| An over-time percent-met moved                         | _Why the over-time dashboard's numbers change_            |
-| PSAT 8/9 HS Grad-Ready rose for 2028 or 2029           | same — the 800 to 790 threshold, 10 students each         |
-| A 2014, 2015 or 2022 cohort's percent-met rose         | same — the 27 restored scores                             |
-| A score reads `No Data` in one view but not another    | _Known issue — `rn_highest = 1` discards scores_          |
-| Every school shows the same goal line                  | _Why the current dashboard's numbers change_              |
-| An attempts percentage roughly halved or doubled       | same — the attempts denominator is test takers            |
-| The board metrics view lost its goal line              | same — Board is retired, goals are now uniform            |
-| `_current` reports a year behind, or two years at once | same — four branches hardcoded AY2025                     |
-| Official growth is not official-to-official            | _Growth is measured in season order, and practice counts_ |
+| Question                                               | Where                                                       |
+| ------------------------------------------------------ | ----------------------------------------------------------- |
+| An attempt count is lower than it was                  | RC _Why participation attempt counts change_                |
+| A student's SAT attempts dropped by one                | same — 86 students, the Camden 2027 duplicate load          |
+| An attempt count is higher than it was                 | same — counts are no longer scoped to enrolled years        |
+| The roster returns two rows for one student            | same — `test_type` is in the grain                          |
+| A percent-met or benchmark total moved                 | RC _Why the benchmark dashboard's totals change_            |
+| Two records for one sitting, or an inflated row count  | doc _Duplicate kippadb test records_                        |
+| A goal line moved, or does not match the strategy doc  | [references/goals.md](references/goals.md), and doc _Goals_ |
+| An over-time percent-met moved                         | RC _Why the over-time dashboard's numbers change_           |
+| PSAT 8/9 HS Grad-Ready rose for 2028 or 2029           | same — the 800 to 790 threshold, 10 students each           |
+| A 2014, 2015 or 2022 cohort's percent-met rose         | same — the 27 restored scores                               |
+| A score reads `No Data` in one view but not another    | doc _`rn_highest = 1` hides some students' best scores_     |
+| Every school shows the same goal line                  | RC _Why the current dashboard's numbers change_             |
+| An attempts percentage roughly halved or doubled       | doc _Attempts_ — the denominator is test takers             |
+| The board metrics view lost its goal line              | RC _Why the current dashboard's numbers change_             |
+| `_current` reports a year behind, or two years at once | same — four branches hardcoded AY2025                       |
+| Official growth is not official-to-official            | doc _Growth_                                                |
+| Practice numbers on the roster dropped sharply         | RC _Roster scores: what the repointing changed_             |
 
-Each of those carries the measured numbers, so an answer can cite them instead
-of re-running a comparison. If a reconciliation disagrees with the documented
-figures, read the last subsection of the participation section first — the
-counting fix and the Salesforce cleanup cancel each other depending on which
-landed first, which is the usual reason.
+If a reconciliation disagrees with the documented figures, read the last
+subsection of RC's participation section first — the counting fix and the
+Salesforce cleanup cancel each other depending on which landed first, which is
+the usual reason.
 
 ## Orientation
 
