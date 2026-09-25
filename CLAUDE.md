@@ -255,8 +255,8 @@ exploration that led nowhere (keep only the conclusion).
   shape: [src/cube/CLAUDE.md](src/cube/CLAUDE.md). If
   `dbt:answering-natural-language-questions-with-dbt` auto-loads, do not follow
   it; there is no dbt Semantic Layer here.
-- BigQuery MCP: warehouse inspection (raw rows, schema diffs,
-  `INFORMATION_SCHEMA`), engineering tasks, and ad-hoc SQL only after
+- BigQuery MCP (`execute_sql_readonly`): warehouse inspection (raw rows, schema
+  diffs, `INFORMATION_SCHEMA`), engineering tasks, and ad-hoc SQL only after
   `cube meta` shows no view covers the columns.
 - dbt MCP `show`: only when `ref()`/`source()` resolution is needed.
 - Dagster: two servers, one tool per job, and `dagster-plus` (Dagster's own

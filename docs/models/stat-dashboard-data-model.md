@@ -421,10 +421,10 @@ representation of what a press figure contains.
 ### Reading the sheets: ADC, not the BigQuery MCP
 
 Both Google Sheets sources behind this dashboard are Drive-backed externals. The
-BigQuery MCP service account has no Drive scope and returns 403 on them. **ADC
-does have Drive scope**, so a Python client reads the external directly and sees
-the sheet live — which is the only way to answer "did that paste land" without
-waiting on a build.
+BigQuery MCP's OAuth token has no Drive scope and returns Access Denied on them.
+**ADC does have Drive scope**, so a Python client reads the external directly
+and sees the sheet live — which is the only way to answer "did that paste land"
+without waiting on a build.
 
 Do not reach for a `--target staging` build to inspect rows. It is a shared
 write that needs authorization, and the table it produces is frozen at build
