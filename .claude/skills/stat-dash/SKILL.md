@@ -148,7 +148,7 @@ Almost always an unresolved `localstudentidentifier`.
    student with four bad test rows needs four rows here.
 
 5. **Re-check by reading the sheet external live** through ADC
-   (`.claude/context/bigquery.md`):
+   (`.claude/context/claude_ai_Google_Cloud_BigQuery.md`):
 
    ```python
    client.query('''
@@ -419,9 +419,10 @@ Never set `remove_row = TRUE` on anything else.
 
 ### Step 6 — audit after the paste, before telling anyone it is done
 
-**Read the sheet external live through ADC** (`.claude/context/bigquery.md`). Do
-not build anything: a `--target staging` build is a shared write needing
-authorization, and its copy is frozen at build time.
+**Read the sheet external live through ADC**
+(`.claude/context/claude_ai_Google_Cloud_BigQuery.md`). Do not build anything: a
+`--target staging` build is a shared write needing authorization, and its copy
+is frozen at build time.
 
 ```python
 # uv run python <script.py>
