@@ -216,11 +216,9 @@
     ]
   },
   "enabledPlugins": {
-    "commit-commands@claude-plugins-official": true,
     "dagster@dagster": true,
     "dbt@dbt-agent-marketplace": true,
     "pyright-lsp@claude-plugins-official": true,
-    "security-guidance@claude-plugins-official": true,
     "superpowers@superpowers-dev": true
   },
   "extraKnownMarketplaces": {
