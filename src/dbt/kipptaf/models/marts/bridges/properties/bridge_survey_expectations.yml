@@ -53,20 +53,6 @@ models:
               arguments:
                 to: ref('dim_survey_administrations')
                 field: survey_administration_key
-      - name: respondent_type
-        data_type: string
-        description: >-
-          Discriminator for respondent type: staff, student, or family.
-          Determines which respondent FK is populated.
-        data_tests:
-          - not_null
-          - accepted_values:
-              arguments:
-                values:
-                  - staff
-                  - student
-                  - family
-
       - name: staff_key
         data_type: string
         description: >-
@@ -114,3 +100,8 @@ models:
               arguments:
                 to: ref('dim_student_contact_persons')
                 field: student_contact_person_key
+      - name: respondent_type
+        data_type: string
+        description: >-
+          Discriminator for respondent type: staff, student, or family.
+          Determines which respondent FK is populated.

@@ -1,7 +1,7 @@
 with
     /*
         TODO: remove this deduplication once the duplicate kippadb standardized
-        test records are cleaned up at source. 87 SAT sittings are entered twice
+        test records are cleaned up at source. Some SAT sittings are entered twice
         in Salesforce -- two distinct record ids sharing contact, date, and score
         -- which reaches this model as byte-identical rows and double-weights
         those scores in the workbook's averages. Deduplicating here fixes the

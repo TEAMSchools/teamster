@@ -55,6 +55,8 @@ nav:
       - Claude Code & Superpowers: guides/superpowers.md
       - Cube: guides/cube.md
       - Claude + Cube Connector: guides/claude-cube-connector.md
+      - Cube Access - Individual Exceptions:
+          guides/cube-access-individual-exceptions.md
   - Troubleshooting:
       - Dagster: troubleshooting/dagster.md
       - dbt: troubleshooting/dbt.md
@@ -76,6 +78,8 @@ nav:
       - HS Early Warning Data Model: models/hs-early-warning-data-model.md
       - DIBELS Dashboard Data Model: models/dibels-dashboard-data-model.md
       - STAT Dashboard Data Model: models/stat-dashboard-data-model.md
+      - Athletic Eligibility Data Model:
+          models/athletic-eligibility-data-model.md
   - Automations: reference/automations.md
 
 markdown_extensions:

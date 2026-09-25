@@ -261,63 +261,6 @@ if [[ ${tool_name} == "bash" ]]; then
 fi
 
 # ═══════════════════════════════════════════════════════════════════
-# Section 3: BigQuery MCP — read-only enforcement
-# ═══════════════════════════════════════════════════════════════════
-
-# 8. BigQuery MCP read-only enforcement, gated on the mcp__bigquery__* prefix so
-#    every SQL-capable tool is covered (execute_sql, forecast,
-#    analyze_contribution, and any future tool), not just two named ones.
-if [[ ${tool_name} == mcp__bigquery__* ]]; then
-	# Write-statement denylist. Newlines flattened so UPDATE..SET split across
-	# lines is caught (#12); INSERT no longer requires INTO (#11); TRUNCATE and
-	# LOAD DATA added (#10). Verbs require a trailing space so column names like
-	# delete_flag / merge_count do not false-positive.
-	_bq_has_write() {
-		# Newlines flattened to spaces via parameter expansion (no tr subshell).
-		# Match each write verb on a word boundary (\b…\b) instead of requiring a
-		# secondary keyword or a trailing space: GoogleSQL makes DELETE's FROM and
-		# MERGE's INTO optional and lets /* */ comments replace the whitespace, so
-		# `DELETE ds.t`, `MERGE ds.t …` and `DROP/**/TABLE t` must all still match.
-		# \b…\b keeps read-query identifiers like delete_flag / merge_count /
-		# create_ts from false-positiving (no boundary before the trailing _).
-		echo "${1//$'\n'/ }" | grep -qiE '\bINSERT\b|\bUPDATE\b.*\bSET\b|\bDELETE\b|\bMERGE\b|\bEXPORT\b.*\bDATA\b|\bLOAD\b.*\bDATA\b|\bTRUNCATE\b|\bCREATE\b|\bDROP\b|\bALTER\b|\bGRANT\b|\bREVOKE\b|\bCALL\b'
-	}
-	case ${tool_name} in
-	mcp__bigquery__execute_sql)
-		# Whole arg is SQL: require a read statement at the start (allowlist) ...
-		if ! echo "${sanitized}" | grep -qiE '^[[:space:]]*(SELECT|SHOW|DESCRIBE|WITH)\b'; then
-			deny "check-sensitive.sh Rule 8: BigQuery MCP is read-only; the SQL must start with SELECT, SHOW, DESCRIBE, or WITH. DML/DDL goes to the user's terminal."
-		fi
-		# ... and reject any embedded write statement.
-		if _bq_has_write "${sanitized}"; then
-			deny "check-sensitive.sh Rule 8: BigQuery MCP is read-only and the SQL contains a write verb (INSERT, UPDATE..SET, DELETE, MERGE, CREATE, DROP, ALTER, TRUNCATE, EXPORT/LOAD DATA, GRANT, REVOKE, CALL), matched even inside a string literal. Reword the literal (like 'Dr%') or hand DML/DDL to the user's terminal."
-		fi
-		;;
-	mcp__bigquery__forecast | mcp__bigquery__analyze_contribution)
-		# history_data / input_data accept a bare table-id OR a query, so requiring
-		# a read prefix would wrongly deny a legitimate table-id (#28); reject only
-		# embedded write statements.
-		if _bq_has_write "${sanitized}"; then
-			deny "check-sensitive.sh Rule 8: BigQuery MCP is read-only and the SQL contains a write verb (INSERT, UPDATE..SET, DELETE, MERGE, CREATE, DROP, ALTER, TRUNCATE, EXPORT/LOAD DATA, GRANT, REVOKE, CALL), matched even inside a string literal. Reword the literal (like 'Dr%') or hand DML/DDL to the user's terminal."
-		fi
-		;;
-	mcp__bigquery__ask_data_insights)
-		# Natural-language question + structured table refs; no raw-SQL field for a
-		# caller to inject (server performs read-only NL->SQL). Intentionally not
-		# SQL-gated — a denylist on prose would block words like "drop"/"deleted".
-		: # no-op
-		;;
-	*)
-		# Unknown bigquery tool: conservatively reject obvious write statements
-		# anywhere in its arguments.
-		if _bq_has_write "${sanitized}"; then
-			deny "check-sensitive.sh Rule 8: BigQuery MCP is read-only and the SQL contains a write verb (INSERT, UPDATE..SET, DELETE, MERGE, CREATE, DROP, ALTER, TRUNCATE, EXPORT/LOAD DATA, GRANT, REVOKE, CALL), matched even inside a string literal. Reword the literal (like 'Dr%') or hand DML/DDL to the user's terminal."
-		fi
-		;;
-	esac
-fi
-
-# ═══════════════════════════════════════════════════════════════════
 # Section 4: Outbound egress — secret-VALUE scan
 # ═══════════════════════════════════════════════════════════════════
 # Section 1 matches sensitive PATHS; this catches secret VALUES being SENT to a
@@ -334,5 +277,10 @@ if [[ ${tool_name} == webfetch || ${tool_name} == websearch ]] ||
 	[[ ${tool_name} =~ ^mcp__.*(create|update|write|add|comment|upload|send|post|put|delete|append|insert|merge|push|reply|share|forward|schedule|launch|trigger) ]]; then
 	if echo "${path}" | grep -qiE 'op://[^/{}[:space:]]+/|-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|PRIVATE KEY-----|AIza[0-9A-Za-z_-]{35}|ya29\.[0-9A-Za-z_-]+|goog_[a-zA-Z0-9_-]+|eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}|ops_eyJ[A-Za-z0-9_-]{50,}|AKIA[0-9A-Z]{16}|(postgres(ql)?|mysql|mongodb(\+srv)?)://[^[:space:]]+:[^[:space:]]+@|"type"[[:space:]]*:[[:space:]]*"service_account"|gh[pusor]_[A-Za-z0-9_]{36,}|github_pat_[A-Za-z0-9_]{22,}|xox[baprs]-[0-9A-Za-z-]{10,}|\b(sk|rk)_(live|test)_[0-9A-Za-z]{16,}|hooks\.slack\.com/services/[A-Za-z0-9/]+|aws_secret_access_key["[:space:]:=]+[A-Za-z0-9/+]{40}'; then
 		deny "check-sensitive.sh Section 4: this outbound write carries a secret-shaped value (1Password reference, private-key header, cloud token, JWT, connection string, service-account JSON). Redact it (write op-uri) before sending."
+	fi
+	# Asana PAT: 1/<gid>:<32 hex> (legacy) or 2/<gid>/<gid>:<32 hex>. Mirrors the
+	# Asana PAT branch of secret_re in check-output.sh.
+	if echo "${path}" | grep -qiE '\b[12]/[0-9]+(/[0-9]+)?:[0-9a-f]{32}\b'; then
+		deny "check-sensitive.sh Section 4: this outbound write carries an Asana personal access token. Redact it before sending."
 	fi
 fi

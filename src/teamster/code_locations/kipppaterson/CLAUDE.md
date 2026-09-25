@@ -7,8 +7,6 @@ CODE_LOCATION = "kipppaterson"
 LOCAL_TIMEZONE = ZoneInfo("America/New_York")
 ```
 
-GCS bucket: `teamster-kipppaterson`
-
 ## Active Integrations
 
 | Module                  | Type                         | Trigger                                                               |
@@ -20,24 +18,24 @@ GCS bucket: `teamster-kipppaterson`
 | `deanslist`             | API assets                   | schedule (nightly)                                                    |
 | `edplan`                | SFTP assets                  | sensor (`build_edplan_sftp_sensor`)                                   |
 | `finalsite`             | API + SFTP assets            | schedule (`contacts`, 4am) + sensor (`status_report`)                 |
-| `pearson`               | SFTP assets                  | sensor (`couchdrop_sftp_sensor`)                                      |
+| `pearson`               | SFTP assets                  | manual only (retired; Cambium replaced it)                            |
 | `extracts`              | BigQuery→SFTP                | schedule (3am)                                                        |
 | `titan`                 | SFTP assets                  | sensor (`build_titan_sftp_sensor`)                                    |
-| `couchdrop`             | sensor only                  | sensor (Google Drive watcher: cambium, pearson, finalsite)            |
+| `couchdrop`             | sensor only                  | sensor (Google Drive watcher: cambium, finalsite)                     |
 
 ## PowerSchool via dlt
 
 Paterson ingests PowerSchool with **dlt**, syncing directly from its Oracle
 database through an in-process paramiko SSH tunnel (`ssh_powerschool` resource,
 `enable_legacy_rsa=True`) and landing to BigQuery via keyless ADC (issue #3807).
-This is the pilot/template for migrating the ODBC districts (`kippnewark`,
-`kippcamden`, `kippmiami`) off `sshpass`. ONE `@dlt_assets` multi-asset covers
-every configured table (`powerschool/sis/dlt/`); `cursor_column: null` tables
-always replace. Config in `powerschool/sis/dlt/config/assets.yaml` (per-table
-`cursor_column` + `intraday`/`nightly` membership booleans). Intraday selection
-is decided by `kipppaterson__powerschool__dlt__intraday_sensor` (probe +
-dlt-state baseline); the nightly schedule full-refreshes its targets
-unconditionally and re-baselines. Design:
+`kippnewark` and `kippcamden` use the same dlt pattern; `kippmiami` has retired
+PowerSchool for Focus. ONE `@dlt_assets` multi-asset covers every configured
+table (`powerschool/sis/dlt/`); `cursor_column: null` tables always replace.
+Config in `powerschool/sis/dlt/config/assets.yaml` (per-table `cursor_column` +
+`intraday`/`nightly` membership booleans). Intraday selection is decided by
+`kipppaterson__powerschool__dlt__intraday_sensor` (probe + dlt-state baseline);
+the nightly schedule full-refreshes its targets unconditionally and
+re-baselines. Design:
 `docs/superpowers/specs/2026-07-20-powerschool-dlt-intraday-sensor-design.md`.
 
 Consequences:
@@ -49,8 +47,7 @@ Consequences:
 - Ingestion writes to BigQuery `dagster_kipppaterson_dlt_powerschool`; the dbt
   `powerschool` package `staging/dlt` variant is enabled here
 - `couchdrop_sftp_sensor` carries no PowerSchool files; it watches Cambium
-  `njsla`, Pearson `njsla` / `njsla_science` / `student_list_report`, and
-  Finalsite `status_report`
+  `njsla` and Finalsite `status_report`
 - No `iready`, `overgrad`, or `renlearn`
 - The `dlt_powerschool_kipppaterson` pool stays at limit 1 (Dagster+ deployment
   settings, UI) so an overrunning tick serializes with the next instead of
@@ -72,7 +69,7 @@ a freshness check. PowerSchool dlt runs on an intraday change-detection sensor
 (`kipppaterson__powerschool__dlt__intraday_sensor`, 15-min probe) plus one
 nightly cron schedule (unconditional full-refresh + re-baseline, matching
 kippnewark's cadence). DeansList, Finalsite `contacts`, and the PowerSchool
-autocomm `extracts` job add nightly schedules; Cambium, Pearson and Finalsite
+autocomm `extracts` job add nightly schedules; Cambium and Finalsite
 `status_report` (`couchdrop_sftp_sensor`), Amplify
 (`build_amplify_mclass_sftp_sensor`), Titan (`build_titan_sftp_sensor`), EdPlan
 (`build_edplan_sftp_sensor`), and PowerSchool intraday are sensor-driven. The

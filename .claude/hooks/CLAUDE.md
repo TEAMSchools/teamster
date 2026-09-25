@@ -10,9 +10,9 @@ bash tests/hooks/run_all.sh
 ```
 
 Individual suites are in `tests/hooks/test_*.sh`. Test files contain sensitive
-fixture strings (gitleaks ignores are required). The `expect_deny_exit0` helper
-in `helpers.sh` guards against the exit-code and stderr regressions described
-above.
+fixture strings (gitleaks ignores are required). `expect_deny_exit0` in
+`helpers.sh` enforces the invariants in `.claude/rules/claude-settings.md` →
+_Hook protocol_.
 
 **Ad-hoc rule probing:** a Bash command that names `.claude/hooks/*.sh` is
 blocked (Rule 2), and trigger tokens placed in the command self-block. To test a

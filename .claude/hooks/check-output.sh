@@ -72,6 +72,39 @@ combined=$(jq -r '
     elif type == "array" then map(strip_images) else . end;
   [(.tool_response // .) | strip_images | .. | strings] | join(" ")' <<<"${input}")
 
+# Asana pagination cursors: next_page.offset (echoed in next_page.path and .uri)
+# is an opaque JWT-shaped token that trips secret_re, jwt_re and the entropy
+# heuristic, so a cursor could never be read back to fetch the next page. Exempt
+# a token only when it is the offset= query param of an https://app.asana.com/api/
+# URL in this same output, then delete that exact token everywhere in the corpus
+# (the bare offset field, the path copy). The token charset excludes `/` and
+# `:`, so an Asana PAT is never captured; the 16-char floor stops a short value
+# from deleting unrelated text. Runs before the decode pass so the cursor's
+# base64 segments are not decoded and re-scanned either.
+asana_url_re='(^|[^A-Za-z0-9._/:-])https://app\.asana\.com/api/[^[:space:]"<>'"'"']*([?&]|\\u0026)offset=[A-Za-z0-9_.=-]{16,}'
+asana_urls=$(echo "${combined}" | grep -oE "${asana_url_re}" || true)
+while read -r asana_url; do
+	[[ -n ${asana_url} ]] || continue
+	cursor=${asana_url##*offset=}
+	combined=${combined//"${cursor}"/}
+done <<<"${asana_urls}"
+
+# Google Drive pagination cursors: search_files returns nextPageToken, an opaque
+# ~!!~-prefixed token (590-790 chars) with no separator break, so the entropy
+# heuristic below redacted every multi-page result. Exempt a token only in
+# Google Drive MCP output, only as a "nextPageToken" value, and only in the ~!!~
+# shape, then delete that exact token from the corpus. Runs before the decode
+# pass for the same reason as the Asana cursor above.
+if [[ ${tool_name} == mcp__claude_ai_google_drive__* ]]; then
+	drive_re='"nextPageToken"[[:space:]]*:[[:space:]]*"(~!!~[A-Za-z0-9_=!~-]{16,})"'
+	drive_rest=${combined}
+	while [[ ${drive_rest} =~ ${drive_re} ]]; do
+		drive_token=${BASH_REMATCH[1]}
+		combined=${combined//"${drive_token}"/}
+		drive_rest=${drive_rest#*"${drive_token}"}
+	done
+fi
+
 # Decode candidate blobs and re-scan (catches encoded secrets). Two explicit
 # passes — standard base64 and url-safe base64 (#16) — so path separators aren't
 # conflated with the alphabet. Floor 24 covers real token formats (128-bit key =
@@ -104,6 +137,10 @@ stripped=${combined//[[:space:]]/}
 # on doc placeholders (e.g. "password: enter-your-password-here"); the
 # high-entropy heuristic below still catches opaque values.
 secret_re='op://[^/{}[:space:]]+/|-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|PRIVATE KEY-----|AIza[0-9A-Za-z_-]{35}|ya29\.[0-9A-Za-z_-]+|goog_[a-zA-Z0-9_-]+|eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}|ops_eyJ[A-Za-z0-9_-]{50,}|AKIA[0-9A-Z]{16}|(postgres(ql)?|mysql|mongodb(\+srv)?)://[^[:space:]]+:[^[:space:]]+@|"type"[[:space:]]*:[[:space:]]*"service_account"|gh[pusor]_[A-Za-z0-9_]{36,}|github_pat_[A-Za-z0-9_]{22,}|xox[baprs]-[0-9A-Za-z-]{10,}|\b(sk|rk)_(live|test)_[0-9A-Za-z]{16,}|hooks\.slack\.com/services/[A-Za-z0-9/]+|aws_secret_access_key["[:space:]:=]+[A-Za-z0-9/+]{40}'
+
+# Asana PAT: 1/<gid>:<32 hex> (legacy) or 2/<gid>/<gid>:<32 hex>. Mirrored in
+# check-sensitive.sh Section 4.
+secret_re="${secret_re}"'|\b[12]/[0-9]+(/[0-9]+)?:[0-9a-f]{32}\b'
 
 # On the whitespace-stripped copy scan ONLY the JWT pattern (the realistic
 # token-split-across-newline case, #30) — not the full set, which would

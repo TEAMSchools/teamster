@@ -17,11 +17,13 @@ Injected on the first `Agent` or `Workflow` call in a session.
   long `dbt build` strands itself waiting on the notification and returns having
   written nothing. Never run two dbt subagents against one worktree at once:
   they share `target/` and corrupt the partial-parse manifest.
-- Worktree dispatches spell out the absolute worktree path and mandate
-  `git -C <worktree>` plus `uv run` from it. A subagent starts in the MAIN
-  checkout, so bare edits hit `main`. State that IDE Pyright errors on worktree
-  files (`reportMissingImports`, "not accessed", "not iterable") are expected
-  false positives.
+- Worktree dispatches spell out the absolute worktree path, mandate
+  `git -C <worktree>` plus `uv run` from it, and state that IDE Pyright errors
+  on worktree files (`reportMissingImports`, "not accessed", "not iterable") are
+  expected false positives.
+- A subagent starts in the session's cwd: the MAIN checkout unless the session
+  ran `EnterWorktree`. It loads the main checkout's CLAUDE.md either way, so a
+  branch-only CLAUDE.md change reaches it only if the prompt says so.
 - Subagents name specific files in `git add`, never `-u`, `-A`, or `.`.
 
 ## Model and effort
@@ -37,8 +39,7 @@ The decision rules are in the root CLAUDE.md _Subagents_ section. Behind them:
   the same tier.
 - A retry costs more than the tier you saved. When in doubt, go up a tier.
 - A skill's own model guidance wins over these rules.
-- Effort is settable on Workflow `agent()` and in a `.claude/agents/<name>.md`
-  frontmatter definition, not on `Agent`.
+- Workflow `agent()` also takes an effort setting.
 
 ## Verifying the result
 
@@ -59,9 +60,9 @@ The decision rules are in the root CLAUDE.md _Subagents_ section. Behind them:
 - A dead run's journal
   (`~/.claude/projects/<proj>/subagents/workflows/wf_<id>/journal.jsonl`) stops
   growing for about 2 minutes with no live `dbt` or agent processes.
-- `isolation:'worktree'` dirs live at `.claude/worktrees/wf_<id>-N`, not the
-  repo `.worktrees/`. Orphaned ones are left `locked`: `git worktree unlock`,
-  then `remove --force`.
+- `isolation:'worktree'` dirs live at `.claude/worktrees/wf_<id>-N`, beside the
+  branch worktrees; the `wf_` prefix tells them apart. Orphaned ones are left
+  `locked`: `git worktree unlock`, then `remove --force`.
 - `TaskStop` only sees tasks launched in the CURRENT session. A Workflow from a
   reloaded session is not in the registry; clean it at the process and worktree
   level.

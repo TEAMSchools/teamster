@@ -150,15 +150,15 @@ To grant a new developer access: add them to
 `gcloud auth login` and `gcloud auth application-default login` write to
 different places and expire independently:
 
-| Store                                  | Written by                              | Read by                                |
-| -------------------------------------- | --------------------------------------- | -------------------------------------- |
-| `credentials.db`                       | `gcloud auth login`                     | `gcloud` CLI commands, `bq`            |
-| `application_default_credentials.json` | `gcloud auth application-default login` | client libraries, every GCP MCP server |
+| Store                                  | Written by                              | Read by                                                                    |
+| -------------------------------------- | --------------------------------------- | -------------------------------------------------------------------------- |
+| `credentials.db`                       | `gcloud auth login`                     | `gcloud` CLI commands, `bq`                                                |
+| `application_default_credentials.json` | `gcloud auth application-default login` | client libraries, local dbt, the `gke` and `gcp-observability` MCP servers |
 
 A Workspace Cloud-session-length policy expires the **user** store roughly
 daily. ADC is unaffected. The symptom is lopsided: `bq` and bare `gcloud` start
-failing with "Reauthentication failed" while every MCP server and client-library
-script keeps working normally.
+failing with "Reauthentication failed" while local dbt, the ADC-backed MCP
+servers, and client-library scripts keep working normally.
 
 The **GCloud: Application Default Login** task refreshes ADC only — there is no
 task for the user store, so re-run `gcloud auth login` yourself when you need
