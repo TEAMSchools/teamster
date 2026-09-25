@@ -68,25 +68,26 @@ The 2026 rebuild's measured before/after figures are in
 standing explanations are in the reference doc (doc). Cite them rather than
 re-deriving:
 
-| Question                                               | Where                                                           |
-| ------------------------------------------------------ | --------------------------------------------------------------- |
-| An attempt count is lower than it was                  | RC _Why participation attempt counts change_                    |
-| A student's SAT attempts dropped by one                | same — 86 students, the Camden 2027 duplicate load              |
-| An attempt count is higher than it was                 | same — counts are no longer scoped to enrolled years            |
-| The roster returns two rows for one student            | same — `test_type` is in the grain                              |
-| A percent-met or benchmark total moved                 | RC _Why the benchmark dashboard's totals change_                |
-| Two records for one sitting, or an inflated row count  | doc _Duplicate kippadb test records_                            |
-| A goal line moved, or does not match the strategy doc  | [references/goals.md](references/goals.md), and doc _Goals_     |
-| An over-time percent-met moved                         | RC _Why the over-time dashboard's numbers change_               |
-| PSAT 8/9 HS Grad-Ready rose for 2028 or 2029           | same — the 800 to 790 threshold, 10 students each               |
-| A 2014, 2015 or 2022 cohort's percent-met rose         | same — the 27 restored scores                                   |
-| A score reads `No Data` in one view but not another    | doc _`rn_highest = 1` hides some students' best scores_         |
-| Every school shows the same goal line                  | RC _Why the current dashboard's numbers change_                 |
-| A current-view percentage doesn't match a count        | doc _Attempts_ — every bar divides by all students in the group |
-| The board metrics view lost its goal line              | RC _Why the current dashboard's numbers change_                 |
-| `_current` reports a year behind, or two years at once | same — four branches hardcoded AY2025                           |
-| Official growth is not official-to-official            | doc _Growth_                                                    |
-| Practice numbers on the roster dropped sharply         | RC _Roster scores: what the repointing changed_                 |
+| Question                                               | Where                                                                         |
+| ------------------------------------------------------ | ----------------------------------------------------------------------------- |
+| An attempt count is lower than it was                  | RC _Why participation attempt counts change_                                  |
+| A student's SAT attempts dropped by one                | same — 86 students, the Camden 2027 duplicate load                            |
+| An attempt count is higher than it was                 | same — counts are no longer scoped to enrolled years                          |
+| The roster returns two rows for one student            | same — `test_type` is in the grain                                            |
+| A percent-met or benchmark total moved                 | RC _Why the benchmark dashboard's totals change_                              |
+| Two records for one sitting, or an inflated row count  | doc _Duplicate kippadb test records_                                          |
+| A goal line moved, or does not match the strategy doc  | [references/goals.md](references/goals.md), and doc _Goals_                   |
+| An over-time percent-met moved                         | RC _Why the over-time dashboard's numbers change_                             |
+| PSAT 8/9 HS Grad-Ready rose for 2028 or 2029           | same — the 800 to 790 threshold, 10 students each                             |
+| A 2014, 2015 or 2022 cohort's percent-met rose         | same — the 27 restored scores                                                 |
+| A score reads `No Data` in one view but not another    | doc _`rn_highest = 1` hides some students' best scores_                       |
+| Every school shows the same goal line                  | RC _Why the current dashboard's numbers change_                               |
+| A current-view percentage doesn't match a count        | doc _Attempts_ — every bar divides by all students in the group               |
+| The board metrics view lost its goal line              | RC _Why the current dashboard's numbers change_                               |
+| `_current` reports a year behind, or two years at once | same — four branches hardcoded AY2025                                         |
+| A SAT score disagrees with a College Board report      | [references/gotchas.md](references/gotchas.md) _CARAT's SAT is kippadb's SAT_ |
+| Official growth is not official-to-official            | doc _Growth_                                                                  |
+| Practice numbers on the roster dropped sharply         | RC _Roster scores: what the repointing changed_                               |
 
 If a reconciliation disagrees with the documented figures, read the last
 subsection of RC's participation section first — the counting fix and the

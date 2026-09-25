@@ -104,6 +104,47 @@
   exclusion removed Reading and Writing but left `sat_math`, which grade 11 also
   uses — leaving 737 Total rows with `actual_total_subjects_tested = 1` against
   `expected = 3` and a null score on every one.
+- **CARAT's SAT is kippadb's SAT, not College Board's.** The College Board SAT
+  files reach CARAT only after the data team loads them into Salesforce from the
+  Unified KFWD Processes Document (doc _How official SAT reaches the
+  dashboard_). When a SAT score is questioned, reconcile the two sources before
+  touching a model. Report counts only:
+
+  ```sql
+  with
+      cb as (
+          select distinct
+              powerschool_student_number as sn, sat_date as d, sat_total as score,
+          from `teamster-332318.kipptaf_collegeboard.int_collegeboard__sat_unpivot`
+          where powerschool_student_number is not null and sat_total is not null
+      ),
+
+      sf as (
+          select distinct school_specific_id as sn, `date` as d, score,
+          from `teamster-332318.kipptaf_kippadb.int_kippadb__standardized_test_unpivot`
+          where
+              score_type = 'sat_total_score'
+              and `date` is not null
+              and school_specific_id is not null
+      )
+
+  select
+      extract(year from coalesce(cb.d, sf.d)) as test_year,
+      countif(cb.score = sf.score) as both_same,
+      countif(cb.score != sf.score) as both_different,
+      countif(sf.sn is null) as college_board_only,
+      countif(cb.sn is null) as kippadb_only,
+  from cb
+  full join sf on cb.sn = sf.sn and cb.d = sf.d
+  group by test_year
+  ```
+
+  Baseline on 2026-09-25, sittings dated July 2024 to June 2026: 1,649 scores in
+  both, 1 with different values, 2 College Board scores not yet loaded, and 62
+  kippadb-only scores (sittings whose reports didn't come to the school, or hand
+  entries). `both_different` and `college_board_only` are the ones to chase; the
+  second should match what's on the KIPP Forward SAT sheets. `kippadb_only` is
+  expected and needs a look only when a specific score is questioned.
 
 ## Common mistakes
 

@@ -87,15 +87,38 @@ reads PowerSchool grades, and AP has its own path (see _Dashboard views_).
 | KIPP Forward workbook (four tabs) | Practice conversions, test vocabulary, goals, seasons | KIPP Forward, entered by the data team |
 | PowerSchool, via enrollments      | Student, school, grade, graduation year               | Schools                                |
 
-College Board also sends SAT files, but official SAT on the dashboard comes from
-kippadb only. The SAT files (`int_collegeboard__sat_unpivot`) feed the KIPP
-Forward SAT sheets, `rpt_gsheets__kippfwd_ogsat` and
-`rpt_gsheets__kippfwd_sfsat`, and nothing in CARAT.
-
 The four KIPP Forward tabs are described under _The Google Sheets_. Edits to
 them reach the warehouse on their own: a Dagster sensor watches the workbook's
 modified time and rebuilds the staging models, usually within an hour of an
 edit. Tableau shows the change after its next daily refresh.
+
+### How official SAT reaches the dashboard
+
+College Board also sends SAT files, but CARAT never reads them. Official SAT on
+the dashboard comes from kippadb only. The files reach kippadb by a round trip
+the data team runs:
+
+1. The SAT files land and are matched to students through the SAT/PSAT crosswalk
+   (`int_collegeboard__sat_unpivot`).
+2. Two extracts, `rpt_gsheets__kippfwd_sfsat` and `rpt_gsheets__kippfwd_ogsat`,
+   list every College Board SAT score that kippadb doesn't have yet, matching on
+   student, score type, and exact test date. They feed the Unified KFWD
+   Processes Document, a Google Sheet.
+3. The data team loads those rows into Salesforce. Once a score is in kippadb it
+   drops off the sheet, and it reaches CARAT through the official model.
+
+So for years with College Board files, which start in spring 2022 and are nearly
+complete from school year 2024-25, kippadb and the College Board tables should
+agree score for score. A score still on the sheet hasn't been loaded yet.
+
+kippadb also holds SAT scores with no College Board record: sittings before the
+files began, sittings whose reports never came to the school, and scores entered
+by hand. Scores entered by hand, including by the KIPP Foundation, have been
+wrong before. When someone asks why CARAT disagrees with a College Board report,
+compare the two sources first (the `carat-dashboard` skill has the query). A
+score in both with different values, or a College Board score that isn't in
+kippadb on the same date, points to a Salesforce entry. A different date is
+enough to break the match.
 
 ## Key ideas
 

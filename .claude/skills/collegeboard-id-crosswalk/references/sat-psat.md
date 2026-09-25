@@ -6,9 +6,12 @@ both unpivots (`int_collegeboard__sat_unpivot`,
 AP IDs are a different ID space — see [SKILL.md](../SKILL.md).
 
 The two feed different places. PSAT flows into the CARAT dashboard. SAT feeds
-only the KIPP Forward SAT sheets (`rpt_gsheets__kippfwd_ogsat`, `_sfsat`);
-official SAT on CARAT comes from kippadb. Tell the user which one a paste
-affects.
+only the KIPP Forward SAT sheets (`rpt_gsheets__kippfwd_ogsat`, `_sfsat`, in the
+Unified KFWD Processes Document). Those sheets list the College Board SAT scores
+Salesforce doesn't have yet, and the data team loads them into Salesforce. CARAT
+reads SAT from kippadb, so a newly matched SAT score shows on the dashboard only
+after it's loaded. Tell the user which one a paste affects, and for SAT, that
+the new rows are now on the sheet waiting to be loaded.
 
 ## Step 1: Ingestion check
 

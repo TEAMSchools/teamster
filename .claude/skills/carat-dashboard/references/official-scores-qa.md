@@ -18,9 +18,11 @@ Record the paste time first; every step compares against it.
 | 4    | `rpt_tableau__ap_assessment_dashboard` | `rpt_tableau__college_assessment_dashboard_*`, `rpt_gsheets__college_assessments_wide` | `rpt_gsheets__kippfwd_sfsat`, `rpt_gsheets__kippfwd_ogsat` | views |
 
 Official SAT on the dashboard comes from kippadb, not College Board files, so a
-SAT crosswalk paste changes only the KIPP Forward SAT sheets. For a SAT-only
-load, run step 1 on `int_collegeboard__sat_unpivot`, skip steps 2 to 4, and say
-in the report that the dashboard is unaffected.
+SAT crosswalk paste changes only the KIPP Forward SAT sheets in the Unified KFWD
+Processes Document. They list the SAT scores Salesforce doesn't have yet. For a
+SAT-only load, run step 1 on `int_collegeboard__sat_unpivot`, confirm the new
+scores now appear on those sheets, and skip steps 2 to 4. In the report, say the
+scores reach the dashboard only after they're loaded into Salesforce.
 
 Views read live, so a score is in prod once the last table above it has rebuilt:
 step 1 for AP and SAT, step 3 for PSAT. Tableau shows it after the workbook's
