@@ -16,3 +16,14 @@ updates:
     directory: /src/cube
     schedule:
       interval: daily
+  # weekly: each uv image bump invalidates the Dockerfile's dependency layer
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+    ignore:
+      # python upgrades are deliberate; keep in step with .python-version
+      - dependency-name: python
+        update-types:
+          - version-update:semver-major
+          - version-update:semver-minor
