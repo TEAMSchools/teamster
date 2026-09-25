@@ -123,6 +123,18 @@ Then, on the file:
    & Learning and can fix it at source. Do not route it to the data team, who
    cannot know the intended number.
 
+   **No count exceeds 20 either.** These are cumulative totals for a whole
+   quarter, and 20 is above anything Teaching & Learning have set: the highest
+   value live in `U_EXPECTATIONS` is 15 work habits, with homework and formative
+   at 9 and summative at 2. A 50 where 5 was meant passes every other check here
+   — it rises, it fills, the row count is right — and then reports every teacher
+   in that region as far behind. Treat a value over 20 the same way as a falling
+   count: name it and ask, rather than loading it.
+
+   A legitimate number above 20 means the policy changed, which is worth hearing
+   about before it reaches the dashboard. Tell the data team so the ceiling can
+   move.
+
 6. **Sanity-check against prod — only where the number should not have
    changed.** For a week that already has a row in `Plugin Data Raw` for this
    region and level **and that you are not deliberately changing**, your
