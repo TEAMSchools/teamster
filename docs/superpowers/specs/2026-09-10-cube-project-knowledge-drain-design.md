@@ -64,6 +64,12 @@ Changes:
   7 deletes it.
 - The `performance_band_label_number` and `is_mastery` drafts point at C5.
 
+**Revision, 2026-09-25, third pass — #5508 merged.** It merged to `main` at
+20:07 UTC. "Shipped in #5508" below now means shipped, and PR 1 is unblocked.
+`main` carries `count_assigned`, `count_taken`, `count_scored` and `pct_taken`
+as the 2026-09-23 revision describes; `count_scores` survives only in a YAML
+comment.
+
 ## Decision
 
 The Claude + Cube working group runs on two markdown files uploaded by hand to a
