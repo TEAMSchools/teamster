@@ -11,7 +11,12 @@ Every doc opens with:
 1. What it is: one paragraph, who uses it and for what.
 2. How it fits together: a diagram from sources to consumers.
 3. Terms.
-4. Where the data comes from: each source and who owns it.
+4. Where the data comes from: each source and who owns it. Before naming a
+   source, confirm its `ref()` chain reaches the view or process the section
+   describes (`rg -o 'ref\("[^"]+"\)'` on each model up the chain). A source
+   that feeds a sibling model is not a source of this one: CARAT's docs once
+   said College Board SAT files feed the official scores, when official SAT
+   reaches CARAT only through kippadb.
 
 The middle depends on the consumer (`intake-and-inventory.md` → Find the
 consumers):

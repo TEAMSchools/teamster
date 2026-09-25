@@ -202,3 +202,22 @@ def test_yaml_trimmed_accepted_values_is_flagged():
     ydiff = _load("yaml_description_diff")
     new = YAML_OLD.replace("values: [a, b]", "values: [a]")
     assert ydiff.non_description_changes(YAML_OLD, new)
+
+
+def test_split_keeps_heading_inside_indented_fence():
+    split = _load("split_skill")
+    text = (
+        "## Steps\n"
+        "1. Run this:\n"
+        "\n"
+        "   ```bash\n"
+        "## not a heading (fence indented under a list item)\n"
+        "   ```\n"
+        "\n"
+        "## Next\n"
+    )
+    out = split.split_sections(
+        text, {"Steps": "steps.md", "Next": "next.md"}, default="S.md"
+    )
+    assert "## not a heading (fence indented under a list item)\n" in out["steps.md"]
+    assert out["next.md"] == ["## Next\n"]

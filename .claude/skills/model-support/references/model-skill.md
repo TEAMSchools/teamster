@@ -19,7 +19,9 @@ user's answer.
 
 ## Shape
 
-ICM inside the repo convention:
+ICM (Interpretable Context Methodology: a small entry file that only routes, one
+reference file per task area, loaded only when a step needs it; the repo's
+assessment is issue #5434) inside the repo convention:
 
 - `SKILL.md`: frontmatter `description` that starts "Use when…" and lists
   triggers and model names, never the workflow; the rules that apply to every

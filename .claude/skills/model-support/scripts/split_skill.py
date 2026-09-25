@@ -14,14 +14,14 @@ import re
 import sys
 from pathlib import Path
 
-FENCE = re.compile(r"^(`{3,}|~{3,})")
+FENCE = re.compile(r"^\s*(`{3,}|~{3,})")
 
 
 def _closes(line: str, marker: str, fence: str) -> bool:
     return (
         marker[0] == fence[0]
         and len(marker) >= len(fence)
-        and not line[len(marker) :].strip()
+        and not line.strip()[len(marker) :].strip()
     )
 
 

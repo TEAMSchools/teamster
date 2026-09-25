@@ -33,6 +33,18 @@ Compare prod against the previous load and against the same point last year:
 | Categories appeared or gone              | distinct values now vs before                               |
 | Schools or students appeared or vanished | key set now `except distinct` key set before, both ways     |
 
+Count duplicates and gaps at the grain a person fixes (the source record or
+sitting), not the unpivoted grain; label any unpivoted count as secondary.
+
+### Two sources that should agree
+
+When a vendor file and the system it is loaded into should hold the same
+records, reconcile them with a full outer join on the record's natural key and
+report four counts with the date of the run: in both and the same, in both but
+different, only in A, only in B. The worked example is CARAT's "CARAT's SAT is
+kippadb's SAT" in `.claude/skills/carat-dashboard/references/gotchas.md` (on the
+branch of PR #5542 until it merges).
+
 Previous load:
 `for system_time as of timestamp_sub(current_timestamp(), interval <n> hour)`.
 Time travel reaches 7 days back, and one query can reference a table at only one

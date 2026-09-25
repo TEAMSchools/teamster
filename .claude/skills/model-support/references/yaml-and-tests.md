@@ -53,7 +53,13 @@ issues, need to fix" in the reference doc.
 
 ## Propose tests from the model
 
-For each in-family model, read the grain from the SQL (the `group by`, the
+First list the `data_tests:` already on the model and on its direct parents
+(`.claude/rules/dbt-yaml.md` → "Before adding a data-quality test"). A test that
+looks missing is often already there upstream at warn; on CARAT, a kippadb
+duplicate test said to be missing already existed on
+`int_kippadb__standardized_test_unpivot`.
+
+Then, for each in-family model, read the grain from the SQL (the `group by`, the
 dedupe partition, the join keys) and propose:
 
 - Uniqueness on the grain: `unique` on a single key, or
@@ -86,9 +92,12 @@ For `accepted_values`, list the distinct values first. Staging tests need
 ## A test that fails today
 
 Add it anyway; it warns. Put the cause in the reference doc under "Known issues,
-need to fix" with the query that shows it, in aggregates only. On CARAT, two
-such tests exposed a `strategy_case` fan-out and stored grades matching several
-extension rows.
+need to fix" with the query that shows it, in aggregates only. Count duplicates
+at the grain a person fixes (the source record or sitting: student, test, date),
+not at an unpivoted grain; give the unpivoted count only as a labelled second
+number. One duplicated SAT sitting was once reported as "4 groups", one per
+score type. On CARAT, two such tests exposed a `strategy_case` fan-out and
+stored grades matching several extension rows.
 
 ## "Probably harmless" gets a query
 
