@@ -120,11 +120,13 @@ handover is the whole tab, pasted over A1 — never a partial patch.
 
 **Interfaces:**
 
-- Produces: tab columns in physical order A-J = `PowerSchool_Course_Number`,
-  `PowerSchool_Course_Name`, `Illuminate_Subject_Area`, `Is_Foundations`,
-  `Is_Advanced_Math`, `Discipline`, `Duplicate_Audit`, `SIS`,
-  `Standard_Course_Name`, `Core_Subject`; named range
-  `src_google_sheets__assessments__course_subject_crosswalk_v3` over `A:J`.
+- Produces: the owner's layout of 2026-09-25 — A-F unchanged
+  (`PowerSchool Course Number` … `Discipline`), G `SIS`, H
+  `Standard Course Name`, I `Core Subject`, J `Duplicate Audit` (a sheet-only
+  formula, outside every dbt range). Named range
+  `src_google_sheets__assessments__course_subject_crosswalk_v3` = `A:I`;
+  `src_assessments__course_subject_crosswalk_v2` shrunk to `A:F` so prod never
+  reads `SIS` as its 7th column.
 
 - [ ] **Step 1: Write the generator.**
 
@@ -136,21 +138,24 @@ handover is the whole tab, pasted over A1 — never a partial patch.
   from googleapiclient.discovery import build
 
   spreadsheet_id = "1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE"
-  v2_range = "src_assessments__course_subject_crosswalk_v2"
+  tab = "PowerSchool Course/Subject Crosswalk"
   out_path = "crosswalk_v3.tsv"  # run from the scratchpad directory
 
-  # The tab's headers use spaces; dbt declares underscore names positionally,
-  # so header text never reaches the warehouse. Verified 2026-09-25.
-  existing_header = [
+  # The owner's layout, 2026-09-25: new columns at G-I, Duplicate Audit moved
+  # to J. Headers use spaces; dbt declares underscore names positionally, so
+  # header text never reaches the warehouse.
+  header_expected = [
       "PowerSchool Course Number",
       "PowerSchool Course Name",
       "Illuminate Subject Area",
       "Is Foundations",
       "Is Advanced Math",
       "Discipline",
+      "SIS",
+      "Standard Course Name",
+      "Core Subject",
       "Duplicate Audit",
   ]
-  new_header = existing_header + ["SIS", "Standard Course Name", "Core Subject"]
 
   # PowerSchool main-class course numbers, measured 2026-09-25 from
   # int_students__course_enrollments (AY2023-AY2026).
@@ -193,27 +198,29 @@ handover is the whole tab, pasted over A1 — never a partial patch.
   )
   svc = build("sheets", "v4", credentials=creds)
 
-  # FORMULA render keeps Duplicate_Audit's formula text instead of its value.
+  # FORMULA render keeps Duplicate Audit's formula text instead of its value.
   rows = (
       svc.spreadsheets()
       .values()
       .get(
           spreadsheetId=spreadsheet_id,
-          range=v2_range,
+          range=f"'{tab}'!A:J",
           valueRenderOption="FORMULA",
       )
       .execute()
       .get("values", [])
   )
   header, body = rows[0], [r for r in rows[1:] if r and str(r[0]).strip()]
-  assert header == existing_header, header
+  assert header == header_expected, header
+  filled = sum(1 for r in body for c in r[6:9] if str(c).strip())
+  assert filled == 0, f"{filled} cells already filled in G:I; review before overwriting"
   numbers = [str(r[0]).strip() for r in body]
-  assert len(numbers) == len(set(numbers)), "duplicate course numbers in v2"
+  assert len(numbers) == len(set(numbers)), "duplicate course numbers on the tab"
   missing = sorted(set(ps_core) - set(numbers))
   assert not missing, f"PowerSchool core numbers absent from the sheet: {missing}"
   collisions = sorted(set(focus_codes) & set(numbers))
   assert not collisions, f"Focus codes collide with PowerSchool rows: {collisions}"
-  print("original Duplicate_Audit, row 2:", body[0][6] if len(body[0]) > 6 else None)
+  print("original Duplicate Audit, row 2:", body[0][9] if len(body[0]) > 9 else None)
 
   bq = bigquery.Client(project="teamster-332318")
   titles = {
@@ -241,22 +248,24 @@ handover is the whole tab, pasted over A1 — never a partial patch.
 
 
   def audit(row_number):
-      return f"=COUNTIFS($A:$A,$A{row_number},$H:$H,$H{row_number})"
+      # Sheet-only duplicate check, now keyed on course number plus SIS (G).
+      return f"=COUNTIFS($A:$A,$A{row_number},$G:$G,$G{row_number})"
 
 
-  out = [new_header]
+  out = [header_expected]
   for r in body:
-      r = [cell(v) for v in r] + [""] * (7 - len(r))
-      r = r[:7]
+      r = ([cell(v) for v in r] + [""] * 10)[:10]
       row_number = len(out) + 1
-      r[6] = audit(row_number)
-      out.append(r + ["PowerSchool", r[1], ps_core.get(r[0].strip(), "")])
+      out.append(
+          r[:6]
+          + ["PowerSchool", r[1], ps_core.get(r[0].strip(), ""), audit(row_number)]
+      )
 
   for code, (label, subject) in focus_codes.items():
       row_number = len(out) + 1
       out.append(
-          [code, titles.get(code, label), "", "", "", "", audit(row_number),
-           "Focus", label, subject]
+          [code, titles.get(code, label), "", "", "", "",
+           "Focus", label, subject, audit(row_number)]
       )
 
   with open(out_path, "w", newline="") as f:
@@ -265,7 +274,7 @@ handover is the whole tab, pasted over A1 — never a partial patch.
   print("existing rows:", len(body), "| focus rows:", len(focus_codes),
         "| total incl header:", len(out))
   print("core ELA/Math on PowerSchool rows:",
-        sum(1 for r in out[1:] if r[7] == "PowerSchool" and r[9]))
+        sum(1 for r in out[1:] if r[6] == "PowerSchool" and r[8]))
   print("focus codes without a Focus title (label used):",
         sorted(set(focus_codes) - set(titles)))
   ```
@@ -281,14 +290,23 @@ handover is the whole tab, pasted over A1 — never a partial patch.
   title (at least `1200320`, which no Miami student takes yet). A 403 means Task
   0 Step 3.
 
-- [ ] **Step 3: Owner pastes and names the range.** The owner opens the tab,
-      selects A1, pastes `crosswalk_v3.tsv` over the whole tab, and confirms 426
-      rows and 10 columns. Pasted `=COUNTIFS` text becomes formulas. Then the
-      owner adds the named range
-      `src_google_sheets__assessments__course_subject_crosswalk_v3` =
-      `'PowerSchool Course/Subject Crosswalk'!A:J` (column-bounded,
-      row-unbounded; the tab grid is 7 columns wide today, and the paste widens
-      it) and leaves `_v2` in place: prod reads `_v2` until PR A merges.
+- [ ] **Step 3: Protect prod, then paste.** Order matters: prod reads `_v2`
+      until PR A merges, and inserting G-I widened `_v2` to `A:J`, so prod's 7th
+      declared column (`Duplicate_Audit`, INT64) now lands on `SIS`. Text in
+      `SIS` would fail prod's source table.
+  1. Owner sets `src_assessments__course_subject_crosswalk_v2` to
+     `'PowerSchool Course/Subject Crosswalk'!A:F` (Data → Named ranges).
+  2. Controller reads prod's external live through ADC and confirms 393 rows, no
+     error, `duplicate_audit` null on every row:
+     `select count(*), countif(duplicate_audit is null) from `teamster-332318`.kipptaf_google_sheets.src_google_sheets__assessments__course_subject_crosswalk`.
+     The null-for-a-missing-column behavior is inferred, not documented, so this
+     read is the proof; stop if it errors.
+  3. Owner selects A1 and pastes `crosswalk_v3.tsv` over the tab, then confirms
+     426 rows and 10 columns. Pasted `=COUNTIFS` text becomes formulas.
+     `src_google_sheets__assessments__course_subject_crosswalk_v3` stays `A:I`,
+     as the owner created it.
+  4. Controller repeats the read: 425 rows (Focus codes are unique against
+     PowerSchool numbers, so prod's current unique test still passes), no error.
 
 ### Task 2: Source, staging model and staging tests
 
@@ -311,8 +329,9 @@ handover is the whole tab, pasted over A1 — never a partial patch.
 - [ ] **Step 1: Edit the source block only.** Bound the edit to this source's
       block (per the DIBELS skill: never a forward-scanning regex). Change
       `sheet_range: src_assessments__course_subject_crosswalk_v2` to
-      `src_google_sheets__assessments__course_subject_crosswalk_v3`, and append
-      after the `Duplicate_Audit` column entry:
+      `src_google_sheets__assessments__course_subject_crosswalk_v3`, and replace
+      the `Duplicate_Audit` column entry (both its lines) with these 3 — v3 maps
+      positions 7-9 to G-I, and `Duplicate Audit` is outside it:
 
   ```yaml
   - name: SIS
@@ -325,7 +344,9 @@ handover is the whole tab, pasted over A1 — never a partial patch.
 
   Audit the removals:
   `git -C <worktree> diff src/dbt/kipptaf/models/google/sheets/sources-external.yml | grep '^-' | grep -v '^---'`
-  must show only the old `sheet_range` line.
+  must show exactly 3 lines: the old `sheet_range`, `- name: Duplicate_Audit`
+  and its `data_type: int64`. Nothing reads `Duplicate_Audit` (checked
+  2026-09-25: only the staging contract declared it).
 
 - [ ] **Step 2: Filter phantom rows in the staging SQL.**
 
@@ -431,12 +452,10 @@ handover is the whole tab, pasted over A1 — never a partial patch.
             Academic discipline used by course and grade reporting. Blank on
             Focus rows.
           data_type: string
-        - name: Duplicate_Audit
-          description: >-
-            Sheet formula counting rows that share this row's SIS and course
-            number; above 1 marks a duplicate entry.
-          data_type: int64
   ```
+
+  `Duplicate_Audit` leaves the contract with the source declaration: the sheet's
+  `Duplicate Audit` column (J) stays as a sheet-only check outside the v3 range.
 
 - [ ] **Step 4: Run the build and watch it fail first.**
 
