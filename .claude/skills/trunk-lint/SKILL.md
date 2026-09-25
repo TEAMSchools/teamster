@@ -25,10 +25,10 @@ description:
   lint; `trunk check --force` the changed SQL before pushing. Run from inside
   the worktree — `trunk check --force <abs-worktree-paths>` from the main repo
   silently returns "no applicable linters". The `trunk` binary lives only in the
-  main repo (`.trunk/tools/` is gitignored, absent in worktrees) — invoke the
-  absolute path `/workspaces/teamster/.trunk/tools/trunk` with cwd set to the
-  worktree; relative paths run from the main repo check the main-repo copies,
-  not your worktree edits. A `--force` check over
+  main repo (`.trunk/tools/` is gitignored, absent in a fresh worktree) — invoke
+  the absolute path `/workspaces/teamster/.trunk/tools/trunk` with cwd set to
+  the worktree; relative paths run from the main repo check the main-repo
+  copies, not your worktree edits. A `--force` check over
   `git diff --name-only origin/main...HEAD` hard-errors with
   `'<path>' does not exist` when the PR deletes files — filter to existing paths
   first.

@@ -75,9 +75,10 @@ specifics live there.
   (`git worktree add -b`, `git checkout -b`, bulk Asana `create_tasks`),
   re-confirm in plain text in the same turn. `gh issue develop --name` fails on
   branch names containing `log`, `auth`, or `secret`: rename and retry.
-- Worktree mechanics (paths, cwd, `uv` and dbt invocation, CLAUDE.md
-  re-injection) are in `.claude/rules/worktrees.md`, which loads on the first
-  read under `.worktrees/`. For Bash-only worktree work, read it first.
+- Worktree mechanics (paths, cwd, `uv` and dbt invocation) are in
+  `.claude/rules/worktrees.md`. Read it yourself right after entering a
+  worktree: inside one, rules load from the worktree's own `.claude/rules/` with
+  paths relative to its root, so the `.worktrees/**` trigger never fires.
 - Before resuming a branch, merging `origin/main`, resolving a conflict, or
   diagnosing a CI failure in a file the branch never touched: invoke
   `resuming-a-branch`.
