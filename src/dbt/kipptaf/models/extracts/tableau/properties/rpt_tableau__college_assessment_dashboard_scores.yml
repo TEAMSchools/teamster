@@ -6,18 +6,19 @@ models:
       results appear and test_type separates them.
 
 
-      One row per attempt. The workbook's Score Category filter switches the
-      measure between scale_score, each attempt's own score, and
+      One row per student, test type, score type, test date, and scale score —
+      each score type of each sitting. The workbook's Score Category filter
+      switches the measure between scale_score, each sitting's own score, and
       max_scale_score, that student's best for the score type — both averaged
-      over the same population of attempts, so a student who tested twice counts
+      over the same population of sittings, so a student who tested twice counts
       twice under either measure. That is intended.
 
 
-      Region, school, and graduation year come from the student's current
-      enrollment rather than their enrollment at test time, because the join
-      carries no academic-year predicate. Deduplicated against byte-identical
-      rows inherited from duplicate kippadb standardized test records; see the
-      inline TODO.
+      Region, school, and graduation year come from the student's most recent
+      high school enrollment rather than their enrollment at test time, because
+      the join carries no academic-year predicate. Deduplicated against
+      byte-identical rows inherited from duplicate kippadb standardized test
+      records; see the inline TODO.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -83,17 +84,16 @@ models:
       - name: region
         data_type: string
         description: >-
-          The student's current region, not the region they tested in — scores
-          follow a student who transfers.
+          The student's region from their most recent high school enrollment,
+          not the region they tested in — scores follow a student who transfers.
       - name: school
         data_type: string
-        description: The student's current school, on the same basis as region.
+        description: The student's school, on the same basis as region.
       - name: graduation_year
         data_type: int64
         description: >-
           Expected graduation year, used as the cohort grouping on the
-          average-score view. A small number of rows carry no value and drop out
-          of grouped views.
+          average-score view. Rows without a value drop out of grouped views.
       - name: ktc_cohort
         data_type: int64
         description: KIPP Through College cohort year.

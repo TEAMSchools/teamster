@@ -1,25 +1,19 @@
 models:
   - name: rpt_tableau__college_assessment_dashboard_current
     description: >-
-      Currently enrolled high school students measured against KIPP Forward's
-      attempt and benchmark goals, one row per student per goal. The workbook
-      aggregates these rows into its school, regional and network views, so the
-      model no longer emits a row per granularity level.
-
-
-      That collapse is possible because goals stopped varying by school and
-      region. One goal now applies at every level, and grade is the only
-      dimension a goal is still stated at.
+      Current-year high school students measured against KIPP Forward's attempt
+      and benchmark goals, one row per student per goal. The workbook aggregates
+      these rows into its school, regional, and network views; goals do not vary
+      by school or region, only by grade.
 
 
       Reads the By Grade branch of int_google_sheets__kippfwd__goals_unpivot, so
       thresholds and targets arrive paired and neither sheet is joined here. ACT
-      is excluded, matching what this report has always covered.
+      goals are excluded. Follows the current_academic_year variable.
 
 
       Only a total-level Benchmark is grade-specific. Attempts and section
-      thresholds apply to every student regardless of grade, which is how the
-      retired goals sheet carried them.
+      thresholds apply to every student regardless of grade.
 
 
       See docs/models/carat-dashboard-data-model.md.
@@ -41,94 +35,160 @@ models:
             # here as duplicates instead of as quietly wrong values.
     columns:
       - name: academic_year
+        description: >-
+          Academic year, as its starting calendar year.
         data_type: int64
       - name: academic_year_display
+        description: >-
+          Display label for academic_year.
         data_type: string
       - name: state
+        description: >-
+          State the student's school is in.
         data_type: string
       - name: district
         data_type: string
         description: >-
           Reads KTAF for every row, so the network view is an aggregation over a
           real column rather than a grand total. state, region, school and
-          schoolid carry the narrower levels, and all of them now share one goal
-          per grade and metric — the sheet no longer differentiates a goal by
-          school or region.
-
-
-          A KTAF total here covers Camden and Newark only, which is narrower
-          than the name suggests. This report is high school and Paterson has no
-          high school grades. Miami has no HS rows in this model in any academic
-          year, and is not on Illuminate, so its practice scores could not be
-          tracked even once it does. So the network level is every high school
-          with trackable scores rather than every region.
+          schoolid carry the narrower levels, and all of them share one goal per
+          grade and metric. The network level covers only regions with current
+          high school students.
       - name: region
+        description: >-
+          Region the student's school belongs to.
         data_type: string
       - name: schoolid
+        description: >-
+          PowerSchool identifier for the student's school.
         data_type: int64
       - name: school
+        description: >-
+          The student's school.
         data_type: string
       - name: student_number
+        description: >-
+          PowerSchool student number.
         data_type: int64
       - name: grade_level
+        description: >-
+          Grade the student is enrolled in this academic year.
         data_type: int64
       - name: enroll_status
+        description: >-
+          PowerSchool enrollment status code; 0 is currently enrolled.
         data_type: int64
       - name: iep_status
+        description: >-
+          Whether the student has an IEP.
         data_type: string
       - name: is_504
+        description: >-
+          Whether the student has a 504 plan.
         data_type: boolean
       - name: grad_iep_exempt_status_overall
+        description: >-
+          Whether the student is exempt from graduation testing requirements
+          because of an IEP.
         data_type: string
       - name: lep_status
+        description: >-
+          Whether the student is an English learner.
         data_type: boolean
       - name: ktc_cohort
+        description: >-
+          KIPP Through College cohort the student belongs to.
         data_type: int64
       - name: graduation_year
+        description: >-
+          Year the student is expected to graduate high school.
         data_type: int64
       - name: year_in_network
+        description: >-
+          Count of years the student has attended a network school.
         data_type: int64
       - name: college_match_gpa
+        description: >-
+          GPA used to match the student to colleges.
         data_type: numeric
       - name: college_match_gpa_bands
+        description: >-
+          Band the college match GPA falls into.
         data_type: string
       - name: expected_test_type
+        description: >-
+          Official or Practice, from the goal.
         data_type: string
       - name: expected_scope
+        description: >-
+          Test the goal applies to.
         data_type: string
       - name: expected_subject_area
+        description: >-
+          Subject area of the goal's score type.
         data_type: string
       - name: expected_aligned_subject_area
+        description: >-
+          Subject normalized across tests, with Total covering total and
+          composite scores.
         data_type: string
       - name: expected_score_type
+        description: >-
+          Score type the goal measures.
         data_type: string
       - name: expected_goal_type
+        description: >-
+          Attempts or Benchmark.
         data_type: string
       - name: expected_goal_subtype
+        description: >-
+          The metric — 1 Attempt, 2+ Attempts, HS Grad-Ready, or College-Ready.
         data_type: string
       - name: expected_metric_name
+        description: >-
+          Display label for the metric.
         data_type: string
       - name: expected_metric_label
+        description: >-
+          Metric token from the goals model, such as sat_1_attempt.
         data_type: string
       - name: expected_metric_min_score
+        description: >-
+          The bar the metric is measured against — a count of sittings on
+          Attempts rows, a scale score on Benchmark rows.
         data_type: float64
       - name: expected_metric_pct_goal
+        description: >-
+          Share of students expected to meet the metric, as a 0-1 fraction.
         data_type: float64
       - name: test_type
+        description: >-
+          Official or Practice, from the student's matching results. Null when
+          the student has no result for the goal's score type.
         data_type: string
       - name: scope
+        description: >-
+          Test of the student's matching results. Null when there are none.
         data_type: string
       - name: subject_area
+        description: >-
+          Subject area of the student's matching results. Null when there are
+          none.
         data_type: string
       - name: score_type
+        description: >-
+          Score type of the student's matching results. Null when there are
+          none.
         data_type: string
       - name: score
         data_type: float64
         description: >-
-          The student's best result for this metric — their highest scale score
-          on a Benchmark row, their lifetime sitting count on an Attempts row.
-          Null where they have no result for the score type, which is how a
-          non-test-taker stays visible rather than being dropped.
+          The student's result for this metric — their highest scale score on a
+          Benchmark row, their lifetime sitting count on an Attempts row. On an
+          Attempts row, 0 when the student holds results of this test type but
+          never sat this test, and null when they hold no result of this test
+          type, so the attempts denominator is test takers. On a Benchmark row,
+          null where they have no score for the score type.
       - name: met_min_score_int
         data_type: int64
         description: >-
@@ -150,11 +210,8 @@ models:
           takers sums to one across them.
 
 
-          Derived from both tiers evaluated over the same student and score
-          type, which is why it can be read off a single row. It replaces four
-          wide met_min_board_* flags, whose thresholds were a duplicate encoding
-          of the HS Grad-Ready and College-Ready cut scores the scaffold already
-          carries.
+          Derived from both tiers evaluated over the same student, test type,
+          and score type, which is why it can be read off a single row.
 
 
           Null on Attempts rows, which have no readiness band, and null where

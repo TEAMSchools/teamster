@@ -1,48 +1,93 @@
 models:
   - name: rpt_gsheets__college_assessments_wide
     description: >-
-      **Excludes Miami by design.** Same population as
-      `rpt_gsheets__college_assessments_long`: SAT and ACT results for testing
-      grades, which Miami does not have yet. Ratified on #4996.
+      One row per current high school student in the class of this school year
+      or later, enrolled with enroll status 0 and not out of district, with
+      official and practice PSAT and SAT results pivoted into one column per
+      grade, season, and score. Scores come from
+      int_tableau__college_assessment_roster_scores through the Expected
+      Assessments tab, so a student with no scores still has a row. Every score
+      column without practice in its name is official. No ACT columns.
+
+
+      Miami has no rows on the Expected Assessments tab, so it drops out at that
+      join by design; it has no college-testing cohort.
     config:
       contract:
         enforced: true
     columns:
       - name: student_number
+        description: >-
+          PowerSchool student number.
         data_type: int64
       - name: salesforce_id
+        description: >-
+          Salesforce contact identifier for the student.
         data_type: string
       - name: student_name
+        description: >-
+          Student's full name, last name first.
         data_type: string
       - name: student_first_name
+        description: >-
+          Student's first name.
         data_type: string
       - name: student_last_name
+        description: >-
+          Student's last name.
         data_type: string
       - name: student_email
+        description: >-
+          Student's network email address.
         data_type: string
       - name: region
+        description: >-
+          Region the student's school belongs to.
         data_type: string
       - name: school
+        description: >-
+          The student's school.
         data_type: string
       - name: grade_level
+        description: >-
+          Grade the student is enrolled in this academic year.
         data_type: int64
       - name: graduation_year
+        description: >-
+          Year the student is expected to graduate high school.
         data_type: int64
       - name: ktc_cohort
+        description: >-
+          KIPP Through College cohort the student belongs to.
         data_type: int64
       - name: year_in_network
+        description: >-
+          Count of years the student has attended a network school.
         data_type: int64
       - name: iep_status
+        description: >-
+          Whether the student has an IEP.
         data_type: string
       - name: grad_iep_exempt_status_overall
+        description: >-
+          Whether the student is exempt from graduation testing requirements
+          because of an IEP.
         data_type: string
       - name: cumulative_y1_gpa
+        description: >-
+          Weighted cumulative year-one GPA earned to date.
         data_type: float64
       - name: cumulative_y1_gpa_projected
+        description: >-
+          Weighted cumulative year-one GPA projected for the full year.
         data_type: float64
       - name: college_match_gpa
+        description: >-
+          GPA used to match the student to colleges.
         data_type: numeric
       - name: college_match_gpa_bands
+        description: >-
+          Band the college match GPA falls into.
         data_type: string
       - name: ccr_teacher_name
         data_type: string
@@ -50,9 +95,7 @@ models:
           Teacher of record for the course standing in for the student's College
           and Career Readiness schedule. Falls back to KIPP Newark Lab's
           Advisory course, then homeroom, when the student has no active College
-          and Career section — from SY26-27 the regions schedule those for
-          grades 11 and 12 only. `No Data` means no active course enrollment at
-          all.
+          and Career section. No Data means no active course enrollment at all.
       - name: ccr_section
         data_type: string
         description: >-
@@ -61,12 +104,20 @@ models:
           example `9M311`) on a homeroom row, whose period expression is always
           `HR(A)` or `HR(R)` and carries no information.
       - name: psat89_count_lifetime
+        description: >-
+          Lifetime official PSAT 8/9 sittings; 0 when none.
         data_type: int64
       - name: psatnmsqt_count_lifetime
+        description: >-
+          Lifetime official PSAT NMSQT sittings; 0 when none.
         data_type: int64
       - name: sat_count_lifetime
+        description: >-
+          Lifetime official SAT sittings; 0 when none.
         data_type: int64
       - name: psat10_count_lifetime
+        description: >-
+          Lifetime official PSAT10 sittings; 0 when none.
         data_type: int64
       - name: psat89_practice_count_lifetime
         data_type: int64
@@ -80,118 +131,235 @@ models:
         data_type: int64
         description: Practice sittings only.
       - name: sat_total_superscore
+        description: >-
+          Best official SAT superscore across all sittings.
         data_type: numeric
       - name: sat_ebrw_highest
+        description: >-
+          Highest official SAT EBRW score across all sittings.
         data_type: numeric
       - name: sat_math_highest
+        description: >-
+          Highest official SAT Math score across all sittings.
         data_type: numeric
       - name: earliest_sat_total
+        description: >-
+          Total score from the student's first dated official SAT in kippadb;
+          the higher score when two share that date. Null when kippadb has no
+          dated SAT for the student.
         data_type: numeric
       - name: latest_psat_total
+        description: >-
+          Most recent official College Board PSAT total (8/9, 10, or NMSQT)
+          dated before the student's first kippadb SAT. Null without a kippadb
+          SAT.
         data_type: numeric
       - name: latest_psat_score_type
+        description: >-
+          Score type of latest_psat_total — psat89_total, psat10_total, or
+          psatnmsqt_total.
         data_type: string
       - name: latest_psat_date
+        description: >-
+          Test date of latest_psat_total.
         data_type: date
       - name: g12_sat_total_fall
+        description: >-
+          Official SAT total at the grade 12 Fall administration.
         data_type: numeric
       - name: g12_sat_total_fall_growth_from_first_sat
+        description: >-
+          g12_sat_total_fall minus earliest_sat_total.
         data_type: numeric
       - name: g12_sat_total_fall_growth_from_psat
+        description: >-
+          g12_sat_total_fall minus latest_psat_total.
         data_type: numeric
       - name: g12_sat_total_growth_fall
+        description: >-
+          Roster score change on the official grade 12 Fall SAT row — the change
+          from the student's previous season, which can be a practice
+          administration.
         data_type: numeric
       - name: g12_sat_ebrw_fall
+        description: >-
+          Official SAT EBRW at the grade 12 Fall administration.
         data_type: numeric
       - name: g12_sat_math_fall
+        description: >-
+          Official SAT Math at the grade 12 Fall administration.
         data_type: numeric
       - name: g12_sat_total_winter
+        description: >-
+          Official SAT total at the grade 12 Winter administration.
         data_type: numeric
       - name: g12_sat_total_winter_growth_from_first_sat
+        description: >-
+          g12_sat_total_winter minus earliest_sat_total.
         data_type: numeric
       - name: g12_sat_total_winter_growth_from_psat
+        description: >-
+          g12_sat_total_winter minus latest_psat_total.
         data_type: numeric
       - name: g12_sat_total_growth_winter
+        description: >-
+          Roster score change on the official grade 12 Winter SAT row — the
+          change from the student's previous season, which can be a practice
+          administration.
         data_type: numeric
       - name: g12_sat_ebrw_winter
+        description: >-
+          Official SAT EBRW at the grade 12 Winter administration.
         data_type: numeric
       - name: g12_sat_math_winter
+        description: >-
+          Official SAT Math at the grade 12 Winter administration.
         data_type: numeric
       - name: g11_sat_total_winter
+        description: >-
+          Official SAT total at the grade 11 Winter administration.
         data_type: numeric
       - name: g11_sat_total_winter_growth_from_first_sat
+        description: >-
+          g11_sat_total_winter minus earliest_sat_total.
         data_type: numeric
       - name: g11_sat_total_winter_growth_from_psat
+        description: >-
+          g11_sat_total_winter minus latest_psat_total.
         data_type: numeric
       - name: g11_sat_total_growth_winter
+        description: >-
+          Roster score change on the official grade 11 Winter SAT row — the
+          change from the student's previous season, which can be a practice
+          administration.
         data_type: numeric
       - name: g11_sat_ebrw_winter
+        description: >-
+          Official SAT EBRW at the grade 11 Winter administration.
         data_type: numeric
       - name: g11_sat_math_winter
+        description: >-
+          Official SAT Math at the grade 11 Winter administration.
         data_type: numeric
       - name: g11_sat_total_spring
+        description: >-
+          Official SAT total at the grade 11 Spring administration.
         data_type: numeric
       - name: g11_sat_total_spring_growth_from_first_sat
+        description: >-
+          g11_sat_total_spring minus earliest_sat_total.
         data_type: numeric
       - name: g11_sat_total_spring_growth_from_psat
+        description: >-
+          g11_sat_total_spring minus latest_psat_total.
         data_type: numeric
       - name: g11_sat_total_growth_spring
+        description: >-
+          Roster score change on the official grade 11 Spring SAT row — the
+          change from the student's previous season, which can be a practice
+          administration.
         data_type: numeric
       - name: g11_sat_ebrw_spring
+        description: >-
+          Official SAT EBRW at the grade 11 Spring administration.
         data_type: numeric
       - name: g11_sat_math_spring
+        description: >-
+          Official SAT Math at the grade 11 Spring administration.
         data_type: numeric
       - name: g10_psatnmsqt_total
+        description: >-
+          Official PSAT NMSQT total on the grade 10 administration. NMSQT sat in
+          grade 11 lands here too.
         data_type: numeric
       - name: g10_psatnmsqt_ebrw
+        description: >-
+          Official PSAT NMSQT EBRW on the grade 10 administration.
         data_type: numeric
       - name: g10_psatnmsqt_math
+        description: >-
+          Official PSAT NMSQT Math on the grade 10 administration.
         data_type: numeric
       - name: g10_psat10_total
+        description: >-
+          Official PSAT10 total on the grade 10 administration.
         data_type: numeric
       - name: g10_psat10_ebrw
+        description: >-
+          Official PSAT10 EBRW on the grade 10 administration.
         data_type: numeric
       - name: g10_psat10_math
+        description: >-
+          Official PSAT10 Math on the grade 10 administration.
         data_type: numeric
       - name: g9_psat89_total
+        description: >-
+          Official PSAT 8/9 total on the grade 9 administration.
         data_type: numeric
       - name: g9_psat89_ebrw
+        description: >-
+          Official PSAT 8/9 EBRW on the grade 9 administration.
         data_type: numeric
       - name: g9_psat89_math
+        description: >-
+          Official PSAT 8/9 Math on the grade 9 administration.
         data_type: numeric
       - name: g9_practice_psat89_total
         data_type: numeric
         description: >-
-          Grade 9 practice PSAT 8/9, Fall. Practice administrations carry their
-          own columns so a practice result can never be read as an official one
-          — every score column without practice in its name is official.
+          Grade 9 practice PSAT 8/9 total, the highest across every grade 9
+          practice administration on the Expected Assessments tab; no season
+          filter. Practice administrations carry their own columns so a practice
+          result can never be read as an official one.
       - name: g9_practice_psat89_ebrw
         data_type: numeric
-        description: Grade 9 practice PSAT 8/9 EBRW, Fall.
+        description:
+          Grade 9 practice PSAT 8/9 EBRW, highest across grade 9 practice
+          administrations.
       - name: g9_practice_psat89_math
         data_type: numeric
-        description: Grade 9 practice PSAT 8/9 Math, Fall.
+        description:
+          Grade 9 practice PSAT 8/9 Math, highest across grade 9 practice
+          administrations.
       - name: g10_practice_psat10_total
         data_type: numeric
-        description: Grade 10 practice PSAT10, Fall.
+        description:
+          Grade 10 practice PSAT10 total, highest across grade 10 practice
+          administrations.
       - name: g10_practice_psat10_ebrw
         data_type: numeric
-        description: Grade 10 practice PSAT10 EBRW, Fall.
+        description:
+          Grade 10 practice PSAT10 EBRW, highest across grade 10 practice
+          administrations.
       - name: g10_practice_psat10_math
         data_type: numeric
-        description: Grade 10 practice PSAT10 Math, Fall.
+        description:
+          Grade 10 practice PSAT10 Math, highest across grade 10 practice
+          administrations.
       - name: g11_practice_sat_total
         data_type: numeric
-        description: Grade 11 practice SAT, Fall.
+        description:
+          Grade 11 practice SAT total, highest across grade 11 practice
+          administrations.
       - name: g11_practice_sat_ebrw
         data_type: numeric
-        description: Grade 11 practice SAT EBRW, Fall.
+        description:
+          Grade 11 practice SAT EBRW, highest across grade 11 practice
+          administrations.
       - name: g11_practice_sat_math
         data_type: numeric
-        description: Grade 11 practice SAT Math, Fall.
+        description:
+          Grade 11 practice SAT Math, highest across grade 11 practice
+          administrations.
       - name: psat89_to_psat10_total_growth
+        description: >-
+          g10_psat10_total minus g9_psat89_total, official only.
         data_type: numeric
       - name: psat89_to_psat10_ebrw_growth
+        description: >-
+          g10_psat10_ebrw minus g9_psat89_ebrw, official only.
         data_type: numeric
       - name: psat89_to_psat10_math_growth
+        description: >-
+          g10_psat10_math minus g9_psat89_math, official only.
         data_type: numeric

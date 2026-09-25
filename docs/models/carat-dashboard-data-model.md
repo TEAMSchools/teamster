@@ -253,8 +253,9 @@ official and practice. Reads the hub and enrollments.
 - Both Score Category options average over every sitting, so a student who
   tested twice counts twice either way. That's by design; filtering to each
   student's best would empty the per-sitting option.
-- Region and school are the student's current ones, so a student's whole score
-  history moves with them when they transfer.
+- Region and school come from the student's most recent high school enrollment,
+  so a student's whole score history moves with them when they transfer, and a
+  graduate shows their last high school.
 - Six sub-test score types are excluded by name. Any new score type added
   upstream appears automatically.
 - It deduplicates on its grain to remove kippadb's double-entered SAT sittings
@@ -291,7 +292,8 @@ across years.
 **Grain:** one row per student per goal, for every high school student the
 network has enrolled, current and past, official and practice. Reads the hub,
 enrollments, and the goals model (`All Grades` branch, with the over-time goal
-columns). It has no uniqueness test.
+columns). It has no uniqueness test, and a student whose `strategy_case` differs
+between two rows of one score type appears twice for that goal.
 
 **Worth knowing:**
 
@@ -312,7 +314,8 @@ columns). It has no uniqueness test.
 **What it shows:** the share of students meeting each readiness benchmark.
 
 **Grain:** one row per student per test type, aligned test, subject, and
-benchmark tier, including students with no qualifying score so they count in the
+benchmark tier, for each student's most recent high school enrollment, current
+and past, including students with no qualifying score so they count in the
 denominator. `met_benchmark_goal` reads `Met`, `Not Met`, or `No Data`. Reads
 the hub, enrollments, and the Scaffold tab.
 
@@ -456,9 +459,10 @@ has two branches, and a reader filters `goal_branch`:
 ### Roster scores: `int_tableau__college_assessment_roster_scores`
 
 Each expected administration a current student has a score for, across their
-high school history, feeding `_roster` and the wide KIPP Forward sheet. For
-each, it emits the `Scale Score` and, where the tab has a Growth row, the
-`Score Change`.
+high school history, feeding `_roster` and the wide KIPP Forward sheet. Each row
+carries a `Scale Score`, and SAT rows also carry a `Score Change` (see
+_Growth_). A reader shows the change only where the tab has a Growth row for
+that administration.
 
 It inner joins enrollments to the Expected Assessments tab on region and grade,
 then to the hub on `test_type`, `score_type`, `aligned_month_round`, and, for
