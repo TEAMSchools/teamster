@@ -52,10 +52,12 @@ sections below it.
 - SQL: `.claude/rules/dbt-sql.md` — no `qualify`, no `group by all`, ST06 column
   order, rationale in properties yml rather than inline comments on this hub
   model (the model is upstream of ~184 models).
-- OPEN, confirm with the owner before Task 3: the hub's final
-  `full union all corresponding` stays. The SQL rules ban it and say to convert
-  on edit, but converting means enumerating ~245 star-derived columns in both
-  branches; this plan treats that as a separate change.
+- Decided by the owner 2026-09-25: the hub's final
+  `full union all corresponding` stays in PR A. The SQL rules ban it and say to
+  convert on edit, but converting means enumerating ~245 star-derived columns in
+  both branches, which would bury PR A's behavior change. PR A's description
+  states the exception; conversion is its own change, provable by byte-identical
+  output against prod.
 
 ## Review Focus
 
