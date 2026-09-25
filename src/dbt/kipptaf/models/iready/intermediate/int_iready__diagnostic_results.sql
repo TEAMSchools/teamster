@@ -100,7 +100,7 @@ with
 
             row_number() over (
                 partition by _dbt_source_relation, student_id, academic_year, subject
-                order by completion_date desc
+                order by completion_date desc, rn_subj_day asc
             ) as rn_subj_year,
         from transformations
     )
@@ -171,7 +171,7 @@ select
             wc.academic_year,
             wc.subject,
             rt.name
-        order by wc.completion_date desc
+        order by wc.completion_date desc, wc.rn_subj_day asc
     ) as rn_subj_round,
 
 from window_calcs as wc

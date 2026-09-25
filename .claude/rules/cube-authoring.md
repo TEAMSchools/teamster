@@ -180,20 +180,32 @@ reason about.
 
 - **Student views are single, collapsed views** (names under _Naming_ above) —
   each exposes both row-level identifiers and aggregate-breakdown dimensions on
-  the same view; there is no separate detail/summary pair. Three policies, one
-  per non-`none` `student_location_scope` — `student-region` (`row_level` on the
-  region key), `student-school` (`row_level` on the school abbreviation),
-  `student-network` (no `row_level` — every location). All three use
-  `member_level: { includes: "*" }` — any viewer holding one of these groups
-  sees every field on every student view, including PII. `none` scope → no group
-  → default-deny (zero rows).
+  the same view; there is no separate detail/summary pair. **One flat `student`
+  policy**, `row_level` on
+  `abbreviation IN { securityContext.allowed_student_abbreviations }` (the
+  view's own flat member name — `locations_abbreviation` on three of the four;
+  bare `abbreviation` on `student_assessment_scores_view`, whose `locations`
+  join is unprefixed). `member_level: { includes: "*" }` — any viewer holding
+  the `student` group sees every field on every student view, including PII.
+  `allowed_student_abbreviations` is precomputed server-side
+  (`resolveAccess`/`unionAdditionalGrants` in `src/cube/access.js`): the
+  viewer's base `student_location_scope` resolved to an abbreviation set via
+  `computeAllowedAbbreviations`, UNIONED with every
+  `dim_staff_cube_access.additional_location_grants` element that has
+  `includes_student_data` true. An empty array → no `student` group emitted →
+  default-deny (zero rows) — same empty-array guard as `staff-pii-*` below (Cube
+  hard-errors on `equals []` rather than compiling to zero rows). Keep it one
+  array-based policy: a per-tier group can express only "my whole
+  region/network," never "my region plus one specific other school," which
+  individual-exception grants require.
 - **Staff views are split.** `staff_directory` (roster/employment/work-contact
   fields — no personal or sensitive data) has one open block:
   `member_level: { includes: "*" }` under `staff-directory`, no `row_level` —
-  every resolved staff viewer gets this group. `staff_pii` (the six sensitive
-  fields — `personal_email`, `personal_cell_phone`, `birth_date`,
-  `gender_identity`, `race`, `is_hispanic` — plus the identity/remit keys needed
-  to filter on) has one policy per `staff_pii_scope`: `staff-pii-all_in_scope`
+  every employee gets this group, and a non-employee grantee gets it only when a
+  grant of theirs reached the staff axis. `staff_pii` (the six sensitive fields
+  — `personal_email`, `personal_cell_phone`, `birth_date`, `gender_identity`,
+  `race`, `is_hispanic` — plus the identity/remit keys needed to filter on) has
+  one policy per `staff_pii_scope`: `staff-pii-all_in_scope`
   (`locations_abbreviation` ∩ `department_group` remit),
   `staff-pii-teaching_staff` (that remit +
   `job_function_code IN ('TEACH', 'TIR')`), `staff-pii-reporting_chain`
@@ -245,8 +257,8 @@ a `conditions.if` branch.
 When adding a sensitive staff field, decide PII status per
 `.claude/rules/ferpa-pii.md`. If PII, add it to `staff_pii.yml` (not
 `staff_directory.yml`) and wire its per-field scope in `access.js`'s
-`STAFF_SENSITIVE_SCOPE_BY_MEMBER`. Student views have no PII split — any
-scope-specific `student-*` group sees every field.
+`STAFF_SENSITIVE_SCOPE_BY_MEMBER`. Student views have no PII split — the
+`student` group sees every field.
 
 ## `cube.js` security model
 
@@ -349,10 +361,10 @@ access policies above). `cube.js` exports exactly `driverFactory`,
   (`network` student scope + `all_in_scope` staff PII) — for them emulation is a
   viewport change, not a grant. Anyone narrower gains real access and needs its
   own decision. Those emails are PII: deployment config only, never a commit.
-- **Group taxonomy (`access.buildGroups`)**: `student-<student_location_scope>`,
-  `staff-directory`, `staff-pii-<staff_pii_scope>`, and the forward-compat staff
-  tiers, each listed under _View access policies_. `none` on any axis → no group
-  for that axis → default-deny on the views gated by it.
+- **Group taxonomy (`access.buildGroups`)**: `student`, `staff-directory`,
+  `staff-pii-<staff_pii_scope>`, and the forward-compat staff tiers, each listed
+  under _View access policies_. `none` on any axis → no group for that axis →
+  default-deny on the views gated by it.
 - **`access_policy` blocks, it does not strip.** When a user requests a member
   their tier excludes, Cube denies the whole query — it does not silently drop
   the column and return the rest. BI tools connected via the SQL API (Superset)

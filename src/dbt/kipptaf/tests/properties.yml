@@ -459,6 +459,46 @@ data_tests:
           ref:
             name: int_students__course_sections
 
+  - name: test_cube_access_individual_exceptions_grant_reaches_a_viewer
+    description: >-
+      Every live grant row should resolve to a row in dim_staff_cube_access, and
+      this warns on the ones that do not -- a grant that reaches nobody grants
+      nothing, silently. The mart emits a viewer either off the work-assignment
+      spine or off the non-employee leg, and the non-employee leg requires a
+      Google account that is neither suspended nor archived, so the gap opens
+      when a grantee is both off the spine and no longer has a live account. The
+      common way in is a former employee kept on as a contractor whose account
+      is suspended at offboarding, days or weeks after their termination date
+      ends their work assignment. The google_email foreign-key test does not
+      catch it, because a suspended account keeps its directory row. Warn rather
+      than error: the state denies access instead of over-granting it, and it
+      resolves on its own once the account is reactivated. Also catches a typo
+      that lands on a real but inactive address, and any future spine change
+      that drops a population the sheet still writes against.
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: stg_google_sheets__people__cube_access_individual_exceptions
+
+  - name: test_cube_access_individual_exceptions_single_remit_row
+    description: >-
+      A grantee may now have multiple live rows in
+      stg_google_sheets__people__cube_access_individual_exceptions (one per
+      additional location grant), but the five staff_*_scope remit-override
+      columns describe the person, not a location, so at most one live row per
+      google_email may set any of them -- two live rows disagreeing on, say,
+      staff_pii_scope has no well-defined precedence (the scope vocabulary isn't
+      a strict permissiveness order). Fails loudly on that condition instead of
+      dim_staff_cube_access silently picking one via an aggregate.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: stg_google_sheets__people__cube_access_individual_exceptions
+
   - name: rpt_tableau__gpa_cumulative_year__one_latest_graded_year
     description: >-
       Exactly one academic year may carry `is_latest_graded_year`. More than one
