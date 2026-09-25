@@ -34,7 +34,6 @@ with
             {{ ref("int_powerschool__gpa_term") }} as y
             on co.studentid = y.studentid
             and co.yearid = y.yearid
-            and co.schoolid = y.schoolid
             and y.is_current
             and co._dbt_source_project = y._dbt_source_project
         left join
@@ -42,7 +41,6 @@ with
             on co.studentid = gpa.studentid
             and co.yearid = gpa.yearid
             and term = gpa.term_name
-            and co.schoolid = gpa.schoolid
             and co._dbt_source_project = gpa._dbt_source_project
         left join
             {{ ref("int_powerschool__gpa_cumulative") }} as gc
