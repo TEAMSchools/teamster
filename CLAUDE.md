@@ -210,11 +210,6 @@ cells are not.
   `uv run pytest`: `tests/` holds live integration tests against real source
   systems. Setup is `uv sync`, never the skills' `poetry install` /
   `pip install`.
-- At the `writing-plans` execution handoff, recommend Native (`executing-plans`)
-  when most tasks are small edits to files already in context; the repo's
-  dispatch-or-inline test in _Subagents_ governs that call. Once
-  `subagent-driven-development` is chosen, do not implement tasks inline inside
-  it: those tasks skip per-task review.
 - Ponytail yields to superpowers process skills. It governs the size of what
   gets built inside them, not whether they run.
 
