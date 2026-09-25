@@ -139,16 +139,18 @@ handover is the whole tab, pasted over A1 — never a partial patch.
   v2_range = "src_assessments__course_subject_crosswalk_v2"
   out_path = "crosswalk_v3.tsv"  # run from the scratchpad directory
 
+  # The tab's headers use spaces; dbt declares underscore names positionally,
+  # so header text never reaches the warehouse. Verified 2026-09-25.
   existing_header = [
-      "PowerSchool_Course_Number",
-      "PowerSchool_Course_Name",
-      "Illuminate_Subject_Area",
-      "Is_Foundations",
-      "Is_Advanced_Math",
+      "PowerSchool Course Number",
+      "PowerSchool Course Name",
+      "Illuminate Subject Area",
+      "Is Foundations",
+      "Is Advanced Math",
       "Discipline",
-      "Duplicate_Audit",
+      "Duplicate Audit",
   ]
-  new_header = existing_header + ["SIS", "Standard_Course_Name", "Core_Subject"]
+  new_header = existing_header + ["SIS", "Standard Course Name", "Core Subject"]
 
   # PowerSchool main-class course numbers, measured 2026-09-25 from
   # int_students__course_enrollments (AY2023-AY2026).
@@ -283,8 +285,9 @@ handover is the whole tab, pasted over A1 — never a partial patch.
       selects A1, pastes `crosswalk_v3.tsv` over the whole tab, and confirms 426
       rows and 10 columns. Pasted `=COUNTIFS` text becomes formulas. Then the
       owner adds the named range `src_assessments__course_subject_crosswalk_v3`
-      = `'<tab>'!A:J` (column-bounded, row-unbounded) and leaves `_v2` in place:
-      prod reads `_v2` until PR A merges.
+      = `'PowerSchool Course/Subject Crosswalk'!A:J` (column-bounded,
+      row-unbounded; the tab grid is 7 columns wide today, and the paste widens
+      it) and leaves `_v2` in place: prod reads `_v2` until PR A merges.
 
 ### Task 2: Source, staging model and staging tests
 
