@@ -648,9 +648,8 @@ class GoogleDirectoryResource(ConfigurableResource):
 
         Like :meth:`batch_insert_users` (and unlike the remaining batch helpers,
         which return error strings), this returns structured per-user errors:
-        the update payload carries the password hash on rows that rotate a
-        password, and the structured form keeps it out of logs and asset-check
-        metadata.
+        every update payload carries the password hash, and the structured form
+        keeps it out of logs and asset-check metadata.
 
         Args:
             users: User resource dicts to update; each must include
