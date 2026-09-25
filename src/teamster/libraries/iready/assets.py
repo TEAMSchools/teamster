@@ -10,6 +10,7 @@ def build_iready_sftp_asset(
     avro_schema,
     start_fiscal_year: int,
     end_fiscal_year: int,
+    legacy_remote_file_regex: str | None = None,
     op_tags=None,
 ):
     partition_keys = [str(y - 1) for y in range(start_fiscal_year, end_fiscal_year + 1)]
@@ -18,6 +19,7 @@ def build_iready_sftp_asset(
         asset_key=asset_key,
         remote_dir_regex=rf"/exports/{region_subfolder}/(?P<academic_year>\w+)",
         remote_file_regex=remote_file_regex,
+        legacy_remote_file_regex=legacy_remote_file_regex,
         ssh_resource_key="ssh_iready",
         group_name="iready",
         avro_schema=avro_schema,

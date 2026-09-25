@@ -1,0 +1,23 @@
+select
+    id,
+    student_id,
+    assignment_id,
+    standard_id,
+    letter_grade,
+    exclude_from_average,
+    late,
+    highlight,
+    comment,
+    comment_codes,
+    accommodations,
+    external_api_uuid,
+    last_updated_user,
+    last_updated_date,
+    imported,
+    uuid,
+    created_at,
+    updated_at,
+
+    cast(points as numeric) as points,
+    cast(possible_points as numeric) as possible_points,
+from {{ source("focus", "gradebook_grades") }}

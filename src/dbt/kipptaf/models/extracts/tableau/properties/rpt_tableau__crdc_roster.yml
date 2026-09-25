@@ -1,5 +1,8 @@
 models:
   - name: rpt_tableau__crdc_roster
+    description: >-
+      One row per student per CRDC question section. The enrollment branch
+      covers CRDC questions `ENRL-1`, `2a`, `2b`, `3`, and `4`, and `RETN`.
     columns:
       - name: _dbt_source_relation
         data_type: string
@@ -67,11 +70,23 @@ models:
         data_type: string
       - name: is_oct_01_course
         data_type: boolean
+        description: >-
+          True when the course enrollment covers the October 1 fall snapshot
+          date used for CRDC fall-term reporting.
       - name: is_last_day_course
         data_type: boolean
+        description: >-
+          True when the course enrollment was still active on the last day of
+          the term.
       - name: passed_course
         data_type: boolean
       - name: crdc_question_section
         data_type: string
+        description: >-
+          CRDC question code this row reports against (for example `ENRL`,
+          `PENR-4`, `PENR-6`, `COUR`, `COUR-7`, `APIB-4`, `EXAM-1`, `DSED-2`,
+          `ATHL-3`, or an `ARRS` arrest code). For students tagged through the
+          manual-entry CRDC student crosswalk Google Sheet feed, this carries
+          the question section from that crosswalk.
       - name: crdc_question_description
         data_type: string

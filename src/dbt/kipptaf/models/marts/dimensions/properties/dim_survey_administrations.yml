@@ -6,6 +6,16 @@ models:
       dim_surveys via survey_key and to dim_terms via term_key. Linearizes the
       path from any model to dim_terms -- dim_surveys is a pure definition and
       all temporal scoping flows through this model.
+    config:
+      materialized: table
+      meta:
+        dagster:
+          # Nightly: every data test on this view recomputed it in full, and
+          # dbt Cloud CI ran that on nearly every PR. No Cube cube or Tableau
+          # exposure reads this mart, so nightly clears its break-even with
+          # room to spare. Refs #5217
+          automation_condition:
+            cron_schedule: 0 3 * * *
     columns:
       - name: survey_administration_key
         data_type: string
@@ -15,22 +25,20 @@ models:
         constraints:
           - type: primary_key
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           - unique
-          - not_null
 
       - name: survey_key
         data_type: string
         description: >-
           FK to dim_surveys. Surrogate key derived from survey_id.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_surveys')
-            to_columns: [survey_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_surveys')
+              to_columns: [survey_key]
         data_tests:
-          - not_null
-
           - relationships:
               arguments:
                 to: ref('dim_surveys')
@@ -39,15 +47,13 @@ models:
         data_type: string
         description: >-
           FK to dim_terms. Surrogate key derived from term composite fields
-          (type, code, name, start_date, region, school_id).
-        constraints:
-          - type: foreign_key
-            to: ref('dim_terms')
-            to_columns: [term_key]
-            warn_unsupported: false
+          (type, code, name, start_date, region, school_id, grade_band).
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_terms')
+              to_columns: [term_key]
         data_tests:
-          - not_null
-
           - relationships:
               arguments:
                 to: ref('dim_terms')

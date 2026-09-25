@@ -10,9 +10,6 @@ with
                         "kippcamden_powerschool", "stg_powerschool__attendance_code"
                     ),
                     source(
-                        "kippmiami_powerschool", "stg_powerschool__attendance_code"
-                    ),
-                    source(
                         "kipppaterson_powerschool", "stg_powerschool__attendance_code"
                     ),
                 ]

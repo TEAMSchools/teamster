@@ -1,0 +1,213 @@
+models:
+  - name: int_google_sheets__kippfwd__goals_unpivot
+    description: >-
+      KIPP Forward's college-entrance assessment goals paired with the threshold
+      each one is measured against, so a consumer gets the target percentage and
+      the bar from a single model instead of joining two sheets itself.
+
+
+      Two branches, named by goal_branch, because the reporting views disagree
+      on grain. Consumers select a branch by filtering goal_branch;
+      rpt_consumers lists the reporting views each branch feeds, directly or
+      through int_students__college_assessment_participation_roster.
+
+
+      Both branches are driven from the scaffold, so both carry every threshold
+      it states rather than only those a goal was written for, and both apply
+      the same two exclusions. They differ only in how a goal's grade is
+      treated. The scaffold is unpivoted with UNPIVOT, which drops null
+      thresholds, so a metric the scaffold leaves blank for a score type has no
+      row here.
+
+
+      By Grade attaches grade_level and cohort from the goals sheet, so a score
+      type with goals at two grades fans to one row per grade, and a threshold
+      with no goal stated reads null grade. Section thresholds carry no grade,
+      which is what applies them to every student. This is the shape the
+      grade-reporting views need.
+
+
+      All Grades holds grade_level and cohort null throughout, because over time
+      reports on neither, tracking a cohort's full score history instead. Its
+      percentages come from the goals sheet's over-time columns where stated,
+      else the per-grade goal — see is_over_time_goal on the staging model.
+
+
+      Attempts metrics appear at the total grain only, on both branches. An
+      attempt is a sitting of a test, captured on the total row, so a section
+      row carries no attempt count to compare against, even though the scaffold
+      populates attempt thresholds on section rows. Score-change rows are
+      excluded for a related reason — a growth figure is neither a sitting nor a
+      score to compare against a bar.
+
+
+      Because both branches are scaffold-driven, a goal whose score type has no
+      scaffold row does not appear at all.
+      test_kippfwd_goals_resolve_to_scaffold surfaces those rather than letting
+      them go unreported.
+
+
+      See docs/models/carat-dashboard-data-model.md.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - academic_year
+              - test_type
+              - grade_level
+              - score_type
+              - expected_metric_type
+              - goal_branch
+          config:
+            severity: error
+            # error, not the project's warn default, because a fan-out on the
+            # goals side of either branch's join lands as duplicate rows
+            # identical in every other column, and an avg() over them would skew
+            # a reported goal rather than fail. goal_branch is in the key because
+            # both branches are scaffold-driven and so agree on the other five
+            # columns wherever they overlap — grade_level being null on the
+            # all-grades branch separates them today, but only incidentally.
+    columns:
+      - name: academic_year
+        data_type: int64
+        description: >-
+          Academic year the goal applies to, start-year convention, so SY26-27
+          reads 2026.
+      - name: test_type
+        data_type: string
+        description: Official or Practice, matching both assessment hubs.
+      - name: grade_level
+        data_type: string
+        description: >-
+          Grade the goal applies to, taken from the goals sheet rather than the
+          scaffold. On the By Grade branch it is null wherever no goal is stated
+          for the threshold, such as section rows. Null throughout the All
+          Grades branch, which reports on neither grade nor cohort.
+      - name: cohort
+        data_type: string
+        description: >-
+          Graduating class the goal applies to, an alternate key to grade_level
+          for the same students, and null wherever grade_level is.
+      - name: score_type
+        data_type: string
+        description: >-
+          Score identifier the goal is measured against, matching score_type on
+          the assessment hubs.
+      - name: expected_metric_type
+        data_type: string
+        description: >-
+          Which metric the goal targets — pct_1_attempt, pct_2_plus_attempts,
+          pct_hs_grad_ready, or pct_college_ready. Part of the join key, so the
+          scaffold's min-score column names are mapped onto this vocabulary
+          rather than carried as their own.
+      - name: expected_goal_type
+        data_type: string
+        description: >-
+          Attempts or Benchmark. Attempts compares against a count of sittings,
+          Benchmark against a scale score, which is what expected_min_score
+          means in each case.
+      - name: expected_goal_subtype
+        data_type: string
+        description: >-
+          The metric as the reporting views label it — 1 Attempt, 2+ Attempts,
+          HS Grad-Ready, College-Ready.
+      - name: expected_metric_goal
+        data_type: float64
+        description: >-
+          Share of students expected to meet the metric, as a 0-1 fraction. On
+          the All Grades branch it is the sheet's over-time goal where one is
+          stated, else the lowest per-grade goal for the score type; the
+          Attempts metrics have no over-time column and always take the
+          per-grade goal. test_kippfwd_goals_over_time_collapse guards that
+          fallback.
+
+
+          Null where the scaffold states a threshold no goal was written for,
+          such as ACT and section rows.
+      - name: goal_branch
+        data_type: string
+        description: >-
+          By Grade or All Grades — which framing of the goals this row belongs
+          to, and the column a consumer filters on to select its branch. Part of
+          the uniqueness key, because the two branches are both scaffold-driven
+          and so agree on every other key column wherever they overlap.
+
+
+          Prefer this over filtering rpt_consumers when the consumer is an
+          intermediate rather than a reporting view: rpt_consumers declares
+          blast radius to BI, and coupling branch selection to a view name means
+          retiring that view can silently change an upstream model's output.
+      - name: expected_scope
+        data_type: string
+        description: >-
+          The test itself — SAT, ACT, PSAT 8/9, PSAT10, PSAT NMSQT — from the
+          scaffold. The goals sheet carries no scope, so this is the only place
+          consumers can get it.
+      - name: expected_aligned_scope
+        data_type: string
+        description: >-
+          Scope with ACT and SAT folded together and the two PSAT windows folded
+          together, for attainment comparisons only. Never max a score
+          partitioned on it.
+      - name: expected_subject_area
+        data_type: string
+        description: >-
+          Section as the source systems spell it — Combined or Composite on a
+          total row.
+      - name: expected_aligned_subject_area
+        data_type: string
+        description: >-
+          Subject area with Composite and Combined folded to Total, matching
+          aligned_subject_area on the assessment hub. Derived here rather than
+          taken from the scaffold's same-named column, which folds the reading
+          variants together as well and so belongs on expected_aligned_subject
+          instead.
+      - name: expected_aligned_subject
+        data_type: string
+        description: >-
+          Subject area with the reading and EBRW variants additionally folded to
+          EBRW/Reading, for comparison across test generations, matching
+          aligned_subject on the assessment hub, which carries it on official
+          rows only. This is the scaffold's expected_aligned_subject_area passed
+          through — it already folds both ways.
+      - name: expected_min_score
+        data_type: int64
+        description: >-
+          The bar the metric is measured against, from the scaffold — a count of
+          sittings for the Attempts metrics and a scale score for the Benchmark
+          ones. Never null, since the scaffold UNPIVOT drops null thresholds.
+      - name: rpt_consumers
+        data_type: array<string>
+        description: >-
+          The reporting views this row's branch feeds, a literal per branch. By
+          Grade lists the roster and wide sheet, which read it through the
+          participation roster, and _current; All Grades lists _over_time and
+          the long sheet. Repointing a view at a branch means appending it here.
+
+
+          _over_time selects its branch with cross join unnest(rpt_consumers) as
+          rpt_consumer and a filter on that plain column; the other consumers
+          filter goal_branch. An array rather than a delimited string, so it
+          cannot be joined into a grouping key by accident.
+      - name: expected_metric_label
+        data_type: string
+        description: >-
+          Scope and metric joined into one token — sat_1_attempt,
+          psat89_hs_grad_ready — so a consumer can PIVOT on it to reach a column
+          per metric. The scope half maps the scaffold's expected_scope; a scope
+          outside the five mapped values would make the label null.
+
+
+          Not unique per row. It repeats across test_type and goal_branch, and a
+          score type with goals at two grades (SAT at 11 and 12) carries each
+          label once per grade on the By Grade branch. Benchmark targets differ
+          by grade, so a PIVOT that groups on this column alone averages two
+          classes into one wrong number. Keep grade_level in the grouping for
+          anything Benchmark.
+      - name: expected_metric_name
+        data_type: string
+        description: >-
+          The metric as the over-time view labels it. Benchmark rows read the
+          goal subtype alone — HS Grad-Ready, College-Ready — and Attempts rows
+          carry the scope too, ACT 1 Attempt or SAT 2+ Attempts, because an
+          attempt count is only meaningful against a named test.

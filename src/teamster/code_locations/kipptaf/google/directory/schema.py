@@ -3,11 +3,14 @@ import json
 import py_avro_schema
 
 from teamster.libraries.google.directory.schema import (
+    Group,
     OrgUnits,
     Role,
     RoleAssignment,
     User,
 )
+
+GROUPS_SCHEMA = json.loads(py_avro_schema.generate(py_type=Group, namespace="group"))
 
 ORGUNITS_SCHEMA = json.loads(
     py_avro_schema.generate(py_type=OrgUnits, namespace="orgunits")
@@ -21,5 +24,4 @@ ROLES_SCHEMA = json.loads(py_avro_schema.generate(py_type=Role, namespace="role"
 
 USERS_SCHEMA = json.loads(py_avro_schema.generate(py_type=User, namespace="user"))
 
-# GROUPS_SCHEMA = json.loads(py_avro_schema.generate(py_type=Group, namespace="group"))
 # MEMBERS_SCHEMA = json.loads(py_avro_schema.generate(py_type=Member, namespace="member"))

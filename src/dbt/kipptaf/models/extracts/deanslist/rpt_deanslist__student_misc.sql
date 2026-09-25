@@ -49,6 +49,7 @@ with
             sch.principal,
             sch.schoolphone,
             sch.asstprincipal as culture_lead,
+            sch.asstprincipalemail as culture_lead_email,
 
             concat(co.student_web_id, '.fam') as family_access_id,
             concat(co.student_web_password, 'kipp') as student_web_password,

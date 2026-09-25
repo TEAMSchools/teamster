@@ -1,3 +1,25 @@
+with
+    overgrad_admissions as (
+        select
+            student__external_student_id,
+            award_letter__out_of_pocket,
+            award_letter__unmet_need,
+            updated_at,
+
+            safe_cast(university__ipeds_id as string) as university_ipeds_id_str,
+        from {{ ref("int_overgrad__admissions") }}
+    ),
+
+    overgrad_award_letter as (
+        {{
+            dbt_utils.deduplicate(
+                relation="overgrad_admissions",
+                partition_by="student__external_student_id, university_ipeds_id_str",
+                order_by="updated_at desc",
+            )
+        }}
+    )
+
 select
     r.contact_id,
     r.lastfirst as student_name,
@@ -45,6 +67,9 @@ select
     null as is_ed_ea,
     null as student_aid_index,
     null as best_guess_pathway,
+
+    cast(null as float64) as out_of_pocket,
+    cast(null as float64) as unmet_need,
 
     if(e.status = 'Graduated', true, false) as is_graduated,
     if(e.id = ei.ecc_enrollment_id, true, false) as is_ecc_enrollment,
@@ -196,6 +221,9 @@ select
     r.contact_efc_from_fafsa as student_aid_index,
     r.best_guess_pathway,
 
+    adm.award_letter__out_of_pocket as out_of_pocket,
+    adm.award_letter__unmet_need as unmet_need,
+
     false as is_graduated,
     null as is_ecc_enrollment,
     null as is_ugrad_enrollment,
@@ -222,4 +250,9 @@ left join
     {{ ref("base_kippadb__application") }} as a
     on r.contact_id = a.applicant
     and a.rn_application_school = 1
+left join {{ ref("stg_kippadb__account") }} as acc on a.school = acc.id
+left join
+    overgrad_award_letter as adm
+    on r.contact_id = adm.student__external_student_id
+    and acc.nces_id = adm.university_ipeds_id_str
 left join {{ ref("int_kippadb__enrollment_pivot") }} as ei on r.contact_id = ei.student

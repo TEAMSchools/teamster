@@ -10,6 +10,9 @@ models:
       pseudonymous student_token (a stable hash of student_number), so the
       extract is de-identified at the source and shared under the research
       data-sharing agreement.
+
+      Network-wide, Miami included. Miami held 3,125 AY2026 rows in prod as of
+      2026-08-27. Ratified on #4996.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

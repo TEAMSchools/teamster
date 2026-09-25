@@ -20,6 +20,8 @@ models:
                 severity: error
       - name: active_label
         description: Decoded label for the active select field.
+      - name: gender_label
+        description: Decoded label for the gender select field.
       - name: education_label
         description: >-
           Decoded labels for the education multiple-select field, as an array

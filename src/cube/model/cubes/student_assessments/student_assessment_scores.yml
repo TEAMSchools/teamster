@@ -28,6 +28,14 @@ cubes:
           {CUBE}.student_section_enrollment_key
         relationship: many_to_one
 
+      # Reporting quarter of the score, keyed on the fact's own term_key (the
+      # quarter containing the administration/test date at the section's school).
+      # Reached only through this path: the section dim no longer carries a term
+      # FK, so there is no diamond back to terms (#4484).
+      - name: terms
+        sql: "{terms.term_key} = {CUBE}.term_key"
+        relationship: many_to_one
+
     dimensions:
       - name: assessment_score_key
         description: Surrogate key. Primary key for this fact.
@@ -48,6 +56,11 @@ cubes:
         sql: CAST(test_date_key AS TIMESTAMP)
         type: time
         public: true
+
+      - name: term_key
+        description: FK to terms — the reporting quarter containing the score.
+        sql: term_key
+        type: string
 
       - name: enrollment_resolution
         description: >-

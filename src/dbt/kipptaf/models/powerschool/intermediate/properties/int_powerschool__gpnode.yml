@@ -1,10 +1,12 @@
 models:
   - name: int_powerschool__gpnode
-    description: >
-      Grad plan node hierarchy flattened to one row per plan-discipline-subject
-      slot. Subjects that have no child subject nodes use the discipline node as
-      the subject (coalesce). Includes nodetype for downstream joins to
-      gpprogresssubject.
+    description: >-
+      Union of each region's int_powerschool__gpnode (the powerschool package
+      model). Column docs and the per-instance tests live in the package; this
+      wrapper adds _dbt_source_project so plan_id, which is only unique within
+      one PowerSchool instance, can be disambiguated downstream. Newark and
+      Camden only; Paterson disables the grad-plan tables and Miami never had
+      them.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -15,53 +17,12 @@ models:
               - subject_id
     columns:
       - name: _dbt_source_relation
-        description: Source relation identifier for union models.
         data_type: string
+        description: Source relation identifier from dbt_utils.union_relations.
+
       - name: _dbt_source_project
         data_type: string
-        description: District code location derived from `_dbt_source_relation`.
-      - name: nodetype
-        description:
-          PowerSchool node type code; used to match gpprogresssubject records to
-          the correct plan level.
-        data_type: int64
-      - name: plan_id
-        description: gpnode.id for the plan root node.
-        data_type: int64
-      - name: plan_gpversionid
-        description: Grad plan version ID.
-        data_type: int64
-      - name: plan_parentid
-        description:
-          Parent node ID for the plan root (always null for root plans).
-        data_type: int64
-      - name: plan_name
-        description: Name of the grad plan.
-        data_type: string
-      - name: plan_credit_capacity
-        description: Total credits configured for the plan.
-        data_type: float64
-      - name: discipline_id
-        description: gpnode.id for the discipline node.
-        data_type: int64
-      - name: discipline_name
-        description: Name of the discipline (e.g., English, Math).
-        data_type: string
-      - name: discipline_credit_capacity
-        description: Credits configured for the discipline.
-        data_type: float64
-      - name: subject_id
-        description:
-          gpnode.id for the subject node; falls back to discipline_id when the
-          discipline has no subject children.
-        data_type: int64
-      - name: subject_name
-        description:
-          Name of the subject node; falls back to discipline_name when no
-          subject children exist.
-        data_type: string
-      - name: subject_credit_capacity
-        description:
-          Credits configured for the subject; falls back to discipline credit
-          capacity when no subject children exist.
-        data_type: float64
+        description: >-
+          District code location derived from _dbt_source_relation. Needed to
+          disambiguate plan_id, which is only unique within a single PowerSchool
+          instance.

@@ -1,0 +1,42 @@
+models:
+  - name: int_focus__advisory
+    description: >-
+      One homeroom assignment per Miami student per school year and school,
+      conformed to the PowerSchool advisory column names. Focus identifies the
+      homeroom by course title because its homeroom flag is unpopulated. Covers
+      elementary students only and only the current academic year, because those
+      are the only students and years with homeroom course periods scheduled.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - academic_year
+              - schoolid
+              - _dbt_source_project
+    columns:
+      - name: student_number
+        description: >-
+          Focus student id (10-digit, FLDOE-district-prefixed) — the student in
+          the homeroom.
+        config:
+          meta:
+            contains_pii: true
+      - name: academic_year
+        description: Academic year of the homeroom enrollment.
+      - name: schoolid
+        description: Focus school id where the homeroom is scheduled.
+      - name: advisory_section_number
+        description:
+          Short name of the homeroom course period, the Focus analogue of the
+          PowerSchool section number.
+      - name: advisory_name
+        description:
+          Display name for the homeroom — the course period short name, falling
+          back to the teacher name when the short name is absent.
+      - name: advisor_lastfirst
+        description:
+          Homeroom teacher name in last-comma-first form. Null when the course
+          period carries no teacher.
+      - name: _dbt_source_project
+        description: District code location the row came from.

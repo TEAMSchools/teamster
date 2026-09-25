@@ -2,7 +2,7 @@
 # /// script
 # requires-python = ">=3.13"
 # dependencies = [
-#   "mcp>=1.2",
+#   "mcp>=2.0",
 #   "httpx>=0.27",
 #   "pyjwt>=2.8",
 # ]
@@ -31,6 +31,8 @@ import hashlib
 import json
 import os
 import time
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
 
@@ -39,7 +41,7 @@ import jwt
 from mcp.server.auth.middleware.auth_context import get_access_token
 from mcp.server.auth.provider import AccessToken
 from mcp.server.auth.settings import AuthSettings
-from mcp.server.fastmcp import Context, FastMCP
+from mcp.server.mcpserver import Context, MCPServer
 from mcp.types import ClientCapabilities, ElicitationCapability
 from pydantic import BaseModel, Field
 
@@ -200,29 +202,38 @@ class JWKSTokenVerifier:
         )
 
 
-_fastmcp_kwargs: dict[str, Any] = {
-    "host": "0.0.0.0",  # trunk-ignore(bandit/B104): intentional for Cloud Run
-    "port": 8080,
-    # stateless_http lets Cloud Run scale horizontally — no per-instance session
-    # state, every request stands alone. We don't use MCP features that require
-    # persistent sessions (subscriptions, server-initiated messages); elicit is
-    # only invoked in stdio dev mode.
-    #
-    # Do NOT pass a `lifespan=` kwarg: with stateless_http=True the SDK's
-    # _handle_stateless_request invokes `app.run(...)` per HTTP request, which
-    # in turn runs the user lifespan per request. A teardown like
-    # `await client.aclose()` would close the shared httpx client after the
-    # first request and break every subsequent one.
-    "stateless_http": True,
-}
+# mcp SDK 2.0 fixed the bug where stateless_http=True re-entered a `lifespan=`
+# context manager on every HTTP request (streamable_http_manager now enters it
+# once for the manager's lifetime and reuses that state across requests), so
+# it's now safe to manage the httpx client's shutdown here instead of leaving
+# it as a bare module-level global with no `aclose()`.
+client: httpx.AsyncClient | None = None
+
+
+@asynccontextmanager
+async def _lifespan(_server: "MCPServer[None]") -> AsyncIterator[None]:
+    global client
+    client = httpx.AsyncClient(
+        base_url=CUBE_REST_URL,
+        headers={"Content-Type": "application/json"},
+        timeout=TIMEOUT_SECONDS,
+    )
+    try:
+        yield
+    finally:
+        await client.aclose()
+        client = None
+
+
+_mcpserver_kwargs: dict[str, Any] = {}
 if AUTHKIT_DOMAIN and PUBLIC_URL:
-    _fastmcp_kwargs["token_verifier"] = JWKSTokenVerifier(AUTHKIT_DOMAIN)
-    _fastmcp_kwargs["auth"] = AuthSettings(
+    _mcpserver_kwargs["token_verifier"] = JWKSTokenVerifier(AUTHKIT_DOMAIN)
+    _mcpserver_kwargs["auth"] = AuthSettings(
         issuer_url=f"https://{AUTHKIT_DOMAIN}",  # type: ignore[arg-type]
         resource_server_url=PUBLIC_URL,  # type: ignore[arg-type]
     )
 
-mcp = FastMCP(
+mcp = MCPServer(
     "cube",
     instructions=(
         "Query the Cube semantic layer (KIPP TEAM & Family metrics, dimensions, "
@@ -235,14 +246,8 @@ mcp = FastMCP(
         "on every surface (unlike this instructions block, which some clients "
         "drop or truncate)."
     ),
-    **_fastmcp_kwargs,
-)
-
-
-client = httpx.AsyncClient(
-    base_url=CUBE_REST_URL,
-    headers={"Content-Type": "application/json"},
-    timeout=TIMEOUT_SECONDS,
+    lifespan=_lifespan,
+    **_mcpserver_kwargs,
 )
 
 
@@ -254,6 +259,8 @@ async def _request(
     poll: bool = False,
     **kwargs: Any,
 ) -> dict[str, Any]:
+    if client is None:
+        raise RuntimeError("_request called before the server lifespan started")
     headers = {"Authorization": _mint_token(email)}
     deadline = time.monotonic() + TIMEOUT_SECONDS
     while True:
@@ -365,15 +372,35 @@ async def meta(
     or `sql`.
 
     Call with no arguments first to discover which views exist — analyst-facing
-    surfaces are views (e.g. `student_attendance_view`,
-    `student_assessment_scores_view`; staff is split into `staff_directory` and
-    `staff_pii` by access tier). Once you know the view(s) you need, pass
+    surfaces are views (e.g. `student_attendance_enrollment_daily_view`,
+    `student_attendance_enrollment_periods_view`, `student_assessment_scores_view`; staff
+    is split into `staff_directory` and `staff_pii` by access tier). Once you
+    know the view(s) you need, pass
     `views` to get back just their measures and dimensions — a fraction of the
     full catalog's size, filtered client-side from the same underlying `/meta`
     fetch (Cube's REST API doesn't take a filter param, and its separate
     `/entities` endpoints need a differently scoped token this server doesn't
     mint) — so it avoids exceeding a response size budget on large models
     without any extra round trip once the full catalog is cached.
+
+    Two views can cover one domain at different grains. Attendance splits this
+    way: `student_attendance_enrollment_daily_view` answers day-level questions (was a student
+    absent on a date, calendar heatmaps, day-of-week patterns), while
+    `student_attendance_enrollment_periods_view` answers rates as of a period (chronic
+    absence, ADA tier, truancy) via its `period_type` dimension. Pick by whether
+    the question is about a day or about a period, and do not add an anchor
+    filter to either — neither view needs one.
+
+    Enrollment lives on those same two views — there is no separate
+    enrollment view. `student_attendance_enrollment_daily_view.count_students` counts distinct students
+    over whatever slice is queried, so it answers ever-enrolled over a range and
+    point-in-time on a single date, depending only on how you filter
+    `dates_date_day`. It needs no anchor: the fact carries a row for every
+    calendar day a student was enrolled, break days included, so any date
+    resolves for every school. `student_attendance_enrollment_periods_view.count_students` counts
+    students served during a period, which is a different question from
+    enrolled on its last day — for the latter, pin the date on
+    `student_attendance_enrollment_daily_view`.
 
     Access is group-driven and default-deny: an empty catalog (`cubes: []`)
     usually means the requester lacks the required `cube-*` Workspace group, not
@@ -449,7 +476,7 @@ async def load(ctx: Context, query: dict[str, Any]) -> dict[str, Any]:
     before coarsening.
 
     Member naming: every measure/dimension is dotted `view.member` (e.g.
-    `student_attendance_view.count_students`). Bare names won't resolve.
+    `student_attendance_enrollment_daily_view.count_students`). Bare names won't resolve.
 
     Filter operators are named, not SQL: `equals`, `notEquals`, `contains`,
     `gt`/`gte`/`lt`/`lte`, `set`/`notSet`, `inDateRange`, `beforeDate`,
@@ -543,7 +570,17 @@ def main() -> None:
                 "Run service URL is required for OAuth resource-server "
                 "metadata in HTTP mode."
             )
-        mcp.run(transport="streamable-http")
+        mcp.run(
+            transport="streamable-http",
+            host="0.0.0.0",  # trunk-ignore(bandit/B104): intentional for Cloud Run
+            port=8080,
+            # stateless_http lets Cloud Run scale horizontally — no per-instance
+            # session state, every request stands alone. We don't use MCP
+            # features that require persistent sessions (subscriptions,
+            # server-initiated messages); elicit is only invoked in stdio dev
+            # mode.
+            stateless_http=True,
+        )
     else:
         mcp.run()
 

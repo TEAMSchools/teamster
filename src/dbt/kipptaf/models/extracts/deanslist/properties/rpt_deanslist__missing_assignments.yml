@@ -1,8 +1,35 @@
 models:
   - name: rpt_deanslist__missing_assignments
+    description: >-
+      Assignments marked missing for students, fed to DeansList for follow-up.
+      One row per student per assignment. Uses the gradebook audit's
+      is_expected_missing definition, so exempt assignments and assignments not
+      counted in the final grade are excluded. Miami is out of scope (off
+      DeansList, gradebook on Focus) and ES is out of scope (no PowerSchool
+      assignments; EOQ comments only).
+    data_tests:
+      # TODO(#3915): severity: warn intentional — the upstream grain test on
+      # int_powerschool__gradebook_assignments_scores inherits kipptaf's warn
+      # default, and #3900 documents duplicate cc rows in
+      # base_powerschool__course_enrollments that this lineage date-range
+      # joins. An outbound feed should not hard-fail on an upstream defect
+      # that upstream itself only warns about. Restore to error when Ops
+      # cleanup in #3915 completes.
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - assignmentsectionid
+          config:
+            severity: warn
     columns:
       - name: student_number
         data_type: int64
+      - name: assignmentsectionid
+        data_type: int64
+        description:
+          Assignment-section identifier. Projected so the uniqueness test has a
+          key; DeansList ignores it.
       - name: grade_category
         data_type: string
       - name: assign_name

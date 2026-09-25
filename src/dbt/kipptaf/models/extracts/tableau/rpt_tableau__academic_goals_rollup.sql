@@ -45,22 +45,19 @@ with
             is_approaching_int,
             is_below_int,
 
-            case
-                when illuminate_subject = 'Text Study'
-                then 'Reading'
-                when illuminate_subject = 'Mathematics'
-                then 'Math'
-            end as `subject`,
+            `subject` as raw_subject,
+            'pearson' as source_system,
+            cast(null as string) as `subject`,
 
         from {{ ref("int_pearson__all_assessments") }}
         where
             assessment_name = 'NJSLA'
-            and not (assessmentgrade = 'Grade 8' and `subject` like 'Algebra%')
+            and not (gradelevelwhenassessed = 8 and `subject` like 'Algebra%')
 
         union all
 
         select
-            s.student_number,
+            f.student_number,
 
             f.academic_year,
             f.scale_score,
@@ -74,27 +71,21 @@ with
             f.is_approaching_int,
             f.is_below_int,
 
-            if(f.illuminate_subject = 'Text Study', 'Reading', 'Math') as `subject`,
+            f.assessment_subject as raw_subject,
+            'fldoe' as source_system,
+            cast(null as string) as `subject`,
 
         from {{ ref("int_fldoe__all_assessments") }} as f
-        inner join
-            {{ ref("stg_powerschool__u_studentsuserfields") }} as suf
-            on f.student_id = suf.fleid
-            and f._dbt_source_project = suf._dbt_source_project
-        inner join
-            {{ ref("stg_powerschool__students") }} as s
-            on suf.studentsdcid = s.dcid
-            and suf._dbt_source_project = s._dbt_source_project
-            and s.grade_level >= 4
         where
             f.assessment_name = 'FAST'
             and f.administration_window = 'PM3'
             and f.scale_score is not null
+            and f.assessment_grade != '3'
 
         union all
 
         select
-            s.student_number,
+            f.student_number,
 
             f.academic_year,
             f.scale_score,
@@ -108,25 +99,22 @@ with
             f.is_approaching_int,
             f.is_below_int,
 
-            if(f.illuminate_subject = 'Text Study', 'Reading', 'Math') as `subject`,
+            f.assessment_subject as raw_subject,
+            'fldoe' as source_system,
+            cast(null as string) as `subject`,
 
         from {{ ref("int_fldoe__all_assessments") }} as f
-        inner join
-            {{ ref("stg_powerschool__u_studentsuserfields") }} as suf
-            on f.student_id = suf.fleid
-            and f._dbt_source_project = suf._dbt_source_project
-        inner join
-            {{ ref("stg_powerschool__students") }} as s
-            on suf.studentsdcid = s.dcid
-            and suf._dbt_source_project = s._dbt_source_project
-            and s.grade_level = 3
         where
             f.assessment_name = 'FAST'
             and f.administration_window = 'PM1'
             and f.scale_score is not null
+            and f.assessment_grade = '3'
 
         union all
 
+        -- `star_discipline` is not an illuminate_subject value (it is
+        -- already Reading/Math), so this branch stays outside the
+        -- crosswalk's scope and keeps deriving `subject` directly.
         select
             student_display_id as student_number,
 
@@ -142,12 +130,33 @@ with
             if(state_benchmark_category_level = 4, 1, 0) as is_approaching_int,
             if(state_benchmark_category_level = 5, 1, 0) as is_below_int,
 
+            cast(null as string) as raw_subject,
+            cast(null as string) as source_system,
+
             if(star_discipline = 'ELA', 'Reading', star_discipline) as `subject`,
         from {{ ref("stg_renlearn__star") }}
         where
             rn_subject_round = 1
             and screening_period_window_name = 'Spring'
             and grade_level between 1 and 2
+    ),
+
+    state_test_resolved as (
+        select
+            s.* except (raw_subject, source_system, `subject`),
+
+            case
+                when s.source_system is null
+                then s.`subject`
+                when coalesce(x.illuminate_subject_area, s.raw_subject) = 'Text Study'
+                then 'Reading'
+                else 'Math'
+            end as `subject`,
+        from state_test_union as s
+        left join
+            {{ ref("stg_google_sheets__assessments__vendor_subject_crosswalk") }} as x
+            on s.source_system = x.source_system
+            and s.raw_subject = x.raw_subject
     ),
 
     iready as (
@@ -304,7 +313,7 @@ with
             and not cc.is_dropped_section
             and cc.rn_student_year_illuminate_subject_desc = 1
         left join
-            state_test_union as st
+            state_test_resolved as st
             on co.student_number = st.student_number
             and co.academic_year = st.academic_year_plus
             and co.iready_subject = st.subject

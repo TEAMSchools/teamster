@@ -16,6 +16,39 @@ models:
           config:
             severity: error
             where: type = 'RT'
+      # Guards the dim_terms term_key grain HERE rather than on dim_terms
+      # itself. dim_terms is a view, so sheet edits reach it instantly but its
+      # own unique test only re-runs when someone changes its SQL -- a 2026-08
+      # grade_band split tripled 60 LIT keys and sat undetected for 3 weeks.
+      # This model is a table rebuilt by the google_sheet asset on every sheet
+      # edit, so the test fires exactly when the sheet can break the key.
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - type
+              - code
+              - name
+              - start_date
+              - region
+              - school_id
+              - grade_band
+          config:
+            severity: error
+      # Consumers resolve a term by joining a date into these windows by type,
+      # code and name (plus region, school and grade band where a type scopes
+      # by them). Two such windows that overlap, or a window whose end precedes
+      # its start, fan that join out or drop rows silently. Rows missing a
+      # bound are a separate defect and are excluded here. #5276
+      - dbt_utils.mutually_exclusive_ranges:
+          arguments:
+            lower_bound_column: start_date
+            upper_bound_column: end_date
+            partition_by: type, code, name, region, school_id, grade_band
+            gaps: allowed
+            zero_length_range_allowed: true
+          config:
+            severity: error
+            where: start_date is not null and end_date is not null
     columns:
       - name: type
         data_type: string

@@ -8,6 +8,12 @@ models:
               arguments:
                 to: ref("stg_google_sheets__people__location_crosswalk")
                 field: name
+      - name: grade_level
+        data_type: int64
+        description: >-
+          Derived in the finalsite package staging model — see
+          stg_finalsite__status_report there for the decode and sentinel scheme
+          (-1 = PK).
       - name: _dbt_source_relation
         data_type: string
       - name: _dbt_source_project
@@ -138,8 +144,6 @@ models:
         data_type: string
       - name: first_name
         data_type: string
-      - name: grade_level
-        data_type: int64
       - name: current_academic_year
         data_type: int64
       - name: next_academic_year

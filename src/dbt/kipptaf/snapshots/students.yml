@@ -4,10 +4,11 @@ snapshots:
     config:
       schema: students
       strategy: check
+      # schoolid is not a key column: it is NULL for most students, and a NULL
+      # key never matches, so no version would ever close (#5381)
       unique_key:
         - student_number
         - academic_year
-        - schoolid
       check_cols:
         - successful_call_count
         - total_anticipated_calls
@@ -16,6 +17,19 @@ snapshots:
       meta:
         dagster:
           group: students
+          # Nightly instead of the default eager snapshot condition. A
+          # snapshot inherits dbt_table_automation_condition() (materialized is
+          # 'snapshot', not view/ephemeral), so it re-fires on ANY upstream data
+          # change, recursing through view chains — ~25 executions/day. Its only
+          # consumer, int_topline__attendance_interventions_weekly, is itself on
+          # `0 0 * * *`, so every other execution was invisible downstream.
+          #
+          # Zero history is lost: this snapshot last captured a change on 2026-07-17, ~675
+          # executions ago.
+          # Sharing the consumer's tick lets the deps-in-progress guard
+          # serialize the pass. Refs #4821
+          automation_condition:
+            cron_schedule: 0 0 * * *
           asset_key:
             - kipptaf
             - students

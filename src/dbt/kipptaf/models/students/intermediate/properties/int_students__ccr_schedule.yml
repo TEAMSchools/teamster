@@ -1,0 +1,61 @@
+models:
+  - name: int_students__ccr_schedule
+    description: >-
+      One course per student per academic year, standing in for their College
+      and Career Readiness (CCR) schedule. An active CCR course wins; failing
+      that, KIPP Newark Lab's Advisory course `SEM22106G1`; failing that,
+      homeroom. From SY26-27 the regions schedule CCR for grades 11 and 12 only,
+      so most grade 9 and 10 students resolve to homeroom. A student with no
+      active course enrollment at all is absent from this model, so consumers
+      left join and supply their own fallback label.
+
+
+      A CCR course is matched on its name, with `discipline` as a second net for
+      one whose name stops following the pattern. Neither `courses_credittype`
+      nor `courses_sched_coursesubjectareacode` can identify a CCR course —
+      `SEM022151G4` is `STUDY` in Camden and `CAREER` in Newark, and the subject
+      area code is null on every row.
+
+
+      The pick is partitioned on `student_number`, which is canonical across
+      districts. `cc_studyear` is district-scoped and collides across Camden and
+      Newark in this union, so it must not be used here. `cc_sectionid` ends the
+      sort only to keep the pick STABLE — 12 SY26-27 students sit in two
+      non-dropped homerooms with identical `cc_termid`, `cc_dateenrolled` and
+      `cc_dateleft`, and nothing distinguishes those rows, so without it the
+      teacher and section flap between refreshes.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - academic_year
+    columns:
+      - name: student_number
+        data_type: int64
+        description: >-
+          Canonical network student number. Unique across districts, so it needs
+          no region qualifier.
+      - name: academic_year
+        data_type: int64
+        description: Academic year the course enrollment falls in.
+      - name: ccr_course_source
+        data_type: string
+        description: >-
+          Which tier supplied the row — `CCR` for an active College and Career
+          course, `Advisory` for KIPP Newark Lab's `SEM22106G1`, `Homeroom` for
+          the universal backstop.
+      - name: ccr_course
+        data_type: string
+        description:
+          Name of the course standing in for the student's CCR schedule.
+      - name: ccr_teacher_name
+        data_type: string
+        description: Teacher of record for the course, last name first.
+      - name: ccr_section
+        data_type: string
+        description: >-
+          Section identifier for the course. Reads the period expression on a
+          CCR or Advisory row, and the section number (for example `9M311`) on a
+          homeroom row, whose period expression is always `HR(A)` or `HR(R)` and
+          carries no period information.

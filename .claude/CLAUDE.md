@@ -12,33 +12,23 @@ Two hooks guard secrets and sensitive paths:
   material (keys, tokens, connection strings)
 
 See each script for exact regex patterns. This document covers operational
-behavior.
-
-## Hook protocol
-
-Claude Code hooks communicate decisions via **stdout JSON + exit code 0**:
-
-- **Allow**: exit 0 with no output (or empty stdout)
-- **Deny**: exit 0 with
-  `{"hookSpecificOutput": {"permissionDecision": "deny", ...}}` on stdout
-
-**Exit 1 is a non-blocking error** — Claude Code logs it but executes the tool
-anyway. Never use `exit 1` to deny. Never write deny JSON to stderr (`>&2`). The
-regression test suite (`expect_deny_exit0`) enforces both invariants.
+behavior; the hook protocol (exit codes, JSON shapes) and the context-injection
+hook are in `.claude/rules/claude-settings.md`, which loads on a hook read.
 
 ## What is blocked
 
 **Outbound secret-value egress scan** (PreToolUse, Section 4) — write-capable
 MCP tools (tool name contains
 `create`/`update`/`write`/`add`/`comment`/`upload`/
-`send`/`post`/`put`/`delete`/`append`/`insert`/`merge`/`push`/`reply`) and
-WebFetch URLs are scanned for secret VALUES (`op://` refs, private-key headers,
-cloud tokens, connection strings — the same pattern set as `check-output.sh`). A
-match is blocked to stop exfiltration. Practical effect: a GitHub issue/PR write
-or an Asana/Drive write whose body contains a real-looking secret is denied —
-redact it (e.g. `op://…` → `op-uri`). Read-only MCP tools (bigquery / dagster /
-dbt `get_`/`list_`/`search_`) are not scanned. There is no keyword-based URL
-scanner — only secret-value shapes match.
+`send`/`post`/`put`/`delete`/`append`/`insert`/`merge`/`push`/`reply`/
+`share`/`forward`/`schedule`/`launch`/`trigger`), WebFetch URLs, and WebSearch
+queries are scanned for secret VALUES (`op://` refs, private-key headers, cloud
+tokens, connection strings — the same pattern set as `check-output.sh`). A match
+is blocked to stop exfiltration. Practical effect: a GitHub issue/PR write or an
+Asana/Drive write whose body contains a real-looking secret is denied — redact
+it (e.g. `op://…` → `op-uri`). Read-only MCP tools (bigquery / dagster / dbt
+`get_`/`list_`/`search_`) are not scanned. There is no keyword-based URL scanner
+— only secret-value shapes match.
 
 **Secret paths** (all tools blocked) — dotenv files, private key/cert files, SSH
 directory, secret-volume, credentials JSON files, devcontainer template
@@ -65,11 +55,6 @@ Read/Grep/Glob always run through it. Read/Grep/Glob allowed:
 
 Note: `*.md` files under `.claude/` (like this CLAUDE.md) are writable.
 
-**Claude CLI via Bash** — the `claude` binary lives under
-`~/.vscode-remote/extensions/` and is not on `$PATH`, so it cannot be run via
-Bash. Plugin and marketplace commands (`claude plugins install`,
-`claude plugins marketplace list`, etc.) must be run manually in a terminal.
-
 **Bash-only rules** (do NOT fire for Read, Write, Edit, Grep, or Glob):
 
 - Environment variable / process memory leakage (`printenv`, `set`, `env`, etc.)
@@ -95,170 +80,66 @@ correct schema override.)
 containing the tokens the hooks deny gets your own `mcp__*`/Bash write denied.
 Beyond bare `env`: `.env`/`.environment` (Rule 1 `\.env[.a-z]*` is unanchored —
 matches anywhere, even mid-word in prose), bounded dotfile/cert paths,
-`/proc/*/environ`, and secret-shaped fixtures (`op://`, key headers — these also
-trip `check-output.sh` on the _response_). Reword/backtick them, or keep literal
+`/proc/*/environ`, and secret-shaped fixtures (1Password refs that name a vault
+— the bare `op://` scheme passes — and key headers; these also trip
+`check-output.sh` on the _response_). Reword/backtick them, or keep literal
 evidence in `.claude/scratch/` and reference it. For non-Bash tools only Section
 1 path rules scan the body; Bash-only and `path_only` rules do not. (Edit/Write
 `content`/`new_string` is content-exempt, so editing docs is unaffected.)
 
 **Non-Bash tool inputs are path-scanned too:** `TodoWrite` / `AskUserQuestion`
-text containing a bare `env` (or other sensitive-path token) trips "Cannot
-access sensitive path". Reword (`environment variable`; avoid cred-suffix tokens
-like `_KIPPMIAMI`). Also fires on `mcp__github__*` PR / issue bodies — prose
-like "staging env" / "dev env" is denied; write "environment".
+text containing a bare `env` (or other sensitive-path token) trips Rule 1 or 3c.
+Reword (`environment variable`; avoid cred-suffix tokens like `_KIPPMIAMI`).
 
 **Your own ad-hoc Bash self-blocks on `$UPPER_CASE`:** Rule 7 denies any Bash
 command expanding a non-allowlisted uppercase var — including one you define in
 that same command (`sc=$(...); echo "${SC}"`). Use lowercase names
 (`sc=...; echo "${sc}"`) in throwaway commands.
 
-**BigQuery MCP** — queries must start with SELECT/SHOW/DESCRIBE/WITH; embedded
-DML/DDL (INSERT, UPDATE, DELETE, CREATE, DROP, etc.) is blocked. The block
-matches the keyword as a substring — including inside a string literal
-(`where type = 'Drop'`), which is denied with the misleading "Cannot access
-sensitive path" message. Reword to avoid the literal (`like 'Dr%'`).
+**Deny messages name the rule.** Every `check-sensitive.sh` denial reads
+`❌ check-sensitive.sh Rule N: <what matched>. <what to do instead>.` Follow the
+instruction in the message before consulting this file; the two agree.
 
-**Output scanning** (PostToolUse) — blocks tool results containing secret
-material (keys, tokens, connection strings, high-entropy strings). Fires for
-Bash, Read, Grep, NotebookEdit, WebFetch, WebSearch, and MCP tools. Does NOT
-fire for Edit.
+**Output scanning** (PostToolUse) — redacts tool results containing secret
+material (keys, tokens, connection strings, high-entropy strings): every string
+in the result becomes `[redacted: secret material]` and an `additionalContext`
+note says why. Fires for Bash, Read, Grep, NotebookEdit, WebFetch, WebSearch,
+and MCP tools. Does NOT fire for Edit.
 
-**MCP spill files are Bash-unreadable:** a large MCP result that overflows the
-context budget dumps to `~/.claude/projects/.../tool-results/`; Bash
-(`jq`/`cat`) on that path is denied ("Cannot access sensitive path"). Use a
-subagent (as the spill message suggests) or reconstruct the data from prior tool
-output instead.
+**MCP spill files are Bash-readable — read them directly, never dispatch a
+subagent.** A large MCP result that overflows the context budget dumps to
+`~/.claude/projects/<proj>/<session>/tool-results/<tool>-<ts>.txt`, shaped
+`{result: string}` where `result` is itself a JSON string. No hook blocks that
+path: Rule 2's protected set is `settings.json`, `settings.local.json`,
+`hooks/*.sh` and `shell-snapshots/`, none of which match `.claude/projects/`.
+Extract with `jq -r '.result' <file> | jq '<filter>'`. The spill message itself
+suggests a subagent — ignore that; verified 2026-09-16 after following the old
+"Bash-unreadable" note here burned a ~42k-token dispatch to run one `jq length`.
 
-## Context injection (`tool-gotchas.sh`)
+## Protected files
 
-A third hook adds context instead of blocking. `tool-gotchas.sh` (PreToolUse,
-matcher `mcp__.*`) injects `.claude/context/<server>.md` the first time each MCP
-server is used in a session, keyed on the server segment of the tool name
-(`mcp__<server>__<tool>`). Add or change guidance for a server by editing that
-file — no hook or settings change needed.
+Hook scripts, `settings.json`, and `.devcontainer/scripts/` are Edit-denied:
+draft the change and hand it to the user. Full procedure, `permissions.deny`
+semantics, and the settings-integrity checks load from
+`.claude/rules/claude-settings.md` on the first read of one of those files.
 
-- It fails **open** (unparseable payload → exit 0, call proceeds) because it
-  only adds context. The two guard hooks fail closed — do not copy this pattern
-  into them.
-- `additionalContext` is consumed by PreToolUse at runtime but is NOT in the
-  harness's documented PreToolUse schema (only `permissionDecision`,
-  `permissionDecisionReason`, `updatedInput` are). If injection silently stops
-  after an upgrade, move the matcher to PostToolUse, where the field IS
-  documented; the script echoes the event name back, so it needs no edit.
-- Fires once per session per server, tracked by
-  `.claude/scratch/.gotchas-<session>-<server>`. A SessionStart `compact` hook
-  deletes those markers so the guidance survives a compaction.
-
-## Git authentication for new repos
-
-The Codespace `GITHUB_TOKEN` (`ghu_*`) only has access to the repo it was
-provisioned for. Pushing to other org repos requires bypassing it:
-`GITHUB_TOKEN= git -c credential.helper='!gh auth git-credential' push`
-
-The Codespace token also lacks `project` and org-admin scopes. `gh` calls that
-mutate ProjectV2 items/fields fail with "Resource not accessible by integration"
-— prefix with `GITHUB_TOKEN=` to fall back to the user's OAuth token (`gho_*`)
-which has full scopes.
-
-`gh workflow run` (`workflow_dispatch`) can't be done from the Codespace: the
-`ghu_*` token lacks the `workflow` scope (403 "Resource not accessible by
-integration"), and emptying it via `GITHUB_TOKEN=` leaves `gh` API calls
-unauthenticated. No `mcp__github__*` tool dispatches workflows either — hand it
-to the user or the Actions UI. (Pushing a commit that edits a
-`deploy-prod-<loc>.yaml` also triggers that location's deploy, since the file is
-in its own push-paths.)
-
-## Modifying protected files
-
-- Hook scripts (`.claude/hooks/**/*.sh`), `.devcontainer/scripts/`, and
-  `.claude/settings.json` / `.claude/settings.local.json`: draft changes,
-  present to user for manual application using complete code blocks — show only
-  the final replacement block, never an old+new pair (which reads like a diff
-  and invites copy errors) — with a file + line number link, ordered
-  top-to-bottom, commentary separate from the edits
-- Those files must also be staged and committed manually
-- Other `.claude/` files (e.g. `CLAUDE.md` files) may be edited directly
-- When staging changes that include protected paths, use `git add -u` — naming
-  them explicitly in `git add <file>` triggers the hook and gets blocked
-- **Git commit messages**: Try `git commit -m` first. If the hook blocks the
-  message (false positive on keywords), fall back to writing the message to
-  `.claude/scratch/commit-msg.txt` using the Write tool, then
-  `git commit -F .claude/scratch/commit-msg.txt`. The Write tool's `content`
-  field is exempt from path/keyword scanning. The Bash tool `description` field
-  is also scanned — keep it generic (e.g. "Commit changes"). Delete any stale
-  file first (`rm -f .claude/scratch/commit-msg.txt`) — if it exists from a
-  prior session, Write fails ("File has not been read yet") but a batched
-  `git commit -F` still runs and consumes the old content, producing a commit
-  with the wrong message.
+If the hook blocks a `git commit -m` message, Write the message into your
+SESSION scratchpad (absolute path given in the system prompt), one file per
+commit — `<scratchpad>/commit-msg-<slug>.txt` — then
+`git commit -F <that path>`. What makes this work is that Write's `content` is
+scan-exempt and no hook rule covers the scratchpad; the specific path is
+otherwise incidental. Never use a shared fixed path like
+`.claude/scratch/commit-msg.txt`: `.claude/scratch/` is per-checkout, so
+concurrent sessions in one worktree overwrite each other, and the old `rm -f`
+remedy destroys another session's pending message. Worse, a stale file makes
+Write fail ("File has not been read yet") while a batched `git commit -F` still
+runs — committing the OTHER session's message. Keep the Bash `description`
+generic; it is scanned too.
 
 ## Scratch directory
 
-`.claude/scratch/` is gitignored and writable by all tools. Use it for temp
-files (commit messages, draft content) that would otherwise be blocked by hooks.
-
-## permissions.deny vs hooks
-
-`Bash(<pattern>)` deny rules match from the **start** of the command only. Hooks
-scan the full command string. For `op`, both are needed — do not remove one in
-favor of the other.
-
-## permissions.deny path prefixes
-
-Rules for project-root paths use `/` (e.g. `Edit(/.claude/hooks/**/*.sh)`).
-Rules for home-dir paths must use `~` (e.g.
-`Edit(~/.claude/shell-snapshots/**)`). Using `/` for a home-dir path silently
-fails — the rule never matches.
-
-Glob depth: `Edit(/.claude/skills/**)` may not match deeply nested paths. When
-an approval prompt appears despite an apparently-covering rule, accept it — the
-dialog auto-adds a narrower per-subdirectory rule that works.
-
-## Settings file integrity
-
-Hooks and `permissions.deny` rules are defined in `.claude/settings.json`
-(JSONC). If the parser rejects the file, **all settings are silently ignored** —
-no hooks fire, no deny rules apply. Claude Code does not log a warning.
-
-- Keep `settings.json` as clean JSONC — avoid large commented-out blocks
-- Validate after edits: the file must parse as valid JSONC
-- Symptoms of a broken file: hooks stop firing, deny rules stop blocking, no
-  error messages
-- Recovery: validate by running `bash tests/hooks/run_all.sh` (denials should
-  pass); if hooks still don't fire, restore `.claude/settings.json` from git.
-  Hooks resume on the next tool call after fix.
-
-## Regression tests
-
-```bash
-bash tests/hooks/run_all.sh
-```
-
-Individual suites are in `tests/hooks/test_*.sh`. Test files contain sensitive
-fixture strings (gitleaks ignores are required). The `expect_deny_exit0` helper
-in `helpers.sh` guards against the exit-code and stderr regressions described
-above.
-
-**Ad-hoc rule probing:** a Bash command that names `.claude/hooks/*.sh` is
-blocked (Rule 2), and trigger tokens placed in the command self-block. To test a
-rule, `Write` a harness into `.claude/scratch/` (Write `content` is exempt from
-scanning) that pipes fixtures into the hook by absolute path, then run
-`bash .claude/scratch/<name>.sh` (the command string carries no triggers).
-
-The same trick `cp`s or `diff`s the protected hooks (Bash can't name
-`.claude/hooks/*.sh`): put the hook paths inside the scratch script (snapshot a
-hook into scratch for patching, or `diff` scratch-vs-committed before hand-off)
-and run it by its scratch path.
-
-## Editing the hooks — recurring gotchas
-
-- **The CI `claude-review` bot recurringly reports a phantom unstaged
-  "working-tree revert"** of an edited hook (e.g. ` M check-sensitive.sh`, with
-  the new patterns "missing"). It's a CI-checkout artifact, not the PR — the
-  committed blob is correct. Confirm `git status` is clean and dismiss; do NOT
-  `git checkout` to "fix" a clean tree.
-- **trunk's shellcheck enables `SC2312` (masked-return) on pipelines**:
-  `echo`/`printf` are exempt, but `tr` / `base64` / `gunzip` / `jq` inside a
-  `$(...)` are flagged. Prefer bash parameter expansion (`${v,,}`, `${v//x/y}`,
-  `${v//$'\n'/ }`) over a `tr` subshell, or put a
-  `# trunk-ignore(shellcheck/SC2312)` on the line immediately before the
-  substitution. (Raw `shellcheck` won't show it; trunk's config does.)
+`.claude/scratch/` is gitignored and writable by all tools, but it is shared per
+checkout — every session working that checkout sees the same files. Use it only
+for temp files that must live IN the checkout, such as the hook-probe harnesses
+in `.claude/hooks/CLAUDE.md`, and give each a distinctive name. Everything else
+goes in the session scratchpad.

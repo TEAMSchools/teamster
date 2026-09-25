@@ -4,7 +4,6 @@ select
     school_id,
     syear,
     school_date,
-    minutes,
     block,
     fte_period,
     bell_schedule_id,
@@ -12,4 +11,6 @@ select
     uuid,
     created_at,
     updated_at,
+
+    cast(minutes as numeric) as minutes,
 from {{ source("focus", "attendance_calendar") }}

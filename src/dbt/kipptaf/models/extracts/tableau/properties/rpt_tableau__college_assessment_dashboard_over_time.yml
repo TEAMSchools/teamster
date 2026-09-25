@@ -1,83 +1,207 @@
 models:
   - name: rpt_tableau__college_assessment_dashboard_over_time
+    description: >-
+      Attempts and benchmark attainment by graduating class, across years. One
+      row per student per goal (test type, score type, metric), for every high
+      school student the network has enrolled, current and past, taken from
+      their most recent undergraduate enrollment row. Excludes out-of-district
+      students.
+
+
+      Goals come from the All Grades branch of
+      int_google_sheets__kippfwd__goals_unpivot. Scores are each student's
+      all-time best from int_assessments__all_college_assessments, official and
+      practice kept apart by test_type, with no rn_highest filter.
+
+
+      See docs/models/carat-dashboard-data-model.md.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - expected_test_type
+              - expected_score_type
+              - expected_metric_name
     columns:
       - name: region
+        description: >-
+          Region from the student's most recent undergraduate enrollment row.
         data_type: string
       - name: school
+        description: >-
+          School from the student's most recent undergraduate enrollment row.
         data_type: string
       - name: student_number
+        description: >-
+          PowerSchool student number.
         data_type: int64
       - name: enroll_status
+        description: >-
+          PowerSchool enrollment status code on that row; 0 is currently
+          enrolled.
         data_type: int64
       - name: iep_status
+        description: >-
+          Whether the student has an IEP.
         data_type: string
       - name: is_504
+        description: >-
+          Whether the student has a 504 plan.
         data_type: boolean
       - name: grad_iep_exempt_status_overall
+        description: >-
+          Whether the student is exempt from graduation testing requirements
+          because of an IEP.
         data_type: string
       - name: lep_status
+        description: >-
+          Whether the student is an English learner.
         data_type: boolean
       - name: ktc_cohort
+        description: >-
+          KIPP Through College cohort the student belongs to.
         data_type: int64
       - name: graduation_year
+        description: >-
+          Year the student is expected to graduate high school.
         data_type: int64
       - name: year_in_network
+        description: >-
+          Count of years the student has attended a network school.
         data_type: int64
       - name: college_match_gpa
+        description: >-
+          GPA used to match the student to colleges.
         data_type: numeric
       - name: college_match_gpa_bands
+        description: >-
+          Band the college match GPA falls into.
         data_type: string
       - name: expected_test_type
+        description: >-
+          Official or Practice, from the goal.
         data_type: string
       - name: expected_scope
+        description: >-
+          Test the goal applies to.
         data_type: string
       - name: expected_aligned_scope
+        description: >-
+          Test grouping the goal belongs to. ACT and SAT share ACT/SAT, which
+          met_min_score_int_overall_aligned_scope_subject spans.
         data_type: string
       - name: expected_score_type
+        description: >-
+          Score type the goal measures.
         data_type: string
       - name: expected_subject_area
+        description: >-
+          Subject area of the goal's score type.
         data_type: string
       - name: expected_aligned_subject_area
+        description: >-
+          Subject normalized across tests, with Total covering total and
+          composite scores.
         data_type: string
       - name: expected_aligned_subject
+        description: >-
+          Subject normalized across tests so ACT and SAT sections line up.
         data_type: string
       - name: expected_goal_type
+        description: >-
+          Attempts or Benchmark.
         data_type: string
       - name: expected_goal_subtype
+        description: >-
+          The metric — 1 Attempt, 2+ Attempts, HS Grad-Ready, or College-Ready.
         data_type: string
       - name: expected_metric_name
+        description: >-
+          Display label for the metric, such as SAT 1 Attempt or College-Ready.
         data_type: string
       - name: min_score
+        description: >-
+          The bar the metric is measured against — a count of sittings on
+          Attempts rows, a scale score on Benchmark rows.
         data_type: float64
       - name: pct_goal
+        description: >-
+          Share of students expected to meet the metric, as a 0-1 fraction, from
+          the All Grades branch of the goals model, which carries no grade.
         data_type: float64
       - name: test_type
+        description: >-
+          Official or Practice, from the student's matching results. Null when
+          the student has no result for the goal's score type.
         data_type: string
       - name: scope
+        description: >-
+          Test of the student's matching results. Null when there are none.
         data_type: string
       - name: score_type
+        description: >-
+          Score type of the student's matching results. Null when there are
+          none.
         data_type: string
       - name: subject_area
+        description: >-
+          Subject area of the student's matching results. Null when there are
+          none.
         data_type: string
       - name: aligned_subject_area
+        description: >-
+          Aligned subject area of the student's matching results. Null when
+          there are none.
         data_type: string
       - name: aligned_subject
+        description: >-
+          Aligned subject of the student's matching results. Null on practice
+          rows and when there are none.
         data_type: string
       - name: max_scale_score
+        description: >-
+          The student's highest scale score for the goal's test type and score
+          type, all-time. No rn_highest filter.
         data_type: numeric
       - name: strategy_case
+        description: >-
+          Label for the student's testing pattern from the hub, or No testing
+          history when the student has no result for the goal's score type.
         data_type: string
       - name: score
+        description: >-
+          The student's result for this metric — lifetime sitting count on an
+          Attempts row, highest scale score on a Benchmark row. Null when the
+          student never sat the test; there is no zero fallback.
         data_type: numeric
       - name: met_min_score_int
+        description: >-
+          1 when score is at or above min_score, else 0. A null score reads 0.
         data_type: int64
       - name: alt_met_min_score_int_overall_score_type
+        description: >-
+          1 if any of the student's rows for this test type, score type, and
+          metric meets the bar, reading 1 Attempt as exactly one sitting.
         data_type: int64
       - name: alt_met_min_score_int_overall_aligned_subject
+        description: >-
+          Same as alt_met_min_score_int_overall_score_type, taken over every
+          score type in the aligned subject.
         data_type: int64
       - name: met_min_score_int_overall_score_type
+        description: >-
+          Max of met_min_score_int over the student's rows for this test type,
+          score type, and metric.
         data_type: int64
       - name: met_min_score_int_overall_aligned_subject
+        description: >-
+          Max of met_min_score_int over the student's rows for this test type,
+          aligned subject, and metric.
         data_type: int64
       - name: met_min_score_int_overall_aligned_scope_subject
+        description: >-
+          Max of met_min_score_int over the student's rows for this test type,
+          aligned scope, aligned subject, and metric. Spans ACT and SAT, so one
+          SAT score can set it on an ACT row; count students, not rows.
         data_type: int64

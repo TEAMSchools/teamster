@@ -6,7 +6,11 @@ models:
       Paterson). Each row is one student-school enrollment event (entry into a
       school for an academic year, including re-enrollments). Replaces
       `base_powerschool__student_enrollments` as the canonical enrollment-grain
-      source for marts (#2541).
+      source for marts (#2541). Graduated students carry placeholder rows with
+      null entry and exit dates, one row per academic year per student and
+      district. Surrogate keys must include academic_year or those rows collide.
+      Retain them — downstream enrollment models and dim_student_enrollments are
+      alumni-inclusive by design.
     config:
       materialized: table
     data_tests:

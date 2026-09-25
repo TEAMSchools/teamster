@@ -1,7 +1,7 @@
 import json
 import re
 
-from dagster import AssetExecutionContext
+from dagster import AssetExecutionContext, RetryPolicy
 from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
 
 
@@ -13,6 +13,7 @@ def build_dbt_assets(
     partitions_def=None,
     name: str | None = None,
     op_tags: dict[str, object] | None = None,
+    retry_policy: RetryPolicy | None = None,
 ):
     sources = manifest["sources"]
 
@@ -24,6 +25,7 @@ def build_dbt_assets(
         partitions_def=partitions_def,
         dagster_dbt_translator=dagster_dbt_translator,
         op_tags=op_tags,
+        retry_policy=retry_policy,
     )
     def _assets(context: AssetExecutionContext, dbt_cli: DbtCliResource):
         # get upstream nodes for asset selection

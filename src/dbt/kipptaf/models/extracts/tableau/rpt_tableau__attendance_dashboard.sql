@@ -52,10 +52,13 @@ with
 
             coalesce(co.is_counseling_services, 0) as is_counseling_services,
             coalesce(co.is_student_athlete, 0) as is_student_athlete,
-        from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }} as ad
+        from {{ ref("int_students__attendance_daily") }} as ad
         inner join
             {{ ref("int_extracts__student_enrollments") }} as co
-            on ad.studentid = co.studentid
+            -- studentid is a PowerSchool-internal id, null for every
+            -- Focus-sourced (Miami) row -- student_number is populated on
+            -- both branches and network-wide.
+            on ad.student_number = co.student_number
             and ad.schoolid = co.schoolid
             and ad.calendardate between co.entrydate and co.exitdate
             and ad._dbt_source_project = co._dbt_source_project
@@ -109,7 +112,7 @@ select
     nj_overall_student_tier,
 
     avg(attendancevalue) over (
-        partition by studentid, academic_year order by calendardate
+        partition by student_number, academic_year order by calendardate
     ) as ada_running,
     avg(is_ontime) over (
         partition by student_number, academic_year order by calendardate

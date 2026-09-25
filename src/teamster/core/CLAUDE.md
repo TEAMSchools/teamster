@@ -7,35 +7,9 @@ integration-specific — it is the foundation all other modules build on.
 
 ### `resources.py`
 
-Shared resource instances and factory functions imported by every code
-location's `definitions.py`. Two categories:
-
-**Factories** (called with arguments per code location):
-
-- `get_io_manager_gcs_pickle(code_location)` → `GCSIOManager` (pickle, default
-  IO manager)
-- `get_io_manager_gcs_avro(code_location)` → `GCSIOManager` (Avro, used by
-  SFTP/API assets)
-- `get_io_manager_gcs_file(code_location)` → `GCSIOManager` (raw file, used by
-  paginated Deanslist)
-- `get_dbt_cli_resource(dbt_project)` → `DbtCliResource` (passes
-  `target="defer"` when `DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT == "1"`; otherwise
-  uses the shipped profile default, which is `prod`)
-- `get_powerschool_ssh_resource()` → `SSHResource` (reads from shared env vars)
-
-All IO manager factories redirect to `teamster-test` bucket when
-`DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT=1`.
-
-**Env var gotcha**: `DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT` is `"0"` (not absent)
-in full deployments — always check `== "1"`, never truthy.
-
-**Singletons** (shared across all code locations):
-
-- `BIGQUERY_RESOURCE`, `GCS_RESOURCE`, `DLT_RESOURCE`
-- `DEANSLIST_RESOURCE`, `OVERGRAD_RESOURCE`, `ZENDESK_RESOURCE`
-- `GOOGLE_DRIVE_RESOURCE`, `GOOGLE_FORMS_RESOURCE`
-- `SSH_COUCHDROP`, `SSH_EDPLAN`, `SSH_IREADY`, `SSH_RENLEARN`, `SSH_TITAN`,
-  `SSH_RESOURCE_AMPLIFY` — SFTP resources
+**Env var gotcha**: `DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT` (drives the IO
+managers' `teamster-test` redirect) is `"0"` (not absent) in full deployments —
+always check `== "1"`, never truthy.
 
 ### `io_managers/gcs.py` — `GCSIOManager`
 
@@ -80,17 +54,6 @@ Checks-tab visibility.
 deadline is outside the window. Set `deadline_cron` past the asset's typical
 arrival time, not before, or the check flaps FAIL→PASS every cycle.
 
-### `asset_checks.py`
-
-Two functions used by every SFTP/API asset factory:
-
-- `build_check_spec_avro_schema_valid(asset_key)` → `AssetCheckSpec` (declare
-  the check)
-- `check_avro_schema_valid(asset_key, records, schema)` → `AssetCheckResult`
-  (warn — not fail — if records contain fields not present in the Avro schema)
-
-All asset factories that yield Avro output call both of these.
-
 ### `automation_conditions.py`
 
 Four dbt-specific `AutomationCondition` builders, all sharing a common skeleton
@@ -100,9 +63,11 @@ via `_build_dbt_condition()`:
   `newly_missing`, `code_version_changed`, or `execution_failed`. Intentionally
   omits `any_deps_updated` since views are computed on read.
 - `dbt_union_relations_automation_condition()` — for views using the
-  `union_relations` macro: adds recursive ancestor `code_version_changed`
-  detection (but NOT `any_deps_updated`) to the view condition. Triggers only on
-  code deploys that change upstream model definitions, not on data refreshes.
+  `union_relations` macro: adds one trigger to the view condition, firing on the
+  tick a parent's post-code-change materialization lands (parent's own code or
+  any ancestor's; looks through view parents). Not on the deploy tick, and not
+  on data refreshes (no `any_deps_updated`). The trigger resets only on
+  `newly_requested`, so a stale in-flight run cannot consume it.
 - `dbt_cron_automation_condition(cron_schedule, cron_timezone)` — for expensive
   TABLE models whose consumers refresh on a schedule: replaces the
   ancestor-updated trigger with `cron_tick_passed`. NOT stock `on_cron()` (its
@@ -126,15 +91,14 @@ deploy rollover, the materialization may be stamped with the new deployment's
 code version. `code_version_changed()` returns false permanently — manual
 materialization is the only fix. See dagster-io/dagster#33708.
 
-**`union_relations` wrapper can freeze on a deploy race** (#4290): its condition
-fires on ancestor `code_version_changed`, not `any_deps_updated`. If the wrapper
-materializes at deploy BEFORE its (often cross-code-location) upstream table
-rebuilds with a new schema, `.since(newly_updated)` consumes the trigger and the
-wrapper stays compiled against the OLD column set — downstream reads then fail
-`... failed to parse view` at query time and it does NOT self-heal.
+**`union_relations` wrapper can still freeze in two edge cases** (#4290): a
+parent that reloads and finishes rebuilding within one sensor tick, or a parent
+table that does a data rebuild before its changed ancestor rebuilds. Symptom:
+downstream reads fail `... failed to parse view` and it does NOT self-heal.
 Rematerialize the wrapper + its consumers via `launch_run`. Diagnose by
 comparing the wrapper's stored `input_data_version/<upstream>` materialization
-tag to the upstream's current `data_version`.
+tag to the upstream's current `data_version`. `code_version_changed()` is true
+for exactly one tick (cursor compare), so never build a gate on it alone.
 
 **No dep-code-version gate**: `_build_dbt_condition()` does NOT block
 materialization when a direct dep has
@@ -152,26 +116,3 @@ nodes.
 **Dep fan-out rule**: An unpartitioned dep of a partitioned asset fans out to
 ALL partitions on every materialization. To preserve per-partition triggering,
 the dep must itself be partitioned with the same `PartitionsDefinition`.
-
-### `utils/classes.py`
-
-- `FiscalYear(datetime, start_month)` — computes `.fiscal_year` (int), `.start`
-  (date), `.end` (date). Used throughout for July-based fiscal year
-  calculations.
-- `FiscalYearPartitionsDefinition` — `TimeWindowPartitionsDefinition` subclass
-  with `cron_schedule="0 0 {start_day} {start_month} *"`.
-- `CustomJSONEncoder` — JSON encoder that handles `timedelta`, `Decimal`,
-  `bytes`, `datetime`, and `date` types.
-
-### `utils/functions.py`
-
-- `file_to_records(file_path, ...)` / `csv_string_to_records(csv_string, ...)` —
-  read CSV into `list[dict]`, slugifying column names by default (spaces/special
-  chars → underscores). Empty strings become `None`. Adds `source_file_name`
-  when reading from a file path.
-- `regex_pattern_replace(pattern, replacements)` — replaces `(?P<name>...)`
-  regex named groups with values from a dict. Core of SFTP partition key
-  substitution.
-- `parse_partition_key(partition_key)` / `get_partition_key_path(...)` —
-  converts a partition key string to a Hive-style GCS path segment list.
-- `chunk(obj, size)` — yields successive list slices.
