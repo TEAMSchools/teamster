@@ -15,14 +15,13 @@
       "Edit(/.claude/scratch/**)",
       "Edit(/.claude/skills/dagster-day2/**)",
       "Edit(/.worktrees/**)",
-      "mcp__bigquery__analyze_contribution",
-      "mcp__bigquery__execute_sql",
-      "mcp__bigquery__forecast",
-      "mcp__bigquery__get_dataset_info",
-      "mcp__bigquery__get_table_info",
-      "mcp__bigquery__list_dataset_ids",
-      "mcp__bigquery__list_table_ids",
-      "mcp__bigquery__search_catalog",
+      "mcp__claude_ai_Cube__meta",
+      "mcp__claude_ai_Google_Cloud_BigQuery__execute_sql_readonly",
+      "mcp__claude_ai_Google_Cloud_BigQuery__get_dataset_info",
+      "mcp__claude_ai_Google_Cloud_BigQuery__get_query_results",
+      "mcp__claude_ai_Google_Cloud_BigQuery__get_table_info",
+      "mcp__claude_ai_Google_Cloud_BigQuery__list_dataset_ids",
+      "mcp__claude_ai_Google_Cloud_BigQuery__list_table_ids",
       "mcp__claude_ai_Cube__meta",
       "mcp__context7__query-docs",
       "mcp__context7__resolve-library-id",
@@ -145,6 +144,7 @@
       "Read(//home/vscode/.ssh/**)",
       "Read(//proc/**)",
       "Read(/env/**)",
+      "mcp__claude_ai_Google_Cloud_BigQuery__execute_sql",
       "mcp__dagster__get_asset_health",
       "mcp__dagster__get_run_group",
       "mcp__dagster__get_run",
@@ -160,7 +160,7 @@
       "mcp__github__merge_pull_request"
     ]
   },
-  "enabledMcpjsonServers": ["dagster", "dagster-plus", "bigquery", "dbt"],
+  "enabledMcpjsonServers": ["dagster", "dagster-plus", "dbt"],
   "hooks": {
     "SessionStart": [
       {
