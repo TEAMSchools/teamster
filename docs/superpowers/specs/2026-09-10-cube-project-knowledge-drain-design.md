@@ -183,10 +183,11 @@ still says "overall, strand, standard. Null for state". On `response_type_code`,
 dbt states which rows carry the code and Cube says only "Null for state". The
 model reads the stale copy.
 
-This spec edits the Cube strings only. `ai_context` has no dbt equivalent and
-none is added. Whether PR 1 also corrects a dbt description it finds wrong is an
-open question for review; copying Cube text into dbt wholesale is not proposed,
-because two copies drift the way these two already have.
+The rule: when a PR changes the `description:` of a Cube member that reads one
+column directly (`sql: <column>`), it sets that column's dbt `description:` to
+the same text in the same PR. Measures, view text and `ai_context` have no dbt
+column to match, so they are Cube-only. PR 1's schema test asserts that each
+pair is equal, so a later edit to one side fails the test instead of drifting.
 
 ## Placement map
 
@@ -720,14 +721,14 @@ rather than inlined in the scorer's main loop.
 
 ## PR sequence and validation
 
-| PR  | Scope                                                                                             | Validation                                                                                                                                                 |
-| --- | ------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | YAML descriptions, `ai_context` values, the `cube-authoring.md` rule, reference trim, schema test | `uv run pytest tests/cube/`; Cube Cloud branch staging validates the model                                                                                 |
-| 2   | `load` and `meta` docstrings, eval family 4, pre-drain fixture                                    | `uv run pytest tests/cube/`; eval run, arm B beats arm A                                                                                                   |
-| 3   | `partition_by` on `fct_assessment_scores_enrollment_scoped`                                       | `uv run dbt build --select fct_assessment_scores_enrollment_scoped+`; row counts before and after; dry-run bytes on a date-filtered query before and after |
-| 4   | C2: canonical standard code                                                                       | dbt build; pre-agg partition count unchanged on branch staging                                                                                             |
-| 5   | C3: `count_assessments`                                                                           | `uv run pytest tests/cube/`; branch staging query returns quartile-shaped counts                                                                           |
-| 6   | C4: `assessment_family`                                                                           | `uv run dbt build --select dim_assessments+`; eval rerun                                                                                                   |
+| PR  | Scope                                                                                                                 | Validation                                                                                                                                                 |
+| --- | --------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | YAML descriptions and their dbt twins, `ai_context` values, the `cube-authoring.md` rule, reference trim, schema test | `uv run pytest tests/cube/`; Cube Cloud branch staging validates the model                                                                                 |
+| 2   | `load` and `meta` docstrings, eval family 4, pre-drain fixture                                                        | `uv run pytest tests/cube/`; eval run, arm B beats arm A                                                                                                   |
+| 3   | `partition_by` on `fct_assessment_scores_enrollment_scoped`                                                           | `uv run dbt build --select fct_assessment_scores_enrollment_scoped+`; row counts before and after; dry-run bytes on a date-filtered query before and after |
+| 4   | C2: canonical standard code                                                                                           | dbt build; pre-agg partition count unchanged on branch staging                                                                                             |
+| 5   | C3: `count_assessments`                                                                                               | `uv run pytest tests/cube/`; branch staging query returns quartile-shaped counts                                                                           |
+| 6   | C4: `assessment_family`                                                                                               | `uv run dbt build --select dim_assessments+`; eval rerun                                                                                                   |
 
 Each PR body carries the markdown lines it deleted, so a reviewer can see the
 fact and its new wording side by side.
