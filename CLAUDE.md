@@ -62,6 +62,10 @@ specifics live there.
   `git worktree add`. Base other than `main` skips both `claude-review` and dbt
   Cloud CI; only Trunk runs (see `pr-ci-review`). Unset the upstream right
   after, per `.claude/rules/worktrees.md`.
+- After any `git worktree add`, enter it with `EnterWorktree` `path=<abs-path>`.
+  Never `EnterWorktree` `name`: it creates its own branch in
+  `.claude/worktrees/`, with no issue link, where `.claude/rules/worktrees.md`
+  does not load.
 - Linking an existing remote branch to an issue: `mcp__github__create_branch`
   and GraphQL `createLinkedBranch` both no-op. Deleting the remote branch is
   classifier-blocked even with consent. Create the branch under a NEW name and
@@ -198,11 +202,11 @@ cells are not.
   including inside `superpowers:brainstorming` ("Write design doc"),
   `superpowers:writing-plans` ("Save plans to:"), and
   `superpowers:using-git-worktrees`. Pause the skill, run the flow, then write
-  the spec or plan on the new branch. `using-git-worktrees` prefers a native
-  tool such as `EnterWorktree`; do not use it, since it places the worktree
-  outside `.worktrees/`. After committing a spec, push it and comment its branch
-  URL (`.../blob/<branch>/docs/superpowers/specs/...`, never a commit SHA) on
-  the issue — `superpowers:brainstorming` stops at commit, and Phase 2 step 5 of
+  the spec or plan on the new branch. The native tool `using-git-worktrees` asks
+  for is `EnterWorktree` `path`, after _Branches_ creates the worktree. After
+  committing a spec, push it and comment its branch URL
+  (`.../blob/<branch>/docs/superpowers/specs/...`, never a commit SHA) on the
+  issue — `superpowers:brainstorming` stops at commit, and Phase 2 step 5 of
   `docs/guides/superpowers.md` never loads into context.
 - "The project's suite" (TDD, `finishing-a-development-branch`,
   `using-git-worktrees` baseline) means `uv run pytest <touched tests>` plus
