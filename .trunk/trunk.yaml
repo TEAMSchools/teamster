@@ -8,7 +8,7 @@ plugins:
       uri: https://github.com/trunk-io/plugins
 lint:
   enabled:
-    - pinact@5.0.0
+    - pinact@4.1.1
     - bandit@1.9.4
     - actionlint@1.7.12
     - git-diff-check
