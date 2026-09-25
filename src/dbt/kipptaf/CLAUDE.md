@@ -390,8 +390,9 @@ touching both a district model and a kipptaf consumer:
 1. Add `target=staging` branch to affected `sources-kipp*.yml` (routes to
    `zz_stg_<district>_<source>`).
 2. From each affected district project, run broad clone (no `--select`):
-   `uv --directory <worktree> run dbt clone --target staging --state target/prod`
-   to seed `zz_stg_<district>_*` from prod.
+   `uv run dbt clone --project-dir <worktree>/src/dbt/<district> --target staging --state /workspaces/teamster/src/dbt/<district>/target/prod`
+   to seed `zz_stg_<district>_*` from prod. The state path is absolute: a
+   worktree has no `target/prod/` (see `dbt-local-dev`).
 3. Push; CI reads staged regional via the schema branch.
 
 `dbt clone` only seeds upstreams UNCHANGED in this PR (it copies prod schema).
