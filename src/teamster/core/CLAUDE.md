@@ -7,11 +7,9 @@ integration-specific — it is the foundation all other modules build on.
 
 ### `resources.py`
 
-All IO manager factories redirect to `teamster-test` bucket when
-`DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT=1`.
-
-**Env var gotcha**: `DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT` is `"0"` (not absent)
-in full deployments — always check `== "1"`, never truthy.
+**Env var gotcha**: `DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT` (drives the IO
+managers' `teamster-test` redirect) is `"0"` (not absent) in full deployments —
+always check `== "1"`, never truthy.
 
 ### `io_managers/gcs.py` — `GCSIOManager`
 

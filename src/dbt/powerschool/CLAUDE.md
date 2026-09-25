@@ -26,30 +26,10 @@ by default (every consuming district ingests PowerSchool via dlt); `odbc` and
 `sftp` default off. A district only overrides these flags to disable specific
 `dlt` tables it does not populate (e.g. `kipppaterson`).
 
-## Key Variables
-
-| Variable                            | Default | Notes                                          |
-| ----------------------------------- | ------- | ---------------------------------------------- |
-| `current_academic_year`             | `0`     | Overridden per district project                |
-| `local_timezone`                    | `UTC`   | Overridden per district project                |
-| `bigquery_external_connection_name` | `null`  | Set to BigLake connection in district projects |
-
-## Cross-Project Usage
-
-This project is never run standalone in production. District-specific projects
-reference it as a dbt package and override variables and enabled flags. When a
-district project runs, it resolves `ref('stg_powerschool__*')` models from this
-project.
-
-The `odbc/` / `sftp/` / `dlt/` split exists because districts pull PowerSchool
-via a live Oracle ODBC tunnel, SFTP file drops, or dlt (Oracle over an SSH
-tunnel → BigQuery). Only one variant is enabled per district.
-
 ## dlt staging variant (#3807)
 
-`kipppaterson` ingests PowerSchool via dlt; `staging/dlt/` is the template for
-migrating the ODBC districts. A dlt model = its **odbc** sibling minus the
-struct-unwrap: dlt lands raw Oracle scalars, so drop the
+A dlt model = its archived **odbc** sibling minus the struct-unwrap: dlt lands
+raw Oracle scalars, so drop the
 `.int_value`/`.double_value`/`coalesce(... .bytes_decimal_value ...)` accessors,
 the `_file_name`-snapshot `dbt_utils.deduplicate` (native table, no file dupes)
 — but KEEP a business-grain dedup the odbc model already had (e.g.

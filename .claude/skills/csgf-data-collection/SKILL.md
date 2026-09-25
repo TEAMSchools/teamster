@@ -130,11 +130,8 @@ this skill covers the manual/ownership side only.
   CSGF actually requires** (Portal / HSDC Sheet) -- it's a convenience/backup
   location, not a submission channel.
 - ["CSGF Data" Google Sheet](https://docs.google.com/spreadsheets/d/1rbPI03qTMMv3NVC1_1rjodBq3Cd8mktd5Fwosy2AxuM/edit)
-  -- where all eight `rpt_gsheets__csgf_*` dbt models land, one tab per model.
-  This is KTAF's internal staging sheet, not CSGF's own HSDC workbook -- see
-  "How the dbt models actually reach CSGF" below for how data moves from here
-  into CSGF's actual systems. Several tabs carry real student-level rows -- same
-  PII caution as the HSDC workbook.
+  -- where all eight `rpt_gsheets__csgf_*` dbt models land; see "How the dbt
+  models actually reach CSGF" below (including its PII caution).
 
 **CSGF-provided:**
 
@@ -344,12 +341,6 @@ Plans first" instruction).
   - Review CSGF's own "Field Definitions" link inside the task for anything
     field-specific not covered here.
 
-**Lesson: a walkthrough video is a generic/dated overview; the task's own
-in-portal instructions are the live, specific source.** When the two disagree,
-trust the task text open in front of you, not what a linked video said it would
-say. Don't assume a video accurately describes current-cycle behavior just
-because it's linked from this cycle's Portal User Guide.
-
 **Working a real missing-school case (2026-2027 cycle: KIPP Legacy Elementary,
 KIPP Legacy Middle, KIPP Miami Technical High)**: full export/import mechanics,
 what actually worked, and every field-name/formatting gotcha hit along the way
@@ -455,17 +446,11 @@ guide itself for anything not covered there.
 
 ## Reference: High School Data Collection (HSDC) mechanics
 
-HSDC is a **separate submission** from the main Portal collection, gated on
-signing that cycle's Data Sharing Agreement (DSA), covering every high school
-student who completed the prior school year at a KTAF high school ("HSDC looks
-back one year" -- CSGF's own wording). Full detail -- the elements split across
-Google Sheet vs. Portal, which tabs are front-loadable before the Oct 1 count
-day, and working-the-Sheet mechanics (GPA cells, the Data to Review tab, PII
-caution) -- is in
-[`references/hsdc-mechanics.md`](references/hsdc-mechanics.md). This is also the
-CSGF-sourced explanation for the year-anchoring inconsistency across the
-`rpt_gsheets__csgf_*` models that
-[issue #4897](https://github.com/TEAMSchools/teamster/issues/4897) flags.
+HSDC is a separate, DSA-gated submission that looks back one year. Read
+[`references/hsdc-mechanics.md`](references/hsdc-mechanics.md) before any HSDC
+work: Sheet vs. Portal split, front-loadable tabs, GPA cells, PII caution, and
+the year-anchoring behind
+[issue #4897](https://github.com/TEAMSchools/teamster/issues/4897).
 
 ---
 
@@ -542,14 +527,9 @@ to cycle -- don't assume last year's method still applies:**
 
 ## Ad hoc CSGF surveys outside the Portal/HSDC
 
-Not everything CSGF asks for comes through the Portal or the HSDC sheet. CSGF's
-Analytics team (`datacollection@chartergrowthfund.org`) can also send a one-off
-email with a short Google Form survey, separate from the main collection, with
-its own deadline tied to the same cycle. Treat one of these the same way as any
-other CSGF item -- verify against real data, don't guess. A full worked example
-(the 2026-2027 Florida B.E.S.T. Algebra 1 survey, including which historical
-Miami data source to use and a wrong-turn that's worth not repeating) is in
-[`references/ad-hoc-surveys.md`](references/ad-hoc-surveys.md).
+For a one-off CSGF Google Form survey sent by email, read
+[`references/ad-hoc-surveys.md`](references/ad-hoc-surveys.md) (includes the
+2026-2027 Florida B.E.S.T. Algebra 1 worked example).
 
 ## Open questions for this skill (not yet answered)
 

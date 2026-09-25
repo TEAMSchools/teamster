@@ -1267,11 +1267,10 @@ Work outward from the student, stopping at the first layer with zero rows.
   spanning score types, so one restored SAT score also flips that student's
   `act_composite` row inside the same ACT/SAT-and-Total partition. 13 students
   read as 26 moved rows. Count distinct students, never rows.
-- **`__TABLES__.row_count` is unreliable and reads 0 for views.** Confirm with
-  `count(*)`.
-- **The BigQuery MCP service account cannot read Google Sheets externals** (no
-  Drive scope). Query the materialized `stg_*` table, never the `src_*`
-  external.
+- **The BigQuery MCP cannot read Google Sheets externals** (no Drive scope), and
+  the prod `stg_*` table is frozen at the last build. Query the `src_*` external
+  live through ADC with `uv run python`, per
+  `.claude/context/claude_ai_Google_Cloud_BigQuery.md`.
 - **`rg -ril <pattern>` silently mangles output** — `-r` consumes `il` as a
   replacement string. Use plain `grep`.
 - **`WHERE` runs before window functions.** Section rows borrow their score from
@@ -1287,14 +1286,10 @@ Work outward from the student, stopping at the first layer with zero rows.
   SY26-27 SAT assessments, null on the PSATs — is never read. Every predicate
   selecting a test keys on `scope`; keying on `test_type` matches nothing and
   fails silently.
-- **`grouping` is a BigQuery reserved word** (`GROUPING SETS`). Aliasing the
-  scaffold's `expected_grouping` to `grouping` needs backticks.
-- **Two defects are now FIXED** — do not re-flag them from older notes.
-  `course_discipline` no longer reads `NA` on math rows (it comes from the
-  scaffold, and Math is `MATH`, Science `SCI`), and composite rows are no longer
-  duplicated (the composite is built with `group by`, so ACT is 1:1 at 379 rows
-  where production had 1,094). Both changes are documented in the reference
-  doc's impact section.
+- `course_discipline` comes from the scaffold (Math is `MATH`, Science `SCI`),
+  and the composite is built with `group by`, so ACT composite rows are 1:1 (379
+  rows). Older notes flag `NA` math rows and duplicated composites (1,094 rows);
+  both are resolved, per the reference doc's impact section.
 - **AY2023 grade 9-10 SAT is excluded on purpose — do not re-add it.** KIPP
   Forward ruled those administrations invalid (grades 9-10 should have sat PSAT,
   not a full SAT form). The exclusion lives in the scaffold sheet: all three

@@ -89,6 +89,22 @@ while read -r asana_url; do
 	combined=${combined//"${cursor}"/}
 done <<<"${asana_urls}"
 
+# Google Drive pagination cursors: search_files returns nextPageToken, an opaque
+# ~!!~-prefixed token (590-790 chars) with no separator break, so the entropy
+# heuristic below redacted every multi-page result. Exempt a token only in
+# Google Drive MCP output, only as a "nextPageToken" value, and only in the ~!!~
+# shape, then delete that exact token from the corpus. Runs before the decode
+# pass for the same reason as the Asana cursor above.
+if [[ ${tool_name} == mcp__claude_ai_google_drive__* ]]; then
+	drive_re='"nextPageToken"[[:space:]]*:[[:space:]]*"(~!!~[A-Za-z0-9_=!~-]{16,})"'
+	drive_rest=${combined}
+	while [[ ${drive_rest} =~ ${drive_re} ]]; do
+		drive_token=${BASH_REMATCH[1]}
+		combined=${combined//"${drive_token}"/}
+		drive_rest=${drive_rest#*"${drive_token}"}
+	done
+fi
+
 # Decode candidate blobs and re-scan (catches encoded secrets). Two explicit
 # passes — standard base64 and url-safe base64 (#16) — so path separators aren't
 # conflated with the alphabet. Floor 24 covers real token formats (128-bit key =

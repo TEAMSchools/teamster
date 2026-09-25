@@ -191,7 +191,6 @@ with
             `subject` as raw_subject,
             test_round as administration_period,
             completion_date as test_date,
-            `start_date`,
             _dbt_source_project,
 
             overall_relative_placement as proficiency_level,
@@ -212,6 +211,7 @@ with
             overall_scale_score is not null
             and _dbt_source_project is not null
             and completion_date is not null
+            and rn_subj_day = 1
     ),
 
     -- Domain-level rows. module_code stays the subject, same FK-resolution
@@ -225,7 +225,6 @@ with
             `subject` as raw_subject,
             test_round as administration_period,
             completion_date as test_date,
-            `start_date`,
             _dbt_source_project,
 
             relative_placement as proficiency_level,
@@ -252,9 +251,10 @@ with
             and _dbt_source_project is not null
             and relative_placement != 'Not Assessed'
             and domain_name != 'comprehension_overall'
+            and rn_subj_day = 1
     ),
 
-    iready_all_raw as (
+    iready_scores as (
         select
             student_number,
             academic_year,
@@ -263,7 +263,6 @@ with
             source_system,
             administration_period,
             test_date,
-            `start_date`,
             _dbt_source_project,
             proficiency_level,
             score_source,
@@ -285,7 +284,6 @@ with
             source_system,
             administration_period,
             test_date,
-            `start_date`,
             _dbt_source_project,
             proficiency_level,
             score_source,
@@ -296,83 +294,6 @@ with
             response_type_code,
             response_type_description,
         from iready_domain_scores_raw
-    ),
-
-    -- TODO(#4387): stg_iready__diagnostic_results has no uniqueness test;
-    -- same-day retests and fiscal-year re-pull duplicates exist upstream.
-    -- partition_by includes response_type_code because domain rows share
-    -- module_code with the subject-level anchor -- without it every domain row
-    -- and its anchor collapse into one row, silently.
-    -- partition_by deliberately omits academic_year: a physical test pulled
-    -- under two fiscal-year partitions has the same test_date but a differing
-    -- pull-derived academic_year, so keying on academic_year would keep both
-    -- rows -- they then double-count once academic_year is resolved from the
-    -- test date (#4546). A date belongs to exactly one academic year, so
-    -- collapsing on test_date (sans academic_year) only ever merges re-pulls,
-    -- never distinct sittings. academic_year desc makes the survivor
-    -- deterministic. Remove this dedupe when staging is fixed.
-    -- #5252 measured this site at 273,791 input rows and left it on
-    -- dbt_utils.deduplicate as below the ~1M ranked-column threshold. The
-    -- domain union above changes that. Re-measured against prod 2026-09-16:
-    -- 1,561,075 input rows (274,013 anchor + 1,287,062 domain), with the model
-    -- at 13.62 slot hours over the trailing 7 days. Both gate conditions in
-    -- .claude/rules/dbt-sql.md hold, so this site takes the ranked-column form.
-    -- The window reads the whole union rather than each branch, or the tie-break
-    -- ranks per branch and an anchor row can survive alongside its own domain.
-    iready_all_raw_ranked as (
-        select
-            student_number,
-            academic_year,
-            module_code,
-            raw_subject,
-            source_system,
-            administration_period,
-            test_date,
-            `start_date`,
-            _dbt_source_project,
-            proficiency_level,
-            score_source,
-            scale_score,
-            national_percentile,
-            is_mastery,
-            response_type,
-            response_type_code,
-            response_type_description,
-
-            row_number() over (
-                partition by
-                    _dbt_source_project,
-                    student_number,
-                    administration_period,
-                    module_code,
-                    response_type_code,
-                    test_date
-                order by `start_date` desc, scale_score desc, academic_year desc
-            ) as rn,
-        from iready_all_raw
-    ),
-
-    iready_scores as (
-        select
-            student_number,
-            academic_year,
-            module_code,
-            raw_subject,
-            source_system,
-            administration_period,
-            test_date,
-            `start_date`,
-            _dbt_source_project,
-            proficiency_level,
-            score_source,
-            scale_score,
-            national_percentile,
-            is_mastery,
-            response_type,
-            response_type_code,
-            response_type_description,
-        from iready_all_raw_ranked
-        where rn = 1
     ),
 
     star_scores_raw as (

@@ -76,10 +76,10 @@ check_output "Glob normal paths" clean Glob "/src/a.py\n/src/b.py"
 echo ""
 echo -e "${YELLOW}PostToolUse: MCP tool output scanning${NC}"
 
-check_output "MCP tool with op://" deny "mcp__bigquery__execute_sql" "op://vault/item/field"
+check_output "MCP tool with op://" deny "mcp__claude_ai_Google_Cloud_BigQuery__execute_sql_readonly" "op://vault/item/field"
 # trunk-ignore(gitleaks/private-key): synthetic fixture, not a real key
 check_output "MCP tool with private key" deny "mcp__dagster__get_run" "-----BEGIN RSA PRIVATE KEY-----"
-check_output "MCP tool clean output" clean "mcp__bigquery__execute_sql" "rows_affected: 42"
+check_output "MCP tool clean output" clean "mcp__claude_ai_Google_Cloud_BigQuery__execute_sql_readonly" "rows_affected: 42"
 
 # ─── High-entropy string boundary (120 chars) ────────────────────────────────
 echo ""
@@ -274,6 +274,28 @@ check_output "JWT offset= on app.asana.com outside /api/ is redacted" deny \
 	"https://app.asana.com/0/123?offset=${cursor}"
 check_output "different opaque blob beside a valid cursor is redacted" deny mcp__asana__get_tasks \
 	"$(asana_page "${cursor}" "${opaque//a/c}")"
+# trunk-ignore-end(shellcheck/SC2312)
+
+echo ""
+echo -e "${YELLOW}PostToolUse: Google Drive nextPageToken exemption${NC}"
+# Drive search_files returns an opaque ~!!~-prefixed nextPageToken (590-790
+# chars). It is exempt only in Drive MCP output, as a nextPageToken value.
+# trunk-ignore-begin(shellcheck/SC2312)
+drive_tool=mcp__claude_ai_Google_Drive__search_files
+drive_token="~!!~$(printf 'AA9xZ3qLbT7wKp2R%.0s' {1..40})"
+drive_blob=$(printf 'aB3xZ9qL%.0s' {1..20})
+drive_page() { # $1 token, $2 title
+	jq -cn --arg t "$1" --arg n "${2:-Notes}" \
+		'{files:[{id:"1abcDEFghiJKLmnoPQRstuVWXyz0123456789abcd", title:$n}], nextPageToken:$t}'
+}
+check_output "Drive search_files nextPageToken is clean" clean "${drive_tool}" \
+	"$(drive_page "${drive_token}")"
+check_output "Drive token under a non-Drive tool is redacted" deny mcp__x__y \
+	"$(drive_page "${drive_token}")"
+check_output "Drive token without the ~!!~ prefix is redacted" deny "${drive_tool}" \
+	"$(drive_page "${drive_token#'~!!~'}")"
+check_output "opaque blob beside a valid Drive token is redacted" deny "${drive_tool}" \
+	"$(drive_page "${drive_token}" "${drive_blob}")"
 # trunk-ignore-end(shellcheck/SC2312)
 
 print_summary "Output Scanner"

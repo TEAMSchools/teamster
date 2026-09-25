@@ -13,8 +13,7 @@ present it as fact.
 2. If the reference doc is silent, check git history yourself before answering:
    `git log -S'<column or literal>' -- <path>` to find the introducing commit,
    then read its message and diff. Check the PR that introduced it
-   (`gh pr list --search` / `mcp__github__search_pull_requests`) for comment
-   discussion.
+   (`mcp__github__search_pull_requests`) for comment discussion.
 3. Report what you find precisely — a commit message describing _what_ the code
    does is not the same as a business _why_. If you only find the mechanical
    description, say so plainly rather than inferring a rationale from what the

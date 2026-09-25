@@ -1,3 +1,54 @@
+with
+    -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
+    stint_weeks as (
+        select
+            co._dbt_source_project,
+            co.student_number,
+            co.academic_year,
+            co.entrydate,
+
+            cw.week_start_monday,
+            cw.week_end_sunday,
+            cw.quarter,
+            cw.semester,
+            cw.school_week_start_date,
+            cw.school_week_end_date,
+            cw.week_number_academic_year,
+            cw.week_number_quarter,
+            cw.is_current_week_mon_sun,
+            cw.date_count,
+
+            if(
+                cw.week_start_monday between co.entrydate and co.last_enrolled_date,
+                true,
+                false
+            ) as is_enrolled_week,
+
+            if(
+                cw.week_end_sunday between co.entrydate and co.last_enrolled_date,
+                true,
+                false
+            ) as is_enrolled_week_end,
+        from {{ ref("int_extracts__student_enrollments") }} as co
+        inner join
+            {{ ref("int_students__calendar_week") }} as cw
+            on co.academic_year = cw.academic_year
+            and co.schoolid = cw.schoolid
+            and co._dbt_source_project = cw._dbt_source_project
+            and co.entrydate <= cw.school_week_end_date
+            and co.last_enrolled_date >= cw.school_week_start_date
+    ),
+
+    stint_weeks_deduplicated as (
+        {{
+            dbt_utils.deduplicate(
+                relation="stint_weeks",
+                partition_by="student_number, academic_year, week_start_monday",
+                order_by="is_enrolled_week desc, entrydate desc",
+            )
+        }}
+    )
+
 select
     co._dbt_source_relation,
     co.studentid,
@@ -8,6 +59,7 @@ select
     co.schoolid,
     co.entrydate,
     co.exitdate,
+    co.last_enrolled_date,
     co.entrycode,
     co.exitcode,
     co.exitcomment,
@@ -296,29 +348,22 @@ select
     co.mtss_enrollment,
     co._dbt_source_project,
 
-    cw.week_start_monday,
-    cw.week_end_sunday,
-    cw.quarter,
-    cw.semester,
-    cw.school_week_start_date,
-    cw.school_week_end_date,
-    cw.week_number_academic_year,
-    cw.week_number_quarter,
-    cw.is_current_week_mon_sun,
-    cw.date_count,
-
-    if(
-        cw.week_start_monday between co.entrydate and co.exitdate, true, false
-    ) as is_enrolled_week,
-
-    if(
-        cw.week_end_sunday between co.entrydate and co.exitdate, true, false
-    ) as is_enrolled_week_end,
+    sw.week_start_monday,
+    sw.week_end_sunday,
+    sw.quarter,
+    sw.semester,
+    sw.school_week_start_date,
+    sw.school_week_end_date,
+    sw.week_number_academic_year,
+    sw.week_number_quarter,
+    sw.is_current_week_mon_sun,
+    sw.date_count,
+    sw.is_enrolled_week,
+    sw.is_enrolled_week_end,
 from {{ ref("int_extracts__student_enrollments_subjects") }} as co
 inner join
-    {{ ref("int_students__calendar_week") }} as cw
-    on co.academic_year = cw.academic_year
-    and co.schoolid = cw.schoolid
-    and co._dbt_source_project = cw._dbt_source_project
-    and co.entrydate <= cw.school_week_end_date
-    and co.exitdate >= cw.school_week_start_date
+    stint_weeks_deduplicated as sw
+    on co._dbt_source_project = sw._dbt_source_project
+    and co.student_number = sw.student_number
+    and co.academic_year = sw.academic_year
+    and co.entrydate = sw.entrydate
