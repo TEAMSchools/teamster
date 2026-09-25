@@ -5,61 +5,11 @@ guides, and infrastructure patterns — plus `launch/`, the staff tool catalog a
 the build that renders it into a page. Analyst documentation lives in dbt YAML
 (properties files + exposures), not here.
 
-## Structure
-
-```text
-docs/
-  README.md                # Site homepage (nav/TOC hidden via hooks.py)
-  CONTRIBUTING.md          # Development workflow and PR guidelines
-  hooks.py                 # MkDocs hooks: hides nav/TOC on homepage, and
-                            # generates launch/index.html from launch/
-  launch/                  # Staff tool catalog — source data + build, not docs
-    links.yml              # The catalog: every tool, status, group, etc.
-    groups.yml              # Topical groups, families, promo cards, threshold
-    build.py               # load -> select -> validate -> render
-    template.html           # The published page's shell
-    README.md              # This directory + state of the catalog
-    RUNBOOK.md              # Verification task sequence
-    PROJECT.md              # Why this exists, where it stands
-  reference/               # Architectural patterns and operational guides
-    architecture.md
-    adding-an-integration.md
-    io-managers.md
-    fiscal-year-partitioning.md
-    dbt-conventions.md
-    finalsite-focus-import.md
-    marts-data-models.md
-    automation-conditions.md
-    automations.md         # GENERATED — do not edit manually
-    claude-code-security-hooks.md  # Not in nav
-  models/                  # Per-dashboard/pipeline data-model reference docs
-    gradebook-audit-data-model.md
-  guides/                  # Task-focused walkthroughs
-    index.md               # Account setup + guide routing table (section landing)
-    adp-location-renames.md
-    claude-cube-connector.md
-    codespaces.md
-    cube.md
-    dagster.md
-    dbt-development.md
-    google-sheets.md
-    launch-page-guide.md   # Field reference for links.yml (published)
-    local-development.md
-    sftp-integration.md
-    superpowers.md
-  troubleshooting/         # Diagnostic guides for common failures
-    dagster.md
-    dbt.md
-    vscode.md
-  superpowers/             # Design specs and implementation plans (not in nav)
-    specs/                 # Date-prefixed design documents
-    plans/                 # Date-prefixed implementation plans
-  images/                  # Logos, screenshots
-```
-
 ## MkDocs Configuration
 
-Config: `mkdocs.yml` (project root). Theme: Material for MkDocs.
+Config: `mkdocs.yml` (project root). Theme: Material for MkDocs. `hooks.py`
+hides nav/TOC on the homepage (`README.md`) and generates `launch/index.html`
+from `launch/`.
 
 Navigation is defined explicitly in `mkdocs.yml` `nav:` — adding a new page
 requires a nav entry there. Pages not in `nav:` (e.g.,
@@ -81,11 +31,8 @@ not appear in site navigation.
 `uv run scripts/gen-automations-doc.py`. Never edit it directly. Regenerate when
 adding, removing, or renaming schedules or sensors.
 
-The script imports every code location's `definitions` and silently SKIPS any
-that fail to import — so running it in the codespace (locations fail to import
-without their dbt manifests, and `kipptaf` additionally on unset
-Illuminate/Zendesk dlt credentials) drops those locations from the catalog.
-Regenerate only in a full environment where all locations load.
+Regenerate only where every code location imports — see `scripts/CLAUDE.md` →
+_Prerequisites_.
 
 ## `launch/` Directory
 
@@ -117,6 +64,12 @@ engineering planning.
 Naming convention: `YYYY-MM-DD-<brief-description>.md` (e.g.,
 `2026-03-20-powerschool-odbc-staleness-refactor-design.md`).
 
+Don't edit a spec or plan to track implementation after it's approved. The PR
+diff, commits and review threads record how the build diverged. Edit one only
+when the user asks, or when review changes the design itself; then add a dated
+revision section rather than rewriting. A doc-only push to a branch with dbt
+changes reruns the whole CI selection.
+
 ## When to Update Docs
 
 Update docs for engineering-level changes:
@@ -137,8 +90,7 @@ documentation mechanism for that work.
 - **Don't use a standalone `**bold**` line as a pseudo-heading** — markdownlint
   MD036 fails it; use a real `###` heading (MD024 is `siblings_only`, so a
   subsection heading repeated across sections is fine). `mkdocs build` does NOT
-  run markdownlint, so `trunk check` the generated/edited `.md` before pushing —
-  MD036 / MD001 fire only at pre-push / CI, not in the mkdocs build.
+  run markdownlint, so a clean build is not lint-clean.
 - SQL examples must follow `.trunk/config/.sqlfluff` rules (BigQuery dialect,
   trailing commas, single quotes, max line length 88)
 - Use admonitions for warnings and notes:

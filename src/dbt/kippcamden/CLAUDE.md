@@ -20,5 +20,4 @@ disabled)
 
 ## Source Packages
 
-Package list: `packages.yml` is ground truth (see `src/dbt/CLAUDE.md`). Camden
-does not use `iready` or `renlearn`.
+Camden does not use `iready` or `renlearn`.

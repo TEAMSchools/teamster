@@ -176,19 +176,35 @@
     from username_password
     where username is not null
 {% else %}
+    with
+        current_logins as (
+            select
+                student_number,
+                username,
+                default_password,
+                google_email,
+                dbt_valid_from,
+            from {{ source("people", "src_people__student_logins_snapshot") }}
+            /* rows snapshotted before dbt_valid_to_current was set carry null */
+            where dbt_valid_to is null or dbt_valid_to = '9999-12-31'
+        ),
+
+        deduplicate as (
+            {{
+                dbt_utils.deduplicate(
+                    relation="current_logins",
+                    partition_by="username",
+                    order_by="dbt_valid_from desc, student_number desc",
+                )
+            }}
+        )
+
     select student_number, username, default_password, google_email,
-    from
-        {{
-            source(
-                "google_sheets",
-                "stg_google_sheets__people__student_logins_archive",
-            )
-        }}
+    from deduplicate
 {% endif %}
 
     -- depends_on: {{ ref("stg_powerschool__students") }}
     -- depends_on: {{ ref("stg_finalsite__contacts") }}
     -- depends_on: {{ ref("int_finalsite__contact_id_attributes") }}
-    -- trunk-ignore(sqlfluff/LT05)
-    -- depends_on: {{ source("google_sheets", "stg_google_sheets__people__student_logins_archive") }}
+    -- depends_on: {{ source("people", "src_people__student_logins_snapshot") }}
     -- depends_on: {{ source("people", "src_people__student_logins") }}

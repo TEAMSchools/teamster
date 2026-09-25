@@ -142,8 +142,11 @@ with
             cast(null as string) as aligned_academic_subject,
             cast(null as string) as credit_category,
             cast(null as string) as test_type,
-        from {{ ref("stg_cambium__njgpa") }}
-        where testscalescore is not null
+        from {{ ref("int_pearson__all_assessments") }}
+        where
+            _dbt_source_relation like '%cambium%'
+            and assessment_type = 'state_nj_njgpa'
+            and testscalescore is not null
     ),
 
     -- grain projection, not dup-masking

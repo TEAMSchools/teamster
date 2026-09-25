@@ -256,29 +256,24 @@ views:
             - staff_lead_teacher_last_name
 
     access_policy:
-      # Row-level location scoping (was queryRewrite.studentRowFilters). A viewer
-      # holds exactly one student-<scope> group (buildGroups); none => no group =>
-      # default-deny. row_level uses this view's flat location member names (see
-      # the includes/folders below), not cube-qualified paths.
+      # Row-level location scoping (was queryRewrite.studentRowFilters). A
+      # single flat `student` group (buildGroups) gated on the viewer's
+      # precomputed allowed_student_abbreviations array being non-empty — not
+      # three separate tier groups. The array is the viewer's base
+      # student_location_scope UNIONED with every individual-exception grant
+      # that has includes_student_data (see src/cube/access.js), which lets an
+      # exception add one specific extra school, not just a whole network/
+      # region tier. row_level uses this view's flat location member name (see
+      # the includes/folders below) — bare `abbreviation`, not
+      # `locations_abbreviation`, since this view's locations join is
+      # unprefixed (prefix: false above).
       # Teacher fields (staff_lead_teacher_* names, lead_teacher_staff_key) ride
       # the wildcard include — staff-directory-tier info, not student PII.
-      - group: student-region
-        member_level:
-          includes: "*"
-        row_level:
-          filters:
-            - member: region_key
-              operator: equals
-              values: ["{ securityContext.region_key }"]
-      - group: student-school
+      - group: student
         member_level:
           includes: "*"
         row_level:
           filters:
             - member: abbreviation
               operator: equals
-              values: ["{ securityContext.location_abbreviation }"]
-      - group: student-network
-        member_level:
-          includes: "*"
-        # network: no row_level (sees all locations)
+              values: "{ securityContext.allowed_student_abbreviations }"

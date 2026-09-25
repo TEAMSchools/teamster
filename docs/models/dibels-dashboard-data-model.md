@@ -616,11 +616,11 @@ unscoped join doubles everywhere or not at all.
 The remaining consumers are safe, but each for a reason it does not state: an
 `assessment_type` filter (the marts, `bm_goals_calculations`), a
 `measure_standard = 'Composite'` filter that PM rows never satisfy (`mtss_rti`,
-`kippmiami_payout_roster`, `student_enrollments_subjects`,
-`dibels_benchmark_weekly`), or benchmark seasons never equalling PM seasons
-(`BOY` against `BOY->MOY`, which is what protects the dashboard's own BM
-branch). None of that is careless — they all predate `model_type` — but when you
-touch one, state the scope rather than trust the coincidence.
+`kippmiami_payout_roster`, `student_enrollments_subjects`), the same test on
+`measure_name` (`dibels_benchmark_weekly`), or benchmark seasons never equalling
+PM seasons (`BOY` against `BOY->MOY`, which is what protects the dashboard's own
+BM branch). None of that is careless — they all predate `model_type` — but when
+you touch one, state the scope rather than trust the coincidence.
 
 #### A student's two grade columns can disagree, and that is not fixable
 
@@ -1868,6 +1868,20 @@ The most conservative overall flag:
 `'AND'` and `NULL` are the only values the column holds in any year, so those
 two branches are exhaustive — the `case`'s `else` is unreachable rather than a
 missing `'OR'` branch.
+
+#### The round flags repeat per measure
+
+The model's grain is still one row per student per round per measure, so
+`met_pm_round_overall_criteria` and `completed_test_round_int` are written onto
+every measure row of the round. A consumer that reads them at round grain must
+collapse first, or a student tested on more measures weighs more.
+`int_topline__dibels_pm_weekly` groups to the round with `min()` for this reason
+([#5381](https://github.com/TEAMSchools/teamster/issues/5381)).
+
+`min()` rather than `any_value()`, because the flag is not always constant
+across a round's measures: on 40 AY2025 student-weeks, the round mixes measures
+whose `pm_goal_criteria` is `AND` with measures whose criteria is null. `min()`
+takes the `AND` reading.
 
 #### Labelled twins: the three `*_status` columns
 
