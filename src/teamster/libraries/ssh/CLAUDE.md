@@ -4,7 +4,10 @@ Extended SSH/SFTP resource used by every SFTP-based integration. Wraps
 `dagster-ssh`'s `SSHResource` with three extra capabilities:
 
 - `listdir_attr_r()` — recursive SFTP directory listing returning
-  `(SFTPAttributes, path)` tuples
+  `(SFTPAttributes, path)` tuples. Skips (does not raise on) a listing entry
+  that isn't a single, non-traversing path component — see
+  `_is_safe_listing_filename`. Regression:
+  `tests/resources/test_resource_ssh_listdir.py`.
 - `listdir_attr_r_or_skip()` — connect + `listdir_attr_r` with failure triage;
   **the entry point every SFTP sensor should use**
 - `open_ssh_tunnel()` — in-process paramiko local port forward, used by the dlt

@@ -1,5 +1,4 @@
 import logging
-import os
 import select
 import socket
 import socketserver
@@ -173,8 +172,8 @@ _LegacyRSAKey = type(
 )
 
 
-def _check_listing_filename(filename: str, remote_dir: str) -> None:
-    """Reject a directory entry that is not a single, non-traversing name.
+def _is_safe_listing_filename(filename: str) -> bool:
+    """Whether a directory entry is a single, non-traversing name.
 
     Entry names come from the remote server and are joined onto ``remote_dir``
     to build the paths callers list, match, and download. A real SFTP entry is
@@ -182,19 +181,8 @@ def _check_listing_filename(filename: str, remote_dir: str) -> None:
     ``..`` entries, nothing else), so a name carrying a separator or a ``..``
     could steer that join — and the local download path derived from it —
     outside the directory being walked.
-
-    Raises:
-        ValueError: if the entry name is empty, a relative-directory reference,
-            or contains a path separator.
     """
-    separators = {"/", os.sep, os.altsep}
-
-    if filename in ("", ".", "..") or any(
-        sep is not None and sep in filename for sep in separators
-    ):
-        raise ValueError(
-            f"Illegal filename in SFTP listing of '{remote_dir}': '{filename}'"
-        )
+    return filename not in ("", ".", "..") and "/" not in filename
 
 
 def _persist_legacy_rsa(transport: Transport) -> None:
@@ -316,7 +304,12 @@ class SSHResource(DagsterSSHResource):
 
         files: list[tuple[SFTPAttributes, str]] = []
         for file in sftp_client.listdir_attr(remote_dir):
-            _check_listing_filename(filename=file.filename, remote_dir=remote_dir)
+            if not _is_safe_listing_filename(file.filename):
+                self.log.warning(
+                    "Skipping illegal filename in SFTP listing of "
+                    f"'{remote_dir}': {file.filename!r}"
+                )
+                continue
 
             path = str(Path(remote_dir) / file.filename)
             mtime = check.not_none(value=file.st_mtime)
