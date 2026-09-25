@@ -34,3 +34,15 @@ Configured with a single `api_key_dir` — a directory (the per-city
 one file per school (filename = `school_id`, contents = API key) plus a
 `subdomain` file. `load_deanslist_config()` reads the subdomain and builds the
 `{school_id: key}` map from numeric-named files. Provides `get()` and `list()`.
+
+The key travels as an `apikey` query parameter, so it appears in every rendered
+URL and in the message of any `requests` exception. In `_request`:
+
+- Add the key to a copy of `params`, never to the caller's dict. Asset factories
+  reuse one dict across partitions, so a key left in it gets logged on the next
+  request.
+- Pass any log text or exception message that could hold a URL or the params
+  through `redact_api_keys` first. Re-raise the redacted exception outside the
+  `except` block so the original is not left on `__context__`.
+
+Regression: `tests/resources/test_resource_deanslist.py`.
