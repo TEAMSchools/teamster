@@ -1,0 +1,384 @@
+# OpenAPI description of the KTAF Cube sandbox REST API.
+#
+# WHY THIS EXISTS RATHER THAN CUBE'S OWN SPEC
+#
+# Cube publishes one at packages/cubejs-api-gateway/openspec.yml, and a client
+# generated from it does not authenticate against this deployment. It declares
+# `bearerAuth` with `scheme: bearer`, so a generator emits
+# `Authorization: Bearer <token>`. KTAF's `checkAuth` replaces Cube's default
+# JWT handling and reads the RAW token, so the prefix makes every call fail —
+# with a 403 that says nothing about a prefix.
+#
+# Three more things that spec cannot know, each of which a generator ignores:
+#
+#   - `iat` is mandatory. `checkAuth` verifies with `maxAge: "12h"`, which
+#     derives its cutoff from `iat`, so a token minted without one is rejected
+#     outright rather than treated as non-expiring.
+#   - The whole JWT payload IS the security context. The `email` claim sits at
+#     the top level, not nested under `user` or `securityContext`.
+#   - `/v1/load` can answer HTTP 200 with `{"error": "Continue wait"}`. That is
+#     not a result and not a failure; it means poll again. A client that treats
+#     200 as success returns that object to its caller as data.
+#
+# Shapes here are taken from `src/cube/mcp/server.py`, which calls these
+# endpoints against this deployment, rather than from documentation. Note
+# `/v1/sql` is a GET with a JSON-encoded `query` PARAMETER, not a POST body.
+#
+# The `views` enum is generated from `docs/reference/cube-catalog-meta.json`.
+# `tests/cube_sandbox/test_openapi.py` asserts the two agree, so a model bump
+# that adds or drops a view fails rather than leaving this stale.
+
+openapi: 3.0.3
+
+info:
+  title: KTAF Cube sandbox REST API
+  version: 2026.09.24
+  description: >
+    Read-only analytics over a Cube semantic layer backed entirely by fabricated
+    data. No real student or staff record is reachable through this deployment.
+    The model is identical to KTAF production's, so a client built here repoints
+    by changing the server URL and the signing secret, and nothing else.
+  contact:
+    name: KTAF Data Team
+
+servers:
+  - url: https://petite-dorton.gcp-us-central1.cubecloudapp.dev/cubejs-api
+    description: Sandbox. Fabricated data only.
+
+security:
+  - rawJwt: []
+
+tags:
+  - name: model
+    description: What can be queried.
+  - name: query
+    description: Running a query and inspecting the SQL it compiles to.
+
+paths:
+  /v1/meta:
+    get:
+      tags: [model]
+      summary: Every view, dimension and measure the caller may see
+      description: >
+        Generated from the compiled data model and never touches the warehouse,
+        so the response does not depend on who asks — but it still requires a
+        valid signed token, because authentication runs before identity
+        resolution.
+      operationId: getMeta
+      responses:
+        "200":
+          description: The data model.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [cubes]
+                properties:
+                  cubes:
+                    type: array
+                    items: { $ref: "#/components/schemas/Cube" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /v1/load:
+    post:
+      tags: [query]
+      summary: Run a query
+      operationId: postLoad
+      description: >
+        **A 200 does not always mean a result.** Cube answers a query it is
+        still computing with `{"error": "Continue wait"}` at HTTP 200. Re-send
+        the identical request about once a second until the body carries `data`.
+        Treating the first 200 as the answer hands that object to your caller as
+        if it were rows.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query]
+              properties:
+                query: { $ref: "#/components/schemas/Query" }
+      responses:
+        "200":
+          description: >
+            Either the result, or a long-poll continuation. Discriminate on the
+            presence of `data`.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/LoadResult"
+                  - $ref: "#/components/schemas/ContinueWait"
+        "400": { $ref: "#/components/responses/BadQuery" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /v1/sql:
+    get:
+      tags: [query]
+      summary: The SQL a query compiles to, without running it
+      description: >
+        The query travels as a JSON-encoded string in a GET parameter, not as a
+        request body. Useful for confirming which access policy applied: a
+        default-denied query compiles to `WHERE (1 = 0)`.
+      operationId: getSql
+      parameters:
+        - name: query
+          in: query
+          required: true
+          description:
+            A JSON-encoded query object, the same shape `/v1/load` takes.
+          schema: { type: string }
+          example: '{"measures":["staff_directory.count_employees"],"timezone":"UTC"}'
+      responses:
+        "200":
+          description: The compiled SQL and its bind parameters.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sql:
+                    type: object
+                    properties:
+                      status: { type: string }
+                      sql:
+                        type: array
+                        description: "[query string, [bind parameters]]"
+                        items: {}
+                      query_type: { type: string }
+        "400": { $ref: "#/components/responses/BadQuery" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+components:
+  securitySchemes:
+    rawJwt:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: >
+        The bare JWT, with NO `Bearer` prefix. Declared as an apiKey rather than
+        `http`/`bearer` precisely so a generator does not add one.
+
+
+        Mint per request with HS256 over the sandbox API secret. The entire
+        payload is the security context: `{"email":
+        "<persona>@ktaf-sandbox.invalid", "iat": <unix seconds>}`. `iat` is
+        required and a token older than 12 hours by it is rejected, so mint
+        fresh rather than caching.
+
+  responses:
+    Forbidden:
+      description: >
+        Authentication failed. The body names which check failed — a missing
+        `iat`, a token past the 12-hour cap, or a signature that does not match
+        this deployment's secret. Read it rather than retrying.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          examples:
+            missingIat:
+              value:
+                error: >-
+                  Invalid token: iat required when maxAge is specified. Check
+                  the signing secret matches this deployment's API secret, and
+                  that the token carries an `iat`.
+            tooOld:
+              value:
+                error: >-
+                  Token too old: exceeds the 12h maxAge cap measured from `iat`.
+                  Re-mint it.
+    BadQuery:
+      description: >
+        The query did not compile. A view the caller's access excludes reports
+        as not found, which is indistinguishable from a typo by message alone —
+        tell them apart by the view name you asked for.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          examples:
+            denied:
+              summary: Access denial, not a typo
+              value:
+                error: Table or CTE with name 'staff_pii' not found
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        error: { type: string }
+
+    ContinueWait:
+      type: object
+      description: Not a result. Re-send the same request.
+      required: [error]
+      properties:
+        error:
+          type: string
+          enum: [Continue wait]
+
+    Cube:
+      type: object
+      description: >
+        One entry in the data model. This deployment exposes only views; the
+        underlying cubes are private and do not appear.
+      properties:
+        name: { $ref: "#/components/schemas/ViewName" }
+        type:
+          type: string
+          enum: [view]
+        title: { type: string }
+        description: { type: string }
+        public: { type: boolean }
+        measures:
+          type: array
+          items: { $ref: "#/components/schemas/Member" }
+        dimensions:
+          type: array
+          items: { $ref: "#/components/schemas/Member" }
+
+    Member:
+      type: object
+      description: One measure or dimension, as `/v1/meta` reports it.
+      properties:
+        name: { $ref: "#/components/schemas/MemberName" }
+        title: { type: string }
+        description: { type: string }
+        shortTitle: { type: string }
+        type:
+          type: string
+          enum: [string, number, time, boolean]
+        public: { type: boolean }
+        aggType:
+          type: string
+          description: Measures only.
+
+    ViewName:
+      type: string
+      description: >
+        The six views this deployment exposes. Generated from the committed
+        catalog; a test asserts this list matches it.
+      enum:
+        - staff_directory
+        - staff_pii
+        - student_assessment_scores_view
+        - student_attendance_enrollment_daily_view
+        - student_attendance_enrollment_periods_view
+        - student_section_enrollments_view
+
+    MemberName:
+      type: string
+      description: >
+        `<view>.<member>`, e.g. `staff_directory.count_employees`. The full list
+        of 323 members is in `docs/reference/cube-catalog-meta.json`.
+      # trunk-ignore(yamllint/quoted-strings): a quoted regex is the readable form
+      pattern: '^[a-z_]+\.[a-z0-9_]+$'
+      example: staff_directory.count_employees
+
+    Query:
+      type: object
+      description: >
+        At least one of `measures` or `dimensions` is required. An
+        access-excluded member fails the WHOLE query rather than being dropped
+        from the result, so build one query per access tier instead of one wide
+        query.
+      properties:
+        measures:
+          type: array
+          items: { $ref: "#/components/schemas/MemberName" }
+        dimensions:
+          type: array
+          items: { $ref: "#/components/schemas/MemberName" }
+        filters:
+          type: array
+          items: { $ref: "#/components/schemas/Filter" }
+        timeDimensions:
+          type: array
+          items: { $ref: "#/components/schemas/TimeDimension" }
+        order:
+          type: object
+          additionalProperties:
+            type: string
+            enum: [asc, desc]
+        limit: { type: integer, minimum: 1 }
+        offset: { type: integer, minimum: 0 }
+        timezone:
+          type: string
+          default: UTC
+          description: >
+            Send `UTC` unless wall-clock conversion is intended. Mart dates are
+            date-grain UTC, and a deployment-level default can otherwise shift
+            date-grain results.
+          example: UTC
+      example:
+        measures: [staff_directory.count_employees]
+        dimensions: [staff_directory.position_title]
+        timezone: UTC
+        limit: 100
+
+    Filter:
+      type: object
+      required: [member, operator]
+      properties:
+        member: { $ref: "#/components/schemas/MemberName" }
+        operator:
+          type: string
+          enum:
+            - equals
+            - notEquals
+            - contains
+            - notContains
+            - startsWith
+            - endsWith
+            - gt
+            - gte
+            - lt
+            - lte
+            - set
+            - notSet
+            - inDateRange
+            - notInDateRange
+            - beforeDate
+            - afterDate
+        values:
+          type: array
+          items: { type: string }
+
+    TimeDimension:
+      type: object
+      required: [dimension]
+      properties:
+        dimension: { $ref: "#/components/schemas/MemberName" }
+        granularity:
+          type: string
+          nullable: true
+          enum: [second, minute, hour, day, week, month, quarter, year]
+          description: >
+            Never use `week` or `year` for school-calendar questions. KTAF
+            school weeks are not a Monday-Sunday grid and academic years do not
+            align to calendar years; both bucket silently and wrongly. Group by
+            the model's own academic-year and school-week dimensions instead.
+        dateRange:
+          oneOf:
+            - type: string
+              example: Last 30 days
+            - type: array
+              items: { type: string, format: date }
+              minItems: 2
+              maxItems: 2
+
+    LoadResult:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        annotation:
+          type: object
+          description: Per-member titles and types for the columns in `data`.
+        query:
+          type: object
+          description: The normalized query Cube actually ran.
