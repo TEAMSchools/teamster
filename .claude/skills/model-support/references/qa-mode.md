@@ -6,7 +6,8 @@ should not change them.
 If the family skill has its own QA procedure, read that reference file directly
 and follow it instead of everything below; it already knows the grains and
 ranges. Do not open the family's `SKILL.md` first: that costs a read the
-procedure does not need. Find one with `ls .claude/skills/<family>/references/`
+procedure does not need. Find the family skill with
+`rg -l '<model>' .claude/skills`, then `ls .claude/skills/<family>/references/`
 (for CARAT, `official-scores-qa.md` once PR #5542 has split that skill). If
 there is none, or the family skill is a single long `SKILL.md` with no
 `references/`, do not read that file: use the reference doc and the generic
