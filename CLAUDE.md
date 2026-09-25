@@ -133,6 +133,10 @@ accept a subagent's self-report without the checks there.
   later turn.
 - Never pipe `Bash(run_in_background=true)` output through `head`/`tail`/`grep`.
   The pipe truncates the output file. Filter afterward.
+- Never poll a `Bash(run_in_background=true)` job: its exit notifies you, and
+  the output file holds the result. For any other process wait, never `pgrep -f`
+  a string that also appears in your own command; the waiting shell matches
+  itself and the loop never exits.
 - IDE selection arrives only in `<ide_selection>` tags. If the user says "this"
   with no selection, ask for the snippet.
 - One-off deps: `uv run --with <pkg> python script.py`, not `uv add --dev`.
