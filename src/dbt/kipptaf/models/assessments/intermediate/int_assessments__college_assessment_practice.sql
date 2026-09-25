@@ -98,8 +98,8 @@ with
         inner join
             -- `a.assessment_id` is `canonical_assessment_id`, because
             -- `response_rollup` output is canonical-grain. The sheet's
-            -- `assessment_id` values align to canonical today (12 of 12),
-            -- because Practice SAT/ACT are not canonicalized into multi-member
+            -- `assessment_id` values align to canonical because Practice SAT/ACT are
+            -- not canonicalized into multi-member
             -- groups. If multipart Practice administrations arrive later, the
             -- sheet must reference the canonical (lowest) `assessment_id`.
             conversion as ssk

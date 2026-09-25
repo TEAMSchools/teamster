@@ -8,6 +8,18 @@ models:
       are dropped. The roster and the wide KIPP Forward sheet start from this
       model, so an administration missing here has nowhere to land. See
       docs/models/carat-dashboard-data-model.md.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - expected_region
+              - expected_grade_level
+              - expected_test_type
+              - expected_score_type
+              - expected_month_round
+              - expected_admin_season
+          config:
+            severity: error
     columns:
       - name: expected_region
         data_type: string

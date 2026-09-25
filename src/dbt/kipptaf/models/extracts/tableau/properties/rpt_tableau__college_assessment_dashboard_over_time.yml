@@ -15,6 +15,14 @@ models:
 
 
       See docs/models/carat-dashboard-data-model.md.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - expected_test_type
+              - expected_score_type
+              - expected_metric_name
     columns:
       - name: region
         description: >-

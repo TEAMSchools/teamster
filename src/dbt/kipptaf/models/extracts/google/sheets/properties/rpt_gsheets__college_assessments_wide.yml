@@ -20,6 +20,8 @@ models:
         description: >-
           PowerSchool student number.
         data_type: int64
+        data_tests:
+          - unique
       - name: salesforce_id
         description: >-
           Salesforce contact identifier for the student.

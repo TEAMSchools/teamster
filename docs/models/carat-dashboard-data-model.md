@@ -259,7 +259,7 @@ official and practice. Reads the hub and enrollments.
 - Six sub-test score types are excluded by name. Any new score type added
   upstream appears automatically.
 - It deduplicates on its grain to remove kippadb's double-entered SAT sittings
-  (see _Decisions and known issues_), and a uniqueness test guards the key.
+  (see _Known issues, need to fix_), and a uniqueness test guards the key.
 
 ### `_current`: this year against goal
 
@@ -292,8 +292,7 @@ across years.
 **Grain:** one row per student per goal, for every high school student the
 network has enrolled, current and past, official and practice. Reads the hub,
 enrollments, and the goals model (`All Grades` branch, with the over-time goal
-columns). It has no uniqueness test, and a student whose `strategy_case` differs
-between two rows of one score type appears twice for that goal.
+columns). Its uniqueness test currently warns; see _Known issues, need to fix_.
 
 **Worth knowing:**
 
@@ -305,7 +304,7 @@ between two rows of one score type appears twice for that goal.
   flag, so count students, not rows.
 - It reads each student's best score with no `rn_highest = 1` filter, so it
   shows a few historical students whom `_benchmark_calcs` reads as `No Data`
-  (see _Decisions and known issues_).
+  (see _Known issues, need to fix_).
 - `strategy_case` labels a student's testing pattern, computed on the official
   and practice models; `No testing history` where there is none.
 
@@ -358,12 +357,8 @@ fail, score, semester, and institution.
 
 **Grain:** one row per student per dual-enrollment course grade, from
 PowerSchool stored grades (store codes `Y1` and `Q2`) and the dual-enrollment
-extension table. It has no uniqueness test and doesn't touch the assessment
-pipeline.
-
-**Worth knowing:** institutions submit grades twice a year. If spring grades
-land on `Y1` in the same year as fall's `Q2`, a student gets two rows for one
-course; a `TODO` in the model marks where a priority rule would go.
+extension table. It doesn't touch the assessment pipeline. Its uniqueness test
+currently warns; see _Known issues, need to fix_.
 
 ### `rpt_tableau__ap_assessment_dashboard`: AP
 
@@ -424,8 +419,8 @@ grain) and computes, once for both:
   score types; `rn_highest_benchmark_aligned_scope` tags each student's best
   row; `benchmark_aligned_scope_max_score` carries the same value on every row,
   and keeps an `rn_highest = 1` filter that `_benchmark_calcs` inherits (see
-  _Decisions and known issues_). Both partition on `subject_area`, so PSAT 10
-  and NMSQT fold, and on `test_type`, so practice never competes with official.
+  _Known issues, need to fix_). Both partition on `subject_area`, so PSAT 10 and
+  NMSQT fold, and on `test_type`, so practice never competes with official.
 - `aligned_month_round`: the month on official rows and the `scope_round` on
   practice rows, so the Expected Assessments tab joins both with one predicate.
 - `previous_score_change`: the change from the student's previous sitting of the
@@ -562,7 +557,7 @@ Scaffold:
 - **A column change needs `stage_external_sources`** with
   `ext_full_refresh: true`. A value edit doesn't.
 
-## Decisions and known issues
+## Decisions
 
 ### AY2023 grade 9 and 10 SAT is not reported
 
@@ -584,6 +579,31 @@ Writing raw score (66) to 700, below raw 65's 710. For assessment 226308, raw 66
 is entered as 720. A PSAT 8/9 Reading and Writing 720 is ours; the guide
 says 700. PSAT 8/9 can't reach 1440 regardless: its sections top out at 710
 and 690.
+
+## Known issues, need to fix
+
+Each of these has a test or a documented symptom, and none is fixed yet.
+
+### `_over_time` duplicates some rows
+
+`_over_time` groups by `strategy_case`, and a student whose `strategy_case`
+differs between two rows of one score type appears twice for that goal. The
+uniqueness test on (`student_number`, `expected_test_type`,
+`expected_score_type`, `expected_metric_name`) warns on those rows. A percentage
+the workbook computes over rows counts those students twice. The fix is to
+settle `strategy_case` to one value per student and score type before the group
+by.
+
+### `_de` duplicates some stored grades
+
+Some PowerSchool stored grades match more than one row in the dual-enrollment
+extension table, with different course, score, or semester values, so the view
+carries two or three rows for one grade. The uniqueness test on
+(`student_number`, `storedgrades_dcid`) warns on them. Separately, institutions
+submit grades twice a year: if spring grades land on `Y1` in the same year as
+fall's `Q2`, a student gets two rows for one course, and a `TODO` in the model
+marks where a priority rule would go. The fix is to decide which extension row
+wins for a stored grade.
 
 ### Duplicate kippadb test records
 
