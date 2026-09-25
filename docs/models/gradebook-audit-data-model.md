@@ -833,6 +833,37 @@ for that history.
   T&L whether excluding these sections is still intended; if not, drop the
   filter.
 
+### On the upload side
+
+The two items above are dbt-model work. These are in the PowerSchool plugin and
+the upload process that feeds `U_EXPECTATIONS`, and they affect the numbers this
+dashboard audits against.
+
+- **The plugin's four single-record pages carry open defects** — two in how they
+  check who may use them, two in how they handle text that reaches the page. All
+  four predate the plugin's move into this repository. Specifics are in the Data
+  Team's tracker rather than here. Anyone changing those pages should read
+  `.claude/skills/gradebook-audit/playbooks/maintain-the-plugin.md` first:
+  fixing them means one version bump and a redeploy to three live instances, and
+  the obvious fix for two of them is wrong.
+- **The plugin's Quarter filter stops applying after a delete or an import.**
+  The table re-renders without re-applying it, so every row becomes visible
+  again while the dropdown still shows the quarter. Re-picking the quarter it
+  already displays fires no change event, so the header checkbox then selects
+  the whole instance. Deleting one quarter's rows twice in a session removes all
+  four. Confirmed in the page source; not fixed.
+- **Academics number their weeks straight through the year; PowerSchool restarts
+  at 1 each quarter.** Their week 14 is PowerSchool's week 4. Nothing errors
+  when a sheet's own numbering is passed through, so the audit compares against
+  the wrong week and reports confidently wrong results. The translation is done
+  against the PowerSchool calendar, per
+  `ps-plugins/skills/gradebook-expectations-upload/references/week-matching.md`.
+- **A quarter loaded before the warehouse rolls the academic year over gets the
+  previous year's weeks.** `PS Full Calendar` is filtered to whatever year the
+  warehouse currently calls current, so a PowerSchool instance can sit in the
+  new school year while that setting still points at the old one. The tab looks
+  normal and every downstream check passes.
+
 ---
 
 ## Legacy: AY 2025-2026 and superseded
