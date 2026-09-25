@@ -50,22 +50,24 @@ specifics live there.
 - Naming: [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/)
   for commits and branches. Branch
   `<gh-username>/<commit-type>/claude-<brief-description>`; username from
-  `mcp__github__get_me`.
-- With an issue: `gh issue develop <number> --name <branch>` (add `--checkout`
-  for a branch switch), then
+  `mcp__github__get_me`. `gh issue develop --name` fails on names containing
+  `log`, `auth`, or `secret`: rename and retry.
+- Create, with an issue: `gh issue develop <number> --name <branch>` (add
+  `--checkout` for a branch switch), then
   `git worktree add /workspaces/teamster/.worktrees/<branch> <branch>`. The path
   must be absolute; a relative one nests one worktree inside another.
-- Without an issue (user declined):
+- Create, without an issue (user declined):
   `git worktree add -b <branch> <abs-path> origin/main` or
   `git checkout -b <branch>`. Name `origin/main`; local `main` is often behind.
-- Stacked branch: `gh issue develop <num> --name <branch> --base <parent>`, then
-  `git worktree add`. Base other than `main` skips both `claude-review` and dbt
-  Cloud CI; only Trunk runs (see `pr-ci-review`). Unset the upstream right
+- Create, stacked: `gh issue develop <num> --name <branch> --base <parent>`,
+  then `git worktree add`. Base other than `main` skips both `claude-review` and
+  dbt Cloud CI; only Trunk runs (see `pr-ci-review`). Unset the upstream right
   after, per `.claude/rules/worktrees.md`.
-- After any `git worktree add`, enter it with `EnterWorktree` `path=<abs-path>`.
-  Never `EnterWorktree` `name`: it creates its own branch in
-  `.claude/worktrees/`, with no issue link, where `.claude/rules/worktrees.md`
-  does not load.
+- Enter: after any `git worktree add`, call `EnterWorktree` `path=<abs-path>`,
+  then Read `.claude/rules/worktrees.md`. Inside a worktree its `.worktrees/**`
+  trigger never fires (rules resolve against the worktree root). Never
+  `EnterWorktree` `name`: it creates its own branch in `.claude/worktrees/`,
+  with no issue link.
 - Linking an existing remote branch to an issue: `mcp__github__create_branch`
   and GraphQL `createLinkedBranch` both no-op. Deleting the remote branch is
   classifier-blocked even with consent. Create the branch under a NEW name and
@@ -73,12 +75,7 @@ specifics live there.
 - The consent classifier reads only the assistant message before the tool call,
   never `AskUserQuestion` answers. After out-of-band consent
   (`git worktree add -b`, `git checkout -b`, bulk Asana `create_tasks`),
-  re-confirm in plain text in the same turn. `gh issue develop --name` fails on
-  branch names containing `log`, `auth`, or `secret`: rename and retry.
-- Worktree mechanics (paths, cwd, `uv` and dbt invocation) are in
-  `.claude/rules/worktrees.md`. Read it yourself right after entering a
-  worktree: inside one, rules load from the worktree's own `.claude/rules/` with
-  paths relative to its root, so the `.worktrees/**` trigger never fires.
+  re-confirm in plain text in the same turn.
 - Before resuming a branch, merging `origin/main`, resolving a conflict, or
   diagnosing a CI failure in a file the branch never touched: invoke
   `resuming-a-branch`.
@@ -203,11 +200,11 @@ cells are not.
   including inside `superpowers:brainstorming` ("Write design doc"),
   `superpowers:writing-plans` ("Save plans to:"), and
   `superpowers:using-git-worktrees`. Pause the skill, run the flow, then write
-  the spec or plan on the new branch. The native tool `using-git-worktrees` asks
-  for is `EnterWorktree` `path`, after _Branches_ creates the worktree. After
-  committing a spec, push it and comment its branch URL
+  the spec or plan on the new branch. The flow's _Enter_ step is the native tool
+  `using-git-worktrees` asks for.
+- After committing a spec, push it and comment its branch URL
   (`.../blob/<branch>/docs/superpowers/specs/...`, never a commit SHA) on the
-  issue — `superpowers:brainstorming` stops at commit, and Phase 2 step 5 of
+  issue. `superpowers:brainstorming` stops at commit, and Phase 2 step 5 of
   `docs/guides/superpowers.md` never loads into context.
 - "The project's suite" (TDD, `finishing-a-development-branch`,
   `using-git-worktrees` baseline) means `uv run pytest <touched tests>` plus
