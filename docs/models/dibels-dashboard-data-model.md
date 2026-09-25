@@ -1174,8 +1174,8 @@ What the gate carries for aimline's benefit, and why:
   day academics splits a round, nothing downstream needs restructuring.
 - **`benchmark_goal`** is needed even though Amplify supplies the goal. The
   aimline answers "is the student on pace"; the Benchmark goal answers "are they
-  at grade level yet". The two together are what separate _On Track and Meeting
-  Aimline_ from _Meeting Aimline, Off-Track_.
+  at grade level yet". The two together are what separate _Meeting Aimline,
+  Meeting Benchmark_ from _Meeting Aimline, Not Yet at Benchmark_.
 - **The window** is needed because a score outside it is what makes a student
   Not Tested.
 - **`assessment_include` and `pm_goal_include` pass through unfiltered**, as on
@@ -1984,30 +1984,36 @@ Two things the sibling needs that the internal model does not:
   than as a miss. This generalises the completion asymmetry: under `AND` one
   miss settles the round however much is unknown, under the null (OR) criteria
   one pass does, and only where neither has happened is the round unresolved.
+  That governs the flags. The Aimline `pm_round_status` label does not follow
+  it: since 2026-09-24 any round the student did not finish reads
+  `Round Incomplete`, even when a sat measure was below, at academics' request
+  so schools finish the testing first. AY2025: 1,115 student-rounds, 640 of them
+  previously `Below Aimline`. The Internal label is unchanged.
 
 `aimline_category` carries T&L's reporting categories, taken from their PM
 guidance document, plus two the model adds for rows their four do not cover. Six
 values as of 2026-09-15, with AY2025 counts:
 
-| Value                          | AY2025 rows | Source       |
-| ------------------------------ | ----------: | ------------ |
-| **Below Aimline**              |      16,813 | T&L          |
-| **Meeting Aimline, Off-Track** |       7,070 | T&L          |
-| **Meeting Aimline, On-Track**  |       6,844 | T&L          |
-| **Round Incomplete**           |       2,554 | T&L, renamed |
-| **No Aimline Data, Off-Track** |       1,688 | model        |
-| **No Aimline Data, On-Track**  |       1,533 | model        |
+| Value                                     | AY2025 rows | Source       |
+| ----------------------------------------- | ----------: | ------------ |
+| **Below Aimline**                         |      16,813 | T&L          |
+| **Meeting Aimline, Not Yet at Benchmark** |       7,070 | T&L          |
+| **Meeting Aimline, Meeting Benchmark**    |       6,844 | T&L          |
+| **Round Incomplete**                      |       2,554 | T&L, renamed |
+| **No Aimline Data, Not Yet at Benchmark** |       1,688 | model        |
+| **No Aimline Data, Meeting Benchmark**    |       1,533 | model        |
 
 The cascade tests in that order, and two things about it are T&L's decisions
 rather than ours. `Round Incomplete` comes first and overrides the rest, because
 they define it at the round and not the row — a student not tested on one or
 more of the round's expected measures is incomplete for that round, including on
 the measures they did sit. It is the same `completed_test_round` gate the
-internal method applies, surfaced as a category. And `Meeting Aimline, On-Track`
-fires on the benchmark ahead of the aimline verdict, per their written rule that
-a student meeting benchmark but not aimline still belongs there, so the label
-overstates what it checks — 696 of its 6,844 AY2025 rows are actually below the
-aimline. That wording is theirs, recorded so nobody 'corrects' it.
+internal method applies, surfaced as a category. And
+`Meeting Aimline, Meeting Benchmark` fires on the benchmark ahead of the aimline
+verdict, per their written rule that a student meeting benchmark but not aimline
+still belongs there, so the label overstates what it checks — 696 of its 6,844
+AY2025 rows are actually below the aimline. That wording is theirs, recorded so
+nobody 'corrects' it.
 
 ##### Where the wording departs from T&L's document, deliberately
 
@@ -2015,12 +2021,13 @@ T&L's canonical definitions are the "Definitions Needed" table in _SY26 - KIPP
 NJ - DIBELS PM Rounds + Goals_. The model matches it everywhere but two places,
 both settled on 2026-09-19 after reading the two side by side. Neither is drift.
 
-**`Meeting Aimline, On-Track`** — the doc calls it "On Track and Meeting
-Aimline". Kept as is so it reads as a pair with `Meeting Aimline, Off-Track`;
-matching the doc on one label would leave the two siblings phrased
-inconsistently. The benchmark-wins carve-out is theirs verbatim: "If a student
-meeting benchmark but not aimline by any chance, they should still be in this
-category."
+**`Meeting Aimline, Meeting Benchmark`** — the doc calls it "On Track and
+Meeting Aimline". The model read `Meeting Aimline, On-Track` until 2026-09-24,
+when academics renamed the four benchmark labels to name the benchmark
+explicitly: `On-Track` became `Meeting Benchmark` and `Off-Track` became
+`Not Yet at Benchmark`, on both the Meeting Aimline and No Aimline Data pairs.
+The benchmark-wins carve-out is theirs verbatim: "If a student meeting benchmark
+but not aimline by any chance, they should still be in this category."
 
 **`Not Tested` versus `Round Incomplete`** — the doc defines Not Tested as
 "Student was not PM tested on **one or more** measures within the pre-identified
@@ -2037,8 +2044,9 @@ single Not Tested bucket hides.
 `On Track to Benchmark`, which appears in some of T&L's screenshots but in no
 definitions table, comes from a separate wishlist line — "Meeting Aimline, Below
 Benchmark Trajectory … could be a swap view". That is the origin of
-`aimline_trajectory_category`, so the two category columns answer two different
-requests rather than duplicating one.
+`aimline_trajectory_category`. The two began as different requests, but once
+academics' 2026-09-24 rules were applied they sorted students identically, and
+Trajectory is being dropped (see "Academics' answers on labels and the roster").
 
 **`Round Incomplete` and `Not Tested` are different states, and the extract
 carries both.** Round Incomplete means the student sat some of the round's
@@ -2056,10 +2064,11 @@ about whether the student is on pace.
 
 That split is also a fix. Until 2026-09-15 the benchmark branch fired before any
 aimline check and swallowed the null case, so 1,533 AY2025 rows read
-`Meeting Aimline, On-Track` with no aimline verdict behind the claim, while the
-other 1,688 sat in a single undifferentiated `No Aimline Status`. Missing data
-is deliberately NOT folded into T&L's benchmark-wins rule: that rule is about a
-student who missed a known aimline, and these rows have no aimline to miss.
+`Meeting Aimline, Meeting Benchmark` with no aimline verdict behind the claim,
+while the other 1,688 sat in a single undifferentiated `No Aimline Status`.
+Missing data is deliberately NOT folded into T&L's benchmark-wins rule: that
+rule is about a student who missed a known aimline, and these rows have no
+aimline to miss.
 
 `missed_aimline_consecutive` is the two-rounds-in-a-row signal, per measure and
 within one PM season. Consecutive means consecutive among the rounds the student
@@ -2208,7 +2217,7 @@ is still unidentified; start from the `met_pm_round_criteria` window partitions
 rather than from the CASE, since the CASE reads columns that are themselves
 round-level.
 
-##### Below Aimline outranks No Aimline Data — the one open decision
+##### Below Aimline outranks No Aimline Data — decided 2026-09-22
 
 A student sits several measures in a round and can hold a different verdict on
 each. The round-level columns collapse those into one answer, which needs a
@@ -2225,18 +2234,41 @@ defensible answers:
 - **No Aimline Data wins** — the picture is incomplete, so decline to render a
   verdict rather than report one built on partial evidence.
 
-The model implements the first. That is a choice about what a school leader
-should see, not a fact about the data, and **academics have not confirmed it.**
+The model implements the first, and academics confirmed it on 2026-09-22:
+"Better for us to know that they're below on the measure they were tested on."
+Keep it.
 
-**What it costs if they reverse it.** On AY2025, 694 of the 10,046 round groups
-now reading `Below Aimline` hold at least one no-data measure, so they would
-read `No Aimline Data` instead — 6.9% of that bucket, 4.1% of all 17,011 round
-groups. It is a one-line change to the precedence cascade, but it moves
-published numbers, so it wants an answer before the dashboard is socialised
-rather than after.
+**What it covers.** On AY2025, 694 of the 10,046 round groups reading
+`Below Aimline` hold at least one no-data measure — 6.9% of that bucket, 4.1% of
+all 17,011 round groups. Under the other rule they would read `No Aimline Data`.
 
 Affects `aimline_round_category` and, through the same cascade, the round-grain
 columns built beside it.
+
+##### Academics' answers on labels and the roster, 2026-09-24
+
+Returned in the label crosswalk workbook. What is decided, what has shipped, and
+what is still open:
+
+| Item                                                                      | Decision                                                                                                                                                                                                                                                                                                                                                                                  | Status                                                                                                                                                                                                                                                                                                |
+| ------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Aimline and Benchmark labels                                              | `Meeting Aimline, On-Track` becomes `Meeting Aimline, Meeting Benchmark`; `Meeting Aimline, Off-Track` becomes `Meeting Aimline, Not Yet at Benchmark`; `No Aimline Data, On-Track` becomes `No Aimline Data, Meeting Benchmark`; `No Aimline Data, Off-Track` becomes `No Aimline Data, Not Yet at Benchmark`; `Below Aimline` and `Round Incomplete` unchanged                          | Built 2026-09-24, at all three grains                                                                                                                                                                                                                                                                 |
+| Trajectory comparison item                                                | Dropped 2026-09-24 by the dashboard owner, to be confirmed with academics. Their workbook answers renamed its labels but kept the aimline deciding On Track vs Off Track, and made benchmark win; under those rules it sorts every student exactly as Aimline and Benchmark does. Without the aimline, a round-to-round rule could not judge 14,306 of 26,744 AY2025 below-benchmark rows | Removal from the workbook pending. `aimline_trajectory_category`, `measure_name_code_trajectory_status` and `round_trajectory_status` stay in the extract until the workbook stops using them, then retire                                                                                            |
+| The 490 students below aimline but at benchmark, on Aimline and Benchmark | Leave as is                                                                                                                                                                                                                                                                                                                                                                               | Decided 2026-09-24 and built. They read `Meeting Aimline, Meeting Benchmark` (681 AY2025 rows), which is false for them; academics chose that knowingly                                                                                                                                               |
+| Partial rounds                                                            | Hold them out as `Round Incomplete` at Round granularity on every comparison item. At Measure Standard and Measure granularity, keep scoring each measure the student sat, except on Aimline and Benchmark, which keeps `Round Incomplete` at every grain for the percent-tested reporting Alisha Fairfax asked for (confirmed 2026-09-24)                                                | Built 2026-09-24 on the Aimline method. `aimline_round_category`, `pm_round_status` and `round_benchmark_status` all hold out the 1,115 AY2025 partial student-rounds. `round_trajectory_status` still scores them, and is being dropped with Trajectory. Internal-method round columns are unchanged |
+| Uncoloured No Aimline Data categories                                     | Existing grey                                                                                                                                                                                                                                                                                                                                                                             | Workbook                                                                                                                                                                                                                                                                                              |
+| Aimline comparison item labels                                            | No change requested                                                                                                                                                                                                                                                                                                                                                                       | Decided: keep all four, plus `Round Incomplete` at Round granularity (confirmed 2026-09-24)                                                                                                                                                                                                           |
+| What "Meeting Aimline" measures                                           | Keep Amplify's definition: Meeting Aimline is judged against the aimline value by date (the Round Target), not the student's season goal                                                                                                                                                                                                                                                  | Decided 2026-09-24, after academics reviewed the difference                                                                                                                                                                                                                                           |
+| Roster                                                                    | Season Verdicts renamed Aimline History; Benchmark Goal and Benchmark Gap added                                                                                                                                                                                                                                                                                                           | Workbook done except Benchmark Gap, which needed `benchmark_goal_gap`                                                                                                                                                                                                                                 |
+| Season goal and season gap                                                | Not shown anywhere on the dashboard, including the roster                                                                                                                                                                                                                                                                                                                                 | Decided 2026-09-24. The columns stay in the extract, unbound                                                                                                                                                                                                                                          |
+
+Blanks in the decision column were read as keep-today's-label. Measured when
+weighing the Trajectory answer, AY2025 measure grain: with benchmark deciding
+first, Trajectory sorts every fully tested row with an aimline into exactly the
+same groups as Aimline and Benchmark (16,813 / 7,070 / 6,844 rows), differing
+only on No Aimline Data and partial rounds. That is why the Trajectory
+definition has to come from academics rather than from reusing the aimline
+verdict.
 
 ##### The status vocabulary, settled 2026-09-19
 
@@ -2303,9 +2335,9 @@ thing to know before anyone builds them again:
 "Not meeting" is the inverse of `met_measure_standard_goal = 1`, so it needs no
 separate field. Take it from the verdict columns and **not** from
 `aimline_category`: the category applies T&L's benchmark-wins rule, so 696
-AY2025 rows read `Meeting Aimline, On-Track` while sitting below the aimline.
-For a metric whose purpose is finding students who need intervention, the label
-undercounts the problem set by exactly those rows.
+AY2025 rows read `Meeting Aimline, Meeting Benchmark` while sitting below the
+aimline. For a metric whose purpose is finding students who need intervention,
+the label undercounts the problem set by exactly those rows.
 
 Measured on AY2025 aimline, each grain at its own unit of analysis:
 
@@ -2505,6 +2537,14 @@ How the two numbers land on the extract:
 - **`aimline_season_student_goal` is the season endpoint**, in its own column,
   with `aimline_season_student_goal_gap` beside it. It is a different quantity
   from the moving target and is deliberately not merged into `goal`.
+- **`benchmark_goal_gap` is the score minus `benchmark_goal`**, the grade-level
+  standard, positive when above it. Added 2026-09-24 for the student roster at
+  academics' request, beside Benchmark Goal, replacing the season goal and its
+  gap on that view. It populates on both PM methods; on Internal rows it is
+  measured against the unpadded standard, so its sign matches
+  `met_admin_benchmark_goal_unpadded` rather than the padded
+  `met_admin_benchmark_goal`. Verified on every AY2025 PM row: the sign agrees
+  with the matching met flag on all 35,482 scored rows per method.
 
 So the asymmetry this section used to describe is closed: an internal PM view
 and an aimline view both read "scored 30 against a target of 21" off the same

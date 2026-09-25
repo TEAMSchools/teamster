@@ -70,6 +70,7 @@ select
     cast(null as float64) as goal,
     cast(null as float64) as aimline_season_student_goal,
     cast(null as float64) as aimline_season_student_goal_gap,
+    cast(null as float64) as benchmark_goal_gap,
 
     c.students_student_number as schedule_student_number,
     c.cc_teacherid as teacherid,
@@ -282,6 +283,7 @@ select
     g.cumulative_growth_words as goal,
     cast(null as float64) as aimline_season_student_goal,
     cast(null as float64) as aimline_season_student_goal_gap,
+    a.measure_standard_score - g.benchmark_goal as benchmark_goal_gap,
 
     c.students_student_number as schedule_student_number,
     c.cc_teacherid as teacherid,
@@ -579,6 +581,7 @@ select
     pm.aimline_season_student_goal,
     a.measure_standard_score
     - pm.aimline_season_student_goal as aimline_season_student_goal_gap,
+    a.measure_standard_score - e.benchmark_goal as benchmark_goal_gap,
 
     c.students_student_number as schedule_student_number,
     c.cc_teacherid as teacherid,
