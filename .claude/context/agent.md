@@ -17,11 +17,13 @@ Injected on the first `Agent` or `Workflow` call in a session.
   long `dbt build` strands itself waiting on the notification and returns having
   written nothing. Never run two dbt subagents against one worktree at once:
   they share `target/` and corrupt the partial-parse manifest.
-- Worktree dispatches spell out the absolute worktree path and mandate
-  `git -C <worktree>` plus `uv run` from it. A subagent starts in the MAIN
-  checkout, so bare edits hit `main`. State that IDE Pyright errors on worktree
-  files (`reportMissingImports`, "not accessed", "not iterable") are expected
-  false positives.
+- Worktree dispatches spell out the absolute worktree path, mandate
+  `git -C <worktree>` plus `uv run` from it, and state that IDE Pyright errors
+  on worktree files (`reportMissingImports`, "not accessed", "not iterable") are
+  expected false positives.
+- A subagent starts in the session's cwd: the MAIN checkout unless the session
+  ran `EnterWorktree`. It loads the main checkout's CLAUDE.md either way, so a
+  branch-only CLAUDE.md change reaches it only if the prompt says so.
 - Subagents name specific files in `git add`, never `-u`, `-A`, or `.`.
 
 ## Model and effort

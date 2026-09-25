@@ -32,7 +32,7 @@ Every feature, refactor, or significant change follows this lifecycle:
   the plan"           step-by-step plan
 
  "Let's execute       Works through plan task-by-task     Monitor, unblock,
-  the plan"           using subagents                     answer questions
+  the plan"           (subagents or Native)               answer questions
 
                       Runs verification, commits,         Fill in PR checklist,
                       opens PR                            request reviews
@@ -47,22 +47,32 @@ Tell Claude what you want to build or change. It will:
 1. Explore the codebase to understand the current state.
 2. Ask you clarifying questions — **one at a time**, often multiple choice.
 3. Propose 2-3 approaches with trade-offs and a recommendation.
-4. Present the design in sections, asking for your approval after each one.
+4. Present the design and ask for your approval.
+
+Claude sizes the brainstorm to the task:
+
+- **Spike** — a quick probe to answer a question. No design document.
+- **Bounded** — a small, well-understood change. A short design agreed in chat;
+  no spec file, no Phases 2-3.
+- **Architectural** — anything larger or riskier. A full spec, reviewed by the
+  team (Phases 2-3). When in doubt, Claude picks this one.
 
 !!! warning "Don't skip this phase"
 
     Every project goes through brainstorming — even "simple" ones. A config
     change, a single new model, a small refactor. The design can be short, but
-    it must exist and be approved before moving on.
+    it must exist and be approved before anything is built.
 
 **Your role:** Answer questions honestly. Push back if something doesn't feel
-right. Say "yes" or "looks good" to approve each section.
+right, including the size Claude picked. Approve the design explicitly —
+agreeing with the idea is not the same as approving the design.
 
-**When you're done:** Claude moves to Phase 2 — no files are written yet.
+**When you're done:** An architectural design moves to Phase 2 — no files are
+written yet.
 
 ## Phase 2: GitHub Issue and Dev Branch
 
-After the brainstorm conversation, Claude will:
+After an architectural brainstorm, Claude will:
 
 1. Open a GitHub issue through the GitHub connector — labeled with the
    appropriate conventional commit type (`feat`, `fix`, `refactor`, etc.) and
@@ -130,37 +140,49 @@ issue.
 Once the team approves the spec, Claude turns it into a step-by-step
 implementation plan:
 
-- Saved to `docs/superpowers/plans/YYYY-MM-DD-<topic>.md`.
-- Each task is a checkbox (`- [ ]`) with specific actions, verification
-  commands, and commit messages.
-- Tasks are bite-sized (2-5 minutes each).
-- The plan includes a file map showing every file that will be created,
-  modified, or deleted.
+- Saved to `docs/superpowers/plans/YYYY-MM-DD-<topic>.md`, with a link back to
+  the spec.
+- Each task lists the files it touches and what it hands to later tasks.
+- Each step is one action with a result you can check (`- [ ]` checkboxes).
+- The plan records decisions, not code: function signatures, test assertions,
+  the spec's exact values, and the command that proves each step works. A plan
+  several times longer than its spec is a warning sign.
+- A **Review Focus** section names up to five ways the build could break that
+  the spec implies but no task tests yet.
 
-**Your role:** Review the plan. Make sure the tasks make sense and nothing is
-missing. Say "looks good" to approve.
+**Your role:** Read the saved plan itself — approving the spec or the scope does
+not approve a plan you haven't seen. Make sure the tasks make sense and nothing
+is missing. Say "looks good" to approve.
 
 ## Phase 5: Execute the Plan
 
 **Trigger phrase:** "Let's execute the plan"
 
-Claude works through the plan using **subagents** — independent workers that
-handle one task at a time:
+When the plan is approved, Claude offers two ways to run it and recommends one:
 
-- Each task gets a fresh subagent with focused context.
-- After each task, a reviewer checks the work against the spec.
-- Claude marks checkboxes as it goes so you can track progress.
-- If something is blocked, Claude stops and asks you for help — it doesn't guess
-  or force its way through.
+- **Subagent-driven** — each task goes to a fresh subagent, and a reviewer
+  checks each task against the spec. Costs more; best when tasks are large or
+  independent.
+- **Native** — Claude does every task itself, then one fresh reviewer checks the
+  whole branch at the end. Cheapest; best when most tasks are small.
 
-**Your role:** Monitor progress. Answer questions when Claude gets stuck.
-Unblock issues that require human judgment (e.g., "should we prioritize X or
-Y?").
+Either way:
+
+- Claude keeps a progress log and marks checkboxes as it goes.
+- Claude does not stop between tasks to ask whether to continue. When the plan
+  is ambiguous, it records a decision and keeps going.
+- It stops and asks only for something destructive or irreversible, something
+  security-sensitive, a push or merge to a shared branch, or a plan too broken
+  to follow.
+
+**Your role:** Pick the approach (or accept the recommendation). Answer
+questions when Claude stops. Review the decisions it recorded, and push back on
+any you disagree with.
 
 !!! warning "Don't leave Claude unattended for too long"
 
-    Subagents work fast but they can go off track. Check in periodically,
-    especially on larger plans.
+    Claude won't pause to check in, so check in yourself — especially on
+    larger plans.
 
 ## Phase 6: Verify and Open a PR
 
@@ -169,8 +191,9 @@ When all tasks are complete, Claude:
 1. **Verifies** — runs tests, linters, and any validation commands. It must show
    you the actual passing output before claiming anything works. No "it should
    pass" — evidence only.
-2. **Presents options** — typically: merge locally, push and create a PR, keep
-   the branch as-is, or discard.
+2. **Presents options** — merge locally, push and create a PR, or keep the
+   branch as-is. Discarding the work is not on the menu: ask for it, and Claude
+   will make you type `discard` to confirm.
 3. **Opens a PR** — using the repository's
    [pull request template](https://github.com/TEAMSchools/teamster/blob/main/.github/pull_request_template.md)
    with squash merge.
@@ -186,7 +209,7 @@ You won't use these every time, but they're available when you need them:
 | -------------------------- | ------------------------------------------------------------ |
 | "Let's brainstorm"         | Explore an idea before building it (Phase 1 above)           |
 | "Let's write the plan"     | Turn a spec into a step-by-step plan (Phase 4 above)         |
-| "Let's execute the plan"   | Work through a plan with subagents (Phase 5 above)           |
+| "Let's execute the plan"   | Work through a plan (Phase 5 above)                          |
 | "Let's troubleshoot"       | Structured debugging — find root cause before fixing         |
 | "Let's write tests first"  | Test-driven development — failing test before implementation |
 | "Let's review the code"    | Request a code review from Claude                            |
@@ -246,8 +269,9 @@ aligns. Skipping review means building something nobody agreed to.
 doesn't make sense, say so. Claude will explain or adjust. Rubber- stamping
 approvals leads to bad designs.
 
-**4. Not checking in during execution.** Subagents work independently. If you
-disappear for an hour, you might come back to a mess. Check in every few tasks.
+**4. Not checking in during execution.** Claude runs the whole plan without
+pausing. If you disappear for an hour, you might come back to a mess. Check in
+every few tasks.
 
 **5. Accepting "tests should pass" without seeing output.** Claude must show you
 actual passing test output before claiming success. If it says "should" or
@@ -262,6 +286,6 @@ Phase    You say                  Claude does                 Output
 2        (automatic)              GH issue + dev branch       Issue URL + spec file
 3        (you + team)             —                           Team approval
 4        "Let's write the plan"   Step-by-step plan           Plan file
-5        "Let's execute the plan" Subagent execution          Completed code
+5        "Let's execute the plan" Plan execution              Completed code
 6        (automatic)              Verify + PR                 PR URL
 ```
