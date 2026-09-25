@@ -34,7 +34,8 @@ models:
         dlt:
           +enabled: true
         # ARCHIVED (#4442): the ODBC ingestion path is retired; models are
-        # kept in-tree for reference. No district enables this variant.
+        # kept in-tree for reference. Disabled by default; the kippmiami
+        # archive rebuild (#5201) enabled it once.
         odbc:
           +enabled: false
         # SFTP ingestion is unused (no district enables it).

@@ -1,0 +1,11 @@
+models:
+  - name: stg_focus__student_gpa_calculated
+    description: >-
+      Kipptaf-level union_relations passthrough of kippmiami's
+      stg_focus__student_gpa_calculated, exposing Focus's own GPA and class-rank
+      calculations at network level. One row per student per school, all of them
+      course-history GPA (`marking_period_id = -1`). Column docs/tests live on
+      the kippmiami source model.
+    columns:
+      - name: _dbt_source_project
+        description: District code location derived from _dbt_source_relation.

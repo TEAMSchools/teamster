@@ -8,7 +8,6 @@ select
     global_course,
     enabled,
     rollover_id,
-    drop_lowest_grade,
     force_weighting,
     add_category,
     modify_category,
@@ -21,4 +20,6 @@ select
     modified,
     created_at,
     updated_at,
+
+    cast(drop_lowest_grade as numeric) as drop_lowest_grade,
 from {{ source("focus", "gradebook_templates") }}

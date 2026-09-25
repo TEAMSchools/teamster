@@ -160,6 +160,21 @@ def test_deanslist_jsongz():
     )
 
 
+def test_branchingminds_extract():
+    from teamster.code_locations.kipptaf.extracts.assets import (
+        branchingminds_extract_assets,
+    )
+    from teamster.code_locations.kipptaf.resources import (
+        SSH_RESOURCE_BRANCHINGMINDS,
+    )
+
+    _test_asset(
+        assets=branchingminds_extract_assets,
+        asset_selection="kipptaf/extracts/branchingminds/school_year_csv",
+        ssh_branchingminds=SSH_RESOURCE_BRANCHINGMINDS,
+    )
+
+
 def test_clever_extract():
     from teamster.code_locations.kipptaf.extracts.assets import clever_extract_assets
     from teamster.code_locations.kipptaf.resources import SSH_RESOURCE_CLEVER

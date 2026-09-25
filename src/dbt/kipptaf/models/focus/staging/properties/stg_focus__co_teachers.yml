@@ -1,0 +1,12 @@
+models:
+  - name: stg_focus__co_teachers
+    description: >-
+      Kipptaf-level union_relations passthrough of kippmiami's
+      stg_focus__co_teachers, exposing Miami's co-teacher assignments at network
+      level. One row per staff member co-assigned to a course period for a
+      school year — the source table has no surrogate id, so the grain is the
+      school year, school, course, course period, and staff id together. Column
+      docs/tests live on the kippmiami source model.
+    columns:
+      - name: _dbt_source_project
+        description: District code location derived from _dbt_source_relation.

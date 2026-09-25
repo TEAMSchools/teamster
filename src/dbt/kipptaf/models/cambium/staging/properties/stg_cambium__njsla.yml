@@ -1,0 +1,15 @@
+models:
+  - name: stg_cambium__njsla
+    description: >-
+      Union of Newark, Camden and Paterson stg_cambium__njsla (the cambium
+      package model), NJSLA and NJSLA Science in Cambium's own column names.
+      Column docs and tests live there; int_pearson__all_assessments maps it to
+      the shared NJ-assessment shape.
+    config:
+      materialized: table
+    columns:
+      - name: _dbt_source_project
+        data_type: string
+        description: >-
+          Source REGION ('kippnewark' / 'kippcamden' / 'kipppaterson'), from
+          extract_source_project(). Despite the name it is not the vendor.

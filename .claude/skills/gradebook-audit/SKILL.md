@@ -4,7 +4,9 @@ description: >-
   Use when any question or task touches the gradebook audit data model or its
   lineage. Triggers: explaining the model, listing refs/lineage/sources for the
   gradebook audit dashboard, adding/removing a flag, adding a region, debugging
-  a flag that isn't firing, or working on rpt_tableau__gradebook_audit or
+  a flag that isn't firing, rolling the assignment expectations over to a new
+  year (turning T&L's expectations sheet into U_EXPECTATIONS count rows to
+  upload to PowerSchool), or working on rpt_tableau__gradebook_audit or
   rpt_gsheets__gradebook_audit_student_flags and their upstream models.
 ---
 
@@ -28,74 +30,35 @@ and configuration behavior. The spec covers AY 2026-2027 design decisions.
 
 ---
 
-## START HERE: making a change to this model
+## Before changing this model
 
-If you have been asked to change anything in this pipeline (add/remove/edit a
-flag, add a region, change a threshold, refactor a model, or anything else), run
-these steps **in order before editing any SQL**. Do not jump straight to a
-procedure below — those are the _how_; this is the _what and whether_. This
-matters most when you did not build this model: it forces the questions and the
-impact checks a newcomer would otherwise miss.
+Confirm with the requester the grain (student / section-category /
+teacher-quarter), the specific flag / region / threshold, and the expected
+effect on the dashboard output (more or fewer rows, a new column, changed
+booleans, or none for a pure refactor). Then state which of these the change
+could break, and how you will check each:
 
-1. **Clarify the change with the requester — do not assume.** Invoke the
-   `superpowers:brainstorming` skill (`Skill` tool) and use it to pin down, one
-   question at a time: exactly what should change, why, at which grain (student
-   / section-category / teacher-quarter), which specific flag / region /
-   threshold, and the expected effect on the dashboard output (more or fewer
-   rows? a new column? changed boolean values? none — a pure refactor?). Do not
-   edit until the change is unambiguous and the requester has confirmed the
-   intended output effect.
+- the **4-row category floor** — every section × quarter must keep exactly 4
+  `category_summary` rows;
+- **grain changes cascade** — a grain change in any scaffold breaks every
+  downstream join and must be threaded through all consumers before a full chain
+  build is valid, so build the affected models one at a time;
+- **uniqueness tests and contracts** on every affected model; a refactor that
+  should not change output gets a byte-identical before/after comparison;
+- the two **health columns** (`is_healthy_gradebook_all_flags` /
+  `_excl_comments`) and the **broadcast** section-flag booleans — a new/removed
+  flag usually has to thread into these;
+- **PII** — student-level data stays in
+  `int_extracts__gradebook_audit_student_flags` and the gsheets report; it must
+  never reach `rpt_tableau__gradebook_audit`;
+- the **layering rule** — reports (`rpt_`) must not read other reports; shared
+  logic lives in the intermediate;
+- the **summer-toggle** state (see the rollover procedure);
+- both **exposures** — the Tableau workbook and the Google Sheet each consume an
+  output of this pipeline.
 
-2. **Read the reference doc** (required by "Always read first" above) so you
-   know the current lineage, grain, and invariants before you reason about
-   impact.
-
-3. **Map the impact up- and downstream.** For every model you plan to touch,
-   enumerate what feeds it and what consumes it — never edit against only the
-   one file in front of you:
-
-   - `mcp__dbt__get_model_parents` and `mcp__dbt__get_model_children` (or
-     `mcp__dbt__get_lineage`) on each target model.
-   - Cross-check against this skill's "List refs, lineage, or sources" procedure
-     (the exposure file) and the reference doc's lineage diagram.
-   - Invoke `dbt:using-dbt-for-analytics-engineering` (`Skill` tool) for the
-     build-and-validate methodology.
-
-4. **Flag the model-specific risks to the requester before implementing.** State
-   which of these the change could break, and how you will check each:
-
-   - the **4-row category floor** — every section × quarter must keep exactly 4
-     `category_summary` rows;
-   - **grain changes cascade** — a grain change in any scaffold breaks every
-     downstream join and must be threaded through all consumers before a full
-     chain build is valid;
-   - **uniqueness tests and contracts** on every affected model;
-   - the two **health columns** (`is_healthy_gradebook_all_flags` /
-     `_excl_comments`) and the **broadcast** section-flag booleans — a
-     new/removed flag usually has to thread into these;
-   - **PII** — student-level data stays in
-     `int_extracts__gradebook_audit_student_flags` and the gsheets report; it
-     must never reach `rpt_tableau__gradebook_audit`;
-   - the **layering rule** — reports (`rpt_`) must not read other reports;
-     shared logic lives in the intermediate;
-   - the **summer-toggle** state (see the rollover procedure);
-   - both **exposures** — the Tableau workbook and the Google Sheet each consume
-     an output of this pipeline.
-
-5. **Implement** via the specific procedure below (add/remove/edit a flag, add a
-   region, or the rollover), following the grain rules it gives.
-
-6. **Validate, then get a review.** Build the affected models one at a time
-   (never cascade a downstream build mid-refactor), confirm the checks that
-   apply (uniqueness tests pass, the 4-row floor holds, and — for a refactor
-   that should not change output — a byte-identical comparison of before/after),
-   then invoke the `superpowers:requesting-code-review` skill (`Skill` tool)
-   before opening or updating the PR.
-
-**For a flag that is misbehaving** (firing when it shouldn't, or not firing when
-it should) rather than a requested change, this is a bug, not a feature: use
-"Debug a flag that isn't firing" below together with the
-`superpowers:systematic-debugging` skill.
+A misbehaving flag is a bug, not a change: use "Debug a flag that isn't firing"
+below.
 
 ---
 
@@ -119,20 +82,34 @@ Do NOT search the codebase. Go directly to the exposure file:
 
 `src/dbt/kipptaf/models/exposures/tableau.yml`
 
-Find the exposure named `gradebook_audit` and read its `depends_on` list — that
-is the authoritative answer.
+Find the exposure named `academic_gradebook_health_suite` and read its
+`depends_on` list — that is the authoritative answer. It is the live dashboard
+staff actually use, and it reads 4 models besides the audit, so the audit is one
+input among several rather than the whole exposure.
 
 Current `depends_on` list (update if the exposure changes):
 
+- `rpt_tableau__gpa_goals`
+- `rpt_tableau__gpa_goal_progress`
+- `rpt_tableau__gpa_cumulative_year`
+- `rpt_tableau__student_course_grades`
 - `rpt_tableau__gradebook_audit`
 
-There is also a disabled exposure `gradebook_audit_teacher_report` — mention it
-only if the user asks about disabled or archived workbooks.
+Two disabled exposures, `gradebook_audit` and `gradebook_audit_teacher_report`,
+also name `rpt_tableau__gradebook_audit`. Do NOT read either as the answer —
+`gradebook_audit`'s workbook holds one sheet, has no views, and reads an extract
+from a dbt Cloud CI schema that no longer exists. Mention them only if the user
+asks about disabled or archived workbooks.
 
-The companion student-flags Google Sheet has its own separate exposure in
-`src/dbt/kipptaf/models/exposures/google-sheets.yml`, named
-`rpt_gsheets__gradebook_audit_student_flags` — check there if asked about the
-gsheets side rather than the Tableau side.
+Two companion Google Sheets have their own exposures in
+`src/dbt/kipptaf/models/exposures/google-sheets.yml` — check there if asked
+about the gsheets side rather than the Tableau side:
+
+- `rpt_gsheets__gradebook_audit_student_flags` — the flagged-student review
+  sheet (read side, carries student PII)
+- `rpt_gsheets__gradebook_audit_template` — the expectations upload template
+  (write side; T&L exports it as the CSV they load into `U_EXPECTATIONS` via the
+  PowerSchool plugin)
 
 ---
 
@@ -158,8 +135,7 @@ present it as fact.
 2. If the reference doc is silent, check git history yourself before answering:
    `git log -S'<column or literal>' -- <path>` to find the introducing commit,
    then read its message and diff. Check the PR that introduced it
-   (`gh pr list --search` / `mcp__github__search_pull_requests`) for comment
-   discussion.
+   (`mcp__github__search_pull_requests`) for comment discussion.
 3. Report what you find precisely — a commit message describing _what_ the code
    does is not the same as a business _why_. If you only find the mechanical
    description, say so plainly rather than inferring a rationale from what the
@@ -178,8 +154,11 @@ present it as fact.
 `stg_google_sheets__gradebook_flags` is disabled — no sheet step needed. Since
 the July 2026 teacher/student split there are no UNPIVOT lists — every flag is a
 hardcoded boolean column, and which model it lives in depends on its grain. Per
-the split's design goal, do NOT add a "reason" column explaining why a flag
-fired — flags stay aggregated booleans.
+the split's design goal, do NOT add a "reason" column to a **student-level**
+flag — those stay aggregated booleans, because they carry PII and fan out per
+student. **Assignment-level** checks are the exception: `flag_reasons` on the
+`category_summary` row already names them in plain language, so a new
+assignment-level check needs a label added there (see "Add a new flag" below).
 
 **Student-level flag** (per student × section × quarter, like
 `qt_percent_grade_greater_100`/`qt_grade_70_comment_missing`):
@@ -204,6 +183,20 @@ fired — flags stay aggregated booleans.
 4. Build in dependency order — `int_extracts__gradebook_audit_student_flags`
    first, then `rpt_gsheets__gradebook_audit_student_flags` and
    `rpt_tableau__gradebook_audit` (both read the int).
+
+**Assignment-level check** (per assignment, like `percent_graded_min_not_met`):
+
+1. Add the check to `int_powerschool__gradebook_assignment_scores_rollup.sql`
+   and fold it into `assignment_has_flags`.
+2. In `rpt_tableau__gradebook_audit.sql`'s `category_join`, add a window
+   `countif` for it over the existing partition
+   (`_dbt_source_project, sectionid, quarter, assignment_category_code`),
+   matching its 4 siblings.
+3. Add a plain-language label to the `array_to_string` array in
+   `category_summary`, keeping the array order stable — Tableau groups on the
+   string, so reordering changes existing values. Do NOT reword an existing
+   label without telling the requester; the strings are user-facing.
+4. Update the properties YAML for both models.
 
 **Category-level flag** (per section × quarter × category, like
 `not_enough_assignments`):
@@ -246,17 +239,127 @@ correctly.
    region's PowerSchool instance and the `U_EXPECTATIONS` table is populated.
    Plugin source and update instructions:
    [TEAMSchools/ps-plugins](https://github.com/TEAMSchools/ps-plugins)
-2. Verify `int_powerschool__u_expectations_qtd_unpivot` returns rows for the new
+2. Wire the ingestion and the union — four files, in this order (Paterson's
+   rollout in #4879 is the worked example):
+   - add `u_expectations` to
+     `src/teamster/code_locations/<district>/powerschool/sis/dlt/config/assets.yaml`
+     (`cursor_column: whenmodified`, `intraday: true`, `nightly: false`) and
+     bump that district's hardcoded asset counts in `tests/`
+   - drop the `stg_powerschool__u_expectations: +enabled: false` entry from
+     `src/dbt/<district>/dbt_project.yml`
+   - add the `stg_powerschool__u_expectations` source entry to
+     `src/dbt/kipptaf/models/powerschool/sources-<district>.yml`
+   - add the relation to `union_relations` in
+     `src/dbt/kipptaf/models/powerschool/staging/stg_powerschool__u_expectations.sql`
+3. **Materialize the dlt asset BEFORE enabling the dbt staging model, and
+   confirm the BigQuery table exists.** dlt creates no table at all for the
+   first load of a source table that is empty, and the newly enabled staging
+   model then fails on a missing relation — which cascades into the kipptaf
+   union and takes the whole gradebook audit down, not just the new region. The
+   plugin being installed is not sufficient; the table needs at least one row.
+4. Verify `int_powerschool__u_expectations_qtd_unpivot` returns rows for the new
    region.
-3. No flag sheet changes needed — the flag columns in
+5. No flag sheet changes needed — the flag columns in
    `rpt_tableau__gradebook_audit` apply to all regions. The only exclusions,
    applied in `category_join`'s `WHERE` clause (and matched in
    `int_extracts__gradebook_audit_student_flags`'s own filters, which both
-   reports inherit), are `_dbt_source_project != 'kippmiami'` and
-   `school_level_alt != 'ES'` (MS/HS only). Confirm sections for the new region
-   appear in `rpt_tableau__gradebook_audit`.
+   reports inherit), are `_dbt_source_project != 'kippmiami'`,
+   `school_level_alt != 'ES'` (MS/HS only), `exclude_from_gpa = 0`, and
+   `course_number != 'SEM22106G1'` (KIPP Newark Lab advisory). Confirm sections
+   for the new region appear in `rpt_tableau__gradebook_audit`.
 
 ---
+
+## Procedure: Roll the assignment expectations over to a new year
+
+**Trigger phrases:** "we have to add gradebook audit count rows to PowerSchool",
+"we need to roll over to the new year for the PS plugin", "T&L sent the new
+year's gradebook expectations sheet", "the audit is still reporting against last
+year's expectations"
+
+**The academics team owns this, and the mechanics are not here.** They run it
+from a Claude Desktop chat skill that reads the planning sheet and emits the
+upload CSVs. That skill is the source of truth for the generation rules -- the
+week mapping, the per-column fill, the per-instance split -- and it lives with
+the plugin it feeds:
+
+- Repo: [`TEAMSchools/ps-plugins`](https://github.com/TEAMSchools/ps-plugins) --
+  how the PowerSchool plugin was built and is maintained, plus the academics
+  chat skill
+- Input sheet tab: `ps_plugin_data`. Columns F and G (`week_start_monday` /
+  `week_end_friday`) exist so academics can match a week number to the actual
+  calendar dates while filling in counts -- a reading aid for a person, not part
+  of the upload and not something the skill computes from. Because the sheet
+  already resolves week numbers to dates, the chat skill does no week-mapping
+  arithmetic at all, which is the single biggest reason this work is safe to
+  hand to a chat session.
+
+Deliberately a pointer and not a copy. This procedure used to carry the full
+mechanics; two copies of a fill rule drift, and when they disagree nobody can
+tell which is right. If you are asked for the mechanics, read the chat skill in
+that repo rather than reconstructing them here.
+
+### The replacement rule, and the quiet failure
+
+`U_EXPECTATIONS` has no `academic_year` column -- it reflects whatever is live
+in PowerSchool right now, which is why
+`int_powerschool__u_expectations_qtd_unpivot` stamps the year as a literal. Its
+key is effectively `(instance, school_level, quarter, week_number)`, so two
+years cannot coexist: a new-year row replaces its same-numbered predecessor
+rather than sitting beside it.
+
+That key is also why replacement is **per quarter**, not all-or-nothing.
+
+**The normal process is all four quarters in one swap.** No standing debt, one
+sitting, done. Document and expect that.
+
+**Some years academics is behind**, with only the current quarter decided. That
+is a legitimate degraded path, not a reason to refuse: Q1 is being taught now
+and needs correct expectations now. Replace what is decided, and be explicit
+about what is not.
+
+**The rule that actually binds: each quarter's rows must be replaced before that
+quarter starts.**
+
+The failure this guards against is quiet, which is why it is worth stating
+carefully. An unreplaced future quarter is harmless in October and wrong the
+Monday it opens -- and it does not blank. It serves last year's counts, which
+are plausible numbers, so the audit silently misreports whether teachers entered
+enough assignments for that entire quarter. Nothing fails and no test catches
+it. A blank dashboard gets reported within a day; a wrong expectation does not.
+
+So the question to ask is never "are all four quarters ready" but "is the
+quarter we are in, and the one starting next, correct". If someone asks you to
+roll the year over with one quarter in hand, do it -- and tell them which
+quarters still carry last year's numbers and the date each becomes wrong.
+
+**For that date to be stateable, the `ps_plugin_data` grid should carry all four
+quarters' week rows with their dates from the start, counts left blank where
+academics has not decided.** With those rows present, `week_start_monday` gives
+the exact deadline ("Q2 opens Monday 11/2 and still has last year's counts").
+Without them an undecided quarter has no Monday in the sheet, and the warning
+degrades to "sometime later", which nobody acts on. This is the same reasoning
+as [#4917](https://github.com/TEAMSchools/teamster/pull/4917), which pivoted the
+template wide so a category with no count shows as a blank cell to fill rather
+than silently vanishing as a missing row -- the same principle one level up, for
+quarters.
+
+### What stays on this side
+
+Neither half of this is complete alone: the data team cannot write to
+PowerSchool, and academics cannot run the verification. After they load, confirm
+via the query in the
+[reference doc's](../../../docs/models/gradebook-audit-data-model.md) Step 1:
+zero null counts, week counts matching `int_students__calendar_week`, four rows
+per `region x school_level` out of
+`int_powerschool__u_expectations_qtd_unpivot`, and the four-row
+`category_summary` floor intact.
+
+That query is also the fallback path. If academics is blocked or the plugin repo
+is unreachable, a data-team member can generate the CSVs from
+`int_students__calendar_week` and the planning sheet directly -- but read the
+chat skill's rules first, and hand the upload back, because the delete-and-load
+happens in the plugin.
 
 ## Procedure: Work on the gradebook audit dashboard after academic year rollover
 
@@ -269,7 +372,8 @@ views this summer"
 **Scope — this is the data-team dbt toggle only.** Updating the assignment
 _expectations_ for the new year is a separate task owned by the academics team,
 done in PowerSchool via the `U_EXPECTATIONS` plugin — not a dbt change. For
-that, see "Start-of-year procedure" (Step 1) in the
+that, see _Procedure: Roll the assignment expectations over to a new year_ above
+and Step 1 of the start-of-year procedure in the
 [reference doc](../../../docs/models/gradebook-audit-data-model.md), which
 carries the plugin repo link and ownership. The steps below cover only the
 dbt-side year / grade-source toggle.
@@ -297,8 +401,9 @@ reads; the gsheets report itself no longer carries any toggle):
 - `src/dbt/kipptaf/models/students/intermediate/int_extracts__gradebook_audit_student_flags.sql`
 - `src/dbt/kipptaf/models/powerschool/intermediate/int_powerschool__u_expectations_qtd_unpivot.sql`
 - `src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__gradebook_es_comments.sql`
+- `src/dbt/kipptaf/models/extracts/google/sheets/rpt_gsheets__gradebook_audit_template.sql`
 
-**Four changes to make:**
+**Five changes to make:**
 
 1. In `rpt_tableau__gradebook_audit` — change the year filter in
    `category_join`'s `WHERE` clause (1 occurrence, marked
@@ -398,7 +503,25 @@ reads; the gsheets report itself no longer carries any toggle):
    fallback data source available; escalate instead of shipping a change that
    silently reports every comment as missing.
 
-Build and verify after all four changes:
+5. In `rpt_gsheets__gradebook_audit_template` — the expectations upload template
+   T&L uses to build the PowerSchool CSV. Change both occurrences (one filters
+   `int_powerschool__calendar_week` in the `term_weeks` CTE, marked
+   `-- summer toggle: see skill`; one stamps the output `academic_year` column,
+   marked `/* summer toggle: see skill */`):
+
+   ```sql
+   -- change this (appears 2 times):
+   {{ var("current_academic_year") }}
+   -- to this:
+   {{ var("current_academic_year") - 1 }}
+   ```
+
+   **While toggled, this model shows the PRIOR year's week grid.** It is the
+   sheet T&L exports to upload the NEW year's expectations, so do not hand it
+   over as the new-year grid until the toggle is reverted — they would be
+   editing last year's weeks.
+
+Build and verify after all five changes:
 
 ```bash
 uv run dbt build \
@@ -406,6 +529,7 @@ uv run dbt build \
     int_extracts__gradebook_audit_student_flags \
     rpt_gsheets__gradebook_audit_student_flags rpt_tableau__gradebook_audit \
     rpt_tableau__gradebook_es_comments \
+    rpt_gsheets__gradebook_audit_template \
   --project-dir src/dbt/kipptaf \
   --defer \
   --state target/prod
@@ -417,7 +541,7 @@ would otherwise read the un-toggled prod copy.
 
 **When to revert:** once the new school year starts and teachers begin entering
 grades in PowerSchool (typically Q1), revert all changes:
-`current_academic_year - 1` → `current_academic_year` in all four files, and
+`current_academic_year - 1` → `current_academic_year` in all five files, and
 `'last_year'` → `'current_year'` in
 `int_extracts__gradebook_audit_student_flags`.
 
@@ -443,13 +567,19 @@ Check in order:
    filtered to flagged-only, so absence there just means no flag fired.)
    Category-level: query `rpt_tableau__gradebook_audit` filtered to
    `row_type = 'category_summary'` for the section/quarter/category.
-2. **In scope at all?** Two silent exclusion rules apply in `category_join`'s
+2. **In scope at all?** Four silent exclusion rules apply in `category_join`'s
    `WHERE` (`rpt_tableau__gradebook_audit`) and matched in
    `int_extracts__gradebook_audit_student_flags`'s own filters:
    - `_dbt_source_project != 'kippmiami'` — Miami is excluded at source (AY
      2026-2027 onward)
    - `school_level_alt != 'ES'` — ES is excluded everywhere; ES is handled
      separately by `rpt_tableau__gradebook_es_comments`
+   - `exclude_from_gpa = 0` — drops Lunch, Early Dismissal and Study Hall, which
+     carry `excludefromgpa = 1` in PowerSchool
+   - `course_number != 'SEM22106G1'` — KIPP Newark Lab's Advisory; graded, but
+     no course-level expectation grain exists (see the reference doc's
+     _Course-level scope_). A Lab teacher who teaches only advisory has no rows
+     in either model at all
 3. **For a student-level flag, did it survive the aggregation into
    `rpt_tableau__gradebook_audit`?** `student_flags_aggregate` groups
    `int_extracts__gradebook_audit_student_flags` to

@@ -1,3 +1,4 @@
+-- trunk-ignore(sqlfluff/ST06): contract column order is mandated
 select
     o.employee_number,
     o.observer_employee_number,
@@ -21,18 +22,39 @@ select
     od.measurement_comments,
 
     srh.formatted_name as teammate,
-    srh.home_business_unit_name as entity,
-    srh.home_work_location_name as `location`,
     srh.home_work_location_grade_band as grade_band,
-    srh.home_department_name as department,
-    srh.job_title,
     srh.reports_to_formatted_name as manager,
     srh.worker_original_hire_date,
     srh.assignment_status,
+
+    lc.location_clean_name,
+    lc.campus_name,
+
+    case
+        srh.home_business_unit_name
+        when 'TEAM'
+        then 'TEAM Academy Charter School'
+        when 'KCNA'
+        then 'KIPP Cooper Norcross Academy'
+        when 'MIA'
+        then 'KIPP Miami'
+        when 'KNJ'
+        then 'KIPP TEAM and Family Schools Inc.'
+        else srh.home_business_unit_name
+    end as home_business_unit_name,
+    srh.home_department_name,
+    srh.job_function,
+    srh.job_title,
+
+    srh.mail,
+    srh.user_principal_name,
     srh.sam_account_name,
-    srh.reports_to_sam_account_name as report_to_sam_account_name,
+
+    srh.reports_to_mail,
+    srh.reports_to_sam_account_name,
+
     sr.formatted_name as observer_name,
-    -- trunk-ignore(sqlfluff/LT01) 
+    -- trunk-ignore(sqlfluff/LT01)
     date_trunc(o.observed_at, week(monday)) as week_start,
 from {{ ref("int_performance_management__observations") }} as o
 left join
@@ -42,7 +64,13 @@ left join
     {{ ref("int_people__staff_roster_history") }} as srh
     on o.employee_number = srh.employee_number
     and o.observed_at between srh.effective_date_start and srh.effective_date_end
-    and srh.assignment_status = 'Active'
+    /* staff on leave are still staff -- excluding them left an observation
+       gated to nobody. Matches rpt_gsheets__operations_pm_roster. */
+    and srh.assignment_status in ('Active', 'Leave')
+    and srh.primary_indicator
+left join
+    {{ ref("int_people__location_crosswalk") }} as lc
+    on srh.home_work_location_name = lc.location_name
 left join
     {{ ref("int_people__staff_roster") }} as sr
     on o.observer_employee_number = sr.employee_number

@@ -1,0 +1,855 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Reachable by link, but not surfaced in search. A robots.txt is not an
+         option: this site is served from an org-root domain the repo does not
+         control, and teamschools.github.io/robots.txt already 404s. -->
+    <meta name="robots" content="noindex, nofollow" />
+    <!-- The page is generated raw rather than through the Material theme, so
+         it inherits no favicon. Inline SVG keeps it self-contained; the file
+         has to open standalone as the PR gate's preview artifact. -->
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%88%3C/text%3E%3C/svg%3E"
+    />
+    <title>Data tools — KIPP NJ | Miami</title>
+    <style>
+      /* Tokens lifted from the KIPP NJ | Miami design system.
+
+   Three type stacks, split by size rather than by role, because what
+   renders well at 26px and what renders well at 11px are different fonts.
+   Each names a real face for every platform instead of trusting a generic
+   keyword to resolve. Per-stack reasoning sits with each one below.
+
+   Two Windows notes that drove the current shape, since both are invisible
+   on a Mac and neither is obvious from reading the CSS:
+
+   - `ui-monospace` resolves only on Apple platforms and Menlo is macOS-only,
+     so a mono stack ending there falls through to generic `monospace`, which
+     Windows maps to Courier New.
+   - Windows rasterization depends on font hinting in a way macOS does not.
+     A face that is unhinted at small sizes looks fine on one and poor on the
+     other, from identical CSS.
+
+   Segoe UI precedes Calibri throughout: both are Microsoft faces, but Segoe
+   UI is drawn for screen chrome at small sizes and Calibri is a document
+   face. */
+      :root {
+        --kipp-indigo: #001e62;
+        --kipp-red: #ee3c37;
+        --kipp-orange: #f9a21a;
+        --kipp-green: #c3d52e;
+        --kipp-blue: #57c0e9;
+        --indigo-700: #0a2f7e;
+        --indigo-600: #1a44a0;
+        --indigo-200: #b9caf0;
+        --indigo-100: #dde6fa;
+        --indigo-50: #eef3fc;
+        --neutral-0: #fff;
+        --neutral-25: #fafbfc;
+        --neutral-100: #e9edf3;
+        --neutral-200: #d6dde7;
+        --neutral-300: #b6c0cf;
+        --neutral-400: #8d99ab;
+        --neutral-600: #5a6675;
+        --neutral-800: #2a3340;
+        --surface-page: var(--neutral-25);
+        --surface-card: var(--neutral-0);
+        --surface-muted: var(--neutral-100);
+        --text-body: var(--neutral-800);
+        --text-muted: var(--neutral-600);
+        --text-subtle: var(--neutral-400);
+        --text-link: var(--indigo-600);
+        --border-subtle: var(--neutral-200);
+        --border-default: var(--neutral-300);
+        --focus-ring: var(--kipp-blue);
+        /* Display sizes only -- the logotype at 17px and the page heading at
+           26px. Desktop Whitney is cut for sizes like these and holds up. */
+        --font-display:
+          "Whitney SSm A", "Whitney", -apple-system, BlinkMacSystemFont,
+          "Segoe UI", Roboto, Calibri, "Helvetica Neue", Arial, sans-serif;
+        /* Everything else, which is 17 rules between 11px and 16px. Note the
+           absence of plain "Whitney": staff Windows machines carry the DESKTOP
+           cut, not ScreenSmart, and it is not hinted for these sizes. macOS
+           rasterizes outlines and mostly ignores hinting, so it looks fine
+           there and poor on Windows -- the same file, the same CSS. Whitney
+           SSm stays first because ScreenSmart is cut for exactly this range;
+           anyone who has it should get it. */
+        --font-brand:
+          "Whitney SSm A", -apple-system, BlinkMacSystemFont, "Segoe UI",
+          Roboto, Calibri, "Helvetica Neue", Arial, sans-serif;
+        --font-mono:
+          "JetBrains Mono", "Cascadia Mono", Consolas, ui-monospace, "SF Mono",
+          Menlo, "Roboto Mono", monospace;
+      }
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+      }
+      body {
+        background: var(--surface-page);
+        font-family: var(--font-brand);
+        color: var(--text-body);
+        -webkit-font-smoothing: antialiased;
+      }
+      a {
+        color: var(--text-link);
+        text-decoration: none;
+      }
+      :focus-visible {
+        outline: 2px solid var(--focus-ring);
+        outline-offset: 2px;
+      }
+      .shell {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+      }
+
+      /* masthead */
+      .mast {
+        background: var(--kipp-indigo);
+        padding: 16px 28px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+        flex-wrap: wrap;
+      }
+      .mast .brand {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+      .wordmark {
+        font: 800 17px/1 var(--font-display);
+        letter-spacing: 0.02em;
+        color: #fff;
+      }
+      .wordmark span {
+        font-weight: 300;
+        opacity: 0.75;
+      }
+      .rule {
+        width: 1px;
+        height: 26px;
+        background: rgba(255, 255, 255, 0.28);
+      }
+      .mast .kicker {
+        font: 600 15px/1 var(--font-brand);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #fff;
+      }
+      .mast .meta {
+        font: 400 12.5px/1 var(--font-brand);
+        color: rgba(255, 255, 255, 0.62);
+      }
+
+      /* header block */
+      .head {
+        padding: 22px 28px 0;
+        background: var(--surface-card);
+        border-bottom: 1px solid var(--border-subtle);
+      }
+      .head-top {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 28px;
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+      }
+      .head h1 {
+        font: 700 26px/1.2 var(--font-display);
+        color: var(--kipp-indigo);
+        margin: 0 0 4px;
+      }
+      .head p.sub {
+        font: 400 14px/1.5 var(--font-brand);
+        color: var(--text-muted);
+        margin: 0;
+        max-width: 52ch;
+      }
+      .controls {
+        display: flex;
+        align-items: flex-end;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .field {
+        height: 44px;
+        border: 1px solid var(--border-default);
+        border-radius: 6px;
+        background: var(--surface-card);
+        font: 400 14px/1 var(--font-brand);
+        color: var(--text-body);
+        padding: 0 12px;
+      }
+      .field::placeholder {
+        color: var(--text-subtle);
+      }
+      #q {
+        width: 300px;
+      }
+      #dom {
+        /* auto, so the control fits the longest group name rather than
+           truncating it. The 900px breakpoint below still forces 100%. */
+        width: auto;
+        min-width: 210px;
+        cursor: pointer;
+      }
+      .eyebrow {
+        display: block;
+        font: 700 11px/1 var(--font-brand);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--text-muted);
+        margin-bottom: 9px;
+      }
+
+      /* promo cards */
+      .promos {
+        display: grid;
+        /* auto-fill, not a fixed 5, so cards keep a consistent width
+           whatever the card count is -- the list grows and shrinks as
+           prose lands in Zendesk. */
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 10px;
+        margin-bottom: 18px;
+      }
+      .promo {
+        display: block;
+        padding: 11px 13px;
+        background: var(--indigo-50);
+        border: 1px solid var(--indigo-100);
+        border-radius: 5px;
+        transition:
+          background 0.12s,
+          border-color 0.12s;
+      }
+      .promo:hover {
+        border-color: var(--kipp-indigo);
+        background: var(--indigo-100);
+      }
+      .promo.alt {
+        background: var(--surface-card);
+        border: 2px solid var(--kipp-indigo);
+      }
+      .promo.alt:hover {
+        background: var(--indigo-50);
+      }
+      .promo b {
+        display: block;
+        font: 600 13.5px/1.3 var(--font-brand);
+        color: var(--kipp-indigo);
+      }
+      .promo em {
+        display: block;
+        margin-top: 2px;
+        font: 400 12px/1.4 var(--font-brand);
+        color: var(--text-muted);
+        font-style: normal;
+      }
+
+      /* tabs */
+      .tabs {
+        display: flex;
+        gap: 2px;
+        overflow-x: auto;
+      }
+      .tab {
+        appearance: none;
+        background: none;
+        border: 0;
+        border-bottom: 3px solid transparent;
+        padding: 12px 14px;
+        cursor: pointer;
+        font: 600 13.5px/1 var(--font-brand);
+        color: var(--text-muted);
+        white-space: nowrap;
+      }
+      .tab:hover {
+        color: var(--kipp-indigo);
+      }
+      .tab[aria-selected="true"] {
+        color: var(--kipp-indigo);
+        border-bottom-color: var(--kipp-indigo);
+      }
+      .tab .n {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        opacity: 0.7;
+        margin-left: 5px;
+      }
+
+      /* format chips */
+      .chips {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 12px 28px;
+        background: var(--surface-card);
+        border-bottom: 1px solid var(--border-subtle);
+      }
+      .chip {
+        appearance: none;
+        height: 30px;
+        padding: 0 11px;
+        border-radius: 999px;
+        cursor: pointer;
+        border: 1px solid var(--border-default);
+        background: var(--surface-card);
+        font: 600 12.5px/1 var(--font-brand);
+        color: var(--text-muted);
+      }
+      .chip:hover {
+        border-color: var(--kipp-indigo);
+        color: var(--kipp-indigo);
+      }
+      .chip[aria-pressed="true"] {
+        background: var(--kipp-indigo);
+        border-color: var(--kipp-indigo);
+        color: #fff;
+      }
+      .chip .n {
+        font-family: var(--font-mono);
+        opacity: 0.75;
+        margin-left: 4px;
+      }
+      .linkbtn {
+        appearance: none;
+        background: none;
+        border: 0;
+        cursor: pointer;
+        font: 600 12.5px/1 var(--font-brand);
+        color: var(--indigo-600);
+      }
+
+      /* lens banner */
+      .lens {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 11px 28px;
+        background: var(--indigo-50);
+        border-bottom: 1px solid var(--indigo-100);
+        flex-wrap: wrap;
+      }
+      .lens span {
+        font: 400 13px/1.4 var(--font-brand);
+        color: var(--indigo-700);
+      }
+
+      /* list */
+      .list {
+        flex: 1;
+        padding: 8px 20px 48px;
+      }
+      .grouphead {
+        padding: 20px 8px 4px;
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+      }
+      .grouphead h2 {
+        font: 700 12px/1 var(--font-brand);
+        text-transform: uppercase;
+        letter-spacing: 0.11em;
+        color: var(--kipp-indigo);
+        margin: 0;
+      }
+      .grouphead .fill {
+        flex: 1;
+        height: 1px;
+        background: var(--border-subtle);
+      }
+      .grouphead .n {
+        font: 500 12px/1 var(--font-mono);
+        color: var(--text-subtle);
+      }
+
+      .item {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 2px 18px;
+        align-items: baseline;
+        padding: 9px 12px;
+        border-radius: 5px;
+        border: 1px solid transparent;
+      }
+      .item:hover {
+        background: var(--indigo-50);
+        border-color: var(--indigo-100);
+      }
+      .item .title {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 9px;
+      }
+      .item .name {
+        font: 600 15.5px/1.35 var(--font-brand);
+        color: var(--kipp-indigo);
+      }
+      a.name:hover {
+        text-decoration: underline;
+      }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font: 600 11px/1 var(--font-brand);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--indigo-700);
+        background: var(--surface-card);
+        border: 1px solid var(--border-subtle);
+        border-radius: 999px;
+        padding: 4px 8px 4px 6px;
+      }
+      .dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 999px;
+      }
+      .sys {
+        font: 500 11px/1 var(--font-mono);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-muted);
+        background: var(--surface-muted);
+        border-radius: 3px;
+        padding: 4px 6px;
+      }
+      .limited {
+        font: 600 11px/1 var(--font-brand);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--kipp-indigo);
+        background: #fdeccb;
+        border-radius: 3px;
+        padding: 4px 6px;
+      }
+      .guide {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font: 600 12px/1 var(--font-brand);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--indigo-600);
+        background: var(--indigo-50);
+        border: 1px solid var(--indigo-200);
+        border-radius: 999px;
+        padding: 6px 11px 6px 9px;
+        white-space: nowrap;
+      }
+      .guide:hover {
+        background: var(--kipp-indigo);
+        border-color: var(--kipp-indigo);
+        color: #fff;
+      }
+      .desc {
+        grid-column: 1;
+        margin: 0;
+        font: 400 13.5px/1.5 var(--font-brand);
+        color: var(--text-muted);
+        max-width: 74ch;
+        text-wrap: pretty;
+      }
+      .desc.todo {
+        color: var(--text-subtle);
+        font-style: italic;
+      }
+      .regions {
+        grid-column: 1;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 7px;
+      }
+      .region {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        font: 600 12.5px/1 var(--font-brand);
+        color: var(--kipp-indigo);
+        background: var(--surface-card);
+        border: 1px solid var(--border-default);
+        border-radius: 5px;
+        padding: 8px 12px 8px 10px;
+      }
+      .region:hover {
+        border-color: var(--kipp-indigo);
+        background: var(--indigo-50);
+      }
+
+      .empty {
+        padding: 56px 12px;
+        text-align: center;
+      }
+      .empty b {
+        display: block;
+        font: 600 16px/1.4 var(--font-brand);
+        color: var(--kipp-indigo);
+        margin-bottom: 6px;
+      }
+      .empty p {
+        font: 400 13.5px/1.5 var(--font-brand);
+        color: var(--text-muted);
+        margin: 0;
+      }
+
+      .foot {
+        padding: 18px 28px 28px;
+        font: 400 12px/1.5 var(--font-brand);
+        color: var(--text-subtle);
+        border-top: 1px solid var(--border-subtle);
+      }
+
+      @media (max-width: 900px) {
+        .promos {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        #q,
+        #dom {
+          width: 100%;
+        }
+        .controls {
+          width: 100%;
+        }
+        .head-top {
+          flex-direction: column;
+          align-items: stretch;
+        }
+      }
+      @media (max-width: 640px) {
+        .mast,
+        .head,
+        .chips,
+        .lens {
+          padding-left: 16px;
+          padding-right: 16px;
+        }
+        .list {
+          padding-left: 8px;
+          padding-right: 8px;
+        }
+        .promos {
+          grid-template-columns: 1fr;
+        }
+        .item {
+          grid-template-columns: 1fr;
+        }
+        .item .guide {
+          grid-column: 1;
+          justify-self: start;
+          margin-top: 6px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <header class="mast">
+        <div class="brand">
+          <span class="wordmark">KIPP NJ <span>|</span> Miami</span>
+          <span class="rule"></span>
+          <span class="kicker">Data tools</span>
+        </div>
+        <span class="meta" id="mastmeta"></span>
+      </header>
+
+      <div class="head">
+        <div class="head-top">
+          <div>
+            <h1>Find a data tool</h1>
+            <p class="sub">
+              Every link here opens somewhere else. Search if you know the name;
+              pick a view if you don't.
+            </p>
+          </div>
+          <div class="controls">
+            <input
+              id="q"
+              class="field"
+              type="search"
+              placeholder="Search tools — name or what it does"
+              aria-label="Search tools"
+            />
+            <select
+              id="dom"
+              class="field"
+              aria-label="Filter by domain"
+            ></select>
+          </div>
+        </div>
+
+        <div>
+          <span class="eyebrow">From the data team</span>
+          <div class="promos" id="promos"></div>
+        </div>
+
+        <div class="tabs" id="tabs" role="tablist"></div>
+      </div>
+
+      <div class="chips">
+        <span class="eyebrow" style="margin: 0 4px 0 0">Format</span>
+        <span id="chips" style="display: contents"></span>
+        <button class="linkbtn" id="clearsys" hidden>Clear</button>
+      </div>
+
+      <div class="lens" id="lens" hidden>
+        <span id="lenstext"></span>
+        <button class="linkbtn" id="showall"></button>
+      </div>
+
+      <main class="list" id="list"></main>
+
+      <footer class="foot" id="foot"></footer>
+    </div>
+
+    <script>
+      const CATALOG = __CATALOG__;
+    </script>
+    <script>
+      (() => {
+        const { tools, groups, views, systems, promos, meta } = CATALOG;
+        const state = { view: "all", q: "", sys: [], dom: "all" };
+        const esc = (s) =>
+          String(s ?? "").replace(
+            /[&<>"']/g,
+            (c) =>
+              ({
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                '"': "&quot;",
+                "'": "&#39;",
+              })[c],
+          );
+
+        const inView = (t, v) => v === "all" || (t.audiences || []).includes(v);
+        const viewCount = (v) => tools.filter((t) => inView(t, v)).length;
+        const sysCount = (s) => tools.filter((t) => t.system === s).length;
+
+        document.getElementById("mastmeta").textContent =
+          `${tools.length} tools` +
+          (meta.updated ? ` · updated ${meta.updated}` : "");
+        document.getElementById("foot").textContent =
+          "Generated from docs/launch/links.yml" +
+          (meta.updated ? ` · ${meta.updated}` : "");
+
+        document.getElementById("promos").innerHTML = promos
+          .map(
+            (p) =>
+              `<a class="promo${p.emphasis ? " alt" : ""}" href="${esc(p.url)}">
+       <b>${esc(p.label)}</b><em>${esc(p.blurb)}</em></a>`,
+          )
+          .join("");
+
+        document.getElementById("dom").innerHTML =
+          `<option value="all">All domains</option>` +
+          groups
+            .map((g) => `<option value="${esc(g.id)}">${esc(g.name)}</option>`)
+            .join("");
+
+        const tabsEl = document.getElementById("tabs");
+        tabsEl.innerHTML = views
+          .map(
+            (v) =>
+              `<button class="tab" role="tab" data-v="${esc(v.id)}"
+       aria-selected="${v.id === "all"}">${esc(v.label)}<span class="n">${viewCount(v.id)}</span></button>`,
+          )
+          .join("");
+
+        const chipsEl = document.getElementById("chips");
+        chipsEl.innerHTML = systems
+          .map(
+            (s) =>
+              `<button class="chip" data-s="${esc(s.id)}" aria-pressed="false">${esc(s.label)}<span class="n">${sysCount(s.id)}</span></button>`,
+          )
+          .join("");
+
+        function build() {
+          const q = state.q.trim().toLowerCase();
+          const buckets = new Map(
+            groups.map((g) => [g.id, { name: g.name, items: [] }]),
+          );
+          const seenFamily = new Map();
+
+          for (const t of tools) {
+            if (!inView(t, state.view)) continue;
+            if (state.sys.length && !state.sys.includes(t.system)) continue;
+            if (state.dom !== "all" && t.group !== state.dom) continue;
+            if (
+              q &&
+              !`${t.name} ${t.description} ${t.family ? t.family.name : ""}`
+                .toLowerCase()
+                .includes(q)
+            )
+              continue;
+
+            if (t.family) {
+              const link = {
+                label: t.regionLabel,
+                color: t.regionColor,
+                url: t.url,
+              };
+              const hit = seenFamily.get(t.family.id);
+              if (hit) {
+                hit.regions.push(link);
+                continue;
+              }
+              const item = {
+                name: t.family.name,
+                description: t.family.description,
+                system: t.systemLabel,
+                guide: null,
+                regionLabel: "",
+                limited: false,
+                regions: [link],
+                isFamily: true,
+              };
+              seenFamily.set(t.family.id, item);
+              buckets.get(t.family.group).items.push(item);
+              continue;
+            }
+            buckets
+              .get(t.group)
+              .items.push({ ...t, regions: [], isFamily: false });
+          }
+          return [...buckets.values()].filter((b) => b.items.length);
+        }
+
+        function itemHtml(it) {
+          const title = it.isFamily
+            ? `<span class="name">${esc(it.name)}</span>`
+            : `<a class="name" href="${esc(it.url)}">${esc(it.name)}</a>`;
+          const region = it.regionLabel
+            ? `<span class="pill"><span class="dot" style="background:${esc(it.regionColor)}"></span>${esc(it.regionLabel)}</span>`
+            : "";
+          const limited = it.limited
+            ? `<span class="limited">Limited access</span>`
+            : "";
+          const sys = it.system
+            ? `<span class="sys">${esc(it.systemLabel || it.system)}</span>`
+            : "";
+          const guide = it.guide
+            ? `<a class="guide" href="${esc(it.guide)}"><svg viewBox="0 0 20 20" width="14" height="14" fill="none"
+           stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path
+           d="M10 5.5C8.5 4.3 6.6 4 4.2 4v11c2.4 0 4.3.3 5.8 1.5 1.5-1.2 3.4-1.5 5.8-1.5V4c-2.4 0-4.3.3-5.8 1.5z"/><path
+           d="M10 5.5v11"/></svg>Help guide</a>`
+            : "";
+          const desc = it.description
+            ? `<p class="desc">${esc(it.description)}</p>`
+            : `<p class="desc todo">No description yet.</p>`;
+          const regions = it.regions.length
+            ? `<div class="regions">${it.regions
+                .map(
+                  (r) =>
+                    `<a class="region" href="${esc(r.url)}"><span class="dot" style="background:${esc(r.color)}"></span>${esc(r.label)}</a>`,
+                )
+                .join("")}</div>`
+            : "";
+          return `<div class="item"><div class="title">${title}${region}${limited}${sys}</div>${guide}${desc}${regions}</div>`;
+        }
+
+        function render() {
+          const groupsOut = build();
+          const list = document.getElementById("list");
+          list.innerHTML = groupsOut.length
+            ? groupsOut
+                .map(
+                  (g) =>
+                    `<div class="grouphead"><h2>${esc(g.name)}</h2><span class="fill"></span><span class="n">${g.items.length}</span></div>` +
+                    g.items.map(itemHtml).join(""),
+                )
+                .join("")
+            : `<div class="empty"><b>No tool matches that</b>
+           <p>Names on this page don't always match what people call the tool.
+           <button class="linkbtn" id="clearq">Clear the search</button> and browse the groups instead.</p></div>`;
+
+          const cq = document.getElementById("clearq");
+          if (cq)
+            cq.onclick = () => {
+              state.q = "";
+              document.getElementById("q").value = "";
+              render();
+            };
+
+          // The banner appears for any engaged filter -- role, domain or
+          // format -- since all three hide tools. The lens sentence only
+          // describes role views, so it is swapped out for the other two.
+          const isRole = state.view !== "all";
+          const filtered =
+            isRole || state.dom !== "all" || state.sys.length > 0;
+          document.getElementById("lens").hidden = !filtered;
+          document.getElementById("lenstext").textContent = isRole
+            ? "Views are lenses, not folders — a tool can sit in several, and nothing here is access-controlled."
+            : "Filtered — some tools are hidden from this list.";
+          document.getElementById("showall").textContent =
+            `See all ${tools.length} tools →`;
+          document.getElementById("clearsys").hidden = state.sys.length === 0;
+          for (const b of tabsEl.querySelectorAll(".tab"))
+            b.setAttribute("aria-selected", String(b.dataset.v === state.view));
+          for (const b of chipsEl.querySelectorAll(".chip"))
+            b.setAttribute(
+              "aria-pressed",
+              String(state.sys.includes(b.dataset.s)),
+            );
+        }
+
+        tabsEl.onclick = (e) => {
+          const b = e.target.closest(".tab");
+          if (b) {
+            state.view = b.dataset.v;
+            render();
+          }
+        };
+        chipsEl.onclick = (e) => {
+          const b = e.target.closest(".chip");
+          if (!b) return;
+          const s = b.dataset.s;
+          state.sys = state.sys.includes(s)
+            ? state.sys.filter((x) => x !== s)
+            : [...state.sys, s];
+          render();
+        };
+        document.getElementById("clearsys").onclick = () => {
+          state.sys = [];
+          render();
+        };
+        document.getElementById("showall").onclick = () => {
+          // Clears every filter, not just the role view -- otherwise the
+          // banner stays up after clicking the thing that promises all tools.
+          state.view = "all";
+          state.dom = "all";
+          state.sys = [];
+          document.getElementById("dom").value = "all";
+          render();
+        };
+        document.getElementById("q").oninput = (e) => {
+          state.q = e.target.value;
+          render();
+        };
+        document.getElementById("dom").onchange = (e) => {
+          state.dom = e.target.value;
+          render();
+        };
+
+        render();
+      })();
+    </script>
+  </body>
+</html>

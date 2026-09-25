@@ -21,3 +21,27 @@ models:
       - name: dual_enrollment_indicator_label
         description:
           Decoded label for the dual_enrollment_indicator select field.
+      - name: course_history_term_label
+        description: >-
+          Decoded label for the course_history_term select field — the term
+          structure a course grants credit over. Null for stored values with no
+          matching option.
+      - name: course_level_label
+        description: >-
+          Decoded label for the course_level select field. The option labels are
+          identical to the stored codes, so this column repeats
+          stg_focus__master_courses.course_level rather than translating it.
+      - name: ese_label
+        description: Decoded label for the ese (ESE Type) select field.
+      - name: ell_instruct_model_label
+        description: Decoded label for the ell_instruct_model select field.
+      - name: de_inst_type_label
+        description: >-
+          Decoded label for the de_inst_type (Dual Enrollment Institution Type)
+          select field.
+      - name: online_course_label
+        description: Decoded label for the online_course select field.
+      - name: distance_learning_label
+        description: Decoded label for the distance_learning select field.
+      - name: career_pathway_label
+        description: Decoded label for the career_pathway select field.

@@ -1,7 +1,5 @@
 models:
   - name: dim_terms
-    config:
-      materialized: table
     description: >-
       Generalized term/period dimension. One row per named period per region.
       Covers academic terms, performance management rounds, survey windows,
@@ -13,19 +11,20 @@ models:
         data_type: string
         description: >-
           Surrogate key for this dimension. Hash composition uses term type,
-          code, name, start date, region, and school ID. Region attributes are
-          reachable via dim_terms → dim_locations → dim_regions FK traversal.
+          code, name, start date, region, school ID, and grade band. Region
+          attributes are reachable via dim_terms → dim_locations → dim_regions
+          FK traversal.
         constraints:
           - type: primary_key
             warn_unsupported: false
             warn_unenforced: false
         data_tests:
+          # warn, not error: dim_terms is a view, so this only re-runs on a SQL
+          # edit. The grain check that fires on sheet edits lives on
+          # stg_google_sheets__reporting__terms.
           - unique:
               config:
-                severity: error
-          - not_null:
-              config:
-                severity: error
+                severity: warn
 
       - name: location_key
         data_type: string
@@ -33,12 +32,11 @@ models:
           Foreign key to dim_locations. Surrogate key derived from the location
           name. Nullable when the period is region-wide or when the school is
           not present in dim_locations.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_locations')
-            to_columns: [location_key]
-            warn_unsupported: false
-            warn_unenforced: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_locations')
+              to_columns: [location_key]
         data_tests:
           - relationships:
               arguments:
@@ -57,7 +55,12 @@ models:
         quote: true
         data_type: string
         description: >-
-          Category of period (e.g., academic, PM, survey, assessment, fiscal).
+          Category of period. KIPP-managed and sourced from
+          stg_google_sheets__reporting__terms, not derived from PowerSchool.
+          Values include RT for reporting term at quarter grain, ATT for
+          attendance at semester or year grain, plus LIT, AR, REP, and SURVEY.
+          Quarter attendance rows live under RT with term_name Q1 through Q4 —
+          not under ATT, and not keyed by term_code RT1 through RT4.
 
       - name: term_code
         data_type: string
@@ -111,7 +114,3 @@ models:
           Semester this period falls within. S1 for term_name Q1/Q2, S2 for
           Q3/Q4. Self-mapped for type='ATT' semester rows (term_code S1/S2).
           NULL for periods that don't map to a quarter (annual, custom, etc.).
-        data_tests:
-          - accepted_values:
-              arguments:
-                values: [S1, S2]

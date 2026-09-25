@@ -39,11 +39,41 @@ select
     contact_1_name as mother,
     contact_2_name as father,
 
-    concat(pickup_1_name, ' | ', pickup_1_phone_mobile) as release_1,
-    concat(pickup_2_name, ' | ', pickup_2_phone_mobile) as release_2,
-    concat(pickup_3_name, ' | ', pickup_3_phone_mobile) as release_3,
+    -- The release columns hold the student's emergency contacts. They read the
+    -- pickup_* slots until #4751; no model has emitted a pickup_* contact slot
+    -- since the Finalsite cutover, so every release column was empty for every
+    -- NJ student. array_to_string rather than concat: concat returns NULL if
+    -- either argument is NULL, which would drop the contact's name entirely for
+    -- the minority with no phone on file.
+    array_to_string(
+        [
+            emergency_1_name,
+            coalesce(emergency_1_phone_mobile, emergency_1_phone_primary)
+        ],
+        ' | '
+    ) as release_1,
+    array_to_string(
+        [
+            emergency_2_name,
+            coalesce(emergency_2_phone_mobile, emergency_2_phone_primary)
+        ],
+        ' | '
+    ) as release_2,
+    array_to_string(
+        [
+            emergency_3_name,
+            coalesce(emergency_3_phone_mobile, emergency_3_phone_primary)
+        ],
+        ' | '
+    ) as release_3,
+    array_to_string(
+        [
+            emergency_4_name,
+            coalesce(emergency_4_phone_mobile, emergency_4_phone_primary)
+        ],
+        ' | '
+    ) as release_4,
 
-    null as release_4,
     null as release_5,
 
     coalesce(contact_1_email_current, contact_2_email_current) as guardianemail,

@@ -1,0 +1,16 @@
+select
+    academic_year,
+    metric,
+    aggregation_hash,
+    org_level,
+    region,
+    schoolid,
+    grade_band,
+    goal_proportion,
+    n_students_in_grain,
+    n_students_measured,
+    n_students_met,
+    metric_rate,
+    is_goal_met,
+    progress_to_goal,
+from {{ ref("int_gpa__goal_aggregations") }}

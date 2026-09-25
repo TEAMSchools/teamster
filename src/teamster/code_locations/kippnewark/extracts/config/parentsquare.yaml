@@ -1,0 +1,78 @@
+assets:
+  - query_config:
+      type: schema
+      value:
+        table:
+          schema: kippnewark_extracts
+          name: rpt_parentsquare__schools
+    file_config:
+      stem: schools
+      suffix: csv
+    destination_config:
+      name: parentsquare
+  - query_config:
+      type: schema
+      value:
+        table:
+          schema: kippnewark_extracts
+          name: rpt_parentsquare__students
+    file_config:
+      stem: students
+      suffix: csv
+    destination_config:
+      name: parentsquare
+  - query_config:
+      type: schema
+      value:
+        table:
+          schema: kippnewark_extracts
+          name: rpt_parentsquare__parents
+    file_config:
+      stem: parents
+      suffix: csv
+    destination_config:
+      name: parentsquare
+  - query_config:
+      type: schema
+      value:
+        table:
+          schema: kippnewark_extracts
+          name: rpt_parentsquare__emergency_contacts
+    file_config:
+      stem: emergency_contacts
+      suffix: csv
+    destination_config:
+      name: parentsquare
+  - query_config:
+      type: schema
+      value:
+        table:
+          schema: kippnewark_extracts
+          name: rpt_parentsquare__staff
+    file_config:
+      stem: staff
+      suffix: csv
+    destination_config:
+      name: parentsquare
+  - query_config:
+      type: schema
+      value:
+        table:
+          schema: kippnewark_extracts
+          name: rpt_parentsquare__sections
+    file_config:
+      stem: sections
+      suffix: csv
+    destination_config:
+      name: parentsquare
+  - query_config:
+      type: schema
+      value:
+        table:
+          schema: kippnewark_extracts
+          name: rpt_parentsquare__rosters
+    file_config:
+      stem: rosters
+      suffix: csv
+    destination_config:
+      name: parentsquare

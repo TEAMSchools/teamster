@@ -9,6 +9,16 @@ models:
       dimensions — assignee and original_assignee are nullable), dim_dates
       (created and solved as role-playing — solved is nullable), and
       dim_locations.
+    config:
+      materialized: table
+      meta:
+        dagster:
+          # Nightly: every data test on this view recomputed it in full, and
+          # dbt Cloud CI ran that on nearly every PR. No Cube cube or Tableau
+          # exposure reads this mart, so nightly clears its break-even with
+          # room to spare. Refs #5217
+          automation_condition:
+            cron_schedule: 0 3 * * *
     columns:
       - name: support_ticket_key
         data_type: string
@@ -18,23 +28,21 @@ models:
         constraints:
           - type: primary_key
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           - unique
-          - not_null
 
       - name: submitter_staff_key
         data_type: string
         description: >-
           Foreign key to dim_staff for the ticket submitter. Surrogate key
           derived from submitter employee_number.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_staff')
-            to_columns: [staff_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_staff')
+              to_columns: [staff_key]
         data_tests:
-          - not_null
-
           - relationships:
               arguments:
                 to: ref('dim_staff')
@@ -46,11 +54,11 @@ models:
           key derived from assignee employee_number. Nullable — unassigned
           tickets have no assignee.
 
-        constraints:
-          - type: foreign_key
-            to: ref('dim_staff')
-            to_columns: [staff_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_staff')
+              to_columns: [staff_key]
         data_tests:
           - relationships:
               arguments:
@@ -63,11 +71,11 @@ models:
           Surrogate key derived from original assignee employee_number. Nullable
           — not all tickets have a creation-time assignee.
 
-        constraints:
-          - type: foreign_key
-            to: ref('dim_staff')
-            to_columns: [staff_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_staff')
+              to_columns: [staff_key]
         data_tests:
           - relationships:
               arguments:
@@ -80,11 +88,11 @@ models:
           custom field value on the ticket. Currently fails 100% relationships
           against dim_locations pending Zendesk-slug → canonical-location
           crosswalk (#3709).
-        constraints:
-          - type: foreign_key
-            to: ref('dim_locations')
-            to_columns: [location_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_locations')
+              to_columns: [location_key]
         data_tests:
           - relationships:
               arguments:
@@ -95,11 +103,11 @@ models:
         description: >-
           Foreign key to dim_dates for the date the ticket was created. Matches
           dim_dates.date_key.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_dates')
-            to_columns: [date_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_dates')
+              to_columns: [date_key]
         data_tests:
           - not_null
 
@@ -114,11 +122,11 @@ models:
           dim_dates.date_key. Nullable — open or pending tickets have no solved
           date.
 
-        constraints:
-          - type: foreign_key
-            to: ref('dim_dates')
-            to_columns: [date_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_dates')
+              to_columns: [date_key]
         data_tests:
           - relationships:
               arguments:

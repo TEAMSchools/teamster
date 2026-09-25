@@ -13,6 +13,7 @@ from dagster import (
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
+    SkipReason,
     define_asset_job,
     sensor,
 )
@@ -57,14 +58,10 @@ def build_amplify_mclass_sftp_sensor(
         run_requests = []
         cursor: dict = json.loads(context.cursor or "{}")
 
-        with (
-            ssh_amplify.get_connection() as connection,
-            connection.open_sftp() as sftp_client,
-        ):
-            files = ssh_amplify.listdir_attr_r(
-                sftp_client=sftp_client,
-                remote_dir=remote_dir_regex,
-            )
+        files = ssh_amplify.listdir_attr_r_or_skip(remote_dir=remote_dir_regex)
+
+        if isinstance(files, SkipReason):
+            return files
 
         for asset in asset_selection:
             asset_identifier = asset.key.to_python_identifier()

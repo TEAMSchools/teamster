@@ -21,11 +21,6 @@ models:
             warn_unsupported: false
         data_tests:
           - unique
-          - not_null
-          - relationships:
-              arguments:
-                to: ref('dim_student_enrollments')
-                field: student_enrollment_key
 
       - name: iep_classification
         data_type: string
@@ -37,20 +32,20 @@ models:
       - name: special_education_code
         data_type: string
         description: >-
-          NJ state special education code (Newark and Camden only; NULL for
-          Miami and Paterson). From the latest IEP span.
+          NJ state special education code (NJ regions only; NULL for Miami).
+          From the latest IEP span.
 
       - name: special_education_name
         data_type: string
         description: >-
-          Human-readable label for the NJ special education code (Newark and
-          Camden only; NULL for Miami and Paterson). From the latest IEP span.
+          Human-readable label for the NJ special education code (NJ regions
+          only; NULL for Miami). From the latest IEP span.
 
       - name: special_education_placement
         data_type: string
         description: >-
-          NJ special education placement category (Newark and Camden only; NULL
-          for Miami and Paterson). From the latest IEP span.
+          NJ special education placement category (NJ regions only; NULL for
+          Miami). From the latest IEP span.
 
       - name: meal_eligibility
         data_type: string

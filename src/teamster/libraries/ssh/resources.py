@@ -9,14 +9,24 @@ from pathlib import Path
 from stat import S_ISDIR, S_ISREG
 
 from cryptography.hazmat.primitives import hashes
+from dagster import SkipReason
 from dagster_shared import check
 from dagster_ssh import SSHResource as DagsterSSHResource
 from paramiko import RSAKey, SFTPAttributes, SFTPClient, SSHClient, Transport
-from paramiko.ssh_exception import NoValidConnectionsError
+from paramiko.ssh_exception import (
+    AuthenticationException,
+    BadHostKeyException,
+    IncompatiblePeer,
+    NoValidConnectionsError,
+    ProxyCommandFailure,
+    SSHException,
+)
+from pydantic import Field
 from tenacity import (
     retry,
-    retry_if_exception_type,
+    retry_if_exception,
     stop_after_attempt,
+    stop_after_delay,
     wait_exponential_jitter,
 )
 
@@ -31,6 +41,121 @@ _PREFERRED_KEYS_LOCK = threading.Lock()
 # volume, so paramiko's `need_rekey()` never trips on the tunnel (OpenSSH
 # `RekeyLimit none`). Explicit `Transport.renegotiate_keys()` still works.
 _REKEY_DISABLED_BYTES = 1 << 48
+
+# `SSHClient.connect` hands `timeout` to `Transport.start_client()`, whose wait
+# spans the banner read (`banner_timeout`, 15s) AND the key exchange that
+# follows (`handshake_timeout`, 15s). dagster-ssh defaults `timeout` to 10s, so
+# it expired first — and `start_client()` breaks out of its wait loop WITHOUT
+# raising when its own deadline passes. `connect()` then fell through to
+# `get_remote_server_key()`, which raises the misleading
+# `SSHException("No existing session")` while the real negotiation kept running
+# on an abandoned transport thread that logged an ERROR traceback seconds after
+# the caller had given up (#4636).
+#
+# 45s clears paramiko's 30s negotiation ceiling with headroom. It does NOT need
+# to cover `auth_timeout` (30s) — authentication runs after `start_client()`
+# returns and enforces its own deadline.
+# `tests/resources/test_resource_ssh_banner_timeout.py` reads the paramiko
+# defaults live and fails if an upgrade ever pushes them past this.
+_NEGOTIATION_TIMEOUT_SECONDS = 45
+
+# Soft ceiling on the retry sequence: `stop_after_delay` is evaluated BETWEEN
+# attempts, so an attempt starting just under the threshold still runs its full
+# `_NEGOTIATION_TIMEOUT_SECONDS`, putting the true worst case nearer 165s. That
+# is still well inside the 600s shortest SFTP sensor interval, whereas the
+# unbounded five attempts plus backoff it replaces could reach ~4 minutes
+# against a black-holed host.
+_RETRY_DEADLINE_SECONDS = 120
+
+# Deterministic `SSHException` subclasses: a config/compatibility mismatch that
+# fails identically on every attempt, so retrying only burns backoff.
+# `AuthenticationException` covers `BadAuthenticationType` and
+# `PartialAuthentication`.
+_NON_RETRYABLE_SSH_EXCEPTIONS = (
+    AuthenticationException,
+    BadHostKeyException,
+    IncompatiblePeer,
+    ProxyCommandFailure,
+)
+
+# paramiko reports its transient negotiation failures as a BARE `SSHException`
+# ("Error reading SSH protocol banner", "No existing session", "Negotiation
+# failed.") — there is no dedicated subclass to match on. The rest are NOT
+# `SSHException` subclasses (`NoValidConnectionsError` is an `OSError`), so they
+# have to be named separately.
+#
+# This is the OUTER net — everything a connect can plausibly fail with that is
+# not a programming error. `_is_transient_connect_failure` then subtracts the
+# deterministic subclasses from it. `listdir_attr_r_or_skip` uses both: catch
+# widely, then re-raise the deterministic ones. Catching only `SSHException`
+# here would miss a downed host (`NoValidConnectionsError`) or a reset peer
+# (`ConnectionResetError`), since `reraise=True` on `get_connection` re-raises
+# the ORIGINAL exception once the retry budget is spent.
+TRANSIENT_CONNECT_EXCEPTIONS = (
+    SSHException,
+    NoValidConnectionsError,
+    TimeoutError,
+    socket.gaierror,
+    ConnectionResetError,
+)
+
+
+def _is_transient_connect_failure(exception: BaseException) -> bool:
+    """Retry predicate for `get_connection`.
+
+    Subtracting the deterministic subclasses from `SSHException` rather than
+    dropping the base class outright: `c4541aa1b` did the latter, which
+    correctly stopped retrying `IncompatiblePeer` / `BadHostKeyException` /
+    `BadAuthenticationType` but also silently disabled the retry for every
+    transient bare `SSHException` — including the banner read failure this retry
+    exists for (#4636).
+    """
+    if isinstance(exception, _NON_RETRYABLE_SSH_EXCEPTIONS):
+        return False
+
+    return isinstance(exception, TRANSIENT_CONNECT_EXCEPTIONS)
+
+
+class _DemoteTransportThreadErrors(logging.Filter):
+    """Lower `paramiko.transport`'s ERROR records to WARNING.
+
+    `Transport.run()` logs its exception message and full traceback at ERROR
+    from a BACKGROUND thread, so GCP Error Reporting files a group even when the
+    retry above recovers the connection on the next attempt. Two such groups
+    (`CPuG15Xz8J-doAE`, `CO7X67XY7MG3YA`) were the two halves of one chained
+    traceback, refiled every time an SFTP host was slow (#4636).
+
+    No signal is lost: `run()` also stores the exception in `saved_exception`,
+    which `start_client()` re-raises on the calling thread, so a failure the
+    retry does NOT recover still propagates and gets logged at the run/tick
+    level by Dagster. This is the vendored-library form of the rule in
+    `core/CLAUDE.md` about not logging tracebacks inside retry-wrapped helpers.
+    """
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        if record.levelno >= logging.ERROR:
+            record.levelno = logging.WARNING
+            record.levelname = logging.getLevelName(logging.WARNING)
+
+        return True
+
+
+def _demote_paramiko_transport_errors() -> None:
+    """Install the demoting filter once per process.
+
+    A logger-level filter only runs for records logged directly to that logger,
+    which is exactly the target: `Transport._log` writes to `paramiko.transport`
+    itself. Child loggers (`paramiko.transport.sftp`) are untouched.
+
+    Called from `get_connection` rather than at import so that importing this
+    module does not mutate global logging state in processes that never open an
+    SSH connection. Installing here is still early enough: the transport thread
+    that logs the traceback is not started until `connect()` runs below.
+    """
+    logger = logging.getLogger("paramiko.transport")
+
+    if not any(isinstance(f, _DemoteTransportThreadErrors) for f in logger.filters):
+        logger.addFilter(_DemoteTransportThreadErrors())
 
 
 # `RSAKey` subclass that accepts `ssh-rsa` (SHA-1) signatures. paramiko 5.0
@@ -76,25 +201,30 @@ class SSHResource(DagsterSSHResource):
     # _preferred_keys. Set True to re-enable ssh-rsa for servers that only
     # advertise it (otherwise KEX negotiation fails with IncompatiblePeer).
     enable_legacy_rsa: bool = False
+    # Overrides dagster-ssh's 10s default, which expired before paramiko
+    # finished negotiating. See `_NEGOTIATION_TIMEOUT_SECONDS`.
+    timeout: int = Field(
+        default=_NEGOTIATION_TIMEOUT_SECONDS,
+        description=(
+            "Timeout for the attempt to connect to remote host. Must exceed"
+            " paramiko's banner_timeout + handshake_timeout or connect() reports"
+            " a misleading 'No existing session' and abandons the transport"
+            " thread."
+        ),
+    )
 
     @retry(
-        stop=stop_after_attempt(5),
+        stop=stop_after_attempt(5) | stop_after_delay(_RETRY_DEADLINE_SECONDS),
         wait=wait_exponential_jitter(initial=2, max=30),
-        # Only retry true transients. SSHException is too broad — it covers
-        # IncompatiblePeer / BadHostKeyException / BadAuthenticationType, which
-        # are deterministic config failures that will fail identically on every
-        # attempt and burn ~30s per call.
-        retry=retry_if_exception_type(
-            (
-                NoValidConnectionsError,
-                TimeoutError,
-                socket.gaierror,
-                ConnectionResetError,
-            )
-        ),
+        # Retry true transients only — but by SUBTRACTING the deterministic
+        # subclasses from SSHException rather than dropping the base class,
+        # which would take the transient bare SSHExceptions with it.
+        retry=retry_if_exception(_is_transient_connect_failure),
         reraise=True,
     )
     def get_connection(self) -> SSHClient:
+        _demote_paramiko_transport_errors()
+
         if not self.enable_legacy_rsa:
             return super().get_connection()
 
@@ -187,6 +317,40 @@ class SSHResource(DagsterSSHResource):
                     files.append((file, path))
 
         return files
+
+    def listdir_attr_r_or_skip(
+        self, **kwargs
+    ) -> list[tuple[SFTPAttributes, str]] | SkipReason:
+        """Connect, list recursively, and turn a TRANSIENT failure into a skip.
+
+        The SFTP sensors all share the same shape — open a connection, open an
+        SFTP channel, recurse — and the same need to tell two kinds of failure
+        apart:
+
+        - **Transient** (host slow, down, DNS blip, reset peer): already retried
+          by `get_connection`. Nothing is wrong with the code, so skip the tick
+          and let the next one pick the files up.
+        - **Deterministic** (`AuthenticationException`, `BadHostKeyException`,
+          `IncompatiblePeer`, `ProxyCommandFailure`): a rotated credential or a
+          server that changed its host key. These are re-raised so the tick
+          FAILS and alerts. Skipping them looks identical to "no new files" in
+          the UI, which would let ingestion stop silently and indefinitely.
+
+        Centralized rather than repeated per sensor because that distinction is
+        subtle, and 4 of 5 sensors previously got the simpler version of this
+        wrong (#4636). `**kwargs` are forwarded to `listdir_attr_r`.
+        """
+        try:
+            with (
+                self.get_connection() as connection,
+                connection.open_sftp() as sftp_client,
+            ):
+                return self.listdir_attr_r(sftp_client=sftp_client, **kwargs)
+        except TRANSIENT_CONNECT_EXCEPTIONS as e:
+            if not _is_transient_connect_failure(e):
+                raise
+
+            return SkipReason(str(e))
 
     @contextmanager
     def open_ssh_tunnel(

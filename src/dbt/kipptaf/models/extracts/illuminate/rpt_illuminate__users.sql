@@ -11,6 +11,12 @@ with
             home_business_unit_name,
             job_title,
         from {{ ref("int_people__staff_roster") }}
+        -- Miami left Illuminate ahead of AY2026-27 (#4777, #5537). The filter
+        -- also excludes rows with a NULL code location, which is intended: a
+        -- staff row with no work location does not belong in the feed.
+        where
+            home_work_location_dagster_code_location
+            in ('kippnewark', 'kippcamden', 'kipppaterson')
 
         union all
 
@@ -28,6 +34,8 @@ with
             company as home_business_unit_name,
             title as job_title,
         from {{ ref("int_people__temp_staff") }}
+        -- Miami left Illuminate ahead of AY2026-27 (#4777, #5537)
+        where dagster_code_location in ('kippnewark', 'kippcamden', 'kipppaterson')
     )
 
 -- trunk-ignore(sqlfluff/ST06)

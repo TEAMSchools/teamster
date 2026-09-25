@@ -38,7 +38,8 @@ The audit operates at several grains:
 - **Assignment** — did this assignment receive valid scores (correct point
   value, enough of the class graded, not over-exempt)? This is the
   `assignment_has_flags` rollup, surfaced on the dashboard as per-assignment
-  detail rows.
+  detail rows and, in plain language, in the `flag_reasons` column on the
+  category row.
 - **Section-category, quarter-to-date** — has this teacher entered the required
   number of assignments in this category so far this quarter? (Quarter-grain as
   of AY 2026-2027 — previously a weekly check.)
@@ -52,35 +53,27 @@ The audit operates at several grains:
 
 ### Dashboard coverage (AY 2026-2027)
 
-| Region   | School level | Coverage depth                              | Notes                                                          |
-| -------- | ------------ | ------------------------------------------- | -------------------------------------------------------------- |
-| Camden   | MS, HS       | Full audit (all applicable flags)           |                                                                |
-| Newark   | MS, HS       | Full audit (all applicable flags)           |                                                                |
-| Paterson | MS           | Full audit (all applicable flags)           | Added AY 2026-2027; expectations spoofed from Newark's MS data |
-| Camden   | ES           | EOQ comments only (`qt_es_comment_missing`) | ES schools do not enter assignments in PS gradebook            |
-| Newark   | ES           | EOQ comments only (`qt_es_comment_missing`) | ES schools do not enter assignments in PS gradebook            |
-| Paterson | ES           | EOQ comments only (`qt_es_comment_missing`) | Added AY 2026-2027                                             |
-| Miami    | n/a          | Removed                                     | Moved to Focus gradebook; excluded at scaffold level           |
+| Region   | School level | Coverage depth                              | Notes                                                |
+| -------- | ------------ | ------------------------------------------- | ---------------------------------------------------- |
+| Camden   | MS, HS       | Full audit (all applicable flags)           |                                                      |
+| Newark   | MS, HS       | Full audit (all applicable flags)           |                                                      |
+| Paterson | MS           | Full audit (all applicable flags)           | Added AY 2026-2027                                   |
+| Camden   | ES           | EOQ comments only (`qt_es_comment_missing`) | ES schools do not enter assignments in PS gradebook  |
+| Newark   | ES           | EOQ comments only (`qt_es_comment_missing`) | ES schools do not enter assignments in PS gradebook  |
+| Paterson | ES           | EOQ comments only (`qt_es_comment_missing`) | Added AY 2026-2027                                   |
+| Miami    | n/a          | Removed                                     | Moved to Focus gradebook; excluded at scaffold level |
 
-!!! note "Paterson GradeBook plugin" The **KIPP NJ Gradebook Audit** plugin
-cannot be installed on Paterson's PowerSchool instance, so `U_EXPECTATIONS` is
-never populated there natively. `kipptaf`'s own
-`stg_powerschool__u_expectations` model handles this directly: a
-`paterson_spoof` CTE reads Newark's real U_EXPECTATIONS data via
-`source("kippnewark_powerschool", "stg_powerschool__u_expectations")`, filtered
-to `school_level = 'MS'`, with a hardcoded
-`'kipppaterson' as _dbt_source_project` (bypassing the usual
-`extract_source_project()` regex-on-schema-name derivation, since the physical
-relation really is Newark's — deriving from it would mislabel these rows as
-`kippnewark`). This is `UNION ALL`-ed alongside the real Camden/Newark union
-(`src/dbt/kipptaf/models/powerschool/staging/stg_powerschool__u_expectations.sql`).
-There is no per-district override model in `kipppaterson` anymore — that
-approach (a `kipppaterson`-project model reading Newark's source under a
-misleadingly-named `kippnewark_powerschool` source declaration) was replaced
-after review; see PR #4132 review discussion.
-`int_powerschool__u_expectations_qtd_unpivot`'s kipptaf-level union picks this
-up as a third region alongside Camden and Newark — no different from a real
-region's data at that point. Tracked:
+!!! note "Paterson GradeBook plugin" The **KIPP NJ Gradebook Audit** plugin is
+now installed on Paterson's PowerSchool instance, so `U_EXPECTATIONS` is
+populated there natively and Paterson is an ordinary third region in the
+kipptaf-level union
+(`src/dbt/kipptaf/models/powerschool/staging/stg_powerschool__u_expectations.sql`),
+alongside Camden and Newark. The raw table is ingested by the
+`kipppaterson/powerschool/sis/u_expectations` dlt asset. History: the plugin
+could not originally be installed on Paterson, so from AY 2026-2027 launch until
+the install, Paterson MS ran on _spoofed_ expectations — Newark's MS values,
+relabeled `kipppaterson`. That spoof was removed in #4879; see #4132 for the
+review discussion that shaped it. Tracked:
 [#3908](https://github.com/TEAMSchools/teamster/issues/3908)
 
 ---
@@ -170,6 +163,14 @@ int_powerschool__u_expectations_qtd_unpivot ┼───────────
 int_powerschool__gradebook_assignment_scores_rollup ┘
 ```
 
+Alongside that read path, one model runs in the opposite direction — it feeds
+the sheet T&L uses to push expectations back INTO PowerSchool:
+
+```text
+int_powerschool__calendar_week ──┐
+stg_powerschool__u_expectations ─┴──► rpt_gsheets__gradebook_audit_template
+```
+
 **Why changed:** `rpt_tableau__gradebook_audit` used to carry a `student_course`
 branch with full student PII (name, student number) into a Tableau-facing
 report. The July 2026 split moved that branch's logic into its own model,
@@ -177,8 +178,50 @@ report. The July 2026 split moved that branch's logic into its own model,
 for ops review instead — `rpt_tableau__gradebook_audit` now carries zero student
 PII. See both models' own sections below for the current design.
 
-Both models filter `school_level_alt != 'ES'` and
-`_dbt_source_project != 'kippmiami'`.
+Both models filter `school_level_alt != 'ES'`,
+`_dbt_source_project != 'kippmiami'`, and `exclude_from_gpa = 0`, and both
+exclude KIPP Newark Lab's Advisory course (`course_number != 'SEM22106G1'`).
+
+**Course-level scope.** Non-academic courses leave the audit two different ways,
+and the distinction matters when adding a new exclusion:
+
+- **Incidentally, via `exclude_from_gpa = 0`** — Lunch, Early Dismissal and
+  Study Hall (the `LOG*` course numbers) all carry `excludefromgpa = 1` in
+  PowerSchool, so they never enter scope. No explicit rule names them here.
+- **Explicitly, via `course_number != 'SEM22106G1'`** — KIPP Newark Lab's
+  Advisory, the one graded course (`exclude_from_gpa = 0`) that should not be
+  held to the standard bar. Lab is the only school that runs it, and it is
+  expected to carry roughly one grade per week. Because
+  `int_powerschool__u_expectations_qtd_unpivot` is keyed on
+  `region × school_level × academic_year × quarter × category` with no
+  course-level grain, advisory cannot be given its own expectation — it inherits
+  the Newark/HS bar and fails `not_enough_assignments` on nearly every category
+  row. Excluding it is the cheap fix; a real per-course expectation would be a
+  grain change cascading through every downstream join. Added September 2026
+  (Zendesk 482117).
+
+Excluding advisory drops teachers who teach _only_ advisory out of the model
+entirely, so Lab's teacher denominator falls (51 → 48 at the time of the
+change). That is intended — a teacher with no audited sections has no gradebook
+to audit — but it means the exclusion moves the denominator, not just the
+numerator, on any teacher-level rate built from this model.
+
+All of these scope predicates use `!=`, which drops NULLs along with the
+excluded value. None of `course_number`, `school_level_alt`,
+`_dbt_source_project` or `exclude_from_gpa` carries a `not_null` test, and all
+four are fully populated in AY 2026-2027 — but if rows ever go missing from the
+audit with no obvious cause, check those columns for NULLs before suspecting the
+flag logic.
+
+Two sibling models (`int_powerschool__student_course_grades_spine`,
+`rpt_tableau__gradebook_gpa`) filter non-academic courses with a shared
+`cc_course_number not in (...)` list naming all of the above plus `SEM22106S1`.
+That list is deliberately **not** reused here: every `LOG*` entry is already
+redundant with `exclude_from_gpa = 0`, and `SEM22106S1` has no sections in AY
+2026-2027. If advisory ever needs excluding at another school, add the course
+number explicitly rather than widening to `course_name` or `credit_type` —
+`credit_type = 'STUDY'` would also catch College and Career III/IV, Life Skills
+I–IV and Student Government, which are audited today.
 
 Sections whose PowerSchool term overlaps only a single quarter are excluded
 upstream by `int_extracts__course_schedule_by_term`
@@ -239,6 +282,68 @@ completed week per quarter. One row per
 cutoff — is the Sunday ending the most recently completed school week (the
 latest calendar week with
 `week_start_monday < date_trunc(current_date, isoweek)`).
+
+**A week carrying no expectation blanks the dashboard for that whole week.**
+This model ends in `where expectation is not null` (BigQuery `UNPIVOT` drops
+nulls regardless), and `current_week` collapses to the single most recently
+completed week per quarter. So if that one week holds no count in any of the
+four columns, this model emits nothing for it, `category_join`'s inner join
+drops every section, and the audit reports zero `category_summary` rows until
+the next week starts. A week with only _some_ columns null is the same failure
+in miniature — it yields fewer than four category rows and breaks the four-row
+floor. Neither case is guarded here, by design: both are resolved on the upload
+side, by the fill rules in Step 1 of the
+[Start-of-year procedure](#start-of-year-procedure).
+
+### Expectations upload template: `rpt_gsheets__gradebook_audit_template`
+
+Feeds the Google Sheet the T&L team uses to build the CSV they upload back into
+PowerSchool's `U_EXPECTATIONS` via the plugin — the write side of the same table
+`int_powerschool__u_expectations_qtd_unpivot` reads. Exposure:
+`rpt_gsheets__gradebook_audit_template` in
+`src/dbt/kipptaf/models/exposures/google-sheets.yml`.
+
+One row per `region × school_level × quarter × week_number_quarter`
+(uniqueness-tested), carrying the four category counts as **columns** — `W`,
+`H`, `F`, `S` — rather than one row each. It shares the QTD unpivot's
+`term_weeks` CTE but differs in three ways: it keeps **every** school week
+rather than collapsing to the most recently completed one per quarter; it takes
+`school_week_end_date` (aliased `week_end_friday`) instead of `week_end_sunday`;
+and it stays wide, because the sheet is an upload grid a person fills in, not an
+analytical long table.
+
+Three gotchas worth knowing before editing it:
+
+- **`week_end_friday` is not always a Friday.** It is the last _in-session_ day
+  of the school week, so it lands on Thursday or earlier when a holiday or PD
+  day shortens the week (~11% of AY 2025 weeks). That is deliberate — a short
+  week should be visible to whoever is setting per-week assignment counts.
+- **`int_powerschool__calendar_week` is per-`schoolid`, and
+  `school_week_end_date` varies across the schools in one region** when only
+  some of them lose a day (e.g. Newark MS Q3 week 6 splits across 2026-03-19 and
+  2026-03-20). `term_weeks` therefore aggregates with
+  `max(school_week_end_date)` and an explicit `GROUP BY`; a `SELECT DISTINCT`
+  fans the join out to one row per distinct end date and breaks the grain.
+- **A blank category cell is meaningful — don't filter it away.** The model
+  applies no null guard to the four counts. Under the pre-wide long shape an
+  unset category produced no row at all (BigQuery `UNPIVOT` excludes nulls), so
+  the gap was invisible in the sheet; wide, it surfaces as an empty cell for
+  whoever is setting counts to fill in. Adding an all-null guard would hide
+  exactly what the template exists to show. What must _not_ happen is uploading
+  that blank straight back into `U_EXPECTATIONS`, where a blank does not read as
+  "nobody set this yet" but as "no expectation this week", and takes the
+  dashboard down with it — Step 1 of the
+  [Start-of-year procedure](#start-of-year-procedure) resolves every blank
+  before upload, which is what keeps the source table populated in all four
+  columns. Row counts on both sides track the school calendar rather than any
+  fixed number, and this model emits fewer rows than
+  `stg_powerschool__u_expectations` holds because `term_weeks` keeps only weeks
+  that have already started — so check that invariant with the query in Step 1
+  rather than against a remembered count.
+
+Coverage follows the inner join to `stg_powerschool__u_expectations` — Newark
+and Camden at MS and HS, Paterson at MS, no ES and no Miami — so it needs no
+region filter of its own.
 
 ### Assignment and category rollup layer
 
@@ -305,6 +410,15 @@ downstream models: the `scores` CTE here and
 `int_extracts__student_enrollments` matches on `school_abbreviation = 'Sumner'`
 — never on school name, which PowerSchool has renamed once already. This ensures
 HS-vs-non-HS flag conditions apply consistently to those students.
+
+The same caution applies to the `school_name` column that
+`int_extracts__course_schedule_by_term` and `rpt_tableau__gradebook_audit`
+carry. It reads PowerSchool `schools.name`, so it is a display label only — a
+rename changes it silently. Join and filter on `schoolid` or `school` (the
+abbreviation) instead. `schools.name` also disagrees with the canonical
+`stg_google_sheets__people__locations.location_name` for 2 schools: Hatch
+(`KIPP Hatch Academy` vs `KIPP Hatch Middle`) and Sumner (`KIPP Sumner Academy`
+vs `KIPP Sumner Elementary`).
 
 Feeds `int_powerschool__gradebook_assignment_scores_rollup`.
 
@@ -379,10 +493,11 @@ table in the `extracts` schema, matching its `int_extracts__course_*` siblings.
 
 Source is `int_extracts__course_enrollments_by_term`, filtered `rn_year = 1`,
 `enroll_status = 0`, `not is_out_of_district`, `school_level_alt != 'ES'`,
-`_dbt_source_project != 'kippmiami'`, `exclude_from_gpa = 0`, and inner-joined
-to `int_extracts__course_schedule_by_term` (the orphan-scoping fix described
-above). Grades/comments come from the `quarter_course_grades` union it defines
-(`base_powerschool__final_grades` for the current year,
+`_dbt_source_project != 'kippmiami'`, `exclude_from_gpa = 0`,
+`course_number != 'SEM22106G1'` (see _Course-level scope_ above), and
+inner-joined to `int_extracts__course_schedule_by_term` (the orphan-scoping fix
+described above). Grades/comments come from the `quarter_course_grades` union it
+defines (`base_powerschool__final_grades` for the current year,
 `stg_powerschool__storedgrades` for the prior year during the summer toggle —
 the summer-toggle markers live here). Carries full student PII (name, student
 number) — acceptable because it is an internal intermediate read only by the two
@@ -401,9 +516,13 @@ this is an internal ops artifact, unlike the Tableau-facing report below.
 
 `rpt_tableau__gradebook_audit` reads the intermediate above (aggregated, with
 PII dropped) for its section-level "any student flagged" booleans — see below.
-No per-rule "reason" is ever surfaced for either flag; the whole point of the
-July 2026 split was to move to aggregated boolean signals instead of granular
-rule-level detail.
+No per-rule "reason" is ever surfaced for either **student** flag; the whole
+point of the July 2026 split was to move to aggregated boolean signals instead
+of granular rule-level detail. That rule is scoped to the student flags, which
+carry PII and fan out per student. **Assignment** flags do carry a reason:
+`flag_reasons` names them in plain language on the category row (see below).
+Assignment flags sit at section grain, carry no PII, and come from a fixed set
+of 4 checks, so naming them adds no rows and exposes nothing.
 
 ### Final extract: `rpt_tableau__gradebook_audit`
 
@@ -415,6 +534,69 @@ assignment that fails the no-flags bar for its category
 exactly `(number of sections) × 4` rows for the quarter — no separate anchor-row
 concept, unlike the pre-July-2026 design below.
 
+#### The display label is load-bearing, and lives upstream
+
+The dashboard groups its section rows on `section_or_period`, not on
+`sectionid`, so that column has to be **unique per section within a teacher,
+course, and quarter** or the workbook silently adds two sections together. It is
+derived in `int_extracts__course_schedule_by_term`, not here:
+
+```sql
+if(
+    s.school_level_alt = 'HS',
+    array_to_string([s.external_expression, s.section_number], ' '),
+    s.section_number
+) as section_or_period
+```
+
+MS uses `section_number` alone, which is a cohort name (`5Columbia`) and already
+unique. HS combines the period with the section number, because two HS sections
+of one course can meet in the same period with the same teacher — a specials
+rotation, where PE rotates against Intro to VPA and Driver's Ed, or an AP course
+split by grade. HS section numbers across all 3 high schools already lead with
+the period and add a qualifier (`1a`, `1b`, `1ICR`, `2ACC`, `12DB`), so the
+combined label reads as period plus qualifier and needs no new source column.
+`array_to_string` skips nulls, so a section with no `external_expression` gets
+the bare section number rather than a null label.
+
+Before this fix the HS branch returned `external_expression` alone, which
+collapsed 28 sections at KIPP Newark Collegiate Academy into 14 rows and
+reported each teacher's two sections as one summed count — 6 assignments against
+a target of 4, flagged red, where each section had actually entered 3 of 4. The
+warehouse rows were correct throughout; only the label merged them. If you
+change this expression, that uniqueness property is what to re-check, and the
+collision query is in
+[#5379](https://github.com/TEAMSchools/teamster/issues/5379).
+`int_extracts__course_schedule_by_term` carries a
+`dbt_utils.unique_combination_of_columns` test on
+`_dbt_source_project, academic_year, schoolid, teacher_number, course_number, quarter, section_or_period`
+that fails at `error` severity if the property is ever lost.
+
+!!! warning "The expression exists twice, and both copies must agree"
+`int_extracts__course_enrollments_by_term` derives its own `section_or_period`
+from the same raw PowerSchool columns, for the student-facing side. That copy is
+what `int_extracts__gradebook_audit_student_flags` projects, and therefore what
+reaches the `rpt_gsheets__gradebook_audit_student_flags` Google Sheet — the
+teacher-facing report never reads it. The two are not joined and neither derives
+from the other, so an edit to one silently diverges from the other. Change both,
+or hoist the label into a single shared column first. This is tracked as
+follow-up work in [#5383](https://github.com/TEAMSchools/teamster/issues/5383).
+
+#### Which workbook consumes this
+
+The live dashboard is **Academic & Gradebook Health Suite**
+(`b3c14d67-3130-46ac-82a0-0637a5cc2da5`), exposure
+`academic_gradebook_health_suite`, which reads this model plus 4 GPA and
+course-grade models. It refreshes by extract on that exposure's
+`cron_schedule: 0 4 * * *`. Four of its worksheets render section rows —
+`Your sections grid`, `Your sections flags`, `Teacher sections panel`, and
+`Sheet Card - shortfalls` — and every action filter and tooltip on the audit
+datasource slices on `section_or_period`, which is why the label's uniqueness
+propagates to the tooltips without a workbook change.
+
+The `gradebook_audit` exposure is disabled and points at a dead workbook. Do not
+read it as this model's consumer.
+
 **CTE chain:**
 
 1. `category_join` — `int_extracts__course_schedule_by_term` inner-joined to
@@ -424,7 +606,12 @@ concept, unlike the pre-July-2026 design below.
    rollup data. Computes `expectation`, `assignments_entered_count`, and
    `assignments_entered_count_no_flags` as **window functions** partitioned by
    `_dbt_source_project, sectionid, quarter, assignment_category_code` — not a
-   `GROUP BY` — so the per-assignment row grain survives for step 2 to use.
+   `GROUP BY` — so the per-assignment row grain survives for step 2 to use. Four
+   more window `countif`s over the same partition count the assignments tripping
+   each term of `assignment_has_flags`: `n_percent_graded_min_not_met`,
+   `n_invalid_scores` (the `flags_sum > 0` term), `n_max_score_not_10` and
+   `n_overly_exempt`. They reuse the existing partition rather than introducing
+   a second one.
 2. `category_summary` — a grain-projection `SELECT DISTINCT` over
    `category_join` that collapses the per-assignment fan-out to one row per
    section × quarter × category, and adds `not_enough_assignments`
@@ -436,14 +623,21 @@ concept, unlike the pre-July-2026 design below.
    window aggregates from step 1 over that same partition — so `DISTINCT` is a
    pure grain projection, not a mask for upstream duplicates. The
    assignment-level columns from the rollup are not projected, so they collapse
-   out.
+   out. This step also builds `flag_reasons` from the 4 window counts —
+   `array_to_string` over an array of conditional labels, wrapped in `nullif`
+   because `array_to_string` returns `''`, not NULL, when every element is NULL.
+   The labels print in a fixed order: `Under 90% graded`,
+   `Invalid scores entered`, `Not out of 10 points`, `Half the class exempt`.
+   `Under 90% graded` never appears alone, because grading below 90% of expected
+   students leaves unscored expected students, which increments
+   `n_expected_null` and so trips the `flags_sum > 0` term too.
 3. `assignment_detail` — reads `category_join` directly (the full fanned-out
    set), filtered to `assignment_has_flags`.
 4. `combined` — explicit-column `UNION ALL` of `category_summary` and
    `assignment_detail`, tagging `row_type`. `expectation`,
-   `assignments_entered_count`, and `not_enough_assignments` are null on
-   `assignment_detail` rows; the assignment-identity columns are null on
-   `category_summary` rows.
+   `assignments_entered_count`, `assignments_entered_count_no_flags`,
+   `not_enough_assignments`, and `flag_reasons` are null on `assignment_detail`
+   rows; the assignment-identity columns are null on `category_summary` rows.
 5. `student_flags_aggregate` — reads
    `int_extracts__gradebook_audit_student_flags` (see above), grouped to
    `_dbt_source_project, sectionid, quarter`, computing `has_grade_above_100` /
@@ -487,18 +681,109 @@ flags (`has_grade_above_100`, `has_grade_below_70_no_comment`,
 `not_enough_assignments`) are hardcoded in `rpt_tableau__gradebook_audit`'s
 `health_calc` CTE and require no annual configuration.
 
-### Step 1 — Confirm assignment expectations are updated in PowerSchool
+### Step 1 — Load the new year's assignment expectations into PowerSchool
 
-The expectations data that drives `not_enough_assignments` comes from
+Owned by the T&L team member responsible for gradebook expectations, not the
+data team — no dbt model changes as part of this step. The expectations that
+drive `not_enough_assignments` come from
 `int_powerschool__u_expectations_qtd_unpivot`, which reads the `U_EXPECTATIONS`
-table populated by the **KIPP NJ Gradebook Audit** PowerSchool plugin. The
-`U_EXPECTATIONS` table does not have an `academic_year` field — it reflects the
-current state of expectations in PowerSchool. Until the T&L team member
-responsible for gradebook expectations updates the table for the new year, the
-audit will continue to report against the prior year's expectation values.
+table populated by the **KIPP NJ Gradebook Audit** PowerSchool plugin.
+`U_EXPECTATIONS` has no `academic_year` column — it reflects whatever is
+currently live in PowerSchool — so until it is replaced for the new year, the
+audit keeps reporting against the prior year's values.
+
+`rpt_gsheets__gradebook_audit_template` (see above) exists to support this step:
+it lands every school week's current expectations in a Google Sheet, which T&L
+edits and exports as the CSV they upload through the plugin. Because it is
+driven by the same toggled year filter as the audit models, check the summer
+toggle's state before reading it as the new year's grid.
 
 Plugin source and update instructions:
 [TEAMSchools/ps-plugins](https://github.com/TEAMSchools/ps-plugins)
+
+#### One upload per PowerSchool instance
+
+`U_EXPECTATIONS` carries no region column — region is implied by the instance
+the rows live in, and the kipptaf union (`stg_powerschool__u_expectations`) is
+what re-attaches `_dbt_source_project`. Camden, Newark and Paterson are separate
+PowerSchool instances and therefore separate uploads. Newark MS and Newark HS
+belong in the same Newark file even when T&L maintains them on separate sheet
+tabs.
+
+#### Renumber T&L's weeks to `week_number_quarter` before uploading
+
+`U_EXPECTATIONS.week_number` is the week's position **within its quarter**, and
+`int_powerschool__u_expectations_qtd_unpivot` joins it to
+`int_students__calendar_week.week_number_quarter`. T&L's planning sheet has not
+historically matched that, in three ways — each of which silently shifts every
+expectation onto the wrong week rather than failing loudly:
+
+- **It numbers weeks running across the year**, not within the quarter (Q2
+  starting at 11, Q3 at 23, and so on).
+- **It includes no-school weeks** — Thanksgiving, winter break, Presidents'
+  week, spring break — that `week_number_quarter` does not count.
+- **One tab often serves regions whose school years start on different dates.**
+  In AY 2026-2027 Camden opened Monday 2026-08-17 while Newark and Paterson
+  opened 2026-08-24, so Camden has 11 Q1 weeks against their 10 and the same
+  sheet row is a different `week_number` in each region.
+
+Map each sheet row by the **Monday of its ISO week**, then derive `week_number`
+per region as that Monday's offset from the region's own week 1. Do not map on
+the sheet's own week number, and do not map on its printed date range either — a
+week shortened by a Monday holiday prints its first in-session day (`9/8-9/11`
+for Labor Day week) while the calendar week's Monday is 9/7.
+
+#### Fill every blank before uploading
+
+A blank in `U_EXPECTATIONS` means "no expectation", not "unset", and it removes
+rows from the dashboard — see the expectations source section above for the
+mechanism. Resolve every blank, per count column, scoped to the quarter:
+
+1. Sheet gives a value — use it.
+2. Sheet gives `---` / `--` / blank, or the calendar week has no sheet row at
+   all — carry forward the last non-null value for that column within the same
+   quarter. This is why the last week of a quarter, which T&L marks all-dashes
+   as a revisions week, should hold the same counts as the week before it.
+3. Nothing precedes it in that quarter — use zero. A zero expectation cannot
+   raise `not_enough_assignments`, so a first week of school with no sheet row
+   reports as compliant rather than flagging every section in the region.
+
+Together these keep every calendar week populated in all four columns, which is
+what preserves the four-row category floor.
+
+#### Load every quarter, not just the current one
+
+T&L often has only the current quarter ready, with later tabs still under
+construction. Nothing breaks while those quarters are missing, because
+`current_week` filters to weeks that have already started — which is exactly why
+the gap stays invisible until the first Monday of the next quarter, when the
+dashboard goes blank for every region at once. If the later quarters ship late,
+diary that Monday and re-check before it arrives.
+
+#### Verify after the plugin load
+
+Once the `u_expectations` dlt asset has re-ingested and dbt has run:
+
+```sql
+select
+    _dbt_source_project,
+    school_level,
+    `quarter`,
+    count(*) as weeks,
+    countif(
+        cnt_w is null or cnt_h is null or cnt_f is null or cnt_s is null
+    ) as null_rows,
+from `teamster-332318`.kipptaf_powerschool.stg_powerschool__u_expectations
+group by 1, 2, 3
+order by 1, 2, 3
+```
+
+`null_rows` must be zero everywhere, and `weeks` must equal that region and
+school level's quarter length in `int_students__calendar_week` for the current
+`academic_year`. Then confirm `int_powerschool__u_expectations_qtd_unpivot`
+returns four rows per `region × school_level` for the current quarter, and that
+every section × quarter in `rpt_tableau__gradebook_audit` still has exactly four
+`category_summary` rows.
 
 ### Step 2 — Revert the summer toggle (if applied)
 
@@ -506,8 +791,9 @@ If the summer toggle was applied during the off-season (switching year filters
 to `current_academic_year - 1`, grades type to `'last_year'` where applicable)
 to `rpt_tableau__gradebook_audit`,
 `int_extracts__gradebook_audit_student_flags`,
-`int_powerschool__u_expectations_qtd_unpivot`, and
-`rpt_tableau__gradebook_es_comments`, revert all changes in all four files
+`int_powerschool__u_expectations_qtd_unpivot`,
+`rpt_tableau__gradebook_es_comments`, and
+`rpt_gsheets__gradebook_audit_template`, revert all changes in all five files
 before the new school year begins. See the `gradebook-audit` skill for the exact
 lines — the student grade/comment toggle now lives in
 `int_extracts__gradebook_audit_student_flags` (the July 2026 intermediate
@@ -520,20 +806,12 @@ why).
 
 ## Open questions and future work
 
-Three known future-work items remain. The rest of the AY 2026-2027 build is
+Two known future-work items remain. The rest of the AY 2026-2027 build is
 delivered — see [#3908](https://github.com/TEAMSchools/teamster/issues/3908) and
 the
 [implementation plan](../superpowers/plans/2026-05-14-gradebook-audit-ay2627-revamp.md)
 for that history.
 
-- **Install the gradebook-audit plugin on Paterson's PowerSchool instance.** The
-  KIPP NJ Gradebook Audit plugin cannot currently be installed on Paterson, so
-  `U_EXPECTATIONS` is not populated there natively and Paterson MS runs on
-  _spoofed_ expectations — Newark's MS values, via the `paterson_spoof` CTE in
-  `stg_powerschool__u_expectations` (see the Paterson note above). Once the
-  plugin can be installed on Paterson, it should use its own real expectations
-  and the spoof can be removed. Plugin source:
-  [TEAMSchools/ps-plugins](https://github.com/TEAMSchools/ps-plugins).
 - **Make student-course selection deterministic when enrollment dates overlap.**
   `int_extracts__course_enrollments_by_term` picks one section per
   student/course/quarter with a `row_number()` tiebreaker
@@ -610,7 +888,7 @@ replaced. Kept collapsed for history; none of it describes the current pipeline.
         %% ── Intermediate – Upstream ──────────────────────────────────────────────
         subgraph INT_UP ["Intermediate · Upstream"]
             direction TB
-            int_terms["int_powerschool__terms\n+ calendar_week"]
+            int_terms["int_students__terms\n+ calendar_week"]
             int_catgr["int_powerschool__\ncategory_grades"]
             int_ga["int_powerschool__\ngradebook_assignments"]
             int_gas["int_powerschool__\ngradebook_assignments_scores"]
@@ -849,7 +1127,7 @@ replaced. Kept collapsed for history; none of it describes the current pipeline.
     | Source                             | Scope         |
     | ---------------------------------- | ------------- |
     | `base_powerschool__sections`       | Multi-year    |
-    | `int_powerschool__terms`           | Multi-year    |
+    | `int_students__terms`              | Multi-year    |
     | `int_powerschool__calendar_week`   | Multi-year    |
     | `int_people__staff_roster`         | Year-agnostic |
     | `stg_powerschool__schools`         | Year-agnostic |
@@ -861,7 +1139,7 @@ replaced. Kept collapsed for history; none of it describes the current pipeline.
        `int_people__staff_roster` for `teacher_tableau_username`; filters to
        `current_academic_year` and excludes zero-student sections; applies
        section-level exceptions.
-    2. `term_weeks` — joins `int_powerschool__terms` to
+    2. `term_weeks` — joins `int_students__terms` to
        `int_powerschool__calendar_week` on `yearid + schoolid + quarter`; joins
        `stg_powerschool__schools` for the school abbreviation; joins
        `int_people__leadership_crosswalk` for HoS and school leader names; computes

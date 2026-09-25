@@ -1,8 +1,28 @@
 models:
   - name: int_extracts__student_enrollments
+    description: >-
+      Network-wide enrollment extract, Miami included. Miami held 1,760 AY2026
+      rows in prod as of 2026-08-27. Consumers that filter on `is_enrolled_y1`,
+      `is_enrolled_recent` or `is_out_of_district` dropped Miami entirely until
+      #5038 populated those flags upstream; `is_self_contained` is still null
+      for Miami by design. Ratified on #4996.
+
+
+      The cumulative GPA columns come from `int_students__gpa_cumulative`, so
+      they cover both PowerSchool and Focus. Cumulative GPA is calculated per
+      school, so every enrollment year at a school shows the student's current
+      cumulative GPA at that school.
     config:
       schema: extracts
       materialized: table
+      meta:
+        dagster:
+          # Eager rebuilt this table ~145 times a day. Its fastest consumers are
+          # hourly: the Clever extract job (@hourly) and rpt_tableau__ops_dashboard
+          # (0 * * * *). Everything else reads it nightly or pulls on open
+          # (Connected Sheets). Refs #5215
+          automation_condition:
+            cron_schedule: 0 * * * *
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -13,6 +33,14 @@ models:
               - entrydate
           config:
             severity: error
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - academic_year
+          config:
+            where: rn_year = 1
+            severity: warn
     columns:
       - name: _dbt_source_project
         data_type: string
@@ -80,6 +108,16 @@ models:
             source_system: PowerSchool
             source_model: stg_powerschool__students
             source_column: exitdate
+      - name: last_enrolled_date
+        data_type: date
+        description:
+          Inclusive last day the student was enrolled in this stint. PowerSchool
+          records exitdate as the first day the student is no longer enrolled,
+          so PowerSchool stints use the day before exitdate; Focus trims each
+          stint to the day before the next one starts, so Focus stints use
+          exitdate unchanged. Null for graduate placeholder rows, which carry no
+          exit date. Use this column, not exitdate, for any "enrolled on date X"
+          test.
       - name: entrycode
         data_type: string
         description:
@@ -777,8 +815,17 @@ models:
         data_type: float64
       - name: next_year_school
         data_type: string
+        description:
+          School abbreviation on the student's primary enrollment for the
+          following academic year. Null when the student has no enrollment in
+          that year, including a student who leaves and returns after a gap.
       - name: next_year_schoolid
         data_type: int64
+        description:
+          School id on the student's primary enrollment for the following
+          academic year. Null when the student has no enrollment in that year,
+          including a student who leaves and returns after a gap. The 999999
+          placeholder carries through from the graduate placeholder rows.
       - name: finalsite_student_id
         data_type: string
       - name: district
@@ -829,6 +876,23 @@ models:
       - name: self_contained_status
         data_type: string
         description: Conditional on is_self_contained.
+      - name: homeless_status
+        data_type: string
+        description:
+          Decoded homelessness status for the enrollment year — Not Homeless,
+          Homeless - With Guardian, or Homeless - Unaccompanied. Conditional on
+          homeless_code. Null where the code is unset or unrecognized, and for
+          Miami, which does not populate the field. May disagree with
+          is_homeless on closed years, which reads current status for every
+          year.
+      - name: homeless_primary_nighttime_residence
+        data_type: string
+        description:
+          Decoded primary nighttime residence for the enrollment year —
+          Shelters, transitional housing / Doubled-up / Unsheltered / Hotels or
+          Motels. Conditional on homeless_primary_nighttime_residence_code. Null
+          where no selection was made and outside New Jersey, which is the only
+          state that collects it.
       - name: state_studentnumber
         data_type: string
         description:
@@ -904,6 +968,18 @@ models:
         description:
           The enrollment status of the student. Categorical mapping of
           enroll_status.
+      - name: exited_hs
+        data_type: string
+        description:
+          Whether the student graduated or completed high school, per exitcode =
+          'G1' (Gen Table 6 cat=exitcodes, labeled "Graduated from a KIPP NJ
+          school"). The codeset also lists 'GR' ("Graduated"), 'EG' ("Early
+          Graduate"), and 'L' ("Graduation Code"), but none of the three has
+          ever been assigned to a real enrollment record network-wide -- 'G1' is
+          the only graduation code actually in use, so checking it alone is
+          sufficient. Shared by rpt_gsheets__csgf_hs_postsec_pathways and
+          rpt_gsheets__csgf_hs_enrollment -- promoted here from a duplicated
+          per-model calculation so both stay in sync.
       - name: race_ethnicity
         data_type: string
         description:

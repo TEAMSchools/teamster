@@ -39,9 +39,7 @@ select
     up.relative_placement,
     up.rn_subject_test,
 
-    regexp_replace(
-        left(up.domain_name, length(up.domain_name) - 19), '_', ' '
-    ) as domain_name,
+    regexp_replace(up.domain_name, '_', ' ') as domain_name,
 from {{ ref("int_extracts__student_enrollments") }} as co
 cross join subjects as subj
 cross join unnest(['BOY', 'MOY', 'EOY']) as ar
@@ -67,6 +65,7 @@ left join
     and ir.subject = up.subject
     and ir.start_date = up.start_date
     and ir.completion_date = up.completion_date
+    and ir.rn_subj_day = up.rn_subj_day
 where
     co.academic_year = {{ var("current_academic_year") }}
     and co.rn_year = 1

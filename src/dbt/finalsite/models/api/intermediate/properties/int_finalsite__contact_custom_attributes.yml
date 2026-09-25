@@ -8,9 +8,13 @@ models:
       Contacts with no `custom_attributes` are absent (resolve via a left join).
       The PIVOT enumerates fields explicitly — add a new `custom_attributes`
       field to the PIVOT field list in the model SQL; it does not surface
-      automatically. The model produces ~170 string columns; only the fields
-      consumed by the Focus extracts and the typed (boolean / array) fields are
-      documented below.
+      automatically. Every `_number` phone field is normalized to E.164 here,
+      the earliest point it exists as a scalar column, since these values live
+      inside the repeated `custom_attributes` struct that staging cannot reach;
+      a value that cannot be confidently parsed passes through as entered rather
+      than becoming null. The model produces ~170 string columns; only the
+      fields consumed by the Focus extracts and the typed (boolean / array)
+      fields are documented below.
     columns:
       - name: finalsite_enrollment_id
         data_type: string

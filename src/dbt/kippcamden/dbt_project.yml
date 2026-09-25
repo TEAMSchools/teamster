@@ -17,9 +17,10 @@ clean-targets:
   - dbt_packages
 
 data_tests:
-  +severity: warn
   +store_failures: true
   +store_failures_as: view
+  kippcamden:
+    +severity: warn
 
 vars:
   local_timezone: America/New_York
@@ -44,6 +45,8 @@ models:
   finalsite:
     api:
       +enabled: true
+  cambium:
+    +materialized: table
   deanslist:
     +materialized: table
     staging:

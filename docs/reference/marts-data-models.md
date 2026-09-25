@@ -6,7 +6,8 @@ The `kipptaf` marts are dimensional models (fact and dimension tables) consumed
 by Cube and Tableau. They follow a **strict-chain snowflake** design: each fact
 table holds foreign keys to its _direct_ parents only, and deeper context is
 reached by chaining one dimension to its parent dimension
-(`fct_student_attendance_daily` → `dim_student_enrollments` → `dim_students`).
+(`fct_student_attendance_enrollment_daily` → `dim_student_enrollments` →
+`dim_students`).
 
 Each section below shows one fact table and the snowflake chain reachable from
 it, followed by the fact's own foreign keys. **Conformed dimensions —
@@ -29,6 +30,7 @@ erDiagram
   fct_assessment_scores_enrollment_scoped }o--|| dim_assessment_administrations : "assessment_administration_key"
   fct_assessment_scores_enrollment_scoped }o--|| dim_student_section_enrollments : "student_section_enrollment_key"
   dim_assessment_administrations }o--|| dim_assessments : "assessment_key"
+  dim_student_section_enrollments }o--|| dim_staff : "lead_teacher_staff_key"
   dim_student_section_enrollments }o--|| dim_student_enrollments : "student_enrollment_key"
   dim_student_section_enrollments }o--|| dim_course_sections : "course_section_key"
   dim_student_enrollments }o--|| dim_students : "student_key"
@@ -40,7 +42,9 @@ erDiagram
 | FK column                        | References                        |
 | -------------------------------- | --------------------------------- |
 | `assessment_administration_key`  | `dim_assessment_administrations`  |
+| `assessment_date_key`            | `dim_dates`                       |
 | `student_section_enrollment_key` | `dim_student_section_enrollments` |
+| `term_key`                       | `dim_terms`                       |
 | `test_date_key`                  | `dim_dates`                       |
 
 ## fct_assessment_scores_student_scoped
@@ -120,6 +124,7 @@ erDiagram
 ```mermaid
 erDiagram
   fct_grades_assignments }o--|| dim_student_section_enrollments : "student_section_enrollment_key"
+  dim_student_section_enrollments }o--|| dim_staff : "lead_teacher_staff_key"
   dim_student_section_enrollments }o--|| dim_student_enrollments : "student_enrollment_key"
   dim_student_section_enrollments }o--|| dim_course_sections : "course_section_key"
   dim_student_enrollments }o--|| dim_students : "student_key"
@@ -139,6 +144,7 @@ erDiagram
 ```mermaid
 erDiagram
   fct_grades_category }o--|| dim_student_section_enrollments : "student_section_enrollment_key"
+  dim_student_section_enrollments }o--|| dim_staff : "lead_teacher_staff_key"
   dim_student_section_enrollments }o--|| dim_student_enrollments : "student_enrollment_key"
   dim_student_section_enrollments }o--|| dim_course_sections : "course_section_key"
   dim_student_enrollments }o--|| dim_students : "student_key"
@@ -172,6 +178,7 @@ erDiagram
 ```mermaid
 erDiagram
   fct_grades_term }o--|| dim_student_section_enrollments : "student_section_enrollment_key"
+  dim_student_section_enrollments }o--|| dim_staff : "lead_teacher_staff_key"
   dim_student_section_enrollments }o--|| dim_student_enrollments : "student_enrollment_key"
   dim_student_section_enrollments }o--|| dim_course_sections : "course_section_key"
   dim_student_enrollments }o--|| dim_students : "student_key"
@@ -303,22 +310,6 @@ erDiagram
 | `teacher_staff_key`            | `dim_staff`                     |
 | `term_key`                     | `dim_terms`                     |
 
-## fct_student_attendance_daily
-
-```mermaid
-erDiagram
-  fct_student_attendance_daily }o--|| dim_student_enrollments : "student_enrollment_key"
-  dim_student_enrollments }o--|| dim_students : "student_key"
-```
-
-### Foreign keys
-
-| FK column                | References                |
-| ------------------------ | ------------------------- |
-| `date_key`               | `dim_dates`               |
-| `student_enrollment_key` | `dim_student_enrollments` |
-| `term_key`               | `dim_terms`               |
-
 ## fct_student_attendance_interventions
 
 ```mermaid
@@ -356,6 +347,39 @@ erDiagram
 | `streak_start_date_key`  | `dim_dates`               |
 | `student_enrollment_key` | `dim_student_enrollments` |
 
+## fct_student_attendance_enrollment_daily
+
+```mermaid
+erDiagram
+  fct_student_attendance_enrollment_daily }o--|| dim_student_enrollments : "student_enrollment_key"
+  dim_student_enrollments }o--|| dim_students : "student_key"
+```
+
+### Foreign keys
+
+| FK column                | References                |
+| ------------------------ | ------------------------- |
+| `date_key`               | `dim_dates`               |
+| `student_enrollment_key` | `dim_student_enrollments` |
+| `term_key`               | `dim_terms`               |
+
+## fct_student_attendance_enrollment_periods
+
+```mermaid
+erDiagram
+  fct_student_attendance_enrollment_periods }o--|| dim_student_enrollments : "student_enrollment_key"
+  dim_student_enrollments }o--|| dim_students : "student_key"
+```
+
+### Foreign keys
+
+| FK column                | References                |
+| ------------------------ | ------------------------- |
+| `period_end_date_key`    | `dim_dates`               |
+| `period_start_date_key`  | `dim_dates`               |
+| `student_enrollment_key` | `dim_student_enrollments` |
+| `term_key`               | `dim_terms`               |
+
 ## fct_support_tickets
 
 ```mermaid
@@ -380,8 +404,8 @@ erDiagram
 
 ```mermaid
 erDiagram
-  fct_survey_responses }o--|| fct_survey_submissions : "survey_submission_key"
   fct_survey_responses }o--|| dim_survey_questions : "survey_question_key"
+  fct_survey_responses }o--|| fct_survey_submissions : "survey_submission_key"
   fct_survey_submissions }o--|| dim_survey_administrations : "survey_administration_key"
   fct_survey_submissions }o--|| dim_staff : "staff_key"
   fct_survey_submissions }o--|| dim_student_enrollments : "student_enrollment_key"
