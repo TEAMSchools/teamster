@@ -124,7 +124,8 @@ Two coordination rules:
    sequencing.
 2. **Never judge sheet contents from the prod `stg_` table.** It is a table
    frozen at the last build. Query the `src_` external live through ADC, per
-   `.claude/context/bigquery.md` (the BigQuery MCP cannot read it).
+   `.claude/context/claude_ai_Google_Cloud_BigQuery.md` (the BigQuery MCP cannot
+   read it).
 
 ---
 
