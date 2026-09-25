@@ -1,24 +1,3 @@
-{#-
-  One row per active, primary staff member, keyed on staff_key. Resolves each
-  person's current role to the Cube access model: the student location scope,
-  the staff sensitive-field remit (location + department), and the per-field
-  sensitive scopes. Read by cube.js's resolveAccess (by google_email) to build
-  the securityContext groups and the location/department allow-lists that each
-  view's access_policy reads; not exposed as a Cube. Assembled intra-mart from
-  the current primary work assignment; mappings come from the Google Sheets
-  crosswalks (department override wins over the role mapping). entity
-  (KTAF/Region) is derived from business_unit_name. The viewer identity keys
-  (region_key, location_abbreviation, department_group) are carried so
-  resolveAccess precomputes the location/department allow-lists from the scope
-  level. Rows that resolve to no role emit 'none' (deny) rather than NULL.
-
-  Role crosswalk precedence: when the cube_access_role sheet carries both a
-  wildcard row (entity='any') and a specific row (entity=KTAF/Region) for the
-  same job_function_code, the specific row wins — role_picked ranks a specific
-  entity match ahead of the wildcard and keeps one row per staff, so the overlap
-  cannot fan out staff_key (previously it would have, caught only by the unique
-  test). Wildcard rows remain the entity-agnostic fallback.
--#}
 with
     -- one current primary work assignment per staff (dedup'd below)
     -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
@@ -122,11 +101,10 @@ with
     ),
 
     -- Rank the crosswalk role rows so a specific-entity match beats the 'any'
-    -- wildcard, then keep one per staff (role_picked). Prevents the fan-out when
-    -- the sheet carries both a wildcard and a specific row for one
-    -- job_function_code. Window rank as a named column, filtered in the next CTE
-    -- (no QUALIFY, per the SQL guide). A LEFT-join miss yields one null-role row
-    -- (role_rank 1) that coalesces to 'none' downstream.
+    -- wildcard, then keep 1 per staff member (`role_picked`). The rank prevents
+    -- a fan-out when the sheet carries both a wildcard and a specific row for
+    -- one `job_function_code`. A LEFT-join miss yields 1 null-role row at
+    -- `role_rank` 1, which coalesces to 'none' downstream.
     role_ranked as (
         select
             e.staff_key,
@@ -152,6 +130,171 @@ with
 
     role_picked as (select *, from role_ranked where role_rank = 1),
 
+    -- Individual exceptions live for this run: status active, not before
+    -- grant_date, not past expiry_date. Every other row (revoked, expired,
+    -- not-yet-granted) is excluded entirely -- it contributes nothing below,
+    -- exactly as if it didn't exist.
+    individual_exceptions_live as (
+        select
+            additional_location_name,
+            google_email,
+
+            -- The sheet spells "leave this alone" as 'inherit' so a form can
+            -- require every cell and a reader can tell a deliberate no from an
+            -- unfilled one. NULL is what the coalesce chain below reads as
+            -- fall-through, so the translation happens here, once, before the
+            -- max() in individual_exception_scopes -- which would otherwise
+            -- pick the literal 'inherit' over a real override.
+            nullif(staff_department_scope, 'inherit') as staff_department_scope,
+            nullif(staff_pii_scope, 'inherit') as staff_pii_scope,
+            nullif(staff_compensation_scope, 'inherit') as staff_compensation_scope,
+            nullif(staff_observations_scope, 'inherit') as staff_observations_scope,
+            nullif(staff_benefits_scope, 'inherit') as staff_benefits_scope,
+
+            -- Which axes this row's location reaches. Independent per axis: a
+            -- row may widen students without staff, or the reverse. 'none' is
+            -- the sheet's word for "not this axis"; it is never blank, so a
+            -- plain inequality is the whole test.
+            additional_student_location_scope != 'none' as includes_student_data,
+            additional_staff_location_scope != 'none' as includes_staff_data,
+
+            -- Fails the row closed on the two contradictions staging's
+            -- error-severity tests flag but cannot block: dbt replaces that
+            -- table before its tests run, and this mart is a view, so Cube
+            -- serves the row either way. 'network' ignores
+            -- additional_location_name in access.js, so a school name typed
+            -- beside it reads as one school and grants every location; and two
+            -- axes naming different tiers share one additional_location_name
+            -- that cannot be both, so staging's coalesce hands the staff axis
+            -- the student tier. Both land on 'none', which
+            -- `where location_scope != 'none'` then drops.
+            case
+                when additional_location_scope is null
+                then 'none'
+                when
+                    additional_student_location_scope != 'none'
+                    and additional_staff_location_scope != 'none'
+                    and additional_student_location_scope
+                    != additional_staff_location_scope
+                then 'none'
+                when additional_location_scope != 'network'
+                then additional_location_scope
+                when additional_location_name = 'all'
+                then 'network'
+                else 'none'
+            end as location_scope,
+        from {{ ref("stg_google_sheets__people__cube_access_individual_exceptions") }}
+        where {{ is_live_row("status", "grant_date", "expiry_date") }}
+    ),
+
+    -- At most one live row per grantee should set these, which
+    -- test_cube_access_individual_exceptions_single_remit_row asserts. That
+    -- test reports the violation, it does not prevent it -- dbt replaces the
+    -- staging table before its tests run and this mart is a view -- so on a
+    -- sheet that breaks the rule, max() picks the alphabetically last value
+    -- rather than a defined one. Deterministic across runs, but not meaningful.
+    individual_exception_scopes as (
+        select
+            google_email,
+            max(staff_department_scope) as staff_department_scope,
+            max(staff_pii_scope) as staff_pii_scope,
+            max(staff_compensation_scope) as staff_compensation_scope,
+            max(staff_observations_scope) as staff_observations_scope,
+            max(staff_benefits_scope) as staff_benefits_scope,
+        from individual_exceptions_live
+        group by google_email
+    ),
+
+    -- One struct per live location-grant row, array_agg'd per employee so this
+    -- mart keeps its 1-row-per-staff_key grain while carrying however many
+    -- grants that person has. access.js unions the abbreviations from every
+    -- element (see src/cube/access.js and .claude/rules/cube-authoring.md).
+    individual_exception_grants as (
+        select
+            iel.google_email,
+            array_agg(
+                struct(
+                    iel.location_scope,
+                    reg.region_key,
+                    loc.abbreviation as location_abbreviation,
+                    iel.includes_student_data,
+                    iel.includes_staff_data
+                )
+            ) as additional_location_grants,
+        from individual_exceptions_live as iel
+        left join
+            {{ ref("dim_regions") }} as reg
+            on iel.additional_location_name = reg.legal_entity
+        left join
+            {{ ref("dim_locations") }} as loc
+            on iel.additional_location_name = loc.`name`
+        where iel.location_scope != 'none'
+        group by iel.google_email
+    ),
+
+    -- Contractors and anyone else granted access without an employment record.
+    -- They hold a KTAF Google login but no ADP work assignment, so the spine
+    -- above emits nothing for them and their grant rows would join to nothing.
+    -- This leg gives them a row of their own. The directory join is the
+    -- authorization check: the address must be a real Google account, and one
+    -- that is neither suspended nor archived, so a typo or a deprovisioned
+    -- contractor cannot mint an identity. Minting is deliberately ungated on
+    -- location_scope: a remit-only grant row carries no location, and
+    -- test_cube_access_individual_exceptions_grant_reaches_a_viewer requires
+    -- every live row to resolve to a viewer. A row that grants nothing
+    -- therefore yields a viewer who is denied everything -- is_employee below
+    -- is what keeps that viewer out of the open staff directory.
+    non_employee_grantees as (
+        select distinct
+            {{
+                dbt_utils.generate_surrogate_key(
+                    ["'non_employee'", "iel.google_email"]
+                )
+            }} as staff_key, iel.google_email,
+        from individual_exceptions_live as iel
+        inner join
+            {{ ref("stg_google_directory__users") }} as u
+            on iel.google_email = lower(u.primary_email)
+            and not coalesce(u.suspended, false)
+            and not coalesce(u.archived, false)
+        left join enriched as e on iel.google_email = e.google_email
+        where e.google_email is null
+    ),
+
+    -- Both kinds of viewer on one grain, so the resolution below is written
+    -- once. The staff leg carries its role and org attributes; the non-employee
+    -- leg carries NULLs, which the coalesces read as 'none'. entity is the
+    -- exception: 'unknown' is its deny sentinel, and the column is never NULL.
+    access_spine as (
+        select
+            staff_key,
+            google_email,
+            department_name,
+            department_group,
+            entity,
+            job_function_code,
+            region_key,
+            location_abbreviation,
+
+            true as is_employee,
+        from enriched
+
+        union all
+
+        select
+            staff_key,
+            google_email,
+            cast(null as string) as department_name,
+            cast(null as string) as department_group,
+            'unknown' as entity,
+            cast(null as string) as job_function_code,
+            cast(null as string) as region_key,
+            cast(null as string) as location_abbreviation,
+
+            false as is_employee,
+        from non_employee_grantees
+    ),
+
     matched as (
         select
             e.staff_key,
@@ -161,6 +304,7 @@ with
             e.department_group,
             e.entity,
             e.job_function_code,
+            e.is_employee,
 
             rp.job_function_level,
 
@@ -172,21 +316,39 @@ with
                 ovr.staff_location_scope, rp.staff_location_scope, 'none'
             ) as staff_location_scope,
             coalesce(
-                ovr.staff_department_scope, rp.staff_department_scope, 'none'
+                iex.staff_department_scope,
+                ovr.staff_department_scope,
+                rp.staff_department_scope,
+                'none'
             ) as staff_department_scope,
             coalesce(
-                ovr.staff_pii_scope, rp.staff_pii_scope, 'none'
+                iex.staff_pii_scope, ovr.staff_pii_scope, rp.staff_pii_scope, 'none'
             ) as staff_pii_scope,
             coalesce(
-                ovr.staff_compensation_scope, rp.staff_compensation_scope, 'none'
+                iex.staff_compensation_scope,
+                ovr.staff_compensation_scope,
+                rp.staff_compensation_scope,
+                'none'
             ) as staff_compensation_scope,
             coalesce(
-                ovr.staff_observations_scope, rp.staff_observations_scope, 'none'
+                iex.staff_observations_scope,
+                ovr.staff_observations_scope,
+                rp.staff_observations_scope,
+                'none'
             ) as staff_observations_scope,
             coalesce(
-                ovr.staff_benefits_scope, rp.staff_benefits_scope, 'none'
+                iex.staff_benefits_scope,
+                ovr.staff_benefits_scope,
+                rp.staff_benefits_scope,
+                'none'
             ) as staff_benefits_scope,
-        from enriched as e
+
+            coalesce(ieg.additional_location_grants, []) as additional_location_grants,
+        from access_spine as e
+        left join
+            individual_exception_scopes as iex on e.google_email = iex.google_email
+        left join
+            individual_exception_grants as ieg on e.google_email = ieg.google_email
         left join
             {{ ref("stg_google_sheets__people__cube_access_department_override") }}
             as ovr
@@ -203,6 +365,7 @@ select
     entity,
     job_function_code,
     job_function_level,
+    is_employee,
 
     student_location_scope,
 
@@ -212,4 +375,6 @@ select
     staff_compensation_scope,
     staff_observations_scope,
     staff_benefits_scope,
+
+    additional_location_grants,
 from matched

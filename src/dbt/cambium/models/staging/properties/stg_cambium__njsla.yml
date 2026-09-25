@@ -1,0 +1,147 @@
+models:
+  - name: stg_cambium__njsla
+    description: >-
+      Cambium TIDE NJSLA district summative record file, one row per student per
+      subject test, filtered to summative, attempted records. Carries English
+      Language Arts, Mathematics and Science in one file. Columns keep Cambium's
+      names; kipptaf int_pearson__all_assessments maps them into the shared NJ-
+      assessment shape.
+    columns:
+      # Columns carrying per-column data_tests sort to the top. Every test sets
+      # severity explicitly.
+      - name: student_test_uuid
+        data_type: string
+        description: >-
+          Cambium's per-test identifier, unique per row. These are Cambium's own
+          UUIDs, not Pearson's, so student-crosswalk rows keyed on Pearson UUIDs
+          will not match Cambium records.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: test_date
+        data_type: date
+        description: >-
+          Date of the earliest online unit start across units 1 through 4,
+          coalesced to the parsed assessment session start. The coalesce is
+          required, not defensive: unit timestamps are populated for ELA only,
+          so unit-only derivation nulls every Mathematics row.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: period
+        data_type: string
+        quote: true
+        description: >-
+          Raw vendor-reported administration season. NJSLA is administered in
+          spring only, so a fall or block token fails the build instead of
+          quietly forking a second series downstream.
+        data_tests:
+          # accepted_values passes NULLs, so not_null is required alongside it
+          - not_null:
+              config:
+                severity: error
+          - accepted_values:
+              arguments:
+                values: [Spring]
+              config:
+                severity: error
+      - name: subject
+        data_type: string
+        quote: true
+        description: >-
+          'English Language Arts', 'Mathematics' or 'Science'. kipptaf branches
+          every subject-dependent column on it, so an unrecognized subject fails
+          here rather than silently landing on the ELA branch.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - accepted_values:
+              arguments:
+                values:
+                  - English Language Arts
+                  - Mathematics
+                  - Science
+              config:
+                severity: error
+      - name: academic_year
+        data_type: int64
+        description: >-
+          Start year of assessment_year, e.g. '2025-2026' becomes 2025.
+      - name: assessment_year
+        data_type: string
+        description: Vendor-reported school year, e.g. '2025-2026'.
+      - name: assessment_grade
+        data_type: string
+        description: The test design level, e.g. 'Grade 5'.
+      - name: grade_level_when_assessed
+        data_type: int64
+        description: The student's grade at the time of testing.
+      - name: test_code
+        data_type: string
+        description: >-
+          Cambium test code: ELA03 through ELA09, MAT03 through MAT08, and SC05,
+          SC08, SC11 for Science.
+      - name: test_status
+        data_type: string
+        description: >-
+          Cambium test lifecycle status, e.g. 'completed'. Not filtered on.
+      - name: test_performance_level
+        data_type: numeric
+        description: >-
+          1 through 5 for English Language Arts and Mathematics, 1 through 4 for
+          Science.
+      - name: test_scale_score
+        data_type: numeric
+        description: Scale score.
+      - name: test_score_complete
+        data_type: numeric
+        description: >-
+          Entirely NULL from Cambium, where Pearson set it to 1 on every
+          filtered row. Deliberately not synthesized.
+      - name: state_student_identifier
+        data_type: int64
+        description: NJ SMART state student identifier (10 digits).
+      - name: local_student_identifier
+        data_type: int64
+        description: >-
+          PowerSchool student_number. Null for a small number of students each
+          administration; patched in kipptaf from the student crosswalk sheet.
+      - name: first_name
+        data_type: string
+        description: Student first name as reported by Cambium.
+      - name: last_or_surname
+        data_type: string
+        description: Student surname as reported by Cambium.
+      - name: student_with_disabilities
+        data_type: string
+        description: N, IEP, 504, or B (both IEP and 504).
+      - name: multilingual_learner
+        data_type: string
+        description: Y/N multilingual learner flag.
+      - name: hispanic_or_latino_ethnicity
+        data_type: string
+        description: Y/N federal ethnicity flag.
+      - name: american_indian_or_alaska_native
+        data_type: string
+        description: Y/N federal race flag.
+      - name: asian
+        data_type: string
+        description: Y/N federal race flag.
+      - name: black_or_african_american
+        data_type: string
+        description: Y/N federal race flag.
+      - name: native_hawaiian_or_other_pacific_islander
+        data_type: string
+        description: Y/N federal race flag.
+      - name: two_or_more_races
+        data_type: string
+        description: Y/N federal race flag.
+      - name: white
+        data_type: string
+        description: Y/N federal race flag.

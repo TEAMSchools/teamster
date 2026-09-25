@@ -28,7 +28,9 @@ models:
         description: Contact-type label for the detail (e.g. the contact type).
         data_type: string
       - name: value
-        description: Contact value (e.g. the phone number or email address).
+        description: >-
+          Contact value (e.g. the phone number or email address), blank-trimmed
+          and normalized to null when empty.
         data_type: string
         config:
           meta:
@@ -60,3 +62,17 @@ models:
       - name: updated_at
         description: Row last-update timestamp in Focus.
         data_type: timestamp
+      - name: is_email_title
+        description: >-
+          Whether title is email-shaped (e.g. "Home Email") — when true, value
+          is an email address and must never be typed as a phone.
+        data_type: boolean
+      - name: phone_type
+        description: >-
+          Inferred phone type (mobile / home / work / daytime), mapped from
+          title by regex to the vocabulary shared with the Finalsite contacts
+          intermediate. Focus titles are free-typed and Focus publishes no type
+          vocabulary, so this mapping is inferred and guarded by the
+          focus_unmapped_phone_contact_titles test. Null when title matches no
+          phone-type pattern.
+        data_type: string

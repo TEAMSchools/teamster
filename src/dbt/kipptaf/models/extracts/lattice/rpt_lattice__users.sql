@@ -31,18 +31,24 @@ with
                 or (
                     home_business_unit_name
                     in ('TEAM Academy Charter School', 'KIPP Cooper Norcross Academy')
-                    and job_title in (
-                        'Director School Operations',
-                        'Director Campus Operations',
-                        'Managing Director of School Operations',
-                        'Managing Director of Operations'
-                    )
+                    and home_department_name = 'Operations'
+                    and contains_substr(job_title, 'Director')
+                    -- Associate Directors of School Operations are excluded by
+                    -- decision, not by oversight
+                    and not contains_substr(job_title, 'Associate')
                 )
                 or (
                     home_business_unit_name
                     in ('TEAM Academy Charter School', 'KIPP Cooper Norcross Academy')
                     and home_department_name
                     in ('Technology', 'Marketing, Comms, and Enrollment')
+                )
+                -- network-wide leader roles, included regardless of entity
+                or contains_substr(job_title, 'Head of School')
+                or home_department_name = 'Teaching and Learning'
+                or (
+                    home_department_name = 'School Support'
+                    and contains_substr(job_title, 'Managing Director')
                 )
             )
             and (

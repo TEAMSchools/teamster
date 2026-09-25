@@ -149,6 +149,36 @@ models:
       - name: imported
         description: Y/N — whether the row originated from an import.
         data_type: string
+      - name: ese
+        description: >-
+          ESE Type — Focus custom field. Stored as an encoded select option code
+          (decode deferred).
+        data_type: string
+      - name: ell_instruct_model
+        description: >-
+          ELL Instructional Model — Focus custom field. Stored as an encoded
+          select option code (decode deferred).
+        data_type: string
+      - name: de_inst_type
+        description: >-
+          Dual Enrollment Institution Type — Focus custom field. Stored as an
+          encoded select option code (decode deferred).
+        data_type: string
+      - name: online_course
+        description: >-
+          Online Course — Focus custom field. Stored as an encoded select option
+          code (decode deferred).
+        data_type: string
+      - name: distance_learning
+        description: >-
+          Distance Learning — Focus custom field. Stored as an encoded select
+          option code (decode deferred).
+        data_type: string
+      - name: career_pathway
+        description: >-
+          Career Pathways — Focus custom field. Stored as an encoded select
+          option code (decode deferred).
+        data_type: string
       - name: uuid
         description: Focus global unique identifier for the row.
         data_type: string

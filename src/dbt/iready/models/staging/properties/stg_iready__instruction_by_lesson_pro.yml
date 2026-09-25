@@ -43,3 +43,103 @@ models:
         data_type: numeric
       - name: passed_or_not_passed_numeric
         data_type: float64
+
+unit_tests:
+  - name: unit_iready_instruction_by_lesson_pro_decimal_formatted_ints
+    description:
+      Verifies the integer columns survive a source value formatted with two
+      decimal places. Every column in the i-Ready Avro external is STRING, and
+      the vendor export intermittently writes whole numbers as 9.00, which a
+      bare cast to int64 rejects with Bad int64 value. The first row supplies
+      that formatting for all five integer columns; the second supplies plain
+      integers to prove the numeric round trip leaves clean values unchanged.
+    model: stg_iready__instruction_by_lesson_pro
+    given:
+      - input: source('iready', 'src_iready__instruction_by_lesson_pro')
+        format: sql
+        rows: |
+          select
+              2026 as _dagster_partition_academic_year,
+              'KIPP Miami' as school,
+              '9' as student_grade,
+              'Math' as `subject`,
+              'Level 9' as `level`,
+              'Rational Numbers' as topic,
+              'Completed' as lesson_status,
+              'Passed' as lesson_result,
+              'English' as lesson_language,
+              'Compare Rational Numbers' as lesson_title,
+              '12.00' as lesson_time_on_task_min,
+              '9.00' as skills_completed,
+              '8.00' as skills_successful,
+              '88.50' as percent_skills_successful,
+              '10.00' as items_completed,
+              '9.00' as items_correct,
+              '90.00' as percent_items_correct,
+              '900001' as student_id,
+              '09/02/2026' as completion_date
+
+          union all
+
+          select
+              2026 as _dagster_partition_academic_year,
+              'KIPP Miami' as school,
+              '8' as student_grade,
+              'Reading' as `subject`,
+              'Level 8' as `level`,
+              'Vocabulary' as topic,
+              'Completed' as lesson_status,
+              'Not Passed' as lesson_result,
+              'English' as lesson_language,
+              'Context Clues' as lesson_title,
+              '7' as lesson_time_on_task_min,
+              '4' as skills_completed,
+              '2' as skills_successful,
+              '50' as percent_skills_successful,
+              '6' as items_completed,
+              '3' as items_correct,
+              '50' as percent_items_correct,
+              '900002' as student_id,
+              '09/02/2026' as completion_date
+    expect:
+      rows:
+        - student_id: 900001
+          academic_year_int: 2026
+          school: KIPP Miami
+          subject: Math
+          level: Level 9
+          topic: Rational Numbers
+          lesson_title: Compare Rational Numbers
+          lesson_status: Completed
+          lesson_result: Passed
+          lesson_time_on_task_min: 12
+          lesson_language: English
+          skills_completed: 9
+          skills_successful: 8
+          items_completed: 10
+          items_correct: 9
+          percent_items_correct: 90.00
+          completion_date: 2026-09-02
+          student_grade: "9"
+          percent_skills_successful: 88.50
+          passed_or_not_passed_numeric: 1.0
+        - student_id: 900002
+          academic_year_int: 2026
+          school: KIPP Miami
+          subject: Reading
+          level: Level 8
+          topic: Vocabulary
+          lesson_title: Context Clues
+          lesson_status: Completed
+          lesson_result: Not Passed
+          lesson_time_on_task_min: 7
+          lesson_language: English
+          skills_completed: 4
+          skills_successful: 2
+          items_completed: 6
+          items_correct: 3
+          percent_items_correct: 50
+          completion_date: 2026-09-02
+          student_grade: "8"
+          percent_skills_successful: 50
+          passed_or_not_passed_numeric: 0.0

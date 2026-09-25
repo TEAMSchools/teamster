@@ -1,5 +1,16 @@
 models:
   - name: rpt_gsheets__csgf_hs_act
+    description:
+      Scoped to enroll_status in (0, 3) -- Currently Enrolled or Graduated -- to
+      match rpt_gsheets__csgf_hs_enrollment's population; see
+      rpt_gsheets__csgf_hs_sat.yml for the full rationale (same fix, applied to
+      all four HS-scoped student-level models).
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - studentid
+              - section
     columns:
       - name: studentid
         data_type: int64

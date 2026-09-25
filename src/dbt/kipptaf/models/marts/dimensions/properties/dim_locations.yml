@@ -1,7 +1,5 @@
 models:
   - name: dim_locations
-    config:
-      materialized: table
     description: >-
       School and office location dimension. One row per school or office.
       Conformed dimension. Region context is reached via the region_key FK to
@@ -26,7 +24,6 @@ models:
             warn_unenforced: false
         data_tests:
           - unique
-          - not_null
 
       - name: region_key
         data_type: string
@@ -35,28 +32,33 @@ models:
           `business_unit_code` so this column hashes exactly the keys produced
           by `dim_regions.region_key`. Network-level locations (e.g., KIPP NJ)
           map to KIPP_TAF.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_regions')
-            to_columns: [region_key]
-            warn_unsupported: false
-            warn_unenforced: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_regions')
+              to_columns: [region_key]
         data_tests:
           - relationships:
               arguments:
                 to: ref('dim_regions')
                 field: region_key
 
+      - name: abbreviation
+        data_type: string
+        description: >-
+          Short display name for the location, and the value Cube's row-level
+          access filters student and staff rows on. resolveAccess turns a
+          viewer's location scope into a set of these and every student view
+          filters on membership in it, so a duplicate across two regions would
+          silently widen one viewer's access to the other's school.
+        data_tests:
+          - unique
+
       - name: name
         quote: true
         data_type: string
         description: >-
           Canonical location name.
-
-      - name: abbreviation
-        data_type: string
-        description: >-
-          Short display name for the location.
 
       - name: grade_band
         data_type: string

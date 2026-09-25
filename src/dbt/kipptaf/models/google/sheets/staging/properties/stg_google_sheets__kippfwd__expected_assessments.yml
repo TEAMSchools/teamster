@@ -1,35 +1,93 @@
 models:
   - name: stg_google_sheets__kippfwd__expected_assessments
+    description: >-
+      The Expected Assessments tab — the administrations each region's students
+      are expected to take in high school, by grade, test type, scope, score
+      type, and season, with one row per month (official) or scope_round
+      (practice) that belongs to the season. Rows whose season is Not Official
+      are dropped. The roster and the wide KIPP Forward sheet start from this
+      model, so an administration missing here has nowhere to land. See
+      docs/models/carat-dashboard-data-model.md.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - expected_region
+              - expected_grade_level
+              - expected_test_type
+              - expected_score_type
+              - expected_month_round
+              - expected_admin_season
+          config:
+            severity: error
     columns:
       - name: expected_region
         data_type: string
+        description: Region the expected administration applies to.
       - name: expected_grade_level
         data_type: int64
+        description: Grade expected to sit the administration.
       - name: expected_test_type
         data_type: string
+        description: Official or Practice.
       - name: expected_scope
         data_type: string
+        description: The test — SAT, PSAT 8/9, PSAT10, PSAT NMSQT.
       - name: expected_score_type
         data_type: string
+        description: >-
+          Score identifier, matching score_type on the assessment hub, or
+          sat_total_score_growth for the SAT growth row.
       - name: expected_month_round
         data_type: string
+        description: >-
+          The month an official score must fall in to land in this season, or
+          the scope_round on practice rows; growth rows hold the season name.
+          Joins to aligned_month_round on the assessment hub.
       - name: expected_admin_season
         data_type: string
+        description:
+          Season the administration belongs to — Fall, Winter, Spring.
       - name: expected_admin_season_order
         data_type: int64
+        description: >-
+          Position of the season in the one sequence that runs across all
+          grades; orders a student's progression and growth.
       - name: expected_grouping
         data_type: string
+        description: >-
+          Growth, Total, EBRW, or Math, matched from the score type name in that
+          order. Null for a score type containing none of those words.
       - name: expected_score_type_aligned
         data_type: string
+        description: >-
+          expected_score_type with sat_total_score_growth mapped to
+          sat_total_score, so a growth row keys to the same administration as
+          its total.
       - name: expected_month
         data_type: string
+        description: >-
+          First word of expected_month_round.
       - name: expected_field_name
         data_type: string
+        description: >-
+          Display label built from grade, season, test type, scope, and
+          grouping, such as G11 Spring Official SAT Total.
       - name: expected_score_category
         data_type: string
+        description: Score Change on Growth rows, Scale Score otherwise.
       - name: expected_months_included
         data_type: string
+        description: >-
+          Every expected_month_round on the season's Total rows for this region,
+          grade, test type, and scope, comma-separated.
       - name: rn
         data_type: int64
+        description: >-
+          Row number within region, grade, test type, score type, and season.
+          Consumers filter rn = 1 for one row per administration and score type.
       - name: expected_unique_test_admin_id
         data_type: string
+        description: >-
+          Surrogate key of test type, aligned score type, grade, and season.
+          Shared by a growth row and its total, and across regions.

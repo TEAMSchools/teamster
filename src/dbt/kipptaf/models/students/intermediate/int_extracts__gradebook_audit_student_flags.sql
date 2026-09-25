@@ -93,9 +93,9 @@ left join
     and s.sectionid = qg.sectionid
     and s._dbt_source_project = qg._dbt_source_project
     and s.`quarter` = qg.storecode
-    and qg.grades_type = 'last_year'  /* summer toggle: see skill */
+    and qg.grades_type = 'current_year'  /* summer toggle: see skill */
 where
-    s.academic_year = {{ var("current_academic_year") - 1 }}  /* summer toggle: see skill */
+    s.academic_year = {{ var("current_academic_year") }}  /* summer toggle: see skill */
     and s.quarter_start_date <= current_date('{{ var("local_timezone") }}')
     and s.rn_year = 1
     and s.enroll_status = 0
@@ -103,3 +103,6 @@ where
     and s._dbt_source_project != 'kippmiami'
     and not s.is_out_of_district
     and s.exclude_from_gpa = 0
+    -- LAB advisory: graded, but no course-level expectation grain exists;
+    -- see docs/models/gradebook-audit-data-model.md
+    and s.course_number != 'SEM22106G1'

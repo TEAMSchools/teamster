@@ -39,6 +39,7 @@ sources:
                 - rpt_focus__contacts
       - name: rpt_focus__linked_students
         config:
+          enabled: false
           meta:
             dagster:
               group: extracts

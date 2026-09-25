@@ -1,5 +1,11 @@
 models:
   - name: rpt_gsheets__csgf_hs_postsec_pathways
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - academic_year
+              - student_number
     columns:
       - name: academic_year
         data_type: int64

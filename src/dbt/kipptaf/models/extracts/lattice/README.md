@@ -11,11 +11,15 @@ Keep this doc in sync with the model whenever the criteria change.
 ### High level summary
 
 - **KTAF central and Paterson include everyone** — no role filter.
-- **Newark and Camden are treated identically** — operations leaders and two
-  departments (**Technology** or **Marketing, Comms, and Enrollment**) included.
+- **Newark and Camden are treated identically** — director-level Operations
+  staff (excluding Associate Directors) and two departments (**Technology** or
+  **Marketing, Comms, and Enrollment**) included.
 - **Miami includes additional leader roles** — gated on a title keyword match
   plus one hardcoded location ("Room 11"), rather than an explicit title or
   department list.
+- **Three network-wide rules apply everywhere** — Heads of School, Managing
+  Directors in School Support, and the whole Teaching and Learning department
+  are included no matter which entity they sit in.
 - **Part-time permanent and temporary workers are excluded; full-time temporary
   staff are included.**
 
@@ -45,13 +49,22 @@ Any one of these qualifies:
 - **KIPP Miami** — only school/team leaders: job title contains "Director,"
   "Head," "Leader," or "Dean," **or** their work location is "Room 11."
 - **Newark (TEAM Academy Charter School) or Camden (KIPP Cooper Norcross
-  Academy)** — only these operations roles:
-  - Director School Operations
-  - Director Campus Operations
-  - Managing Director of School Operations
-  - Managing Director of Operations
+  Academy)** — anyone in the **Operations** department whose job title contains
+  "Director" but not "Associate." This covers `Director`,
+  `Director School Operations`, `Director Campus Operations`,
+  `Managing Director of School Operations`, `Managing Director of Operations`,
+  and `Fellow School Operations Director`. **Associate Directors of School
+  Operations are excluded** — confirmed with Ops. The keyword match replaced an
+  exact title list that silently dropped Operations staff carrying the bare ADP
+  title `Director`.
 - **Newark or Camden** — anyone in the **Technology** or **Marketing, Comms, and
   Enrollment** department.
+- **Any entity** — job title contains "Head of School." The ADP title is "Head
+  of Schools"; the substring also picks up variants such as "Head of Schools in
+  Residence."
+- **Any entity** — anyone in the **Teaching and Learning** department.
+- **Any entity** — job title contains "Managing Director" **and** their
+  department is **School Support**.
 
 #### 3. Currently employed, or very recently departed
 

@@ -11,9 +11,12 @@ ADP occasionally renames a location in its system without any real-world change
 to the school or office. When that happens:
 
 1. Open the `src_people__location_crosswalk` Google Sheet.
-2. Add a **new alias row**: set `name` to the new ADP value, set `clean_name` to
-   the unchanged existing clean name, and copy all other columns (region, school
-   level, etc.) from the existing row for that location.
+2. Add a **new alias row**: set `name` to the new ADP value and `clean_name` to
+   the unchanged existing clean name. Leave the remaining columns alone — dbt
+   reads only those two, via the `src_people__location_crosswalk_v2` named
+   range. Region, school level, school ids, and every other attribute resolve
+   from the `src_google_sheets__people__locations_v3` tab in the same
+   spreadsheet, matched on `clean_name`.
 3. No downstream action is needed — `int_people__location_crosswalk` absorbs the
    rename via alias resolution. All models that join on `clean_name` are
    unaffected.

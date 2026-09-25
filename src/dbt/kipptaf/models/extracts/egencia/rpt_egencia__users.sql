@@ -9,7 +9,6 @@ select
 
     if(sr.assignment_status = 'Terminated', 'Disabled', 'Active') as `Status`,
 
-    /* legal name */
     regexp_replace(normalize(sr.legal_given_name, nfd), r'\pM', '') as `First name`,
     regexp_replace(normalize(sr.legal_family_name, nfd), r'\pM', '') as `Last name`,
 

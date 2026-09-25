@@ -12,7 +12,7 @@ with
                         "int_powerschool__teacher_grade_levels",
                     ),
                     source(
-                        "kippmiami_powerschool",
+                        "kipppaterson_powerschool",
                         "int_powerschool__teacher_grade_levels",
                     ),
                 ]

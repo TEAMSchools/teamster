@@ -1,6 +1,6 @@
 import json
 
-from dagster import AssetSpec
+from dagster import AssetSpec, Backoff, Jitter, RetryPolicy
 
 from teamster.code_locations.kipptaf import CODE_LOCATION, DBT_PROJECT, LOCAL_TIMEZONE
 from teamster.code_locations.kipptaf.adp.payroll.assets import (
@@ -58,6 +58,17 @@ google_sheet_dbt_assets = build_dbt_assets(
             }
         }
     },
+    # BigQuery reads of a Google Sheets external table intermittently fail with
+    # `Resources exceeded during query execution: Google Sheets service
+    # overloaded for spreadsheet id: ...`. dbt-bigquery cannot retry it: reason
+    # `resourcesExceeded` maps to HTTP 400 and is in neither BigQuery's
+    # `_RETRYABLE_REASONS` nor its `job_retry_reasons`, so `job_retries` in
+    # profiles.yml never applies. The delay is the point -- the sheets asset
+    # sensor fires because someone just edited the spreadsheet, so an immediate
+    # retry re-reads it inside the same overload window.
+    retry_policy=RetryPolicy(
+        max_retries=3, delay=120, backoff=Backoff.EXPONENTIAL, jitter=Jitter.PLUS_MINUS
+    ),
 )
 
 asset_specs = [

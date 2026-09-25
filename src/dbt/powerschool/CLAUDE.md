@@ -3,7 +3,10 @@
 Source-system staging project for **PowerSchool SIS** data. Produces clean,
 contract-enforced staging models consumed by the NJ district dbt projects
 (`kippnewark`, `kippcamden`, `kipppaterson`) and `kipptaf`. `kippmiami` no
-longer consumes it — its SIS moved to Focus (#4441).
+longer consumes it — its SIS moved to Focus (#4441). The exception is an archive
+rebuild, which re-includes the package in `kippmiami` and removes it again
+afterward; `src/dbt/kippmiami/CLAUDE.md` carries that recipe. If you find the
+package listed in that project's `packages.yml`, a rebuild is mid-flight.
 
 ## Model Structure
 
@@ -13,7 +16,7 @@ models/
     base/        # base models (light renaming, no logic)
     staging/
       dlt/       # models sourced from dlt (Oracle over SSH tunnel → BigQuery); ENABLED by default — the live SIS path
-      odbc/      # models sourced from live Oracle ODBC connection (ARCHIVED - disabled by default; no district builds it)
+      odbc/      # models sourced from live Oracle ODBC connection (ARCHIVED - disabled by default; the kippmiami archive rebuild (#5201) enabled it once)
       sftp/      # models sourced from SFTP file extracts (disabled by default; unused)
     intermediate/
 ```
@@ -23,30 +26,10 @@ by default (every consuming district ingests PowerSchool via dlt); `odbc` and
 `sftp` default off. A district only overrides these flags to disable specific
 `dlt` tables it does not populate (e.g. `kipppaterson`).
 
-## Key Variables
-
-| Variable                            | Default | Notes                                          |
-| ----------------------------------- | ------- | ---------------------------------------------- |
-| `current_academic_year`             | `0`     | Overridden per district project                |
-| `local_timezone`                    | `UTC`   | Overridden per district project                |
-| `bigquery_external_connection_name` | `null`  | Set to BigLake connection in district projects |
-
-## Cross-Project Usage
-
-This project is never run standalone in production. District-specific projects
-reference it as a dbt package and override variables and enabled flags. When a
-district project runs, it resolves `ref('stg_powerschool__*')` models from this
-project.
-
-The `odbc/` / `sftp/` / `dlt/` split exists because districts pull PowerSchool
-via a live Oracle ODBC tunnel, SFTP file drops, or dlt (Oracle over an SSH
-tunnel → BigQuery). Only one variant is enabled per district.
-
 ## dlt staging variant (#3807)
 
-`kipppaterson` ingests PowerSchool via dlt; `staging/dlt/` is the template for
-migrating the ODBC districts. A dlt model = its **odbc** sibling minus the
-struct-unwrap: dlt lands raw Oracle scalars, so drop the
+A dlt model = its archived **odbc** sibling minus the struct-unwrap: dlt lands
+raw Oracle scalars, so drop the
 `.int_value`/`.double_value`/`coalesce(... .bytes_decimal_value ...)` accessors,
 the `_file_name`-snapshot `dbt_utils.deduplicate` (native table, no file dupes)
 — but KEEP a business-grain dedup the odbc model already had (e.g.

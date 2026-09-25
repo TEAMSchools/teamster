@@ -4,11 +4,11 @@
 # depending on a skill being invoked. Silent (exit 0, no stdout) whenever there
 # is nothing to say — this hook never blocks a call.
 #
-# Content is keyed by MCP server name: mcp__<server>__<tool> reads
-# .claude/context/<server>.md. That file IS the configuration — adding a server
-# means adding a file, with no edit to this script or to settings.json. A
-# missing file makes the hook inert for that server, so sections can be migrated
-# out of CLAUDE.md one at a time.
+# Content is keyed by tool: mcp__<server>__<tool> reads .claude/context/<server>.md,
+# and Agent / Workflow read .claude/context/agent.md. A context file IS the
+# configuration for a server — adding one means adding a file, with no edit to
+# this script or to settings.json. A missing file makes the hook inert for that
+# key, so sections can be migrated out of CLAUDE.md one at a time.
 #
 # hookEventName is echoed back from the payload because the harness hard-fails
 # on a mismatch ("Hook returned incorrect event name"), and so this same script
@@ -23,7 +23,7 @@ input=$(cat)
 # hooks this one fails OPEN: it only adds context, so an unparseable envelope
 # must not block the tool call.
 if [[ -z ${input} ]] || ! jq -e 'type == "object"' >/dev/null 2>&1 <<<"${input}"; then
-  exit 0
+	exit 0
 fi
 
 tool_name=$(jq -r '.tool_name // ""' <<<"${input}")
@@ -36,13 +36,16 @@ PreToolUse | PostToolUse) ;;
 *) exit 0 ;;
 esac
 
-# mcp__<server>__<tool> -> <server>; anything else is not ours.
+# mcp__<server>__<tool> -> <server>; Agent and Workflow -> agent; anything
+# else is not ours.
 case "${tool_name}" in
-mcp__*__*) ;;
+mcp__*__*)
+	key=${tool_name#mcp__}
+	key=${key%%__*}
+	;;
+Agent | Workflow) key=agent ;;
 *) exit 0 ;;
 esac
-key=${tool_name#mcp__}
-key=${key%%__*}
 
 # Defence in depth: the key becomes a path segment, so allow only safe chars.
 case "${key}" in
@@ -52,16 +55,16 @@ esac
 
 context_file=".claude/context/${key}.md"
 if [[ ! -r ${context_file} ]]; then
-  exit 0
+	exit 0
 fi
 
 # Once per session per server.
 marker=".claude/scratch/.gotchas-${session}-${key}"
 if [[ -e ${marker} ]]; then
-  exit 0
+	exit 0
 fi
 mkdir -p .claude/scratch
 : >"${marker}"
 
 jq -n --arg ev "${event}" --rawfile body "${context_file}" \
-  '{hookSpecificOutput: {hookEventName: $ev, additionalContext: $body}}'
+	'{hookSpecificOutput: {hookEventName: $ev, additionalContext: $body}}'

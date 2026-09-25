@@ -1,0 +1,78 @@
+models:
+  - name: int_students__calendar_day
+    description: >-
+      SIS-neutral in-session school calendar days across the network. The
+      PowerSchool branch is NJ-only; Miami rows come from Focus from the cutover
+      year forward, and no Miami calendar history before AY2026 is kept. Focus's
+      internal school id (14, 15, 58...) is crosswalked to the network school
+      number here, because the crosswalk sheet is a kipptaf model the focus
+      package cannot reach. That id also differs from the school_number the
+      focus package exposes, a Florida code like 2332A, so the crosswalk
+      resolves both hops. It is an inner join, which doubles as the filter that
+      drops Focus's 3 non-instructional schools -- Applicants, Virtual
+      Franchise, ZZ Course History -- since those have no locations row.
+      int_focus__calendar_day is otherwise Focus-native. It emits academic_year
+      and school_date and no insession or membershipvalue at all, and a row
+      existing there IS an in-session day, so both flags are supplied as
+      constants on that branch. The Focus branch floors on the 2026 cutover year
+      rather than on Focus row presence, because Focus's calendar before that
+      year is a scaffold rather than the network's calendar of record. Every
+      measure is dual-exposed: a neutral column (`school_date`, `academic_year`,
+      `is_in_session`, `is_in_membership`) for new work, alongside the legacy
+      PowerSchool-derived name (`date_value`, `yearid`, `insession`,
+      `membershipvalue`) that dim_school_calendars and the NJ-parity gate read.
+      The legacy set is transitional and kept only so existing consumers can
+      migrate independently; retiring it is out of scope here.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              [schoolid, yearid, date_value, _dbt_source_project]
+          config:
+            severity: error
+    columns:
+      - name: date_value
+        description: >-
+          The in-session calendar date. Legacy alias, transitional -- read by
+          dim_school_calendars and the NJ-parity gate. Same value as
+          school_date.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: schoolid
+        description: Network school number.
+      - name: school_date
+        description: >-
+          The in-session calendar date. Neutral primary name; same value as
+          date_value.
+      - name: yearid
+        description: >-
+          Academic year minus 1990. Legacy alias, transitional -- read by
+          dim_school_calendars and the NJ-parity gate. On the PowerSchool branch
+          this arrives from int_powerschool__calendar_day, a left join to the
+          isyearrec = 1 term window, so real calendar days that fall outside
+          every window carry a null yearid and academic_year -- August
+          pre-service dates and a 15-day Paterson gap. Nothing downstream
+          requires either to be non-null.
+      - name: academic_year
+        description: Academic year. Neutral primary name; yearid + 1990.
+      - name: insession
+        description: >-
+          1 when the day is in session. Legacy alias, transitional -- read by
+          dim_school_calendars and the NJ-parity gate.
+      - name: is_in_session
+        description: True when the day is in session. Neutral primary name.
+      - name: membershipvalue
+        description: >-
+          Membership weight for the day; greater than 0 counts. Legacy alias,
+          transitional -- read by dim_school_calendars and the NJ-parity gate.
+      - name: is_in_membership
+        description: >-
+          True when the day counts toward membership. Neutral primary name.
+      - name: week_start_date
+        description: Sunday of the week the date falls in.
+      - name: week_end_date
+        description: Saturday of the week the date falls in.
+      - name: _dbt_source_project
+        description: Originating district project.

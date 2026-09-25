@@ -1,273 +1,4 @@
 with
-    -- internal scores: one row per (student, canonical assessment, source).
-    -- anchor = the scheduled administration date (administered_date). date_taken
-    -- is NOT used -- it is occasionally corrupt (epoch / year-2000 sentinels) and
-    -- the wrong grain; anchoring on it dropped scores whose bad date missed every
-    -- enrollment window (#4183). The academic year is
-    -- not carried: the half-open enrollment window [cc_dateenrolled, cc_dateleft)
-    -- pins the section to the year the assessment was actually sat. Adding a
-    -- year-equality predicate is redundant for state scores and wrong for
-    -- internal -- scaffold.academic_year (academic_year_clean) and the
-    -- inventory's illuminate_academic_year (cc_academic_year + 1) use offset
-    -- conventions that disagree by a school year.
-    -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
-    internal_anchored as (
-        select
-            sc.powerschool_student_number,
-            sc.canonical_assessment_id,
-            sc.subject_area,
-            sc._dbt_source_project,
-
-            c.administered_date as anchor_date,
-        from {{ ref("int_assessments__scaffold") }} as sc
-        inner join
-            {{ ref("int_assessments__assessments_canonical") }} as c
-            on sc.canonical_assessment_id = c.canonical_assessment_id
-        where sc.is_internal_assessment and not sc.is_replacement
-    ),
-
-    internal_deduplicated as (
-        {{
-            dbt_utils.deduplicate(
-                relation="internal_anchored",
-                partition_by="""
-                    powerschool_student_number,
-                    canonical_assessment_id,
-                    _dbt_source_project
-                """,
-                order_by="anchor_date asc",
-            )
-        }}
-    ),
-
-    internal_scores as (
-        select
-            powerschool_student_number,
-            canonical_assessment_id,
-            subject_area,
-            _dbt_source_project,
-            anchor_date,
-
-            cast(null as int64) as academic_year,
-            cast(null as string) as administration_period,
-
-            'internal' as source_type,
-        from internal_deduplicated
-    ),
-
-    -- NJ state scores (Pearson). illuminate_subject is the upstream state->course
-    -- subject mapping (English Language Arts% -> Text Study, Algebra/Geometry ->
-    -- Mathematics, else passthrough), aligning with inventory illuminate_subject_area.
-    -- rows with no test date or no student cannot resolve -> dropped (out of scope).
-    state_nj_scores as (
-        select
-            localstudentidentifier as powerschool_student_number,
-            academic_year,
-            administration_period,
-            illuminate_subject as subject_area,
-            _dbt_source_project,
-
-            test_date as anchor_date,
-
-            cast(null as int64) as canonical_assessment_id,
-
-            'state_nj' as source_type,
-        from {{ ref("int_pearson__all_assessments") }}
-        where test_date is not null and localstudentidentifier is not null
-    ),
-
-    -- FL state scores (FLDOE). administration_window is the FL analogue of
-    -- administration_period.
-    state_fl_scores as (
-        select
-            student_number as powerschool_student_number,
-            academic_year,
-            administration_window as administration_period,
-            illuminate_subject as subject_area,
-            _dbt_source_project,
-
-            test_date as anchor_date,
-
-            cast(null as int64) as canonical_assessment_id,
-
-            'state_fl' as source_type,
-        from {{ ref("int_fldoe__all_assessments") }}
-        where test_date is not null and student_number is not null
-    ),
-
-    -- iReady diagnostics. test_round is the reporting-terms IR window (BOY /
-    -- MOY / EOY / Outside Round); illuminate_subject maps Reading -> Text
-    -- Study, Math -> Mathematics upstream.
-    iready_scores as (
-        select
-            student_id as powerschool_student_number,
-            academic_year_int as academic_year,
-            test_round as administration_period,
-            illuminate_subject as subject_area,
-            _dbt_source_project,
-
-            completion_date as anchor_date,
-
-            cast(null as int64) as canonical_assessment_id,
-
-            'iready' as source_type,
-        from {{ ref("int_iready__diagnostic_results") }}
-        where completion_date is not null and overall_scale_score is not null
-    ),
-
-    -- STAR attempts. screening_period_window_name is the vendor window (Fall /
-    -- Winter / Spring); rows without a crosswalk-resolved project cannot join
-    -- course enrollments and are dropped (out of scope).
-    star_scores as (
-        select
-            student_display_id as powerschool_student_number,
-            academic_year,
-            screening_period_window_name as administration_period,
-            illuminate_subject as subject_area,
-            _dbt_source_project,
-
-            completed_date_value as anchor_date,
-
-            cast(null as int64) as canonical_assessment_id,
-
-            'star' as source_type,
-        from {{ ref("stg_renlearn__star") }}
-        where
-            completed_date_value is not null
-            and unified_score is not null
-            and _dbt_source_project is not null
-    ),
-
-    -- DIBELS benchmark composites. One row per student x benchmark window
-    -- (BOY / MOY / EOY); PM probes and subskill measures are out of scope.
-    dibels_scores as (
-        select
-            student_number as powerschool_student_number,
-            academic_year,
-            `period` as administration_period,
-            illuminate_subject as subject_area,
-            _dbt_source_project,
-
-            client_date as anchor_date,
-
-            cast(null as int64) as canonical_assessment_id,
-
-            'dibels' as source_type,
-        from {{ ref("int_amplify__all_assessments") }}
-        where
-            assessment_type = 'Benchmark'
-            and measure_standard = 'Composite'
-            and client_date is not null
-    ),
-
-    scores as (
-        select
-            powerschool_student_number,
-            canonical_assessment_id,
-            academic_year,
-            administration_period,
-            subject_area,
-            _dbt_source_project,
-            anchor_date,
-            source_type,
-        from internal_scores
-
-        union all
-
-        select
-            powerschool_student_number,
-            canonical_assessment_id,
-            academic_year,
-            administration_period,
-            subject_area,
-            _dbt_source_project,
-            anchor_date,
-            source_type,
-        from state_nj_scores
-
-        union all
-
-        select
-            powerschool_student_number,
-            canonical_assessment_id,
-            academic_year,
-            administration_period,
-            subject_area,
-            _dbt_source_project,
-            anchor_date,
-            source_type,
-        from state_fl_scores
-
-        union all
-
-        select
-            powerschool_student_number,
-            canonical_assessment_id,
-            academic_year,
-            administration_period,
-            subject_area,
-            _dbt_source_project,
-            anchor_date,
-            source_type,
-        from iready_scores
-
-        union all
-
-        select
-            powerschool_student_number,
-            canonical_assessment_id,
-            academic_year,
-            administration_period,
-            subject_area,
-            _dbt_source_project,
-            anchor_date,
-            source_type,
-        from star_scores
-
-        union all
-
-        select
-            powerschool_student_number,
-            canonical_assessment_id,
-            academic_year,
-            administration_period,
-            subject_area,
-            _dbt_source_project,
-            anchor_date,
-            source_type,
-        from dibels_scores
-    ),
-
-    -- course_subject is the section subject the resolver matches against. For
-    -- internal scores subject_area already equals the inventory's
-    -- illuminate_subject_area; for state scores the state->course mapping is
-    -- already applied upstream (illuminate_subject), so this is a passthrough.
-    -- Derived as a named column (not inline in a join) per src/dbt/CLAUDE.md.
-    -- score_grain_key is the stable per-score handle used for the tier-2
-    -- anti-join (internal grain: canonical; state grain: year/period/subject).
-    scores_mapped as (
-        select
-            *,
-
-            subject_area as course_subject,
-
-            {{
-                dbt_utils.generate_surrogate_key(
-                    [
-                        "powerschool_student_number",
-                        "_dbt_source_project",
-                        "source_type",
-                        "canonical_assessment_id",
-                        "academic_year",
-                        "administration_period",
-                        "subject_area",
-                    ]
-                )
-            }} as score_grain_key,
-        from scores
-    ),
-
-    -- tier 1: subject-matching section active on the anchor date (half-open window)
     candidates_subject as (
         select
             s.powerschool_student_number,
@@ -278,20 +9,23 @@ with
             s._dbt_source_project,
             s.source_type,
             s.score_grain_key,
+            s.anchor_date,
 
             ce.cc_dcid,
             ce._dbt_source_project as cc_source_project,
             ce.cc_dateleft,
+            ce.powerschool_school_id,
+            ce.region,
 
             1 as tier,
 
             'subject_section' as resolution_type,
-        from scores_mapped as s
+        from {{ ref("int_assessments__score_anchors") }} as s
         inner join
             {{ ref("int_assessments__course_enrollments") }} as ce
             on s.powerschool_student_number = ce.powerschool_student_number
             and s._dbt_source_project = ce._dbt_source_project
-            and s.course_subject = ce.illuminate_subject_area
+            and s.subject_area = ce.illuminate_subject_area
             and s.anchor_date >= ce.cc_dateenrolled
             and s.anchor_date < ce.cc_dateleft
             -- only sections with a real course-enrollment row resolve to a
@@ -300,19 +34,16 @@ with
             and ce.cc_dcid is not null
     ),
 
-    -- grain projection: every selected column is functionally determined
-    -- by the partition key; not a mask for upstream duplicates
+    -- grain projection, not dup-masking
     resolved_subject_keys as (select distinct score_grain_key, from candidates_subject),
 
-    -- scores that found no subject section, eligible for the homeroom tier
     scores_unresolved as (
         select s.*,
-        from scores_mapped as s
+        from {{ ref("int_assessments__score_anchors") }} as s
         left join resolved_subject_keys as cs on s.score_grain_key = cs.score_grain_key
         where cs.score_grain_key is null
     ),
 
-    -- tier 2: the student's homeroom section active on the anchor date
     candidates_homeroom as (
         select
             s.powerschool_student_number,
@@ -323,10 +54,13 @@ with
             s._dbt_source_project,
             s.source_type,
             s.score_grain_key,
+            s.anchor_date,
 
             ce.cc_dcid,
             ce._dbt_source_project as cc_source_project,
             ce.cc_dateleft,
+            ce.powerschool_school_id,
+            ce.region,
 
             2 as tier,
 
@@ -342,7 +76,6 @@ with
             and ce.cc_dcid is not null
     ),
 
-    -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
     all_candidates as (
         select *,
         from candidates_subject
@@ -355,14 +88,34 @@ with
 
     -- one section per score: prefer the subject section (tier 1) over homeroom,
     -- then the section that ends latest among ties within a tier
+    all_candidates_ranked as (
+        select
+            *,
+
+            row_number() over (
+                partition by score_grain_key
+                order by tier asc, cc_dateleft desc, cc_dcid desc
+            ) as rn,
+        from all_candidates
+    ),
+
     resolved as (
-        {{
-            dbt_utils.deduplicate(
-                relation="all_candidates",
-                partition_by="score_grain_key",
-                order_by="tier asc, cc_dateleft desc, cc_dcid desc",
-            )
-        }}
+        select
+            powerschool_student_number,
+            canonical_assessment_id,
+            academic_year,
+            administration_period,
+            subject_area,
+            _dbt_source_project,
+            source_type,
+            resolution_type,
+
+            cc_dcid,
+            cc_source_project,
+            powerschool_school_id,
+            region,
+        from all_candidates_ranked
+        where rn = 1
     )
 
 select
@@ -375,6 +128,13 @@ select
     cc_source_project,
     source_type,
     resolution_type,
+
+    -- the resolved section's school and region. Carried so consumers can resolve
+    -- a score's reporting quarter from the score's OWN date (#4484); this model
+    -- is one row per score GRAIN, so its anchor_date cannot stand in for the
+    -- date of every score row sharing that grain.
+    powerschool_school_id,
+    region,
 
     {{ dbt_utils.generate_surrogate_key(["cc_dcid", "cc_source_project"]) }}
     as student_section_enrollment_key,

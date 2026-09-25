@@ -1,19 +1,16 @@
 {
   "mcpServers": {
     "dagster": {
-      "command": "/workspaces/teamster/scripts/dagster-mcp-launch.sh",
+      "command": "${CLAUDE_PROJECT_DIR:-.}/scripts/dagster-mcp-launch.sh",
       "args": []
     },
-    "bigquery": {
-      "command": "npx",
-      "args": ["-y", "@toolbox-sdk/server", "--prebuilt=bigquery", "--stdio"],
-      "env": {
-        "GOOGLE_APPLICATION_CREDENTIALS": "${HOME}/.config/gcloud/application_default_credentials.json",
-        "BIGQUERY_PROJECT": "teamster-332318"
-      }
+    "dagster-plus": {
+      "type": "http",
+      "url": "https://mcp.agent.dagster.cloud/mcp",
+      "headersHelper": "${CLAUDE_PROJECT_DIR:-.}/scripts/dagster-plus-mcp-headers.sh"
     },
     "dbt": {
-      "command": "/workspaces/teamster/scripts/dbt-mcp-launch.sh",
+      "command": "${CLAUDE_PROJECT_DIR:-.}/scripts/dbt-mcp-launch.sh",
       "args": [],
       "env": {
         "DBT_HOST": "us1.dbt.com",
@@ -50,7 +47,7 @@
       "args": ["-y", "@upstash/context7-mcp"]
     },
     "tableau": {
-      "command": "/workspaces/teamster/scripts/tableau-mcp-launch.sh",
+      "command": "${CLAUDE_PROJECT_DIR:-.}/scripts/tableau-mcp-launch.sh",
       "args": [],
       "env": {
         "TRANSPORT": "stdio"

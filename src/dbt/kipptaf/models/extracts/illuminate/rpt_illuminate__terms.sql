@@ -14,4 +14,12 @@ select
 
     dcid as `09 Local Term ID`,
 -- trunk-ignore-end(sqlfluff/RF05)
-from {{ ref("stg_powerschool__terms") }}
+from {{ ref("int_students__terms") }}
+where
+    -- Miami left Illuminate ahead of AY2026-27 (#4777, #5537)
+    _dbt_source_project in ('kippnewark', 'kippcamden', 'kipppaterson')
+    -- Keeps only the rows that carry a term name. On the PowerSchool arm a
+    -- quarter usually appears twice: once from the raw terms table, carrying
+    -- the name and identifiers Illuminate needs, and once as a quarter row
+    -- carrying neither. This keeps the first and drops the second.
+    and `name` is not null

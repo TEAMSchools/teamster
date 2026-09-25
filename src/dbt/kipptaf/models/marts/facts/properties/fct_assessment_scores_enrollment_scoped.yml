@@ -2,21 +2,44 @@ models:
   - name: fct_assessment_scores_enrollment_scoped
     description: >-
       Enrollment-scoped assessment score fact table. One row per student x
-      assessment x administration. Covers internal Illuminate assessments, state
-      assessments (NJSLA, NJGPA, FAST), and vendor benchmark assessments
-      (i-Ready Diagnostic, STAR, DIBELS Composite). Each row is linked to an
-      assessment administration (via assessment_administration_key) and to the
-      student's resolved section enrollment (via student_section_enrollment_key
-      and enrollment_resolution).
+      assessment x administration x response type. Covers internal Illuminate
+      assessments, state assessments (NJSLA, NJGPA, FAST), and vendor benchmark
+      assessments (i-Ready Diagnostic, STAR, DIBELS — Composite plus subtests).
+      Each row is linked to an assessment administration (via
+      assessment_administration_key) and to the student's resolved section
+      enrollment (via student_section_enrollment_key and enrollment_resolution).
+
+      Vendor breakdown rows sit alongside the summary row, not in place of it.
+      DIBELS contributes one row per subtest next to the Composite. i-Ready
+      contributes one row per domain next to the subject-level row, with two
+      exclusions: domains i-Ready marks 'Not Assessed', and
+      comprehension_overall. That last one is the rollup parent of
+      comprehension_literature and comprehension_informational_text, and the
+      proficiency measures built on this table are additive, so keeping it would
+      count the comprehension construct three times. A domain with a grade-level
+      placement but no scale score is kept — the placement is the primary domain
+      signal, so filtering on a non-null scale_score drops real rows.
     config:
       materialized: table
       meta:
         dagster:
-          # nightly instead of eager: only consumer is Cube, whose sole
-          # pre-aggregation refresh_key checks once a day — intraday rebuilds
-          # (125+/day at ~4.6 GiB each) were invisible to it. Refs #4559
+          # 5x/day table instead of an eager view. Every reader of this model
+          # recomputed its 27-base-table view chain: each of its 10 dbt tests
+          # per CI build, every Cube query missing the proficiency_rollup_v2,
+          # and every pre-agg partition build. That was 85% of CI's BigQuery spend
+          # (0.486 GiB per test run against a deep view chain vs 0.016 GiB
+          # against a table).
+          #
+          # Tick matches int_assessments__response_rollup, the heaviest
+          # upstream, so ~any_deps_in_progress serializes the pass and
+          # response_rollup builds first. Eager is not an option: the other
+          # upstreams are eager and would drive 125+ rebuilds/day (#4559).
+          # Accepted trade-off: Cube queries that miss the rollup read live
+          # today and become 5x/day fresh. Cube's rollup refresh_key is
+          # already 1 day, so the view bought no freshness Cube consumed.
+          # Refs #4821
           automation_condition:
-            cron_schedule: 0 0 * * *
+            cron_schedule: 0 0,10,13,15,17 * * *
     columns:
       - name: assessment_score_key
         data_type: string
@@ -28,7 +51,6 @@ models:
             warn_unenforced: false
         data_tests:
           - unique
-          - not_null
 
       - name: assessment_administration_key
         data_type: string
@@ -36,29 +58,16 @@ models:
           FK to dim_assessment_administrations. Identifies the scheduled
           administration (assessment definition + occurrence context: academic
           year, region, season/window) that this score belongs to.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_assessment_administrations')
-            to_columns: [assessment_administration_key]
-            warn_unsupported: false
-            warn_unenforced: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_assessment_administrations')
+              to_columns: [assessment_administration_key]
         data_tests:
           - relationships:
               arguments:
                 to: ref('dim_assessment_administrations')
                 field: assessment_administration_key
-
-      - name: enrollment_resolution
-        data_type: string
-        description: >-
-          How the section enrollment was resolved: subject_section (the section
-          for the assessment's subject, active on the test date) or homeroom
-          (the student's HR section, used when no subject section resolved).
-          Filter to subject_section for course/section-level rollups.
-        data_tests:
-          - accepted_values:
-              arguments:
-                values: [subject_section, homeroom]
 
       - name: student_section_enrollment_key
         data_type: string
@@ -69,17 +78,36 @@ models:
           no subject section resolves (see enrollment_resolution). Populated for
           every row; homeroom-resolved rows are coarser-grained than
           subject_section rows.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_student_section_enrollments')
-            to_columns: [student_section_enrollment_key]
-            warn_unsupported: false
-            warn_unenforced: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_student_section_enrollments')
+              to_columns: [student_section_enrollment_key]
         data_tests:
           - relationships:
               arguments:
                 to: ref('dim_student_section_enrollments')
                 field: student_section_enrollment_key
+
+      - name: term_key
+        data_type: string
+        description: >-
+          FK to dim_terms. The reporting quarter containing the date this score
+          was administered or taken, at the school of the section enrollment
+          int_assessments__resolved_section_enrollments resolved. Matched by
+          date rather than through the section enrollment itself, whose term id
+          is not quarter-specific. Null when no reporting quarter is defined for
+          that school and date.
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_terms')
+              to_columns: [term_key]
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_terms')
+                field: term_key
 
       - name: test_date_key
         data_type: date
@@ -90,12 +118,11 @@ models:
           assessment_date_key for every state and vendor row (those have no
           administration date); the two differ only for internal and college
           rows, where assessment_date_key uses the administration date.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_dates')
-            to_columns: [date_key]
-            warn_unsupported: false
-            warn_unenforced: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_dates')
+              to_columns: [date_key]
         data_tests:
           - relationships:
               arguments:
@@ -112,12 +139,11 @@ models:
           Populated for every row, so academic year resolves for all sources —
           unlike the administration date alone, which is null for state and
           vendor rows.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_dates')
-            to_columns: [date_key]
-            warn_unsupported: false
-            warn_unenforced: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_dates')
+              to_columns: [date_key]
         data_tests:
           # not_null guards the invariant the #4546 fix rests on: the FK
           # relationships test skips nulls and the constraint is not enforced,
@@ -129,6 +155,28 @@ models:
               arguments:
                 to: ref('dim_dates')
                 field: date_key
+
+      - name: response_type
+        data_type: string
+        description: >-
+          The response type associated with the assessment score: overall
+          (subject/course-level or composite score), group (a strand/domain
+          rollup within a subject), standard (a single standard-level Illuminate
+          response), or not_taken (an internal assessment the student was
+          expected to take but has no recorded response).
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [not_taken, overall, group, standard]
+          - not_null
+
+      - name: enrollment_resolution
+        data_type: string
+        description: >-
+          How the section enrollment was resolved: subject_section (the section
+          for the assessment's subject, active on the test date) or homeroom
+          (the student's HR section, used when no subject section resolved).
+          Filter to subject_section for course/section-level rollups.
 
       - name: scale_score
         data_type: numeric
@@ -159,30 +207,42 @@ models:
         data_type: boolean
         description: >-
           TRUE if the student met the mastery or proficiency threshold for this
-          assessment.
-
-      - name: response_type
-        data_type: string
-        description: >-
-          The response type associated with the assessment score (e.g., overall,
-          strand, standard). Null for state assessments.
+          assessment. The threshold is per source: an at-or-above-grade-level
+          placement for i-Ready, the measure's own benchmark level for DIBELS,
+          the performance band for Illuminate, and the state achievement level
+          for NJSLA, NJGPA and FAST. Null on the DIBELS subtests whose benchmark
+          level is not set upstream, concentrated in the K-2 phonics measures —
+          those rows sit in a proficiency denominator without ever entering the
+          numerator.
 
       - name: response_type_code
         data_type: string
         description: >-
-          Short code identifying the response type. Null for state assessments.
+          Breakdown identifier, populated as custom_code for an Illuminate
+          standard row, domain_name for an i-Ready domain, or measure_standard
+          for a DIBELS subtest. Null on Illuminate group rows — the
+          reporting-group branch carries no equivalent code — and on all overall
+          and not_taken rows. Serves as a surrogate-key discriminator
+          distinguishing breakdown rows that would otherwise collide on
+          assessment, administration, and student.
 
       - name: response_type_description
         data_type: string
         description: >-
-          Human-readable description of the response type. Null for state
-          assessments.
+          Human-readable label for the response_type_code breakdown: an
+          Illuminate standard's own description or its reporting-group label, a
+          rendered domain name for i-Ready, or the measure_name for DIBELS.
+          Populated for every group and standard row; null only for overall and
+          not_taken rows.
 
       - name: response_type_root_description
         data_type: string
         description: >-
-          Description of the root (top-level) response type in the hierarchy.
-          Null for state assessments.
+          Description of the root (top-level) standard in the Illuminate
+          standards hierarchy. Populated only where an Illuminate standard row
+          resolves a parent standard. Null everywhere else: Illuminate group
+          rows, and every vendor and state row, which have no root-standard
+          concept.
 
       - name: is_replacement
         data_type: boolean

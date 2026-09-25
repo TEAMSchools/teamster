@@ -1,5 +1,24 @@
 models:
   - name: rpt_gsheets__csgf_hs_grad_data
+    description:
+      One row per school, scoped to the current cohort only (co.cohort =
+      var("current_academic_year") in grad_roster) -- per CSGF's own Salesforce
+      Portal task purpose, this calculates the official 4-year graduation rate
+      for the cohort that entered 9th grade four years prior and is expected to
+      graduate this year, not every cohort ever recorded. A prior version had no
+      cohort filter on the live query path (a cohort-filtered "graduated" CTE
+      existed but was never referenced, confirmed dead by reading the whole
+      file) and produced one row PER COHORT per school -- e.g. 20 rows for a
+      single school spanning cohorts 2011-2030. Confirmed against CSGF's task
+      instructions ("if the school did not have 12th graders in [year], leave
+      all rows blank") that one row per school for the current cohort is
+      correct.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - cohort
+              - school
     columns:
       - name: cohort
         data_type: int64
@@ -15,5 +34,22 @@ models:
         data_type: int64
       - name: total_4yr_grad
         data_type: int64
+      - name: total_graduates
+        data_type: int64
+        description:
+          CSGF's own field tooltip reads "Include All Students Who Received a
+          Diploma." Distinct from total_4yr_grad -- not scoped to co.cohort =
+          var("current_academic_year") at all, since a student who received a
+          diploma this year can belong to an earlier cohort (5th-year/held-back
+          graduate) or a later one (early graduate), and both count here even
+          though grad_roster's cohort filter excludes them from every other
+          column on this model. Counts distinct students with exitcode = 'G1'
+          whose academic_year + 1 equals the current academic year, grouped by
+          school only -- verification numbers and background live in
+          docs/models/csgf-data-model.md. A school with off-cohort graduates but
+          zero current-cohort HS students would not get a row here at all (this
+          model is driven from grad_roster, which this column's CTE
+          intentionally isn't scoped to) -- monitored, not currently
+          manifesting; see the reference doc's Known Risks.
       - name: pct_grad
         data_type: float64

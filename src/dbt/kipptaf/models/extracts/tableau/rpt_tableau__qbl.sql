@@ -1,4 +1,3 @@
--- K-8
 select
     co.academic_year,
     co.student_number,
@@ -114,7 +113,6 @@ where
 
 union all
 
--- HS
 select
     co.academic_year,
     co.student_number,

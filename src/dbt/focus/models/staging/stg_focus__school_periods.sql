@@ -10,11 +10,12 @@ select
     attendance,
     required_for_scheduling,
     conflicts_with,
-    sort_order,
-    length,
     start_time,
     end_time,
     uuid,
     created_at,
     updated_at,
+
+    cast(length as numeric) as length,
+    cast(sort_order as numeric) as sort_order,
 from {{ source("focus", "school_periods") }}

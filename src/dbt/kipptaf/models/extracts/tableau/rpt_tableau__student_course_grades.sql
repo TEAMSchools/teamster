@@ -18,7 +18,8 @@ with
                 term when 'Q2' then 'Q1' when 'Q3' then 'Q2' when 'Q4' then 'Q3'
             end as prior_quarter,
 
-        from {{ ref("int_powerschool__terms") }}
+        from {{ ref("int_students__terms") }}
+        where term is not null
 
         union all
 
@@ -38,7 +39,7 @@ with
 
             cast(null as string) as prior_quarter,
 
-        from {{ ref("stg_powerschool__terms") }}
+        from {{ ref("int_students__terms") }}
         where isyearrec = 1
     ),
 
@@ -73,6 +74,34 @@ with
                 n_school_rows = 1, gpa_y1_single_school, gpa_y1_blended
             ) as gpa_y1_prior_year,
         from prior_year_gpa_rollup
+    ),
+
+    prior_year_cumulative as (
+        /* prior-year FINAL unweighted cumulative GPA — the baseline the
+           in-progress projection is measured against. is_projected is true only
+           for the year in progress, so filtering it out yields the actual
+           end-of-year value rather than a projection of it.
+
+           Upstream accumulates per student-school and its uniqueness key is
+           (studentid, schoolid, academic_year), so a student at two schools in
+           one year legitimately produces two rows and would fan this CTE out.
+           AY2023 onward has none; AY2019-AY2022 had 11-29 a year, values
+           genuinely differing. A recurrence would NOT fail CI — this model's
+           own key test is severity warn for the unrelated #3915 storedgrades
+           issue, so it would only inflate that warn count. Compare the count
+           against prod rather than trusting a green build.
+
+           That same per-school accumulation splits the middle- and high-school
+           series, so a grade 9 row pairs a high-school projection with a
+           middle-school baseline. See the column descriptions. */
+        select
+            studentid,
+            _dbt_source_project,
+
+            cumulative_y1_gpa_unweighted as cumulative_y1_gpa_unweighted_prior_year,
+        from {{ ref("int_powerschool__gpa_cumulative_year") }}
+        where
+            academic_year = {{ var("current_academic_year") - 1 }} and not is_projected
     ),
 
     student_roster as (
@@ -114,6 +143,8 @@ with
             enr.is_counseling_services,
             enr.is_student_athlete,
             enr.ada,
+            enr.unweighted_ada,
+            enr.weighted_ada,
             enr.ada_above_or_at_80,
             enr.hos,
             enr.school_leader,
@@ -126,8 +157,6 @@ with
             term.semester,
 
             gtq.gpa_semester,
-            gtq.total_credit_hours_y1 as gpa_total_credit_hours,
-            gtq.n_failing_y1 as gpa_n_failing_y1,
 
             gc.cumulative_y1_gpa,
             gc.cumulative_y1_gpa_unweighted,
@@ -156,6 +185,8 @@ with
 
             pyg.gpa_y1_prior_year,
 
+            pyc.cumulative_y1_gpa_unweighted_prior_year,
+
             enr.academic_year
             = {{ var("current_academic_year") }} as is_current_academic_year,
 
@@ -166,6 +197,47 @@ with
             if(term.quarter = 'Y1', gty.gpa_y1, gtq.gpa_term) as gpa_for_quarter,
 
             if(term.quarter = 'Y1', gty.gpa_y1, gtq.gpa_y1) as gpa_y1,
+
+            if(
+                term.quarter = 'Y1', gty.n_failing_y1, gtq.n_failing_y1
+            ) as gpa_n_failing_y1,
+
+            if(
+                term.quarter = 'Y1',
+                gty.total_credit_hours_y1,
+                gtq.total_credit_hours_y1
+            ) as gpa_total_credit_hours,
+
+            /* KIPP GPA Band, the KIPP Foundation five-band unweighted scale
+               documented in models/students/CLAUDE.md. Band 5 is open-ended
+               rather than capped at the documented 4.00 because unweighted GPA
+               reaches 4.33 and a closed upper bound leaves those rows unbanded.
+               The trailing is-not-null arm keeps a null GPA out of band 1. */
+            case
+                when gc.cumulative_y1_gpa_projected_unweighted >= 3.50
+                then 5
+                when gc.cumulative_y1_gpa_projected_unweighted >= 3.00
+                then 4
+                when gc.cumulative_y1_gpa_projected_unweighted >= 2.50
+                then 3
+                when gc.cumulative_y1_gpa_projected_unweighted >= 2.00
+                then 2
+                when gc.cumulative_y1_gpa_projected_unweighted is not null
+                then 1
+            end as gpa_band_projected_unweighted,
+
+            case
+                when pyc.cumulative_y1_gpa_unweighted_prior_year >= 3.50
+                then 5
+                when pyc.cumulative_y1_gpa_unweighted_prior_year >= 3.00
+                then 4
+                when pyc.cumulative_y1_gpa_unweighted_prior_year >= 2.50
+                then 3
+                when pyc.cumulative_y1_gpa_unweighted_prior_year >= 2.00
+                then 2
+                when pyc.cumulative_y1_gpa_unweighted_prior_year is not null
+                then 1
+            end as gpa_band_unweighted_prior_year,
 
         from {{ ref("int_extracts__student_enrollments") }} as enr
         inner join
@@ -219,6 +291,14 @@ with
             on enr.studentid = pyg.studentid
             and enr._dbt_source_project = pyg._dbt_source_project
             and enr.academic_year = {{ var("current_academic_year") }}
+        /* gated to the current year in ON, matching gc — the projection it is
+           compared against is a current-year-only measure, so a prior-year row
+           would carry a baseline with nothing to measure it against */
+        left join
+            prior_year_cumulative as pyc
+            on enr.studentid = pyc.studentid
+            and enr._dbt_source_project = pyc._dbt_source_project
+            and enr.academic_year = {{ var("current_academic_year") }}
         where
             enr.rn_year = 1
             and not enr.is_out_of_district
@@ -232,214 +312,7 @@ with
             and enr.academic_year <= {{ var("current_academic_year") }}
             /* Miami hard-excluded: region unsupported in the rebuilt
                dashboard (#4340) */
-            -- TODO(#4340): add Paterson once PS gradebook data is populated
-            and enr.region in ('Newark', 'Camden')
-    ),
-
-    course_enrollments as (
-        select
-            m._dbt_source_relation,
-            m._dbt_source_project,
-            m.cc_studentid as studentid,
-            m.cc_yearid as yearid,
-            m.cc_course_number as course_number,
-            m.cc_sectionid as sectionid,
-            m.cc_dateenrolled as date_enrolled,
-            m.sections_dcid,
-            m.sections_section_number as section_number,
-            m.sections_external_expression as external_expression,
-            m.courses_credittype as credit_type,
-            m.courses_course_name as course_name,
-            m.courses_excludefromgpa as exclude_from_gpa,
-            m.teachernumber as teacher_number,
-            m.teacher_lastfirst as teacher_name,
-
-            f.is_tutoring as tutoring_nj,
-            f.nj_student_tier,
-
-            r.sam_account_name as teacher_tableau_username,
-        from {{ ref("base_powerschool__course_enrollments") }} as m
-        left join
-            {{ ref("int_extracts__student_enrollments_subjects") }} as f
-            on m.cc_studentid = f.studentid
-            and m.cc_academic_year = f.academic_year
-            and m.courses_credittype = f.powerschool_credittype
-            and m._dbt_source_project = f._dbt_source_project
-            and f.rn_year = 1
-        left join
-            {{ ref("int_people__staff_roster") }} as r
-            on m.teachernumber = r.powerschool_teacher_number
-        where
-            m.rn_course_number_year = 1
-            and m.cc_sectionid > 0
-            and m.cc_course_number not in (
-                'LOG100',  -- Lunch
-                'LOG1010',  -- Lunch
-                'LOG11',  -- Lunch
-                'LOG12',  -- Lunch
-                'LOG20',  -- Early Dismissal
-                'LOG22999XL',  -- Lunch
-                'LOG300',  -- Study Hall
-                'LOG9',  -- Lunch
-                'SEM22106G1',  -- Advisory
-                'SEM22106S1'  -- Not in SY24-25 yet
-            )
-    ),
-
-    y1_final_grades as (
-        select
-            _dbt_source_relation,
-            _dbt_source_project,
-            studentid,
-            yearid,
-            course_number,
-            storecode,
-
-            cast(`percent` as float64) as y1_course_final_percent_grade_adjusted,
-
-            grade as y1_course_final_letter_grade_adjusted,
-            earnedcrhrs as y1_course_final_earned_credits,
-            potentialcrhrs as y1_course_final_potential_credit_hours,
-            gpa_points as y1_course_final_grade_points,
-
-        from {{ ref("stg_powerschool__storedgrades") }}
-        where
-            storecode = 'Y1' and academic_year >= {{ var("current_academic_year") - 1 }}
-    ),
-
-    quarter_grades as (
-        /* current year: live gradebook */
-        select
-            _dbt_source_relation,
-            _dbt_source_project,
-            studentid,
-            yearid,
-            course_number,
-
-            storecode as `quarter`,
-
-            term_percent_grade_adjusted as quarter_course_percent_grade,
-            term_letter_grade_adjusted as quarter_course_letter_grade,
-            term_grade_points as quarter_course_grade_points,
-            y1_percent_grade_adjusted as y1_course_in_progress_percent_grade_adjusted,
-            y1_letter_grade_adjusted as y1_course_in_progress_letter_grade_adjusted,
-            y1_grade_points as y1_course_in_progress_grade_points,
-            y1_grade_points_unweighted as y1_course_in_progress_grade_points_unweighted,
-
-            need_60,
-            need_70,
-            need_80,
-            need_90,
-
-        from {{ ref("base_powerschool__final_grades") }}
-        where
-            academic_year = {{ var("current_academic_year") }}
-            and not is_dropped_section
-            and termbin_start_date <= current_date('{{ var("local_timezone") }}')
-
-        union all
-
-        /* current year: in-progress Y1 row */
-        select
-            _dbt_source_relation,
-            _dbt_source_project,
-            studentid,
-            yearid,
-            course_number,
-
-            'Y1' as `quarter`,
-
-            y1_percent_grade_adjusted as quarter_course_percent_grade,
-            y1_letter_grade_adjusted as quarter_course_letter_grade,
-            y1_grade_points as quarter_course_grade_points,
-            y1_percent_grade_adjusted as y1_course_in_progress_percent_grade_adjusted,
-            y1_letter_grade_adjusted as y1_course_in_progress_letter_grade_adjusted,
-            y1_grade_points as y1_course_in_progress_grade_points,
-            y1_grade_points_unweighted as y1_course_in_progress_grade_points_unweighted,
-
-            need_60,
-            need_70,
-            need_80,
-            need_90,
-
-        from {{ ref("base_powerschool__final_grades") }}
-        where
-            academic_year = {{ var("current_academic_year") }}
-            and termbin_is_current
-            and not is_dropped_section
-
-        union all
-
-        /* prior year: stored grades (Q1-Q4 term rows plus the stored Y1 row,
-           which fills the quarter columns on Y1 rows like the in-progress
-           branch does for the current year) */
-        select
-            _dbt_source_relation,
-            _dbt_source_project,
-            studentid,
-            yearid,
-            course_number,
-
-            storecode as `quarter`,
-
-            cast(`percent` as float64) as quarter_course_percent_grade,
-            grade as quarter_course_letter_grade,
-            gpa_points as quarter_course_grade_points,
-
-            cast(null as float64) as y1_course_in_progress_percent_grade_adjusted,
-            cast(null as string) as y1_course_in_progress_letter_grade_adjusted,
-            cast(null as float64) as y1_course_in_progress_grade_points,
-            cast(null as float64) as y1_course_in_progress_grade_points_unweighted,
-
-            cast(null as float64) as need_60,
-            cast(null as float64) as need_70,
-            cast(null as float64) as need_80,
-            cast(null as float64) as need_90,
-
-        from {{ ref("stg_powerschool__storedgrades") }}
-        where
-            storecode in ('Q1', 'Q2', 'Q3', 'Q4', 'Y1')
-            and academic_year = {{ var("current_academic_year") - 1 }}
-    ),
-
-    category_grades as (
-        select
-            _dbt_source_relation,
-            _dbt_source_project,
-            yearid,
-            schoolid,
-            studentid,
-            course_number,
-            sectionid,
-            storecode_type as category_name_code,
-            storecode as category_quarter_code,
-            percent_grade as category_quarter_percent_grade,
-            percent_grade_y1_running as category_y1_percent_grade_running,
-
-            concat('Q', storecode_order) as term,
-
-            avg(if(is_current, percent_grade_y1_running, null)) over (
-                partition by
-                    _dbt_source_relation,
-                    studentid,
-                    yearid,
-                    course_number,
-                    storecode_type
-            ) as category_y1_percent_grade_current,
-
-            round(
-                avg(percent_grade) over (
-                    partition by _dbt_source_relation, yearid, studentid, storecode
-                ),
-                2
-            ) as category_quarter_average_all_courses,
-
-        from {{ ref("int_powerschool__category_grades") }}
-        where
-            yearid >= {{ var("current_academic_year") - 1991 }}
-            and not is_dropped_section
-            and storecode_type not in ('Q')
-            and termbin_start_date <= current_date('{{ var("local_timezone") }}')
+            and enr.region in ('Newark', 'Camden', 'Paterson')
     )
 
 select
@@ -481,6 +354,8 @@ select
     s.is_counseling_services,
     s.is_student_athlete,
     s.ada,
+    s.unweighted_ada,
+    s.weighted_ada,
     s.ada_above_or_at_80,
 
     s.`quarter`,
@@ -522,84 +397,118 @@ select
     s.potential_gpa_credits_current_year,
     s.gpa_needed_for_cumulative_3_0,
     s.is_cumulative_3_0_attainable,
+    s.cumulative_y1_gpa_unweighted_prior_year,
+    s.gpa_band_projected_unweighted,
+    s.gpa_band_unweighted_prior_year,
 
-    ce.sectionid,
-    ce.sections_dcid,
-    ce.section_number,
-    ce.external_expression,
-    ce.date_enrolled,
-    ce.credit_type,
-    ce.course_number,
-    ce.course_name,
-    ce.exclude_from_gpa,
-    ce.teacher_number,
-    ce.teacher_name,
-    ce.teacher_tableau_username,
-    ce.tutoring_nj,
-    ce.nj_student_tier,
+    g.sectionid,
+    g.sections_dcid,
+    g.section_number,
+    g.external_expression,
+    g.date_enrolled,
+    g.credit_type,
+    g.course_number,
+    g.course_name,
+    g.exclude_from_gpa,
+    g.teacher_number,
+    g.teacher_name,
 
-    y1f.y1_course_final_percent_grade_adjusted,
-    y1f.y1_course_final_letter_grade_adjusted,
-    y1f.y1_course_final_earned_credits,
-    y1f.y1_course_final_potential_credit_hours,
-    y1f.y1_course_final_grade_points,
+    r.sam_account_name as teacher_tableau_username,
+    r.reports_to_formatted_name as manager,
+    r.reports_to_sam_account_name as report_to_sam_account_name,
 
-    qg.quarter_course_percent_grade,
-    qg.quarter_course_letter_grade,
-    qg.quarter_course_grade_points,
-    qg.y1_course_in_progress_percent_grade_adjusted,
-    qg.y1_course_in_progress_letter_grade_adjusted,
-    qg.y1_course_in_progress_grade_points,
-    qg.y1_course_in_progress_grade_points_unweighted,
-    qg.need_60,
-    qg.need_70,
-    qg.need_80,
-    qg.need_90,
+    f.is_tutoring as tutoring_nj,
+    f.nj_student_tier,
 
-    c.category_name_code,
-    c.category_quarter_code,
-    c.category_quarter_percent_grade,
-    c.category_y1_percent_grade_running,
-    c.category_y1_percent_grade_current,
-    c.category_quarter_average_all_courses,
+    g.y1_course_final_percent_grade_adjusted,
+    g.y1_course_final_letter_grade_adjusted,
+    g.y1_course_final_earned_credits,
+    g.y1_course_final_potential_credit_hours,
+    g.y1_course_final_grade_points,
+
+    g.quarter_course_percent_grade,
+    g.quarter_course_letter_grade,
+    g.quarter_course_grade_points,
+    g.y1_course_in_progress_percent_grade_adjusted,
+    g.y1_course_in_progress_letter_grade_adjusted,
+    g.y1_course_in_progress_grade_points,
+    g.y1_course_in_progress_grade_points_unweighted,
+    g.need_60,
+    g.need_70,
+    g.need_80,
+    g.need_90,
+
+    g.category_name_code,
+    g.category_quarter_code,
+    g.category_quarter_percent_grade,
+    g.category_y1_percent_grade_running,
+    g.category_y1_percent_grade_current,
+    g.category_quarter_average_all_courses,
+
+    g.lowest_category_y1_name,
+    g.lowest_category_y1_percent,
+    g.lowest_category_recent_term_name,
+    g.lowest_category_recent_term_percent,
+
+    g.need_next_letter_grade,
+    g.need_next_cutoff_percent,
+
+    g.office_hours_priority_rank,
+
+    /* signed, so negative means the projection sits below last year's actual.
+       Both inputs are student-grain, so these repeat across every quarter row
+       and the Y1 row for a student, which is what makes them filterable at any
+       marking period. */
+    s.cumulative_y1_gpa_projected_unweighted
+    - s.cumulative_y1_gpa_unweighted_prior_year
+    as cumulative_y1_gpa_unweighted_change_from_prior_year,
+
+    s.gpa_band_projected_unweighted
+    - s.gpa_band_unweighted_prior_year as gpa_band_change_from_prior_year,
+
+    g.need_next,
 
     coalesce(
-        y1f.y1_course_final_letter_grade_adjusted,
-        qg.y1_course_in_progress_letter_grade_adjusted
+        g.y1_course_final_letter_grade_adjusted,
+        g.y1_course_in_progress_letter_grade_adjusted
     ) as y1_course_letter_grade_adjusted,
 
-    if(
-        s.grade_level < 9, ce.section_number, ce.external_expression
-    ) as section_or_period,
+    if(s.grade_level < 9, g.section_number, g.external_expression) as section_or_period,
+
+    /* NULL rather than false when either side is missing — an unbanded student
+       is unknown, not known-to-be-holding-steady */
+    s.gpa_band_projected_unweighted
+    <= s.gpa_band_unweighted_prior_year - 1 as is_gpa_band_slide,
+
+    /* prefix match, not = 'F', because the failing domain is F and F*. F* is
+       not a PowerSchool grade — stg_powerschool__pgfinalgrades manufactures it
+       alongside the 50% floor (if percent < 0.5 then 'F*'), so an exact-equality
+       test silently drops every floored failure, roughly a third of them. This
+       matches the canonical rule the warehouse already uses for n_failing_y1.
+
+       NULL, not false, on an ungraded enrolment — no grade posted is unknown,
+       not known-to-be-passing. Consumers computing a failure rate should divide
+       by the count of non-null quarter_course_letter_grade, not by all rows.
+
+       The Y1 row carries the Y1 letter grade in this same column, so one flag
+       covers Q1-Q4 and Y1 with no marking-period branching. */
+    g.quarter_course_letter_grade like 'F%' as is_quarter_course_failing,
 
 from student_roster as s
 left join
-    course_enrollments as ce
-    on s.studentid = ce.studentid
-    and s.yearid = ce.yearid
-    and s._dbt_source_project = ce._dbt_source_project
+    {{ ref("int_powerschool__student_course_grades_spine") }} as g
+    on s.studentid = g.studentid
+    and s.yearid = g.yearid
+    and s.`quarter` = g.`quarter`
+    and s._dbt_source_project = g._dbt_source_project
 left join
-    y1_final_grades as y1f
-    on s.studentid = y1f.studentid
-    and s.yearid = y1f.yearid
-    and s.`quarter` = y1f.storecode
-    and s._dbt_source_project = y1f._dbt_source_project
-    and ce.course_number = y1f.course_number
-    and ce._dbt_source_project = y1f._dbt_source_project
+    {{ ref("int_extracts__student_enrollments_subjects") }} as f
+    on g.studentid = f.studentid
+    and g.academic_year = f.academic_year
+    and g.credit_type = f.powerschool_credittype
+    and g._dbt_source_project = f._dbt_source_project
+    and f.rn_year = 1
 left join
-    quarter_grades as qg
-    on s.studentid = qg.studentid
-    and s.yearid = qg.yearid
-    and s.`quarter` = qg.`quarter`
-    and s._dbt_source_project = qg._dbt_source_project
-    and ce.course_number = qg.course_number
-    and ce._dbt_source_project = qg._dbt_source_project
-left join
-    category_grades as c
-    on s.studentid = c.studentid
-    and s.yearid = c.yearid
-    and s.`quarter` = c.term
-    and s._dbt_source_project = c._dbt_source_project
-    and ce.sectionid = c.sectionid
-    and ce._dbt_source_project = c._dbt_source_project
+    {{ ref("int_people__staff_roster") }} as r
+    on g.teacher_number = r.powerschool_teacher_number
 where s.quarter_start_date <= current_date('{{ var("local_timezone") }}')

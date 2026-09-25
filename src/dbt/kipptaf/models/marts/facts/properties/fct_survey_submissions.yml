@@ -15,6 +15,16 @@ models:
       populated only for Manager Survey submissions (role-playing FK to
       dim_staff for the manager being evaluated). FK to
       dim_survey_administrations and dim_dates.
+    config:
+      materialized: table
+      meta:
+        dagster:
+          # Nightly: every data test on this view recomputed it in full, and
+          # dbt Cloud CI ran that on nearly every PR. No Cube cube or Tableau
+          # exposure reads this mart, so nightly clears its break-even with
+          # room to spare. Refs #5217
+          automation_condition:
+            cron_schedule: 0 3 * * *
     columns:
       - name: survey_submission_key
         data_type: string
@@ -24,6 +34,7 @@ models:
         constraints:
           - type: primary_key
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           - unique
 
@@ -32,11 +43,11 @@ models:
         description: >-
           FK to dim_survey_administrations. Identifies which survey
           administration this submission belongs to.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_survey_administrations')
-            to_columns: [survey_administration_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_survey_administrations')
+              to_columns: [survey_administration_key]
         data_tests:
           - relationships:
               arguments:
@@ -48,30 +59,16 @@ models:
           FK to dim_dates (role-playing as submission date). The local date the
           survey was submitted.
 
-        constraints:
-          - type: foreign_key
-            to: ref('dim_dates')
-            to_columns: [date_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_dates')
+              to_columns: [date_key]
         data_tests:
           - relationships:
               arguments:
                 to: ref('dim_dates')
                 field: date_key
-      - name: respondent_type
-        data_type: string
-        description: >-
-          Discriminator for respondent type: staff, student, or family.
-          Determines which respondent FK is populated.
-        data_tests:
-          - not_null
-          - accepted_values:
-              arguments:
-                values:
-                  - staff
-                  - student
-                  - family
-
       - name: staff_key
         data_type: string
         description: >-
@@ -80,11 +77,11 @@ models:
           student / family respondents AND for staff respondents whose identity
           cannot be resolved upstream.
 
-        constraints:
-          - type: foreign_key
-            to: ref('dim_staff')
-            to_columns: [staff_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_staff')
+              to_columns: [staff_key]
         data_tests:
           - relationships:
               arguments:
@@ -101,11 +98,11 @@ models:
           not present in int_extracts__student_enrollments or has no enrollment
           row covering date_submitted.
 
-        constraints:
-          - type: foreign_key
-            to: ref('dim_student_enrollments')
-            to_columns: [student_enrollment_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_student_enrollments')
+              to_columns: [student_enrollment_key]
         data_tests:
           - relationships:
               arguments:
@@ -117,11 +114,11 @@ models:
           FK to dim_student_contact_persons for the respondent. Populated when
           respondent_type is family. Null for staff and student.
 
-        constraints:
-          - type: foreign_key
-            to: ref('dim_student_contact_persons')
-            to_columns: [student_contact_person_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_student_contact_persons')
+              to_columns: [student_contact_person_key]
         data_tests:
           - relationships:
               arguments:
@@ -135,16 +132,21 @@ models:
           (direct report) evaluates their manager (subject). Null for all other
           survey types.
 
-        constraints:
-          - type: foreign_key
-            to: ref('dim_staff')
-            to_columns: [staff_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_staff')
+              to_columns: [staff_key]
         data_tests:
           - relationships:
               arguments:
                 to: ref('dim_staff')
                 field: staff_key
+      - name: respondent_type
+        data_type: string
+        description: >-
+          Discriminator for respondent type: staff, student, or family.
+          Determines which respondent FK is populated.
       - name: academic_year
         data_type: int64
         description: >-

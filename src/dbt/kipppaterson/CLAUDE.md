@@ -1,8 +1,8 @@
 # CLAUDE.md — `dbt/kipppaterson/`
 
 District-specific dbt project for **KIPP New Jersey - Paterson** schools. The
-most limited district project — PowerSchool only, with a narrower set of enabled
-models compared to Newark and Camden.
+narrowest of the three NJ district projects — fewer enabled models than Newark
+or Camden.
 
 ## Model Structure
 
@@ -21,14 +21,27 @@ dlt models its PowerSchool instance does not populate — see the
 
 ## Source Packages
 
-Package list: `packages.yml` is ground truth (see `src/dbt/CLAUDE.md`).
 Endpoint-level notes:
 
+- `cambium` — `stg_cambium__njsla` only. `stg_cambium__njgpa`,
+  `stg_cambium__eoc` and their sources are disabled in `dbt_project.yml`, and so
+  are their generic tests, listed individually under `data_tests:` — a disabled
+  model keeps its tests, and they would scan a relation Paterson never builds.
+  Quoted columns (`period`, `subject`) get a trailing underscore in the test
+  name. Enable EOC when Paterson receives the file
 - `pearson` — `stg_pearson__njsla` and `stg_pearson__njsla_science` enabled;
   `stg_pearson__njgpa`, `stg_pearson__parcc`, `stg_pearson__student_test_update`
   disabled in `dbt_project.yml`
 - `amplify` — both `dds` and `mclass/api` disabled
 - `finalsite`
+- `titan` — `stg_titan__person_data` only; `stg_titan__income_form_data`
+  disabled (parity with Newark and Camden)
+- `edplan` — `stg_edplan__njsmart_powerschool` and the regional
+  `int_edplan__njsmart_powerschool_union` only.
+  `stg_edplan__njsmart_powerschool_archive` is disabled (as in Newark and
+  Camden) AND Paterson sets `edplan_has_archive: false`, which drops the archive
+  leg from the regional union — the one-time NJSMART archive load predates
+  Paterson's feed, so no `kipppaterson_edplan` archive table exists to read
 - `deanslist` — `behavior`, `comm_log`, `incidents`, `roster_assignments`,
   `rosters`, `students`, `terms`, and `users` endpoints pulled. The
   `stg_deanslist__dff_stats`, `stg_deanslist__followups`,

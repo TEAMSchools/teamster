@@ -1,3 +1,17 @@
+with
+    latest_graded_year as (
+        /* the most recent year with posted Y1 grades. Cumulative earned credits
+           cannot serve as this signal — they include prior years, so a
+           not-yet-started year's upperclassmen already carry credits. Scoped to
+           the districts this extract serves: `int_powerschool__gpa_term` also
+           unions kippmiami, and an unscoped max would let another region's
+           calendar advance the default year to one with no Newark or Camden
+           rows. */
+        select max(yearid) + 1990 as latest_graded_academic_year,
+        from {{ ref("int_powerschool__gpa_term") }}
+        where gpa_y1 is not null and _dbt_source_project in ('kippnewark', 'kippcamden')
+    )
+
 select
     gcy._dbt_source_relation,
     gcy._dbt_source_project,
@@ -45,6 +59,42 @@ select
     e.school_leader,
     e.school_leader_tableau_username,
 
+    gcc.cumulative_y1_gpa_unweighted as cumulative_y1_gpa_unweighted_as_of_today,
+    gcc.gpa_needed_for_cumulative_3_0,
+    gcc.is_cumulative_3_0_attainable,
+    gcc.potential_gpa_credits_current_year,
+
+    gcy.academic_year = lgy.latest_graded_academic_year as is_latest_graded_year,
+
+    gcy.cumulative_y1_gpa_unweighted >= 2.75
+    and gcy.cumulative_y1_gpa_unweighted < 3.00 as is_on_cusp_3_0,
+
+    case
+        when gcy.cumulative_y1_gpa_unweighted >= 3.50
+        then '3.5+'
+        when gcy.cumulative_y1_gpa_unweighted >= 3.00
+        then '3.0-3.49'
+        when gcy.cumulative_y1_gpa_unweighted >= 2.50
+        then '2.5-2.99'
+        when gcy.cumulative_y1_gpa_unweighted >= 2.00
+        then '2.0-2.49'
+        when gcy.cumulative_y1_gpa_unweighted < 2.00
+        then 'below 2.0'
+    end as gpa_band_label,
+
+    case
+        when gcc.cumulative_y1_gpa_unweighted >= 3.50
+        then '3.5+'
+        when gcc.cumulative_y1_gpa_unweighted >= 3.00
+        then '3.0-3.49'
+        when gcc.cumulative_y1_gpa_unweighted >= 2.50
+        then '2.5-2.99'
+        when gcc.cumulative_y1_gpa_unweighted >= 2.00
+        then '2.0-2.49'
+        when gcc.cumulative_y1_gpa_unweighted < 2.00
+        then 'below 2.0'
+    end as gpa_band_as_of_today_label,
+
 from {{ ref("int_powerschool__gpa_cumulative_year") }} as gcy
 /* the inner join on the year's rn_year = 1 enrollment (including schoolid)
    dedupes the union model's student x school x year grain to one row per
@@ -55,6 +105,16 @@ inner join
     and gcy.academic_year = e.academic_year
     and gcy.schoolid = e.schoolid
     and gcy._dbt_source_project = e._dbt_source_project
+left join
+    {{ ref("int_powerschool__gpa_cumulative") }} as gcc
+    on gcy.studentid = gcc.studentid
+    and gcy.schoolid = gcc.schoolid
+    and gcy._dbt_source_project = gcc._dbt_source_project
+    /* int_powerschool__gpa_cumulative is current-state, with no academic year.
+       Gating on is_projected attaches it to the current-year row only; without
+       the gate today's values get stamped onto every prior year. */
+    and gcy.is_projected
+cross join latest_graded_year as lgy
 where
     e.rn_year = 1
     and not e.is_out_of_district
@@ -62,7 +122,8 @@ where
        is_enrolled_recent) and invalid (1) rows */
     and e.enroll_status in (0, 2, 3)
     and e.is_enrolled_recent
-    /* Miami hard-excluded: region unsupported in the rebuilt dashboard
-       (#4340) */
-    -- TODO(#4340): add Paterson once PS gradebook data is populated
+    /* Newark and Camden are the only regions with HS students on record —
+       Paterson runs ES and MS only, and Miami has no HS rows in any year. This
+       is not a coverage gap for an HS-grain dashboard; the region dimension
+       stays so a future Paterson HS appears automatically. */
     and e.region in ('Newark', 'Camden')
