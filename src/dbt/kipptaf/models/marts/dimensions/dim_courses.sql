@@ -14,3 +14,4 @@ from {{ ref("int_students__courses") }} as c
 left join
     {{ ref("stg_google_sheets__assessments__course_subject_crosswalk") }} as csc
     on c.course_number = csc.powerschool_course_number
+    and csc.sis = 'PowerSchool'
