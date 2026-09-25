@@ -31,7 +31,7 @@ The skills hold the step-by-step procedures; this page explains the model.
 ```text
  Official                               Practice
  kippadb: SAT, ACT                      Illuminate responses
- College Board files: PSAT, SAT         + Scale Score Conversion tab
+ College Board files: PSAT             + Scale Score Conversion tab
    (matched to students by the          + Scaffold tab
     College Board ID crosswalk)           │
    │                                      │
@@ -81,11 +81,16 @@ reads PowerSchool grades, and AP has its own path (see _Dashboard views_).
 | Source                            | What it provides                                      | Owner                                  |
 | --------------------------------- | ----------------------------------------------------- | -------------------------------------- |
 | kippadb (Salesforce)              | Official SAT and ACT scores                           | KIPP Forward                           |
-| College Board files, via SFTP     | Official PSAT, SAT, and AP scores                     | College Board                          |
+| College Board files, via SFTP     | Official PSAT and AP scores                           | College Board                          |
 | College Board ID crosswalk sheets | Each College Board ID's PowerSchool `student_number`  | Data team                              |
 | Illuminate                        | Practice test responses (raw scores)                  | Schools and KIPP Forward               |
 | KIPP Forward workbook (four tabs) | Practice conversions, test vocabulary, goals, seasons | KIPP Forward, entered by the data team |
 | PowerSchool, via enrollments      | Student, school, grade, graduation year               | Schools                                |
+
+College Board also sends SAT files, but official SAT on the dashboard comes from
+kippadb only. The SAT files (`int_collegeboard__sat_unpivot`) feed the KIPP
+Forward SAT sheets, `rpt_gsheets__kippfwd_ogsat` and
+`rpt_gsheets__kippfwd_sfsat`, and nothing in CARAT.
 
 The four KIPP Forward tabs are described under _The Google Sheets_. Edits to
 them reach the warehouse on their own: a Dagster sensor watches the workbook's
@@ -312,6 +317,12 @@ school students).
   _Attempts_).
 - `benchmark_tier` bands each student as College-Ready, HS Grad-Ready, or No
   Benchmark Met.
+- To reproduce a dashboard total, filter the goal side,
+  `expected_aligned_subject_area = 'Total'`. The score side's `subject_area`
+  shares its values (`Combined`, `EBRW`, `Math`) but is null for students who
+  haven't tested, so filtering on it drops them from the denominator. Leaving
+  the filter off blends section rows into the totals; a numerator larger than
+  the denominator is the tell. Section rows carry thresholds but no goals.
 - It follows the `current_academic_year` dbt variable, so it rolls over each
   July without a code change.
 
@@ -393,9 +404,38 @@ currently warns; see _Known issues, need to fix_.
 
 ### `rpt_tableau__ap_assessment_dashboard`: AP
 
-AP results, from `int_collegeboard__ap_unpivot` through
-`int_assessments__ap_assessments`. Its crosswalk and checks are covered by the
-`collegeboard-id-crosswalk` skill.
+**What it shows:** the AP Overview tab: AP course enrollment against AP exam
+results, by school and subject.
+
+**Grain:** one row per high school student per academic year per AP subject
+code. The subject list is the union of the student's AP courses and the AP exams
+they sat, so a course with no exam and an exam with no course both appear. It
+doesn't read the hub.
+
+**Where the scores come from:** `int_assessments__ap_assessments` takes kippadb
+for academic years 2010-2017 and College Board files
+(`int_collegeboard__ap_unpivot`) from 2018, the first year of files.
+Irregularity codes exist only in the files, so they are null before 2018. Its
+crosswalk and checks are covered by the `collegeboard-id-crosswalk` skill.
+
+**Worth knowing:**
+
+- A College Board ID missing from the AP crosswalk drops out silently:
+  `int_assessments__ap_assessments` keeps only rows with a PowerSchool
+  `student_number`. Count gaps from staging, as the crosswalk skill does.
+- The population is students enrolled in high school on May 1 of the school
+  year, roughly exam time.
+- `Calculus BC: AB Subscore` is excluded, so a BC exam counts once.
+- A student in a main AP course and its recitation section gets two rows for one
+  subject. Both sections are real; the model leaves them in on purpose.
+- `rn_highest` ranks a student's scores per subject, but nothing filters on it,
+  so a retaken exam shows both attempts.
+- `test_subject_area` reads `Took course, but not AP exam.`,
+  `Took AP exam, not enrolled in course.`, `Not applicable`, or the AP course
+  name when the student did both.
+- `expected_scope` and `expected_test_type` are literals (`AP` and `Official`
+  when the student took the course, otherwise `Not applicable`), set so the tab
+  can share filters with the other views.
 
 ### Not part of CARAT
 
@@ -408,7 +448,7 @@ disabled (`enabled: false`) and feed nothing.
 
 ### The official model: `int_assessments__college_assessment`
 
-Official scores from kippadb (SAT, ACT) and College Board (PSAT, SAT), one row
+Official scores from kippadb (SAT, ACT) and College Board files (PSAT), one row
 per student per score type per sitting. It computes `rn_highest`, superscores,
 `strategy_case`, and `previous_total_score_change`. College Board rows reach it
 only when their College Board ID is in the crosswalk sheet; AP and SAT/PSAT IDs
@@ -628,14 +668,31 @@ tab's visible filters don't include it. Tracked in #4871.
 
 ### `_de` duplicates some stored grades
 
-Some PowerSchool stored grades match more than one row in the dual-enrollment
-extension table, with different course, score, or semester values, so the view
-carries two or three rows for one grade. The uniqueness test on
-(`student_number`, `storedgrades_dcid`) warns on them. Separately, institutions
-submit grades twice a year: if spring grades land on `Y1` in the same year as
-fall's `Q2`, a student gets two rows for one course, and a `TODO` in the model
-marks where a priority rule would go. The fix is to decide which extension row
-wins for a stored grade.
+Two separate problems, and the test catches only the first.
+
+- **Extension-table fan-out.** Some PowerSchool stored grades match more than
+  one row in the dual-enrollment extension table, with different course, score,
+  or semester values, so the view carries two or three rows for one grade. The
+  uniqueness test on (`student_number`, `storedgrades_dcid`) warns on them.
+- **`Q2` and `Y1` for the same course.** Institutions submit grades twice a
+  year, and it has already happened that fall's `Q2` and spring's `Y1` both land
+  for one course in one year. The student then has two stored grades, so two
+  rows, and the test doesn't see it because the `storedgrades_dcid` values
+  differ. The view has more rows than student-course-years, and a `TODO` in the
+  model marks where a priority rule would go.
+
+Also, about four in ten rows have no match in the extension table, so their
+course, score, and institution are empty. `unique_identifier` is not a key; use
+`storedgrades_dcid`. The fix is to decide which extension row wins for a stored
+grade and which store code wins for a course-year.
+
+### Pre-2016 SAT is on the old 2400 scale
+
+SAT sittings before March 2016 are on the 2400 scale (three sections), but every
+threshold is on the 1600 scale. Those scores rate high against the benchmarks,
+which inflates attainment for graduating classes through about 2017 in
+`_over_time` and `_scores`. They're separable by `test_date < '2016-03-01'`. The
+fix is to exclude or rescale them; ACT is unaffected.
 
 ### Duplicate kippadb test records
 
@@ -682,8 +739,19 @@ Each school year, with KIPP Forward:
 2. **Seasons.** Add new administrations, including new practice rounds, to the
    Expected Assessments spec and regenerate the tab.
 3. **Goals.** Enter the year's goals on the Goals tab.
-4. **Rollover.** `current_academic_year` rolls over each July, and `_current`
-   and `_benchmark_calcs` follow it.
+4. **Rollover.** `current_academic_year` rolls over each July, network-wide, and
+   `_current`, `_benchmark_calcs`, and `_roster` follow it. Before that, the new
+   year's Illuminate sessions must exist, which is owned outside the data team;
+   a missing Scaffold year also fails silently, as empty rows. After rollover,
+   check that `_current` has rows for the new year:
+
+   ```sql
+   select academic_year, expected_test_type, count(*) as goal_rows,
+   from
+       `teamster-332318.kipptaf_tableau.rpt_tableau__college_assessment_dashboard_current`
+   group by academic_year, expected_test_type
+   ```
+
 5. **Official scores.** When College Board files arrive, match new College Board
    IDs with the `collegeboard-id-crosswalk` skill. It then runs the CARAT
    pipeline check and drafts a summary for KIPP Forward.

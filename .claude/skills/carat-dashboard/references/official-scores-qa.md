@@ -10,22 +10,27 @@ Record the paste time first; every step compares against it.
 
 ## The chain
 
-| Step | AP                                     | SAT, PSAT                                                                                                                                          | Kind  |
-| ---- | -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
-| 1    | `int_collegeboard__ap_unpivot`         | `int_collegeboard__sat_unpivot`, `int_collegeboard__psat_unpivot`                                                                                  | table |
-| 2    | `int_assessments__ap_assessments`      | `int_assessments__college_assessment`                                                                                                              | view  |
-| 3    | —                                      | `int_assessments__all_college_assessments`                                                                                                         | table |
-| 4    | `rpt_tableau__ap_assessment_dashboard` | `rpt_tableau__college_assessment_dashboard_*`, `rpt_gsheets__kippfwd_sfsat`, `rpt_gsheets__kippfwd_ogsat`, `rpt_gsheets__college_assessments_wide` | views |
+| Step | AP                                     | PSAT                                                                                   | SAT                                                        | Kind  |
+| ---- | -------------------------------------- | -------------------------------------------------------------------------------------- | ---------------------------------------------------------- | ----- |
+| 1    | `int_collegeboard__ap_unpivot`         | `int_collegeboard__psat_unpivot`                                                       | `int_collegeboard__sat_unpivot`                            | table |
+| 2    | `int_assessments__ap_assessments`      | `int_assessments__college_assessment`                                                  | —                                                          | view  |
+| 3    | —                                      | `int_assessments__all_college_assessments`                                             | —                                                          | table |
+| 4    | `rpt_tableau__ap_assessment_dashboard` | `rpt_tableau__college_assessment_dashboard_*`, `rpt_gsheets__college_assessments_wide` | `rpt_gsheets__kippfwd_sfsat`, `rpt_gsheets__kippfwd_ogsat` | views |
+
+Official SAT on the dashboard comes from kippadb, not College Board files, so a
+SAT crosswalk paste changes only the KIPP Forward SAT sheets. For a SAT-only
+load, run step 1 on `int_collegeboard__sat_unpivot`, skip steps 2 to 4, and say
+in the report that the dashboard is unaffected.
 
 Views read live, so a score is in prod once the last table above it has rebuilt:
-step 1 for AP, step 3 for SAT and PSAT. Tableau shows it after the workbook's
+step 1 for AP and SAT, step 3 for PSAT. Tableau shows it after the workbook's
 next extract refresh.
 
 ## 1. When it reached prod
 
 For each table in the chain, call `mcp__dagster__get_asset_materializations`
 (asset key `kipptaf/<dataset>/<model>`, for example
-`kipptaf/collegeboard/int_collegeboard__sat_unpivot`) and report the first
+`kipptaf/collegeboard/int_collegeboard__psat_unpivot`) and report the first
 materialization after the paste time, converted to local time. A table with no
 materialization after the paste has not rebuilt yet; say so rather than
 reporting old data as new.

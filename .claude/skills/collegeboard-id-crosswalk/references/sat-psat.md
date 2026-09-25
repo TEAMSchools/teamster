@@ -5,6 +5,11 @@ both unpivots (`int_collegeboard__sat_unpivot`,
 `int_collegeboard__psat_unpivot`) resolve `cb_id` through it with a left join.
 AP IDs are a different ID space — see [SKILL.md](../SKILL.md).
 
+The two feed different places. PSAT flows into the CARAT dashboard. SAT feeds
+only the KIPP Forward SAT sheets (`rpt_gsheets__kippfwd_ogsat`, `_sfsat`);
+official SAT on CARAT comes from kippadb. Tell the user which one a paste
+affects.
+
 ## Step 1: Ingestion check
 
 Compare `mcp__dagster__get_asset_materializations` for the raw asset

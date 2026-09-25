@@ -3,11 +3,11 @@ models:
     description: >-
       Official college-entrance scores, one row per student, score type, and
       sitting. SAT and ACT come from kippadb
-      (int_kippadb__standardized_test_unpivot, dated rows only); PSAT and SAT
-      come from College Board files (int_collegeboard__psat_unpivot). Adds
-      score-shape counts, strategy_case, best-score and superscore fields, and
-      the change in total score from the previous sitting. test_type is the
-      constant Official and scope holds the test.
+      (int_kippadb__standardized_test_unpivot, dated rows only); PSAT comes from
+      College Board files (int_collegeboard__psat_unpivot). Adds score-shape
+      counts, strategy_case, best-score and superscore fields, and the change in
+      total score from the previous sitting. test_type is the constant Official
+      and scope holds the test.
 
 
       See docs/models/carat-dashboard-data-model.md.
