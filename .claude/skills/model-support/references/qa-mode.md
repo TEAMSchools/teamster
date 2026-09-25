@@ -41,9 +41,13 @@ sitting), not the unpivoted grain; label any unpivoted count as secondary.
 When a vendor file and the system it is loaded into should hold the same
 records, reconcile them with a full outer join on the record's natural key and
 report four counts with the date of the run: in both and the same, in both but
-different, only in A, only in B. The worked example is CARAT's "CARAT's SAT is
-kippadb's SAT" in `.claude/skills/carat-dashboard/references/gotchas.md` (on the
-branch of PR #5542 until it merges).
+different, only in A, only in B. Name both sides as models before querying; if
+the user's words do not map to one, ask. For SAT, the College Board file is
+`int_collegeboard__sat_unpivot` and the system it is loaded into is kippadb
+(`int_kippadb__standardized_test_unpivot`). The worked example is CARAT's
+"CARAT's SAT is kippadb's SAT" in
+`.claude/skills/carat-dashboard/references/gotchas.md` (on the branch of PR
+#5542 until it merges).
 
 Previous load:
 `for system_time as of timestamp_sub(current_timestamp(), interval <n> hour)`.
