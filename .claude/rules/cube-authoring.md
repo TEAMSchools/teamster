@@ -214,6 +214,14 @@ reason about.
   the chain-IN check). The location∩department remit is precomputed server-side
   into `securityContext.allowed_abbreviations` / `allowed_department_groups` —
   domain-agnostic, reused as-is when comp/observations/benefits views are built.
+  `staff_pii` is an access tier, not a FERPA category: sensitive HR fields that
+  aren't identifiers (`status_reason`) belong there too, never on
+  `staff_directory`. Every policy returns zero rows for former staff, because
+  the remit attributes (`dim_staff_cube_access`) and the reporting chain cover
+  current staff only, so termination reasons for people who have left can't be
+  read through Cube. `tests/cube/test_cube_schema.py` checks that every
+  `staff_pii_scope` member in `access.js` is exposed only behind `staff-pii-*`
+  groups.
 - **No aggregate-demographics view yet.** A `staff_summary` view once exposed
   `gender_identity`/`race`/`is_hispanic` as open, unscoped aggregate breakdowns
   — removed because small-cell slices (e.g. location × race) can re-identify an
