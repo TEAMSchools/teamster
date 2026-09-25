@@ -720,23 +720,26 @@ fix is to exclude or rescale them; ACT is unaffected.
 ### Duplicate kippadb test records
 
 Some scores are entered twice in kippadb, as two records with the same student,
-test, and date. Tracked in #4871.
+test, and date. Tracked in #4871. Counted by record, grouped on student, test,
+date, and subject:
 
-- **SAT:** resolved. The double-entered spring 2026 school-day load was cleaned
-  up in Salesforce. `_scores` still deduplicates, as a guard against a repeat,
-  and attempt counts use distinct dates either way.
-- **PSAT 2024:** double imports with identical scores remain in kippadb. They
+- **SAT:** the double-entered spring 2026 school-day load was cleaned up in
+  Salesforce. One October 2015 sitting remains, with 2 records whose scores
+  differ on every section, so one of them is wrong. `_scores` still
+  deduplicates, as a guard against a repeat, and attempt counts use distinct
+  dates either way.
+- **PSAT 2024:** 478 sittings were imported twice with identical scores. They
   don't reach CARAT, which takes PSAT from College Board files.
-- **AP:** duplicates remain, many with conflicting scores, awaiting a decision
-  on which record is right. Only those before academic year 2018 reach the AP
-  Overview tab; from 2018 the AP model reads College Board files instead.
+- **AP:** no duplicates. Students often sit several AP exams on one day, so AP
+  records only look duplicated when grouped without subject.
 
-When hunting duplicates in kippadb, key on subject too, because students
-legitimately sit several AP exams in one day.
+Count duplicates by record, not on the unpivot. The unpivot has one row per
+score type, so one duplicated sitting shows up once per score type: a SAT
+sitting with 4 scores looks like 4 duplicates.
 
 A warn-level uniqueness test on `int_kippadb__standardized_test_unpivot`
 (student, test, score type, AP course, and date) already flags these. Once the
-PSAT and AP records are cleaned up, raise it to `error` so a new double entry
+PSAT and SAT records are cleaned up, raise it to `error` so a new double entry
 fails the build.
 
 ### `rn_highest = 1` hides some students' best scores

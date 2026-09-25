@@ -171,12 +171,20 @@ Fingerprint every non-identity column, not just the score fields, before calling
 a pair redundant — two records can share a score and differ on
 `administration_round` or `scoring_irregularity`.
 
-Re-measured 2026-09-25 on the unpivot, grouped on contact, score type and date:
-the April 2026 SAT double load (Camden class of 2027) is cleaned up; the only
-SAT groups left are 4 from 2015 with genuinely different scores, not duplicates.
-PSAT 2024 still holds 1,434 identical double imports, and AP 1,524 groups, 845
-of them with conflicting scores. Status and asks live in issue #4871; re-measure
-there before acting.
+Count at the record grain, on `stg_kippadb__standardized_test` grouped on
+contact, date, test type and subject. Never count on the unpivot: it has one row
+per score type, so one duplicated sitting reads as one group per score type. A
+2015 SAT sitting with 4 scores was once reported as "4 groups", and AP grouped
+on the unpivot's score type (which drops subject) reported 1,524 AP groups that
+were really students sitting several exams on one day.
+
+Re-measured 2026-09-25 at the record grain: the April 2026 SAT double load
+(Camden class of 2027) is cleaned up. One SAT sitting from October 2015 remains,
+2 records with different scores on every section, so one is wrong. PSAT 2024
+holds 478 sittings imported twice with identical scores. AP has none. One 2018
+ACT Diagnostic Test sitting has 2 conflicting records. Casey handles the
+Salesforce fixes; status lives in issue #4871, so re-measure there before
+acting.
 
 ### Where the new goals tab belongs
 
