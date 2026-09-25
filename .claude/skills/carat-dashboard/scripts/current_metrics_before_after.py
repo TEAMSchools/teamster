@@ -9,10 +9,12 @@ in the output is caused by the load and nothing else.
 Both references to the scores table carry the same timestamp, which BigQuery
 requires. Time travel reaches back 7 days only.
 
-Percent met follows the view's own definitions: met_min_score_int averaged over
-rows with a score (so the attempts denominator is test takers, not every enrolled
-student), against expected_metric_pct_goal. Counts only -- no student rows leave
-the warehouse.
+Percent met matches the published dashboard: one row per grade for
+total scores only, filtered to currently enrolled (enroll_status = 0),
+non-IEP-exempt students, then met_min_score_int = 1 over all of them, testers or
+not -- verified against the Landing Page's bar counts. Shown
+beside expected_metric_pct_goal. Counts only -- no student rows leave the
+warehouse.
 
 Usage (compile the model first):
     uv run dbt compile --select rpt_tableau__college_assessment_dashboard_current \
@@ -44,12 +46,17 @@ select
     expected_test_type,
     expected_scope,
     expected_metric_label,
+    grade_level,
     {school}
-    countif(score is not null) as students_with_score,
-    round(100 * avg(if(score is not null, met_min_score_int, null)), 1) as pct_met,
+    count(*) as students_with_score,
+    round(100 * avg(met_min_score_int), 1) as pct_met,
     round(100 * any_value(expected_metric_pct_goal), 1) as pct_goal,
 from v
-group by expected_test_type, expected_scope, expected_metric_label {"," if by_school else ""} {school.rstrip(",")}
+where
+    enroll_status = 0
+    and grad_iep_exempt_status_overall != 'Yes'
+    and expected_aligned_subject_area = 'Total'
+group by expected_test_type, expected_scope, expected_metric_label, grade_level {"," if by_school else ""} {school.rstrip(",")}
 """
 
 
@@ -89,7 +96,7 @@ def main() -> None:
             runs.setdefault(key, {})[label] = row
 
     print(
-        "test_type | scope | metric"
+        "test_type | scope | metric | grade"
         + (" | school" if args.by_school else "")
         + " | before % (n) | now % (n) | change | goal %"
     )

@@ -22,15 +22,13 @@
   `roster` CTE. This is the same failure that produced 4,107 fabricated practice
   rows on the roster dashboard — the general rule is in _Practice is first-class
   in the strategy_ in [goals.md](goals.md).
-- **An attempts score of 0 is not the same as null, and confusing them halves
-  every reported percentage.** `_current` reads 0 where a student holds any
-  result of that test type but never sat this particular test, and null where
-  they hold no result at all. Every attempts metric shares one denominator —
-  1,319 of 2,090 enrolled students — so treating a non-tester as 0 moves it to
-  2,090 and SAT 1 Attempt reads 20.2% instead of 31.8%. Nothing errors, no row
-  count changes, only the denominator moves. Production got this population by
-  reading the participation roster, whose grain is enrollment intersected with
-  results.
+- **Every percentage on the current view divides by all students in the group,
+  testers or not.** The workbook filters `_current` to currently enrolled,
+  non-IEP-exempt students and divides `met_min_score_int = 1` by all rows; a
+  student with no score counts as not met. Verified against the published
+  Landing Page bar counts. `score` reads 0 versus null on Attempts rows
+  depending on whether the student has any result of that test type, but that
+  only matters when averaging `score`.
 - **Only a total-level Benchmark is grade-specific.** Attempts and section
   thresholds apply to every student regardless of grade. Requiring a grade match
   on Attempts cuts them to a quarter of their rows; letting null-grade rows
@@ -42,14 +40,12 @@
   school, Paterson has no high school grades, and Miami is not on Illuminate so
   its scores are untrackable. `district` reads KTAF regardless, so the label is
   wider than the population.
-- **`_over_time` and `_benchmark_calcs` deliberately disagree on 27 students
-  right now.** `_over_time` dropped the `rn_highest = 1` score filter and shows
-  their restored SAT scores; `_benchmark_calcs` reads
-  `benchmark_aligned_scope_max_score`, which keeps the filter, so the same
-  students still read `No Data` there. This is expected until the benchmark view
-  is repointed — do not "fix" either side to make them match without reading
-  _`rn_highest = 1` hides some students' best scores_ in the reference doc
-  first.
+- **`_over_time` and `_benchmark_calcs` disagree on a few dozen historical SAT
+  students.** `_over_time` reads scores with no `rn_highest = 1` filter;
+  `_benchmark_calcs` reads `benchmark_aligned_scope_max_score`, which keeps it,
+  so those students read `No Data` there. It is a known issue to fix, not a
+  design choice: see _`rn_highest = 1` hides some students' best scores_ in the
+  reference doc before touching either side.
 - **Two different causes move over-time percent-met, and they never overlap.**
   Restored scores land only on grad years 2014, 2015 and 2022; the PSAT 8/9
   800-to-790 threshold lands only on 2028 and 2029. Before explaining a moved

@@ -187,14 +187,16 @@ models:
           Benchmark row, their lifetime sitting count on an Attempts row. On an
           Attempts row, 0 when the student holds results of this test type but
           never sat this test, and null when they hold no result of this test
-          type, so the attempts denominator is test takers. On a Benchmark row,
-          null where they have no score for the score type.
+          type. On a Benchmark row, null where they have no score for the score
+          type. The workbook's percentages don't depend on the 0-versus-null
+          split; they divide met_min_score_int by every row.
       - name: met_min_score_int
         data_type: int64
         description: >-
           Whether score clears expected_metric_min_score. Reads 0 rather than
-          null when score is null, so an average over it treats a non-test-taker
-          as not meeting the bar.
+          null when score is null, so a student with no score counts as not
+          meeting the bar. The workbook's percentages are the share of rows
+          (currently enrolled, non-IEP-exempt students) where this is 1.
       - name: alt_met_min_score_int
         data_type: int64
         description: >-
@@ -206,8 +208,7 @@ models:
         description: >-
           Which readiness band the student's score falls in for this score type
           — College-Ready, HS Grad-Ready, or No Benchmark Met. The three are
-          mutually exclusive and cover every test taker, so a share of test
-          takers sums to one across them.
+          mutually exclusive and cover every student with a score.
 
 
           Derived from both tiers evaluated over the same student, test type,
@@ -215,5 +216,4 @@ models:
 
 
           Null on Attempts rows, which have no readiness band, and null where
-          score is null — so filtering it non-null gives the test-taker
-          population these bands are reported over.
+          score is null.

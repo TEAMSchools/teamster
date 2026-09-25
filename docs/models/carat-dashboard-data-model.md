@@ -122,12 +122,21 @@ Counting rows instead would credit a sitting entered twice in kippadb as two
 attempts.
 
 The attempts metrics ask what share of students took a test at least once, or at
-least twice. In `_current`, **the denominator is test takers, not every enrolled
-student**: a student with any result of that test type who never sat this
-particular test counts as zero, and a student with no results of that type is
-left out. Treating non-testers as zero would roughly halve every reported
-percentage, with no error and no change in row count. `_over_time` has no zero
-fallback; a student who never sat a test has a null attempts score there.
+least twice. On the dashboard, **every metric's denominator is every student in
+the group, whether or not they tested**: the workbook filters `_current` to
+currently enrolled students who aren't IEP-exempt, then divides the students who
+met the bar (`met_min_score_int = 1`) by all rows. A student with no score has
+`met_min_score_int = 0`, so they count as not meeting it. Checked against the
+published Landing Page, where every bar's count matches this calculation.
+
+Attempt counts are lifetime: "1+ attempts" means the student has ever sat the
+test, in any year, so a grade's rate climbs through the year as its first
+official sitting arrives (grade 11 SAT reads near zero in the fall).
+
+`score` itself reads 0 on an Attempts row for a student who holds results of
+that test type but never sat this test, and null for a student with no results
+of that type. That distinction matters only when averaging `score`; the
+percentages don't depend on it.
 
 ### Benchmarks
 
@@ -174,6 +183,12 @@ College-Ready. They are entered on the Goals tab.
   goal rows are goals for two classes.
 - **The Goals tab holds percentages only**; thresholds come from the Scaffold
   tab. `int_google_sheets__kippfwd__goals_unpivot` pairs them.
+
+The topline table below is KIPP Forward's strategy target per class, by the end
+of junior year. The Goals tab doesn't hold it as-is: the tab has one row per
+current grade and test for this school year, so a class's SAT goal appears on
+the tab only while that class is in grade 11 or 12. In SY26-27 the class of 2029
+is in grade 10, so its only row is PSAT 10.
 
 Topline goals, by the end of junior year:
 
@@ -238,6 +253,21 @@ it is measured on.
 
 ## Dashboard views
 
+The published workbook has five tabs. Each view feeds one of them:
+
+| Tab          | What's on it                                                       | View                                   |
+| ------------ | ------------------------------------------------------------------ | -------------------------------------- |
+| Landing Page | Average scores by graduating class (left)                          | `_scores`                              |
+| Landing Page | Grades 11 and 12 against goal, by school, region, and NJ (right)   | `_current`                             |
+| Over Time    | Attainment by graduating class                                     | `_over_time`                           |
+| Roster       | Each current student's expected tests and scores (the default tab) | `_roster`                              |
+| AP Overview  | AP enrollment, attempts, and scores                                | `rpt_tableau__ap_assessment_dashboard` |
+| DE Overview  | Dual-enrollment results                                            | `_de`                                  |
+
+`_benchmark_calcs` has no tab of its own. The Landing Page's "Met Benchmark" and
+"CY Board Report" buttons open pop-ups, and the benchmark view most likely sits
+behind the first; confirm in Tableau before relying on that.
+
 ### `_scores`: average scores
 
 **What it shows:** the landing page. Average scores over time by graduating
@@ -278,7 +308,8 @@ school students).
   thresholds apply to every student regardless of grade: a grade 9 student has
   taken the SAT zero times, which is a reportable answer.
 - `score` holds an attempt count on Attempts rows and the best scale score on
-  Benchmark rows. Attempts use the test-taker denominator (see _Attempts_).
+  Benchmark rows. Every percentage divides by all students in the group (see
+  _Attempts_).
 - `benchmark_tier` bands each student as College-Ready, HS Grad-Ready, or No
   Benchmark Met.
 - It follows the `current_academic_year` dbt variable, so it rolls over each
@@ -625,6 +656,14 @@ few dozen historical SAT students read `No Data` in `_benchmark_calcs`, while
 backfilling the dates in kippadb, or ranking after the null-date filter.
 
 ## Yearly upkeep
+
+| Who          | Does what                                                                                        |
+| ------------ | ------------------------------------------------------------------------------------------------ |
+| KIPP Forward | Decides goals, thresholds, the testing calendar, and which practice tests are given              |
+| KIPP Forward | Supplies practice-test scale scores (or the College Board scoring guide) and Illuminate links    |
+| Data team    | Turns those into sheet rows with the skill, pastes them, and verifies the rebuild                |
+| Data team    | Matches new College Board IDs, runs the pipeline check, and sends KIPP Forward a summary         |
+| Automatic    | Sheet edits rebuild staging; `current_academic_year` rolls over in July; Tableau refreshes daily |
 
 Each school year, with KIPP Forward:
 

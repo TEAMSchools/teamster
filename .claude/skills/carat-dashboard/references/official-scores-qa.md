@@ -69,8 +69,8 @@ It runs the view's own SQL twice, once with the scores table read as of the
 paste, and prints each metric's percent met before and now, the change, and the
 goal. Goals, thresholds and the roster are read as of now in both runs, so any
 change comes from the load. The attempts metrics (`*_1_attempt`,
-`*_2_plus_attempts`) are the share of test takers meeting the expected test
-count; the ready metrics are the share at HS Grad-Ready or College-Ready.
+`*_2_plus_attempts`) are the share of students in the group meeting the expected
+test count; the ready metrics are the share at HS Grad-Ready or College-Ready.
 
 AP has no `_current` metrics, so an AP-only load skips this step. Report only
 the tests the load touched, lead with the attempts metrics, and put each metric

@@ -1,4 +1,7 @@
-# PSAT 8/9 and PSAT 10 — official College Board tables
+# Practice PSAT 8/9 and PSAT 10 — College Board's published scoring tables
+
+For converting PRACTICE PSAT raw scores. Official PSAT score files and their
+student matching are a different job, in the `collegeboard-id-crosswalk` skill.
 
 ## Exception: PSAT 8/9 and PSAT 10 use official College Board tables
 

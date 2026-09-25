@@ -45,19 +45,20 @@ Also relevant:
 Read the one file for your task. Every sheet change also follows _Handing sheet
 rows to the user_, below.
 
-| Task                                                                                                    | Read                                                                                                                                                           |
-| ------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Change a goal percentage ("the Foundation moved the target, update Tableau")                            | [references/goals.md](references/goals.md) — a sheet edit, never code                                                                                          |
-| Goal thresholds, cut scores, or the strategy doc's topline goals                                        | [references/goals.md](references/goals.md)                                                                                                                     |
-| Counting attempts, or hunting duplicate kippadb records                                                 | [references/goals.md](references/goals.md)                                                                                                                     |
-| Add practice SAT/ACT assessments for a new administration                                               | [references/practice-assessments.md](references/practice-assessments.md)                                                                                       |
-| Audit conversion-tab rows, or a practice score is not appearing                                         | [references/practice-assessments.md](references/practice-assessments.md)                                                                                       |
-| Add PSAT 8/9 or PSAT 10 practice conversions                                                            | [references/practice-assessments.md](references/practice-assessments.md), then [references/psat-college-board.md](references/psat-college-board.md) for Step 3 |
-| Add or check scaffold-tab rows                                                                          | [references/practice-assessments.md](references/practice-assessments.md)                                                                                       |
-| Rebuild the Expected Assessments seasons tab                                                            | [references/expected-assessments.md](references/expected-assessments.md)                                                                                       |
-| QA official scores after a College Board ID crosswalk paste (hand-off from `collegeboard-id-crosswalk`) | [references/official-scores-qa.md](references/official-scores-qa.md)                                                                                           |
-| An official SAT, PSAT or AP score is missing for a student                                              | the `collegeboard-id-crosswalk` skill — usually an unmapped College Board ID                                                                                   |
-| Editing a CARAT model, or a result looks wrong and nothing above fits                                   | [references/gotchas.md](references/gotchas.md)                                                                                                                 |
+| Task                                                                                                    | Read                                                                                                                                                                               |
+| ------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Change a goal percentage ("the Foundation moved the target, update Tableau")                            | [references/goals.md](references/goals.md) — a sheet edit, never code                                                                                                              |
+| Goal thresholds, cut scores, or the strategy doc's topline goals                                        | [references/goals.md](references/goals.md)                                                                                                                                         |
+| Counting attempts, or hunting duplicate kippadb records                                                 | [references/goals.md](references/goals.md)                                                                                                                                         |
+| Add practice SAT/ACT assessments for a new administration                                               | [references/practice-assessments.md](references/practice-assessments.md)                                                                                                           |
+| Audit conversion-tab rows, or a practice score is not appearing                                         | [references/practice-assessments.md](references/practice-assessments.md)                                                                                                           |
+| Add PSAT 8/9 or PSAT 10 practice conversions                                                            | [references/practice-assessments.md](references/practice-assessments.md), then [references/practice-psat-scoring-tables.md](references/practice-psat-scoring-tables.md) for Step 3 |
+| Add or check scaffold-tab rows                                                                          | [references/practice-assessments.md](references/practice-assessments.md)                                                                                                           |
+| Rebuild the Expected Assessments seasons tab                                                            | [references/expected-assessments.md](references/expected-assessments.md)                                                                                                           |
+| QA official scores after a College Board ID crosswalk paste (hand-off from `collegeboard-id-crosswalk`) | [references/official-scores-qa.md](references/official-scores-qa.md)                                                                                                               |
+| Add a new metric, or a threshold that isn't on the Scaffold (e.g. PSAT 10 Math ≥ 450)                   | a design change, not a sheet edit: doc _Benchmarks_ and the view's SQL; ask about an issue and brainstorming first                                                                 |
+| An official SAT, PSAT or AP score is missing for a student                                              | the `collegeboard-id-crosswalk` skill — usually an unmapped College Board ID                                                                                                       |
+| Editing a CARAT model, or a result looks wrong and nothing above fits                                   | [references/gotchas.md](references/gotchas.md)                                                                                                                                     |
 
 ### Why did this number change
 
@@ -66,25 +67,25 @@ The 2026 rebuild's measured before/after figures are in
 standing explanations are in the reference doc (doc). Cite them rather than
 re-deriving:
 
-| Question                                               | Where                                                       |
-| ------------------------------------------------------ | ----------------------------------------------------------- |
-| An attempt count is lower than it was                  | RC _Why participation attempt counts change_                |
-| A student's SAT attempts dropped by one                | same — 86 students, the Camden 2027 duplicate load          |
-| An attempt count is higher than it was                 | same — counts are no longer scoped to enrolled years        |
-| The roster returns two rows for one student            | same — `test_type` is in the grain                          |
-| A percent-met or benchmark total moved                 | RC _Why the benchmark dashboard's totals change_            |
-| Two records for one sitting, or an inflated row count  | doc _Duplicate kippadb test records_                        |
-| A goal line moved, or does not match the strategy doc  | [references/goals.md](references/goals.md), and doc _Goals_ |
-| An over-time percent-met moved                         | RC _Why the over-time dashboard's numbers change_           |
-| PSAT 8/9 HS Grad-Ready rose for 2028 or 2029           | same — the 800 to 790 threshold, 10 students each           |
-| A 2014, 2015 or 2022 cohort's percent-met rose         | same — the 27 restored scores                               |
-| A score reads `No Data` in one view but not another    | doc _`rn_highest = 1` hides some students' best scores_     |
-| Every school shows the same goal line                  | RC _Why the current dashboard's numbers change_             |
-| An attempts percentage roughly halved or doubled       | doc _Attempts_ — the denominator is test takers             |
-| The board metrics view lost its goal line              | RC _Why the current dashboard's numbers change_             |
-| `_current` reports a year behind, or two years at once | same — four branches hardcoded AY2025                       |
-| Official growth is not official-to-official            | doc _Growth_                                                |
-| Practice numbers on the roster dropped sharply         | RC _Roster scores: what the repointing changed_             |
+| Question                                               | Where                                                           |
+| ------------------------------------------------------ | --------------------------------------------------------------- |
+| An attempt count is lower than it was                  | RC _Why participation attempt counts change_                    |
+| A student's SAT attempts dropped by one                | same — 86 students, the Camden 2027 duplicate load              |
+| An attempt count is higher than it was                 | same — counts are no longer scoped to enrolled years            |
+| The roster returns two rows for one student            | same — `test_type` is in the grain                              |
+| A percent-met or benchmark total moved                 | RC _Why the benchmark dashboard's totals change_                |
+| Two records for one sitting, or an inflated row count  | doc _Duplicate kippadb test records_                            |
+| A goal line moved, or does not match the strategy doc  | [references/goals.md](references/goals.md), and doc _Goals_     |
+| An over-time percent-met moved                         | RC _Why the over-time dashboard's numbers change_               |
+| PSAT 8/9 HS Grad-Ready rose for 2028 or 2029           | same — the 800 to 790 threshold, 10 students each               |
+| A 2014, 2015 or 2022 cohort's percent-met rose         | same — the 27 restored scores                                   |
+| A score reads `No Data` in one view but not another    | doc _`rn_highest = 1` hides some students' best scores_         |
+| Every school shows the same goal line                  | RC _Why the current dashboard's numbers change_                 |
+| A current-view percentage doesn't match a count        | doc _Attempts_ — every bar divides by all students in the group |
+| The board metrics view lost its goal line              | RC _Why the current dashboard's numbers change_                 |
+| `_current` reports a year behind, or two years at once | same — four branches hardcoded AY2025                           |
+| Official growth is not official-to-official            | doc _Growth_                                                    |
+| Practice numbers on the roster dropped sharply         | RC _Roster scores: what the repointing changed_                 |
 
 If a reconciliation disagrees with the documented figures, read the last
 subsection of RC's participation section first — the counting fix and the
