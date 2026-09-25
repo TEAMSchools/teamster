@@ -831,8 +831,11 @@ Expected: `No issues`; the link checker prints nothing and exits 0.
 
 1. `# QA mode` — start from the family's reference doc for grains, keys, and
    known issues; if there is none, run `intake-and-inventory.md` first. If the
-   family skill has its own QA procedure (CARAT: `official-scores-qa.md`),
-   follow that and skip the generic checks.
+   family skill has its own QA procedure, link straight to that reference file,
+   never to the family's `SKILL.md` (CARAT:
+   `.claude/skills/carat-dashboard/references/official-scores-qa.md`), follow
+   it, and skip the generic checks. Going through the family's entry file costs
+   a third read and fails the walk test.
 2. `## New data landed` — the five comparisons from the spec, each with a query
    shape; previous load via
    `FOR SYSTEM_TIME AS OF timestamp_sub(current_timestamp(), interval <n> hour)`
@@ -1004,8 +1007,9 @@ W5 "I refactored int_students__athletic_eligibility for readability; it has no
 
 - [ ] **Step 2: Score each.** Pass: SKILL.md plus at most two more reads, and
       the plan hits the matching RED checklist items from Task 1 (W1: A1-A8; W5:
-      B1-B5 and the inventory-first rule). W4 may read CARAT's own skill; count
-      it as one of the two.
+      B1-B5 and the inventory-first rule). Every read counts, including files in
+      a family's own skill. W4 passes only by reading SKILL.md, `qa-mode.md`,
+      and CARAT's `official-scores-qa.md` directly.
 
 - [ ] **Step 3: Fix every failure** in the file the walk test names (merge
       references, add a pointer, name a stopping heading). Re-lint and
@@ -1033,11 +1037,14 @@ Expected: `No issues`; `7 passed`.
 
 - [ ] **Step 3: Open a draft PR** with `mcp__github__create_pull_request`, body
       from `.github/pull_request_template.md`: plain-language Summary; Reviewer
-      Notes naming the judgment calls (Python link checker instead of `.sh`;
-      five-model inline threshold; QA's Tableau opt-in); `Refs #5434` (not
-      `Closes`: acceptance needs the athletic eligibility run); a "For Claude"
-      fold-out with the RED baseline summary and walk-test read counts. Draft
-      until the athletic eligibility PR's real run passes and its fixes land
-      here. End the body with the Claude Code attribution line.
+      Notes naming the judgment calls (Python link checker instead of `.sh`,
+      matching all 10 existing skill scripts; `tests/skills/` is the first test
+      coverage for skill scripts and runs locally only, since `pytest.yaml`
+      covers `tests/launch/**` alone; five-model inline threshold; QA's Tableau
+      opt-in); `Refs #5434` (not `Closes`: acceptance needs the athletic
+      eligibility run); a "For Claude" fold-out with the RED baseline summary
+      and walk-test read counts. Draft until the athletic eligibility PR's real
+      run passes and its fixes land here. End the body with the Claude Code
+      attribution line.
 
 - [ ] **Step 4: Verify** the returned title, body, and draft state match intent.
