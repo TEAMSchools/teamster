@@ -18,6 +18,8 @@
 -- narrow using first_name (case-fold, diacritic-strip, alphanumeric only).
 --
 -- Tier C/D gender check is a HARD GATE (mismatch -> flagged_for_review).
+-- A gap with several candidates the tiebreak can't narrow is 'ambiguous', not
+-- 'no_match'.
 -- Unlike the AP match, PowerSchool rows are not scoped to a year: SAT files
 -- carry no enrollment year, and DOB + last name is already tight network-wide.
 --
@@ -244,6 +246,14 @@ with
         group by nr.test, nr.cb_id, nr.student_number, nr.tiers
     ),
 
+    -- several name-tier candidates the first-name tiebreak could not narrow
+    ambiguous as (
+        select pg.test, pg.cb_id,
+        from per_gap as pg
+        left join tier_s as s on pg.test = s.test and pg.cb_id = s.cb_id
+        where pg.n_combined > 1 and pg.n_tiebreak != 1 and s.cb_id is null
+    ),
+
     candidates as (
         select
             test,
@@ -262,8 +272,22 @@ with
             student_number,
             tiers,
 
-            if(tiers = 'A_B' or gender_ok, 'resolved', 'flagged_for_review') as bucket,
+            -- tiers is an ordered string_agg, so an A/B match always starts it
+            if(
+                starts_with(tiers, 'A_B') or gender_ok, 'resolved', 'flagged_for_review'
+            ) as bucket,
         from name_gender
+
+        union all
+
+        select
+            test,
+            cb_id,
+
+            cast(null as int64) as student_number,
+            cast(null as string) as tiers,
+            'ambiguous' as bucket,
+        from ambiguous
     )
 
 select test, cb_id, student_number, tiers, bucket,

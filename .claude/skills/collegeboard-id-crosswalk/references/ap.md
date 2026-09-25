@@ -125,6 +125,10 @@ Present `flagged_for_review` rows (if any) separately as a markdown table (CB
 first/last/gender vs. PS first/last/gender) for the user to decide on
 individually — these never go in the paste file.
 
+Present `ambiguous` rows (if any) the same way, with each gap's candidate
+students listed: the name tiers found more than one and the first-name tiebreak
+couldn't narrow them. These never go in the paste file.
+
 Present `no_match` rows (if any) as a single markdown table (CB first/last/DOB)
 — see Phase 12.
 

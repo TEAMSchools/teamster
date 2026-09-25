@@ -45,6 +45,9 @@ def main() -> None:
     rows = [{k: "" if v is None else str(v) for k, v in row.items()} for row in result]
 
     for match, assignment in args.set:
+        pairs = match.split(",") + [assignment]
+        if any("=" not in pair for pair in pairs):
+            sys.exit(f"--set {match} {assignment}: every part must be column=value")
         conditions = dict(pair.split("=", 1) for pair in match.split(","))
         column, value = assignment.split("=", 1)
         unknown = (set(conditions) | {column}) - set(header)

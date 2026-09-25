@@ -67,8 +67,9 @@ Present counts per tier and bucket, then follow _Handing rows to the user_ in
 [SKILL.md](../SKILL.md) with destination tab
 `src_collegeboard__sat_id_crosswalk`. `flagged_for_review` rows go in chat as a
 table (CB name/DOB/gender against PS name/DOB/gender) for the user to decide
-individually. For `no_match` rows, run _No-match root cause review_ in
-[ap.md](ap.md).
+individually. `ambiguous` rows (several candidates the first-name tiebreak
+couldn't narrow) go in chat the same way, with the candidates listed. For
+`no_match` rows, run _No-match root cause review_ in [ap.md](ap.md).
 
 ## Step 5: Pipeline QA
 
