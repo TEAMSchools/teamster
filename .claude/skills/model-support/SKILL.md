@@ -39,6 +39,15 @@ the request; if it is unclear, ask.
   code; do not re-argue it in later messages.
 - Status updates to the user come in three groups: done, pending (your work),
   and needs their decision. Nothing else.
+- A count taken from an issue, PR, skill, or doc gets re-run before it goes into
+  new writing, and the new writing says when it was measured (the root CLAUDE.md
+  "re-run its diagnostic" rule, applied to every number). A month-old AP count
+  copied without re-running reached a manual, a skill, two issues, a handoff
+  doc, and Asana, and was wrong.
+- When a finding is corrected, fix every body it appears in, not just a comment:
+  the issue and PR bodies (with a dated correction line), the published doc, and
+  the skill. Then `rg` the repo and search the tracker for the old number so no
+  copy survives.
 - Relative paths in commands (`docs/models`, `.claude/skills`) mean the checkout
   being edited. In a worktree, run them with `cd <worktree> &&` in the same
   command; from the main checkout they read stale copies and report a false
@@ -84,8 +93,11 @@ Run trunk on every changed file, with cwd in the edited checkout
 (`/workspaces/teamster/.trunk/tools/trunk check --force --no-fix <files> </dev/null`),
 and
 `uv run dbt parse --no-partial-parse --project-dir <worktree>/src/dbt/<project>`.
-Commit with messages that state what was verified, push, and open the PR. Tell
-the user every judgment call they might disagree with.
+Commit with messages that state what was verified, push, and open the PR. Before
+asking for review, rewrite the PR body's Summary from
+`git diff --stat origin/main...HEAD` and the commit list, so it describes the
+whole PR and not its first commit, and check every CI checkbox claim against
+`gh pr checks <n>`. Tell the user every judgment call they might disagree with.
 
 ## Scripts
 

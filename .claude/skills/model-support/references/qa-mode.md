@@ -33,8 +33,10 @@ Compare prod against the previous load and against the same point last year:
 | Categories appeared or gone              | distinct values now vs before                               |
 | Schools or students appeared or vanished | key set now `except distinct` key set before, both ways     |
 
-Count duplicates and gaps at the grain a person fixes (the source record or
-sitting), not the unpivoted grain; label any unpivoted count as secondary.
+Count duplicates and gaps on the source-grain model with its full natural key,
+including columns that repeat within a day such as subject; label any unpivoted
+count as secondary (`yaml-and-tests.md` → A test that fails today has the case
+where the wrong key would have deleted real AP results).
 
 ### Two sources that should agree
 

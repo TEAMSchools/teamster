@@ -92,12 +92,20 @@ For `accepted_values`, list the distinct values first. Staging tests need
 ## A test that fails today
 
 Add it anyway; it warns. Put the cause in the reference doc under "Known issues,
-need to fix" with the query that shows it, in aggregates only. Count duplicates
-at the grain a person fixes (the source record or sitting: student, test, date),
-not at an unpivoted grain; give the unpivoted count only as a labelled second
-number. One duplicated SAT sitting was once reported as "4 groups", one per
-score type. On CARAT, two such tests exposed a `strategy_case` fan-out and
-stored grades matching several extension rows.
+need to fix" with the query that shows it, in aggregates only.
+
+Count duplicates on the source-grain model with its full natural key, including
+every column that legitimately repeats within a day (subject, section,
+administration); give an unpivoted count only as a labelled second number. On
+CARAT, grouping `int_kippadb__standardized_test_unpivot` on contact, score type
+and date dropped the AP subject, so students who sat several AP exams in one day
+read as over a thousand duplicate groups; `stg_kippadb__standardized_test` on
+contact, date, test type and subject has none, and PSAT fell to a third (three
+score types per sitting). A cleanup list built from the unpivoted count would
+have deleted real results. The worked example is "Hunting duplicates in kippadb"
+in `.claude/skills/carat-dashboard/references/goals.md` (on the branch of PR
+#5542 until it merges). On CARAT, two such tests exposed a `strategy_case`
+fan-out and stored grades matching several extension rows.
 
 ## "Probably harmless" gets a query
 
