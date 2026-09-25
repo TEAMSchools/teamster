@@ -102,3 +102,23 @@ def test_check_links_reports_only_broken_relative_links(tmp_path):
     )
     broken = links.find_broken_links([tmp_path])
     assert broken == [(tmp_path / "SKILL.md", 5, "references/missing.md")]
+
+
+def test_comment_only_edit_is_detected():
+    diff = _load("comment_only_diff")
+    old = "select a, -- old note\n    b\nfrom t /* block */\n{# jinja note #}\n"
+    new = "select a,\n    b -- new note\nfrom t\n"
+    assert diff.is_comment_only(old, new)
+
+
+def test_logic_edit_is_detected():
+    diff = _load("comment_only_diff")
+    assert not diff.is_comment_only("select a from t", "select b from t")
+
+
+def test_dashes_inside_strings_are_not_comments():
+    diff = _load("comment_only_diff")
+    old = "select '--' as sep, \"a -- b\" as label from t"
+    new = "select '-' as sep, \"a -- b\" as label from t"
+    assert "'--'" in diff.strip_comments(old)
+    assert not diff.is_comment_only(old, new)
