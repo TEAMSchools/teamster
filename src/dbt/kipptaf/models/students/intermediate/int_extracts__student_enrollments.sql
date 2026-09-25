@@ -524,8 +524,8 @@ left join
     and e.academic_year = (adapy.academic_year + 1)
     and e._dbt_source_project = adapy._dbt_source_project
 left join
-    {{ ref("int_powerschool__gpa_cumulative") }} as gc
-    on e.studentid = gc.studentid
+    {{ ref("int_students__gpa_cumulative") }} as gc
+    on e.student_number = gc.student_number
     and e.schoolid = gc.schoolid
     and e._dbt_source_project = gc._dbt_source_project
 left join

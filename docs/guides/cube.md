@@ -251,6 +251,30 @@ for `resolveAccess failed for <email>`. Two causes, in order of likelihood: a
 stale ADC token, or the dev server is serving a checkout whose `resolveAccess`
 predates the ADC fallback — see the warning under [Local Dev](#local-dev).
 
+**Testing a change to `dim_staff_cube_access` itself.** The identity read is a
+`SELECT *` against `kipptaf_marts`, so a column the deployed view does not have
+yet comes back undefined rather than erroring — a local run then looks green
+while exercising none of the new logic. Build the mart into your dev schema and
+point the identity read at it:
+
+```bash
+CUBE_ACCESS_DATASET=zz_<you>_kipptaf_marts NODE_ENV=production CUBEJS_DEV_MODE=false npm run dev
+```
+
+Two gates govern it, and both must hold. The value must match `^zz_[a-z0-9_]+$`,
+and `CUBEJS_DB_BQ_CREDENTIALS` must be unset — the local ADC path. Every working
+deployment sets that variable, so the override cannot take effect on one,
+whatever the value. That matters because `zz_` is the prefix of every
+developer's own writable schema: honored in prod, it would let anyone resolve
+their own identity row. At startup, an honored override logs
+`cube_access_dataset_override`; a set but ignored one logs
+`cube_access_dataset_ignored` with the reason.
+
+It redirects the two `dim_staff_cube_access` reads only. `dim_locations` stays
+on prod deliberately — a dev copy of the location universe would change every
+viewer's resolved abbreviations, and a matrix that passed against it would prove
+nothing.
+
 **The SQL API is ground truth.** It is the surface Superset/BI actually use, and
 identity resolves per connection, so one script covers every viewer. Tesseract
 (`CUBEJS_TESSERACT_SQL_PLANNER`, default `true`) is the planner on the SQL API,
@@ -329,8 +353,8 @@ Include a network-scoped, a region-scoped, a school-scoped, a `none`-scope, and
 one deliberately unresolvable viewer. Expect the network viewer to return all
 four regions, the region viewer only their own, the school viewer a subset of
 that region, and the last two no rows at all (default-deny) — which confirms
-`resolveAccess` and the `student-<scope>` policies agree. Because identity is
-the connecting `user`, one run covers the matrix with no restart.
+`resolveAccess` and the flat `student` policy agree. Because identity is the
+connecting `user`, one run covers the matrix with no restart.
 
 It exits non-zero if any viewer's connection or query fails, and calls out the
 one ambiguous result explicitly: if **every** viewer returns zero rows,
@@ -449,8 +473,8 @@ it should stay that way — but **check an older `.env` for it**, because a copy
 made before it was removed still carries it. It is a dev bypass that supplies
 `groups` only, so it cannot validate `row_level` scoping at all, and its old
 placeholder value used group names (`cube-network-detail`,
-`cube-access-student-data`) that predate the current taxonomy (`student-<scope>`
-/ `staff-directory` / `staff-pii-<scope>`) — dead groups no policy matches, so
+`cube-access-student-data`) that predate the current taxonomy (`student` /
+`staff-directory` / `staff-pii-<scope>`) — dead groups no policy matches, so
 **every view denies**. The bypass fires whenever `NODE_ENV !== production` and
 the variable is set, and it sits in the resolution path _shared_ by both auth
 hooks, so it corrupts the REST and SQL surfaces alike. Leave it unset locally;
@@ -727,32 +751,41 @@ tail -f ~/Library/Logs/Claude/mcp-server-cube-mcp-server.log
 Cube resolves each user's access at query time via two BigQuery reads against
 `kipptaf_marts` (no Google Admin Directory API):
 
-1. **`dim_staff_cube_access`** — one row per active+primary staff member, keyed
-   on `google_email`. Carries per-field scope enums (`student_location_scope`,
-   `staff_pii_scope`, etc.) that `cube.js` translates into Cube group strings
-   via `access.buildGroups(row)`.
+1. **`dim_staff_cube_access`** — one row per viewer, keyed on `google_email`.
+   Covers active+primary staff plus non-employee grantees (contractors and the
+   like, who hold a KIPP Google login but no employment record) named on the
+   `cube_access_individual_exceptions` sheet. Carries per-field scope enums
+   (`student_location_scope`, `staff_pii_scope`, etc.) plus
+   `additional_location_grants`, which `cube.js` translates into Cube group
+   strings and allow-lists via `access.buildGroups(row)`.
 2. **`dim_staff_reporting_chain`** — transitive closure of the org tree, keyed
    on `(manager_staff_key, reportee_staff_key)`. Used to resolve the viewer's
    direct and indirect reports for `reporting_chain` and
    `reporting_chain_or_below_rank` scopes.
 
-Results are cached until next midnight ET. A staff member not in
-`dim_staff_cube_access` (e.g. a non-staff admin user) resolves to an empty group
-list and sees no data (default deny).
+Results are cached until next midnight ET. Anyone not in `dim_staff_cube_access`
+resolves to an empty group list and sees no data (default deny).
 
 ### Access groups
 
-`access.buildGroups(row)` emits scope-specific group strings from the access
-row's scope columns. A viewer holds at most one group per axis, and each gated
-view's `access_policy` matches exactly one of them — no group on an axis means
+`access.buildGroups(row)` emits group strings from the access row's scope
+columns. A viewer holds at most one group per axis, and each gated view's
+`access_policy` matches exactly one of them — no group on an axis means
 default-deny for the views gated by it:
 
-| Group                                                          | Emitted when                                 |
-| -------------------------------------------------------------- | -------------------------------------------- |
-| `student-region` / `student-school` / `student-network`        | matching non-`none` `student_location_scope` |
-| `staff-directory`                                              | always (every resolved viewer)               |
-| `staff-pii-<scope>`                                            | one group per non-`none` `staff_pii_scope`   |
-| `staff-compensation` / `staff-observations` / `staff-benefits` | matching non-`none` `*_scope`                |
+| Group                                                          | Emitted when                                                            |
+| -------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| `student`                                                      | `allowed_student_abbreviations` resolves non-empty                      |
+| `staff-directory`                                              | every employee; a non-employee only when a grant reaches the staff axis |
+| `staff-pii-<scope>`                                            | one group per non-`none` `staff_pii_scope`                              |
+| `staff-compensation` / `staff-observations` / `staff-benefits` | matching non-`none` `*_scope`                                           |
+
+There is one flat `student` group rather than one per location tier.
+`allowed_student_abbreviations` is precomputed server-side: the viewer's base
+`student_location_scope` resolved to a set of school abbreviations, unioned with
+every `additional_location_grants` entry whose `includes_student_data` is true.
+A tier group could only say "my whole region"; the array can say "my region plus
+this one other school," which is what an individual exception needs to express.
 
 The `staff_pii_scope` values are `all_in_scope`, `teaching_staff`,
 `reporting_chain`, and `reporting_chain_or_below_rank`. The compensation /
@@ -762,10 +795,10 @@ observations / benefits groups are emitted but no view consumes them yet
 Row-level filtering is enforced **declaratively in each view's `access_policy`**
 — `row_level` filters that interpolate the `securityContext` values
 `resolveAccess` builds — **not** in `cube.js`, which carries no RLS at all.
-Student domains are single collapsed views (no summary/detail split); any
-`student-<scope>` group sees every field, including PII, with location scoping
-applied by the matching policy. Staff is split into `staff_directory` (open
-roster, no PII) and `staff_pii` (the sensitive fields, gated per
+Student domains are single collapsed views (no summary/detail split); the
+`student` group sees every field, including PII, with location scoping applied
+from `allowed_student_abbreviations`. Staff is split into `staff_directory`
+(open roster, no PII) and `staff_pii` (the sensitive fields, gated per
 `staff_pii_scope` by a location-and-department remit precomputed into
 `securityContext`).
 

@@ -195,11 +195,6 @@ billed (10 MB min/query) while `tables.get` is free metadata.
 uv run dagster-dbt project prepare-and-package --file src/teamster/code_locations/kipptaf/__init__.py
 ```
 
-`dagster definitions validate` may mislead locally — env vars unavailable in
-codespace cause false errors unrelated to production failures. Fall back to
-`uv run python -c "import <module>"` for syntactic checks when validate fails on
-missing manifest or env vars.
-
 In the codespace, importing a district `definitions.py` first needs the dbt
 manifest (`dagster-dbt project prepare-and-package`, above). With the manifest,
 `kippnewark` and `kippcamden` import cleanly. `kipptaf.definitions` AND

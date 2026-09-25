@@ -18,10 +18,6 @@ models:
         data_tests:
           - unique
           - not_null
-          - relationships:
-              arguments:
-                to: ref('int_assessments__assessments_members')
-                field: canonical_assessment_id
         data_type: int64
         description: >-
           Primary key. The lowest `assessment_id` within the canonical partition

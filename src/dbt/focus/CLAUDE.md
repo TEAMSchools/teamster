@@ -151,11 +151,6 @@ use `sources-bigquery.yml` with a plain schema var. Intermediate
 
 ## Cross-Project Usage
 
-This project is never run standalone in production. District projects reference
-it as a dbt package and override variables. `{{ project_name }}` in source
-definitions resolves to the consuming district project name, enabling correct
-Dagster asset key lineage.
-
 To add a NEW kipptaf dependency on Focus data in a single PR, declare the dlt
 landing dataset (`dagster_kippmiami_dlt_focus`) as a BQ-native
 `sources-bigquery.yml` source (hardcoded schema, no target branch) — it reads

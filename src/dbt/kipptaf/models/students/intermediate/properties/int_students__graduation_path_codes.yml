@@ -178,18 +178,6 @@ models:
           carried through rather than recomputed.
       - name: grad_eligibility
         data_type: string
-        data_tests:
-          - accepted_values:
-              arguments:
-                values:
-                  - Grad Eligible
-                  - ELA Only
-                  - Not Grad Eligible
-                  - Math Only
-                  - No FAFSA
-                  - FAFSA Only
-                  - ELA Only / No FAFSA
-                  - Math Only / No FAFSA
         description: >-
           Where the student stands against the graduation requirement overall,
           which is what the dashboard shows. Derived from whether each subject

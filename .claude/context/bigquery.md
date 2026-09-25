@@ -10,8 +10,11 @@ Three identities reach BigQuery here, and they differ in what they can read:
   GOOGLE_SHEETS external tables.
 - **ADC from Python** — carries Drive scope and does not expire. The only client
   that reads a sheet-backed external live.
-- **`bq` CLI** — gcloud USER creds that expire mid-session. For shell contexts
-  (Monitor poll loops) and CSV dumps only.
+- **`bq` CLI** — gcloud USER creds that expire mid-session: SELECTs that worked
+  early fail later with "Reauthentication failed" or "You do not currently have
+  an active account selected" (non-interactive can't `gcloud auth login`); both
+  mean expiry, not a missing grant. Switch to the MCP or ADC rather than
+  retrying. For shell contexts (Monitor poll loops) and CSV dumps only.
 
 The MCP's 50-row truncation is silent: a 200-row query returns 50 rows with no
 marker, so never read a 50-row result as complete. When querying
@@ -48,10 +51,6 @@ shell-quoting. `--max_rows` defaults to 100 — raise it for full dumps. To hand
 PII to Ops, redirect to a local `.claude/scratch/*.csv`
 (`bq query --format=csv ... > file`; the `>` keeps PII out of the tool result),
 verify with `wc -l`, and reference the FILE (never the values) in any tracker.
-
-`bq` auth expires mid-session, so SELECTs that worked early fail later with
-"Reauthentication failed" (non-interactive can't `gcloud auth login`). Switch to
-the MCP or to ADC from Python rather than retrying.
 
 ## Metadata and staleness
 

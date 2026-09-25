@@ -46,32 +46,23 @@ not just before editing.
 
 ---
 
-## START HERE: making a change to this pipeline
+## Before changing this pipeline
 
-Run these in order before editing any SQL.
+Confirm with the requester the grain, region, academic year, and expected effect
+on the dashboard (more rows, different booleans, changed labels, or none for a
+refactor). Then state these model-specific risks before implementing:
 
-1. **Clarify the change with the requester.** Invoke `superpowers:brainstorming`
-   (`Skill` tool) and pin down, one question at a time: what changes, at which
-   grain, for which region and academic year, and what the expected effect on
-   the dashboard is — more rows, different booleans, changed labels, or none
-   because it is a refactor.
-2. **Read the reference doc**, as required above.
-3. **Map the impact.** `mcp__dbt__get_model_parents` /
-   `mcp__dbt__get_model_children` on each target, cross-checked against the
-   exposure's `depends_on`.
-4. **State the model-specific risks before implementing:**
-   - **Which of the two comps paths does this touch?** Changing the sheet
-     touches both. Changing `rpt_tableau__state_assessments_dashboard_comps`
-     touches only Advanced Comps.
-   - **Does it move a string the ten-column self-join keys on?** If so, rows
-     silently lose their Region partner and read `false`, not null.
-   - **PII.** Student-level rows live in
-     `rpt_tableau__state_assessments_dashboard` and in the failure rows of
-     `test_incorrect_student_number_pearson`, which carry student names. Never
-     paste them outbound.
-   - Contract enforcement on both `rpt_` models and both staging models.
-5. **Implement**, then **validate** — build the affected models one at a time
-   and run the audit query from the relevant procedure below.
+- **Which of the two comps paths does this touch?** Changing the sheet touches
+  both. Changing `rpt_tableau__state_assessments_dashboard_comps` touches only
+  Advanced Comps.
+- **Does it move a string the ten-column self-join keys on?** If so, rows
+  silently lose their Region partner and read `false`, not null.
+- **PII.** Student-level rows live in `rpt_tableau__state_assessments_dashboard`
+  and in the failure rows of `test_incorrect_student_number_pearson`, which
+  carry student names. Never paste them outbound.
+- Contract enforcement on both `rpt_` models and both staging models.
+
+Validate with the audit query from the relevant procedure below.
 
 ---
 
@@ -151,14 +142,13 @@ Almost always an unresolved `localstudentidentifier`.
    | `Student_Number`    | the correct network student_number |
 
    The sheet is named for Pearson but serves every NJ vendor. **Cambium
-   corrections go in this same tab** -- `stg_cambium__njgpa` aliases
-   `student_test_uuid` to `studenttestuuid` upstream, so the join reaches them
-   with no code change. One row per test, not per student: a student with four
-   bad test rows needs four rows here.
+   corrections go in this same tab** -- `int_pearson__all_assessments` aliases
+   Cambium's `student_test_uuid` to `studenttestuuid` before the join, so it
+   reaches them with no code change. One row per test, not per student: a
+   student with four bad test rows needs four rows here.
 
-5. **Re-check by reading the sheet external directly**, with a Python client on
-   ADC — the BigQuery MCP 403s on a Drive-backed external but ADC has Drive
-   scope, and this reads the sheet live with no build:
+5. **Re-check by reading the sheet external live** through ADC
+   (`.claude/context/bigquery.md`):
 
    ```python
    client.query('''
@@ -168,9 +158,7 @@ Almost always an unresolved `localstudentidentifier`.
    ```
 
    Confirm the row count rose by what you added, then re-run the detector once
-   the models rebuild. **Never judge the sheet's current contents from the prod
-   `stg_` table** — that is a table frozen at the last prod build, not a live
-   read, so it reports pre-edit values indefinitely.
+   the models rebuild. Not from the prod `stg_` table (see _Gotchas_).
 
 **Do not quote the student's name in a PR, issue, or Slack.** Quote the UUID.
 
@@ -431,13 +419,9 @@ Never set `remove_row = TRUE` on anything else.
 
 ### Step 6 — audit after the paste, before telling anyone it is done
 
-**Read the sheet external directly. Do not build anything.** The BigQuery MCP
-service account has no Drive scope and 403s on a sheet-backed external, but ADC
-does, so a Python client queries the live sheet — no dbt build, no
-`stage_external_sources`, and the answer reflects the paste seconds after it
-happens. A `--target staging` build is a shared write needing authorization, and
-the copy it makes is frozen at build time, so it cannot answer "did my paste
-land" anyway.
+**Read the sheet external live through ADC** (`.claude/context/bigquery.md`). Do
+not build anything: a `--target staging` build is a shared write needing
+authorization, and its copy is frozen at build time.
 
 ```python
 # uv run python <script.py>
@@ -667,10 +651,8 @@ After `current_academic_year` bumps in July:
 ## Gotchas
 
 - **Never judge the current contents of either Google Sheet from the prod `stg_`
-  table.** Both are frozen at the last prod build. Rebuild into dev.
-- **The BigQuery MCP cannot read either sheet's external table** — the service
-  account has no Drive scope and returns 403. Build the staging model first,
-  then query the materialized table.
+  table.** Both are frozen at the last prod build. Read the `src_` external live
+  instead (Step 6).
 - **The Tableau MCP cannot answer "what does the workbook do with this field".**
   It is read-only, returns no calculated-field text, and 500s on
   `get-datasource-metadata` for the embedded extracts this workbook uses. Use

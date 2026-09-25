@@ -85,7 +85,8 @@ skill.
   reconciliation cascade (cold start + ClusterIP churn) — factor into cost
   analysis.
 - **Run/step pods and code servers both run at priority 0.** Do not add a
-  `priorityClassName` to either. Run pods sat at 1000 (`dagster-run`) until
+  `priorityClassName` to either. A run pod that fits nowhere therefore waits for
+  NAP instead of preempting. Run pods sat at 1000 (`dagster-run`) until
   2026-09-08, when one preempted the kippcamden code server mid-upload and left
   the location in a terminal `ERROR` for four days (#5187). Only the agent
   carries a PriorityClass (`dagster-agent`, 1000), and it lives on amd64 nodes

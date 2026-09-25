@@ -6,6 +6,7 @@ exposures:
       name: Data Team
     depends_on:
       - ref("rpt_powerschool__autocomm_students")
+      - ref("rpt_powerschool__autocomm_students_iep")
       - ref("rpt_powerschool__autocomm_teachers")
     config:
       meta:

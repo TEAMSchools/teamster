@@ -8,11 +8,9 @@ paths:
 Loads on the first read under `.worktrees/`. For Bash-only worktree work
 (`git -C`, `uv run`), read this file yourself before starting.
 
-- Every git call is `git -C <worktree>`. Bare `git` from the main repo commits
-  to `main`.
-- Every file path is `/workspaces/teamster/.worktrees/<branch>/<path>`, never
-  `/workspaces/teamster/<path>`. Editing the main path dirties `main`, and the
-  worktree commit then reports "nothing to commit".
+- Missing `git -C` or the worktree path (root _Never_): bare `git` commits to
+  `main`, and editing the main path dirties `main` so the worktree commit
+  reports "nothing to commit".
 - dbt: `uv run dbt ... --project-dir <worktree>/src/dbt/<project>`. Do not use
   `uv --directory <worktree> run dbt`: it sets cwd to the worktree root, where
   `dbt_project.yml` does not exist.
@@ -35,10 +33,6 @@ Loads on the first read under `.worktrees/`. For Bash-only worktree work
   verify with `git -C <worktree> diff`. Without subagents, `Write` a Python
   script to `.claude/scratch/`, run it by absolute path from the main cwd,
   assert each anchor matches exactly once, and abort otherwise.
-- `git worktree add` with a relative path resolves against the shell cwd, which
-  drifts after a `cd`. Pass an absolute path
-  (`git worktree add /workspaces/teamster/.worktrees/<branch> <branch>`) or it
-  nests one worktree inside another.
 - A stacked `git worktree add -b <new> <abs-path> <parent>` sets the new
   branch's upstream to the parent, so a bare `git push` lands on someone else's
   branch. Run `git -C <worktree> branch --unset-upstream`, then
@@ -46,6 +40,7 @@ Loads on the first read under `.worktrees/`. For Bash-only worktree work
 - A Codespace restart can delete `.worktrees/` and desync refs. Invoke
   `resuming-a-branch`.
 - A fresh worktree has no `dbt_packages/`, so the first dbt command fails on
-  missing `dbt_utils`. Run
+  missing `dbt_utils` or with "N package(s) specified in packages.yml, but only
+  0 package(s) installed". Run
   `uv run dbt deps --project-dir <worktree>/src/dbt/<project>` before any
-  `dbt build`/`compile` there, in its own Bash call.
+  `dbt build`/`test`/`compile`/`clone` there, in its own Bash call.

@@ -15,11 +15,15 @@ with
             cw.date_count,
 
             if(
-                cw.week_start_monday between co.entrydate and co.exitdate, true, false
+                cw.week_start_monday between co.entrydate and co.last_enrolled_date,
+                true,
+                false
             ) as is_enrolled_week,
 
             if(
-                cw.week_end_sunday between co.entrydate and co.exitdate, true, false
+                cw.week_end_sunday between co.entrydate and co.last_enrolled_date,
+                true,
+                false
             ) as is_enrolled_week_end,
         from {{ ref("int_extracts__student_enrollments") }} as co
         inner join
@@ -32,6 +36,6 @@ with
         dbt_utils.deduplicate(
             relation="student_week",
             partition_by="_dbt_source_project, student_number, week_start_monday",
-            order_by="is_enrolled_week desc",
+            order_by="is_enrolled_week desc, entrydate desc",
         )
     }}

@@ -120,11 +120,8 @@ before drawing conclusions — partial data produces wrong findings.
 chasing user-code or PowerSchool/ADP/etc. theories for a step failure, fetch
 `get_run_logs(run_id, filter_types=["LogsCapturedEvent"])`. If no event exists
 for the failing step, the container never started — root cause is at the K8s
-layer (see Reclassify row above). Don't query `mcp__gke__query_logs` for
-`resource.type=k8s_container` on `dagster-step-*` pods: Dagster step container
-logs are filtered from GCP Logging at ingest (per main `CLAUDE.md`). The run-pod
-audit log + pod events for `dagster-step-<hash>-.*` are the only ground-truth
-signals at that layer.
+layer (see Reclassify row above). Step pod logs are not in `k8s_container` logs;
+see `.claude/context/dagster.md` for where they are.
 
 **Pod-event run attribution (`step_10_gke_events.podEvents`):** for any
 `dagster-run-*` Evicted/Preempted event, the collector parses the runId from the
@@ -331,5 +328,5 @@ Run all three before concluding — even if agent looks healthy now.
 
 ### Re-execution chains
 
-`get_run_group(run_id)` returns the full chain in one call. Don't traverse
-parentRunId/rootRunId via get_run/list_runs.
+Walk the chain from run tags as `.claude/context/dagster-plus.md` describes
+(`get_run` bullet, "the whole re-execution chain").

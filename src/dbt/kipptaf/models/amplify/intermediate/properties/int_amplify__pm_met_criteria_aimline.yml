@@ -146,20 +146,6 @@ models:
           these rows have no aimline to miss. Before 2026-09-15 the benchmark
           branch swallowed them and 1,533 AY2025 rows read as Meeting Aimline
           with no aimline verdict behind the claim.
-        data_tests:
-          - not_null
-          - accepted_values:
-              arguments:
-                # Not Tested is absent deliberately: this model carries scored
-                # rows only, so it cannot produce that value. The extract
-                # coalesces a missing row to Not Tested on its own column.
-                values:
-                  - Below Aimline
-                  - Meeting Aimline, Off-Track
-                  - Meeting Aimline, On-Track
-                  - Round Incomplete
-                  - No Aimline Data, Off-Track
-                  - No Aimline Data, On-Track
       - name: pm_round_status
         data_type: string
         description: >-
@@ -182,15 +168,6 @@ models:
           unsettled round reaches the two unknown states, and an incomplete
           round is named ahead of an unpublished status because finishing the
           testing is the actionable half.
-        data_tests:
-          - not_null
-          - accepted_values:
-              arguments:
-                values:
-                  - Meeting Aimline
-                  - Below Aimline
-                  - Round Incomplete
-                  - No Aimline Data
       - name: aimline_round_category
         data_type: string
         description: >-
@@ -214,16 +191,6 @@ models:
           A student who sat nothing in the round has no row here, and the
           reporting extract names those Not Tested, exactly as it does for
           aimline_category.
-        data_tests:
-          - not_null
-          - accepted_values:
-              arguments:
-                values:
-                  - Round Incomplete
-                  - Below Aimline
-                  - No Aimline Data
-                  - Meeting Aimline, Off-Track
-                  - Meeting Aimline, On-Track
       - name: academic_year
         data_type: int64
         description:

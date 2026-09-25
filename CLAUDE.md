@@ -54,14 +54,14 @@ specifics live there.
 - With an issue: `gh issue develop <number> --name <branch>` (add `--checkout`
   for a branch switch), then
   `git worktree add /workspaces/teamster/.worktrees/<branch> <branch>`. The path
-  must be absolute.
+  must be absolute; a relative one nests one worktree inside another.
 - Without an issue (user declined):
   `git worktree add -b <branch> <abs-path> origin/main` or
   `git checkout -b <branch>`. Name `origin/main`; local `main` is often behind.
 - Stacked branch: `gh issue develop <num> --name <branch> --base <parent>`, then
-  `git worktree add`. Base other than `main` skips `claude-review`; dbt Cloud CI
-  still runs (see `.github/CLAUDE.md`). Unset the upstream right after, per
-  `.claude/rules/worktrees.md`.
+  `git worktree add`. Base other than `main` skips both `claude-review` and dbt
+  Cloud CI; only Trunk runs (see `pr-ci-review`). Unset the upstream right
+  after, per `.claude/rules/worktrees.md`.
 - Linking an existing remote branch to an issue: `mcp__github__create_branch`
   and GraphQL `createLinkedBranch` both no-op. Deleting the remote branch is
   classifier-blocked even with consent. Create the branch under a NEW name and
@@ -83,7 +83,7 @@ specifics live there.
 - Stage with `git add -u`. Naming protected paths triggers the hook; `-A` stages
   unrelated files.
 - A model or column rename sweep includes `*.md`: `--include='*.{sql,yml,md}'`.
-  CLAUDE.md examples, specs, and doc cross-refs otherwise go stale.
+  CLAUDE.md examples and doc cross-refs otherwise go stale.
 
 ## Subagents
 
@@ -94,9 +94,8 @@ Decide these two things before every `Agent` call, including the first:
   parallel, or needs a fresh reviewer, even on the same tier. Otherwise do it
   inline: a small edit with the files already loaded is cheaper on the main
   model than a cold subagent on a cheaper one.
-- Which `model`. Pass the cheapest one you expect to finish on the first try.
-  Name it explicitly on every dispatch; pick the capable model for judgment
-  calls and reviews you will act on.
+- Which `model`. Pass the cheapest one you expect to finish on the first try;
+  pick the capable model for judgment calls and reviews you will act on.
 
 Model and effort rules, dispatch-prompt rules, and Workflow cleanup inject from
 `.claude/context/agent.md` on the first `Agent` or `Workflow` call. Do not
@@ -144,8 +143,6 @@ accept a subagent's self-report without the checks there.
   [tests/CLAUDE.md](tests/CLAUDE.md).
 - Arm the Monitor in the same turn you say you will watch something. An exited
   monitor and a waiting one are both silent.
-- Do not truncate or hand off work because the session feels long. The harness
-  compacts automatically.
 - The Claude CLI is not on `$PATH`. The user runs `claude` commands, including
   plugin and marketplace commands, in their terminal.
 

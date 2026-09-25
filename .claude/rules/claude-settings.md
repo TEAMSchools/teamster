@@ -21,24 +21,7 @@ script, or a `.claude/context/` file. Hook block list: `.claude/CLAUDE.md`.
   and invites copy errors) — with a file + line number link, ordered
   top-to-bottom, commentary separate from the edits
 - Those files must also be staged and committed manually
-- Other `.claude/` files (e.g. `CLAUDE.md` files) may be edited directly
-- When staging changes that include protected paths, use `git add -u` — naming
-  them explicitly in `git add <file>` triggers the hook and gets blocked
-- **Git commit messages**: Try `git commit -m` first. If the hook blocks the
-  message (false positive on keywords), fall back to writing the message with
-  the Write tool — whose `content` field is exempt from path/keyword scanning —
-  then `git commit -F <path>`. The Bash tool `description` field is also
-  scanned, so keep it generic (e.g. "Commit changes").
-
-  Write it to your SESSION scratchpad (absolute path in the system prompt), one
-  file per commit: `<scratchpad>/commit-msg-<slug>.txt`. No hook rule covers
-  that path, and it is isolated per session. Do NOT use a shared fixed path such
-  as `.claude/scratch/commit-msg.txt`: that directory is per-checkout, so two
-  sessions in one worktree race on the same file. The old remedy — `rm -f` the
-  stale file — deletes a concurrent session's pending message, and leaving it in
-  place is worse: Write fails ("File has not been read yet") while a batched
-  `git commit -F` still runs and consumes the other session's content, producing
-  a commit with someone else's message.
+- Commit message blocked by the hook: `.claude/CLAUDE.md` _Protected files_.
 
 ## permissions.deny vs hooks
 

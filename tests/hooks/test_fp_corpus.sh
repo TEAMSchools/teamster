@@ -93,4 +93,11 @@ check_output "1Password ref template in code" clean Read \
 check_output "1Password scheme named in prose" clean Read \
 	"fixtures (\`${scheme}\`, key headers, cloud tokens) get redacted"
 
+# Asana PAT rule (\b[12]/<digits>(/<digits>)?:<32 hex>): gid-bearing Asana
+# URLs, ratios, and hex digests after a colon are not PATs.
+check_output "Asana task URL with gids" clean mcp__asana__get_task \
+	"https://app.asana.com/0/1200000000000001/1200000000000002"
+check_output "ratio then a git sha" clean "merged 1/2 files; head at 0123456789abcdef0123456789abcdef01234567"
+check_output "md5 digest after a key" clean "md5:0123456789abcdef0123456789abcdef"
+
 print_summary "FP corpus"

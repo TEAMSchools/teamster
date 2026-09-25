@@ -1,74 +1,46 @@
 with
-    -- hardcoded sources so that we can access raw data
-    base_scores as (
-        select
-            * except (school_year, student_primary_id_studentnumber),
-
-            safe_cast(left(school_year, 4) as int64) as academic_year,
-
-            safe_cast(
-                student_primary_id_studentnumber as int
-            ) as student_primary_id_studentnumber,
-
-        from kippnewark_amplify.benchmark_student_summary
-        where state != 'FL'
-
-        union all
-
-        select
-            * except (school_year, student_primary_id_studentnumber),
-
-            safe_cast(left(school_year, 4) as int64) as academic_year,
-
-            safe_cast(
-                student_primary_id_studentnumber as int
-            ) as student_primary_id_studentnumber,
-
-        from kipppaterson_amplify.benchmark_student_summary
-    ),
-
     scores as (
         select
+            r.region,
+            r.schoolid,
+            r.school,
             r.assessment_edition,
-            r.student_primary_id_studentnumber,
             r.benchmark_period,
-            r.completion_status,
 
             r.composite_score,
             r.composite_level,
-            r.composite_national_norm_percentile,
+            r.composite_tested_out,
+            r.composite_discontinued,
 
             r.letter_names_lnf_score,
             r.letter_names_lnf_level,
-            r.letter_names_lnf_national_norm_percentile,
+            r.letter_names_lnf_tested_out,
+            r.letter_names_lnf_discontinued,
 
             r.phonemic_awareness_psf_score,
             r.phonemic_awareness_psf_level,
-            r.phonemic_awareness_psf_national_norm_percentile,
+            r.phonemic_awareness_psf_tested_out,
+            r.phonemic_awareness_psf_discontinued,
 
             r.decoding_nwf_wrc_score,
             r.decoding_nwf_wrc_level,
-            r.decoding_nwf_wrc_national_norm_percentile,
+            r.decoding_nwf_wrc_tested_out,
+            r.decoding_nwf_wrc_discontinued,
 
             r.reading_fluency_orf_score,
             r.reading_fluency_orf_level,
-            r.reading_fluency_orf_national_norm_percentile,
+            r.reading_fluency_orf_tested_out,
+            r.reading_fluency_orf_discontinued,
 
             r.basic_comprehension_maze_score,
             r.basic_comprehension_maze_level,
-            r.basic_comprehension_maze_national_norm_percentile,
-
-            x.location_abbreviation as school,
-            x.location_powerschool_school_id as schoolid,
+            r.basic_comprehension_maze_tested_out,
+            r.basic_comprehension_maze_discontinued,
 
             e.state_studentnumber,
 
-            initcap(
-                regexp_extract(x.location_dagster_code_location, r'kipp(\w+)')
-            ) as region,
-
             case
-                initcap(regexp_extract(x.location_dagster_code_location, r'kipp(\w+)'))
+                r.region
                 when 'Newark'
                 then '7325'
                 when 'Camden'
@@ -78,7 +50,7 @@ with
             end as district_code,
 
             case
-                initcap(regexp_extract(x.location_dagster_code_location, r'kipp(\w+)'))
+                r.region
                 when 'Newark'
                 then '965'
                 when 'Camden'
@@ -87,14 +59,11 @@ with
                 then '925'
             end as school_code,
 
-        from base_scores as r
-        inner join
-            {{ ref("int_people__location_crosswalk") }} as x
-            on r.school_name = x.location_name
+        from {{ ref("int_amplify__mclass__benchmark_student_summary") }} as r
         inner join
             {{ ref("int_extracts__student_enrollments") }} as e
             on r.academic_year = e.academic_year
-            and r.student_primary_id_studentnumber = e.student_number
+            and r.student_primary_id = e.student_number
             and e.rn_year = 1
         where
             r.state = 'NJ'
@@ -116,47 +85,57 @@ with
             assessment_edition,
 
             measure,
-            score,
             `level`,
-            percentile,
 
-            if(
-                percentile in ('Tested Out', 'Discontinued'), percentile, `level`
-            ) as level_mod,
+            cast(score as string) as score,
+
+            case
+                when tested_out
+                then 'Tested Out'
+                when discontinued
+                then 'Discontinued'
+                else `level`
+            end as level_mod,
 
         from
             -- trunk-ignore(sqlfluff/LT01)
             scores unpivot include nulls(
-                (`level`, score, percentile) for measure in (
+                (`level`, score, tested_out, discontinued) for measure in (
                     (
                         decoding_nwf_wrc_level,
                         decoding_nwf_wrc_score,
-                        decoding_nwf_wrc_national_norm_percentile
+                        decoding_nwf_wrc_tested_out,
+                        decoding_nwf_wrc_discontinued
                     ) as 'phonics_and_decoding',
                     (
                         letter_names_lnf_level,
                         letter_names_lnf_score,
-                        letter_names_lnf_national_norm_percentile
+                        letter_names_lnf_tested_out,
+                        letter_names_lnf_discontinued
                     ) as 'letter_naming',
                     (
                         phonemic_awareness_psf_level,
                         phonemic_awareness_psf_score,
-                        phonemic_awareness_psf_national_norm_percentile
+                        phonemic_awareness_psf_tested_out,
+                        phonemic_awareness_psf_discontinued
                     ) as 'phonemic_awareness',
                     (
                         basic_comprehension_maze_level,
                         basic_comprehension_maze_score,
-                        basic_comprehension_maze_national_norm_percentile
+                        basic_comprehension_maze_tested_out,
+                        basic_comprehension_maze_discontinued
                     ) as 'comprehension',
                     (
                         reading_fluency_orf_level,
                         reading_fluency_orf_score,
-                        reading_fluency_orf_national_norm_percentile
+                        reading_fluency_orf_tested_out,
+                        reading_fluency_orf_discontinued
                     ) as 'oral_reading_fluency',
                     (
                         composite_level,
                         composite_score,
-                        composite_national_norm_percentile
+                        composite_tested_out,
+                        composite_discontinued
                     ) as 'composite'
                 )
             )

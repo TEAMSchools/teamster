@@ -71,41 +71,40 @@ of them is a gap in the past and cannot be fixed by a re-pull. And
 `stg_pearson__njgpa` is **moot**: the Pearson form of that test is retired.
 
 [`src/dbt/cambium/CLAUDE.md`](https://github.com/TEAMSchools/teamster/blob/main/src/dbt/cambium/CLAUDE.md)
-describes NJSLA and NJSLA Science as Pearson-only, and that remains **correct**
-as a statement about the pipeline: the vendor has changed, but Cambium score
-files for those two assessments have not arrived yet, so nothing ingests them.
-Update it when the first files land, not before.
+covers the Cambium side. From Spring 2026, NJSLA, NJSLA Science and the Algebra
+I, Algebra II and Geometry end-of-course tests arrive from Cambium as well as
+NJGPA.
 
-The union happens at kipptaf `int_pearson__all_assessments`, over five
-relations:
+The union happens at kipptaf `int_pearson__all_assessments`:
 
 ```text
 kippnewark_pearson.int_pearson__all_assessments    ]
-kippcamden_pearson.int_pearson__all_assessments    ]  Pearson
+kippcamden_pearson.int_pearson__all_assessments    ]  Pearson, already aligned
 kipppaterson_pearson.int_pearson__all_assessments  ]
 
-kippnewark_cambium.stg_cambium__njgpa              ]  Cambium
-kippcamden_cambium.stg_cambium__njgpa              ]
+stg_cambium__njsla  (Newark, Camden, Paterson)     ]
+stg_cambium__eoc    (Newark, Camden)               ]  Cambium, mapped here
+stg_cambium__njgpa  (Newark, Camden)               ]
 ```
 
 **The model's name is a misnomer and a rename is pending.** It carries two
 vendors. Anything reading it should not assume Pearson.
 
 Cambium ships a completely different schema — snake_case headers against
-Pearson's camel case, with only 11 of 225 column names in common — so
-`stg_cambium__njgpa` in the cambium package does the vocabulary mapping into the
-Pearson-shaped columns before kipptaf ever sees it. The two vendors' aligned
-columns are computed in two different places and have to be kept in step by
-hand:
+Pearson's camel case, with only 11 of 225 column names in common. The cambium
+package staging models keep Cambium's names, and kipptaf
+`int_pearson__all_assessments` maps them into the Pearson-shaped columns. The
+two vendors' aligned columns are computed in two different places and have to be
+kept in step by hand:
 
 | Vendor  | Where the aligned columns are computed                    |
 | ------- | --------------------------------------------------------- |
 | Pearson | `int_pearson__all_assessments` in the **pearson** package |
-| Cambium | `stg_cambium__njgpa` in the **cambium** package           |
+| Cambium | `int_pearson__all_assessments` in **kipptaf**             |
 
-A cambium-package model cannot call into the pearson package, so the race, IEP
-and ML mappings are deliberately restated rather than shared. If you change one,
-change the other.
+A kipptaf model cannot call into the pearson package, so the race, IEP and ML
+mappings are deliberately restated rather than shared. If you change one, change
+the other.
 
 `assessment_version` is what tells the two apart downstream: `NJGPA` is the
 retired Pearson form, `NJGPA-A` the Cambium adaptive form. They use different
@@ -122,8 +121,9 @@ Production distribution:
 | NJGPA (Pearson)      |      3,081 |      1,049 |            — |
 | NJGPA-A (Cambium)    |        564 |        249 |            — |
 
-Paterson does not sit for NJGPA and has `stg_pearson__njgpa` disabled; it does
-not import the cambium package at all.
+Paterson does not sit for NJGPA and has `stg_pearson__njgpa` and
+`stg_cambium__njgpa` disabled. It has no end-of-course file yet, so
+`stg_cambium__eoc` is disabled too.
 
 Florida is a separate leg entirely — `int_fldoe__all_assessments`, unioned in at
 the reporting view rather than here.
@@ -157,8 +157,8 @@ coalesce(x.student_number, s.localstudentidentifier) as localstudentidentifier
 **The repair is applied after the union, so it already covers every vendor.**
 There is no Pearson-specific and Cambium-specific version of this: one sheet,
 one join, keyed on the test UUID. A Cambium correction goes in the same sheet as
-a Pearson one and works with no code change, because `stg_cambium__njgpa`
-already aliases `student_test_uuid` to `studenttestuuid` before the union.
+a Pearson one and works with no code change, because the Cambium mapping aliases
+`student_test_uuid` to `studenttestuuid` before the join.
 
 The sheet is named for Pearson only because Pearson was the sole vendor when it
 was built. Renaming it is deferred, not forgotten -- see _Deferred work_ below.

@@ -23,6 +23,7 @@ with
                     "discipline",
                     "englishlearnerel",
                     "firstname",
+                    "gradelevelwhenassessed",
                     "hispanicorlatinoethnicity",
                     "is_bl_fb",
                     "is_proficient",

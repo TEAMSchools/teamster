@@ -48,7 +48,22 @@ njsla = build_sftp_file_asset(
     partitions_def=partitions_def,
 )
 
+eoc = build_sftp_file_asset(
+    asset_key=[*key_prefix, "eoc"],
+    remote_dir_regex=rf"{remote_dir_regex_prefix}/eoc",
+    remote_file_regex=build_remote_file_regex(
+        partitions_def=partitions_def,
+        district_code=DISTRICT_CODE,
+        filename_suffix_regex=r"_SLA_EOC",
+    ),
+    # Cambium ships EOC with a byte-identical header to the NJSLA file.
+    avro_schema=NJSLA_SCHEMA,
+    ssh_resource_key=ssh_resource_key,
+    partitions_def=partitions_def,
+)
+
 assets = [
     njgpa,
     njsla,
+    eoc,
 ]

@@ -17,18 +17,18 @@ description:
   shared). **Pre-commit hook runs `fmt` only**; sqlfluff/yamllint and other
   check-only linters fire at `pre-push` and in CI. If a session reports "trunk
   clean" on a SQL/YAML change based on commit hooks alone, run
-  `.trunk/tools/trunk check --force <files>` to verify before claiming the
-  change is lint-clean. A clean pre-PUSH `trunk-check-pre-push` is not
-  sufficient either — it is git-diff-scoped (no `--force`) and can MISS a
-  sqlfluff violation (e.g. ST06) on already-committed lines that CI's full check
-  flags, so a push succeeds and CI still fails on lint; `trunk check --force`
-  the changed SQL before pushing. Run from inside the worktree —
-  `trunk check --force <abs-worktree-paths>` from the main repo silently returns
-  "no applicable linters". The `trunk` binary lives only in the main repo
-  (`.trunk/tools/` is gitignored, absent in worktrees) — invoke the absolute
-  path `/workspaces/teamster/.trunk/tools/trunk` with cwd set to the worktree;
-  relative paths run from the main repo check the main-repo copies, not your
-  worktree edits. A `--force` check over
+  `/workspaces/teamster/.trunk/tools/trunk check --force --no-fix <files> </dev/null`
+  to verify before claiming the change is lint-clean. A clean pre-PUSH
+  `trunk-check-pre-push` is not sufficient either — it is git-diff-scoped (no
+  `--force`) and can MISS a sqlfluff violation (e.g. ST06) on already-committed
+  lines that CI's full check flags, so a push succeeds and CI still fails on
+  lint; `trunk check --force` the changed SQL before pushing. Run from inside
+  the worktree — `trunk check --force <abs-worktree-paths>` from the main repo
+  silently returns "no applicable linters". The `trunk` binary lives only in the
+  main repo (`.trunk/tools/` is gitignored, absent in worktrees) — invoke the
+  absolute path `/workspaces/teamster/.trunk/tools/trunk` with cwd set to the
+  worktree; relative paths run from the main repo check the main-repo copies,
+  not your worktree edits. A `--force` check over
   `git diff --name-only origin/main...HEAD` hard-errors with
   `'<path>' does not exist` when the PR deletes files — filter to existing paths
   first.
@@ -60,8 +60,7 @@ description:
   before the flagged line — not linter-native disable syntax. Wrapping the
   reason onto extra comment lines silently breaks the suppression (trunk only
   honors the directive on the adjacent line), and CI also flags it with
-  `trunk/ignore-does-nothing`. Binary:
-  `/workspaces/teamster/.trunk/tools/trunk`.
+  `trunk/ignore-does-nothing`.
 
 - **Markdown**: Always specify a language on fenced code blocks (MD040). Use
   `text` only when no real language applies.
