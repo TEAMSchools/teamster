@@ -154,8 +154,9 @@ models:
       - name: q1_ae_status
         data_type: string
         description:
-          Fall eligibility status. Blank for a student with no previous-year GPA
-          or ADA.
+          Fall eligibility status. Blank for a student in grades 6 to 8 or 10 to
+          12 with no previous-year GPA or ADA; grade 5 and first-time 9th
+          graders are Eligible.
       - name: q2_ae_status
         data_type: string
         description: Winter eligibility status.

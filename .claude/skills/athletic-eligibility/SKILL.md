@@ -43,13 +43,13 @@ Read its "Steps" section (stop at "Outputs") before changing any rule.
 
 ## Why did this status come out this way
 
-| Status seen                                    | Most likely cause                                                          |
-| ---------------------------------------------- | -------------------------------------------------------------------------- |
-| Blank Q1                                       | No previous-year GPA or ADA: the student is new to the network             |
-| Blank Q2 to Q4 for a high schooler             | A missing high school input sent the row to rules that also found nothing  |
-| Ineligible - Age                               | 19th birthday before September 1 of the academic year                      |
-| Ineligible - Credits in Q3 or Q4               | A failing Y1 grade as of Q2, not the 30-credit count                       |
-| A middle school status the sheet can't explain | It reads the running ADA and current Y1 GPA, which the sheet does not show |
+| Status seen                                    | Most likely cause                                                                                          |
+| ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Blank Q1                                       | No previous-year GPA or ADA in grades 6 to 8 or 10 to 12 (grade 5 and first-time 9th graders are Eligible) |
+| Blank Q2 to Q4 for a high schooler             | A missing high school input sent the row to rules that also found nothing                                  |
+| Ineligible - Age                               | 19th birthday before September 1 of the academic year                                                      |
+| Ineligible - Credits in Q3 or Q4               | A failing Y1 grade as of Q2, not the 30-credit count                                                       |
+| A middle school status the sheet can't explain | It reads the running ADA and current Y1 GPA, which the sheet does not show                                 |
 
 To see which input decided one student's status, read their row (the result is
 PII: terminal only). Match the non-null inputs against the doc's "Steps" tables;

@@ -9,8 +9,9 @@ models:
       Q1 weighted ADA for high school, and the current Y1 GPA and running ADA
       for middle school. Q3 and Q4 use semester 1 GPA, semester 1 weighted ADA,
       and current-year credits for high school, and the same middle school
-      inputs as Q2. A student with no previous-year GPA or ADA, such as a
-      student new to the network, has no Q1 status.
+      inputs as Q2. A student in grades 6 to 8 or 10 to 12 with no previous-year
+      GPA or ADA, such as a student new to the network, has no Q1 status; grade
+      5 and first-time 9th graders are Eligible in Q1 regardless.
 
     columns:
       - name: student_number
