@@ -623,7 +623,8 @@ uniqueness test on (`student_number`, `expected_test_type`,
 `expected_score_type`, `expected_metric_name`) warns on those rows. A percentage
 the workbook computes over rows counts those students twice. The fix is to
 settle `strategy_case` to one value per student and score type before the group
-by.
+by, or to drop it from the grain if the workbook doesn't use it; the Over Time
+tab's visible filters don't include it. Tracked in #4871.
 
 ### `_de` duplicates some stored grades
 
@@ -638,12 +639,20 @@ wins for a stored grade.
 
 ### Duplicate kippadb test records
 
-Some official SAT sittings are entered twice in kippadb: two records with the
-same student, date, and score, most from one spring 2026 school-day load. The
-real fix is cleaning up the records. `_scores` deduplicates them and attempt
-counts use distinct dates, so neither is affected; other readers of the official
-model still see both copies. When hunting duplicates in kippadb, key on subject
-too, because students legitimately sit several AP exams in one day.
+Some scores are entered twice in kippadb, as two records with the same student,
+test, and date. Tracked in #4871.
+
+- **SAT:** resolved. The double-entered spring 2026 school-day load was cleaned
+  up in Salesforce. `_scores` still deduplicates, as a guard against a repeat,
+  and attempt counts use distinct dates either way.
+- **PSAT 2024:** double imports with identical scores remain in kippadb. They
+  don't reach CARAT, which takes PSAT from College Board files.
+- **AP:** duplicates remain, many with conflicting scores, awaiting a decision
+  on which record is right. Only those before academic year 2018 reach the AP
+  Overview tab; from 2018 the AP model reads College Board files instead.
+
+When hunting duplicates in kippadb, key on subject too, because students
+legitimately sit several AP exams in one day.
 
 ### `rn_highest = 1` hides some students' best scores
 

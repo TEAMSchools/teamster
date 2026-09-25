@@ -171,9 +171,12 @@ Fingerprint every non-identity column, not just the score fields, before calling
 a pair redundant — two records can share a score and differ on
 `administration_round` or `scoring_irregularity`.
 
-Verified real duplicates as of 2026-08: 87 ACT/SAT records (86 of them Camden
-class of 2027 on the April 2026 school-day SAT) and 478 PSAT records from 2024.
-One 2015 SAT pair has genuinely different scores and is not a duplicate.
+Re-measured 2026-09-25 on the unpivot, grouped on contact, score type and date:
+the April 2026 SAT double load (Camden class of 2027) is cleaned up; the only
+SAT groups left are 4 from 2015 with genuinely different scores, not duplicates.
+PSAT 2024 still holds 1,434 identical double imports, and AP 1,524 groups, 845
+of them with conflicting scores. Status and asks live in issue #4871; re-measure
+there before acting.
 
 ### Where the new goals tab belongs
 
