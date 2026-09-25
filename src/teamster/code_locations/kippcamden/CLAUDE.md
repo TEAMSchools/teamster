@@ -7,8 +7,6 @@ CODE_LOCATION = "kippcamden"
 LOCAL_TIMEZONE = ZoneInfo("America/New_York")
 ```
 
-GCS bucket: `teamster-kippcamden`
-
 ## Active Integrations
 
 | Module        | Type              | Trigger                                                               |
@@ -20,7 +18,7 @@ GCS bucket: `teamster-kippcamden`
 | `edplan`      | SFTP asset        | sensor (`build_edplan_sftp_sensor`)                                   |
 | `finalsite`   | API + SFTP assets | schedule (`contacts`, 4am) + sensor (`status_report`)                 |
 | `overgrad`    | API assets        | schedule                                                              |
-| `pearson`     | SFTP assets       | `AutomationConditionSensor`                                           |
+| `pearson`     | SFTP assets       | manual only (retired; Cambium replaced it)                            |
 | `titan`       | SFTP assets       | sensor (`build_titan_sftp_sensor`)                                    |
 | `extracts`    | BigQuery→SFTP     | schedule (nightly, 3am)                                               |
 | `couchdrop`   | sensor only       | sensor (Google Drive watcher)                                         |

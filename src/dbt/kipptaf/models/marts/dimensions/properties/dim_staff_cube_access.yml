@@ -1,32 +1,59 @@
 models:
   - name: dim_staff_cube_access
     description: >-
-      Cube access-control resolution, one row per active primary staff member
-      keyed on staff_key. Resolves each person's current role to the student
-      location scope, the staff sensitive-field remit (location + department),
-      and the per-field sensitive scopes, derived from the current primary work
-      assignment and the Google Sheets access crosswalks (department
-      special-access override taking precedence over the role mapping). Read by
-      cube.js's resolveAccess, matched on google_email, to build the
-      securityContext groups and location/department allow-lists that each
-      view's access_policy reads; not exposed as a Cube. The staff directory and
-      aggregate summary are open — these scopes only constrain sensitive fields.
-      Unresolved roles emit 'none' (deny), never NULL.
+      Cube access-control resolution, one row per viewer, keyed on staff_key.
+      Resolves each person's current role to the student location scope, the
+      staff sensitive-field remit (location + department), the per-field
+      sensitive scopes, and any individual-exception grants, derived from the
+      current primary work assignment and the Google Sheets access crosswalks
+      (individual exception, then department special-access override, then role
+      mapping, in that priority order for the five staff_*_scope remit columns).
+      Two kinds of viewer are unioned onto one grain: active primary staff, off
+      the work-assignment spine, and non-employee grantees such as contractors,
+      off the individual-exceptions sheet. The latter hold a KTAF Google login
+      but no ADP record, so nothing in the work-assignment tree emits them, and
+      their row carries NULL for every role and org attribute except entity,
+      leaving all five scopes at 'none' except what their own exception grants.
+      A non-employee row also requires a Google directory account that is
+      neither suspended nor archived. Read by cube.js's resolveAccess, matched
+      on google_email, to build the securityContext groups and the allow-lists
+      that each view's access_policy reads; not exposed as a Cube. The staff
+      directory is open to every employee — these scopes only constrain
+      sensitive fields — but a non-employee reaches it only through an
+      individual-exception grant that carries the staff axis, so a grant row
+      that widens nothing yields a viewer who is denied everything. Unresolved
+      roles emit 'none' (deny), never NULL.
     data_tests:
       # A remit-scoped PII scope (all_in_scope / teaching_staff) with a none
-      # location or department axis is a resolution bug: the remit resolves empty,
-      # and Cube (Tesseract) throws "Values required for filter" on the empty
-      # `equals []` row_level filter rather than returning zero rows (verified
-      # #4269). access.buildGroups now suppresses the group in that state so the
-      # viewer default-denies cleanly, but the state is still a misconfiguration —
-      # error (not warn) so it can't ship. reporting_chain scopes key on the
-      # staff_key chain, not this remit, so they are not covered here.
+      # location AND no additional-location grant, or a none department, is a
+      # resolution bug: the remit resolves empty, and Cube (Tesseract) throws
+      # "Values required for filter" on the empty `equals []` row_level filter
+      # rather than returning zero rows (verified #4269). access.buildGroups now
+      # suppresses the group in that state so the viewer default-denies
+      # cleanly, but the state is still a misconfiguration — error (not warn) so
+      # it can't ship. The location axis is satisfied by EITHER
+      # staff_location_scope (role/department-derived) OR an
+      # individual-exception grant that reaches the STAFF axis. Counting
+      # includes_staff_data rather than the array length is load-bearing: since
+      # the student/staff axis split, additional_location_grants also carries
+      # student-only grants, and a bare array_length would call the remit
+      # satisfied when every grant on it widens students alone. That is exactly
+      # the empty-remit state this test exists to catch, and a contractor
+      # reaches it easily -- the non-employee leg sets staff_location_scope to
+      # 'none' by construction. reporting_chain scopes key on the staff_key
+      # chain, not this remit, so they are not covered here.
       - dbt_utils.expression_is_true:
           arguments:
             expression: |
               staff_pii_scope not in ('all_in_scope', 'teaching_staff')
               or (
-                staff_location_scope != 'none'
+                (
+                  staff_location_scope != 'none'
+                  or (
+                      select countif(g.includes_staff_data)
+                      from unnest(additional_location_grants) as g
+                  ) > 0
+                )
                 and staff_department_scope != 'none'
               )
           config:
@@ -36,11 +63,12 @@ models:
       # 'unknown' matches only the entity-agnostic 'any' role rows, never the
       # KTAF/Region-specific grants. Asserts every staff member's employing
       # entity resolves. Zero rows today across 1,573 staff, so a hit means ADP
-      # added an org unit and dim_regions has not caught up.
+      # added an org unit and dim_regions has not caught up. Non-employee
+      # grantees carry 'unknown' by construction, so they are exempt.
       - dbt_utils.expression_is_true:
           arguments:
             expression: |
-              entity != 'unknown'
+              not is_employee or entity != 'unknown'
           config:
             severity: error
       # Guards the CASE in the `resolved` CTE against a future edit, NOT the
@@ -92,8 +120,14 @@ models:
       - name: staff_key
         data_type: string
         description: >-
-          Primary key — generate_surrogate_key([employee_number]), matching
-          dim_staff.
+          Primary key. For a staff viewer it is
+          generate_surrogate_key([employee_number]), matching dim_staff. For a
+          non-employee grantee there is no employee number, so it is
+          generate_surrogate_key(['non_employee', google_email]) — the literal
+          keeps the two keyspaces from colliding and marks the row's origin. A
+          non-employee key matches nothing in dim_staff_reporting_chain, so
+          reporting-chain scopes resolve empty for them, which is correct: they
+          manage no one.
         constraints:
           - type: primary_key
             warn_unsupported: false
@@ -105,6 +139,12 @@ models:
         description: >-
           Resolve-only lookup for the Cube JWT boundary; the active+primary
           Google email so a recycled address cannot resolve to a stale identity.
+          Also the key the individual-exceptions sheet is written against, and
+          the only identifier a non-employee grantee has. Cube matches it
+          case-sensitively, so the sheet side is lower-cased upstream.
+        config:
+          meta:
+            contains_pii: true
         data_tests:
           - not_null:
               config:
@@ -124,7 +164,8 @@ models:
           dim_locations.region_key. It also bounds the staff-PII remit when
           staff_location_scope is region or school, which FERPA does not argue
           for; a model-level warn test flags any viewer who reaches that state.
-          NULL when the employing business unit does not resolve, which denies.
+          NULL when the employing business unit does not resolve, and for every
+          non-employee grantee, which has no employer; either way it denies.
         config:
           meta:
             foreign_key:
@@ -139,14 +180,17 @@ models:
       - name: location_abbreviation
         data_type: string
         description: >-
-          Viewer's school abbreviation (from dim_locations). cube.js filters on
-          this for a school location scope. NULL when location does not resolve.
+          Viewer's school abbreviation (from dim_locations). resolveAccess
+          expands it into allowed_abbreviations and
+          allowed_student_abbreviations for a school location scope; no
+          access_policy reads it directly. NULL when location does not resolve.
 
       - name: department_group
         data_type: string
         description: >-
-          Viewer's functional department grouping from the rollup crosswalk;
-          cube.js filters on this for an own_group department scope.
+          Viewer's functional department grouping from the rollup crosswalk.
+          resolveAccess expands it into allowed_department_groups for an
+          own_group department scope, which the staff_pii policies filter on.
 
       - name: entity
         data_type: string
@@ -156,7 +200,8 @@ models:
           business_unit_code is KIPP_TAF, Region for every other matched
           business unit. A business unit dim_regions does not know resolves to
           unknown — a deny sentinel that matches only entity-agnostic 'any' role
-          rows, never the KTAF/Region-specific grants.
+          rows, never the KTAF/Region-specific grants. Non-employee grantees
+          have no business unit and carry unknown for the same reason.
         data_tests:
           - not_null
           - accepted_values:
@@ -173,6 +218,18 @@ models:
           Org rank from the role crosswalk (1 = Chief, 6 = Teacher); drives the
           below-rank branch of reporting_chain_or_below_rank. NULL when the role
           does not resolve.
+
+      - name: is_employee
+        data_type: boolean
+        description: >-
+          True for a viewer off the work-assignment spine, false for a
+          non-employee grantee off the individual-exceptions sheet. Gates the
+          open staff directory in access.buildGroups — an employee holds it
+          unconditionally, matching the network's own directory norm, while a
+          non-employee holds it only when a grant reaches the staff axis. No
+          other column distinguishes the two legs: entity is 'unknown' and
+          job_function_code is NULL for unresolved employees as well, so neither
+          can carry this decision.
 
       - name: student_location_scope
         data_type: string
@@ -271,3 +328,18 @@ models:
                   - reporting_chain_or_below_rank
                   - reporting_chain
                   - teaching_staff
+
+      - name: additional_location_grants
+        data_type: |
+          ARRAY<STRUCT<location_scope STRING, region_key STRING, location_abbreviation STRING, includes_student_data BOOL, includes_staff_data BOOL>>
+        description: >-
+          Individual-exception location grants for this person, one struct per
+          live grant row (empty array when they have none) -- location_scope is
+          network/region/school; region_key is populated only when
+          location_scope = region; location_abbreviation only when
+          location_scope = school. includes_student_data and includes_staff_data
+          are per-grant and independent, mirroring the sheet's two axis columns,
+          so one grant can widen students without staff or the reverse. Unioned
+          into the person's normal location remit by cube.js/access.js
+          (unionAdditionalGrants, once per axis), never replacing
+          student_location_scope/staff_location_scope.

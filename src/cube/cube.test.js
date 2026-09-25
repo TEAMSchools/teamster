@@ -1013,7 +1013,7 @@ test("contextToGroups: no security context at all is default-deny", async () => 
 
 // --- Structural invariant: every securityContext.<field> a policy
 // interpolates must be a key access.buildSecurityContext returns -----------
-// src/cube/CLAUDE.md states this in prose: it is what makes the Object.assign
+// .claude/rules/cube-authoring.md states this in prose: it is what makes the Object.assign
 // overwrite in contextToGroups a COMPLETE one. A new `row_level` filter that
 // interpolates a securityContext field buildSecurityContext doesn't return
 // would silently reopen the Cube Cloud paste vector for that field alone —
@@ -1107,10 +1107,12 @@ test("structural invariant: every securityContext.<field> interpolated in model/
 
   // A regex that silently matched nothing would make every assertion below
   // vacuously pass. Guard against that explicitly with a floor plausible for
-  // the current model, rather than trusting an empty derived set.
+  // the current model, rather than trusting an empty derived set. (Was 6
+  // before the flat `student` group replaced tiered student-region/-school/
+  // -network groups and dropped `region_key` from view YAML.)
   assert.ok(
-    found.size >= 6,
-    `expected at least 6 distinct securityContext.<field> tokens under ${modelDir}, ` +
+    found.size >= 5,
+    `expected at least 5 distinct securityContext.<field> tokens under ${modelDir}, ` +
       `found ${found.size}: ${[...found].sort().join(", ")}. Either the model ` +
       "lost its row_level filters, or the extraction regex broke.",
   );
@@ -1132,21 +1134,23 @@ test("structural invariant: every securityContext.<field> interpolated in model/
       : undefined,
   );
 
-  // Sanity check against the six fields known today (#4526 / Task 5b). This is
-  // in addition to, not instead of, the derived assertion above — it exists
-  // so a reader can see at a glance what the model currently interpolates.
+  // Sanity check against the five fields known today (#4526 / Task 5b; was
+  // six with `location_abbreviation` / `region_key` before the flat
+  // `student` group replaced tiered student-region/-school/-network groups
+  // with `allowed_student_abbreviations`). This is in addition to, not
+  // instead of, the derived assertion above — it exists so a reader can see
+  // at a glance what the model currently interpolates.
   const expected = [
     "allowed_abbreviations",
     "allowed_department_groups",
+    "allowed_student_abbreviations",
     "job_function_level",
-    "legal_entity_region_key",
-    "location_abbreviation",
     "reportee_staff_keys",
   ];
   assert.deepEqual(
     [...found].sort(),
     expected,
-    `model/ now interpolates a different securityContext field set than the six documented ` +
+    `model/ now interpolates a different securityContext field set than the five documented ` +
       `here: found ${[...found].sort().join(", ")}, expected ${expected.join(", ")}. If the ` +
       "'missing' assertion above passed, the new/removed field IS already covered by " +
       "buildSecurityContext - this list is a deliberate, human-reviewed sanity check, not a " +

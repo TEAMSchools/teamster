@@ -8,21 +8,9 @@ with
             week_start_monday,
             week_end_sunday,
             discipline,
-            entrydate,
-            is_enrolled_week,
         from {{ ref("int_extracts__student_enrollments_subjects_weeks") }}
         where
             region = 'Miami' and academic_year >= {{ var("current_academic_year") - 1 }}
-    ),
-
-    subject_weeks_deduplicate as (
-        {{
-            dbt_utils.deduplicate(
-                relation="subject_weeks",
-                partition_by="student_number, academic_year, week_start_monday, discipline",
-                order_by="is_enrolled_week desc, entrydate desc",
-            )
-        }}
     ),
 
     star_results as (
@@ -58,7 +46,7 @@ select
     cw.discipline,
 
     s.is_state_benchmark_proficient_int,
-from subject_weeks_deduplicate as cw
+from subject_weeks as cw
 inner join
     {{ ref("stg_google_sheets__reporting__terms") }} as rt
     on cw.academic_year = rt.academic_year

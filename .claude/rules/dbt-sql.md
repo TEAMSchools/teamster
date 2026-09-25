@@ -63,9 +63,10 @@ validation/profiling goes through BigQuery MCP, not `dbt show`.
   even mid-edit on a `.sql` file where the note feels like natural momentum. The
   file being open is not evidence it's the right place. Keep inline SQL comments
   to what a reader of that exact line cannot see — a non-obvious fallback, why a
-  filter exists. Carve-out: TODOs, tracking-issue refs, and migration plumbing
-  stay inline at the derivation site — a defect belongs in the code, not the
-  metadata.
+  filter exists. The repo's existing multi-paragraph SQL comments are not a
+  precedent to extend. Carve-out: TODOs, tracking-issue refs, and migration
+  plumbing stay inline at the derivation site — a defect belongs in the code,
+  not the metadata.
 - **Max 1 level of function nesting.** `if(coalesce(x, y) > 0, 'a', 'b')` is at
   the limit; anything deeper gets split into a CTE. Aggregates as direct
   function arguments don't count toward depth —
@@ -413,7 +414,8 @@ the same partition.
 - **BigQuery-reserved CTE names**: `groups` is reserved (window-frame syntax
   `OVER (... GROUPS BETWEEN ...)`). A CTE named `groups` fails parsing with
   "Expected keyword SELECT but got keyword GROUPS". Use `reporting_groups` or
-  similar.
+  similar. `grouping` is reserved too (`GROUPING SETS`): an alias named
+  `grouping` needs backticks.
 - **BigQuery `PIVOT` operator**: pivots ONE value column per aggregate. For a
   mixed-type key-value array, use a multi-aggregate pivot —
   `pivot(max(v_str) as s, max(v_bool) as b, any_value(v_arr) as a for field_name in ('x', ...))`

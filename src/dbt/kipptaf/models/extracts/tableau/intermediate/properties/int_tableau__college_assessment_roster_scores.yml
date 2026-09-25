@@ -1,23 +1,25 @@
 models:
   - name: int_tableau__college_assessment_roster_scores
     description: >-
-      One row per administration the Expected Assessments tab expects of a
-      student, for every current student graduating this year or later, carrying
-      the score they earned in it. Covers a student's whole high school history
-      rather than the current year, so the reporting view can show progress
-      across administrations.
+      One row per score category for each administration the Expected
+      Assessments tab expects of a student that the student has a score for, for
+      students graduating this school year or later. Administrations without a
+      score do not appear here; the reporting view left joins the tab to supply
+      them. Covers a student's whole high school history rather than the current
+      year, so the reporting view can show progress across administrations.
 
 
-      The tab is the driver — a score sat in a month the tab does not list has
-      nowhere to land and does not appear. Widening coverage is an edit to the
-      tab, not to this model. See the carat-dashboard skill for regenerating it.
+      The tab defines the administrations — a score sat in a month (or, for
+      practice, a scope_round) the tab does not list has nowhere to land and
+      does not appear. Widening coverage is an edit to the tab, not to this
+      model. See the carat-dashboard skill for regenerating it.
 
 
       Scores come from int_assessments__all_college_assessments, so official and
       practice arrive already reconciled to one vocabulary and join on the same
-      key. Practice administrations are ordinary rows here: they occupy their
-      own season, and the grade 11 practice SAT is the first link in the SAT
-      growth chain.
+      key. The join binds academic year for SAT only. Practice administrations
+      are ordinary rows here: they occupy their own season and are links in the
+      SAT growth chain.
 
 
       See docs/models/carat-dashboard-data-model.md.
@@ -41,7 +43,7 @@ models:
         data_type: int64
         description: >-
           Grade the student was in for this administration, from the enrollment
-          row the scaffold row was matched against — not their current grade.
+          row the tab row was matched against — not their current grade.
       - name: expected_test_type
         data_type: string
         description: >-
@@ -51,10 +53,12 @@ models:
       - name: expected_grouping
         data_type: string
         description: >-
-          Total, EBRW, Math, or Growth — which shape of score the row reports.
+          Total, EBRW, or Math — which shape of score the row reports. The tab's
+          Growth rows never appear, because their score type exists only on the
+          tab and matches no score.
       - name: expected_scope
         data_type: string
-        description: The test itself — SAT, PSAT 8/9, PSAT10, PSAT NMSQT.
+        description: The test itself, such as SAT, PSAT 8/9, PSAT10, PSAT NMSQT.
       - name: expected_score_type
         data_type: string
         description: Score identifier, unique per test and section.
@@ -62,7 +66,8 @@ models:
         data_type: string
         description: >-
           Fall, Winter, or Spring — the administration window this score belongs
-          to, resolved from the month it was sat in.
+          to, resolved from the month it was sat in (official) or its
+          scope_round (practice).
       - name: expected_admin_season_order
         data_type: int64
         description: >-
@@ -101,12 +106,15 @@ models:
           measures the seasons this report displays rather than every sitting
           the student had. Practice administrations are links in that chain — a
           grade 11 Winter SAT score is measured against the grade 11 practice
-          SAT that precedes it. SAT totals only, because those are the only
-          administrations the tab carries a Growth row for.
+          SAT that precedes it when the student sat it. Computed from SAT Total
+          rows only, and attached to every row of that SAT administration
+          (student, grade, test type, season), whatever its grouping; the
+          reporting view reads it through the tab's Growth row.
       - name: unique_test_admin_id
         data_type: string
         description: >-
           Hash of test type, score type, grade level, and season, matching the
           tab's own expected_unique_test_admin_id so the reporting view can join
-          the two. A Growth row hashes to the same value as its Total row by
-          design; score category separates them.
+          the two. The tab hashes its Growth rows with the total score type, so
+          a tab Growth row matches this model's Total row; score category
+          separates Scale Score from Score Change.

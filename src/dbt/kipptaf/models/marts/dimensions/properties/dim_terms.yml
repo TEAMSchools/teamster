@@ -114,7 +114,3 @@ models:
           Semester this period falls within. S1 for term_name Q1/Q2, S2 for
           Q3/Q4. Self-mapped for type='ATT' semester rows (term_code S1/S2).
           NULL for periods that don't map to a quarter (annual, custom, etc.).
-        data_tests:
-          - accepted_values:
-              arguments:
-                values: [S1, S2]

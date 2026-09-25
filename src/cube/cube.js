@@ -7,6 +7,41 @@ const { CubejsHandlerError } = require("@cubejs-backend/api-gateway");
 
 const groupCache = new Map(); // email → { ctx, expiresAt }
 
+// Which dataset the IDENTITY reads come from — the two dim_staff_cube_access
+// queries only. dim_locations and dim_staff_reporting_chain stay on prod: a dev
+// copy of the location universe would change every viewer's resolved
+// abbreviations and make a passing run untrustworthy for the opposite reason.
+// The gating rules live in access.resolveAccessDataset, which is unit-tested.
+const requestedAccessDataset = process.env.CUBE_ACCESS_DATASET;
+const hasDeploymentCredentials = Boolean(process.env.CUBEJS_DB_BQ_CREDENTIALS);
+const ACCESS_DATASET = access.resolveAccessDataset(
+  requestedAccessDataset,
+  hasDeploymentCredentials,
+);
+
+// Log both outcomes of a set override. An honored one redirects identity
+// resolution, which must be visible. An ignored one is safe, but silent it lets
+// a local run read prod while looking like it tested the dev copy.
+if (ACCESS_DATASET !== "kipptaf_marts") {
+  console.warn(
+    JSON.stringify({
+      event: "cube_access_dataset_override",
+      dataset: ACCESS_DATASET,
+      message:
+        "Identity reads are resolving against a dev copy of dim_staff_cube_access, not kipptaf_marts. Expected only on a local run.",
+    }),
+  );
+} else if (requestedAccessDataset) {
+  console.warn(
+    JSON.stringify({
+      event: "cube_access_dataset_ignored",
+      message: hasDeploymentCredentials
+        ? "CUBE_ACCESS_DATASET is set but CUBEJS_DB_BQ_CREDENTIALS is too, so identity reads stay on kipptaf_marts. Unset the credentials to use a dev copy locally."
+        : "CUBE_ACCESS_DATASET must match ^zz_[a-z0-9_]+$, so identity reads stay on kipptaf_marts.",
+    }),
+  );
+}
+
 // Global (not per-email) cache of the "universes" computeAllowedAbbreviations
 // / computeAllowedDepartmentGroups need: every location abbreviation+region
 // and every distinct department_group. Same midnight-ET expiry as
@@ -55,8 +90,7 @@ async function loadUniverses(bq) {
   // is invisible to every remit-scoped PII policy (fail-closed). Zero such rows
   // today; if that changes, backfill a sentinel group upstream.
   const [deps] = await bq.query({
-    query:
-      "SELECT DISTINCT department_group FROM `kipptaf_marts.dim_staff_cube_access` WHERE department_group IS NOT NULL",
+    query: `SELECT DISTINCT department_group FROM \`${ACCESS_DATASET}.dim_staff_cube_access\` WHERE department_group IS NOT NULL`,
   });
   const data = {
     locations: locs.map((r) => ({
@@ -133,8 +167,7 @@ async function resolveAccess(email) {
     }
     const bq = new BigQuery(bqOptions);
     const [rows] = await bq.query({
-      query:
-        "SELECT * FROM `kipptaf_marts.dim_staff_cube_access` WHERE google_email = @email ORDER BY staff_key LIMIT 1",
+      query: `SELECT * FROM \`${ACCESS_DATASET}.dim_staff_cube_access\` WHERE google_email = @email ORDER BY staff_key LIMIT 1`,
       params: { email },
     });
     const row = rows[0] ?? null;
@@ -148,11 +181,34 @@ async function resolveAccess(email) {
       reporteeStaffKeys = rc.map((r) => r.reportee_staff_key);
     }
     const universes = await loadUniverses(bq);
-    const allowedAbbreviations = access.computeAllowedAbbreviations(
+    const baseStaffAbbreviations = access.computeAllowedAbbreviations(
       row?.staff_location_scope,
       row?.legal_entity_region_key,
       row?.location_abbreviation,
       universes.locations,
+    );
+    const baseStudentAbbreviations = access.computeAllowedAbbreviations(
+      row?.student_location_scope,
+      row?.legal_entity_region_key,
+      row?.location_abbreviation,
+      universes.locations,
+    );
+    // additional_location_grants (dim_staff_cube_access) is one struct per
+    // live individual-exception location grant, unioned in on top of the base
+    // scope once per axis — each grant carries its own includes_staff_data /
+    // includes_student_data, so the two axes widen independently. See
+    // access.js's unionAdditionalGrants / buildGroups docs.
+    const allowedAbbreviations = access.unionAdditionalGrants(
+      baseStaffAbbreviations,
+      row?.additional_location_grants,
+      universes.locations,
+      { axis: "staff" },
+    );
+    const allowedStudentAbbreviations = access.unionAdditionalGrants(
+      baseStudentAbbreviations,
+      row?.additional_location_grants,
+      universes.locations,
+      { axis: "student" },
     );
     const allowedDepartmentGroups = access.computeAllowedDepartmentGroups(
       row?.staff_department_scope,
@@ -164,6 +220,7 @@ async function resolveAccess(email) {
       reporteeStaffKeys,
       allowedAbbreviations,
       allowedDepartmentGroups,
+      allowedStudentAbbreviations,
     );
     groupCache.set(email, { ctx, expiresAt: nextMidnightEastern() });
     return ctx;
