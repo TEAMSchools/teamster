@@ -50,9 +50,17 @@ def resolve_local_filepath(asset_key_string: str, remote_filepath: str) -> str:
 
     The remote directory structure is kept intact — two files sharing a basename
     in different remote folders must not collide — and the resolved path is
-    asserted to stay inside the asset's own transient directory, so a remote
+    checked to stay inside the asset's own transient directory, so a remote
     path that traverses upward can never redirect the download elsewhere on
     disk.
+
+    Args:
+        asset_key_string: The asset key in slash form
+            (``AssetKey.to_user_string()``), used as the per-asset directory.
+        remote_filepath: The remote path as matched on the SFTP server.
+
+    Returns:
+        The normalized local path under ``/tmp/dagster/{asset_key_string}/``.
 
     Raises:
         ValueError: if the remote path resolves outside the asset's directory.
