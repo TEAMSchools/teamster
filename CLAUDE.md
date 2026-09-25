@@ -198,18 +198,23 @@ cells are not.
   including inside `superpowers:brainstorming` ("Write design doc"),
   `superpowers:writing-plans` ("Save plans to:"), and
   `superpowers:using-git-worktrees`. Pause the skill, run the flow, then write
-  specs to `docs/superpowers/specs/...` or plans to `docs/superpowers/plans/...`
-  on the new branch. After committing a spec, push it and comment its branch URL
-  (`.../blob/<branch>/docs/superpowers/specs/...`, never a commit SHA) on the
-  issue — `superpowers:brainstorming` stops at commit, and Phase 2 step 5 of
+  the spec or plan on the new branch. `using-git-worktrees` prefers a native
+  tool such as `EnterWorktree`; do not use it, since it places the worktree
+  outside `.worktrees/`. After committing a spec, push it and comment its branch
+  URL (`.../blob/<branch>/docs/superpowers/specs/...`, never a commit SHA) on
+  the issue — `superpowers:brainstorming` stops at commit, and Phase 2 step 5 of
   `docs/guides/superpowers.md` never loads into context.
-- `finishing-a-development-branch` / `using-git-worktrees`: this repo uses `uv`,
-  not `poetry`/`pip`. Run `uv run dbt build --select <model>+` alongside the
-  skills' other tests.
-- `subagent-driven-development`: a plan step of roughly 10 lines or fewer whose
-  files are already in context is done inline, not dispatched. The skill assumes
-  every task is dispatched; the repo's dispatch-or-inline test in _Subagents_
-  governs.
+- "The project's suite" (TDD, `finishing-a-development-branch`,
+  `using-git-worktrees` baseline) means `uv run pytest <touched tests>` plus
+  `uv run dbt build --select <model>+` for modified models. Never bare
+  `uv run pytest`: `tests/` holds live integration tests against real source
+  systems. Setup is `uv sync`, never the skills' `poetry install` /
+  `pip install`.
+- At the `writing-plans` execution handoff, recommend Native (`executing-plans`)
+  when most tasks are small edits to files already in context; the repo's
+  dispatch-or-inline test in _Subagents_ governs that call. Once
+  `subagent-driven-development` is chosen, do not implement tasks inline inside
+  it: those tasks skip per-task review.
 - Ponytail yields to superpowers process skills. It governs the size of what
   gets built inside them, not whether they run.
 
