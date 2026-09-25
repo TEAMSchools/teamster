@@ -439,6 +439,20 @@ data_tests:
           ref:
             name: int_extracts__course_enrollments_by_term
 
+  - name: int_students__course_enrollments__core_sections_cover_k8
+    description: >-
+      Warns when fewer than 95% of a region's K-8 students this academic year
+      hold a primary ELA or math section (`rn_core_subject_year = 1`). The
+      likeliest cause is a course missing from the course-subject crosswalk
+      sheet -- a new Florida code or a renumbered PowerSchool course -- which
+      otherwise leaves students unscheduled with no error. Measured 2026-09-25
+      before this test existed: 97.4% NJ and 98.6% Miami for math.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: int_students__course_enrollments
+
   - name: test_focus_course_sections_teacher_resolves
     description: >-
       Warns on Focus course periods whose lead teacher does not resolve through

@@ -8,9 +8,11 @@ models:
       PowerSchool branch is scoped to years before Focus coverage begins, so the
       frozen archive keeps serving Miami AY2020 through AY2025. The boundary is
       derived from the Focus schedule rather than hardcoded, so a Focus backfill
-      of an earlier year moves it instead of double-counting that year. Replaces
-      `base_powerschool__course_enrollments` as the canonical
-      course-enrollment-grain source.
+      of an earlier year moves it instead of double-counting that year. The
+      Focus branch now also carries course name, section, teacher and course row
+      number, conformed to the same columns the PowerSchool branch has always
+      populated. Replaces `base_powerschool__course_enrollments` as the
+      canonical course-enrollment-grain source.
     config:
       materialized: table
       meta:
@@ -203,4 +205,65 @@ models:
           `cc_studyear`, `illuminate_subject_area` ordered by `cc_termid`,
           `cc_dateenrolled`, `cc_dateleft`, all descending. Null for Miami's
           Focus branch, which does not compute this window.
+        data_type: int64
+      - name: standard_course_name
+        description: >-
+          SIS-independent course label from the course-subject crosswalk sheet,
+          matched on SIS and course number.
+        data_type: string
+      - name: core_subject
+        description: >-
+          ELA or Math when the course is the student's main class in that
+          subject, from the course-subject crosswalk sheet. Null for every other
+          course, including intervention and second courses in the same subject.
+        data_type: string
+      - name: rn_core_subject_year
+        description: >-
+          1 marks the student's primary section in `core_subject` at that school
+          that year. Ranks only rows with a `core_subject` that are not
+          `is_dropped_section`, and is null on every other row. Order: term
+          already started first (Focus dates a section to its marking period, so
+          a future-term row carries a future date), then latest
+          `cc_dateenrolled`, then the larger roster of non-dropped students (a
+          same-teacher small-group section loses to the full class), then
+          `cc_section_number`, then `cc_dcid`. School is in the partition so a
+          mid-year transfer keeps a section per school. No course grade is used:
+          no SIS course grade is populated reliably.
+        data_type: int64
+      - name: courses_course_name
+        description: >-
+          The course's display name. For PowerSchool, the course catalog's
+          `courses_course_name`. For Miami's Focus branch, the trimmed Focus
+          schedule `course_title`.
+        data_type: string
+      - name: cc_section_number
+        description: >-
+          The section's display number. For PowerSchool, `stg_powerschool__cc`
+          `section_number`. For Miami's Focus branch, the Focus schedule's
+          `course_period_short_name`.
+        data_type: string
+      - name: cc_teacherid
+        description: >-
+          Lead teacher identifier in the SIS's own id space -- not comparable
+          across regions. For PowerSchool, the PowerSchool teacher id. For
+          Miami's Focus branch, the Focus `teacher_id`, a different id space
+          from PowerSchool's; resolved separately to the network staff roster
+          via `teachernumber`.
+        data_type: int64
+      - name: teacher_lastfirst
+        description: >-
+          Lead teacher's name, `Last, First`. For PowerSchool, from
+          `int_powerschool__teachers.lastfirst` (`stg_powerschool__users`). For
+          Miami's Focus branch, built from `int_focus__users` last and first
+          name.
+        data_type: string
+      - name: rn_course_number_year
+        description: >-
+          Row number of the enrollment within the same student, year, and course
+          number, most recent first. For PowerSchool,
+          `base_powerschool__course_enrollments`'s definition: partitioned by
+          `cc_studyear`, `cc_course_number`, ordered by `cc_termid`,
+          `cc_dateenrolled`, `cc_dateleft`, all descending. For Miami's Focus
+          branch, the same definition without `cc_termid` (Focus has no term
+          id), ordered by `cc_dateenrolled` then `exit_date`, both descending.
         data_type: int64

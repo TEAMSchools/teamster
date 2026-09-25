@@ -36,6 +36,8 @@ with
             csc.is_foundations,
             csc.is_advanced_math,
             csc.discipline,
+            csc.standard_course_name,
+            csc.core_subject,
 
             -- PowerSchool has no separate departure date: cc_dateleft is the
             -- actual leave date when the student left and the term end plus a
@@ -80,6 +82,7 @@ with
         left join
             {{ ref("stg_google_sheets__assessments__course_subject_crosswalk") }} as csc
             on a.cc_course_number = csc.powerschool_course_number
+            and csc.sis = 'PowerSchool'
         where
             not (
                 a._dbt_source_project = 'kippmiami'
@@ -98,6 +101,8 @@ with
             -- future-term row therefore carries a future date. #5002
             s.start_date as cc_dateenrolled,
             s.end_date as cc_dateleft,
+            s.course_period_short_name as cc_section_number,
+            s.teacher_id as cc_teacherid,
 
             -- Focus records the departure and the scheduled term end as two
             -- facts; PowerSchool conflates them into cc_dateleft. Resolve the
@@ -110,7 +115,12 @@ with
             c.short_name as cc_course_number,
             s._dbt_source_project,
 
+            csc.standard_course_name,
+            csc.core_subject,
+
             {{ extract_region("s") }} as region,
+            trim(s.course_title) as courses_course_name,
+            concat(usr.last_name, ', ', usr.first_name) as teacher_lastfirst,
 
             coalesce(
                 sr_ein.powerschool_teacher_number, sr_email.powerschool_teacher_number
@@ -157,6 +167,10 @@ with
         left join
             {{ ref("int_people__staff_roster") }} as sr_email
             on lower(usr.e_mail_address) = lower(sr_email.google_email)
+        left join
+            {{ ref("stg_google_sheets__assessments__course_subject_crosswalk") }} as csc
+            on c.short_name = csc.powerschool_course_number
+            and csc.sis = 'Focus'
     ),
 
     -- is_dropped_course mirrors PowerSchool's derivation in
@@ -176,13 +190,64 @@ with
                     cc_course_number
             )
             = 1.0 as is_dropped_course,
+
+            row_number() over (
+                partition by
+                    _dbt_source_project,
+                    students_student_number,
+                    cc_academic_year,
+                    cc_course_number
+                order by cc_dateenrolled desc, exit_date desc
+            ) as rn_course_number_year,
         from focus_conformed
+    ),
+
+    unioned as (
+        select *,
+        from powerschool_conformed
+
+        full union all corresponding
+
+        select *,
+        from focus_course_dropped
+    ),
+
+    core_section_inputs as (
+        select
+            *,
+
+            core_subject is not null
+            and not is_dropped_section as is_core_section_candidate,
+
+            cc_dateenrolled
+            <= current_date('{{ var("local_timezone") }}') as is_term_started,
+
+            countif(not is_dropped_section) over (
+                partition by _dbt_source_project, cc_academic_year, cc_sectionid
+            ) as section_enrolled_count,
+        from unioned
     )
 
-select *,
-from powerschool_conformed
+select
+    * except (is_core_section_candidate, is_term_started, section_enrolled_count),
 
-full union all corresponding
-
-select *,
-from focus_course_dropped
+    if(
+        is_core_section_candidate,
+        row_number() over (
+            partition by
+                _dbt_source_project,
+                cc_academic_year,
+                cc_schoolid,
+                students_student_number,
+                core_subject,
+                is_core_section_candidate
+            order by
+                is_term_started desc,
+                cc_dateenrolled desc,
+                section_enrolled_count desc,
+                cc_section_number asc,
+                cc_dcid asc
+        ),
+        null
+    ) as rn_core_subject_year,
+from core_section_inputs
