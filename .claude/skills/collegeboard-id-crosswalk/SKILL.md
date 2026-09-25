@@ -69,5 +69,6 @@ an edit; there is no manual step.
 ## Pipeline QA after a crosswalk update
 
 Once the crosswalk staging model reconciles, invoke the `carat-dashboard` skill
-and follow its `references/official-scores-qa.md`. It reports what changed, when
-it reached prod, and a score summary the user can share with KIPP Forward.
+and follow its `references/official-scores-qa.md`. It ends in a three-part
+report: what changed and when it reached prod, a draft for KIPP Forward, and a
+before/after preview of the metrics the dashboard tracks.

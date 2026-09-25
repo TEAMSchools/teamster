@@ -2,8 +2,9 @@
 
 Run this when the `collegeboard-id-crosswalk` skill hands off, after the user
 has pasted new College Board ID mappings and the crosswalk staging model
-reconciles. It produces three things for the user: what changed, when it reached
-prod, and a summary to share with KIPP Forward.
+reconciles. It ends in a three-part report (step 5): what changed and when it
+reached prod, a draft for KIPP Forward, and a preview of how the new scores
+moved the tracked metrics.
 
 Record the paste time first; every step compares against it.
 
@@ -52,7 +53,31 @@ equal the rows pasted for that test; a shortfall means a pasted student's scores
 did not flow, and a crosswalk row that maps to a student outside the enrollment
 spine is the usual cause.
 
-## 3. The KIPP Forward summary
+## 3. Performance preview
+
+Show how the load moved the metrics the `_current` view tracks, network-wide and
+by school:
+
+```bash
+uv run dbt compile --select rpt_tableau__college_assessment_dashboard_current \
+    --project-dir src/dbt/kipptaf --target prod
+uv run python .claude/skills/carat-dashboard/scripts/current_metrics_before_after.py \
+    "<paste time> America/New_York" [--by-school]
+```
+
+It runs the view's own SQL twice, once with the scores table read as of the
+paste, and prints each metric's percent met before and now, the change, and the
+goal. Goals, thresholds and the roster are read as of now in both runs, so any
+change comes from the load. The attempts metrics (`*_1_attempt`,
+`*_2_plus_attempts`) are the share of test takers meeting the expected test
+count; the ready metrics are the share at HS Grad-Ready or College-Ready.
+
+AP has no `_current` metrics, so an AP-only load skips this step. Report only
+the tests the load touched, lead with the attempts metrics, and put each metric
+beside its goal. A metric with no goal (`None`) is tracked but not targeted; say
+so rather than printing an empty goal.
+
+## 4. Scores added, by school and grade
 
 The newly resolved students are the `student_number` values in the file the user
 pasted. Aggregate their scores by test, administration, school, and grade:
@@ -88,31 +113,21 @@ demographic, and mark any cell under 10 students so the user can decide whether
 to combine or drop it before sharing; the repo has no automated small-cell
 suppression (#4237).
 
-### Performance preview
+## 5. Hand over the report
 
-Show how the load moved the metrics the `_current` view tracks, network-wide and
-by school:
+Three parts, in this order.
 
-```bash
-uv run dbt compile --select rpt_tableau__college_assessment_dashboard_current \
-    --project-dir src/dbt/kipptaf --target prod
-uv run python .claude/skills/carat-dashboard/scripts/current_metrics_before_after.py \
-    "<paste time> America/New_York" [--by-school]
-```
-
-It runs the view's own SQL twice, once with the scores table read as of the
-paste, and prints each metric's percent met before and now, the change, and the
-goal. Goals, thresholds and the roster are read as of now in both runs, so any
-change comes from the load. The attempts metrics (`*_1_attempt`,
-`*_2_plus_attempts`) are the share of test takers meeting the expected test
-count; the ready metrics are the share at HS Grad-Ready or College-Ready.
-
-Report only the tests the load touched, lead with the attempts metrics, and put
-each metric beside its goal. A metric with no goal (`None`) is tracked but not
-targeted; say so rather than printing an empty goal.
-
-Hand it over as a short message written for KIPP Forward: which tests and
-administrations, how many students and scores were added, the performance
-preview, when they reached the data, and when the dashboard will show them (the
-next Tableau refresh). State that it is internal to the network. No student
-names or ids.
+1. **Report to the user** (terminal): the crosswalk tab and link, rows pasted,
+   the staging row-count check; the step 1 table of rebuild times with the line
+   that views read live and Tableau shows the scores after its next refresh; the
+   step 2 before/now table with whether the student increase matches the rows
+   pasted; anything still open (`flagged_for_review`, `no_match`).
+2. **Draft for KIPP Forward**, opened with a one-line "Written for" note: a
+   short email naming the tests and administrations, the step 4 table with its
+   total, how many students are still being matched, and that it is internal to
+   the network. No student names or ids. Flag every cell under 10 to the user
+   before they send it, and say whether the total lets someone recover it.
+3. **Performance preview**: the step 3 tables, attempts first, then readiness,
+   each metric beside its goal, plus one by-school line for the headline metric.
+   The KIPP Forward draft carries a short version: the attempts lines and one
+   readiness line per test.

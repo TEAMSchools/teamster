@@ -6,8 +6,9 @@ description: >-
   practice SAT/ACT assessments for a new administration, generating or auditing
   raw-to-scale-score rows for the practice conversion or scaffold sheets, a
   practice score not appearing on the dashboard, goal thresholds not matching, a
-  request to change a goal percentage or target line, academic-year rollover, or
-  working on int_assessments__college_assessment_practice,
+  request to change a goal percentage or target line, QA or a KIPP Forward
+  summary after new official scores load, academic-year rollover, or working on
+  int_assessments__college_assessment_practice,
   int_tableau__college_assessment_roster_scores,
   rpt_tableau__college_assessment_dashboard_current, or _benchmark_calcs and
   their upstream models.
@@ -160,3 +161,6 @@ All in [`scripts/`](scripts/); run with `uv run python` from the repo root.
   [references/expected-assessments.md](references/expected-assessments.md).
 - `dump_goals_tab.py` — the whole live Goals tab, with `--set` edits applied.
   See [references/goals.md](references/goals.md).
+- `current_metrics_before_after.py` — the `_current` view's metrics before and
+  after a score load, against goal. See
+  [references/official-scores-qa.md](references/official-scores-qa.md).
