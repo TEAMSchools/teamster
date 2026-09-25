@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<queries>
+  <query name="com.kippnj.gradebookaudit.expectations_list"
+         coreTable="u_expectations"
+         flattened="true">
+    <description>All rows from U_EXPECTATIONS for the list page</description>
+    <columns>
+      <column column="u_expectations.id">id</column>
+      <column column="u_expectations.school_level">school_level</column>
+      <column column="u_expectations.quarter">quarter</column>
+      <column column="u_expectations.week_number">week_number</column>
+      <column column="u_expectations.cnt_w">cnt_w</column>
+      <column column="u_expectations.cnt_h">cnt_h</column>
+      <column column="u_expectations.cnt_f">cnt_f</column>
+      <column column="u_expectations.cnt_s">cnt_s</column>
+      <column column="u_expectations.notes">notes</column>
+    </columns>
+    <sql>
+      <![CDATA[
+      SELECT id, school_level, quarter, week_number,
+             cnt_w, cnt_h, cnt_f, cnt_s, notes
+      FROM u_expectations
+      ORDER BY school_level, quarter, week_number
+      ]]>
+    </sql>
+  </query>
+</queries>

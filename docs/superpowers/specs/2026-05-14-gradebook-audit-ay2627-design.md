@@ -119,7 +119,7 @@ The new model sources from `stg_powerschool__u_expectations` (the U_EXPECTATIONS
 PowerSchool plugin) joined to `int_powerschool__calendar_week` for region. It
 provides the expected assignment count per category per quarter for the current
 region/school_level. Plugin source and deployment scripts live at
-[TEAMSchools/ps-plugins](https://github.com/TEAMSchools/ps-plugins).
+[`ps-plugins/gradebook-audit/`](../../../ps-plugins/gradebook-audit/README.md).
 
 **Naming convention:** if the model unpivots `cnt_w/h/f/s` to long format
 internally, it must be named `int_powerschool__u_expectations_unpivot` per
@@ -127,9 +127,10 @@ Charlie's convention.
 
 **Coverage at launch:** Newark only. Camden is blocked on PR #4077 (Bini's
 integration work). Paterson is blocked on PS instance access — deploy the plugin
-from [TEAMSchools/ps-plugins](https://github.com/TEAMSchools/ps-plugins) once
-access is available. Until each region has PS data, category-level audit rows
-will be silent for that region.
+from
+[`ps-plugins/gradebook-audit/`](../../../ps-plugins/gradebook-audit/README.md)
+once access is available. Until each region has PS data, category-level audit
+rows will be silent for that region.
 
 The deprecated Google Sheet model is **disabled** (`config: enabled: false`),
 not deleted, pending operational decisions after July 1, 2026.

@@ -698,8 +698,34 @@ edits and exports as the CSV they upload through the plugin. Because it is
 driven by the same toggled year filter as the audit models, check the summer
 toggle's state before reading it as the new year's grid.
 
+That sheet exists as a pair — a source copy the data team edits, whose tabs are
+named after the models, and a report copy T&L open, whose tabs have friendly
+names. A change to either has to be made in both; nothing in the pipeline
+creates a tab or widens an `IMPORTRANGE` range, and a new column fails silently.
+Three tabs on the report copy matter here:
+
+- **`PS Full Calendar`** (`rpt_gsheets__gradebook_audit_all_weeks`) — every
+  school week of the year with its PowerSchool quarter and week number. This is
+  what dates are matched against. It runs a year ahead, which is what makes a
+  rollover possible before any of it has happened.
+- **`Plugin Data Raw`** (`rpt_gsheets__gradebook_audit_current_expectations`) —
+  what is actually live in `U_EXPECTATIONS`, with who changed each row and when.
+  Refreshed overnight, so it is up to a day behind.
+- **`Template QW-Date Crosswalk`** (`rpt_gsheets__gradebook_audit_template`) —
+  how a week number gets tagged to the week it belongs to, translating between
+  Academics' own week numbering and PowerSchool's. **It stops at the last
+  completed week**, so it is empty for anything about to be loaded. That is
+  expected, and it means the tab cannot confirm the week numbers on a new
+  quarter.
+
+A fourth report tab, `PS Plugin CSV Template`, is typed by hand and has no model
+behind it.
+
+The per-change procedure for the pair is in
+[the Google Sheets guide](../guides/google-sheets.md).
+
 Plugin source and update instructions:
-[TEAMSchools/ps-plugins](https://github.com/TEAMSchools/ps-plugins)
+[`ps-plugins/gradebook-audit/`](https://github.com/TEAMSchools/teamster/tree/main/ps-plugins/gradebook-audit)
 
 #### One upload per PowerSchool instance
 
@@ -832,6 +858,37 @@ for that history.
   be out of scope (see the note under the pipeline section above). Confirm with
   T&L whether excluding these sections is still intended; if not, drop the
   filter.
+
+### On the upload side
+
+The two items above are dbt-model work. These are in the PowerSchool plugin and
+the upload process that feeds `U_EXPECTATIONS`, and they affect the numbers this
+dashboard audits against.
+
+- **The plugin's four single-record pages carry open defects** — two in how they
+  check who may use them, two in how they handle text that reaches the page. All
+  four predate the plugin's move into this repository. Specifics are in the Data
+  Team's tracker rather than here. Anyone changing those pages should read
+  `.claude/skills/gradebook-audit/playbooks/maintain-the-plugin.md` first:
+  fixing them means one version bump and a redeploy to three live instances, and
+  the obvious fix for two of them is wrong.
+- **The plugin's Quarter filter stops applying after a delete or an import.**
+  The table re-renders without re-applying it, so every row becomes visible
+  again while the dropdown still shows the quarter. Re-picking the quarter it
+  already displays fires no change event, so the header checkbox then selects
+  the whole instance. Deleting one quarter's rows twice in a session removes all
+  four. Confirmed in the page source; not fixed.
+- **Academics number their weeks straight through the year; PowerSchool restarts
+  at 1 each quarter.** Their week 14 is PowerSchool's week 4. Nothing errors
+  when a sheet's own numbering is passed through, so the audit compares against
+  the wrong week and reports confidently wrong results. The translation is done
+  against the PowerSchool calendar, per
+  `ps-plugins/skills/gradebook-expectations-upload/references/week-matching.md`.
+- **A quarter loaded before the warehouse rolls the academic year over gets the
+  previous year's weeks.** `PS Full Calendar` is filtered to whatever year the
+  warehouse currently calls current, so a PowerSchool instance can sit in the
+  new school year while that setting still points at the old one. The tab looks
+  normal and every downstream check passes.
 
 ---
 

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<permission_mappings>
+
+  <permission name='/admin/gradebookaudit/gradebook_expectations.html'>
+    <implies allow="post">/ws/schema/query/com.kippnj.gradebookaudit.expectations_list</implies>
+  </permission>
+
+  <permission name='/admin/gradebookaudit/gradebook_expectations_new.html'>
+    <implies allow="post">/ws/schema/query/com.kippnj.gradebookaudit.expectations_list</implies>
+  </permission>
+
+  <permission name='/admin/gradebookaudit/gradebook_expectations_delete.html'>
+    <implies allow="post">/ws/schema/query/com.kippnj.gradebookaudit.expectations_list</implies>
+  </permission>
+
+  <permission name='/admin/gradebookaudit/gradebook_expectations_insert.html'>
+    <implies allow="post">/ws/schema/query/com.kippnj.gradebookaudit.expectations_list</implies>
+  </permission>
+
+</permission_mappings>

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<!--
+  gradebook_expectations_insert.html
+  Gradebook Audit Plugin - Phase 1 v1.5
+  Path in plugin zip: WEB_ROOT/admin/gradebookaudit/gradebook_expectations_insert.html
+
+  Insert passthrough page. Receives field values as URL GET parameters via gpv.
+  Uses DirectTable.Select with ID:-1 to insert a new record.
+  Auto-submits on page load. User never sees this page.
+  
+  Parameters received via URL:
+    ?sl=ES&q=Q1&wk=1&w=2&h=1&f=1&s=0&notes=some+text
+-->
+<html>
+<head>
+  <title>Inserting...</title>
+  ~[wc:commonscripts]
+</head>
+<body>
+
+  <form id="insert-form"
+        action="gradebook_expectations.html"
+        method="POST">
+
+    ~[DirectTable.Select:U_EXPECTATIONS;ID:-1]
+
+    <input type="hidden" name="[U_EXPECTATIONS]school_level" value="~(gpv.sl)">
+    <input type="hidden" name="[U_EXPECTATIONS]quarter"      value="~(gpv.q)">
+    <input type="hidden" name="[U_EXPECTATIONS]week_number"  value="~(gpv.wk)">
+    <input type="hidden" name="[U_EXPECTATIONS]cnt_w"        value="~(gpv.w)">
+    <input type="hidden" name="[U_EXPECTATIONS]cnt_h"        value="~(gpv.h)">
+    <input type="hidden" name="[U_EXPECTATIONS]cnt_f"        value="~(gpv.f)">
+    <input type="hidden" name="[U_EXPECTATIONS]cnt_s"        value="~(gpv.s)">
+    <input type="hidden" name="[U_EXPECTATIONS]notes"        value="~(gpv.notes)">
+    <input type="hidden" name="ac"                           value="prim">
+
+  </form>
+
+  <script>
+    document.getElementById('insert-form').submit();
+  </script>
+
+</body>
+</html>

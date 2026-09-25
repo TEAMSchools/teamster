@@ -31,6 +31,8 @@ _Linting_.
 
 ## Ignore Rules
 
+- `ps-plugins/**/*.html` — prettier ignored (PowerSchool PSHTML `~[...]`
+  constructs don't survive a generic HTML formatter)
 - `src/teamster/**` — sqlfluff, sqlfmt ignored (SQL linting is dbt-only)
 - `src/teamster/libraries/dlt_sources/**` — pyright additionally ignored
   (third-party library wrappers)

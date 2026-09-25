@@ -1,4 +1,42 @@
 with
+    school_levels as (
+        -- grain projection, not dup-masking: key is
+        -- _dbt_source_project/academic_year/ps_schoolid. school_level_alt
+        -- varies within that key for Sumner only, so this returns two rows
+        -- there; see the properties yml.
+        select distinct
+            _dbt_source_project, academic_year, ps_schoolid, school_level_alt,
+
+        from {{ ref("int_students__school_directory") }}
+        where
+            -- summer toggle: see skill
+            academic_year = {{ var("current_academic_year") }}
+    ),
+
+    week_school_levels as (
+        select
+            cw._dbt_source_project,
+            cw.region,
+            cw.`quarter`,
+            cw.week_number_quarter,
+            cw.week_start_monday,
+            cw.school_week_end_date,
+
+            coalesce(sl.school_level_alt, cw.school_level) as school_level,
+
+        from {{ ref("int_students__calendar_week") }} as cw
+        left join
+            school_levels as sl
+            on cw.academic_year = sl.academic_year
+            and cw.schoolid = sl.ps_schoolid
+            and cw._dbt_source_project = sl._dbt_source_project
+        where
+            -- summer toggle: see skill
+            cw.academic_year = {{ var("current_academic_year") }}
+            and cw.week_start_monday
+            < date_trunc(current_date('{{ var("local_timezone") }}'), isoweek)
+    ),
+
     term_weeks as (
         /*
         calendar_week is per-schoolid; school_week_end_date varies across the
@@ -16,12 +54,7 @@ with
 
             max(school_week_end_date) as school_week_end_date,
 
-        from {{ ref("int_students__calendar_week") }}
-        where
-            -- summer toggle: see skill
-            academic_year = {{ var("current_academic_year") }}
-            and week_start_monday
-            < date_trunc(current_date('{{ var("local_timezone") }}'), isoweek)
+        from week_school_levels
         group by
             _dbt_source_project,
             region,

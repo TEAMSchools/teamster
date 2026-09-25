@@ -1,0 +1,111 @@
+# Builds each plugin into an installable zip and validates it before publishing.
+#
+# Two reasons this exists:
+#
+#   1. It removes hand-zipping. Zipping by hand is how the WEB_ROOT/admin/
+#      gradebookaudit/ folder level got lost, producing a plugin whose nav link
+#      404'd and whose permission mappings bound to nothing -- silently, with no
+#      error at install or enable time. scripts/build_plugin.py fails the build if
+#      any path referenced in the XML doesn't resolve in the package.
+#
+#   2. It gives anyone a correct zip to download without needing a local checkout
+#      or a git client: open the workflow run and grab the artifact.
+#
+# Action SHAs are pinned to match the versions vetted in TEAMSchools/teamster.
+# The two `paths:` lists below are intentionally duplicated -- GitHub Actions does
+# not support YAML anchors, so they must be kept in sync by hand.
+
+name: Build plugin
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ps-plugins/**
+      - src/dbt/powerschool/models/sis/staging/dlt/stg_powerschool__u_expectations.sql
+      - tests/ps_plugins/**
+      - .github/workflows/build-plugin.yaml
+  pull_request:
+    paths:
+      - ps-plugins/**
+      - src/dbt/powerschool/models/sis/staging/dlt/stg_powerschool__u_expectations.sql
+      - tests/ps_plugins/**
+      - .github/workflows/build-plugin.yaml
+  workflow_dispatch: null
+
+jobs:
+  build:
+    if: github.actor != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      # references/powerschool-navigation.md walks Teaching & Learning staff
+      # through the WEB_ROOT screens step by step. No test can tell that prose
+      # describing a user interface has gone stale, so this is a human gate
+      # with a machine trigger: a PR that changes plugin pages must also
+      # touch the skill, or say in its title that the walkthrough doesn't
+      # need it.
+      - name: Check the walkthrough was considered
+        if: github.event_name == 'pull_request'
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          base=$(git merge-base "origin/$BASE_REF" HEAD)
+          pages=$(git diff --name-only "$base"...HEAD -- 'ps-plugins/gradebook-audit/WEB_ROOT/**' | wc -l)
+          skill=$(git diff --name-only "$base"...HEAD -- 'ps-plugins/skills/**' | wc -l)
+          if [ "$pages" -gt 0 ] && [ "$skill" -eq 0 ]; then
+            if echo "$PR_TITLE" | grep -q '\[skill-unaffected\]'; then
+              echo "Author asserted the walkthrough is unaffected."
+              exit 0
+            fi
+            echo "::error::This PR changes plugin pages but not the end-user skill."
+            echo "Confirm references/powerschool-navigation.md still matches the"
+            echo "screens, then rebuild the zip. If the walkthrough genuinely needs"
+            echo "no change, add [skill-unaffected] to the PR title."
+            exit 1
+          fi
+
+      # Validates and packages. Exits non-zero if any page path referenced in
+      # plugin.xml or permissions_root/*.xml is missing from the package, so a
+      # structural break fails here instead of silently in PowerSchool.
+      - name: Build and validate plugin packages
+        run: python3 ps-plugins/scripts/build_plugin.py
+
+      # Packages the nine end-user skill files at the zip root and fails the
+      # build if any relative markdown link in the skill doesn't resolve.
+      - name: Build the end-user skill zip
+        run: python3 ps-plugins/scripts/build_skill.py
+
+      # https://github.com/astral-sh/setup-uv
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+
+      # Both uploads sit below this step on purpose. build_skill.py's own link
+      # and version checks already gate the skill zip's structure, but the
+      # content-hygiene suite -- which asserts the skill never names the
+      # internal source sheet or its tab names -- lives here. Uploading first
+      # would publish a skill artifact from a red run.
+      - name: Run plugin contract tests
+        run: uv run pytest tests/ps_plugins -v
+
+      - name: Upload the skill zip
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: gradebook-expectations-upload
+          path: ps-plugins/dist/gradebook_expectations_upload_*.zip
+          if-no-files-found: error
+
+      - name: Upload plugin zips
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: plugin-zips
+          path: ps-plugins/dist/gradebook_audit_*.zip
+          if-no-files-found: error

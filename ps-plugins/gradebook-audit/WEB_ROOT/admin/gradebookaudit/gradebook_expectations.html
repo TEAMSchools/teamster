@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+~[if.not.memberof:Gradebook Group]
+~[redirect:/admin/home.html]
+~[/if]
+<!--
+  gradebook_expectations.html
+  Gradebook Audit Plugin - Phase 1 v1.5
+  Path in plugin zip: WEB_ROOT/admin/gradebookaudit/gradebook_expectations.html
+-->
+<html>
+<head>
+  <title>Gradebook Expectations</title>
+  ~[wc:commonscripts]
+  <link href="/images/css/screen.css" rel="stylesheet" media="screen">
+  <link href="/images/css/print.css" rel="stylesheet" media="print">
+  <style>
+    .ga-toolbar { margin-bottom:14px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+    .ga-filters { display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+    .ga-filters label { font-weight:bold; font-size:13px; }
+    .ga-filters select { font-size:13px; padding:3px 6px; }
+    .ga-mass-bar { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+    .ga-mass-bar.bottom { margin-top:8px; margin-bottom:0; }
+    .btn-danger { background-color:#c00; color:#fff; border:1px solid #a00; padding:4px 12px; cursor:pointer; font-size:12px; border-radius:2px; }
+    .btn-danger:hover { background-color:#a00; }
+    .btn-danger:disabled { background-color:#999; border-color:#888; cursor:default; }
+    .sel-count { font-size:12px; color:#555; font-style:italic; }
+    table.ga-table { width:100%; border-collapse:collapse; font-size:13px; }
+    table.ga-table thead tr { background-color:#d0dce8; }
+    table.ga-table th { text-align:left; padding:6px 8px; border-bottom:2px solid #aaa; white-space:nowrap; }
+    table.ga-table td { padding:5px 8px; border-bottom:1px solid #ddd; vertical-align:middle; }
+    table.ga-table tr:hover td { background-color:#f5f8fc; }
+    table.ga-table td.center { text-align:center; }
+    .ga-select-col { width:32px; text-align:center; }
+    .ga-no-results { color:#777; font-style:italic; padding:12px 0; display:none; }
+
+    /* CSV Modal */
+    #csv-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9000; }
+    #csv-modal { position:fixed; /* also sets anchor for absolute X btn */ top:50%; left:50%; transform:translate(-50%,-50%); background:#fff; border:1px solid #999; border-radius:4px; padding:36px 28px 20px 28px; width:680px; max-height:85vh; overflow-y:auto; z-index:9001; box-shadow:0 4px 20px rgba(0,0,0,0.3); }
+    #csv-modal h2 { margin:0 0 4px; font-size:16px; }
+    #csv-modal-close { position:absolute; top:12px; right:16px; cursor:pointer; font-size:20px; font-weight:bold; color:#555; line-height:1; z-index:1; }
+    #csv-modal-close:hover { color:#000; }
+    .modal-section { margin-bottom:16px; }
+    .modal-section h3 { font-size:13px; font-weight:bold; margin:0 0 6px; color:#333; }
+    .template-note { font-size:12px; color:#555; margin-bottom:8px; }
+    .csv-template-cols { font-family:monospace; font-size:12px; background:#f5f5f5; padding:8px 10px; border:1px solid #ddd; border-radius:3px; }
+    #csv-file-input { font-size:13px; }
+    #csv-preview-area { display:none; }
+    .csv-stats { font-size:13px; margin-bottom:8px; }
+    .csv-errors { background:#fff3cd; border:1px solid #ffc107; border-radius:3px; padding:8px 10px; font-size:12px; color:#856404; margin-bottom:10px; }
+    .csv-errors ul { margin:4px 0 0 16px; padding:0; }
+    .csv-dupes { background:#fde8e8; border:1px solid #f5c6cb; border-radius:3px; padding:8px 10px; font-size:12px; color:#721c24; margin-bottom:10px; display:none; }
+    table.csv-preview { width:100%; border-collapse:collapse; font-size:12px; }
+    table.csv-preview th { background:#e8e8e8; padding:4px 6px; text-align:left; border-bottom:1px solid #ccc; white-space:nowrap; }
+    table.csv-preview td { padding:3px 6px; border-bottom:1px solid #eee; }
+    table.csv-preview tr.row-error td { background:#ffeaea; }
+    table.csv-preview tr.row-dupe td { background:#fff3cd; }
+    #csv-mode-area { display:none; margin-top:14px; }
+    .mode-options { display:flex; gap:12px; flex-wrap:wrap; }
+    .mode-card { flex:1; min-width:220px; border:2px solid #ccc; border-radius:4px; padding:12px 14px; cursor:pointer; font-size:13px; }
+    .mode-card:hover { border-color:#0066cc; }
+    .mode-card.selected { border-color:#0066cc; background:#f0f6ff; }
+    .mode-card strong { display:block; margin-bottom:4px; }
+    .mode-card .mode-warn { color:#c00; font-size:11px; margin-top:4px; }
+    #csv-import-btn { display:none; margin-top:14px; background:#0066cc; color:#fff; border:none; padding:7px 18px; font-size:13px; border-radius:3px; cursor:pointer; }
+    #csv-import-btn:hover { background:#0052a3; }
+    #csv-import-btn:disabled { background:#999; cursor:default; }
+    #csv-progress { display:none; font-size:13px; color:#555; margin-top:10px; }
+    #csv-progress-bar-wrap { background:#eee; border-radius:3px; height:10px; margin-top:6px; }
+    #csv-progress-bar { background:#0066cc; height:10px; border-radius:3px; width:0%; transition:width 0.2s; }
+  </style>
+</head>
+<body>
+
+~[wc:admin_header_frame_css]
+<a href="/admin/home.html" target="_top">Start Page</a> &gt; Gradebook Expectations
+~[wc:admin_navigation_frame_css]
+
+~[wc:title_begin]Gradebook Expectations~[wc:title_end]
+
+<div class="box-round">
+
+  <div class="ga-toolbar">
+    <a href="gradebook_expectations_new.html" class="button">+ New Expectation</a>
+    <button onclick="openCsvModal()" class="button">&#8679; Upload CSV</button>
+    <div class="ga-filters">
+      <label for="filter-sl">School Level:</label>
+      <select id="filter-sl" onchange="applyFilters()">
+        <option value="">All</option>
+        <option value="ES">ES</option>
+        <option value="MS">MS</option>
+        <option value="HS">HS</option>
+      </select>
+      <label for="filter-q">Quarter:</label>
+      <select id="filter-q" onchange="applyFilters()">
+        <option value="">All</option>
+        <option value="Q1">Q1</option>
+        <option value="Q2">Q2</option>
+        <option value="Q3">Q3</option>
+        <option value="Q4">Q4</option>
+      </select>
+      <button onclick="clearFilters()" class="button">Clear Filters</button>
+    </div>
+  </div>
+
+  <div class="ga-mass-bar">
+    <button class="btn-danger" id="del-btn-top" onclick="deleteSelected()">Delete Selected</button>
+    <span class="sel-count" id="sel-count-top"></span>
+    <span id="grasshopper-msg" style="display:none;font-size:12px;color:#555;font-style:italic;">Be patient, grasshopper. The page will reload when done.</span>
+  </div>
+
+  <table class="ga-table">
+    <thead>
+      <tr>
+        <th class="ga-select-col"><input type="checkbox" id="select-all" title="Select/deselect all visible" onchange="toggleAll(this)"></th>
+        <th>School Level</th>
+        <th>Quarter</th>
+        <th>Week #</th>
+        <th>Work Habits</th>
+        <th>Homework</th>
+        <th>Formative</th>
+        <th>Summative</th>
+        <th>Notes</th>
+        <th style="width:55px;">Edit</th>
+      </tr>
+    </thead>
+    <tbody id="ga-tbody">
+      <tr><td colspan="10" style="text-align:center;color:#777;font-style:italic;padding:16px;">Loading...</td></tr>
+    </tbody>
+  </table>
+
+  <p class="ga-no-results" id="ga-no-results">No records match the selected filters.</p>
+
+  <div class="ga-mass-bar bottom">
+    <button class="btn-danger" id="del-btn-bottom" onclick="deleteSelected()">Delete Selected</button>
+    <span class="sel-count" id="sel-count-bottom"></span>
+  </div>
+
+</div>
+
+<!-- CSV Upload Modal -->
+<div id="csv-overlay">
+  <div id="csv-modal">
+    <span id="csv-modal-close" onclick="closeCsvModal()" title="Close">&#x2715;</span>
+    <h2>Upload Expectations from CSV</h2>
+    <p style="font-size:12px;color:#666;margin:0 0 16px;">Use this to bulk-load expectations at the start of the year.</p>
+
+    <div class="modal-section">
+      <h3>Step 1 &mdash; Download the template</h3>
+      <p class="template-note">Your CSV must have these columns in this order (header row required):</p>
+      <div class="csv-template-cols">School Level,Quarter,Week Number,W,H,F,S,Notes</div>
+      <p style="margin:8px 0 0;">
+        <button onclick="downloadTemplate()" class="button" style="font-size:12px;">&#8681; Download Template CSV</button>
+      </p>
+    </div>
+
+    <div class="modal-section">
+      <h3>Step 2 &mdash; Choose your file</h3>
+      <input type="file" id="csv-file-input" accept=".csv" onchange="handleFileSelect(this)">
+    </div>
+
+    <div id="csv-preview-area">
+      <div class="modal-section">
+        <h3>Step 3 &mdash; Review your data</h3>
+        <div class="csv-stats" id="csv-stats"></div>
+        <div class="csv-errors" id="csv-errors" style="display:none;"></div>
+        <div class="csv-dupes" id="csv-dupes"></div>
+        <div style="max-height:200px;overflow-y:auto;border:1px solid #ddd;">
+          <table class="csv-preview">
+            <thead>
+              <tr>
+                <th>#</th><th>School Level</th><th>Quarter</th><th>Week #</th>
+                <th>W</th><th>H</th><th>F</th><th>S</th><th>Notes</th><th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="csv-preview-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="csv-mode-area">
+        <h3 style="font-size:13px;font-weight:bold;margin:0 0 8px;">Step 4 &mdash; Choose import mode</h3>
+        <div class="mode-options">
+          <div class="mode-card" id="mode-add" onclick="selectMode('add')">
+            <strong>Add to existing records</strong>
+            Inserts new rows without removing what's already there.
+            Use this for mid-year additions.
+          </div>
+          <div class="mode-card" id="mode-replace" onclick="selectMode('replace')">
+            <strong>Replace all records</strong>
+            Deletes ALL existing rows first, then inserts the new ones.
+            <div class="mode-warn">&#9888; This will permanently delete all current data before importing.</div>
+          </div>
+        </div>
+        <button id="csv-import-btn" onclick="startImport()">Import</button>
+        <p id="csv-patience-msg" style="display:none;font-size:12px;color:#555;font-style:italic;margin:8px 0 0;">Great things take time. Please do not exit out of this window until done.</p>
+        <div id="csv-progress">
+          <span id="csv-progress-text">Importing...</span>
+          <div id="csv-progress-bar-wrap"><div id="csv-progress-bar"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden iframe for all passthrough operations -->
+<iframe id="op-iframe" name="op-iframe" style="display:none;"></iframe>
+
+<script>
+  var allIds  = [];
+  var csvRows = [];
+  var selectedMode = '';
+
+  // ── Load ───────────────────────────────────────────────────────
+  function loadExpectations() {
+    fetch('/ws/schema/query/com.kippnj.gradebookaudit.expectations_list', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({})
+    })
+    .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function(data) { renderTable(data.record || []); })
+    .catch(function(err) {
+      document.getElementById('ga-tbody').innerHTML =
+        '<tr><td colspan="10" style="color:#c00;padding:12px;">Error loading data: ' + err + '</td></tr>';
+    });
+  }
+
+  // ── Render ─────────────────────────────────────────────────────
+  function renderTable(rows) {
+    allIds = rows.map(function(r) { return String(r.id); });
+    var tbody = document.getElementById('ga-tbody');
+    if (!rows || rows.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="10" style="color:#777;font-style:italic;padding:12px;">No records found. Use + New Expectation or Upload CSV to add records.</td></tr>';
+      updateCount(); return;
+    }
+    var html = '';
+    rows.forEach(function(r) {
+      var id = esc(r.id), sl = esc(r.school_level), q = esc(r.quarter), wk = esc(r.week_number);
+      html += '<tr class="ga-row" data-id="' + id + '" data-sl="' + sl + '" data-q="' + q + '" data-wk="' + wk + '">'
+        + '<td class="ga-select-col center"><input type="checkbox" class="row-cb" data-id="' + id + '" onchange="updateCount()"></td>'
+        + '<td>' + sl + '</td><td>' + q + '</td>'
+        + '<td class="center">' + wk + '</td>'
+        + '<td class="center">' + esc(r.cnt_w) + '</td>'
+        + '<td class="center">' + esc(r.cnt_h) + '</td>'
+        + '<td class="center">' + esc(r.cnt_f) + '</td>'
+        + '<td class="center">' + esc(r.cnt_s) + '</td>'
+        + '<td>' + esc(r.notes || '') + '</td>'
+        + '<td class="center"><a href="gradebook_expectations_edit.html?id=' + id + '" class="button">Edit</a></td>'
+        + '</tr>';
+    });
+    tbody.innerHTML = html;
+    updateCount();
+  }
+
+  function toggleAll(cb) {
+    document.querySelectorAll('.row-cb').forEach(function(el) {
+      if (el.closest('tr').style.display !== 'none') el.checked = cb.checked;
+    });
+    updateCount();
+  }
+
+  function updateCount() {
+    var n = document.querySelectorAll('.row-cb:checked').length;
+    var msg = n > 0 ? n + ' row' + (n > 1 ? 's' : '') + ' selected' : '';
+    document.getElementById('sel-count-top').textContent = msg;
+    document.getElementById('sel-count-bottom').textContent = msg;
+  }
+
+
+  function deleteSelected() {
+    var checked = Array.from(document.querySelectorAll('.row-cb:checked'));
+    if (checked.length === 0) { alert('No rows selected.'); return; }
+    var summary = checked.map(function(cb) {
+      var row = cb.closest('tr');
+      return row.getAttribute('data-sl') + ' / ' + row.getAttribute('data-q') + ' / Week ' + row.getAttribute('data-wk');
+    }).join('\n');
+    if (!confirm('Delete ' + checked.length + ' selected record' + (checked.length > 1 ? 's' : '') + '?\n\n' + summary + '\n\nThis cannot be undone.')) return;
+    var ids = checked.map(function(cb) { return cb.getAttribute('data-id'); });
+    setDeleteBtns(true);
+    timedDeleteQueue(ids, 0, function() {
+      setDeleteBtns(false);
+      document.getElementById('select-all').checked = false;
+      loadExpectations();
+    });
+  }
+
+  function timedDeleteQueue(ids, index, callback) {
+    if (index >= ids.length) { callback(); return; }
+    var form = document.createElement('form');
+    form.style.display = 'none';
+    form.target = 'op-iframe';
+    form.method = 'GET';
+    form.action = 'gradebook_expectations_delete.html';
+    addHidden(form, 'id', ids[index]);
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+    setTimeout(function() {
+      timedDeleteQueue(ids, index + 1, callback);
+    }, 1200);
+  }
+
+  function setDeleteBtns(disabled) {
+    ['del-btn-top','del-btn-bottom'].forEach(function(id) {
+      var b = document.getElementById(id);
+      b.disabled = disabled;
+      b.textContent = disabled ? 'Deleting...' : 'Delete Selected';
+    });
+    document.getElementById('grasshopper-msg').style.display = disabled ? 'inline' : 'none';
+  }
+
+  function applyFilters() {
+    var sl = document.getElementById('filter-sl').value;
+    var q  = document.getElementById('filter-q').value;
+    var rows = document.querySelectorAll('tr.ga-row');
+    var visible = 0;
+    rows.forEach(function(row) {
+      var show = (!sl || row.getAttribute('data-sl') === sl) && (!q || row.getAttribute('data-q') === q);
+      row.style.display = show ? '' : 'none';
+      if (!show && row.querySelector('.row-cb')) row.querySelector('.row-cb').checked = false;
+      if (show) visible++;
+    });
+    document.getElementById('ga-no-results').style.display = (visible === 0 && rows.length > 0) ? 'block' : 'none';
+    document.getElementById('select-all').checked = false;
+    updateCount();
+  }
+
+  function clearFilters() {
+    document.getElementById('filter-sl').value = '';
+    document.getElementById('filter-q').value = '';
+    applyFilters();
+  }
+
+  // ── Generic iframe chain ───────────────────────────────────────
+  // mode = 'delete' | 'insert'
+  // items = array of IDs (delete) or row objects (insert)
+  function iframeChain(items, index, mode, callback) {
+    if (index >= items.length) { callback(); return; }
+    var iframe = document.getElementById('op-iframe');
+    iframe.onload = function() {
+      // Small delay to let PS finish writing to Oracle
+      setTimeout(function() { iframeChain(items, index + 1, mode, callback); }, 300);
+    };
+    var form = document.createElement('form');
+    form.style.display = 'none';
+    form.target = 'op-iframe';
+
+    if (mode === 'delete') {
+      form.method = 'GET';
+      form.action = 'gradebook_expectations_delete.html';
+      addHidden(form, 'id', items[index]);
+    } else {
+      // Insert — use GET to pass values as gpv params
+      var r = items[index];
+      form.method = 'GET';
+      form.action = 'gradebook_expectations_insert.html';
+      addHidden(form, 'sl',    r.sl);
+      addHidden(form, 'q',     r.q);
+      addHidden(form, 'wk',    r.wk);
+      addHidden(form, 'w',     r.w);
+      addHidden(form, 'h',     r.h);
+      addHidden(form, 'f',     r.f);
+      addHidden(form, 's',     r.s);
+      addHidden(form, 'notes', r.notes);
+    }
+
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+  }
+
+  function addHidden(form, name, value) {
+    var el = document.createElement('input');
+    el.type = 'hidden'; el.name = name; el.value = value || '';
+    form.appendChild(el);
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // CSV MODAL
+  // ══════════════════════════════════════════════════════════════
+
+  var csvUploadInProgress = false;
+
+  function openCsvModal() { resetModal(); document.getElementById('csv-overlay').style.display = 'block'; }
+  function closeCsvModal() {
+    if (csvUploadInProgress) return; // lock modal during upload
+    document.getElementById('csv-overlay').style.display = 'none';
+  }
+
+  function resetModal() {
+    document.getElementById('csv-file-input').value = '';
+    document.getElementById('csv-preview-area').style.display = 'none';
+    document.getElementById('csv-mode-area').style.display = 'none';
+    document.getElementById('csv-import-btn').style.display = 'none';
+    document.getElementById('csv-progress').style.display = 'none';
+    document.getElementById('csv-errors').style.display = 'none';
+    document.getElementById('csv-dupes').style.display = 'none';
+    document.getElementById('csv-preview-tbody').innerHTML = '';
+    document.getElementById('csv-stats').textContent = '';
+    document.getElementById('csv-import-btn').disabled = false;
+    document.getElementById('csv-import-btn').textContent = 'Import';
+    selectedMode = ''; csvRows = [];
+    ['mode-add','mode-replace'].forEach(function(id) { document.getElementById(id).classList.remove('selected'); });
+  }
+
+  function downloadTemplate() {
+    var content = 'School Level,Quarter,Week Number,W,H,F,S,Notes\nES,Q1,1,2,1,1,0,\nMS,Q1,1,2,1,1,0,\nHS,Q1,1,2,1,1,0,\n';
+    var blob = new Blob([content], { type: 'text/csv' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a'); a.href = url;
+    a.download = 'gradebook_expectations_template.csv';
+    a.click(); URL.revokeObjectURL(url);
+  }
+
+  function handleFileSelect(input) {
+    var file = input.files[0]; if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(e) { parseCSV(e.target.result); };
+    reader.readAsText(file);
+  }
+
+  function parseCSV(text) {
+    var lines = text.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n');
+    while (lines.length && lines[lines.length-1].trim() === '') lines.pop();
+    if (lines.length < 2) { alert('File appears empty or has no data rows.'); return; }
+
+    var header = lines[0].split(',').map(function(h){ return h.trim().toLowerCase(); });
+    var expected = ['school level','quarter','week number','w','h','f','s','notes'];
+    if (!expected.every(function(h,i){ return header[i] === h; })) {
+      alert('Header row does not match template.\n\nExpected:\nSchool Level,Quarter,Week Number,W,H,F,S,Notes\n\nFound:\n' + lines[0]);
+      return;
+    }
+
+    // Build existing key set for dupe detection
+    var existingKeys = {};
+    document.querySelectorAll('tr.ga-row').forEach(function(row) {
+      var key = row.getAttribute('data-sl') + '|' + row.getAttribute('data-q') + '|' + row.getAttribute('data-wk');
+      existingKeys[key] = true;
+    });
+
+    var validRows = [], errors = [], dupeRows = [], previewHtml = '';
+    var validSL = ['ES','MS','HS'], validQ = ['Q1','Q2','Q3','Q4'];
+
+    for (var i = 1; i < lines.length; i++) {
+      var cols = parseCSVLine(lines[i]);
+      var rowNum = i + 1;
+      var rowErrors = [];
+      var sl    = (cols[0]||'').trim().toUpperCase();
+      var q     = (cols[1]||'').trim().toUpperCase();
+      var wk    = (cols[2]||'').trim();
+      var w     = (cols[3]||'').trim();
+      var h     = (cols[4]||'').trim();
+      var f     = (cols[5]||'').trim();
+      var s     = (cols[6]||'').trim();
+      var notes = (cols[7]||'').trim();
+
+      if (validSL.indexOf(sl) === -1) rowErrors.push('Invalid School Level "' + sl + '"');
+      if (validQ.indexOf(q)   === -1) rowErrors.push('Invalid Quarter "' + q + '"');
+      if (!wk || isNaN(parseInt(wk))) rowErrors.push('Week Number must be a number');
+      if (w===''||isNaN(parseInt(w))) rowErrors.push('W must be a number');
+      if (h===''||isNaN(parseInt(h))) rowErrors.push('H must be a number');
+      if (f===''||isNaN(parseInt(f))) rowErrors.push('F must be a number');
+      if (s===''||isNaN(parseInt(s))) rowErrors.push('S must be a number');
+
+      var hasError = rowErrors.length > 0;
+      var isDupe   = !hasError && existingKeys[sl+'|'+q+'|'+wk];
+
+      if (hasError) {
+        errors.push('Row ' + rowNum + ': ' + rowErrors.join('; '));
+      } else {
+        validRows.push({ sl:sl, q:q, wk:wk, w:w, h:h, f:f, s:s, notes:notes });
+        if (isDupe) dupeRows.push(sl + ' / ' + q + ' / Week ' + wk);
+      }
+
+      var rowClass = hasError ? ' class="row-error"' : (isDupe ? ' class="row-dupe"' : '');
+      var status   = hasError ? '<span style="color:#c00;">Error</span>'
+                   : isDupe   ? '<span style="color:#856404;">Duplicate</span>'
+                              : '<span style="color:#155724;">OK</span>';
+
+      previewHtml += '<tr' + rowClass + '>'
+        + '<td style="color:#999;">' + rowNum + '</td>'
+        + '<td>' + esc(sl) + '</td><td>' + esc(q) + '</td>'
+        + '<td>' + esc(wk) + '</td><td>' + esc(w) + '</td>'
+        + '<td>' + esc(h) + '</td><td>' + esc(f) + '</td>'
+        + '<td>' + esc(s) + '</td><td>' + esc(notes) + '</td>'
+        + '<td>' + status + '</td></tr>';
+    }
+
+    csvRows = validRows;
+    document.getElementById('csv-preview-area').style.display = 'block';
+    document.getElementById('csv-preview-tbody').innerHTML = previewHtml;
+
+    var statsMsg = validRows.length + ' valid row' + (validRows.length !== 1 ? 's' : '');
+    if (errors.length > 0) statsMsg += ', ' + errors.length + ' with errors (skipped, shown in red)';
+    if (dupeRows.length > 0) statsMsg += ', ' + dupeRows.length + ' duplicate' + (dupeRows.length > 1 ? 's' : '') + ' (shown in yellow)';
+    document.getElementById('csv-stats').textContent = statsMsg;
+
+    if (errors.length > 0) {
+      document.getElementById('csv-errors').innerHTML = '<strong>Rows with errors will be skipped:</strong><ul>'
+        + errors.map(function(e){ return '<li>' + e + '</li>'; }).join('') + '</ul>';
+      document.getElementById('csv-errors').style.display = 'block';
+    }
+
+    if (dupeRows.length > 0) {
+      document.getElementById('csv-dupes').innerHTML = '<strong>&#9888; These rows already exist (highlighted in yellow). In Add mode they will create duplicates unless you choose Replace:</strong><ul>'
+        + dupeRows.map(function(d){ return '<li>' + d + '</li>'; }).join('') + '</ul>';
+      document.getElementById('csv-dupes').style.display = 'block';
+    }
+
+    if (validRows.length > 0) document.getElementById('csv-mode-area').style.display = 'block';
+  }
+
+  function parseCSVLine(line) {
+    var result = [], current = '', inQuotes = false;
+    for (var i = 0; i < line.length; i++) {
+      var ch = line[i];
+      if (ch === '"') { inQuotes = !inQuotes; }
+      else if (ch === ',' && !inQuotes) { result.push(current); current = ''; }
+      else { current += ch; }
+    }
+    result.push(current);
+    while (result.length < 8) result.push('');
+    return result;
+  }
+
+  function selectMode(mode) {
+    selectedMode = mode;
+    ['mode-add','mode-replace'].forEach(function(id){ document.getElementById(id).classList.remove('selected'); });
+    document.getElementById('mode-' + mode).classList.add('selected');
+    document.getElementById('csv-import-btn').style.display = 'inline-block';
+  }
+
+  function startImport() {
+    if (!selectedMode) { alert('Please select an import mode first.'); return; }
+    if (csvRows.length === 0) { alert('No valid rows to import.'); return; }
+
+    if (selectedMode === 'replace') {
+      if (!confirm('REPLACE MODE: This will permanently delete ALL ' + allIds.length + ' existing record' + (allIds.length !== 1 ? 's' : '') + ' before importing ' + csvRows.length + ' new row' + (csvRows.length !== 1 ? 's' : '') + '.\n\nAre you sure?')) return;
+    }
+
+    csvUploadInProgress = true;
+    document.getElementById('csv-modal-close').style.display = 'none';
+    document.getElementById('csv-import-btn').disabled = true;
+    document.getElementById('csv-import-btn').textContent = 'Importing...';
+    document.getElementById('csv-progress').style.display = 'block';
+    document.getElementById('csv-patience-msg').style.display = 'block';
+
+    if (selectedMode === 'replace' && allIds.length > 0) {
+      updateProgress(0, allIds.length + csvRows.length, 'Deleting ' + allIds.length + ' existing records...');
+      iframeChainWithProgress(allIds, 0, 'delete', allIds.length + csvRows.length, 0, function() {
+        updateProgress(allIds.length, allIds.length + csvRows.length, 'Inserting rows...');
+        iframeChainWithProgress(csvRows, 0, 'insert', allIds.length + csvRows.length, allIds.length, function() {
+          importComplete();
+        });
+      });
+    } else {
+      updateProgress(0, csvRows.length, 'Inserting rows...');
+      iframeChainWithProgress(csvRows, 0, 'insert', csvRows.length, 0, function() {
+        importComplete();
+      });
+    }
+  }
+
+  function iframeChainWithProgress(items, index, mode, total, offset, callback) {
+    if (index >= items.length) { callback(); return; }
+    updateProgress(offset + index, total,
+      (mode === 'delete' ? 'Deleting record ' : 'Inserting row ')
+      + (index + 1) + ' of ' + items.length + '...');
+    var iframe = document.getElementById('op-iframe');
+    iframe.onload = function() {
+      setTimeout(function() {
+        iframeChainWithProgress(items, index + 1, mode, total, offset, callback);
+      }, 300);
+    };
+    var form = document.createElement('form');
+    form.style.display = 'none';
+    form.target = 'op-iframe';
+
+    if (mode === 'delete') {
+      form.method = 'GET';
+      form.action = 'gradebook_expectations_delete.html';
+      addHidden(form, 'id', items[index]);
+    } else {
+      var r = items[index];
+      form.method = 'GET';
+      form.action = 'gradebook_expectations_insert.html';
+      addHidden(form, 'sl',    r.sl);
+      addHidden(form, 'q',     r.q);
+      addHidden(form, 'wk',    r.wk);
+      addHidden(form, 'w',     r.w);
+      addHidden(form, 'h',     r.h);
+      addHidden(form, 'f',     r.f);
+      addHidden(form, 's',     r.s);
+      addHidden(form, 'notes', r.notes);
+    }
+
+    document.body.appendChild(form); form.submit(); document.body.removeChild(form);
+  }
+
+  function updateProgress(done, total, msg) {
+    document.getElementById('csv-progress-text').textContent = msg;
+    var pct = total > 0 ? Math.round((done / total) * 100) : 0;
+    document.getElementById('csv-progress-bar').style.width = pct + '%';
+  }
+
+  function importComplete() {
+    csvUploadInProgress = false;
+    updateProgress(1, 1, 'Import complete!');
+    document.getElementById('csv-import-btn').textContent = 'Done';
+    document.getElementById('csv-patience-msg').style.display = 'none';
+    setTimeout(function() { closeCsvModal(); loadExpectations(); }, 1200);
+  }
+
+  function esc(str) {
+    if (str === null || str === undefined) return '';
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  document.getElementById('csv-overlay').addEventListener('click', function(e) {
+    if (e.target === this && !csvUploadInProgress) closeCsvModal();
+  });
+
+  loadExpectations();
+</script>
+
+~[wc:admin_footer_frame_css]
+
+</body>
+</html>
