@@ -179,7 +179,7 @@ test files under `tests/hooks/`:
 | `test_env_protection.sh`    | 60    | printenv/declare/export/compgen/typeset, os.environ, bare `set`, `$VAR` allowlist                                                       |
 | `test_bypass_protection.sh` | 71    | 1Password CLI, base64/xxd/printf encoding, process substitution, Python exec/eval construction, `__import__`, importlib, /proc, /dev/fd |
 | `test_output_scanner.sh`    | 42    | Secret pattern detection, tool-specific scanning, MCP output, high-entropy boundary (119/120/121 chars)                                 |
-| `test_bigquery_mcp.sh`      | 27    | Generic field extraction, nested fields, DML/DDL/export blocking                                                                        |
+| `test_bigquery_mcp.sh`      | 8     | Generic MCP field extraction, nested fields                                                                                             |
 | `test_self_protection.sh`   | 20    | Hook scripts and Claude config (Bash blocked by hook; Edit/Write blocked by `permissions.deny`)                                         |
 
 Supporting infrastructure:
