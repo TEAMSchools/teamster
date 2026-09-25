@@ -37,8 +37,7 @@ The decision rules are in the root CLAUDE.md _Subagents_ section. Behind them:
   the same tier.
 - A retry costs more than the tier you saved. When in doubt, go up a tier.
 - A skill's own model guidance wins over these rules.
-- Effort is settable on Workflow `agent()` and in a `.claude/agents/<name>.md`
-  frontmatter definition, not on `Agent`.
+- Workflow `agent()` also takes an effort setting.
 
 ## Verifying the result
 

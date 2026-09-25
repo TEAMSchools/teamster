@@ -1,5 +1,9 @@
 models:
   - name: rpt_illuminate__mastschd
+    description: >-
+      Current-year section master schedule feed for Illuminate. Newark, Camden,
+      and Paterson only; Miami left Illuminate ahead of AY2026-27 and is
+      excluded by an inclusive region filter.
     columns:
       - name: "`01 Section ID`"
         data_type: string

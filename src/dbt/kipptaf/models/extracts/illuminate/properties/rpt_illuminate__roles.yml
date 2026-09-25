@@ -1,5 +1,9 @@
 models:
   - name: rpt_illuminate__roles
+    description: >-
+      Staff role assignment feed for Illuminate. Newark, Camden, and Paterson
+      only; Miami left Illuminate ahead of AY2026-27 and is excluded by an
+      inclusive region filter.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

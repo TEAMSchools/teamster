@@ -69,18 +69,6 @@ models:
                 to: ref('dim_assessment_administrations')
                 field: assessment_administration_key
 
-      - name: enrollment_resolution
-        data_type: string
-        description: >-
-          How the section enrollment was resolved: subject_section (the section
-          for the assessment's subject, active on the test date) or homeroom
-          (the student's HR section, used when no subject section resolved).
-          Filter to subject_section for course/section-level rollups.
-        data_tests:
-          - accepted_values:
-              arguments:
-                values: [subject_section, homeroom]
-
       - name: student_section_enrollment_key
         data_type: string
         description: >-
@@ -181,6 +169,14 @@ models:
               arguments:
                 values: [not_taken, overall, group, standard]
           - not_null
+
+      - name: enrollment_resolution
+        data_type: string
+        description: >-
+          How the section enrollment was resolved: subject_section (the section
+          for the assessment's subject, active on the test date) or homeroom
+          (the student's HR section, used when no subject section resolved).
+          Filter to subject_section for course/section-level rollups.
 
       - name: scale_score
         data_type: numeric

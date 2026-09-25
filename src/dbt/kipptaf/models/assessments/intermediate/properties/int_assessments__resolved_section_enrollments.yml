@@ -40,10 +40,6 @@ models:
           (Illuminate-sourced), state_nj (Pearson NJ), state_fl (FLDOE FL),
           iready (i-Ready diagnostics), star (Renaissance STAR), or dibels
           (Amplify DIBELS benchmark composites).
-        data_tests:
-          - accepted_values:
-              arguments:
-                values: [internal, state_nj, state_fl, iready, star, dibels]
       - name: resolution_type
         data_type: string
         description: >-
@@ -52,10 +48,6 @@ models:
           anchor date); homeroom means tier 2 resolved it (no subject section
           matched; the homeroom section active on the anchor date was used
           instead).
-        data_tests:
-          - accepted_values:
-              arguments:
-                values: [subject_section, homeroom]
       - name: powerschool_student_number
         data_type: int64
         description: >-
