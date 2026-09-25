@@ -10,7 +10,9 @@ Every doc opens with:
 
 1. What it is: one paragraph, who uses it and for what.
 2. How it fits together: a diagram from sources to consumers.
-3. Terms.
+3. Terms, including every term the family skill defines: the skill is read by
+   Claude, the page by a person. Gradebook audit's skill defined its crosswalk
+   tab while the page never mentioned it.
 4. Where the data comes from: each source and who owns it. Before naming a
    source, confirm its `ref()` chain reaches the view or process the section
    describes (`rg -o 'ref\("[^"]+"\)'` on each model up the chain). A source

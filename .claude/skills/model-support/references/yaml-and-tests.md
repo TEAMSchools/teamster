@@ -71,6 +71,10 @@ dedupe partition, the join keys) and propose:
 - `accepted_values` on low-cardinality categories: status, region, test type,
   eligibility flags.
 - `relationships` to the parent's key where the join is a lookup.
+- `dbt_utils.accepted_range` on counts and scores, with the bound set from the
+  prod maximum plus headroom. A direction check (a count that should only rise)
+  is a different test: on gradebook audit, a 50 typed for a 5 would rise, fill
+  the right rows, and pass every check but a bound. Propose both.
 
 Present a table (model, test, columns, why, prod result) and wait for the user
 to approve before adding any test.
