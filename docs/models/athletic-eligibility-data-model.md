@@ -69,7 +69,8 @@ For each student, `int_students__athletic_eligibility` gathers:
 
 - this year's grade level and last year's grade level;
 - date of birth, for the age rule;
-- last year's credits (from Y1 stored grades) and last year's final Y1 GPA;
+- last year's credits and weighted Y1 GPA, both from every Y1 stored grade,
+  summer school included;
 - this year's Q1 term GPA, Y1 GPA at the end of semester 1, and current Y1 GPA;
 - this year's running ADA, and Q1 and semester 1 ADA, weighted and unweighted;
 - last year's whole-year ADA, weighted and unweighted;

@@ -16,6 +16,23 @@ with
         group by _dbt_source_relation, yearid, studentid, _dbt_source_project
     ),
 
+    py_gpa as (
+        select
+            studentid,
+            _dbt_source_project,
+
+            round(
+                safe_divide(sum(potentialcrhrs * gpa_points), sum(potentialcrhrs)), 2
+            ) as py_y1_gpa,
+
+        from {{ ref("stg_powerschool__storedgrades") }}
+        where
+            storecode = 'Y1'
+            and excludefromgpa = 0
+            and academic_year = {{ var("current_academic_year") - 1 }}
+        group by studentid, _dbt_source_project
+    ),
+
     cy_credits as (
         select
             _dbt_source_relation,
@@ -57,10 +74,10 @@ with
             gpa.gpa_y1_q2 as cy_s1_gpa,
             gpa.gpa_y1_cur as cy_y1_gpa,
 
-            gpapy.gpa_y1_cur as py_y1_gpa,
-
             pyc.py_credits,
             pyc.met_py_credits,
+
+            pyg.py_y1_gpa,
 
             cyc.met_cy_credits,
 
@@ -84,14 +101,13 @@ with
             and e.yearid = gpa.yearid
             and e._dbt_source_project = gpa._dbt_source_project
         left join
-            {{ ref("int_powerschool__gpa_term_pivot") }} as gpapy
-            on e.studentid = gpapy.studentid
-            and e.yearid = (gpapy.yearid + 1)
-            and e._dbt_source_project = gpapy._dbt_source_project
-        left join
             py_credits as pyc
             on e.studentid = pyc.studentid
             and e._dbt_source_project = pyc._dbt_source_project
+        left join
+            py_gpa as pyg
+            on e.studentid = pyg.studentid
+            and e._dbt_source_project = pyg._dbt_source_project
         left join
             cy_credits as cyc
             on e.studentid = cyc.studentid

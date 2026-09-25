@@ -124,7 +124,9 @@ models:
         description: Y1 GPA as of the end of Q2, the end of semester 1.
       - name: py_y1_gpa
         data_type: float64
-        description: Final Y1 GPA for the previous academic year.
+        description:
+          Weighted Y1 GPA for the previous academic year across every Y1 stored
+          grade, including summer school grades stored without a course number.
       - name: py_credits
         data_type: float64
         description:
