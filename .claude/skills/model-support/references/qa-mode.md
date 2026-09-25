@@ -67,6 +67,10 @@ Label every finding "expected" (with the reason) or "needs a look".
 
 3. On matched keys, count differing rows per column
    (`countif(d.<col> is distinct from p.<col>)`), grouped by school and term.
+   For a status or tier column, count old → new transitions instead, and report
+   the ones that make things worse for the student (eligible to ineligible, on
+   track to off track) as their own number. The dev build can be the compiled
+   SQL inlined as a CTE, run under ADC, when a dev build is not worth it.
 4. Read the refactor's hunks
    (`git -C <worktree> diff origin/main...HEAD -- <model>.sql`), tie each
    difference to the hunk that explains it, and label it a regression or an

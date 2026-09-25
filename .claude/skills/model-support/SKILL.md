@@ -33,6 +33,12 @@ the request; if it is unclear, ask.
   test. Ask before each dispatch; the user may skip one for a trivial edit.
 - Student-level rows stay in the terminal and the session scratchpad. Commit
   messages and PRs get aggregates without small cells.
+- When the user says a column or rule works differently from what the SQL shows,
+  search merged PRs for the model and column names before answering, and cite
+  the line and the PR once. Then ask one yes-or-no question about changing the
+  code; do not re-argue it in later messages.
+- Status updates to the user come in three groups: done, pending (your work),
+  and needs their decision. Nothing else.
 - Relative paths in commands (`docs/models`, `.claude/skills`) mean the checkout
   being edited. In a worktree, run them with `cd <worktree> &&` in the same
   command; from the main checkout they read stale copies and report a false

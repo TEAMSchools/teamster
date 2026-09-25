@@ -21,6 +21,10 @@ consumers):
 - Process: What triggers it → Inputs → Steps → Outputs (where they land, who
   reads them) → Who runs it and when.
 
+Before writing "live" or "today's data", check each model's materialization
+(`<dataset>.__TABLES__`, type 2 is a view): a view over tables is only as fresh
+as those tables' last build.
+
 Every doc closes with:
 
 1. Supporting models, including shared upstreams as one line each and "also read

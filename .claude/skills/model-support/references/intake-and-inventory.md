@@ -17,12 +17,15 @@ Ask in one message, before reading any SQL:
      specific tabs of a Sheet through the Sheets API (the Drive tools flatten
      every tab into one blob with no tab names).
 
-   Record the source's title and last-modified date (`get_file_metadata`), and
-   never put an internal doc link in the reference doc. If the model was
-   designed through `superpowers:brainstorming`, its spec under
-   `docs/superpowers/specs/` counts too. Granola and other claude.ai connectors
-   may need authorizing in the user's claude.ai connector settings; when one is
-   unavailable, ask for an export to scratch.
+   A Google Doc's tabs arrive as `#` headings: list them first and read every
+   tab that turns the policy into rules (athletic eligibility's Reporting tab
+   settled a blank status the policy tab left open). Record the source's title
+   and last-modified date (`get_file_metadata`), and never put an internal doc
+   link in the reference doc. If the model was designed through
+   `superpowers:brainstorming`, its spec under `docs/superpowers/specs/` counts
+   too. Granola and other claude.ai connectors may need authorizing in the
+   user's claude.ai connector settings; when one is unavailable, ask for an
+   export to scratch.
 
 2. Google Sheet upkeep: does anyone maintain an input sheet for this family
    (examples: CARAT goal updates, season regeneration, College Board ID

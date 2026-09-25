@@ -116,6 +116,17 @@ shipped with one or the other:
   never falling through to "no match". Count candidates per source record per
   tier; any count above 1 must reach the ambiguous label.
 
+## Status ladders
+
+When a column is a `case` that assigns a status or tier and stops at the first
+match, check two things against prod before documenting it:
+
+- Rows whose inputs are all present but whose status is null. Each one is a
+  missing branch (athletic eligibility had 43).
+- Rows that match a branch meant for another group. A branch for one grade band
+  written as `grade_level >= 6` also catches every older student, so a later
+  branch never fires. List the branch order and the range each branch covers.
+
 ## SQL comments
 
 Remove stale counts and "after this PR" narration from SQL comments. Prove the
