@@ -86,3 +86,19 @@ def test_split_rejects_unmapped_heading():
     split = _load("split_skill")
     with pytest.raises(KeyError, match="Gotchas"):
         split.split_sections(SOURCE, {"Goals": "g.md"}, default="SKILL.md")
+
+
+def test_check_links_reports_only_broken_relative_links(tmp_path):
+    links = _load("check_links")
+    (tmp_path / "references").mkdir()
+    (tmp_path / "references" / "goals.md").write_text("# Goals\n")
+    (tmp_path / "SKILL.md").write_text(
+        "[ok](references/goals.md)\n"
+        "[ok anchor](references/goals.md#goals)\n"
+        "[web](https://example.com/x)\n"
+        "[self](#top)\n"
+        "[broken](references/missing.md)\n"
+        "```text\n[in fence](nowhere.md)\n```\n"
+    )
+    broken = links.find_broken_links([tmp_path])
+    assert broken == [(tmp_path / "SKILL.md", 5, "references/missing.md")]
