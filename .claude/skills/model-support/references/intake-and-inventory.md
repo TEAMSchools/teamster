@@ -11,10 +11,15 @@ Ask in one message, before reading any SQL:
    requester's email. Three ways to hand it over:
    - a file dropped in the session scratchpad (give the absolute path);
    - a public URL, read with WebFetch;
-   - an org Google Drive file shared with the Codespaces account, read with the
-     Google Drive tools.
+   - an org Google Drive link, read with the Google Drive tools. They run as the
+     user, so no extra sharing is needed. Ask the user to share the file with
+     `codespaces@teamster-332318.iam.gserviceaccount.com` only when you need
+     specific tabs of a Sheet through the Sheets API (the Drive tools flatten
+     every tab into one blob with no tab names).
 
-   If the model was designed through `superpowers:brainstorming`, its spec under
+   Record the source's title and last-modified date (`get_file_metadata`), and
+   never put an internal doc link in the reference doc. If the model was
+   designed through `superpowers:brainstorming`, its spec under
    `docs/superpowers/specs/` counts too. Granola and other claude.ai connectors
    may need authorizing in the user's claude.ai connector settings; when one is
    unavailable, ask for an export to scratch.
@@ -40,6 +45,17 @@ Reading exposure YAML is local; do not open Tableau.
 
 Every external consumer needs an exposure (`src/dbt/kipptaf/CLAUDE.md` →
 Exposures). A missing one is a finding, not a reason to guess the branch.
+
+For a Google Sheet consumer, check the data team's two-tier convention: the
+Connected Sheets extraction lives in the shared drive's IMPORTRANGE Sources
+folder, named exactly after the model, and users get a friendly-named sheet in
+Reports that pulls from it with IMPORTRANGE. The exposure `url` points at the
+source sheet. Check with the Drive tools: `get_file_metadata` on the exposure's
+sheet ID gives its parent folder (then `get_file_metadata` on that folder for
+its name), and `search_files` with `fullText contains '<sheet id>'` finds a
+Reports sheet that imports it. A source sheet sitting in Reports, or no Reports
+copy, goes under "Known issues, need to fix". The convention is written up in
+`docs/guides/google-sheets.md` once PR #5525 merges.
 
 ## Propose the boundary
 
@@ -77,3 +93,8 @@ the user to confirm or edit it.
 - Cut candidates: one-time checks, change logs, "Resolved —" notes, counts that
   go stale.
 - Note every dashboard view or process step the doc does not explain.
+- Open issues about the family: `mcp__github__search_issues` with each model
+  name. Check each issue's claims against the current SQL before citing it;
+  issue bodies drift (on athletic eligibility, an open question said two regions
+  were excluded after the code had already brought one back). A resolved one is
+  a candidate to comment on and close, with the user's go-ahead.
