@@ -82,6 +82,7 @@ read each hunk in full, then route by the kind of change:
 | Logic in a status or tier `case` | [yaml-and-tests.md](references/yaml-and-tests.md) → Status ladders, `qa-mode.md`  | Ladder checks, then refactor parity by transition                   |
 | New view, sheet tab, or model    | [intake-and-inventory.md](references/intake-and-inventory.md), `reference-doc.md` | Boundary check, a new doc section, a new route in the family skill  |
 | SQL comment only                 | [yaml-and-tests.md](references/yaml-and-tests.md) → SQL comments                  | Comment-only proof and the CI warning                               |
+| New known issue, no diff         | [reference-doc.md](references/reference-doc.md) → Outline, Public-page rules      | Add it under known issues; security specifics go to Asana           |
 
 A rename sweep includes `*.md`: `rg -n '<old name>' --glob '*.{sql,yml,md}'`.
 Every edited doc section then gets the cold review, and every edited

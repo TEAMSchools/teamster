@@ -10,9 +10,11 @@ hold:
 - sheet-upkeep procedures the user named at intake;
 - yearly rollover: grep the family SQL for `current_academic_year` and
   hard-coded years or term names;
-- QA checks worth re-running after each data load;
+- QA checks worth re-running after each data load, each reporting what it
+  compared (`qa-mode.md` → New data landed);
 - questions people keep asking about the numbers;
-- before/after measurements the reference doc no longer carries.
+- before/after measurements that a later QA parity run compares against. Not a
+  changelog: commit messages already carry history.
 
 If the list is empty, say so and propose no skill. Either way, wait for the
 user's answer.

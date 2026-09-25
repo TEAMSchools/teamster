@@ -59,6 +59,16 @@ filter `academic_year = <current> - 1` at the matching term.
 
 Label every finding "expected" (with the reason) or "needs a look".
 
+Every check, here or in a family skill, reports what it compared:
+
+- A check whose comparison set was empty reports "skipped" and why, never
+  "passed". On gradebook audit, a crosswalk check passed for every week being
+  loaded because the crosswalk carries only completed weeks.
+- A check against prod names when a difference is expected. "Must match exactly"
+  is wrong when the run exists to change those values (a mid-year refresh), or
+  when last year's rows share the same keys (a rollover into a table with no
+  `academic_year`).
+
 ## Refactor parity
 
 1. Build the changed `rpt_` views on the dev target. Invoke `dbt-local-dev`

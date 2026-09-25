@@ -36,7 +36,10 @@ Every doc closes with:
    by" for in-family models with outside children.
 2. Inputs: Google Sheets and other hand-maintained sources.
 3. Decisions: why it works the way it does.
-4. Known issues, need to fix: each with the query or test that shows it.
+4. Known issues, need to fix: each with the query or test that shows it, or, for
+   a defect outside the warehouse, where it is tracked. If the doc already has
+   an open-questions section, add them there as a subsection instead of a second
+   heading.
 5. Yearly upkeep.
 
 ## What to cut
@@ -51,6 +54,13 @@ Every doc closes with:
 
 - No internal sheet URLs or IDs: write "ask the data team".
 - No emails, no student data, no small-cell counts.
+- A security defect goes in as shape only: that it exists, what kind, and where
+  the fix is tracked. Which page lacks a guard, the exact construct, and which
+  instance is reachable go to Asana, never a GitHub issue: this repo and its
+  issues are public. After redacting, search for the claim in other words across
+  the repo, not only for the removed string: on the PowerSchool plugin, two
+  prose passages restated the redacted facts, and one shipped in a distributed
+  zip.
 - No standalone bold line as a heading (markdownlint MD036, `docs/CLAUDE.md`).
 - Add the page to the `mkdocs.yml` nav under `Models`.
 
