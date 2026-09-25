@@ -39,8 +39,8 @@ const STAFF_SENSITIVE_SCOPE_BY_MEMBER = {
   gender_identity: "staff_pii_scope",
   race: "staff_pii_scope",
   is_hispanic: "staff_pii_scope",
-  // Leave type (Medical / Family / Disability) or termination reason behind a
-  // period's status_name. status_name itself stays on the open directory.
+  // The hire, leave type, or termination reason behind a period's
+  // status_name. status_name itself stays on the open directory.
   status_reason: "staff_pii_scope",
   salary: "staff_compensation_scope",
 };

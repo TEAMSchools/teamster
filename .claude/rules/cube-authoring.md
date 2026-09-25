@@ -214,14 +214,8 @@ reason about.
   the chain-IN check). The location∩department remit is precomputed server-side
   into `securityContext.allowed_abbreviations` / `allowed_department_groups` —
   domain-agnostic, reused as-is when comp/observations/benefits views are built.
-  `staff_pii` is an access tier, not a FERPA category: sensitive HR fields that
-  aren't identifiers (`status_reason`) belong there too, never on
-  `staff_directory`. Every policy returns zero rows for former staff, because
-  the remit attributes (`dim_staff_cube_access`) and the reporting chain cover
-  current staff only, so termination reasons for people who have left can't be
-  read through Cube. `tests/cube/test_cube_schema.py` checks that every
-  `staff_pii_scope` member in `access.js` is exposed only behind `staff-pii-*`
-  groups.
+  `tests/cube/test_cube_schema.py` checks that every `staff_pii_scope` member in
+  `access.js` is exposed only behind `staff-pii-*` groups.
 - **No aggregate-demographics view yet.** A `staff_summary` view once exposed
   `gender_identity`/`race`/`is_hispanic` as open, unscoped aggregate breakdowns
   — removed because small-cell slices (e.g. location × race) can re-identify an
@@ -263,10 +257,11 @@ emits one scope-specific group per enum value instead of a single group gated by
 a `conditions.if` branch.
 
 When adding a sensitive staff field, decide PII status per
-`.claude/rules/ferpa-pii.md`. If PII, add it to `staff_pii.yml` (not
-`staff_directory.yml`) and wire its per-field scope in `access.js`'s
-`STAFF_SENSITIVE_SCOPE_BY_MEMBER`. Student views have no PII split — the
-`student` group sees every field.
+`.claude/rules/ferpa-pii.md`. If PII, or a sensitive HR field that is not an
+identifier (`status_reason`; `staff_pii` is an access tier, not a FERPA
+category), add it to `staff_pii.yml` (not `staff_directory.yml`) and wire its
+per-field scope in `access.js`'s `STAFF_SENSITIVE_SCOPE_BY_MEMBER`. Student
+views have no PII split — the `student` group sees every field.
 
 ## `cube.js` security model
 
