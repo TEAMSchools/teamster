@@ -57,9 +57,10 @@ with the crosswalk; ignore it.
 
 Validated 2026-09-24 by running every current ID through the match
 (`--vars '{sat_psat_match_all_ids: true}'`) and scoring it against the
-crosswalk: all 3,031 `resolved` rows agreed, 34 went to `flagged_for_review` (7
-of them Tier S rows whose `secondary_id` named the wrong student), and 15 were
-`no_match`. Rerun that validation after changing a tier.
+crosswalk: all 3,035 `resolved` rows agreed, 30 went to `flagged_for_review` (7
+of them Tier S rows whose `secondary_id` named the wrong student), 1 was
+`ambiguous`, and 14 were `no_match`. Rerun that validation after changing a
+tier.
 
 ## Step 4: Deliver, paste, reconcile
 

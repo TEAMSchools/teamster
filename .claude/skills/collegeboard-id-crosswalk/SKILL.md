@@ -57,8 +57,8 @@ Every paste reaches the user in one shape:
    `College_Board_ID<tab>PowerSchool_Student_Number`, no header, handed over as
    a clickable path to open in VS Code, select all, copy, and paste below the
    last filled row. Never in chat: the chat panel turns tabs into spaces.
-3. Review tables (Tier C/D, `flagged_for_review`, `no_match`) in chat as
-   markdown, never in the paste file.
+3. Review tables (Tier C/D, `flagged_for_review`, `ambiguous`, `no_match`) in
+   chat as markdown, never in the paste file.
 
 After the paste, confirm the crosswalk staging model's row count rose by the
 number of rows handed over, then reconcile: no generated pair missing, no

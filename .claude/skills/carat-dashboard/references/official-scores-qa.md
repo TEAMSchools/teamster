@@ -121,7 +121,7 @@ Three parts, in this order.
    the staging row-count check; the step 1 table of rebuild times with the line
    that views read live and Tableau shows the scores after its next refresh; the
    step 2 before/now table with whether the student increase matches the rows
-   pasted; anything still open (`flagged_for_review`, `no_match`).
+   pasted; anything still open (`flagged_for_review`, `ambiguous`, `no_match`).
 2. **Draft for KIPP Forward**, opened with a one-line "Written for" note: a
    short email naming the tests and administrations, the step 4 table with its
    total, how many students are still being matched, and that it is internal to

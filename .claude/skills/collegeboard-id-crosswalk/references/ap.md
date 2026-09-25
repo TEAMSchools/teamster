@@ -108,8 +108,9 @@ logic.
 ## Phase 6: Tier breakdown
 
 Present counts per tier (how many resolved at Tier A/B, C, D, via tiebreak), how
-many `flagged_for_review` (gender mismatch), and how many `no_match`. Ask:
-"Ready to start copy-pasting matches into the sheet?" **Don't proceed without
+many `flagged_for_review` (gender mismatch), how many `ambiguous` (several
+candidates the tiebreak couldn't narrow), and how many `no_match`. Ask: "Ready
+to start copy-pasting matches into the sheet?" **Don't proceed without
 confirmation.**
 
 ## Phase 7: Delivery
