@@ -49,6 +49,21 @@ facts:
 #5508's branch", and PR 1 cannot start until it merges. A new section says how
 Cube and dbt descriptions relate.
 
+**Revision, 2026-09-25, second pass — band sets are configuration, and become
+C5.** Both earlier versions deleted the band-set table (reference L58–83) under
+sieve step 1. Only its Scores column is a point-in-time number. The set names,
+cut points and first mastery band are configuration, and no Cube member carries
+them: `performance_band_set_id` stops at `int_assessments__assessments_members`.
+Re-measured today, the table was also stale and partial (details under C5).
+Changes:
+
+- Sieve step 1 no longer names the band-set table as its example.
+- New C5 adds band-set columns to `dim_assessments` and the assessments cube,
+  shipped as PR 7.
+- PR 1 replaces the table with the corrected fallback in C5, without volumes. PR
+  7 deletes it.
+- The `performance_band_label_number` and `is_mastery` drafts point at C5.
+
 ## Decision
 
 The Claude + Cube working group runs on two markdown files uploaded by hand to a
@@ -203,10 +218,12 @@ added later lands in the same place. It is a sieve, in the same shape as the
 column procedure in `.claude/rules/ferpa-pii.md`: **work down the list, stop at
 the first match.**
 
-1. **Is it a point-in-time number?** Score volumes, percentages, year ranges,
-   the performance-band cut-point table. Delete it, or restate it qualitatively.
-   This runs first because it removes content regardless of which channel would
-   otherwise take it.
+1. **Is it a point-in-time number?** Score volumes, percentages, year ranges.
+   Delete it, or restate it qualitatively. This runs first because it removes
+   content regardless of which channel would otherwise take it. Configuration is
+   not a point-in-time number even though it can change: a band set's cut points
+   are what the data means, not how much of it there is. Configuration that no
+   member carries is a model change (C5), not a deletion.
 2. **Is it derivable live?** Which region has which source in which years is a
    query. Delete the specifics; say that coverage is uneven and how to check.
 3. **Does it hold for more than one view?** `notSet` versus `equals "null"`, and
@@ -255,9 +272,9 @@ the other channel needs a sieve step that says why.
 | `response_type_code`                     | L235 "Normalize standard codes before any standards-level rollup … never an average of the two reported percentages"                         | Breakdown identifier — the standard code on Illuminate standard rows, the domain on i-Ready group rows, the subtest on DIBELS group rows. Null on Illuminate group rows and on every overall and not_taken row. Some CCSS Math standards carry two spellings (8.EE.C.8.b and 8.EE.C.8b), and a small share of older rows have an empty code. | For a standards rollup, group on response_type_code_canonical once C2 ships; until then merge the two spellings and recompute pct_proficient from the counts, never by averaging the two percentages. For an Illuminate group-level cut, group on response_type_description — this code is null there, so keying on it drops every Illuminate group row and keeps i-Ready and DIBELS. |
 | `response_type_description`              | none; from the 2026-09-23 measurement below                                                                                                  | Human-readable breakdown label. Populated on standard rows and every group row; null on overall and not_taken.                                                                                                                                                                                                                               | —                                                                                                                                                                                                                                                                                                                                                                                     |
 | `response_type_root_description`         | L141 "the CCSS domain rollup — reliable for CCSS-aligned content, unreliable for FL state-aligned standards"; L440                           | CCSS domain the standard rolls up to. Populated on Illuminate standard rows only.                                                                                                                                                                                                                                                            | Unreliable for FL state-aligned standards. Null on every i-Ready, DIBELS, STAR and state row, so never group a cross-source query by it.                                                                                                                                                                                                                                              |
-| `performance_band_label_number`          | L58 "Performance bands are Illuminate-only … It is not a 1–5 scale and not comparable across assessments"; L76–83; L231                      | Position of the score's band within its assessment's performance band set. Illuminate only; null for state and vendor rows. Band sets differ in cut points, in band count, and in which band starts mastery, so band 5 is not always the top.                                                                                                | Never compare or pool band numbers across assessments unless they share a band set. Within one set, prefer this number to proficiency_level text, which has many spellings per band.                                                                                                                                                                                                  |
+| `performance_band_label_number`          | L58 "Performance bands are Illuminate-only … It is not a 1–5 scale and not comparable across assessments"; L76–83; L231                      | Position of the score's band within its assessment's performance band set. Illuminate only; null for state and vendor rows. Band sets differ in cut points, in band count, and in which band starts mastery, so band 5 is not always the top.                                                                                                | Never compare or pool band numbers across assessments unless they share a band set; once C5 ships, group by performance_band_set first. Within one set, prefer this number to proficiency_level text, which has many spellings per band.                                                                                                                                              |
 | `proficiency_level`                      | L270 i-Ready scale; L351 DIBELS tiers; L373 STAR levels; L392 NJ; L433 FL; L344 "Tier-movement rates are not comparable to i-Ready's"        | Proficiency label; the vocabulary is per source. i-Ready: five placement levels, 3 or More Grade Levels Below through Mid or Above Grade Level. DIBELS: Well Below, Below, At and Above Benchmark. STAR: Level 1 to Level 5, null on a share of rows. State: the achievement level. Illuminate: the performance band label.                  | Tier-movement rates are not comparable across instruments — fewer, wider tiers mechanically raise the stayed-the-same rate. Compare each instrument with itself over time.                                                                                                                                                                                                            |
-| `is_mastery`                             | L32 "the underlying per-score proficient flag"; L76 "The mastery bar ranges from 60% to 80% correct"; L291 Early On counts; L432 FL Level 3+ | Per-row proficient flag that pct_proficient is built from. The bar is per source — for i-Ready, Early On Grade Level and Mid or Above Grade Level; for FL, Level 3 and up; for Illuminate, set by each assessment's band set, so it is not one fixed standard across Illuminate.                                                             | i-Ready's bar includes Early On Grade Level, the lower of its two on-grade placements; for a Mid or Above bar, filter proficiency_level directly. An Illuminate rate mixes assessments with different bars, so say which assessments it covers.                                                                                                                                       |
+| `is_mastery`                             | L32 "the underlying per-score proficient flag"; L76 "The mastery bar ranges from 60% to 80% correct"; L291 Early On counts; L432 FL Level 3+ | Per-row proficient flag that pct_proficient is built from. The bar is per source — for i-Ready, Early On Grade Level and Mid or Above Grade Level; for FL, Level 3 and up; for Illuminate, set by each assessment's band set, so it is not one fixed standard across Illuminate.                                                             | i-Ready's bar includes Early On Grade Level, the lower of its two on-grade placements; for a Mid or Above bar, filter proficiency_level directly. An Illuminate rate mixes assessments with different bars, so say which assessments it covers; once C5 ships, report mastery_cut_score alongside it.                                                                                 |
 | `scale_score`                            | L308 "scale scores do not normalize across grade bands"                                                                                      | Scale score achieved. Null for Illuminate (percent-correct) rows. Scales differ by source, and within i-Ready the scale compresses at higher grades.                                                                                                                                                                                         | Report a scale-score change within one grade band, never pooled across ES and MS. i-Ready's growth norms are not in this view; do not label a computed delta with the vendor's growth-measure name.                                                                                                                                                                                   |
 | `enrollment_resolution`                  | L115 "filter `enrollment_resolution = subject_section`"                                                                                      | How the section enrollment was resolved — subject_section or homeroom. (Shipped text, minus its instruction.)                                                                                                                                                                                                                                | Filter to subject_section for course- and section-level rollups.                                                                                                                                                                                                                                                                                                                      |
 | `date_taken`                             | L120–128                                                                                                                                     | Present                                                                                                                                                                                                                                                                                                                                      | —                                                                                                                                                                                                                                                                                                                                                                                     |
@@ -334,7 +351,8 @@ scope), L152, L358 and L381 (coverage), L317 (sittings), L329 (upstream), L414
 | L28 "filter with operator `notSet` … `equals "null"` matches the literal string"                                 | `load` docstring                                | 3          |
 | L54 "A dimension-only pull silently de-duplicates"                                                               | `load` docstring                                | 3          |
 | L118 "force-refresh `meta` if the lead-teacher fields appear to be missing"                                      | `meta` docstring                                | 3          |
-| L66–74 band-set table; L187–201 module-type volumes                                                              | deleted                                         | 1          |
+| L66–74 band-set Scores column; L187–201 module-type volumes                                                      | deleted                                         | 1          |
+| L58–83 band-set names, cut points and first mastery band                                                         | C5 members; corrected fallback until PR 7       | C5         |
 | L147 regional loss rates; L298 median test dates; L322 repeat-sitting rates; L400 window dates; L411 Fall counts | deleted; the qualitative claim stays in its row | 1          |
 | L152 Paterson specifics; L304 i-Ready regions; L358 DIBELS start year; L381 STAR start year; L439 FL is Miami    | deleted; the view says coverage is uneven       | 2          |
 | L269, L350, L372, L391, L431 "`response_type = null`"                                                            | deleted; wrong since 2026-09-22                 | —          |
@@ -623,6 +641,66 @@ Alternatives. Cube-only `CASE` on `assessment_type`: no rebuild, same grey area
 as C2's alternative. Text only: fix `is_internal_assessment` and list values by
 family on `assessment_type`.
 
+### C5. Performance band set
+
+Finding. `performance_band_label_number` means nothing without its band set, and
+no Cube member names the set. `performance_band_set_id` reaches
+`int_assessments__assessments_members` and stops; `dim_assessments` reads that
+model but does not select it. Measured 2026-09-25 over every band set that an
+AY2025-26 or AY2026-27 assessment points at (about 85 distinct configurations),
+the reference table was stale and partial:
+
+- K-2 PB's cut points moved from 0 / 30 / 60 / 80 / 90 to 0 / 50 / 65 / 80 / 90.
+  Mastery still starts at band 4.
+- The most common configuration was missing. Illuminate copies a set per
+  imported assessment, so "KIPP Performance Levels" spreads across about 1,900
+  set ids, each small when ranked by id.
+- A new 6-band set, SY26-27 KIPP Math Performance Levels, starts mastery at
+  band 5.
+- The mastery bar is not 60–80% correct. CIAs for non-AP courses start at 81; AP
+  mock and unit sets start between 39 and 60; two sets mark every band as
+  mastery, a bar of 0.
+- Cut points are not always percent correct. A CKLA fluency set cuts at 4.7 to
+  44.9, and practice SAT and ACT sets carry 27 to 53 bands.
+- Cut points alone do not give the mastery band. CIAs for non-AP courses share
+  KIPP Performance Levels' cut points and start mastery at band 5, not 4.
+
+`dim_assessments` is one row per Illuminate `assessment_id`, and each assessment
+points at one band set, so the columns attach without a grain change.
+
+Chosen. Add four columns to `dim_assessments`, null for every non-Illuminate
+row, from `int_illuminate__performance_band_sets` aggregated to one row per set:
+
+- `performance_band_set` — the set's name.
+- `performance_band_count` — how many bands it has.
+- `mastery_band_label_number` — the lowest band flagged `is_mastery`.
+- `mastery_cut_score` — that band's minimum value. The description says the unit
+  is percent correct for most sets but not all.
+
+Expose them on the assessments cube and the view, in the `Assessment` folder.
+Each reads one column, so its dbt `description:` matches the Cube one. Names are
+drafts; review applies the marts column-naming rubric.
+
+Until PR 7 merges, PR 1 keeps this fallback in the reference file, labeled a
+partial list of the most-used configurations as of 2026-09-25:
+
+| Band set                                                 | Cut points                 | Mastery starts |
+| -------------------------------------------------------- | -------------------------- | -------------- |
+| KIPP Performance Levels (every year and "Imported" copy) | 0 / 21 / 41 / 61 / 81      | band 4         |
+| District Default                                         | 0 / 60 / 70 / 80 / 90      | band 4         |
+| SY26-27 KIPP Math Performance Levels                     | 0 / 30 / 50 / 60 / 70 / 80 | band 5         |
+| KIPP T&F 2021-22 MS PB                                   | 0 / 25 / 45 / 65 / 85      | band 4         |
+| HS Summative Assessment (non-AP), and its KIPP NJ copy   | 0 / 40 / 60 / 75 / 88      | **band 3**     |
+| KIPP T&F 2021-22 ES PB                                   | 0 / 30 / 50 / 70 / 85      | band 4         |
+| KIPP T&F 2026-27 K-2 PB                                  | 0 / 50 / 65 / 80 / 90      | band 4         |
+| CKLA (80%+ Mastery)                                      | 0 / 20 / 40 / 60 / 80      | band 5         |
+| CIAs for non-AP Courses                                  | 0 / 21 / 41 / 61 / 81      | band 5         |
+| FAST Performance Bands 3-4                               | 8 bands, 0 / 55 / 60 … 85  | band 6         |
+| AP4A/CCRS General                                        | 0 / 21 / 41 / 61 / 81      | every band     |
+
+Alternative. Text fallback only: the table above, kept by hand. Rejected because
+it had already drifted once and missed the largest configuration.
+
 ## Eval extension
 
 `src/cube/mcp/eval` today measures one thing, the academic-year crosswalk, with
@@ -729,6 +807,7 @@ rather than inlined in the scorer's main loop.
 | 4   | C2: canonical standard code                                                                                           | dbt build; pre-agg partition count unchanged on branch staging                                                                                             |
 | 5   | C3: `count_assessments`                                                                                               | `uv run pytest tests/cube/`; branch staging query returns quartile-shaped counts                                                                           |
 | 6   | C4: `assessment_family`                                                                                               | `uv run dbt build --select dim_assessments+`; eval rerun                                                                                                   |
+| 7   | C5: band-set columns on `dim_assessments`, deletes the reference fallback table                                       | `uv run dbt build --select dim_assessments+`; `assessment_key` still unique; `mastery_cut_score` matches the band-set model for a sample of sets           |
 
 Each PR body carries the markdown lines it deleted, so a reviewer can see the
 fact and its new wording side by side.
