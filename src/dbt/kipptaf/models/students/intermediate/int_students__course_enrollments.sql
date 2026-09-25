@@ -223,7 +223,7 @@ with
             <= current_date('{{ var("local_timezone") }}') as is_term_started,
 
             countif(not is_dropped_section) over (
-                partition by _dbt_source_project, cc_academic_year, cc_sectionid
+                partition by _dbt_source_project, cc_academic_year, sections_dcid
             ) as section_enrolled_count,
         from unioned
     )
@@ -245,7 +245,7 @@ select
                 is_term_started desc,
                 cc_dateenrolled desc,
                 section_enrolled_count desc,
-                cc_section_number asc,
+                cc_section_number asc nulls last,
                 cc_dcid asc
         ),
         null

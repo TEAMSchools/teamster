@@ -445,8 +445,8 @@ data_tests:
       hold a primary ELA or math section (`rn_core_subject_year = 1`). The
       likeliest cause is a course missing from the course-subject crosswalk
       sheet -- a new Florida code or a renumbered PowerSchool course -- which
-      otherwise leaves students unscheduled with no error. Measured 2026-09-25
-      before this test existed: 97.4% NJ and 98.6% Miami for math.
+      otherwise leaves students unscheduled with no error. Every region sat a
+      few points above the threshold for both subjects when the test was added.
     config:
       meta:
         dagster:

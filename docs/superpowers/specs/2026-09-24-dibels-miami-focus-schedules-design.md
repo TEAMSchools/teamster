@@ -135,8 +135,8 @@ filters, and verification lists each case:
 - students whose `rn_course_number_year = 1` row was a dropped section gain
   their live section.
 
-Intensive Reading stays out of core ELA. 1 Miami AY2026 student (grade 6) holds
-it with no main ELA course; the owner raises that student with Miami.
+Intensive Reading stays out of core ELA. Very few Miami AY2026 students hold it
+with no main ELA course; the owner raises those cases with Miami.
 
 ## Goal
 
