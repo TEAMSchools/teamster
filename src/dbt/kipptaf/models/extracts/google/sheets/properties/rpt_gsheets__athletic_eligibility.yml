@@ -141,7 +141,9 @@ models:
           test for being on track to earn 30 credits this year.
       - name: is_first_time_ninth
         data_type: boolean
-        description: True for a 9th grader who was not in 9th grade last year.
+        description:
+          True for a 9th grader who was not in 9th grade last year, including a
+          student new to the network.
       - name: is_age_eligible
         data_type: boolean
         description:

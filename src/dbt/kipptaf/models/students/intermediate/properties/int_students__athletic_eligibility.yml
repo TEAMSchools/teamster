@@ -71,8 +71,9 @@ models:
           Spring eligibility status after the February 1 credit check. High
           school reads current-year credits (no failing Y1 grade as of Q2), Y1
           GPA at the end of semester 1, and semester 1 weighted ADA. Middle
-          school reads the current Y1 GPA and the running ADA. The same GPA and
-          ADA cut points as Q1 apply.
+          school reads the current Y1 GPA and the running ADA. Any student with
+          a current Y1 GPA below 2.2 is Ineligible - GPA, high school included.
+          The same GPA and ADA cut points as Q1 apply.
         data_tests:
           - accepted_values:
               arguments:

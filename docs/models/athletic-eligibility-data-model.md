@@ -15,7 +15,10 @@ quarter, and the sheet reads the result.
 
 ```mermaid
 flowchart LR
-    enr[int_extracts__student_enrollments] --> ae[int_students__athletic_eligibility]
+    att[int_students__attendance_daily] --> adat[int_powerschool__ada_term]
+    adat --> adap[int_powerschool__ada_term_pivot]
+    adap --> enr[int_extracts__student_enrollments]
+    enr --> ae[int_students__athletic_eligibility]
     gpa[int_powerschool__gpa_term_pivot] --> ae
     sg[stg_powerschool__storedgrades] --> ae
     fg[base_powerschool__final_grades] --> ae
@@ -27,11 +30,15 @@ flowchart LR
 
 ## Terms
 
-- **ADA** — average daily attendance, as a fraction of days enrolled.
+- **ADA** — average daily attendance: days present over days enrolled with
+  recorded attendance, up to today.
 - **Weighted ADA** — ADA where a tardy counts as 0.67 of a day present.
   Unweighted ADA counts a tardy as a full day.
+- **Running ADA** — this year's ADA so far. The enrollment model's `ada` column
+  holds it, weighted for high school and unweighted for middle school.
 - **Y1 GPA** — the year-to-date GPA across all courses.
-- **First-time 9th grader** — a 9th grader who was not in 9th grade last year.
+- **First-time 9th grader** — a 9th grader who was not in 9th grade last year,
+  including a student new to the network.
 - **Probation** — eligible to play, with a required intervention (office hours
   for GPA, an attendance contract for ADA).
 
@@ -51,8 +58,10 @@ tab. Ask the data team for the link.
 
 ## What triggers it
 
-The tracker is a live view. Every time the sheet refreshes, it reads today's
-enrollment, grades, and attendance. Nothing is frozen at the start of a season.
+Both tracker models are views, so every sheet refresh recomputes the statuses.
+They read enrollment, attendance, and GPA tables that rebuild on their own
+schedules, so the sheet reflects those tables' last build. Nothing freezes at
+the start of a season.
 
 ## Inputs
 
@@ -62,7 +71,7 @@ For each student, `int_students__athletic_eligibility` gathers:
 - date of birth, for the age rule;
 - last year's credits (from Y1 stored grades) and last year's final Y1 GPA;
 - this year's Q1 term GPA, Y1 GPA at the end of semester 1, and current Y1 GPA;
-- this year's running ADA, Q1 ADA, and semester 1 ADA, weighted and unweighted;
+- this year's running ADA, and Q1 and semester 1 ADA, weighted and unweighted;
 - last year's whole-year ADA, weighted and unweighted;
 - whether any current Y1 grade is failing as of Q2.
 
@@ -80,44 +89,54 @@ After age, the cut points are the same everywhere:
 | 2.2 to 2.49 | Probation - GPA     | Probation - ADA and GPA |
 | Below 2.2   | Ineligible - GPA    | Ineligible - GPA        |
 
-What changes by quarter is which GPA, ADA, and credit values are read:
+What changes by quarter is which values are read:
 
-| Quarter            | High school reads                                                                  | Middle school reads                      |
-| ------------------ | ---------------------------------------------------------------------------------- | ---------------------------------------- |
-| Q1 (fall)          | Last year's credits (30 needed), final Y1 GPA, whole-year ADA                      | Last year's final Y1 GPA, whole-year ADA |
-| Q2 (winter)        | Last year's credits, Q1 term GPA, Q1 weighted ADA                                  | Current Y1 GPA, running ADA              |
-| Q3 and Q4 (spring) | No failing Y1 grade as of Q2, Y1 GPA at end of semester 1, semester 1 weighted ADA | Current Y1 GPA, running ADA              |
+| Quarter            | High school reads                                                                  | Middle school reads                                 |
+| ------------------ | ---------------------------------------------------------------------------------- | --------------------------------------------------- |
+| Q1 (fall)          | Last year's credits (30 needed), final Y1 GPA, unweighted whole-year ADA           | Last year's final Y1 GPA, unweighted whole-year ADA |
+| Q2 (winter)        | Last year's credits (30 needed), Q1 term GPA, Q1 weighted ADA                      | Current Y1 GPA, running ADA                         |
+| Q3 and Q4 (spring) | No failing Y1 grade as of Q2, Y1 GPA at end of semester 1, semester 1 weighted ADA | Current Y1 GPA, running ADA                         |
 
-Exemptions:
+Rules that cross those columns:
 
 - In Q1, first-time 9th graders and grade 5 students are Eligible without the
   GPA, ADA, and credit checks.
 - In Q2, first-time 9th graders skip the credit check.
-- A high school student under 30 credits is **Ineligible - Credits**.
+- **Ineligible - Credits** means under 30 credits last year in Q1 and Q2, and a
+  failing Y1 grade as of Q2 in Q3 and Q4.
 - In Q2, any student with a Q1 term GPA below 2.2 is **Ineligible - GPA**,
-  middle school included, even though the other middle school Q2 rules read the
-  current Y1 GPA.
+  middle school included.
+- In Q3 and Q4, any student with a current Y1 GPA below 2.2 is **Ineligible -
+  GPA**, high school included, even when the semester 1 GPA passes.
+- A student with no previous-year GPA or ADA gets no Q1 status. That is any
+  student new to the network in grades 6 to 8 or 10 to 12, in every region.
 
 ## Outputs
 
-`rpt_gsheets__athletic_eligibility` adds roster details (school, name, cohort,
-email) to the statuses and is the table the Google Sheet reads. It holds one row
-per student, and excludes out-of-district placements.
+`rpt_gsheets__athletic_eligibility` joins the statuses back to the enrollment
+roster on `student_number`, academic year, and region, adds school, name,
+cohort, and email, and excludes out-of-district placements. It is the table the
+Google Sheet reads, one row per student. It does not carry the running ADA or
+the current Y1 GPA, so the sheet cannot show the values behind a middle school
+status.
 
 `int_students__athletic_eligibility` is also read by
-`rpt_deanslist__promo_status`, which unpivots the four statuses. A change to the
-statuses changes that extract too.
+`rpt_deanslist__promo_status`, which unpivots the four statuses. Unpivot drops
+blanks, so a blank status never reaches DeansList. A change to the statuses
+changes that extract too.
 
 ## Who runs it and when
 
-Nobody runs it by hand. The dbt views update whenever their upstream tables
-rebuild, and the sheet reads the view through Connected Sheets on the sheet's
-own refresh schedule. Teaching and Learning shares the sheet with schools.
+Nobody runs it by hand. The sheet reads the view through Connected Sheets on the
+sheet's own refresh schedule. Teaching and Learning shares the sheet with
+schools.
 
 ## Supporting models
 
-- `int_extracts__student_enrollments` — the enrollment roster, grade levels,
-  birthdays, and every ADA figure, joined on `student_number` and region.
+- `int_extracts__student_enrollments` — the base roster: grade levels,
+  birthdays, and every ADA figure.
+- `int_powerschool__ada_term_pivot` — ADA by term, semester, and year, read by
+  the enrollment model.
 - `int_powerschool__gpa_term_pivot` — GPA by term for this year and last year,
   joined on `studentid`, `yearid`, and region.
 - `stg_powerschool__storedgrades` — last year's Y1 stored grades, summed for
@@ -128,12 +147,9 @@ own refresh schedule. Teaching and Learning shares the sheet with schools.
 ## Decisions
 
 - **Miami is excluded.** Its athletics program is outside the tracker's scope.
-- **Paterson middle school is included.** Paterson students new to the network
-  have no previous-year GPA or ADA, so they have no fall status; returning
-  Paterson students are evaluated like everyone else.
-- **Statuses are live.** The middle school policy says "at the start of the
-  season", but the tracker has always shown current values, and no change has
-  been agreed. See the open questions below.
+- **Newark, Camden, and Paterson are included from grade 5 up.**
+- **Statuses are live, not frozen at the start of a season.** See the open
+  questions.
 - **The tracker follows the policy doc's Reporting tab** where it is more
   specific than the policy text.
 
@@ -151,15 +167,14 @@ own refresh schedule. Teaching and Learning shares the sheet with schools.
   answer with Teaching and Learning, then change the Q2 through Q4 high school
   rules for that region.
 - **A high school student missing a high school input falls through to the
-  middle school rules.** If, for example, Q1 weighted ADA is missing, the Q2
-  `case` reaches the middle school branches, which read the running ADA and the
-  current Y1 GPA instead. Fix: end the high school branches with an explicit
-  status for missing data.
+  middle school rules.** A missing credit record (Q1), Q1 weighted ADA (Q2), or
+  semester 1 ADA or Q2 grades (Q3 and Q4) skips every high school branch, so the
+  status comes from the running ADA and current Y1 GPA instead. Fix: end the
+  high school branches with an explicit status for missing data.
 
 ## Open questions
 
-- **What should a new student's fall status be?** A student with no
-  previous-year GPA or ADA has a blank Q1 status. The policy does not say.
+- **What should a new student's fall status be?** The policy does not say.
 - **Should middle school statuses freeze at the start of each season?** The
   policy says "at the start of the season"; the tracker shows live values. This
   has never been agreed as a change, so it stays live until Athletics decides.
