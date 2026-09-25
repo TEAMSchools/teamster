@@ -1,5 +1,15 @@
 models:
   - name: int_topline__gpa_term_weekly
+    description: >-
+      Weighted Y1 term GPA carried onto the enrollment week spine, one row per
+      enrolled student-week for middle and high school in the current and prior
+      academic year. The GPA comes from snapshot_powerschool__gpa_term, matched
+      to the snapshot version in effect at the instant the week closes, so each
+      week reports the freshest value known during it. That boundary instant is
+      built in the local timezone, and comparing it against the version's
+      validity span as a half-open interval resolves every week to exactly one
+      version. Feeds int_topline__student_metrics, which scores each row against
+      the 3.00 bar.
     config:
       materialized: table
       meta:
@@ -9,3 +19,34 @@ models:
           # midnight tick (deps-in-progress guard serializes). Refs #4153
           automation_condition:
             cron_schedule: 0 0 * * *
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - academic_year
+              - week_start_monday
+          config:
+            severity: error
+    columns:
+      - name: student_number
+        description: KIPP student number of the enrolled student.
+        config:
+          meta:
+            contains_pii: true
+      - name: academic_year
+        description: Academic year the enrollment week belongs to.
+      - name: week_start_monday
+        description: Monday that opens the enrollment week.
+      - name: week_end_sunday
+        description:
+          Sunday that closes the enrollment week, and the date the snapshot
+          boundary instant is built from.
+      - name: gpa_y1
+        description:
+          Weighted year-to-date term GPA in effect when the week closed, as
+          captured by the snapshot. Null where no snapshot version covers that
+          instant.
+        config:
+          meta:
+            contains_pii: true

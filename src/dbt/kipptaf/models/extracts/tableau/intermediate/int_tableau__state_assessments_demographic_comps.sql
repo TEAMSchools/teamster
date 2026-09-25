@@ -1,10 +1,3 @@
-{#
-    Student-level assessment scores joined to enrollment demographics,
-    then aggregated via GROUPING SETS into demographic comparison rows.
-
-    Each grouping set produces one demographic focus at a time (or a total),
-    crossed with region present-or-rolled-up — 12 sets total.
-#}
 {% set base_dims = [
     "academic_year",
     "district_state",
@@ -278,7 +271,11 @@ with
         inner join
             {{ ref("int_fldoe__all_assessments") }} as a
             on e.academic_year = a.academic_year
-            and e.state_studentnumber = a.student_id
+            -- network student_number, the same key the NJ legs above use;
+            -- Miami state_studentnumber reads fleid, null under Focus (#5042).
+            -- Guarded by test_state_assessment_joins_resolve_miami, which
+            -- asserts this leg holds rows -- a revert re-drops Miami silently.
+            and e.pearson_local_student_identifier = a.student_number
             and e._dbt_source_project = a._dbt_source_project
             and a.results_type = 'Actual'
             and a.scale_score is not null
@@ -306,7 +303,6 @@ select
 
     avg(s.is_proficient_int) as percent_proficient,
 
-    /* (a) focus_level + demographic labels */
     case
         {% for dim in focus_dims %}
             when grouping({{ dim }}) = 0 then '{{ dim }}'
@@ -347,10 +343,8 @@ select
             )
     end as comparison_demographic_subgroup,
 
-    /* (b) comparison_entity from region null-ness */
     if(grouping(s.region) = 1, s.district_state, 'Region') as comparison_entity,
 
-    /* (c) test_code-derived columns via sheet lookup */
     any_value(m.school_level) as school_level,
     any_value(m.grade_range_band) as grade_range_band,
     any_value(m.discipline) as discipline,

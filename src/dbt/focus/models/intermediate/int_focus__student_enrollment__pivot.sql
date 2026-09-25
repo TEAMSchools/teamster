@@ -7,6 +7,8 @@ with
             cast(prior_country as string) as custom_3,
             cast(educational_choice as string) as custom_4,
             cast(student_offender_transfer as string) as custom_6,
+            cast(resident_status_state_county as string) as custom_18,
+            cast(disaster_affected_student as string) as custom_5,
         from {{ ref("stg_focus__student_enrollment") }}
     ),
 
@@ -14,8 +16,15 @@ with
         select id, column_name, stored_value,
         from
             encoded unpivot (
-                stored_value for column_name
-                in (custom_1, custom_2, custom_3, custom_4, custom_6)
+                stored_value for column_name in (
+                    custom_1,
+                    custom_2,
+                    custom_3,
+                    custom_4,
+                    custom_6,
+                    custom_18,
+                    custom_5
+                )
             )
     ),
 
@@ -37,6 +46,8 @@ from
             'custom_2' as prior_state_label,
             'custom_3' as prior_country_label,
             'custom_4' as educational_choice_label,
-            'custom_6' as student_offender_transfer_label
+            'custom_6' as student_offender_transfer_label,
+            'custom_18' as resident_status_state_county_label,
+            'custom_5' as disaster_affected_student_label
         )
     )

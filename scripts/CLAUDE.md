@@ -1,69 +1,30 @@
 # CLAUDE.md — `scripts/`
 
-Project utilities. Python scripts: `uv run scripts/<name>.py [args]`. Shell
-scripts: `bash scripts/<name>.sh`.
-
 ## Script Catalog
 
-| Script                                              | Purpose                                                                                                                                                                                                                                                                          |
-| --------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `dagster-dev.py`                                    | Start Dagster webserver for selected code locations                                                                                                                                                                                                                              |
-| `dagster-mcp-launch.sh`                             | MCP launcher: exchange OP token for scoped Dagster Cloud API token, exec `dagster_plus_mcp`                                                                                                                                                                                      |
-| `dbt-mcp-launch.sh`                                 | MCP launcher: exchange OP token for dbt Cloud service token, exec `dbt-mcp`                                                                                                                                                                                                      |
-| `cube-rest-mcp-launch.sh`                           | MCP launcher (dev mode only): fetch `CUBE_API_SECRET`, exec `src/cube/mcp/server.py` in stdio. Default cube MCP path is the Cloud Run deploy — use this only when iterating on the server itself.                                                                                |
-| `tableau-mcp-launch.sh`                             | MCP launcher: fetch Tableau connection config (server/site/PAT) from 1Password item `Tableau Server PAT - Dagster` (Data Team vault), exec `@tableau/mcp-server`. Reuses the same PAT as the Dagster Tableau refresh assets.                                                     |
-| `audit_marts_yaml.py`                               | Audit mart YAMLs against BigQuery + Dagster (#3678)                                                                                                                                                                                                                              |
-| `avro-schema-update.py`                             | Rewrite Avro data in GCS with updated schema (flat records only — stringifies values and drops nulls; for nested schemas use `reencode_avro_partitions.py`)                                                                                                                      |
-| `backfill_google_directory_student_external_ids.py` | One-shot: backfill Workspace `externalIds[type='organization']` for existing student accounts (#3950)                                                                                                                                                                            |
-| `bq-cleanup.sh`                                     | Drop orphaned BigQuery datasets / tables / views (dry-run by default; `--execute` to drop)                                                                                                                                                                                       |
-| `dbt-manifest.py`                                   | Extract dbt manifest model list to CSV                                                                                                                                                                                                                                           |
-| VS Code task: **dbt: Stage External Sources**       | (see below)                                                                                                                                                                                                                                                                      |
-| `dbt-yaml.py`                                       | **Non-functional** — shells out to `generate_model_yaml`, a `dbt-codegen` macro; that package is not in any `packages.yml`, so the run errors with "could not find a macro". Write properties YAML by hand.                                                                      |
-| `enrich_staging_descriptions.py`                    | Write descriptions + PII flags to staging YAMLs                                                                                                                                                                                                                                  |
-| `extract_ceds_schema.py`                            | Extract CEDS attribute names from GitHub XLSX                                                                                                                                                                                                                                    |
-| `extract_edfi_schema.py`                            | Extract Ed-Fi attribute names from OpenAPI spec                                                                                                                                                                                                                                  |
-| `extract_pdf_dictionary.py`                         | Extract column descriptions from source-system PDFs                                                                                                                                                                                                                              |
-| `gen-automations-doc.py`                            | Regenerate `docs/reference/automations.md`                                                                                                                                                                                                                                       |
-| `generate_marts_reference.py`                       | Regenerate `docs/reference/marts-data-models.md` from marts FK constraints (parses marts properties YAML; no dbt build or warehouse access needed)                                                                                                                               |
-| `gen_column_naming_audit_inventory.py`              | Generate mart column naming audit inventory CSV                                                                                                                                                                                                                                  |
-| `propagate_mart_descriptions.py`                    | Propagate staging descriptions into downstream YAML                                                                                                                                                                                                                              |
-| `init_sftp_integration.py`                          | Inspect SFTP servers and scaffold new integrations                                                                                                                                                                                                                               |
-| `json2py.py`                                        | Generate Pydantic models from JSON schemas                                                                                                                                                                                                                                       |
-| `migrate-asset-key.py`                              | Migrate asset materialization history to new key                                                                                                                                                                                                                                 |
-| `reencode_avro_partitions.py`                       | Re-encode an asset's partitioned GCS Avro files to its current schema — homogenize writer schemas across partitions after a partial backfill so heterogeneous-schema reads don't drop new fields (nested-safe; idempotent; dry-run by default, `--execute` to write). See #4151. |
-| `sync_cube_descriptions.py`                         | Sync dbt mart column descriptions into Cube cube YAML dimensions                                                                                                                                                                                                                 |
-
-## VS Code Task: dbt: Stage External Sources
-
-Replaced `dbt-sxs.py`. Run via **Terminal > Run Task > dbt: Stage External
-Sources** in VS Code.
-
-**Inputs** (prompted at run time):
-
-- **Project** (pickString): `kipptaf`, `kippnewark`, `kippcamden`, `kippmiami`,
-  `kipppaterson`
-- **Target** (pickString): `defer` (default), `dev`, `staging`
-- **Source** (promptString): dbt source selector, default `*`
-
-**Terminal equivalent:**
-
-```bash
-uv run dbt run-operation stage_external_sources \
-  --project-dir src/dbt/<project> \
-  --target <target> \
-  --vars '{"ext_full_refresh": "true", "cloud_storage_uri_base": "gs://teamster-<project>/dagster/<project>"}' \
-  --args 'select: <source>'
-```
+| Script                        | Purpose                                                                                                                                                                                                                                                                                                                              |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `dagster-mcp-launch.sh`       | MCP launcher: exchange OP token for scoped Dagster Cloud API token, exec `dagster_plus_mcp`. Pass `--no-exec` when sourcing it to get the credentials without starting the server                                                                                                                                                    |
+| `dagster-plus-mcp-headers.sh` | MCP `headersHelper` for Dagster's official hosted server: sources `dagster-mcp-launch.sh --no-exec`, prints the bearer and organization headers as JSON                                                                                                                                                                              |
+| `cube-rest-mcp-launch.sh`     | MCP launcher (dev mode only): fetch `CUBE_API_SECRET`, exec `src/cube/mcp/server.py` in stdio. Default cube MCP path is the Cloud Run deploy — use this only when iterating on the server itself.                                                                                                                                    |
+| `tableau-mcp-launch.sh`       | MCP launcher: fetch Tableau connection config (server/site/PAT) from 1Password item `Tableau Server PAT - Dagster` (Data Team vault), exec `@tableau/mcp-server`. Reuses the same PAT as the Dagster Tableau refresh assets.                                                                                                         |
+| `avro-schema-update.py`       | Rewrite Avro data in GCS with updated schema (flat records only — stringifies values and drops nulls; for nested schemas use `reencode_avro_partitions.py`)                                                                                                                                                                          |
+| `bq-cleanup.sh`               | Drop orphaned BigQuery datasets / tables / views (dry-run by default; `--execute` to drop)                                                                                                                                                                                                                                           |
+| `cube_rls_matrix.py`          | Validate Cube row-level security per viewer over the local SQL API — one connection per viewer email running the same query, so any scope difference is attributable to access policy. Viewer emails are PII: pass via `--viewers` or `--viewers-file`, never hardcoded. Needs the Cube dev server with the SQL API enabled (#4526). |
+| `dbt-yaml.py`                 | **Non-functional** — shells out to `generate_model_yaml`, a `dbt-codegen` macro; that package is not in any `packages.yml`, so the run errors with "could not find a macro". Write properties YAML by hand.                                                                                                                          |
+| `reencode_avro_partitions.py` | Re-encode an asset's partitioned GCS Avro files to its current schema — homogenize writer schemas across partitions after a partial backfill so heterogeneous-schema reads don't drop new fields (nested-safe; idempotent; dry-run by default, `--execute` to write). See #4151.                                                     |
 
 ## Prerequisites
 
 - `dbt-manifest.py` — requires `dbt parse` to have run first (reads
   `target/manifest.json`)
 - `gen-automations-doc.py` — requires dbt manifests to be parsed. **Do NOT run
-  in the codespace**: it imports every code location incl. `kipptaf`, which
-  fails at module load (eager `EnvVar`), and the script `continue`s past the
-  failed import → writes a catalog with `kipptaf` silently DROPPED. Run only in
-  a bootstrapped terminal where all locations import.
+  in the codespace**: it imports every code location's `definitions` and
+  `continue`s past a failed import, writing a catalog with that location
+  silently DROPPED. Without its dbt manifest any location fails; even with one,
+  `kipptaf` (Illuminate/Zendesk dlt credentials) and `kippmiami` (Focus
+  `FOCUS_DB`) fail at module load on eager credential resolution. Run only in a
+  bootstrapped terminal where all locations import.
 - `generate_marts_reference.py` — no prerequisites; run after adding/removing a
   fact table or changing FK constraints:
   `uv run scripts/generate_marts_reference.py`. Like `automations.md`, commit
@@ -90,6 +51,14 @@ Pattern:
   prompt fires once per user. Allow `<UPPER>_OVERRIDE` env var to bypass.
 - Launcher (`<name>-mcp-launch.sh`) handles only the secret fetch via `op read`;
   non-secret config lives in `.mcp.json` `env:`.
+- A **hosted** (`"type": "http"`) server has no launcher, and `${VAR}` in its
+  `headers` resolves against the shell, where this container keeps no secrets.
+  Point `headersHelper` at a script instead: Claude Code runs it at connection
+  time, parses stdout as a JSON object of headers, and kills it after 10s. The
+  token then lives only in that helper process, and never in `.mcp.json`, which
+  is checked in. Claude Code logs the header back as
+  `"Authorization":"[REDACTED]"`, so it does not reach the subprocess debug log
+  either. `dagster-plus-mcp-headers.sh` is the reference.
 - Adding an MCP for a system Dagster already integrates? Reuse its 1Password
   item rather than minting new credentials — `dagster-cloud.yaml`'s
   `op-<system>` `secretKeyRef` confirms the item exists (item name ≈ secret

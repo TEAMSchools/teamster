@@ -1,0 +1,30 @@
+models:
+  - name: rpt_branchingminds__behavior_incident_detail
+    description: >
+      One row per student involved in an incident sent by
+      rpt_branchingminds__behavior_incident, built for the Branching Minds daily
+      SFTP feed. Derived from that model, so it inherits its region, year, and
+      disciplinary filters. DeansList doesn't track multiple students with
+      distinct roles on one incident today, so this is currently one-to-one with
+      the incident feed rather than a true one-to-many breakdown.
+    columns:
+      - name: incident_detail_id
+        data_type: string
+        description: Unique identifier for the incident/student pairing.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: incident_id
+        data_type: string
+        description: >-
+          Foreign key to rpt_branchingminds__behavior_incident.incident_id.
+      - name: student_id
+        data_type: string
+        description: Student's PowerSchool student number.
+        config:
+          meta:
+            contains_pii: true

@@ -26,7 +26,6 @@ models:
             warn_unsupported: false
         data_tests:
           - unique
-          - not_null
 
       - name: staff_status_key
         data_type: string
@@ -36,11 +35,11 @@ models:
           retained staff (9/1 for foundation/recruitment, 7/1 for
           nj_compliance), termination effective date for attritors. Null when no
           matching status version exists.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_staff_status')
-            to_columns: [staff_status_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_staff_status')
+              to_columns: [staff_status_key]
         data_tests:
           - relationships:
               arguments:

@@ -29,6 +29,16 @@ models:
       - name: syear
         description: Focus school year (start year).
         data_type: int
+      - name: quarter_semester
+        description: >-
+          Semester the quarter falls in — S1 for Q1 and Q2, S2 otherwise.
+          Meaningful only on quarter rows.
+        data_type: string
+      - name: is_within_dates
+        description: >-
+          Whether today falls between start_date and end_date, evaluated in the
+          district's local timezone.
+        data_type: boolean
       - name: title
         description: Full marking period name.
         data_type: string

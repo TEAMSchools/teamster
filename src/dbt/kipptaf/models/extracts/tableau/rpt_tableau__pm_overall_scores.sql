@@ -43,7 +43,7 @@ left join
     on s.employee_number = ye.employee_number
     and ye.academic_year = {{ var("current_academic_year") }}
 left join
-    {{ ref("int_powerschool__teacher_grade_levels") }} as tgl
+    {{ ref("int_students__teacher_grade_levels") }} as tgl
     on sr.powerschool_teacher_number = tgl.teachernumber
     and tgl.academic_year = {{ var("current_academic_year") }}
     and tgl.grade_level_rank = 1

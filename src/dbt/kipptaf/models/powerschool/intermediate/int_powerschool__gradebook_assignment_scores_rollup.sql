@@ -40,7 +40,6 @@ with
             ) as avg_score_for_assign,
 
         from {{ ref("int_powerschool__gradebook_assignments_scores") }}
-        where _dbt_source_project != 'kippmiami'
         group by
             _dbt_source_project,
             sectionsdcid,
@@ -57,7 +56,6 @@ with
         select
             *,
 
-            -- flags
             if(
                 category_code in ('H', 'W', 'F') and totalpointvalue != 10, true, false
             ) as assign_max_score_not_10,

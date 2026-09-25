@@ -21,8 +21,9 @@ hook system that:
 4. Catches **bypass attempts** (encoding tricks, `__import__`, `importlib`,
    symlinks, path traversal, quote-splitting).
 5. Scans **tool output** post-execution for accidentally returned secrets.
-6. Restricts **BigQuery MCP** to read-only operations (SELECT/SHOW/DESCRIBE/WITH
-   only).
+6. Keeps the **BigQuery MCP** read-only: `permissions.deny` blocks the
+   read-write `execute_sql` tool, and Google's hosted server enforces
+   `execute_sql_readonly` itself, so no hook rule inspects the SQL.
 
 ### Architecture
 
@@ -90,12 +91,6 @@ sections:
 | 5d  | `importlib` bypass          | Block `importlib` with same dangerous module list — avoids `__import__` check                                         |
 | 7   | Shell variable expansion    | Block `$UPPER_CASE` vars not on an allowlist of ~60 safe variables; block `${!prefix*}` indirect expansion            |
 
-##### Section 3 — BigQuery MCP
-
-| #   | Pattern Group             | Purpose                                                                                                                                     |
-| --- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| 8   | BigQuery DML/export block | For `mcp__bigquery__*` tools: require SELECT/SHOW/DESCRIBE/WITH; deny INSERT/UPDATE/DELETE/MERGE/EXPORT/CREATE/DROP/ALTER/GRANT/REVOKE/CALL |
-
 Key design decisions in the PreToolUse hook:
 
 - **Recursive field extraction**: Uses `jq` to extract all string values from
@@ -125,7 +120,8 @@ Scans output from Bash, Read, Grep, NotebookEdit, WebFetch, WebSearch, and all
 MCP tools for patterns that indicate leaked secrets (Edit is excluded — it does
 not produce content that could contain secrets):
 
-- `op://` references (1Password URIs)
+- 1Password references that name a vault; the bare `op://` scheme and
+  placeholder templates such as `op://{vault}/...` pass
 - Private key headers (RSA, EC, OPENSSH)
 - Google API keys (`AIza...`), OAuth tokens (`ya29.`), `goog_` prefixes
 - JWTs (`eyJ...eyJ...`)
@@ -133,7 +129,9 @@ not produce content that could contain secrets):
 - Database connection strings (postgres/mysql/mongodb URIs with credentials)
 - Service account JSON (`"type": "service_account"`)
 - GitHub tokens (`ghp_`, `ghs_`, `ghu_`, `gho_`, `ghr_`, `github_pat_`)
-- High-entropy strings (120+ chars of `[A-Za-z0-9+/=_-]`) as a catch-all
+- High-entropy strings as a catch-all: mixed-case runs of 120+ chars of
+  `[A-Za-z0-9+/=_-]`. Pure-hex runs, single-case runs, and snake_case
+  identifiers (no 24-char stretch without an underscore) are exempt.
 
 The output hook also decodes base64 blobs found in the output and re-scans the
 decoded content, catching secrets that were base64-encoded in tool responses.
@@ -181,7 +179,7 @@ test files under `tests/hooks/`:
 | `test_env_protection.sh`    | 60    | printenv/declare/export/compgen/typeset, os.environ, bare `set`, `$VAR` allowlist                                                       |
 | `test_bypass_protection.sh` | 71    | 1Password CLI, base64/xxd/printf encoding, process substitution, Python exec/eval construction, `__import__`, importlib, /proc, /dev/fd |
 | `test_output_scanner.sh`    | 42    | Secret pattern detection, tool-specific scanning, MCP output, high-entropy boundary (119/120/121 chars)                                 |
-| `test_bigquery_mcp.sh`      | 27    | Generic field extraction, nested fields, DML/DDL/export blocking                                                                        |
+| `test_bigquery_mcp.sh`      | 8     | Generic MCP field extraction, nested fields                                                                                             |
 | `test_self_protection.sh`   | 20    | Hook scripts and Claude config (Bash blocked by hook; Edit/Write blocked by `permissions.deny`)                                         |
 
 Supporting infrastructure:

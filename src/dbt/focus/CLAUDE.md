@@ -19,11 +19,6 @@ the Focus import column order is contract-fixed. ST06 firing is
 expression-shape-dependent, so keep the ignore even when a diff makes it look
 vestigial.
 
-## Data Flow
-
-Focus Postgres → dlt `sql_database` → BigQuery (`dagster_<project>_dlt_focus`) →
-dbt staging models → dbt intermediate models
-
 ## Focus field value codes
 
 A Focus custom field's allowed value codes live in
@@ -55,6 +50,31 @@ entity's populated custom fields, scan the FULL table and join the whole catalog
 on `lower(column_name)`, since filtering to `custom_*`-prefixed columns silently
 misses the semantic-named ones.
 
+**The `__pivot` models now decode every populated field that has select
+options** (all 92, per #4597 — previously 32, all `custom_*`-prefixed).
+Semantic-named fields are covered too. Two exclusions are deliberate:
+`users.custom_l790` and `users.custom_l1472` are option_query-backed, so the
+catalog holds zero `custom_field_select_options` rows and there is nothing to
+decode. When adding a field to a pivot, check that it has options first — a
+field with none yields an all-null label column that still builds and lints
+clean.
+
+**An all-null label column has two innocent causes besides a wrong match key.**
+The field has no `custom_field_select_options` rows at all (option_query-backed,
+above), or every stored value points at a **soft-deleted** option —
+`stg_focus__custom_field_select_options` filters `where deleted is null`, so a
+deleted option contributes no label (`students.custom_1429` is the live
+example). Check both before assuming the `option_id`/`code` match is broken.
+
+**A decode can be an identity mapping.** `master_courses.course_level`'s options
+are `1`→`1`, `2`→`2`, `3`→`3`, so `course_level_label` repeats the stored code.
+Before treating a decode as valuable, check `label` against `code`.
+
+**Population is not informativeness.** Most Focus Florida-reporting fields are
+non-null on every row but hold a single default value, so a
+`countif(... is not null)` scan overstates the value of decoding them. Add
+`count(distinct <stored value>)` when profiling.
+
 `source_class`→entity-table map (use the catalog's own spelling, NOT the
 entity's): `SISStudent`→students, `FocusUser`→users, `SISSchool`→schools,
 `StudentEnrollment`→student_enrollment, `CoursePeriod`→course_periods,
@@ -72,6 +92,24 @@ positional `custom_N` / `custom_field_N` slots DO resolve to catalog titles
 catalog row): `course_subjects` (no `CourseSubject` class) and
 `master_courses.custom_field_11`.
 
+## Identifier spaces
+
+**Three distinct school identifier spaces.** Focus `schools.id` is an internal
+integer (14, 15, 58...); `school_number` is a Florida school code (`2008A`); the
+network id is `powerschool_school_id`, reachable only via
+`stg_google_sheets__people__locations.focus_school_id`. Joining the wrong one
+null-fills every school attribute with no error.
+
+**Same column name, different concept.** Focus `fteid` holds a Florida education
+identifier string (`FL000007024992`); the network `fteid` is a PowerSchool
+numeric id. Casting fails outright and `safe_cast` would null real data under a
+misleading heading — drop such columns and let the consuming union null-fill.
+
+The student id has the same shape of trap: `students.student_id` is the network
+student number prefixed with `8400` (Miami-Dade's FLDOE district number), and
+`int_focus__student_enrollment_roster.student_number` holds that PREFIXED form
+despite its name, so joining on it by name returns zero matches with no error.
+
 ## Source data conventions
 
 **Soft-delete.** Focus `deleted INT64` is `NULL` for live rows and `1` for
@@ -86,44 +124,42 @@ attributes, not delete sentinels.
 students→`student_id`, users→`staff_id` (`profile_id` is null for nearly all
 rows).
 
+**Cross-table `relationships` tests are `severity: warn` here — keep them that
+way.** The load has no cross-table snapshot: every table is its own
+`@dlt.resource` with `write_disposition="replace"` and `parallelized=True`, each
+opening its own engine, so two related tables are read seconds apart from a live
+Postgres. A row written between the parent read and the child read lands as an
+orphan that no code change can prevent, and the Dagster run retry cannot absorb
+it — the retry re-runs dbt against identical data. The next dlt load clears it.
+Precedent: assignment 424551 on 2026-09-15 orphaned
+`stg_focus__gradebook_assignments_join_course_periods` for one load and healed
+on the next. A **persistent** orphan — one still present after a later
+`_dlt_load_id` — is a real defect; that is what these warnings are for.
+Single-table tests (`unique`, `not_null`) stay `severity: error`: one table IS
+read atomically. Raising a `relationships` test back to `error` would fail a
+whole district build on a teacher saving an assignment mid-load.
+
 ## Model Structure
 
-```text
-models/
-  staging/
-    sources-bigquery.yml          # BQ-native sources (dlt-loaded, not external)
-    stg_focus__<table>.sql        # one contract-enforced model per source table
-    properties/
-      stg_focus__<table>.yml      # contract columns, tests, descriptions
-```
-
-Staging models are contract-enforced (`contract: enforced: true`, set at the
-`staging` directory level in `dbt_project.yml`): every projected column is
-declared with a `data_type` in `properties/`, with a `unique` + `not_null` PK
-test at `severity: error`. Each model selects from a
-`{{ source("focus", ...) }}` relation, drops dlt bookkeeping (`_dlt_*`) and the
-audit-quad, and applies the soft-delete filter where the table has one. Data
-comes from dlt (not external tables), so sources use `sources-bigquery.yml` with
-a plain schema var. Intermediate (`int_focus__*`) models layer on top.
-
-## Key Variables
-
-| Variable                | Default                            | Notes                           |
-| ----------------------- | ---------------------------------- | ------------------------------- |
-| `focus_schema`          | `dagster_<project_name>_dlt_focus` | BQ dataset with dlt-loaded data |
-| `current_academic_year` | `0`                                | Overridden per district         |
-| `current_fiscal_year`   | `0`                                | Overridden per district         |
-| `local_timezone`        | `UTC`                              | Overridden per district         |
+Staging models declare every projected column with a `data_type` in
+`properties/`, plus a `unique` + `not_null` PK test at `severity: error`. Each
+model selects from a `{{ source("focus", ...) }}` relation, drops dlt
+bookkeeping (`_dlt_*`) and the audit-quad, and applies the soft-delete filter
+where the table has one. Data comes from dlt (not external tables), so sources
+use `sources-bigquery.yml` with a plain schema var. Intermediate
+(`int_focus__*`) models layer on top.
 
 ## Cross-Project Usage
-
-This project is never run standalone in production. District projects reference
-it as a dbt package and override variables. `{{ project_name }}` in source
-definitions resolves to the consuming district project name, enabling correct
-Dagster asset key lineage.
 
 To add a NEW kipptaf dependency on Focus data in a single PR, declare the dlt
 landing dataset (`dagster_kippmiami_dlt_focus`) as a BQ-native
 `sources-bigquery.yml` source (hardcoded schema, no target branch) — it reads
 prod in all targets, so kipptaf CI resolves it without seeding `zz_stg`. Only
 the raw dlt tables exist in prod pre-merge; district `stg_focus__*` do not.
+
+This package declares only `dbt_utils` in its own `packages.yml` — models here
+must not reference macros from another source-system package (e.g.
+`finalsite.clean_phone`), since packages are not necessarily installed together
+and a consuming district project may lack it. Phone values are therefore emitted
+raw, as stored in Focus; normalization (E.164) is applied by the downstream
+consumer, not in this package.

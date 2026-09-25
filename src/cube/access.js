@@ -5,14 +5,29 @@
 // caching and calls these to translate a resolved access row into the Cube
 // groups + flat securityContext that per-view access_policy interpolates.
 // Row-level security lives in the view access_policy blocks (see
-// src/cube/CLAUDE.md "View access policies"), NOT here — this file only shapes
-// identity into groups + allow-list arrays. Model:
-//   - Students are location-scoped: a non-none student_location_scope emits a
-//     student-<scope> group; the matching view policy filters rows by location.
-//   - The staff directory is OPEN (staff-directory group, every resolved
-//     viewer); sensitive staff PII is gated in the staff_pii view per
+// .claude/rules/cube-authoring.md "View access policies"), NOT here — this
+// file only shapes identity into groups + allow-list arrays. Model:
+//   - Students are location-scoped: a single `student` group is emitted
+//     whenever the viewer's allowed_student_abbreviations array is non-empty;
+//     the matching view policy filters rows with an abbreviation IN that
+//     array. The array is the viewer's base student_location_scope UNIONED
+//     with every individual-exception grant that has includes_student_data
+//     (see unionAdditionalGrants) — this is what lets an exception grant a
+//     single extra school, not just a whole network/region tier.
+//   - The staff directory is OPEN to every EMPLOYEE (staff-directory group,
+//     emitted on row.is_employee). A non-employee grantee — a contractor, who
+//     reaches this table only through the individual-exceptions sheet — holds
+//     it only when allowed_abbreviations is non-empty, i.e. some grant of
+//     theirs reaches the staff axis. A grant row that widens nothing therefore
+//     yields a viewer denied everything, which is the whole point of letting
+//     an inert row mint a viewer at all (see dim_staff_cube_access.sql).
+//     Sensitive staff PII is gated separately, in the staff_pii view per
 //     staff_pii_scope (staff-pii-<scope>), scoped by a location ∩ department
 //     remit precomputed into allowed_abbreviations / allowed_department_groups.
+//     allowed_abbreviations is the base staff_location_scope UNIONED with
+//     every individual-exception grant carrying includes_staff_data; the
+//     student axis reads includes_student_data. The two are independent, so a
+//     grant can widen one without the other (see unionAdditionalGrants).
 
 // Sensitive staff leaf → the access-row scope column that gates it. The PII
 // members live in the staff_pii view; compensation is registered here
@@ -52,6 +67,7 @@ function buildGroups(
   allowedAbbreviations = [],
   allowedDepartmentGroups = [],
   reporteeStaffKeys = [],
+  allowedStudentAbbreviations = [],
 ) {
   // Gate on a real identity: a row with no staff_key (a stray {} or an
   // object-shaped lookup miss) is not a resolved viewer and must get no groups
@@ -59,16 +75,31 @@ function buildGroups(
   if (!row?.staff_key) return [];
   const groups = [];
 
-  // Student: one scope-specific group per non-none location scope
-  // (student-region / student-school / student-network). Cube's canonical
-  // group-based RLS — the group IS the row-level tier; each maps 1:1 to a view
-  // access_policy. none → no group → default-deny.
-  if (row.student_location_scope && row.student_location_scope !== "none") {
-    groups.push(`student-${row.student_location_scope}`);
+  // Student: a single `student` group, gated on the precomputed
+  // allowed_student_abbreviations array being non-empty — same empty-array
+  // guard as staff-pii-* below (Cube (Tesseract) throws "Values required for
+  // filter" on an `equals []` row_level filter rather than compiling to zero
+  // rows, #4269), not three separate tier groups. This is what lets an
+  // individual-exception grant add one specific extra school for a viewer
+  // whose base student_location_scope is narrower (or none) — a tier group
+  // could only ever express "my whole region/network," never "my region plus
+  // this one other school."
+  if (allowedStudentAbbreviations.length > 0) {
+    groups.push("student");
   }
 
-  // Open staff directory for every resolved staff viewer.
-  groups.push("staff-directory");
+  // Open staff directory for every EMPLOYEE. A non-employee grantee holds it
+  // only when a grant of theirs reached the staff axis — allowedAbbreviations
+  // is the base staff scope (always empty for them) unioned with exactly those
+  // grants, so a non-empty list IS that condition. staff_directory carries no
+  // row_level filter, so this group is the only gate on it; without the
+  // is_employee split an inert sheet row would hand a contractor the whole
+  // unfiltered directory. is_employee is read defensively (=== true) so a row
+  // predating the column, or a stubbed test row, falls to the grant check
+  // rather than to open access.
+  if (row.is_employee === true || allowedAbbreviations.length > 0) {
+    groups.push("staff-directory");
+  }
 
   // Staff PII: emit the scope-specific group ONLY when the securityContext
   // arrays its staff_pii.yml access_policy interpolates are non-empty. Cube
@@ -141,6 +172,50 @@ function computeAllowedAbbreviations(
   }
 }
 
+// Unions a base allow-list of abbreviations with every individual-exception
+// location grant on the row (dim_staff_cube_access.additional_location_grants
+// — an array of { location_scope, region_key, location_abbreviation,
+// includes_student_data, includes_staff_data } structs, one per live grant;
+// empty when the person has none). Each grant is resolved through the same
+// computeAllowedAbbreviations used for the base scope, so a `network` grant
+// contributes every abbreviation, a `region` grant contributes that region's
+// abbreviations, and a `school` grant contributes just that one school —
+// exactly the mechanism that lets an exception add a single specific extra
+// location rather than only widening to a whole tier.
+//
+// `axis` selects which per-grant flag gates the union: "student" reads
+// includes_student_data, "staff" reads includes_staff_data. The two are
+// independent (they mirror the sheet's two axis columns), so a grant can widen
+// students without staff or the reverse — call this once per axis. A missing or
+// unrecognized axis unions nothing and returns the base list, failing closed
+// rather than widening the wrong axis.
+function unionAdditionalGrants(
+  baseAbbreviations,
+  grants,
+  universe,
+  { axis } = {},
+) {
+  const result = new Set(baseAbbreviations ?? []);
+  const gate =
+    axis === "student"
+      ? "includes_student_data"
+      : axis === "staff"
+        ? "includes_staff_data"
+        : null;
+  for (const grant of grants ?? []) {
+    if (!gate || !grant[gate]) continue;
+    for (const abbreviation of computeAllowedAbbreviations(
+      grant.location_scope,
+      grant.region_key,
+      grant.location_abbreviation,
+      universe,
+    )) {
+      result.add(abbreviation);
+    }
+  }
+  return [...result];
+}
+
 // The department groups a viewer may see, given their department scope.
 // `universe` = all distinct department_group values. all → every group;
 // own_group → just the viewer's group; none/other → [] (deny).
@@ -165,15 +240,19 @@ function computeAllowedDepartmentGroups(
 // the connecting user / email claim in cube.js; `email` is intentionally NOT
 // stored on the returned context (no access_policy interpolates it — do not add
 // a policy referencing securityContext.email without first setting it here).
-// `allowedAbbreviations` / `allowedDepartmentGroups` are precomputed by the
-// caller (resolveAccess) via computeAllowedAbbreviations /
-// computeAllowedDepartmentGroups — domain-agnostic allow-lists later
-// interpolated into access_policy row_level filters (Task 5b).
+// `allowedAbbreviations` / `allowedDepartmentGroups` / `allowedStudentAbbreviations`
+// are precomputed by the caller (resolveAccess) via computeAllowedAbbreviations /
+// computeAllowedDepartmentGroups / unionAdditionalGrants — domain-agnostic
+// allow-lists later interpolated into access_policy row_level filters (Task 5b).
+// allowedAbbreviations already has every individual-exception grant unioned in
+// (unconditionally); allowedStudentAbbreviations has only the grants where
+// includes_student_data is true unioned in — see unionAdditionalGrants.
 function buildSecurityContext(
   row,
   reporteeStaffKeys,
   allowedAbbreviations,
   allowedDepartmentGroups,
+  allowedStudentAbbreviations = [],
 ) {
   return {
     groups: buildGroups(
@@ -181,8 +260,8 @@ function buildSecurityContext(
       allowedAbbreviations,
       allowedDepartmentGroups,
       reporteeStaffKeys,
+      allowedStudentAbbreviations,
     ),
-    student_location_scope: row?.student_location_scope ?? "none",
     staff_pii_scope: row?.staff_pii_scope ?? "none",
     region_key: row?.region_key ?? null,
     location_abbreviation: row?.location_abbreviation ?? null,
@@ -191,6 +270,124 @@ function buildSecurityContext(
     reportee_staff_keys: reporteeStaffKeys ?? [],
     allowed_abbreviations: allowedAbbreviations ?? [],
     allowed_department_groups: allowedDepartmentGroups ?? [],
+    allowed_student_abbreviations: allowedStudentAbbreviations ?? [],
+  };
+}
+
+// --- Identity-read dataset override (local testing only) -------------------
+// Which dataset resolveAccess reads dim_staff_cube_access from. Defaults to
+// prod, so an unset deployment is unchanged.
+//
+// It exists because the identity read is a `SELECT *` against a hardcoded
+// dataset, so a change to that mart cannot be exercised before it is built to
+// prod: a column the deployed view lacks comes back undefined rather than
+// erroring, and a local run looks green while testing none of the new logic.
+//
+// TWO gates, because the shape check alone is not a safety property. `zz_` is
+// exactly the prefix of every personal dev schema and the shared zz_stg_*
+// copies — all of them writable by developers — so a `zz_` value set on a
+// deployment would let anyone grant themselves whatever their own copy says.
+// The credentials check is what separates local from deployed: every working
+// deployment sets CUBEJS_DB_BQ_CREDENTIALS (#4466) and local dev runs on ADC
+// without it. Honoring the override only when credentials are absent means a
+// deployment cannot honor it at all, whatever the value.
+function resolveAccessDataset(raw, hasDeploymentCredentials) {
+  const fallback = "kipptaf_marts";
+  if (!raw) return fallback;
+  if (hasDeploymentCredentials) return fallback;
+  if (/^zz_[a-z0-9_]+$/.test(raw)) return raw;
+  return fallback;
+}
+
+// --- Internal user emulation (#4526) ---------------------------------------
+// Admin-gated emulation lets a data-team caller resolve another internal user's
+// real context for RLS validation. All of the security reasoning lives in
+// resolveEmulationTarget below; the surface adapters are dumb field maps.
+
+// Who may emulate. v1 source is the CUBE_IMPERSONATORS deployment variable
+// (comma-separated emails). A warehouse-column source
+// (dim_staff_cube_access.is_cube_impersonator) can replace THIS FUNCTION ONLY,
+// later, without touching the resolver or either adapter.
+function parseImpersonators(raw) {
+  return new Set(
+    String(raw ?? "")
+      .split(",")
+      .map((entry) => entry.trim().toLowerCase())
+      .filter(Boolean),
+  );
+}
+
+function isImpersonator(email, impersonators) {
+  if (!email) return false;
+  return impersonators.has(String(email).toLowerCase());
+}
+
+// The single decision point shared by both emulation surfaces. Returns the
+// caller, the email whose context must actually be resolved, and whether that
+// is an emulation (for the audit line).
+//
+// The decision reads ONLY the caller's own identity, so a non-impersonator who
+// supplies a target — in an `act_as` claim they signed, or a spoofed cubeCloud
+// block — gets their OWN scope, never the target's. Fail-closed: no caller means
+// no emulation and a null target, which resolveAccess turns into the empty
+// default-deny context.
+//
+// CASE IS PRESERVED on the returned emails, deliberately. Comparisons here are
+// case-insensitive, but `target` is handed to resolveAccess, which queries
+// `WHERE google_email = @email` and keys its cache on the raw string. Returning
+// a lowercased email would change resolution for EVERY request (not just
+// emulated ones) and desync this path from checkSqlAuth, which passes the
+// connecting user through verbatim. Every dim_staff_cube_access row is lowercase
+// today, but the model applies no lower() and the column's only test is
+// not_null — incidental, not an invariant to build on.
+function resolveEmulationTarget({
+  callerEmail,
+  requestedTarget,
+  impersonators,
+}) {
+  // Both identities are coerced to "a string or nothing" before any comparison.
+  // On Cube Cloud the target is a pasted JSON value, so it can just as easily be
+  // an object or an array as a string, and a bare `requested.toLowerCase()`
+  // throws a TypeError out of contextToGroups — a 500 instead of a decision.
+  // Treating a non-string as absent is the fail-closed reading: no target means
+  // no emulation, and a non-string caller means no caller, which resolveAccess
+  // turns into the empty default-deny context.
+  const caller = typeof callerEmail === "string" ? callerEmail : null;
+  const requested =
+    typeof requestedTarget === "string" ? requestedTarget : null;
+  // No target, or the caller's own email: an ordinary request, not an emulation
+  // (also keeps no-op self-emulation out of the audit log).
+  const isSelf =
+    caller && requested && requested.toLowerCase() === caller.toLowerCase();
+  if (!requested || isSelf) return { caller, target: caller, emulating: false };
+  if (!isImpersonator(caller, impersonators))
+    return { caller, target: caller, emulating: false };
+  return { caller, target: requested, emulating: true };
+}
+
+// Surface adapter — REST/MCP. The signed JWT carries the caller in `email` and
+// an optional emulation target in `act_as`.
+function emulationInputsFromToken(payload) {
+  return {
+    callerEmail: payload?.email ?? null,
+    requestedTarget: payload?.act_as ?? null,
+  };
+}
+
+// Surface adapter — Cube Cloud. Cube Cloud injects its own context: the console
+// user in `cubeCloud.username`, and the emulation target as a top-level `email`
+// when a Security Context is pasted. With nothing pasted there is no top-level
+// email, so the console user resolves as themselves.
+function emulationInputsFromCubeCloud(securityContext) {
+  return {
+    callerEmail: securityContext?.cubeCloud?.username ?? null,
+    // Cube Cloud merges a pasted Security Context into the top level AND mirrors
+    // it under cubeCloud.userAttributes, so check both — observed on 1.7.14,
+    // where a paste appears in both places and neither is present without one.
+    requestedTarget:
+      securityContext?.email ??
+      securityContext?.cubeCloud?.userAttributes?.email ??
+      null,
   };
 }
 
@@ -199,6 +396,13 @@ module.exports = {
   buildSecurityContext,
   computeAllowedAbbreviations,
   computeAllowedDepartmentGroups,
+  emulationInputsFromCubeCloud,
+  emulationInputsFromToken,
+  isImpersonator,
+  parseImpersonators,
+  resolveAccessDataset,
+  resolveEmulationTarget,
+  unionAdditionalGrants,
   STAFF_SENSITIVE_MEMBERS,
   STAFF_SENSITIVE_SCOPE_BY_MEMBER,
 };

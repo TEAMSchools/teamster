@@ -12,7 +12,7 @@ description: >-
 ## Phase 1: Collect data
 
 Run [`scripts/day2_collect.py`](scripts/day2_collect.py) — it issues all 15
-queries (Dagster GraphQL + GCP REST + `gcloud logging`) and writes a single
+queries (Dagster GraphQL + GCP REST, authenticated with ADC) and writes a single
 artifact to `.claude/scratch/day2.json`. No subagent dispatch.
 
 ```bash
@@ -120,11 +120,8 @@ before drawing conclusions — partial data produces wrong findings.
 chasing user-code or PowerSchool/ADP/etc. theories for a step failure, fetch
 `get_run_logs(run_id, filter_types=["LogsCapturedEvent"])`. If no event exists
 for the failing step, the container never started — root cause is at the K8s
-layer (see Reclassify row above). Don't query `mcp__gke__query_logs` for
-`resource.type=k8s_container` on `dagster-step-*` pods: Dagster step container
-logs are filtered from GCP Logging at ingest (per main `CLAUDE.md`). The run-pod
-audit log + pod events for `dagster-step-<hash>-.*` are the only ground-truth
-signals at that layer.
+layer (see Reclassify row above). Step pod logs are not in `k8s_container` logs;
+see `.claude/context/dagster.md` for where they are.
 
 **Pod-event run attribution (`step_10_gke_events.podEvents`):** for any
 `dagster-run-*` Evicted/Preempted event, the collector parses the runId from the
@@ -165,13 +162,13 @@ Step 8 churn: at replicas=1 with maxSurge=200%, normal Helm upgrade = 2 creates.
 3-4 creates = a rollout retry; >>4 = sustained storm.
 
 In this codebase, agent pods run at priority 1000 (`dagster-agent`
-PriorityClass) — same tier as run/step pods, so they CANNOT be preempted by
-them. If you see "no agents have recently heartbeated" AND the agent pod shows
-Preempted events, the preemption would have to come from a pod at priority >1000
-(system-cluster-critical, etc.) — which is rare and worth investigating. If
-agents are RUNNING with heartbeats but there's agent-level ReadTimeout to
-`*.agent.dagster.cloud`, that's a control-plane connectivity issue, not
-pod-level preemption.
+PriorityClass) — above run/step and code server pods (0), so they CANNOT be
+preempted by them. If you see "no agents have recently heartbeated" AND the
+agent pod shows Preempted events, the preemption would have to come from a pod
+at priority >1000 (system-cluster-critical, etc.) — which is rare and worth
+investigating. If agents are RUNNING with heartbeats but there's agent-level
+ReadTimeout to `*.agent.dagster.cloud`, that's a control-plane connectivity
+issue, not pod-level preemption.
 
 **Timeline table** (ET): run failures, tick failures, terminal schedule tick
 failures, location load failures, agent errors, code server failures, unhealthy
@@ -331,5 +328,5 @@ Run all three before concluding — even if agent looks healthy now.
 
 ### Re-execution chains
 
-`get_run_group(run_id)` returns the full chain in one call. Don't traverse
-parentRunId/rootRunId via get_run/list_runs.
+Walk the chain from run tags as `.claude/context/dagster-plus.md` describes
+(`get_run` bullet, "the whole re-execution chain").

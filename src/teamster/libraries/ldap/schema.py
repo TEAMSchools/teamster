@@ -31,6 +31,7 @@ class UserPerson(BaseModel):
     employeeNumber: str | None = None
     employeeType: str | None = None
     extensionAttribute1: str | None = None
+    extensionAttribute10: str | None = None
     extensionAttribute13: str | None = None
     extensionAttribute14: str | None = None
     extensionAttribute15: str | None = None
@@ -193,6 +194,7 @@ class Group(BaseModel):
     dLMemSubmitPermsBL: str | None = None
     dn: str | None = None
     dSCorePropagationData: float | None = None
+    extensionAttribute2: str | None = None
     extensionAttribute11: str | None = None
     extensionAttribute12: str | None = None
     extensionAttribute13: str | None = None

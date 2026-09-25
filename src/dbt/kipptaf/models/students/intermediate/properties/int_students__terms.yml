@@ -1,0 +1,196 @@
+models:
+  - name: int_students__terms
+    description: >-
+      SIS-agnostic school-year, semester, and quarter spine, at full grain (one
+      row per school and per term record). Unions the per-district PowerSchool
+      terms spine for all four regions with Miami's Focus marking periods
+      conformed inline to the PowerSchool terms vocabulary. PowerSchool is the
+      source of record before the SIS cutover year, Miami included -- its frozen
+      archive supplies terms back to its first school year -- and Focus supplies
+      Miami from the cutover year on. The 2026 floor is on the Focus arm alone,
+      so the three NJ districts stay on the PowerSchool arm in every year,
+      cutover included. Only Miami is split, and for Miami the two arms are
+      disjoint by year. Nothing is reconciled between them. A lower floor would
+      admit the fabricated year, semester, and quarter rows Focus carries back
+      to 1980 for schools with no enrollment behind them. On the PowerSchool arm
+      the quarter-only columns (term, term_start_date, term_end_date, semester,
+      is_current_term) are populated only on quarter rows, and the raw-terms
+      columns (dcid, name, firstday, lastday, id, and the PowerSchool
+      bookkeeping fields) only on the rows that come from the raw terms table,
+      so a quarter usually appears as two rows -- one carrying its abbreviation
+      and scheduling-window dates, one carrying its term code and
+      grade-storage-window dates. A quarter that termbins carries but the raw
+      terms table never had appears as one row, the spine's. The two windows
+      routinely disagree, and no consumer reads both halves on one row. The
+      Focus arm has no such split -- one row per marking period, and a
+      quarter-type period carries its abbreviation, its scheduling window, and
+      its term columns together, with term equal to abbreviation. On the
+      PowerSchool arm the quarter rows resolve their dates from termbins where
+      termbins carries the quarter and from the raw terms table's own quarter
+      row where it does not; on the Focus arm they are derived from Focus's
+      quarter-type marking periods. Consumers that need only the quarter grain
+      filter to term is not null at the call site.
+    data_tests:
+      # Two tests, because the two halves of the grain key on different
+      # columns. Spine rows key on term, which int_powerschool__terms_spine
+      # supplies. Everything with no term -- year and semester rows, and the
+      # raw Q1-Q4 records -- keys on abbreviation, which comes straight off the
+      # raw terms row. One test over both would have to key on a column that is
+      # null for half the model.
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - schoolid
+              - yearid
+              - term
+              - _dbt_source_project
+          config:
+            where: term is not null
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - schoolid
+              - yearid
+              - abbreviation
+              - _dbt_source_project
+          config:
+            where: term is null
+    columns:
+      - name: schoolid
+        description: >-
+          The School_Number of the associated school. On Focus rows, resolved
+          from Focus's internal school id through the focus package's own
+          school_number and the locations crosswalk.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: yearid
+        description: >-
+          A number representing which year the term belongs to (e.g. 13 for
+          2003-2004). On Focus rows, no Focus equivalent exists; derived as
+          academic_year - 1990, the formula verified against every PowerSchool
+          district and year in prod.
+      - name: academic_year
+        description: >-
+          Academic year the term falls in. On Focus rows, from Focus syear.
+      - name: name
+        quote: true
+        description: >-
+          The common name for this term (e.g. Semester 1, Quarter 1). Null on
+          the spine's quarter rows.
+      - name: abbreviation
+        description: >-
+          The short code for the term (e.g. S1, Q1, FY). On Focus rows, from
+          Focus short_name. Null on the spine's quarter rows.
+      - name: firstday
+        description: >-
+          The first calendar date of the term. Null on the spine's quarter rows.
+      - name: lastday
+        description: >-
+          The last calendar date of the term. Null on the spine's quarter rows.
+      - name: isyearrec
+        description: >-
+          Flag indicating if this record is the year-long term. 1 = yes, 0 = no.
+          On Focus rows, derived from Focus's marking period type. Null on the
+          spine's quarter rows.
+      - name: fiscal_year
+        description: >-
+          Fiscal year the term falls in. On Focus rows, derived as academic_year
+          + 1, matching the archive's own convention. Null on the spine's
+          quarter rows.
+      - name: term
+        description: >-
+          Quarter code (Q1-Q4). Null for the year and semester rows a school
+          year also carries. On the PowerSchool arm, carried by the spine's own
+          quarter rows, which hold no abbreviation. On Focus rows, from Focus's
+          quarter-type marking periods only.
+      - name: term_start_date
+        description: >-
+          First calendar date of the quarter, sourced from
+          int_powerschool__terms_spine on the PowerSchool arm. Null outside the
+          quarter rows.
+      - name: term_end_date
+        description: >-
+          Last calendar date of the quarter, sourced from
+          int_powerschool__terms_spine on the PowerSchool arm. Null outside the
+          quarter rows.
+      - name: semester
+        description: >-
+          Semester the quarter falls in (S1 for Q1/Q2, S2 for Q3/Q4). Null
+          outside the quarter rows.
+      - name: is_current_term
+        description: >-
+          Whether today falls within the quarter's dates. Null outside the
+          quarter rows.
+      - name: dcid
+        description: >-
+          Unique identifier for this term record in PowerSchool. Null on Focus
+          rows -- Focus has no equivalent internal surrogate exposed here -- and
+          null on the spine's quarter rows.
+      - name: id
+        description: >-
+          Sequential number generated by PowerSchool; not guaranteed unique on
+          its own. Null on Focus rows and on the spine's quarter rows.
+      - name: portion
+        description: >-
+          The fraction of a year the term takes, PowerSchool-internal. Null on
+          Focus rows and on the spine's quarter rows.
+      - name: importmap
+        description:
+          If importing, the code that relates to this term. PowerSchool-only.
+      - name: terminfo_guid
+        description: Globally unique identifier for this row, PowerSchool-only.
+      - name: psguid
+        description: >-
+          Unique identifier for the row where applicable (multi-tenant,
+          Schoolnet, Pearson), PowerSchool-only.
+      - name: ip_address
+        description: >-
+          IP address of the client that initiated the PowerSchool transaction.
+          PowerSchool-only.
+      - name: whomodifiedtype
+        description: >-
+          Type of user account that last modified the PowerSchool record.
+          PowerSchool-only.
+      - name: transaction_date
+        description: Date and time of the PowerSchool database transaction.
+      - name: noofdays
+        description: >-
+          Calculated number of in-session days between the term's dates,
+          PowerSchool-only.
+      - name: yearlycredithrs
+        description: No longer used by PowerSchool; may still appear on reports.
+      - name: termsinyear
+        description: >-
+          The number of scheduling terms this term takes up given the school's
+          LCM of term lengths, PowerSchool-only.
+      - name: autobuildbin
+        description: Used when copying the PowerSchool master schedule.
+      - name: periods_per_day
+        description: Number of periods in a school day for this term.
+      - name: days_per_cycle
+        description: Number of days for a cycle for this term, PowerSchool-only.
+      - name: attendance_calculation_code
+        description: >-
+          Whether positive or negative attendance is used in this term (1 =
+          negative, 2 = positive), PowerSchool-only.
+      - name: sterms
+        description:
+          Number of scheduling terms in a school year, PowerSchool-only.
+      - name: suppresspublicview
+        description: >-
+          Whether sections meeting for this term are hidden from the Public
+          Portal and Mobile App, PowerSchool-only.
+      - name: whomodifiedid
+        description:
+          Internal id of the PowerSchool user who last modified the record.
+      - name: _dbt_source_relation
+        description: >-
+          Source relation, passed through from the source union view. Every row
+          reports the district relation it came from, including a quarter the
+          raw terms table never carried.
+      - name: _dbt_source_project
+        description:
+          District code location, passed through from the source union view on
+          both arms.

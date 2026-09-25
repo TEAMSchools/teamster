@@ -94,6 +94,16 @@ models:
           Exclude from State Reporting. Populated Focus custom field
           (custom_200000200) of type checkbox; stored value left as-is.
         data_type: string
+      - name: paec_gpa_for_transcript
+        description: >-
+          GPA to Display on Secondary Transcript. Populated Focus custom field
+          of type select; stored value left as-is.
+        data_type: int
+      - name: paec_rank_for_transcript
+        description: >-
+          Class Rank to Display on Secondary Transcript. Populated Focus custom
+          field of type select; stored value left as-is.
+        data_type: int
       - name: uuid
         description: Focus global unique identifier for the row.
         data_type: string

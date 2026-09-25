@@ -1,4 +1,42 @@
 models:
   - name: int_students__attendance_interventions_rollup
+    description: >-
+      Attendance intervention call completion rolled up to one row per student
+      for the current academic year. School is deliberately not part of the
+      grain — it is null for students with no completed call, so grouping by it
+      would split one student's completed calls from their required calls.
+      Source for snapshot_students__attendance_interventions_rollup.
     config:
       materialized: ephemeral
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - academic_year
+          config:
+            severity: error
+    columns:
+      - name: student_number
+        description: KIPP student number.
+        config:
+          meta:
+            contains_pii: true
+      - name: academic_year
+        description: Academic year the calls belong to.
+      - name: successful_call_count
+        description: Number of required intervention calls completed.
+        config:
+          meta:
+            contains_pii: true
+      - name: total_anticipated_calls
+        description:
+          Number of intervention calls the student's absences required.
+        config:
+          meta:
+            contains_pii: true
+      - name: pct_interventions_complete
+        description: Share of required intervention calls completed.
+        config:
+          meta:
+            contains_pii: true

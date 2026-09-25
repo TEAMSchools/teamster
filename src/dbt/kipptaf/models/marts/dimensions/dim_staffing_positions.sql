@@ -1,3 +1,10 @@
+with
+    live_keys as (
+        -- grain projection: one row per seat key; not a mask for upstream dups
+        select distinct academic_year, staffing_model_id,
+        from {{ ref("stg_google_appsheet__seat_tracker__seats") }}
+    )
+
 select
     {{ dbt_utils.generate_surrogate_key(["s.dbt_scd_id"]) }} as staffing_position_key,
 
@@ -30,6 +37,10 @@ select
     cast(s.dbt_valid_from as date) as effective_start_date,
     cast(s.dbt_valid_to as date) as effective_end_date,
 from {{ ref("snapshot_seat_tracker__seats") }} as s
+inner join
+    live_keys as lk
+    on s.academic_year = lk.academic_year
+    and s.staffing_model_id = lk.staffing_model_id
 left join
     {{ ref("int_people__location_crosswalk") }} as loc
     on s.adp_location = loc.location_name

@@ -1,0 +1,92 @@
+models:
+  - name: stg_focus__people
+    description: >-
+      Focus people — one row per live person record (deleted rows excluded),
+      keyed on person_id. People are the guardians/contacts linked to students
+      through students_join_people; their phone/email detail rows live in
+      people_join_contacts. The free-text notes column, the audit
+      (created_by/updated_by) columns, and other unused Focus-internal
+      bookkeeping columns (e.g. last_verification_time, disclaimer_agreement,
+      edfi_identity, id_photo_file_id, deleted) are intentionally omitted —
+      notes is unneeded sensitive free text, deleted is consumed by the
+      soft-delete filter and adds no signal once filtered, and the rest are
+      unused Focus-internal fields.
+    columns:
+      - name: person_id
+        description: Primary key — Focus person id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+        config:
+          meta:
+            contains_pii: true
+      - name: title
+        description: Salutation / name title for the person (rarely populated).
+        data_type: string
+      - name: first_name
+        description: Person first name.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: middle_name
+        description: Person middle name.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: last_name
+        description: Person last name.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: email
+        description: Person email address.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: email_opt_out
+        description: Y-flag — the person opted out of email communication.
+        data_type: string
+      - name: birthdate
+        description: Person date of birth.
+        data_type: date
+        config:
+          meta:
+            contains_pii: true
+      - name: education_level
+        description: Focus education-level code id for the person.
+        data_type: int
+      - name: primary_language
+        description: Focus language code id for the person's primary language.
+        data_type: int
+      - name: imported
+        description: Y-flag — the record arrived via a Focus import job.
+        data_type: string
+      - name: people_import_key
+        description: Import-batch key assigned when the record was imported.
+        data_type: string
+      - name: uuid
+        description: Focus-internal UUID for the record.
+        data_type: string
+      - name: created_at
+        description: Record creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Record last-update timestamp in Focus.
+        data_type: timestamp
+      - name: contact_name
+        description: >-
+          The contact's full name (first + last). Null when both name parts are
+          absent, rather than an empty string.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true

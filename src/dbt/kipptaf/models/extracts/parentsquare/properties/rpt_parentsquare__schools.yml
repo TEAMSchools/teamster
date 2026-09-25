@@ -1,0 +1,71 @@
+models:
+  - name: rpt_parentsquare__schools
+    description:
+      ParentSquare `schools.csv` for the KIPP NJ regions — one row per reporting
+      school. Miami is excluded because it rosters from Focus rather than
+      PowerSchool. Each district's thin `extracts/parentsquare` wrapper slices
+      this to its own `code_location`, and that wrapper is what ParentSquare
+      receives; this view is the shared export format, not a delivered file.
+      Delivered as a full snapshot each run; ParentSquare reconciles adds and
+      removals on its side. `state_excludefromreporting` filters out the summer
+      school, graduated-students, and non-operating placeholder schools, leaving
+      exactly the set of school ids `rpt_parentsquare__students` can reference.
+      Principal first and last name resolve from the staff roster by principal
+      email rather than by splitting PowerSchool's combined principal string.
+    columns:
+      - name: school_id
+        data_type: string
+        description:
+          PowerSchool `school_number` as a string, the school key ParentSquare
+          matches students and contacts against.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: code_location
+        data_type: string
+        description:
+          Dagster code location of the region this row belongs to. Present so
+          each district's thin `extracts/parentsquare` wrapper can slice the
+          feed to its own region; it is not part of the ParentSquare file and no
+          wrapper projects it.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: school_name
+        data_type: string
+        description: The school's name as recorded in PowerSchool.
+      - name: school_zip
+        data_type: string
+        description: The school's postal code.
+      - name: school_address
+        data_type: string
+        description: The school's street address.
+      - name: school_city
+        data_type: string
+        description: The city the school is located in.
+      - name: school_state
+        data_type: string
+        description: The two-letter state code the school is located in.
+      - name: principal_email
+        data_type: string
+        description: The principal's email address as recorded in PowerSchool.
+      - name: school_phone
+        data_type: string
+        description:
+          The school's main phone number reduced to digits — PowerSchool records
+          these in mixed formats and ParentSquare expects 10 digits.
+      - name: principal_first_name
+        data_type: string
+        description:
+          The principal's given name, taken from the staff roster record
+          matching `principal_email`. Null when no roster record matches.
+      - name: principal_last_name
+        data_type: string
+        description:
+          The principal's family name, taken from the staff roster record
+          matching `principal_email`. Null when no roster record matches.

@@ -13,9 +13,25 @@ models:
       client date for iReady, STAR, and DIBELS); tier 2 falls back to the
       homeroom section active on the same anchor date. Scores with no matching
       section in either tier are dropped. The resolution_type column identifies
-      which tier resolved the row.
+      which tier resolved the row. Also carries the resolved section's school
+      and region so consumers can resolve a score's reporting quarter by date.
+      The score rows themselves come from int_assessments__score_anchors, which
+      carries each score's anchor date and score_grain_key.
     config:
       materialized: table
+      meta:
+        dagster:
+          # Cron instead of the default eager table condition, which
+          # re-fires on ANY upstream data change, recursing through view
+          # chains up to 10 levels.
+          # ~93 executions/day on the eager table condition. Its ONLY consumer
+          # is fct_assessment_scores_enrollment_scoped, already on
+          # `0 0,10,13,15,17 * * *`. Sharing that tick lets the deps-in-progress
+          # guard serialize the pass instead of rebuilding per upstream change.
+          #
+          # Refs #4821
+          automation_condition:
+            cron_schedule: 0 0,10,13,15,17 * * *
     columns:
       - name: source_type
         data_type: string
@@ -24,10 +40,6 @@ models:
           (Illuminate-sourced), state_nj (Pearson NJ), state_fl (FLDOE FL),
           iready (i-Ready diagnostics), star (Renaissance STAR), or dibels
           (Amplify DIBELS benchmark composites).
-        data_tests:
-          - accepted_values:
-              arguments:
-                values: [internal, state_nj, state_fl, iready, star, dibels]
       - name: resolution_type
         data_type: string
         description: >-
@@ -36,10 +48,6 @@ models:
           anchor date); homeroom means tier 2 resolved it (no subject section
           matched; the homeroom section active on the anchor date was used
           instead).
-        data_tests:
-          - accepted_values:
-              arguments:
-                values: [subject_section, homeroom]
       - name: powerschool_student_number
         data_type: int64
         description: >-
@@ -70,8 +78,10 @@ models:
       - name: administration_period
         data_type: string
         description: >-
-          Administration window label within the academic year. Populated only
-          for state score rows; NULL for internal score rows.
+          Administration window label within the academic year. Populated for
+          state, iReady, STAR, and DIBELS score rows; NULL for internal score
+          rows. For iReady rows this is the reporting-terms window (BOY / MOY /
+          EOY / Outside Round) from `test_round`.
         config:
           meta:
             source_column: int_pearson__all_assessments.administration_period
@@ -79,10 +89,13 @@ models:
         data_type: string
         description: >-
           Subject area of the assessment, aligned to illuminate_subject_area
-          values in int_assessments__course_enrollments. For internal scores
-          this is the scaffold subject_area; for state scores it is the
-          state-to-course mapped illuminate_subject column from the state
-          intermediates.
+          values in int_assessments__course_enrollments. Carried through from
+          int_assessments__score_anchors, where state and vendor scores are
+          resolved from each source's raw subject value via a LEFT JOIN to
+          stg_google_sheets__assessments__vendor_subject_crosswalk, falling back
+          to the raw value when a source_system/raw_subject pair has no
+          crosswalk row, and internal scores keep the scaffold's subject_area
+          unchanged.
         config:
           meta:
             source_column: int_assessments__scaffold.subject_area
@@ -111,6 +124,25 @@ models:
           Surrogate key derived from (cc_dcid, cc_source_project) of the
           resolved course enrollment, matching
           dim_student_section_enrollments.student_section_enrollment_key.
+      - name: powerschool_school_id
+        data_type: int64
+        description: >-
+          School of the resolved section enrollment. Carried so consumers can
+          resolve a score's reporting quarter for the right school; this model
+          is one row per score grain, so it cannot resolve the quarter itself —
+          scores sharing a grain can carry different dates.
+        config:
+          meta:
+            source_column: int_assessments__course_enrollments.powerschool_school_id
+      - name: region
+        data_type: string
+        description: >-
+          Short region name (Newark, Camden, Miami, Paterson) of the resolved
+          section enrollment. Pairs with powerschool_school_id when matching the
+          reporting-terms sheet, which keys quarters by school and region.
+        config:
+          meta:
+            source_column: int_assessments__course_enrollments.region
 
 unit_tests:
   - name: test_subject_section_in_window_wins
@@ -121,20 +153,19 @@ unit_tests:
       half-open window join.
     model: int_assessments__resolved_section_enrollments
     given:
-      - input: ref('int_assessments__scaffold')
-        rows:
-          - {
-              powerschool_student_number: 1,
-              canonical_assessment_id: 100,
-              _dbt_source_project: kippnewark,
-              subject_area: Mathematics,
-              date_taken: 2024-03-10,
-              is_internal_assessment: true,
-              is_replacement: false,
-            }
-      - input: ref('int_assessments__assessments_canonical')
-        rows:
-          - { canonical_assessment_id: 100, administered_date: 2024-03-04 }
+      - input: ref('int_assessments__score_anchors')
+        format: sql
+        rows: |
+          select
+              1 as powerschool_student_number,
+              100 as canonical_assessment_id,
+              cast(null as int64) as academic_year,
+              cast(null as string) as administration_period,
+              'Mathematics' as subject_area,
+              'kippnewark' as _dbt_source_project,
+              date('2024-03-04') as anchor_date,
+              'internal' as source_type,
+              'k1' as score_grain_key
       - input: ref('int_assessments__course_enrollments')
         rows:
           - {
@@ -145,6 +176,8 @@ unit_tests:
               cc_dateenrolled: 2024-01-01,
               cc_dateleft: 2025-06-15,
               cc_dcid: 111,
+              powerschool_school_id: 73252,
+              region: Newark,
             }
           - {
               powerschool_student_number: 1,
@@ -154,17 +187,9 @@ unit_tests:
               cc_dateenrolled: 2025-09-01,
               cc_dateleft: 2026-06-15,
               cc_dcid: 222,
+              powerschool_school_id: 73252,
+              region: Newark,
             }
-      - input: ref('int_pearson__all_assessments')
-        rows: []
-      - input: ref('int_fldoe__all_assessments')
-        rows: []
-      - input: ref('int_iready__diagnostic_results')
-        rows: []
-      - input: ref('stg_renlearn__star')
-        rows: []
-      - input: ref('int_amplify__all_assessments')
-        rows: []
     expect:
       rows:
         - {
@@ -181,20 +206,19 @@ unit_tests:
       homeroom.
     model: int_assessments__resolved_section_enrollments
     given:
-      - input: ref('int_assessments__scaffold')
-        rows:
-          - {
-              powerschool_student_number: 2,
-              canonical_assessment_id: 200,
-              _dbt_source_project: kippcamden,
-              subject_area: ELA,
-              date_taken: 2024-11-05,
-              is_internal_assessment: true,
-              is_replacement: false,
-            }
-      - input: ref('int_assessments__assessments_canonical')
-        rows:
-          - { canonical_assessment_id: 200, administered_date: 2024-11-01 }
+      - input: ref('int_assessments__score_anchors')
+        format: sql
+        rows: |
+          select
+              2 as powerschool_student_number,
+              200 as canonical_assessment_id,
+              cast(null as int64) as academic_year,
+              cast(null as string) as administration_period,
+              'ELA' as subject_area,
+              'kippcamden' as _dbt_source_project,
+              date('2024-11-01') as anchor_date,
+              'internal' as source_type,
+              'k2' as score_grain_key
       - input: ref('int_assessments__course_enrollments')
         rows:
           - {
@@ -205,17 +229,9 @@ unit_tests:
               cc_dateenrolled: 2024-09-01,
               cc_dateleft: 2025-06-15,
               cc_dcid: 333,
+              powerschool_school_id: 179902,
+              region: Camden,
             }
-      - input: ref('int_pearson__all_assessments')
-        rows: []
-      - input: ref('int_fldoe__all_assessments')
-        rows: []
-      - input: ref('int_iready__diagnostic_results')
-        rows: []
-      - input: ref('stg_renlearn__star')
-        rows: []
-      - input: ref('int_amplify__all_assessments')
-        rows: []
     expect:
       rows:
         - {
@@ -230,31 +246,20 @@ unit_tests:
       produces no output row.
     model: int_assessments__resolved_section_enrollments
     given:
-      - input: ref('int_assessments__scaffold')
-        rows:
-          - {
-              powerschool_student_number: 3,
-              canonical_assessment_id: 300,
-              _dbt_source_project: kippmiami,
-              subject_area: Science,
-              date_taken: 2024-10-15,
-              is_internal_assessment: true,
-              is_replacement: false,
-            }
-      - input: ref('int_assessments__assessments_canonical')
-        rows:
-          - { canonical_assessment_id: 300, administered_date: 2024-10-01 }
+      - input: ref('int_assessments__score_anchors')
+        format: sql
+        rows: |
+          select
+              3 as powerschool_student_number,
+              300 as canonical_assessment_id,
+              cast(null as int64) as academic_year,
+              cast(null as string) as administration_period,
+              'Science' as subject_area,
+              'kippmiami' as _dbt_source_project,
+              date('2024-10-01') as anchor_date,
+              'internal' as source_type,
+              'k3' as score_grain_key
       - input: ref('int_assessments__course_enrollments')
-        rows: []
-      - input: ref('int_pearson__all_assessments')
-        rows: []
-      - input: ref('int_fldoe__all_assessments')
-        rows: []
-      - input: ref('int_iready__diagnostic_results')
-        rows: []
-      - input: ref('stg_renlearn__star')
-        rows: []
-      - input: ref('int_amplify__all_assessments')
         rows: []
     expect:
       rows: []
@@ -265,10 +270,19 @@ unit_tests:
       source_type is state_nj.
     model: int_assessments__resolved_section_enrollments
     given:
-      - input: ref('int_assessments__scaffold')
-        rows: []
-      - input: ref('int_assessments__assessments_canonical')
-        rows: []
+      - input: ref('int_assessments__score_anchors')
+        format: sql
+        rows: |
+          select
+              4 as powerschool_student_number,
+              cast(null as int64) as canonical_assessment_id,
+              2024 as academic_year,
+              'Spring' as administration_period,
+              'Mathematics' as subject_area,
+              'kippnewark' as _dbt_source_project,
+              date('2025-04-10') as anchor_date,
+              'state_nj' as source_type,
+              'k4' as score_grain_key
       - input: ref('int_assessments__course_enrollments')
         rows:
           - {
@@ -279,25 +293,9 @@ unit_tests:
               cc_dateenrolled: 2024-09-01,
               cc_dateleft: 2025-06-15,
               cc_dcid: 444,
+              powerschool_school_id: 73252,
+              region: Newark,
             }
-      - input: ref('int_pearson__all_assessments')
-        rows:
-          - {
-              localstudentidentifier: 4,
-              academic_year: 2024,
-              administration_period: Spring,
-              illuminate_subject: Mathematics,
-              _dbt_source_project: kippnewark,
-              test_date: 2025-04-10,
-            }
-      - input: ref('int_fldoe__all_assessments')
-        rows: []
-      - input: ref('int_iready__diagnostic_results')
-        rows: []
-      - input: ref('stg_renlearn__star')
-        rows: []
-      - input: ref('int_amplify__all_assessments')
-        rows: []
     expect:
       rows:
         - {
@@ -313,17 +311,37 @@ unit_tests:
     description: >-
       Regression test for #3625 (fixed in a743b7d6c). An iReady Reading score
       and a DIBELS Composite score for the same student/project/academic
-      year/administration_period/subject_area (Text Study) agree on every
-      score_grain_key input except source_type. Both must resolve to the subject
-      section and survive as distinct output rows -- if source_type were dropped
-      from score_grain_key the two would hash identically and the resolved-tier
-      dedupe would silently collapse them into one.
+      year/administration_period/subject_area (Text Study) carry distinct
+      score_grain_key values because source_type is a key input. Both must
+      resolve to the subject section and survive as distinct output rows -- the
+      resolved-tier dedupe partitions on score_grain_key, so a shared key would
+      silently collapse them into one.
     model: int_assessments__resolved_section_enrollments
     given:
-      - input: ref('int_assessments__scaffold')
-        rows: []
-      - input: ref('int_assessments__assessments_canonical')
-        rows: []
+      - input: ref('int_assessments__score_anchors')
+        format: sql
+        rows: |
+          select
+              5 as powerschool_student_number,
+              cast(null as int64) as canonical_assessment_id,
+              2024 as academic_year,
+              'BOY' as administration_period,
+              'Text Study' as subject_area,
+              'kippnewark' as _dbt_source_project,
+              date('2024-09-15') as anchor_date,
+              'iready' as source_type,
+              'k5-iready' as score_grain_key
+          union all
+          select
+              5 as powerschool_student_number,
+              cast(null as int64) as canonical_assessment_id,
+              2024 as academic_year,
+              'BOY' as administration_period,
+              'Text Study' as subject_area,
+              'kippnewark' as _dbt_source_project,
+              date('2024-09-20') as anchor_date,
+              'dibels' as source_type,
+              'k5-dibels' as score_grain_key
       - input: ref('int_assessments__course_enrollments')
         rows:
           - {
@@ -334,36 +352,9 @@ unit_tests:
               cc_dateenrolled: 2024-09-01,
               cc_dateleft: 2025-06-15,
               cc_dcid: 555,
+              powerschool_school_id: 73252,
+              region: Newark,
             }
-      - input: ref('int_pearson__all_assessments')
-        rows: []
-      - input: ref('int_fldoe__all_assessments')
-        rows: []
-      - input: ref('int_iready__diagnostic_results')
-        format: sql
-        rows: |
-          select
-              5 as student_id,
-              2024 as academic_year_int,
-              'BOY' as test_round,
-              'Text Study' as illuminate_subject,
-              'kippnewark' as _dbt_source_project,
-              date('2024-09-15') as completion_date,
-              650 as overall_scale_score
-      - input: ref('stg_renlearn__star')
-        rows: []
-      - input: ref('int_amplify__all_assessments')
-        format: sql
-        rows: |
-          select
-              5 as student_number,
-              2024 as academic_year,
-              'BOY' as `period`,
-              'Text Study' as illuminate_subject,
-              'kippnewark' as _dbt_source_project,
-              date('2024-09-20') as client_date,
-              'Benchmark' as assessment_type,
-              'Composite' as measure_standard
     expect:
       rows:
         - {

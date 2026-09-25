@@ -61,6 +61,35 @@ models:
         data_type: float64
       - name: ideal_grad_rate
         data_type: float64
+      - name: last_activity
+        description:
+          Timestamp of the student's most recent recorded activity in Overgrad.
+        data_type: string
+      - name: grade_level
+        description: >-
+          Student's grade level as reported by Overgrad. Carries numeric grade
+          values for enrolled students and Alumni for graduates, so the value is
+          text rather than an integer.
+        data_type: string
+      - name: css_profile_status
+        description: >-
+          CSS Profile submission status tracked natively by Overgrad. Distinct
+          from the counselor-maintained `css_profile_complete` custom field.
+        data_type: string
+      - name: state_aid_application_status
+        description: State aid application status tracked natively by Overgrad.
+        data_type: string
+      - name: fafsa_status
+        description: >-
+          FAFSA submission status tracked natively by Overgrad, following the
+          platform's own submission lifecycle. Distinct from
+          `fafsa_status_custom`, which holds the counselor-maintained assessment
+          and can disagree with this field.
+        data_type: string
+      - name: completed_account_setup
+        description:
+          Indicates whether the student has completed Overgrad account setup.
+        data_type: boolean
       - name: school__id
         data_type: int64
       - name: school__object

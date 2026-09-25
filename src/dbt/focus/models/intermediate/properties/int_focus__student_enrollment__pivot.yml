@@ -28,3 +28,11 @@ models:
       - name: student_offender_transfer_label
         description:
           Decoded label for the student_offender_transfer select field.
+      - name: resident_status_state_county_label
+        description: >-
+          Decoded label for the resident_status_state_county select field — the
+          student's residency relative to the district and county.
+      - name: disaster_affected_student_label
+        description: >-
+          Decoded label for the disaster_affected_student select field — the
+          declared disaster a displaced student was affected by.

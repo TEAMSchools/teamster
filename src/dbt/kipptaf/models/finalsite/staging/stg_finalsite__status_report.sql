@@ -13,23 +13,11 @@ with
     )
 
 select
-    * except (first_name, enrollment_type),
-
-    initcap(first_name) as first_name,
-
-    regexp_replace(active_school_year, r'-\d{2}', '-') as active_school_year_display,
+    *,
 
     initcap(regexp_extract(_dbt_source_relation, r'kipp(\w+)_')) as region,
 
     {{ extract_source_project() }} as _dbt_source_project,
-
-    if(
-        application_grade in ('K', 'Kindergarten'),
-        0,
-        cast(regexp_extract(application_grade, r'\d+') as int)
-    ) as grade_level,
-
-    initcap(if(enrollment_type is null, 'New', enrollment_type)) as enrollment_type,
 
 from union_relations
 where

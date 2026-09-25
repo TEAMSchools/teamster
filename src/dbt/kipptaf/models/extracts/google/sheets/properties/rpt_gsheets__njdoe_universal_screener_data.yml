@@ -1,43 +1,121 @@
 models:
   - name: rpt_gsheets__njdoe_universal_screener_data
+    description:
+      Current-year DIBELS 8 benchmark results for New Jersey students in
+      kindergarten through grade 3, one row per student, benchmark period and
+      assessment, formatted for the NJDOE universal screener submission.
+      Students without a state student ID in PowerSchool share a null sid and
+      collapse into one row per school and period.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - sid
+              - benchmark_period
+              - assessment_name
+          config:
+            severity: error
+            where: sid is not null
     columns:
       - name: region
         data_type: string
+        description: KIPP region name (Newark, Camden or Paterson).
       - name: schoolid
         data_type: int64
+        description:
+          PowerSchool school ID of the school where the student tested.
       - name: school
         data_type: string
+        description: School abbreviation from the location crosswalk.
       - name: benchmark_period
         data_type: string
+        description: DIBELS benchmark window (BOY, MOY or EOY).
       - name: district_code
         data_type: string
+        description: NJDOE county-district code for the region.
       - name: school_code
         data_type: string
+        description: NJDOE school code for the region's charter.
       - name: sid
         data_type: string
+        description: New Jersey state student ID from PowerSchool.
+        config:
+          meta:
+            contains_pii: true
       - name: assessment_name
         data_type: string
+        description: Amplify assessment edition, such as DIBELS 8th Edition.
       - name: phonics_and_decoding_score
         data_type: string
+        description: Nonsense Word Fluency words-recoded-correctly score.
+        config:
+          meta:
+            contains_pii: true
       - name: letter_naming_score
         data_type: string
+        description: Letter Naming Fluency score.
+        config:
+          meta:
+            contains_pii: true
       - name: phonemic_awareness_score
         data_type: string
+        description: Phonemic Segmentation Fluency score.
+        config:
+          meta:
+            contains_pii: true
       - name: comprehension_score
         data_type: string
+        description: Maze adjusted score; can be fractional.
+        config:
+          meta:
+            contains_pii: true
       - name: oral_reading_fluency_score
         data_type: string
+        description: Oral Reading Fluency words-correct score.
+        config:
+          meta:
+            contains_pii: true
       - name: composite_score
         data_type: string
+        description: DIBELS composite score.
+        config:
+          meta:
+            contains_pii: true
       - name: phonics_and_decoding_level
         data_type: string
+        description:
+          Nonsense Word Fluency level recoded for NJDOE — Above, At or Below
+          Grade Level, TO (tested out) or D (discontinued).
+        config:
+          meta:
+            contains_pii: true
       - name: letter_naming_level
         data_type: string
+        description: Letter Naming Fluency level, recoded the same way.
+        config:
+          meta:
+            contains_pii: true
       - name: phonemic_awareness_level
         data_type: string
+        description: Phonemic Segmentation Fluency level, recoded the same way.
+        config:
+          meta:
+            contains_pii: true
       - name: comprehension_level
         data_type: string
+        description: Maze level, recoded the same way.
+        config:
+          meta:
+            contains_pii: true
       - name: oral_reading_fluency_level
         data_type: string
+        description: Oral Reading Fluency level, recoded the same way.
+        config:
+          meta:
+            contains_pii: true
       - name: composite_level
         data_type: string
+        description: Composite level, recoded the same way.
+        config:
+          meta:
+            contains_pii: true

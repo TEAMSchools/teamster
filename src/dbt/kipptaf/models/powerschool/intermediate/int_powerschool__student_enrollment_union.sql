@@ -1,3 +1,6 @@
+-- Miami is absent from this list on purpose: Focus is Miami's sole enrollment
+-- source across all years, so the PowerSchool archive's stints would
+-- double-count every one of them (#4750).
 with
     unioned as (
         {{
@@ -9,10 +12,6 @@ with
                     ),
                     source(
                         "kippcamden_powerschool",
-                        "int_powerschool__student_enrollment_union",
-                    ),
-                    source(
-                        "kippmiami_powerschool",
                         "int_powerschool__student_enrollment_union",
                     ),
                     source(

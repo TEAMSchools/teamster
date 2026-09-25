@@ -6,8 +6,9 @@ conditions to kipptaf dbt assets:
 1. **Baseline**: All views get dbt_view_automation_condition() (no special
    union_relations handling). This was the state before PR #3440.
 2. **Union-relations only** (current): Views with union_relations in raw_code
-   get dbt_union_relations_automation_condition(); other views get the plain
-   view condition.
+   get dbt_union_relations_automation_condition() (fires when a parent's
+   post-code-change materialization lands); other views get the plain view
+   condition.
 3. **All views**: Every view gets _build_any_ancestor_code_version_changed()
    added to its condition, not just union_relations views.
 
@@ -232,8 +233,8 @@ class TestAutomationConditionPerformance:
 
     Three strategies are compared:
     - baseline: views get dbt_view_automation_condition() only
-    - union_relations_only: union_relations views get recursive ancestor
-      code_version_changed (current state after PR #3440)
+    - union_relations_only: union_relations views get the parent-landed
+      trigger (current state, issue #4290)
     - all_views: ALL views get recursive ancestor code_version_changed
     """
 

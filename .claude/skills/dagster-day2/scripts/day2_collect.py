@@ -1,18 +1,24 @@
 # /// script
 # requires-python = ">=3.13"
-# dependencies = ["httpx>=0.27"]
+# dependencies = ["httpx>=0.27", "google-auth[requests]>=2.35"]
 # ///
 """Day-2 ops data collector — replaces Phase 1 of the /dagster-day2 skill.
 
-Issues 15 queries against Dagster Cloud GraphQL, GCP REST APIs (Service Health,
-Error Reporting, Cloud Monitoring), and `gcloud logging read`. Writes a single
+Issues 15 queries against Dagster Cloud GraphQL and GCP REST APIs (Cloud
+Logging, Service Health, Error Reporting, Cloud Monitoring). Writes a single
 artifact to .claude/scratch/day2.json keyed by step.
 
 Authentication mirrors scripts/dagster-mcp-launch.sh: reads the 1Password
 service-account token from /etc/secret-volume/.op-token, exchanges it for a
 scoped Dagster Cloud API token via `op read`, then POSTs to
-https://kipptaf.dagster.cloud/prod/graphql. GCP calls reuse the codespace's
-`gcloud auth print-access-token`.
+https://kipptaf.dagster.cloud/prod/graphql.
+
+GCP calls authenticate with Application Default Credentials — the same
+impersonated-service-account credential the GCP MCP servers read from
+~/.config/gcloud/application_default_credentials.json. This is deliberately NOT
+the `gcloud auth login` user credential: the two stores are independent, and a
+Workspace Cloud-session-length policy expires the user one roughly daily, which
+used to break steps 8, 10, 11, and 12 with no effect on anything else.
 
 Usage:
     uv run scripts/day2_collect.py                  # default: 5pm ET prev biz day → now
@@ -24,6 +30,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import functools
 import json
 import os
 import re
@@ -34,6 +41,8 @@ from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
 
+import google.auth
+import google.auth.transport.requests
 import httpx
 
 ORG = "kipptaf"
@@ -875,37 +884,47 @@ async def step_04_freshness(gql: GraphQL, _after_epoch: float) -> dict:
 PROJECT_ID = "teamster-332318"
 
 
-def gcloud_logging_read(
+CLOUD_PLATFORM_SCOPE = "https://www.googleapis.com/auth/cloud-platform"
+
+
+@functools.cache
+def _adc() -> Any:
+    """Application Default Credentials, resolved once per process."""
+    credentials, _ = google.auth.default(scopes=[CLOUD_PLATFORM_SCOPE])
+    return credentials
+
+
+def gcp_token() -> str:
+    """Bearer token from ADC.
+
+    Reads ~/.config/gcloud/application_default_credentials.json (an impersonated
+    service account), NOT the `gcloud auth login` user credential — see the
+    module docstring for why the distinction matters.
+    """
+    credentials = _adc()
+    if not credentials.valid:
+        credentials.refresh(google.auth.transport.requests.Request())
+    return credentials.token
+
+
+def logging_read(
     query: str, utc_start: str, utc_end: str, limit: int = 100
 ) -> list[dict]:
     full = f'({query}) AND timestamp >= "{utc_start}" AND timestamp <= "{utc_end}"'
-    # trunk-ignore(bandit/B603,bandit/B607): trusted CLI on PATH, fixed argv shape
-    result = subprocess.run(
-        [
-            "gcloud",
-            "logging",
-            "read",
-            full,
-            f"--project={PROJECT_ID}",
-            f"--limit={limit}",
-            "--format=json",
-            "--order=desc",
-        ],
-        capture_output=True,
-        text=True,
-        check=True,
+    resp = httpx.post(
+        "https://logging.googleapis.com/v2/entries:list",
+        headers={"Authorization": f"Bearer {gcp_token()}"},
+        json={
+            "resourceNames": [f"projects/{PROJECT_ID}"],
+            "filter": full,
+            "orderBy": "timestamp desc",
+            "pageSize": limit,
+        },
+        timeout=60.0,
     )
-    return json.loads(result.stdout or "[]")
-
-
-def gcloud_token() -> str:
-    # trunk-ignore(bandit/B603,bandit/B607): trusted CLI on PATH, fixed argv
-    return subprocess.run(
-        ["gcloud", "auth", "print-access-token"],
-        capture_output=True,
-        text=True,
-        check=True,
-    ).stdout.strip()
+    if resp.status_code >= 400:
+        raise RuntimeError(f"logging HTTP {resp.status_code}: {resp.text[:300]}")
+    return resp.json().get("entries", [])
 
 
 # ─── Step 8: Agent pod churn ──────────────────────────────────────────────
@@ -924,7 +943,7 @@ def step_08_agent_pod_churn(utc_start: str, utc_end: str, agents: dict) -> dict:
         'AND jsonPayload.involvedObject.name:"user-cloud-dagster-cloud-agent-agent" '
         'AND jsonPayload.reason="SuccessfulCreate"'
     )
-    entries = gcloud_logging_read(query, utc_start, utc_end)
+    entries = logging_read(query, utc_start, utc_end)
     return {
         "events": [
             {
@@ -979,8 +998,8 @@ def step_10_gke_events(utc_start: str, utc_end: str, step_01: dict) -> dict:
         'AND jsonPayload.reason=("Preempted" OR "Evicted" OR "OOMKilling" '
         'OR "Preempting" OR "BackOff")'
     )
-    cluster = gcloud_logging_read(cluster_query, utc_start, utc_end)
-    pod = gcloud_logging_read(pod_query, utc_start, utc_end)
+    cluster = logging_read(cluster_query, utc_start, utc_end)
+    pod = logging_read(pod_query, utc_start, utc_end)
     failed_ids = {f.get("runId") for f in step_01.get("failures", []) if f.get("runId")}
     success_ids = set(step_01.get("successRunIds", []) or [])
     pod_events = []
@@ -1013,53 +1032,49 @@ def step_10_gke_events(utc_start: str, utc_end: str, step_01: dict) -> dict:
     }
 
 
-# ─── Step 11: Service-health alerts ───────────────────────────────────────
+# ─── Step 11: Cloud Monitoring alerts ─────────────────────────────────────
 
 
 def step_11_alerts(utc_start: str) -> dict:
-    """GCP Service Health events: open at any time, or starting in window."""
-    token = gcloud_token()
-    url = f"https://servicehealth.googleapis.com/v1/projects/{PROJECT_ID}/locations/global/events"
+    """Cloud Monitoring alert-policy violations: open now, or opened in window.
+
+    Uses Monitoring rather than the Service Health API because the codespaces
+    service account ADC resolves to can read Monitoring but not
+    `servicehealth.events.list`. Monitoring is also the better fit: it covers
+    GKE-side alerts (pod eviction, memory/CPU limit utilization) AND Google
+    incidents, which reach it through the log-based `Confirmed relevant
+    incidents` policy.
+    """
     resp = httpx.get(
-        url,
-        headers={"Authorization": f"Bearer {token}"},
-        params={"pageSize": 50},
+        f"https://monitoring.googleapis.com/v3/projects/{PROJECT_ID}/alerts",
+        headers={"Authorization": f"Bearer {gcp_token()}"},
+        params={"pageSize": 50, "orderBy": "open_time desc"},
         timeout=30.0,
     )
     if resp.status_code >= 400:
-        raise RuntimeError(f"service-health HTTP {resp.status_code}: {resp.text[:300]}")
-    events = resp.json().get("events", [])
+        raise RuntimeError(f"monitoring HTTP {resp.status_code}: {resp.text[:300]}")
     out = []
-    for e in events:
-        in_window = (e.get("startTime") or "") >= utc_start
-        if not (in_window or e.get("state") == "ACTIVE"):
+    for a in resp.json().get("alerts", []):
+        in_window = (a.get("openTime") or "") >= utc_start
+        if not (in_window or a.get("state") == "OPEN"):
             continue
-        impacts = e.get("eventImpacts") or []
-        products = sorted(
-            {
-                name
-                for i in impacts
-                if (name := (i.get("product") or {}).get("productName"))
-            }
-        )
-        locations = sorted(
-            {
-                name
-                for i in impacts
-                if (name := (i.get("location") or {}).get("locationName"))
-            }
-        )
+        resource = a.get("resource") or {}
+        labels = resource.get("labels") or {}
+        extracted = (a.get("log") or {}).get("extractedLabels") or {}
+        policy = a.get("policy") or {}
         out.append(
             {
-                "name": e.get("name"),
-                "state": e.get("state"),
-                "title": e.get("title"),
-                "openTime": e.get("startTime"),
-                "closeTime": e.get("endTime"),
-                "category": e.get("category"),
-                "relevance": e.get("relevance"),
-                "impactedProducts": products,
-                "impactedLocations": locations,
+                "name": a.get("name"),
+                "state": a.get("state"),
+                "title": policy.get("displayName") or extracted.get("title"),
+                "severity": policy.get("severity"),
+                "openTime": a.get("openTime"),
+                "closeTime": a.get("closeTime"),
+                "resourceType": resource.get("type"),
+                "podName": labels.get("pod_name"),
+                "metricType": (a.get("metric") or {}).get("type"),
+                "reason": extracted.get("reason"),
+                "message": extracted.get("message") or extracted.get("description"),
             }
         )
     return {"alerts": out}
@@ -1089,13 +1104,13 @@ def _resolve_exception_line(pod_name: str, last_seen: str) -> str | None:
     start = (ts - timedelta(seconds=2)).isoformat().replace("+00:00", "Z")
     end = (ts + timedelta(seconds=2)).isoformat().replace("+00:00", "Z")
     try:
-        entries = gcloud_logging_read(
+        entries = logging_read(
             f'resource.labels.pod_name="{pod_name}" severity>=ERROR',
             start,
             end,
             limit=100,
         )
-    except subprocess.CalledProcessError:
+    except (RuntimeError, httpx.HTTPError):
         return None
     candidates: list[str] = []
     for e in entries:
@@ -1138,7 +1153,7 @@ def _correlate_pod_event(
 
 
 def step_12_error_groups(utc_start: str, step_10: dict) -> dict:
-    token = gcloud_token()
+    token = gcp_token()
     url = f"https://clouderrorreporting.googleapis.com/v1beta1/projects/{PROJECT_ID}/groupStats"
     params = {
         "timeRange.period": "PERIOD_30_DAYS",
@@ -1251,7 +1266,7 @@ def step_13_oom_metrics(step_01: dict, _utc_end: str) -> dict:
     ]
     if not oom_runs:
         return {"skipped": True, "reason": "no OOM/eviction failures"}
-    token = gcloud_token()
+    token = gcp_token()
     url = f"https://monitoring.googleapis.com/v3/projects/{PROJECT_ID}/timeSeries"
     out = []
     for run in oom_runs:
@@ -1370,7 +1385,7 @@ async def main() -> None:
     finally:
         await gql.aclose()
 
-    # GCP-side steps (sync, gcloud subprocess + REST).
+    # GCP-side steps (sync REST, authenticated with ADC).
     s7 = artifact.get("step_07_agents", {})
     run_sync(
         "step_08_agent_pod_churn",
