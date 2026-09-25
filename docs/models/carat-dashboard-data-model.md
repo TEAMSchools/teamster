@@ -754,6 +754,38 @@ No test catches a null date yet: the date test on
 `not_null` on `date` alongside the kippadb cleanup, so the count can be driven
 to zero and held there.
 
+## Possible improvements
+
+Ideas that have been asked for, but not designed or built. None is a defect.
+
+- **AP and dual enrollment metrics.** Participation, AP scores of 3 or higher,
+  and DE grades of B or better, tracked against goals. AP is ready to build on;
+  DE first needs the fixes under _Known issues, need to fix_. Tracked in #5546.
+- **College Board standards.** Show the knowledge-and-skills results next to
+  each official SAT. They exist only in the College Board files, from spring
+  2022, so the work is a join from each kippadb sitting to its College Board
+  record on student and test date (see _How official SAT reaches the
+  dashboard_).
+- **Flag students who didn't test with KTAF.** Mark official scores from a
+  school year in which the student had no KTAF enrollment record, so results
+  earned elsewhere can be told apart from results earned here.
+- **AP course grades against AP exam scores.** A scatterplot per subject. The AP
+  view has course enrollment and exam scores but no course grades, so this needs
+  the stored grades joined in.
+- **Percent met by CCR teacher.** `_roster` already carries the student's
+  college-and-career-readiness course, section, and teacher from
+  `int_students__ccr_schedule`. `_current` and `_benchmark_calcs` don't, so the
+  met-benchmark tabs can't be cut by CCR teacher yet.
+- **Results by student group.** The views carry IEP, 504, and English learner
+  status, but not gender, race, or free and reduced-price lunch status. Adding
+  them makes small groups likely, and the repo has no automatic small-cell
+  suppression (#4237), so decide how to suppress before building.
+- **AP Potential.** College Board's AP Potential report, which predicts AP
+  success from PSAT results, isn't ingested.
+- **A guide for dashboard users.** This manual is for the people who maintain
+  CARAT. A short user guide or walkthrough video for the landing page was
+  planned and not made.
+
 ## Yearly upkeep
 
 | Who          | Does what                                                                                        |
