@@ -197,7 +197,7 @@ with
                     students_student_number,
                     cc_academic_year,
                     cc_course_number
-                order by cc_dateenrolled desc, exit_date desc
+                order by cc_dateenrolled desc, exit_date desc, cc_dcid asc
             ) as rn_course_number_year,
         from focus_conformed
     ),

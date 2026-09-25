@@ -265,5 +265,8 @@ models:
           `cc_studyear`, `cc_course_number`, ordered by `cc_termid`,
           `cc_dateenrolled`, `cc_dateleft`, all descending. For Miami's Focus
           branch, the same definition without `cc_termid` (Focus has no term
-          id), ordered by `cc_dateenrolled` then `exit_date`, both descending.
+          id), ordered by `cc_dateenrolled` then `exit_date`, both descending,
+          then `cc_dcid` ascending to break ties deterministically -- Focus
+          dates a section to its marking period, so multiple sections in the
+          same course commonly share both dates.
         data_type: int64
