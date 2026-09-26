@@ -1,18 +1,13 @@
 models:
   - name: rpt_tableau__dibels_dashboard
     description: >-
-      Amplify DIBELS benchmark and progress-monitoring results. Network-wide,
-      Miami included as of #5518. The grain filter used to read `not
-      s.is_self_contained`, which is null for every Miami row because Focus
-      records no self-contained placement -- #4968 and #5038 both decline to
-      assert false for a fact the data does not carry, so it silently dropped
-      every Miami row. Ratified on #4996 pending a fix, and fixed by reading
-      `s.is_self_contained is not true` instead, which keeps a null row rather
-      than excluding it. The schedule columns' ELA match also moved from
-      `base_powerschool__course_enrollments`, which carries no Miami rows past
-      the Focus cutover, to `int_students__course_enrollments`, whose
-      `core_subject` and `rn_core_subject_year` pick each student's primary ELA
-      section for both SIS.
+      Amplify DIBELS benchmark and progress-monitoring results, network-wide
+      including Miami. The grain filter reads `s.is_self_contained is not true`,
+      so a row with a null self-contained flag stays in. Focus records no
+      self-contained placement, so every Miami row carries a null flag. The
+      schedule columns come from `int_students__course_enrollments` — each
+      student's primary ELA section at the enrolled school (`core_subject` of
+      ELA, `rn_core_subject_year` of 1), for both PowerSchool and Focus.
 
       The `*_status` and `*_category` columns form a grid: three granularities
       (measure standard, measure name code, round) crossed with four comparison
