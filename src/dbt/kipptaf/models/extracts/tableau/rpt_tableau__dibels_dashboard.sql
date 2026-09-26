@@ -74,7 +74,7 @@ select
     c.students_student_number as schedule_student_number,
     c.cc_teacherid as teacherid,
     c.teacher_lastfirst as teacher_name,
-    c.courses_course_name as course_name,
+    c.standard_course_name as course_name,
     c.cc_course_number as course_number,
     c.cc_section_number as section_number,
 
@@ -141,7 +141,7 @@ select
     ) as expected_round_selection,
     cast(null as string) as measure_standard_round_verdicts,
 
-    right(c.courses_course_name, 1) as schedule_student_grade_level,
+    right(c.standard_course_name, 1) as schedule_student_grade_level,
 
     if(b.measure_standard is null, 'Not Tested', 'Tested') as measure_test_status,
 
@@ -170,26 +170,14 @@ left join
     and a.admin_season = g.period
     and s.school = g.school
 left join
-    {{ ref("base_powerschool__course_enrollments") }} as c
+    {{ ref("int_students__course_enrollments") }} as c
     on s.academic_year = c.cc_academic_year
     and s.schoolid = c.cc_schoolid
     and s.student_number = c.students_student_number
     and s._dbt_source_project = c._dbt_source_project
-    and c.rn_course_number_year = 1
-    and not c.is_dropped_section
+    and c.core_subject = 'ELA'
+    and c.rn_core_subject_year = 1
     and c.cc_section_number not like '%SC%'
-    and c.courses_course_name in (
-        'ELA GrK',
-        'ELA K',
-        'ELA Gr1',
-        'ELA Gr2',
-        'ELA Gr3',
-        'ELA Gr4',
-        'ELA Gr5',
-        'ELA Gr6',
-        'ELA Gr7',
-        'ELA Gr8'
-    )
 left join
     {{ ref("int_amplify__all_assessments") }} as b
     on a.academic_year = b.academic_year
@@ -205,7 +193,7 @@ left join
     and s.student_number = r.student_number
 where
     s.iready_subject = 'Reading'
-    and not s.is_self_contained
+    and s.is_self_contained is not true
     and not s.is_out_of_district
     and s.enroll_status in (0, 2, 3)
 
@@ -286,7 +274,7 @@ select
     c.students_student_number as schedule_student_number,
     c.cc_teacherid as teacherid,
     c.teacher_lastfirst as teacher_name,
-    c.courses_course_name as course_name,
+    c.standard_course_name as course_name,
     c.cc_course_number as course_number,
     c.cc_section_number as section_number,
 
@@ -409,7 +397,7 @@ select
         rows between unbounded preceding and unbounded following
     ) as measure_standard_round_verdicts,
 
-    right(c.courses_course_name, 1) as schedule_student_grade_level,
+    right(c.standard_course_name, 1) as schedule_student_grade_level,
 
     if(a.measure_standard is null, 'Not Tested', 'Tested') as measure_test_status,
 
@@ -447,26 +435,14 @@ inner join
     and r.measure_standard = 'Composite'
     and r.overall_probe_eligible = 'Yes'
 left join
-    {{ ref("base_powerschool__course_enrollments") }} as c
+    {{ ref("int_students__course_enrollments") }} as c
     on s.academic_year = c.cc_academic_year
     and s.schoolid = c.cc_schoolid
     and s.student_number = c.students_student_number
     and s._dbt_source_project = c._dbt_source_project
-    and c.rn_course_number_year = 1
-    and not c.is_dropped_section
+    and c.core_subject = 'ELA'
+    and c.rn_core_subject_year = 1
     and c.cc_section_number not like '%SC%'
-    and c.courses_course_name in (
-        'ELA GrK',
-        'ELA K',
-        'ELA Gr1',
-        'ELA Gr2',
-        'ELA Gr3',
-        'ELA Gr4',
-        'ELA Gr5',
-        'ELA Gr6',
-        'ELA Gr7',
-        'ELA Gr8'
-    )
 -- this branch is the INTERNAL method's: it reads the internal expectation gate,
 -- the frozen custom goals sheet and int_amplify__pm_met_criteria. Both joins
 -- below now carry a row per data method, so without model_type each one matches
@@ -498,7 +474,7 @@ left join
     and s.student_number = pm.student_number
 where
     s.iready_subject = 'Reading'
-    and not s.is_self_contained
+    and s.is_self_contained is not true
     and not s.is_out_of_district
     and s.enroll_status in (0, 2, 3)
 
@@ -583,7 +559,7 @@ select
     c.students_student_number as schedule_student_number,
     c.cc_teacherid as teacherid,
     c.teacher_lastfirst as teacher_name,
-    c.courses_course_name as course_name,
+    c.standard_course_name as course_name,
     c.cc_course_number as course_number,
     c.cc_section_number as section_number,
 
@@ -720,7 +696,7 @@ select
         rows between unbounded preceding and unbounded following
     ) as measure_standard_round_verdicts,
 
-    right(c.courses_course_name, 1) as schedule_student_grade_level,
+    right(c.standard_course_name, 1) as schedule_student_grade_level,
 
     if(a.measure_standard is null, 'Not Tested', 'Tested') as measure_test_status,
 
@@ -774,26 +750,14 @@ inner join
     and e.assessment_include is null
     and e.pm_goal_include is null
 left join
-    {{ ref("base_powerschool__course_enrollments") }} as c
+    {{ ref("int_students__course_enrollments") }} as c
     on s.academic_year = c.cc_academic_year
     and s.schoolid = c.cc_schoolid
     and s.student_number = c.students_student_number
     and s._dbt_source_project = c._dbt_source_project
-    and c.rn_course_number_year = 1
-    and not c.is_dropped_section
+    and c.core_subject = 'ELA'
+    and c.rn_core_subject_year = 1
     and c.cc_section_number not like '%SC%'
-    and c.courses_course_name in (
-        'ELA GrK',
-        'ELA K',
-        'ELA Gr1',
-        'ELA Gr2',
-        'ELA Gr3',
-        'ELA Gr4',
-        'ELA Gr5',
-        'ELA Gr6',
-        'ELA Gr7',
-        'ELA Gr8'
-    )
 left join
     {{ ref("int_amplify__all_assessments") }} as a
     on e.academic_year = a.academic_year
@@ -820,6 +784,6 @@ left join
     and s.student_number = pm.student_number
 where
     s.iready_subject = 'Reading'
-    and not s.is_self_contained
+    and s.is_self_contained is not true
     and not s.is_out_of_district
     and s.enroll_status in (0, 2, 3)
