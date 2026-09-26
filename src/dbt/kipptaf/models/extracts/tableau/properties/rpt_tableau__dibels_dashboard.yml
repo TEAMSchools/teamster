@@ -2,14 +2,17 @@ models:
   - name: rpt_tableau__dibels_dashboard
     description: >-
       Amplify DIBELS benchmark and progress-monitoring results. Network-wide,
-      Miami included in principle — Miami is a DIBELS region with 48 AY2026 rows
-      in the expected-assessments sheet and 20,698 AY2025 Amplify results. **In
-      practice Miami still returns no rows here.** The grain filter reads `not
+      Miami included as of #5518. The grain filter used to read `not
       s.is_self_contained`, which is null for every Miami row because Focus
-      records no self-contained placement. #4968 and #5038 both decline to
-      assert false for a fact the data does not carry, so Miami stays out until
-      Focus supplies a placement field or Ops confirms a mapping. Ratified on
-      #4996.
+      records no self-contained placement -- #4968 and #5038 both decline to
+      assert false for a fact the data does not carry, so it silently dropped
+      every Miami row. Ratified on #4996 pending a fix, and fixed by reading
+      `s.is_self_contained is not true` instead, which keeps a null row rather
+      than excluding it. The schedule columns' ELA match also moved from
+      `base_powerschool__course_enrollments`, which carries no Miami rows past
+      the Focus cutover, to `int_students__course_enrollments`, whose
+      `core_subject` and `rn_core_subject_year` pick each student's primary ELA
+      section for both SIS.
 
       The `*_status` and `*_category` columns form a grid: three granularities
       (measure standard, measure name code, round) crossed with four comparison
@@ -366,7 +369,10 @@ models:
           section matched.
       - name: teacherid
         data_type: int64
-        description: PowerSchool teacher id on the matched ELA section.
+        description: >-
+          Teacher id on the matched ELA section, in the SIS's own id space --
+          the PowerSchool teacher id for New Jersey and for Miami before AY2026,
+          and the Focus staff id for Miami from AY2026.
       - name: teacher_name
         data_type: string
         description: Teacher of the matched ELA section.
@@ -375,7 +381,9 @@ models:
             contains_pii: true
       - name: course_name
         data_type: string
-        description: Name of the matched ELA course.
+        description:
+          The matched ELA course's standard label, from the course-subject
+          crosswalk sheet.
       - name: course_number
         data_type: string
         description: Course number of the matched ELA section.
