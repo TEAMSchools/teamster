@@ -125,13 +125,25 @@ student's composite row out to 1-3 population rows via
 -- avoids a 3-way `UNION ALL` and any subquery.
 
 **ELA teacher/course/section, joined exactly like
-`rpt_tableau__dibels_dashboard` does** -- `base_powerschool__course_enrollments`
-filtered to the `ELA Gr*` course-name list, `rn_course_number_year = 1`, not
-dropped, section not `%SC%`. This is separate from and in addition to `advisory`
-(a general homeroom/advisor field, not subject-specific) -- DIBELS is a reading
-assessment, so the relevant teacher is the ELA one, not the generic advisor.
-**PowerSchool-only**: null for Miami (Focus) students, same known gap the
-existing dashboard already has.
+`rpt_tableau__dibels_dashboard` does** -- `int_students__course_enrollments`
+filtered to `core_subject = 'ELA'`, `rn_core_subject_year = 1`, not dropped,
+section not `%SC%`. `core_subject` and `course_name` (the sheet's
+`Standard_Course_Name`) come from the course-subject crosswalk sheet
+(`stg_google_sheets__assessments__course_subject_crosswalk`), including the
+Florida (Focus) course codes -- those live on the sheet, not in SQL. Don't
+substitute a course-title search for the crosswalk join: ACCESS course titles
+abbreviate Language Arts to `LA`, so a `LIKE '%LANG%'` search misses them.
+Covers Miami with the Focus staff id from AY2026 and the frozen PowerSchool
+archive before that -- not PowerSchool-only. This is separate from and in
+addition to `advisory` (a general homeroom/advisor field, not subject-specific)
+-- DIBELS is a reading assessment, so the relevant teacher is the ELA one, not
+the generic advisor.
+
+**The `%SC%` section-name exclusion over-matches on Miami's PowerSchool
+archive.** It is inherited from NJ self-contained sections, but a Miami section
+name that contains the letters `SC` for an unrelated reason -- a homeroom named
+after a college such as USC, for example -- reads unscheduled too. This is why
+Miami AY2024 shows a lower scheduled rate than the other years.
 
 **`foundation_measure_standard_level` (on `int_amplify__all_assessments`), not
 `aggregated_measure_standard_level`, is the field to aggregate on.** The latter
@@ -1237,10 +1249,16 @@ When the calendar checks above pass and an entire region still has no scores,
 gave the user three wrong causes for Miami's empty AY2026 dashboard -- a missing
 union member, a crosswalk gap, then the `is_self_contained` exclusion -- before
 checking the top of the hierarchy, where the answer was sitting: Amplify's
-SY2026-2027 export contained no Miami schools at all on that date. By 2026-09-22
-Amplify had added 4 Miami schools back under a new `district_name`,
-`Kipp Florida` (the NJ schools moved to `Kipp New Jersey`). The export moves
-under you; re-run the query, do not trust the last answer.
+SY2026-2027 export contained no Miami schools at all on that date.
+`is_self_contained` was the wrong cause for that specific incident, but it was a
+real bug independent of it: `not s.is_self_contained` is null for every Miami
+row (Focus records no self-contained placement), so it silently dropped every
+Miami row from the dashboard, every year and every branch, regardless of what
+the Amplify export carried. Fixed by switching the filter to
+`is_self_contained is not true`. By 2026-09-22 Amplify had added 4 Miami schools
+back under a new `district_name`, `Kipp Florida` (the NJ schools moved to
+`Kipp New Jersey`). The export moves under you; re-run the query, do not trust
+the last answer.
 
 Run this before anything else:
 
@@ -2615,9 +2633,9 @@ that is current somewhere is no longer selectable by number on this field, so
 cosmetic: a filter on the bare round number silently mixes NJ students
 mid-first-half with Miami students in their second half.
 
-Latent today only because Miami produces no rows in the extract at all. Do not
+This is live, not latent: Miami now produces rows in the extract. Do not
 "simplify" the label away on the grounds that round numbers look unique -- they
-look unique because Miami is missing.
+only look unique in a view that filters Miami out.
 
 ### The switcher grid, and why its names are inconsistent
 
