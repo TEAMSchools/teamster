@@ -718,10 +718,9 @@ models:
           different halves of the year. A filter on the bare number silently
           mixes them.
 
-          The ambiguity is latent rather than live: Miami currently produces no
-          rows in this model at all (see the model description), so today every
-          round number resolves to one season. It becomes real the day Miami
-          appears.
+          The ambiguity is live, not latent: Miami produces rows in this model,
+          so a filter on the bare round number mixes Miami rows into the wrong
+          NJ season.
       - name: expected_round_selection
         data_type: string
         description: >-
@@ -806,12 +805,12 @@ models:
           into one. A LEFT JOIN miss means the student sat nothing. An explicit
           null from the intermediate means the student DID sit the round but
           Amplify published no benchmark goal for one of its measures, so the
-          rollup has nothing to judge. Measured on AY2025 the second state
-          occurs on zero rows in both methods, because the population it depends
-          on is the Miami benchmark_goal nulls and Miami produces no rows in
-          this extract -- so the conflation is latent, not live. It becomes real
-          the day Miami appears, and the honest fix then is a fourth value
-          rather than a wider Not Tested.
+          rollup has nothing to judge. This population is not always empty: a
+          season whose goals have not been pasted yet -- AY2023, which predates
+          the goals sheet, and AY2026, not yet pasted -- puts every region's
+          scored-but-goalless rows into this state, Miami included now that it
+          produces rows here. The honest fix is a fourth value rather than a
+          wider Not Tested.
 
           The measure-name-code rung of the benchmark lens, between
           admin_benchmark_goal_status at measure-standard grain and
@@ -830,12 +829,12 @@ models:
           into one. A LEFT JOIN miss means the student sat nothing. An explicit
           null from the intermediate means the student DID sit the round but
           Amplify published no benchmark goal for one of its measures, so the
-          rollup has nothing to judge. Measured on AY2025 the second state
-          occurs on zero rows in both methods, because the population it depends
-          on is the Miami benchmark_goal nulls and Miami produces no rows in
-          this extract -- so the conflation is latent, not live. It becomes real
-          the day Miami appears, and the honest fix then is a fourth value
-          rather than a wider Not Tested.
+          rollup has nothing to judge. This population is not always empty: a
+          season whose goals have not been pasted yet -- AY2023, which predates
+          the goals sheet, and AY2026, not yet pasted -- puts every region's
+          scored-but-goalless rows into this state, Miami included now that it
+          produces rows here. The honest fix is a fourth value rather than a
+          wider Not Tested.
 
           Round grain, so it repeats on every measure-standard row of that
           student's round. Count distinct students rather than rows.

@@ -71,11 +71,7 @@ flowchart TD
         stg_schools["stg_powerschool__schools"]
         stg_cal["stg_powerschool__calendar_day"]
         stg_nj_crs["stg_powerschool__s_nj_crs_x"]
-    end
-
-    %% ── Base ──────────────────────────────────────────────────────────────────
-    subgraph BASE ["Base"]
-        base_ce["base_powerschool__\ncourse_enrollments"]
+        stg_xwalk["stg_google_sheets__\nassessments__course_subject_crosswalk"]
     end
 
     %% ── Intermediate — Amplify / mClass ──────────────────────────────────────
@@ -99,6 +95,7 @@ flowchart TD
         direction TB
         int_spenroll["int_powerschool__spenrollments"]
         int_nj_stu["int_powerschool__\ns_nj_stu_x_unpivot"]
+        int_course_enroll["int_students__\ncourse_enrollments"]
         int_enroll["int_extracts__\nstudent_enrollments"]
         int_enroll_subj["int_extracts__\nstudent_enrollments_subjects"]
         int_dibels_roster["int_students__\ndibels_participation_roster"]
@@ -130,11 +127,12 @@ flowchart TD
     src_ps_cal   --> stg_cal
     src_ps_nj_crs --> stg_nj_crs
     src_ps_nj_stu --> int_nj_stu
+    src_gs_xwalk  --> stg_xwalk
 
-    %% ── Edges: Sources / Staging → Base ──────────────────────────────────────
-    src_ps_districts --> base_ce
-    src_gs_xwalk     --> base_ce
-    stg_nj_crs       --> base_ce
+    %% ── Edges: Sources / Staging → int_students__course_enrollments ─────────
+    src_ps_districts --> int_course_enroll
+    stg_nj_crs        --> int_course_enroll
+    stg_xwalk         --> int_course_enroll
 
     %% ── Edges: Sources → Amplify Intermediate ────────────────────────────────
     src_amp --> int_bm_sum
@@ -162,8 +160,8 @@ flowchart TD
     %% ── Edges: Student enrollment chain ──────────────────────────────────────
     int_spenroll --> int_enroll
 
-    int_enroll      --> int_enroll_subj
-    base_ce         --> int_enroll_subj
+    int_enroll        --> int_enroll_subj
+    int_course_enroll --> int_enroll_subj
     int_nj_stu      --> int_enroll_subj
     int_fast        --> int_enroll_subj
     int_pearson     --> int_enroll_subj
@@ -187,7 +185,7 @@ flowchart TD
     stg_bm           --> RPT
     int_gs_pm_exp    --> RPT
     stg_pm           --> RPT
-    base_ce          --> RPT
+    int_course_enroll --> RPT
     int_all          --> RPT
     int_dibels_roster --> RPT
     int_pm_crit      --> RPT
@@ -195,26 +193,23 @@ flowchart TD
     %% ── Styling ───────────────────────────────────────────────────────────────
     classDef source    fill:#e8f4f8,stroke:#5b9bd5,color:#000
     classDef staging   fill:#e2f0d9,stroke:#70ad47,color:#000
-    classDef base      fill:#fff2cc,stroke:#ffc000,color:#000
     classDef intmodel  fill:#fce4d6,stroke:#ed7d31,color:#000
     classDef report    fill:#d9e1f2,stroke:#4472c4,color:#000,font-weight:bold
 
     class src_amp,src_gs_exp,src_gs_bm,src_gs_pm,src_gs_long,src_gs_terms,src_gs_xwalk,src_ps_districts,src_ps_spenroll,src_ps_schools,src_ps_cal,src_ps_nj_crs,src_ps_nj_stu source
-    class stg_exp,stg_bm,stg_pm,stg_long,stg_terms,stg_schools,stg_cal,stg_nj_crs staging
-    class base_ce base
-    class int_bm_sum,int_bm_unpivot,int_pm_sum,int_all,int_pm_crit,int_gs_exp,int_gs_pm_exp,int_spenroll,int_nj_stu,int_enroll,int_enroll_subj,int_dibels_roster,int_cal,int_focus_cal,int_fast,int_pearson,int_fldoe,int_iready,int_deanslist intmodel
+    class stg_exp,stg_bm,stg_pm,stg_long,stg_terms,stg_schools,stg_cal,stg_nj_crs,stg_xwalk staging
+    class int_bm_sum,int_bm_unpivot,int_pm_sum,int_all,int_pm_crit,int_gs_exp,int_gs_pm_exp,int_spenroll,int_nj_stu,int_course_enroll,int_enroll,int_enroll_subj,int_dibels_roster,int_cal,int_focus_cal,int_fast,int_pearson,int_fldoe,int_iready,int_deanslist intmodel
     class RPT report
 ```
 
 ### Layer summary
 
-| Layer        | Count | Purpose                                                                   |
-| ------------ | ----- | ------------------------------------------------------------------------- |
-| Sources      | 13    | Raw Google Sheets, Amplify DDS, and district PowerSchool tables           |
-| Staging      | 8     | Light cleaning and type-casting of source data                            |
-| Base         | 1     | Union of 4 district `course_enrollments` tables                           |
-| Intermediate | 17    | Business logic — enrollment, DIBELS roster, assessment joins, PM criteria |
-| Report       | 1     | Final Tableau extract with both Benchmark and PM branches                 |
+| Layer        | Count | Purpose                                                                                     |
+| ------------ | ----- | ------------------------------------------------------------------------------------------- |
+| Sources      | 13    | Raw Google Sheets, Amplify DDS, and district PowerSchool tables                             |
+| Staging      | 9     | Light cleaning and type-casting of source data                                              |
+| Intermediate | 18    | Business logic — enrollment, course schedules, DIBELS roster, assessment joins, PM criteria |
+| Report       | 1     | Final Tableau extract with both Benchmark and PM branches                                   |
 
 ### Key data flows
 
@@ -234,6 +229,13 @@ Below = probe-eligible).
 
 Both the Benchmark and PM branches land in `rpt_tableau__dibels_dashboard` via a
 `UNION ALL`.
+
+**Schedule columns** — teacher, course, and section come from
+`int_students__course_enrollments`, which covers both the PowerSchool and Focus
+(Miami) branches and picks each student's primary ELA section via
+`core_subject = 'ELA'` and `rn_core_subject_year = 1`. Course name and the
+Florida (Focus) course codes come from the course-subject crosswalk sheet
+(`stg_google_sheets__assessments__course_subject_crosswalk`).
 
 ### Configuration: `stg_google_sheets__dibels_expected_assessments`
 
