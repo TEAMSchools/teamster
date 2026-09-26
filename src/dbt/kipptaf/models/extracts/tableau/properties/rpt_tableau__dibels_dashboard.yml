@@ -805,11 +805,11 @@ models:
           into one. A LEFT JOIN miss means the student sat nothing. An explicit
           null from the intermediate means the student DID sit the round but
           Amplify published no benchmark goal for one of its measures, so the
-          rollup has nothing to judge. This population is not always empty: a
-          season whose goals have not been pasted yet -- AY2023, which predates
-          the goals sheet, and AY2026, not yet pasted -- puts every region's
-          scored-but-goalless rows into this state, Miami included now that it
-          produces rows here. The honest fix is a fourth value rather than a
+          rollup has nothing to judge. Only the Aimline method returns that
+          null; the Internal method always resolves to Met or Did Not Meet
+          Benchmark. No Aimline row, in any region, takes the null state yet, so
+          Not Tested currently means the student sat nothing. If unpublished
+          goals start to appear, the honest fix is a fourth value rather than a
           wider Not Tested.
 
           The measure-name-code rung of the benchmark lens, between
@@ -829,11 +829,11 @@ models:
           into one. A LEFT JOIN miss means the student sat nothing. An explicit
           null from the intermediate means the student DID sit the round but
           Amplify published no benchmark goal for one of its measures, so the
-          rollup has nothing to judge. This population is not always empty: a
-          season whose goals have not been pasted yet -- AY2023, which predates
-          the goals sheet, and AY2026, not yet pasted -- puts every region's
-          scored-but-goalless rows into this state, Miami included now that it
-          produces rows here. The honest fix is a fourth value rather than a
+          rollup has nothing to judge. Only the Aimline method returns that
+          null; the Internal method always resolves to Met or Did Not Meet
+          Benchmark. No Aimline row, in any region, takes the null state yet, so
+          Not Tested currently means the student sat nothing. If unpublished
+          goals start to appear, the honest fix is a fourth value rather than a
           wider Not Tested.
 
           Round grain, so it repeats on every measure-standard row of that
