@@ -5,9 +5,12 @@ models:
       including Miami. The grain filter reads `s.is_self_contained is not true`,
       so a row with a null self-contained flag stays in. Focus records no
       self-contained placement, so every Miami row carries a null flag. The
-      schedule columns come from `int_students__course_enrollments` — each
-      student's primary ELA section at the enrolled school (`core_subject` of
-      ELA, `rn_core_subject_year` of 1), for both PowerSchool and Focus.
+      null-safe filter's consequence: NJ self-contained students are excluded,
+      while Miami rows include any self-contained students, because Focus
+      records no placement to exclude on. The schedule columns come from
+      `int_students__course_enrollments` — each student's primary ELA section at
+      the enrolled school (`core_subject` of ELA, `rn_core_subject_year` of 1),
+      for both PowerSchool and Focus.
 
       The `*_status` and `*_category` columns form a grid: three granularities
       (measure standard, measure name code, round) crossed with four comparison
@@ -367,7 +370,8 @@ models:
         description: >-
           Teacher id on the matched ELA section, in the SIS's own id space --
           the PowerSchool teacher id for New Jersey and for Miami before AY2026,
-          and the Focus staff id for Miami from AY2026.
+          and the Focus staff id for Miami from AY2026. Not unique across
+          regions -- pair it with `region` when grouping.
       - name: teacher_name
         data_type: string
         description: Teacher of the matched ELA section.
@@ -915,7 +919,10 @@ models:
           measure comes from the expectation gate this model joins.
       - name: scheduled
         data_type: int64
-        description: 1 when the student matched an ELA section, else 0.
+        description: >-
+          1 when the student matched an ELA section, else 0. Also reads 0 when
+          the student's primary ELA section has a section number containing SC,
+          which the join treats as self-contained.
       - name: aimline_trajectory_category
         data_type: string
         description: >-

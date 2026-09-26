@@ -1250,15 +1250,12 @@ gave the user three wrong causes for Miami's empty AY2026 dashboard -- a missing
 union member, a crosswalk gap, then the `is_self_contained` exclusion -- before
 checking the top of the hierarchy, where the answer was sitting: Amplify's
 SY2026-2027 export contained no Miami schools at all on that date.
-`is_self_contained` was the wrong cause for that specific incident, but it was a
-real bug independent of it: `not s.is_self_contained` is null for every Miami
-row (Focus records no self-contained placement), so it silently dropped every
-Miami row from the dashboard, every year and every branch, regardless of what
-the Amplify export carried. Fixed by switching the filter to
-`is_self_contained is not true`. By 2026-09-22 Amplify had added 4 Miami schools
-back under a new `district_name`, `Kipp Florida` (the NJ schools moved to
-`Kipp New Jersey`). The export moves under you; re-run the query, do not trust
-the last answer.
+`is_self_contained` was the wrong cause for that specific incident. Keep
+`is_self_contained is not true`; `not is_self_contained` drops every Miami row,
+because Focus records no self-contained placement. By 2026-09-22 Amplify had
+added 4 Miami schools back under a new `district_name`, `Kipp Florida` (the NJ
+schools moved to `Kipp New Jersey`). The export moves under you; re-run the
+query, do not trust the last answer.
 
 Run this before anything else:
 
