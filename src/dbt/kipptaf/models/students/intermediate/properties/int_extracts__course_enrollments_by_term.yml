@@ -735,8 +735,14 @@ models:
             contains_pii: true
       - name: infosnap_id
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: infosnap_opt_in
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: media_release
         data_type: string
         config:
