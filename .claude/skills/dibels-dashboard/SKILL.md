@@ -107,9 +107,9 @@ What to write down, beyond the change itself:
   it must not be corrected.
 - A value or label rename — the old name, the new one, and the date, because
   academics will ask about a word they still use.
-- Anything measured — row counts, category distributions, coverage rates — with
-  the academic year, since the next reader cannot tell a real shift from a
-  method change without it.
+- A measurement a later QA run will compare against, with its date and academic
+  year, in `references/diagnosing.md`. Other counts stay in the session
+  scratchpad or the PR body; they go stale in a skill.
 - A dead end: an MCP that cannot reach a source, a check that proves nothing.
 
 Put column and model semantics in the model's properties yml, workflow and
