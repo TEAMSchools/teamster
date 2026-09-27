@@ -132,6 +132,15 @@ the user to confirm or edit it.
   the links). The DIBELS skill described a Bright Spots model that had sat on an
   unmerged PR for a month as if it were shipped.
 
+- Open Asana tasks: `search_tasks` with `assignee_any` set to the owner,
+  `completed=false`, once per family term (the family name, its measures or
+  dashboard, its sheets). TEAMster tasks named `#NNNN | title` mirror GitHub:
+  they follow their issue, so fix the issue and the task follows. Tasks with no
+  number are known only to Asana: each one is done (complete it with a one-line
+  comment), belongs in an issue body (move the detail, then complete it with a
+  pointer), or needs a new owner. On DIBELS, a "send the preview" task held an
+  open question the issue already carried. Propose the actions as a table and
+  wait for the user before changing any task.
 - Open PRs that edit family files: search PRs for each model name, then list
   each PR's files. Two PRs editing one model or skill file conflict for
   whichever merges second; tell the user which pair before starting (on DIBELS,
