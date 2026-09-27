@@ -101,9 +101,9 @@ Those rows collapse together, because every other key column matches for
 students at the same school in the same period.
 
 NJDOE matches submissions on the state ID, so a null-`sid` row cannot be matched
-on the state's side. As of the AY2026 Beginning-of-Year window this affected 3
-students, one in each region. The uniqueness test excludes them deliberately —
-they are a data-entry gap in PowerSchool, not a modelling defect.
+on the state's side. As of the AY2026 Beginning-of-Year window this affected
+fewer than 10 students. The uniqueness test excludes them deliberately — they
+are a data-entry gap in PowerSchool, not a modelling defect.
 
 ## Shape of the transformation
 
