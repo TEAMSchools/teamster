@@ -553,6 +553,8 @@ monitor's default year is the most recent year with posted Y1 grades
 
 ### Completed-year cumulative goal rates use today's projection
 
+Tracked in #5562.
+
 `int_gpa__goal_student_metrics` takes `cumulative_gpa_unweighted` from
 `int_extracts__student_enrollments`, which joins cumulative GPA on student and
 school with no year. Every past year of a student at their current school
@@ -581,6 +583,8 @@ The fix is to read the year-end value from
 Monitor is not affected: it reads the year extract.
 
 ### Honors courses read weighted points as unweighted this year
+
+Tracked in #5563.
 
 Stored grades map the `KIPP NJ 2024 (5-12) Weighted - Honors` scale to its
 unweighted twin by name, but the current-year path maps unweighted scales by id
@@ -642,6 +646,8 @@ reads 0 failures instead of unknown. It reaches `gpa_n_failing_y1` and
 it. Tracked, with its query, in #5173.
 
 ### Y1 `F*` label is on the wrong scale
+
+Tracked in #5564.
 
 `base_powerschool__final_grades` labels a Y1 grade `F*` when
 `y1_percent_grade < 0.500`, but that column is on a 0 to 100 scale, so only a Y1
