@@ -1,5 +1,18 @@
 models:
   - name: rpt_tableau__fresh_dashboard_aggregated
+    description: >
+      Funnel view of the FRESH dashboard. Each funnel goal row from
+      int_tableau__fresh_goals_scaffold is left-joined to the students in
+      int_tableau__finalsite_student_scaffold who count toward it, giving one
+      row per goal and matching student, or a single row with null student
+      columns when no student matches. Only these goals are included, each with
+      its own match rule. Deferred and Waitlisted ("Current") and Enrollment In
+      Progress ("Current", per-grade goals only) match students whose latest
+      status equals the goal name. Offers and Pending Offers (including the day
+      buckets) match on goal name and school. Inquiries and Applications (region
+      x grade goals only) match on region and grade without a school. Conversion
+      ("Ever") matches the conversion denominator and fills goal_name_value with
+      the numerator. Every other goal type on the goals sheet is dropped.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -20,63 +33,198 @@ models:
     columns:
       - name: academic_year
         data_type: int64
+        description: >
+          The Finalsite recruitment cycle of the goal row, in start- year form
+          (AY2026-2027 = 2026). Renamed from enrollment_academic_year for
+          Tableau; always populated.
       - name: org
         data_type: string
+        description: >
+          Always "KTAF".
       - name: region
         data_type: string
+        description: >
+          One of "Newark", "Camden", "Miami", "Paterson".
       - name: school_level
         data_type: string
+        description: >
+          ES / MS / HS, as entered on the goals sheet.
       - name: schoolid
         data_type: int64
+        description: >
+          PowerSchool-space school id of the goal row. 0 on region- level goals.
       - name: school
         data_type: string
+        description: >
+          Short school abbreviation of the goal row, or the region name on
+          region-level goals.
       - name: grade_level
         data_type: int64
+        description: >
+          Grade of the goal row. -9 on whole-school goals, otherwise the grade
+          (K = 0).
       - name: goal_granularity
         data_type: string
+        description: >
+          "School", "School/Grade Level" or "Region/Grade Level", from the goals
+          sheet.
       - name: goal_type
         data_type: string
+        description: >
+          The funnel stage the goal measures -- Deferred, Waitlisted, Enrollment
+          In Progress, Offers, Pending Offers, Inquiries, Applications or
+          Conversion.
       - name: goal_name
         data_type: string
+        description: >
+          The specific goal, from the goals sheet (e.g. "App Target", "Offers
+          Target", a Pending Offers day bucket, a conversion sub-type).
       - name: goal_value
         data_type: numeric
+        description: >
+          The goal's target value from the goals sheet. Repeated on every
+          student row for the goal, so do not sum it across students.
       - name: grouped_status_timeframe
         data_type: string
+        description: >
+          "Ever" (Conversion) or "Current" (everything else in this view) --
+          whether students are counted for ever reaching the stage or for being
+          in it now.
       - name: enrollment_academic_year
         data_type: int64
+        description: >
+          The matched student's recruitment cycle; the same value as
+          academic_year when a student matched, null otherwise.
       - name: enrollment_academic_year_display
         data_type: string
+        description: >
+          The matched student's cycle as a label, e.g. "2026-27". Null when no
+          student matched.
       - name: finalsite_id
         data_type: string
+        description: >
+          Finalsite enrollment id of the matched student. Null when no student
+          matched. For Conversion rows this is the conversion denominator; count
+          distinct values for a headcount.
+        config:
+          meta:
+            contains_pii: true
       - name: powerschool_student_number
         data_type: int64
+        description: >
+          Student number as reported by Finalsite. Null when no student matched
+          or the applicant has no SIS identity yet.
+        config:
+          meta:
+            contains_pii: true
       - name: first_name
         data_type: string
+        description: >
+          Student first name.
+        config:
+          meta:
+            contains_pii: true
       - name: last_name
         data_type: string
+        description: >
+          Student last name.
+        config:
+          meta:
+            contains_pii: true
       - name: student_grade_level
         data_type: int64
+        description: >
+          The student's Finalsite grade. Can differ from grade_level only on
+          whole-school (-9) goals, which never match a student, so in practice
+          it equals grade_level or is null.
+        config:
+          meta:
+            contains_pii: true
       - name: enroll_status
         data_type: int64
+        description: >
+          Enrollment status from the student's matched SIS record -- 0 enrolled,
+          2 withdrawn, 3 graduated. Null when no student or no SIS record
+          matched.
+        config:
+          meta:
+            contains_pii: true
       - name: birthdate
         data_type: date
+        description: >
+          Student date of birth as recorded in Finalsite.
+        config:
+          meta:
+            contains_pii: true
       - name: gender
         data_type: string
+        description: >
+          Student gender as recorded in Finalsite.
+        config:
+          meta:
+            contains_pii: true
       - name: latest_status
         data_type: string
+        description: >
+          The student's most recent Finalsite status this cycle.
+        config:
+          meta:
+            contains_pii: true
       - name: self_contained
         data_type: string
+        description: >
+          Finalsite self-contained special-education indicator (mixed "Yes" /
+          "No" / "false" labels).
+        config:
+          meta:
+            contains_pii: true
       - name: enrollment_type
         data_type: string
+        description: >
+          The student's Finalsite enrollment type -- "New" or "Returning".
       - name: is_enrolled_fdos
         data_type: boolean
+        description: >
+          True when the student's SIS enrollment started on or before the
+          region's first day of school. Null when no SIS record matched.
+        config:
+          meta:
+            contains_pii: true
       - name: is_enrolled_oct01
         data_type: boolean
+        description: >
+          True when the student's SIS enrollment covers October 1.
+        config:
+          meta:
+            contains_pii: true
       - name: is_enrolled_oct15
         data_type: boolean
+        description: >
+          True when the student's SIS enrollment covers October 15.
+        config:
+          meta:
+            contains_pii: true
       - name: aligned_enrollment_type
         data_type: string
+        description: >
+          Always "All" when a student matched; null otherwise.
+        config:
+          meta:
+            contains_pii: true
       - name: days_in_grouped_status
         data_type: int64
+        description: >
+          Days the student spent in the status group (see
+          int_tableau__finalsite_student_scaffold). Populated only for New
+          students.
+        config:
+          meta:
+            contains_pii: true
       - name: goal_name_value
         data_type: string
+        description: >
+          The id to count toward the goal. For every goal except Conversion it
+          equals finalsite_id. For Conversion it is finalsite_id only when the
+          student (New students only) also meets the conversion numerator, null
+          otherwise -- so count distinct goal_name_value over count distinct
+          finalsite_id gives the conversion rate.
