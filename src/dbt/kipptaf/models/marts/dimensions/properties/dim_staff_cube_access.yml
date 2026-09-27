@@ -58,6 +58,64 @@ models:
               )
           config:
             severity: error
+      # An employing business unit whose code does not match
+      # dim_regions.business_unit_code must deny, not fall through to a grant:
+      # 'unknown' matches only the entity-agnostic 'any' role rows, never the
+      # KTAF/Region-specific grants. Asserts every staff member's employing
+      # entity resolves. Zero rows today across 1,573 staff, so a hit means ADP
+      # added an org unit and dim_regions has not caught up. Non-employee
+      # grantees carry 'unknown' by construction, so they are exempt.
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: |
+              not is_employee or entity != 'unknown'
+          config:
+            severity: error
+      # Guards the CASE in the `resolved` CTE against a future edit, NOT the
+      # data: the CASE already forces this outcome for every KTAF row, so this
+      # cannot fail against any input. It fails if someone later adds a KTAF
+      # branch returning region or school — which is the mistake worth
+      # catching, because KTAF's own legal entity enrolls no students and such
+      # a scope resolves to an empty allow-list and denies outright (measured
+      # before the fix as 5 KTAF viewers at zero rows and 3 capped to one
+      # city). 'none' must stay reachable for KTAF: it is a decision about the
+      # role, not the desk.
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: |
+              entity != 'KTAF' or student_location_scope in ('network', 'none')
+          config:
+            severity: error
+      # A school student scope whose location does not resolve grants nothing:
+      # the policy filters on a NULL abbreviation and the viewer is denied every
+      # row, which looks exactly like a correct deny at the Cube surface. Warn,
+      # not error — the rows are a real upstream gap in the work-assignment
+      # location (9 Miami-employed viewers as of 2026-09-23), so this surfaces
+      # them for Ops rather than blocking a deploy.
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: |
+              student_location_scope != 'school'
+              or location_abbreviation is not null
+          config:
+            severity: warn
+      # legal_entity_region_key is employer-derived for a FERPA reason that
+      # covers student records only. It also bounds the staff-PII remit, via
+      # computeAllowedAbbreviations, whenever staff_location_scope is region or
+      # school — and staff records are not education records, so that half has
+      # no FERPA argument behind it. It is inert only while no viewer holds both
+      # a location-bounded remit and a non-none PII scope; zero do today,
+      # network-wide. This is the tripwire for that: a hit means someone's staff
+      # PII remit is now bounded by their employer rather than their desk, which
+      # is a decision to make deliberately, not to discover. Warn, not error —
+      # it constrains a future grant, not current correctness.
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: |
+              staff_pii_scope = 'none'
+              or staff_location_scope not in ('region', 'school')
+          config:
+            severity: warn
     columns:
       - name: staff_key
         data_type: string
@@ -95,13 +153,29 @@ models:
               config:
                 severity: warn
 
-      - name: region_key
+      - name: legal_entity_region_key
         data_type: string
         description: >-
-          Viewer's region identity key (from dim_locations). resolveAccess
-          expands it into allowed_abbreviations and
-          allowed_student_abbreviations for a region location scope; no
-          access_policy reads it directly. NULL when location does not resolve.
+          Region key of the legal entity EMPLOYING this viewer, resolved by
+          joining business_unit_code to dim_regions.business_unit_code — not the
+          region of the desk they sit at. This is the student row-level security
+          boundary: FERPA binds student-record access to the employing LEA, and
+          region maps 1:1 to legal entity, so the value is still joinable to
+          dim_locations.region_key. It also bounds the staff-PII remit when
+          staff_location_scope is region or school, which FERPA does not argue
+          for; a model-level warn test flags any viewer who reaches that state.
+          NULL when the employing business unit does not resolve, and for every
+          non-employee grantee, which has no employer; either way it denies.
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_regions')
+              to_columns: [region_key]
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_regions')
+                field: region_key
 
       - name: location_abbreviation
         data_type: string
@@ -117,6 +191,22 @@ models:
           Viewer's functional department grouping from the rollup crosswalk.
           resolveAccess expands it into allowed_department_groups for an
           own_group department scope, which the staff_pii policies filter on.
+
+      - name: entity
+        data_type: string
+        description: >-
+          KTAF, Region, or unknown, derived from the dim_regions join that
+          produces legal_entity_region_key: KTAF when the matched region's
+          business_unit_code is KIPP_TAF, Region for every other matched
+          business unit. A business unit dim_regions does not know resolves to
+          unknown — a deny sentinel that matches only entity-agnostic 'any' role
+          rows, never the KTAF/Region-specific grants. Non-employee grantees
+          have no business unit and carry unknown for the same reason.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [KTAF, Region, unknown]
 
       - name: job_function_code
         data_type: string
@@ -146,7 +236,11 @@ models:
         description: >-
           Student data location breadth — network, region, school, or none. The
           only gating on student data: a viewer with a non-none scope sees every
-          student view and all fields, including PII.
+          student view and all fields, including PII. Region and school scopes
+          are bounded by legal_entity_region_key and location_abbreviation
+          respectively. A KTAF viewer granted any scope resolves to network,
+          because KTAF's own legal entity enrolls no students; a KTAF viewer
+          mapped to none stays none.
         data_tests:
           - not_null
           - accepted_values:
@@ -249,12 +343,3 @@ models:
           into the person's normal location remit by cube.js/access.js
           (unionAdditionalGrants, once per axis), never replacing
           student_location_scope/staff_location_scope.
-
-      - name: entity
-        data_type: string
-        description: >-
-          KTAF, Region, or unknown, derived from business_unit_name via an
-          explicit allow-list. Unrecognized or NULL business units resolve to
-          unknown — a deny sentinel that matches only entity-agnostic 'any' role
-          rows, never the KTAF/Region-specific grants. Non-employee grantees
-          have no business unit and carry unknown for the same reason.

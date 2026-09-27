@@ -9,14 +9,6 @@
       "url": "https://mcp.agent.dagster.cloud/mcp",
       "headersHelper": "${CLAUDE_PROJECT_DIR:-.}/scripts/dagster-plus-mcp-headers.sh"
     },
-    "bigquery": {
-      "command": "npx",
-      "args": ["-y", "@toolbox-sdk/server", "--prebuilt=bigquery", "--stdio"],
-      "env": {
-        "GOOGLE_APPLICATION_CREDENTIALS": "${HOME}/.config/gcloud/application_default_credentials.json",
-        "BIGQUERY_PROJECT": "teamster-332318"
-      }
-    },
     "dbt": {
       "command": "${CLAUDE_PROJECT_DIR:-.}/scripts/dbt-mcp-launch.sh",
       "args": [],

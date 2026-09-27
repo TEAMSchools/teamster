@@ -8,7 +8,7 @@ source "${HOME}/.local/bin/env"
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 GITHUB_USER="${GITHUB_USER:-$(gh api user --jq .login 2>/dev/null)}"
 BRANCH="${GITHUB_USER}/chore/update-dependencies-$(date +%Y-%m-%d)"
-WORKTREE="${REPO_ROOT}/.worktrees/${BRANCH}"
+WORKTREE="${REPO_ROOT}/.claude/worktrees/${BRANCH}"
 
 # --- create branch + worktree ---
 if [[ -d ${WORKTREE} ]]; then
