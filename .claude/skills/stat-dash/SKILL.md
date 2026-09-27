@@ -148,7 +148,7 @@ Almost always an unresolved `localstudentidentifier`.
    student with four bad test rows needs four rows here.
 
 5. **Re-check by reading the sheet external live** through ADC
-   (`.claude/context/bigquery.md`):
+   (`.claude/context/claude_ai_Google_Cloud_BigQuery.md`):
 
    ```python
    client.query('''
@@ -169,8 +169,8 @@ Almost always an unresolved `localstudentidentifier`.
 Use this instead of resolving rows one at a time when the detector has a batch
 outstanding. The logic lives in
 [`src/dbt/kipptaf/analyses/state_assessment_tiered_crosswalk_match.sql`](../../../src/dbt/kipptaf/analyses/state_assessment_tiered_crosswalk_match.sql);
-this is the runbook. It is modelled on `collegeboard-ap-data-ingest-protocol`,
-which solves the same problem for AP.
+this is the runbook. It is modelled on `collegeboard-id-crosswalk`, which solves
+the same problem for AP.
 
 **PII.** Output carries names, dates of birth and student numbers. Terminal and
 local scratch only -- never a PR, issue, commit or any file under version
@@ -419,9 +419,10 @@ Never set `remove_row = TRUE` on anything else.
 
 ### Step 6 — audit after the paste, before telling anyone it is done
 
-**Read the sheet external live through ADC** (`.claude/context/bigquery.md`). Do
-not build anything: a `--target staging` build is a shared write needing
-authorization, and its copy is frozen at build time.
+**Read the sheet external live through ADC**
+(`.claude/context/claude_ai_Google_Cloud_BigQuery.md`). Do not build anything: a
+`--target staging` build is a shared write needing authorization, and its copy
+is frozen at build time.
 
 ```python
 # uv run python <script.py>

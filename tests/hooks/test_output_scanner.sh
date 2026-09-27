@@ -76,10 +76,10 @@ check_output "Glob normal paths" clean Glob "/src/a.py\n/src/b.py"
 echo ""
 echo -e "${YELLOW}PostToolUse: MCP tool output scanning${NC}"
 
-check_output "MCP tool with op://" deny "mcp__bigquery__execute_sql" "op://vault/item/field"
+check_output "MCP tool with op://" deny "mcp__claude_ai_Google_Cloud_BigQuery__execute_sql_readonly" "op://vault/item/field"
 # trunk-ignore(gitleaks/private-key): synthetic fixture, not a real key
 check_output "MCP tool with private key" deny "mcp__dagster__get_run" "-----BEGIN RSA PRIVATE KEY-----"
-check_output "MCP tool clean output" clean "mcp__bigquery__execute_sql" "rows_affected: 42"
+check_output "MCP tool clean output" clean "mcp__claude_ai_Google_Cloud_BigQuery__execute_sql_readonly" "rows_affected: 42"
 
 # ─── High-entropy string boundary (120 chars) ────────────────────────────────
 echo ""

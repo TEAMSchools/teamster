@@ -250,9 +250,8 @@ svc.spreadsheets().get(spreadsheetId="<id>").execute()  # 403 -> not shared yet
 
 On a 403: tell the user to share the sheet with
 `codespaces@teamster-332318.iam.gserviceaccount.com`, then retry. This is a
-**different identity** from both the Drive MCP (runs as the user) and the
-BigQuery MCP's service account -- being shared with one says nothing about the
-others.
+**different identity** from the Drive and BigQuery MCPs (both run as the user)
+-- being shared with one says nothing about the other.
 
 ### Step 2 -- pull the tab's raw grid to a TSV
 

@@ -4,10 +4,11 @@
 
 Three identities reach BigQuery here, and they differ in what they can read:
 
-- **MCP** (`mcp__bigquery__*`) — the service account
-  `codespaces@teamster-332318.iam.gserviceaccount.com`. Default for warehouse
-  inspection. SELECT-only, truncates results at 50 rows, and cannot read
-  GOOGLE_SHEETS external tables.
+- **MCP** (`mcp__claude_ai_Google_Cloud_BigQuery__*`) — Google's hosted server
+  (`https://bigquery.googleapis.com/mcp`) through the claude.ai connector. It
+  runs as the signed-in USER over OAuth with the `bigquery` scope only, so it
+  reads everything that user can, PII included. Default for warehouse
+  inspection. Cannot read GOOGLE_SHEETS external tables.
 - **ADC from Python** — carries Drive scope and does not expire. The only client
   that reads a sheet-backed external live.
 - **`bq` CLI** — gcloud USER creds that expire mid-session: SELECTs that worked
@@ -16,17 +17,38 @@ Three identities reach BigQuery here, and they differ in what they can read:
   mean expiry, not a missing grant. Switch to the MCP or ADC rather than
   retrying. For shell contexts (Monitor poll loops) and CSV dumps only.
 
-The MCP's 50-row truncation is silent: a 200-row query returns 50 rows with no
-marker, so never read a 50-row result as complete. When querying
-`INFORMATION_SCHEMA.COLUMNS` for wide tables, paginate with
-`WHERE ordinal_position > N`.
+## MCP tools
 
-The BigQuery MCP service account cannot read GOOGLE_SHEETS external tables
-("Access Denied: ... while getting Drive credentials", 403) — it lacks Drive
-scope. ADC does have Drive scope, so query the external directly from a Python
-client instead — no dbt build, no `stage_external_sources`, and it reads the
-sheet live, so a paste is verifiable seconds after it happens. Run the script
-with `uv run python <script.py>`:
+- `execute_sql_readonly` for every query. `execute_sql` (read-write) is in
+  `permissions.deny`. The read-only tool is enforced by Google's server, not a
+  local hook: a non-SELECT fails with
+  `MCP execute_sql_readonly tool allows only SELECT statements.` before BigQuery
+  resolves any table (verified 2026-09-25 with an `INSERT` into a nonexistent
+  table). Warehouse DML/DDL still goes to the user's terminal.
+- **Results are capped at 3,000 rows, silently.** A 3,500-row query returned
+  exactly 3,000 rows with no `totalRows`, `pageToken`, or marker (verified
+  2026-09-25). Never read a 3,000-row result as complete: page on with
+  `get_query_results` passing the returned `jobId`, `location: "US"`, and
+  `startIndex: "3000"`.
+- A query past the ~20s synchronous wait returns `jobComplete: false` with a
+  `jobId`. Poll `get_query_results` until `jobComplete: true`, or `cancel_job`.
+  Google's docs cap a query at three minutes.
+- Rows come back in the raw REST shape, `rows[].f[].v`, every value a string,
+  and a TIMESTAMP as epoch seconds in float notation (`1.79034505368E9`). Format
+  in SQL (`format_timestamp('%F %R', ts)`) when a human reads the result.
+- Jobs carry the label `goog-mcp-server: true`, and `user_email` is the user's,
+  not a service account's. Filter on that label to separate Claude's queries
+  from the user's own in `JOBS_BY_PROJECT`.
+
+The MCP cannot read GOOGLE_SHEETS external tables:
+`Access Denied: BigQuery BigQuery: Permission denied while getting Drive credentials`
+(verified 2026-09-25 against
+`kipptaf_google_sheets.src_google_sheets__state_test_comparison_demographics`).
+Its OAuth token carries the `bigquery` scope only, and sharing the file does not
+change that. ADC does have Drive scope, so query the external directly from a
+Python client instead — no dbt build, no `stage_external_sources`, and it reads
+the sheet live, so a paste is verifiable seconds after it happens. Run the
+script with `uv run python <script.py>`:
 
 ```python
 from google.cloud import bigquery
@@ -35,10 +57,8 @@ client = bigquery.Client(project="teamster-332318")
 rows = client.query("select ... from `teamster-332318`.<dataset>.<src_table>")
 ```
 
-Verified 2026-09-18 against
-`kipptaf_google_sheets.src_google_sheets__state_test_comparison_demographics`
-(8025 rows through ADC, 403 through the MCP). Build into a dev/staging table
-only when something downstream must read it, not to look at rows.
+Build into a dev/staging table only when something downstream must read it, not
+to look at rows.
 
 `bq` CLI fallback for shell contexts (Monitor poll loops): binary at
 `/usr/local/share/google-cloud-sdk/bin/bq`, `--project_id=teamster-332318`. Same
@@ -163,9 +183,5 @@ Cost triage ("why did BigQuery costs go up"): query
 `destination_table.table_id` — attributes spend and rebuild counts directly to
 dbt models (on-demand ≈ $6.25/TiB billed; filter `statement_type != 'SCRIPT'` to
 avoid double-counting parent jobs). Group by `user_email` to split Dagster vs
-dbt Cloud CI vs humans.
-
-MCP hook block: queries must start with SELECT/SHOW/DESCRIBE/WITH; embedded
-DML/DDL (INSERT, UPDATE, DELETE, CREATE, DROP, etc.) is blocked. The block
-matches the keyword as a substring — including inside a string literal
-(`where type = 'Drop'`). Reword to avoid the literal (`like 'Dr%'`).
+dbt Cloud CI vs humans, and by the `goog-mcp-server` label to split Claude's MCP
+queries out of a human's.
