@@ -1,0 +1,38 @@
+{
+  "regions": ["Camden", "Newark"],
+  "admins": [
+    {
+      "grade": 11,
+      "test_type": "Practice",
+      "scope": "SAT",
+      "season": "Fall",
+      "months": ["September"],
+      "growth": false,
+      "scope_round": "SAT1"
+    },
+    {
+      "grade": 11,
+      "test_type": "Official",
+      "scope": "SAT",
+      "season": "Spring",
+      "months": ["April", "May", "June"],
+      "growth": true
+    },
+    {
+      "grade": 10,
+      "test_type": "Official",
+      "scope": "PSAT10",
+      "season": "Spring",
+      "months": ["February", "March", "April"],
+      "growth": false
+    }
+  ],
+  "not_reported": [
+    {
+      "grade": 11,
+      "test_type": "Official",
+      "scope": "SAT",
+      "months": ["August", "September", "October", "November"]
+    }
+  ]
+}

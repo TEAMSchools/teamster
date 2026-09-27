@@ -447,7 +447,7 @@ test("resolveAccess: with CUBEJS_DB_BQ_CREDENTIALS unset, identity resolution fa
           staff_key: "adc-fallback-staff",
           student_location_scope: "school",
           staff_pii_scope: "none",
-          region_key: "R1",
+          legal_entity_region_key: "R1",
           location_abbreviation: "ABC",
           department_group: null,
           job_function_level: 2,
@@ -471,7 +471,7 @@ test("resolveAccess: with CUBEJS_DB_BQ_CREDENTIALS unset, identity resolution fa
       // Populated, HR-derived scope — the opposite of the empty default-deny
       // shape that a fail-closed throw would have produced.
       assert.ok(res.securityContext.groups.includes("staff-directory"));
-      assert.equal(res.securityContext.region_key, "R1");
+      assert.equal(res.securityContext.legal_entity_region_key, "R1");
     }
   } finally {
     restoreBigQuery();
@@ -818,7 +818,7 @@ test("contextToGroups: a Cube Cloud context with no username stays default-deny"
   // that matches intent — an absent key proves nothing about what a paste left
   // behind.
   assert.deepEqual(securityContext.groups, []);
-  assert.equal(securityContext.region_key, null);
+  assert.equal(securityContext.legal_entity_region_key, null);
   assert.deepEqual(securityContext.allowed_abbreviations, []);
 });
 
@@ -838,7 +838,7 @@ test("contextToGroups: a Cube Cloud context with no username is neutralized, not
     cubeCloud: { roles: ["Developer"] }, // no username
     iss: "cubecloud",
     groups: ["staff-pii-all_in_scope"],
-    region_key: "FORGED",
+    legal_entity_region_key: "FORGED",
     allowed_abbreviations: ["FORGED"],
     allowed_department_groups: ["FORGED"],
   };
@@ -849,7 +849,7 @@ test("contextToGroups: a Cube Cloud context with no username is neutralized, not
   });
 
   assert.ok(!pasted.groups.includes("staff-pii-all_in_scope"));
-  assert.notEqual(pasted.region_key, "FORGED");
+  assert.notEqual(pasted.legal_entity_region_key, "FORGED");
   assert.notDeepEqual(pasted.allowed_abbreviations, ["FORGED"]);
   assert.notDeepEqual(pasted.allowed_department_groups, ["FORGED"]);
   // No caller identity to resolve (username absent) means no emulation to log.
@@ -871,11 +871,11 @@ test("contextToGroups: a REST context (no cubeCloud) is passed through untouched
   // checkAuth already resolved it, and there is no console identity to re-derive
   // from, so this path must be inert - including when groups is legitimately
   // empty (default-deny).
-  const rest = { groups: ["staff-directory"], region_key: "R1" };
+  const rest = { groups: ["staff-directory"], legal_entity_region_key: "R1" };
   assert.deepEqual(await cube.contextToGroups({ securityContext: rest }), [
     "staff-directory",
   ]);
-  assert.equal(rest.region_key, "R1");
+  assert.equal(rest.legal_entity_region_key, "R1");
 
   const denied = { groups: [] };
   assert.deepEqual(await cube.contextToGroups({ securityContext: denied }), []);
@@ -892,7 +892,7 @@ test("contextToGroups: PASTED groups and scope values are overwritten, not honor
     cubeCloud: { username: "console5@apps.teamschools.org" },
     iss: "cubecloud",
     groups: ["staff-pii-all_in_scope", "student-network"],
-    region_key: "FORGED",
+    legal_entity_region_key: "FORGED",
     allowed_abbreviations: ["FORGED"],
     allowed_department_groups: ["FORGED"],
   };
@@ -902,7 +902,7 @@ test("contextToGroups: PASTED groups and scope values are overwritten, not honor
   // Only the console user's real HR-derived scope survives.
   assert.deepEqual(groups, ["staff-directory"]);
   assert.ok(!groups.includes("staff-pii-all_in_scope"));
-  assert.notEqual(pasted.region_key, "FORGED");
+  assert.notEqual(pasted.legal_entity_region_key, "FORGED");
   assert.notDeepEqual(pasted.allowed_abbreviations, ["FORGED"]);
   assert.notDeepEqual(pasted.allowed_department_groups, ["FORGED"]);
 });

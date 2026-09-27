@@ -309,7 +309,14 @@ Every external consumer **must** have a dbt exposure in `models/exposures/`.
 Files grouped by tool: `tableau.yml`, `google-sheets.yml`, etc.
 
 Required fields: `name`, `label`, `type`, `owner.name: Data Team`, `depends_on`,
-`url`, `config.meta.dagster.kinds`.
+`config.meta.dagster.kinds`.
+
+`url` is optional in dbt and is not the convention for every tool. Add it only
+where it is that tool's canonical locator and you have the real value. Google
+Sheets: yes — a Sheet has no other address (64 of 65 carry one). Tableau: no —
+the workbook is addressed by its LSID in `asset.metadata.id` (46 of 50 carry
+one; 3 have a `url` and 2 of those are `TBD`). Never synthesize one from the
+Tableau API to fill the field.
 
 **Tableau workbooks** — add `asset.metadata.id` (LSID) when known. Add
 `cron_schedule` only if Dagster owns the refresh:
@@ -390,8 +397,9 @@ touching both a district model and a kipptaf consumer:
 1. Add `target=staging` branch to affected `sources-kipp*.yml` (routes to
    `zz_stg_<district>_<source>`).
 2. From each affected district project, run broad clone (no `--select`):
-   `uv --directory <worktree> run dbt clone --target staging --state target/prod`
-   to seed `zz_stg_<district>_*` from prod.
+   `uv run dbt clone --project-dir <worktree>/src/dbt/<district> --target staging --state /workspaces/teamster/src/dbt/<district>/target/prod`
+   to seed `zz_stg_<district>_*` from prod. The state path is absolute: a
+   worktree has no `target/prod/` (see `dbt-local-dev`).
 3. Push; CI reads staged regional via the schema branch.
 
 `dbt clone` only seeds upstreams UNCHANGED in this PR (it copies prod schema).
