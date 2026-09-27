@@ -11,7 +11,8 @@ description: >-
   into U_EXPECTATIONS count rows to upload to PowerSchool), changing or
   deploying the `ps-plugins/gradebook-audit/` plugin, bumping or distributing a
   new version of the gradebook-expectations-upload skill, a change to a
-  gradebook audit IMPORTRANGE/Reports sheet pair, or working on
+  gradebook audit IMPORTRANGE/Reports sheet pair, grades, GPA, or GPA goals on
+  the Academic & Gradebook Health Suite, or working on
   rpt_tableau__gradebook_audit or rpt_gsheets__gradebook_audit_student_flags and
   their upstream models.
 ---
@@ -65,3 +66,4 @@ below is the _how_; `plan-a-change.md` is the _what and whether_.
 | Change, build, or deploy the PowerSchool plugin itself                                                               | [`playbooks/maintain-the-plugin.md`](playbooks/maintain-the-plugin.md)       |
 | Get a plugin or skill change to Teaching & Learning (organization skills or per-user zip)                            | [`playbooks/ship-a-skill-update.md`](playbooks/ship-a-skill-update.md)       |
 | A published Sheet's source/report pair needs a matching update, or one looks out of sync                             | [`references/published-sheets.md`](references/published-sheets.md)           |
+| Grades, GPA, or GPA goals on the Academic & Gradebook Health Suite                                                   | [`references/academic-health.md`](references/academic-health.md)             |
