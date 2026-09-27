@@ -5,6 +5,11 @@ Also the first step of QA mode when the family has no reference doc.
 
 ## Intake
 
+If the family already has a reference doc or a family skill, read their source,
+sheet-upkeep, and owner sections first. Put what they say into the message below
+as answers to confirm, and ask only what they leave open. On DIBELS the family
+skill already named five sources and six sheet procedures.
+
 Ask in one message, before reading any SQL:
 
 1. Material that explains the model: Google Docs, PDFs, meeting notes, a
@@ -70,16 +75,26 @@ find src/dbt -name '<parent>.sql'              # locate; read the current projec
 rg -l 'ref\("<model>"\)' src/dbt --glob '*.sql' # children
 ```
 
-Default rule: a model is in the family when every child it has is in the family.
-Shared hubs (`int_extracts__student_enrollments`,
+First rule: a model whose logic exists for this family (its name, or the columns
+the family's consumers read) is in the family, even with children outside it.
+List the outside children as "also read by" in the doc, because a change to the
+model moves them too. Example: `int_students__athletic_eligibility` also feeds
+`rpt_deanslist__promo_status`.
+
+Then the default rule for the rest: a model is in the family when every child it
+has is in the family. Apply it second, because on its own it cascades: one
+outside reader of a mid-chain model drops that model, then every parent whose
+only child it was. On DIBELS a topline model reading the verdict model left the
+default rule with 12 of 24 models, and without the model that computes the
+verdicts. Shared hubs (`int_extracts__student_enrollments`,
 `base_powerschool__final_grades`) stay out; the doc gets one line per hub:
 "reads X for Y, joined on Z".
 
-A model with children outside the family is still proposed as in-family when its
-logic exists for this family (its name, or the columns the family's consumers
-read). List the outside children as "also read by" in the doc, because a change
-to the model moves them too. Example: `int_students__athletic_eligibility` also
-feeds `rpt_deanslist__promo_status`.
+A model can belong to the family only while a condition holds: DIBELS carries
+the NJDOE screener extract until a data-sharing agreement lets the data team
+pull from the vendor directly. The doc records the condition. A family model
+that already has its own reference doc (an open PR counts) keeps it; the family
+doc links to it instead of copying it.
 
 Present a table (model, layer, in or out, why, outside children) and wait for
 the user to confirm or edit it.
@@ -99,6 +114,23 @@ the user to confirm or edit it.
 - Cut candidates: one-time checks, change logs, "Resolved —" notes, counts that
   go stale.
 - Note every dashboard view or process step the doc does not explain.
+- Every model the doc and skill name exists in the checkout:
+
+  ```bash
+  cd <worktree> && for m in $(rg -oN --no-filename '\b(stg|int|rpt|dim|fct)_[a-z0-9_]+__[a-z0-9_]*[a-z0-9]' <doc> <skill dir> | sort -u); do
+    [ -z "$(find src/dbt -name "$m.sql" -print -quit)" ] && echo "MISSING $m"; done
+  ```
+
+  A missing model that lives on an open PR is paused work, not a doc to
+  maintain: move its design detail into that PR's and issue's bodies so the next
+  owner can pick it up, and leave one line in the doc and skill (on hold, with
+  the links). The DIBELS skill described a Bright Spots model that had sat on an
+  unmerged PR for a month as if it were shipped.
+
+- Open PRs that edit family files: search PRs for each model name, then list
+  each PR's files. Two PRs editing one model or skill file conflict for
+  whichever merges second; tell the user which pair before starting (on DIBELS,
+  a Miami PR edited the old single-file skill that another PR had split).
 - Open issues about the family: `mcp__github__search_issues` with each model
   name. Check each issue's claims against the current SQL before citing it;
   issue bodies drift (on athletic eligibility, an open question said two regions

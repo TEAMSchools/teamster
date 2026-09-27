@@ -37,8 +37,8 @@ the request; if it is unclear, ask.
   search merged PRs for the model and column names before answering, and cite
   the line and the PR once. Then ask one yes-or-no question about changing the
   code; do not re-argue it in later messages.
-- Status updates to the user come in three groups: done, pending (your work),
-  and needs their decision. Nothing else.
+- Status updates and the final report come in three groups: done, pending (your
+  work), and needs their decision. Lead with a one-line result. Nothing else.
 - A count taken from an issue, PR, skill, or doc gets re-run before it goes into
   new writing, and the new writing says when it was measured (the root CLAUDE.md
   "re-run its diagnostic" rule, applied to every number). A month-old AP count
@@ -101,6 +101,8 @@ PR. Before asking for review, rewrite the PR body's Summary from
 `git diff --stat origin/main...HEAD` and the commit list, so it describes the
 whole PR and not its first commit, and check every CI checkbox claim against
 `gh pr checks <n>`. Tell the user every judgment call they might disagree with.
+Where this skill's steps were wrong or missing for the family, propose the edit
+to this skill in the report.
 
 ## Scripts
 
