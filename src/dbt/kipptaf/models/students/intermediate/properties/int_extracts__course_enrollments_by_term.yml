@@ -1,34 +1,24 @@
 models:
   - name: int_extracts__course_enrollments_by_term
     description: >
-      One row per student per academic year per course per quarter based on
+      One row per student per academic year per course per quarter, based on
       course enrollment overlap with term dates. Students who re-enrolled in the
       same course within a quarter are deduped to the most recent stint.
 
-      Covers all regions and all academic years. The student join keys on
-      `student_number` rather than PowerSchool's internal `cc_studentid`, which
-      Focus leaves null — before that change this model held no Miami rows in
-      any year.
+      Covers all regions and all academic years, including Miami. The student
+      join keys on `student_number` rather than PowerSchool's internal
+      `cc_studentid`, which Focus (Miami's SIS) leaves null.
 
-      Miami is included by decision (ratified on #4996) and, since #5043, in
-      practice. Two null comparisons had kept it out, both fixed there.
+      The `sections_no_of_students` exclusion is null-safe (`is distinct from
+      0`): Focus records no section student count, so every Focus row is null
+      there and must not be dropped by the filter. The filter still excludes the
+      PowerSchool quirk it targets — a section that holds enrollment rows while
+      recording its count as zero.
 
-      `sections_no_of_students` is null on every Focus row, because Focus
-      records no section student count, so the `!= 0` filter dropped all 19,398
-      AY2026 enrollments. The predicate is now null-safe and still excludes the
-      PowerSchool quirk it targets — a section holding enrollment rows while
-      recording its count as zero, 202 New Jersey rows in AY2026.
-
-      `cc_dateleft` was null while a Focus enrollment was open, true of 95.8% of
-      Miami rows, so the quarter join dropped all but 230 of the survivors. That
-      one is not fixed here. It is fixed at the Focus leg of
-      `int_students__course_enrollments`, which now conforms the column to
-      PowerSchool's convention — the day after the section's term ends — so this
-      model compares it directly, unchanged.
-
-      Neither change moves New Jersey: `sections_no_of_students` is non-null on
-      every NJ row, so the new predicate is identical to the old one there, and
-      the conforming change touches only the Focus leg.
+      `dateleft` is non-null in both SIS branches. For an open enrollment it is
+      the day after the section's term ends — PowerSchool's own convention,
+      which the Focus leg of `int_students__course_enrollments` conforms to —
+      not a departure date, so this model compares it unchanged.
     config:
       schema: extracts
       materialized: table
@@ -948,8 +938,9 @@ models:
         data_type: string
         description: >
           Region concatenated with school_level_alt. Differs from
-          region_school_level only for KIPP Sumner G5, where school_level_alt =
-          'MS' instead of 'ES' (e.g. CamdenMS instead of CamdenES).
+          region_school_level only for grade 5 and above at KIPP Sumner Academy
+          (AY2025+), where school_level_alt = 'MS' instead of 'ES' (e.g.
+          CamdenMS instead of CamdenES).
       - name: guardian_email
         data_type: string
       - name: academic_year_display
