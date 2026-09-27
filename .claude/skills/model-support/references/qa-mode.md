@@ -8,10 +8,10 @@ and follow it instead of everything below; it already knows the grains and
 ranges. Do not open the family's `SKILL.md` first: that costs a read the
 procedure does not need. Find the family skill with
 `rg -l '<model>' .claude/skills`, then `ls .claude/skills/<family>/references/`
-(for CARAT, `official-scores-qa.md` once PR #5542 has split that skill). If
-there is none, or the family skill is a single long `SKILL.md` with no
-`references/`, do not read that file: use the reference doc and the generic
-checks below, and suggest restructuring the skill afterwards (`model-skill.md`).
+(for CARAT, `official-scores-qa.md`). If there is none, or the family skill is a
+single long `SKILL.md` with no `references/`, do not read that file: use the
+reference doc and the generic checks below, and suggest restructuring the skill
+afterwards (`model-skill.md`).
 
 Otherwise, read the family's reference doc for grains, keys, accepted ranges,
 and known issues. Find it with `rg -l '<model>' docs/models`, list its headings
@@ -48,8 +48,7 @@ the user's words do not map to one, ask. For SAT, the College Board file is
 `int_collegeboard__sat_unpivot` and the system it is loaded into is kippadb
 (`int_kippadb__standardized_test_unpivot`). The worked example is CARAT's
 "CARAT's SAT is kippadb's SAT" in
-`.claude/skills/carat-dashboard/references/gotchas.md` (on the branch of PR
-#5542 until it merges).
+`.claude/skills/carat-dashboard/references/gotchas.md`.
 
 Previous load:
 `for system_time as of timestamp_sub(current_timestamp(), interval <n> hour)`.

@@ -122,9 +122,9 @@ read as over a thousand duplicate groups; `stg_kippadb__standardized_test` on
 contact, date, test type and subject has none, and PSAT fell to a third (three
 score types per sitting). A cleanup list built from the unpivoted count would
 have deleted real results. The worked example is "Hunting duplicates in kippadb"
-in `.claude/skills/carat-dashboard/references/goals.md` (on the branch of PR
-#5542 until it merges). On CARAT, two such tests exposed a `strategy_case`
-fan-out and stored grades matching several extension rows.
+in `.claude/skills/carat-dashboard/references/goals.md`. On CARAT, two such
+tests exposed a `strategy_case` fan-out and stored grades matching several
+extension rows.
 
 ## "Probably harmless" gets a query
 
