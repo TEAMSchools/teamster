@@ -180,7 +180,7 @@ Learning owns the report and the policy questions.
   branches with an explicit status for missing data.
 - **Last year's GPA differs from the DeansList transcript GPA for a small share
   of students.** Both average Y1 stored grades weighted by credit hours, but the
-  tracker groups by `studentid` and region in FLOAT64 while
+  tracker groups by `studentid` and `_dbt_source_project` in FLOAT64 while
   `rpt_deanslist__transcript_gpas` groups by `student_number` and year in
   NUMERIC. Rounding explains some of the gaps; the rest have no known cause yet.
   To see it, join `py_y1_gpa` to
