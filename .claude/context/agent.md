@@ -60,9 +60,9 @@ The decision rules are in the root CLAUDE.md _Subagents_ section. Behind them:
 - A dead run's journal
   (`~/.claude/projects/<proj>/subagents/workflows/wf_<id>/journal.jsonl`) stops
   growing for about 2 minutes with no live `dbt` or agent processes.
-- `isolation:'worktree'` dirs live at `.claude/worktrees/wf_<id>-N`, not the
-  repo `.worktrees/`. Orphaned ones are left `locked`: `git worktree unlock`,
-  then `remove --force`.
+- `isolation:'worktree'` dirs live at `.claude/worktrees/wf_<id>-N`, beside the
+  branch worktrees; the `wf_` prefix tells them apart. Orphaned ones are left
+  `locked`: `git worktree unlock`, then `remove --force`.
 - `TaskStop` only sees tasks launched in the CURRENT session. A Workflow from a
   reloaded session is not in the registry; clean it at the process and worktree
   level.

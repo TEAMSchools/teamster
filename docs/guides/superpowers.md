@@ -82,9 +82,9 @@ After an architectural brainstorm, Claude will:
    - **Branch switch** — switches your current workspace to the new branch. One
      directory, no extra setup. Tradeoff: you can't work on `main` or another
      feature without switching back.
-   - **Worktree** — creates a second checkout in `.worktrees/<branch>`. Your
-     original workspace stays on its current branch, so you can run other code
-     or start a separate feature in parallel. Tradeoff: two directories to
+   - **Worktree** — creates a second checkout in `.claude/worktrees/<branch>`.
+     Your original workspace stays on its current branch, so you can run other
+     code or start a separate feature in parallel. Tradeoff: two directories to
      manage, and your editor needs to open the worktree path.
 
    | Consideration                                               | Branch switch                  | Worktree                                    |

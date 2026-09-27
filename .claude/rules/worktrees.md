@@ -1,12 +1,12 @@
 ---
 paths:
-  - ".worktrees/**"
+  - ".claude/worktrees/**"
 ---
 
 # Worktree mechanics
 
-Loads on the first read under `.worktrees/` from the main checkout only. After
-`EnterWorktree`, or for Bash-only worktree work, read this file yourself.
+Loads on the first read under `.claude/worktrees/` from the main checkout only.
+After `EnterWorktree`, or for Bash-only worktree work, read this file yourself.
 
 ## Setup
 
@@ -19,7 +19,7 @@ Loads on the first read under `.worktrees/` from the main checkout only. After
   0 package(s) installed". Run
   `uv run dbt deps --project-dir <worktree>/src/dbt/<project>` before any
   `dbt build`/`test`/`compile`/`clone` there, in its own Bash call.
-- A Codespace restart can delete `.worktrees/` and desync refs. Invoke
+- A Codespace restart can delete `.claude/worktrees/` and desync refs. Invoke
   `resuming-a-branch`.
 
 ## Invocation
