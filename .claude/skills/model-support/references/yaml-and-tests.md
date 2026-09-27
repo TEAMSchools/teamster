@@ -39,6 +39,14 @@ dbt, and run both yourself once they finish: concurrent dbt runs share `target/`
 and corrupt the partial-parse manifest. On DIBELS five groups flagged five
 untagged PII models between them, three of them Amplify wrappers.
 
+A usage limit stops every parallel agent at once and leaves half-edited files.
+Before re-dispatching, run `yaml_description_diff.py` on every file `git status`
+shows; keep what is description-only and tell the new agents which files a
+previous pass already touched. An audit can re-run on a cheaper model while the
+capable one is blocked; hold doc rewrites for the capable model. On the
+gradebook audit run, all six Opus agents stopped at once with five files
+half-edited, and four Sonnet re-runs finished the audits.
+
 A subagent's report is not evidence. Check that only descriptions moved, per
 edited file, against main (so staged and committed edits count too):
 
