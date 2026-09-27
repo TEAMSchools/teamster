@@ -507,9 +507,8 @@ svc.spreadsheets().get(spreadsheetId="<id>").execute()  # 403 -> not shared yet
 
 On a 403: tell the user to share the sheet with
 `codespaces@teamster-332318.iam.gserviceaccount.com`, then retry. This is a
-**different identity** from both the Drive MCP (runs as the user) and the
-BigQuery MCP's service account -- being shared with one says nothing about the
-others.
+**different identity** from the Drive and BigQuery MCPs (both run as the user)
+-- being shared with one says nothing about the other.
 
 ### Step 2 -- pull the tab's raw grid to a TSV
 
@@ -1363,9 +1362,10 @@ Academics replace this each year, so re-read it rather than trusting the values
 recorded here, and update this link if they move it.
 
 **Reading it needs ADC from Python -- both MCP routes fail.** The BigQuery MCP
-cannot read Sheets externals (`.claude/context/bigquery.md`), and the **Drive
-MCP reads it, then `check-output.sh` redacts the whole response** as containing
-a high-entropy string, which any real spreadsheet has somewhere.
+cannot read Sheets externals
+(`.claude/context/claude_ai_Google_Cloud_BigQuery.md`), and the **Drive MCP
+reads it, then `check-output.sh` redacts the whole response** as containing a
+high-entropy string, which any real spreadsheet has somewhere.
 `read_file_content` and `get_file_metadata` both come back as
 `[redacted: secret material]` with no content.
 

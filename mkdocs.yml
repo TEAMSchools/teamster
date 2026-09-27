@@ -80,6 +80,8 @@ nav:
       - STAT Dashboard Data Model: models/stat-dashboard-data-model.md
       - NJDOE Universal Screener Data Model:
           models/njdoe-universal-screener-data-model.md
+      - Athletic Eligibility Data Model:
+          models/athletic-eligibility-data-model.md
   - Automations: reference/automations.md
 
 markdown_extensions:

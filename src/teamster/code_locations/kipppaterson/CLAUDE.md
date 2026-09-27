@@ -18,10 +18,10 @@ LOCAL_TIMEZONE = ZoneInfo("America/New_York")
 | `deanslist`             | API assets                   | schedule (nightly)                                                    |
 | `edplan`                | SFTP assets                  | sensor (`build_edplan_sftp_sensor`)                                   |
 | `finalsite`             | API + SFTP assets            | schedule (`contacts`, 4am) + sensor (`status_report`)                 |
-| `pearson`               | SFTP assets                  | sensor (`couchdrop_sftp_sensor`)                                      |
+| `pearson`               | SFTP assets                  | manual only (retired; Cambium replaced it)                            |
 | `extracts`              | BigQuery→SFTP                | schedule (3am)                                                        |
 | `titan`                 | SFTP assets                  | sensor (`build_titan_sftp_sensor`)                                    |
-| `couchdrop`             | sensor only                  | sensor (Google Drive watcher: cambium, pearson, finalsite)            |
+| `couchdrop`             | sensor only                  | sensor (Google Drive watcher: cambium, finalsite)                     |
 
 ## PowerSchool via dlt
 
@@ -47,8 +47,7 @@ Consequences:
 - Ingestion writes to BigQuery `dagster_kipppaterson_dlt_powerschool`; the dbt
   `powerschool` package `staging/dlt` variant is enabled here
 - `couchdrop_sftp_sensor` carries no PowerSchool files; it watches Cambium
-  `njsla`, Pearson `njsla` / `njsla_science` / `student_list_report`, and
-  Finalsite `status_report`
+  `njsla` and Finalsite `status_report`
 - No `iready`, `overgrad`, or `renlearn`
 - The `dlt_powerschool_kipppaterson` pool stays at limit 1 (Dagster+ deployment
   settings, UI) so an overrunning tick serializes with the next instead of
@@ -70,7 +69,7 @@ a freshness check. PowerSchool dlt runs on an intraday change-detection sensor
 (`kipppaterson__powerschool__dlt__intraday_sensor`, 15-min probe) plus one
 nightly cron schedule (unconditional full-refresh + re-baseline, matching
 kippnewark's cadence). DeansList, Finalsite `contacts`, and the PowerSchool
-autocomm `extracts` job add nightly schedules; Cambium, Pearson and Finalsite
+autocomm `extracts` job add nightly schedules; Cambium and Finalsite
 `status_report` (`couchdrop_sftp_sensor`), Amplify
 (`build_amplify_mclass_sftp_sensor`), Titan (`build_titan_sftp_sensor`), EdPlan
 (`build_edplan_sftp_sensor`), and PowerSchool intraday are sensor-driven. The

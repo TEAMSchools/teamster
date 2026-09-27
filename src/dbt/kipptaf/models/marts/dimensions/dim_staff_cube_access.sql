@@ -40,29 +40,19 @@ with
             j.job_function_code,
 
             o.department_name,
-            o.business_unit_name,
 
-            loc.region_key,
             loc.abbreviation as location_abbreviation,
 
-            -- Explicit allow-list. An unrecognized or NULL business unit resolves
-            -- to 'unknown' (a deny sentinel) rather than 'Region': 'unknown'
-            -- matches only entity-agnostic 'any' role rows in the crosswalk, never
-            -- the entity-specific KTAF/Region grants (e.g. Region's region-wide
-            -- student scope). Prevents fail-toward-grant on an unresolved org unit.
+            r.region_key as legal_entity_region_key,
+
+            -- 'unknown' is the deny sentinel for an employer dim_regions does
+            -- not know; see the legal_entity_region_key description.
             case
-                o.business_unit_name
-                when 'KIPP TEAM and Family Schools Inc.'
+                when r.region_key is null
+                then 'unknown'
+                when r.business_unit_code = 'KIPP_TAF'
                 then 'KTAF'
-                when 'TEAM Academy Charter School'
-                then 'Region'
-                when 'KIPP Cooper Norcross Academy'
-                then 'Region'
-                when 'KIPP Miami'
-                then 'Region'
-                when 'KIPP Paterson'
-                then 'Region'
-                else 'unknown'
+                else 'Region'
             end as entity,
         from primary_deduped as pd
         inner join {{ ref("dim_staff") }} as s on pd.staff_key = s.staff_key
@@ -81,6 +71,11 @@ with
             and wal.is_current
         left join
             {{ ref("dim_locations") }} as loc on wal.location_key = loc.location_key
+        -- Joined on the ADP business-unit code, not the legal name: codes
+        -- outlive rebrands, and this column is already declared and tested as
+        -- an FK to dim_regions.business_unit_code.
+        left join
+            {{ ref("dim_regions") }} as r on o.business_unit_code = r.business_unit_code
     ),
 
     enriched as (
@@ -90,7 +85,7 @@ with
             ca.job_function_code,
             ca.department_name,
             ca.entity,
-            ca.region_key,
+            ca.legal_entity_region_key,
             ca.location_abbreviation,
 
             dr.department_group,
@@ -273,7 +268,7 @@ with
             department_group,
             entity,
             job_function_code,
-            region_key,
+            legal_entity_region_key,
             location_abbreviation,
 
             true as is_employee,
@@ -288,7 +283,7 @@ with
             cast(null as string) as department_group,
             'unknown' as entity,
             cast(null as string) as job_function_code,
-            cast(null as string) as region_key,
+            cast(null as string) as legal_entity_region_key,
             cast(null as string) as location_abbreviation,
 
             false as is_employee,
@@ -299,7 +294,7 @@ with
         select
             e.staff_key,
             e.google_email,
-            e.region_key,
+            e.legal_entity_region_key,
             e.location_abbreviation,
             e.department_group,
             e.entity,
@@ -310,7 +305,7 @@ with
 
             coalesce(
                 ovr.student_location_scope, rp.student_location_scope, 'none'
-            ) as student_location_scope,
+            ) as role_student_location_scope,
 
             coalesce(
                 ovr.staff_location_scope, rp.staff_location_scope, 'none'
@@ -354,12 +349,28 @@ with
             as ovr
             on e.department_name = ovr.department
         left join role_picked as rp on e.staff_key = rp.staff_key
+    ),
+
+    -- KTAF's granted scopes widen to network; see the student_location_scope
+    -- description for why.
+    resolved as (
+        select
+            * except (role_student_location_scope),
+
+            case
+                when entity != 'KTAF'
+                then role_student_location_scope
+                when role_student_location_scope = 'none'
+                then 'none'
+                else 'network'
+            end as student_location_scope,
+        from matched
     )
 
 select
     staff_key,
     google_email,
-    region_key,
+    legal_entity_region_key,
     location_abbreviation,
     department_group,
     entity,
@@ -377,4 +388,4 @@ select
     staff_benefits_scope,
 
     additional_location_grants,
-from matched
+from resolved

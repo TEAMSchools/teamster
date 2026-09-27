@@ -183,13 +183,13 @@ async function resolveAccess(email) {
     const universes = await loadUniverses(bq);
     const baseStaffAbbreviations = access.computeAllowedAbbreviations(
       row?.staff_location_scope,
-      row?.region_key,
+      row?.legal_entity_region_key,
       row?.location_abbreviation,
       universes.locations,
     );
     const baseStudentAbbreviations = access.computeAllowedAbbreviations(
       row?.student_location_scope,
-      row?.region_key,
+      row?.legal_entity_region_key,
       row?.location_abbreviation,
       universes.locations,
     );

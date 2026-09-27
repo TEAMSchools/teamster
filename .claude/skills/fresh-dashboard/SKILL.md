@@ -58,7 +58,7 @@ description: >-
   `stg_google_sheets__finalsite__goals` and
   `int_google_sheets__finalsite__goals_pivot` are both `__TABLES__.type = 1`
   (native table, frozen at last build), and the BigQuery MCP cannot read the
-  `src_` external at all — its service account has no Drive scope
+  `src_` external at all — its OAuth token has no Drive scope
   (`Access Denied ... while getting Drive credentials`). Before trusting ANY
   goals comparison, prove freshness against the **`Finalsite` goals workbook,
   not SRE's**: its Drive `modifiedTime` must be older than `last_modified_time`
@@ -572,10 +572,11 @@ Note also that `KCNA`'s lower block repeats `KHS` in a **Campus** column, so a
 school-name map will happily match it and read the wrong columns.
 
 **Pull the goals table with the BigQuery Python client on ADC** (client choice:
-`.claude/context/bigquery.md`). A full comparison needs every sheet-sourced row
-at once (~700 for the six SRE targets, ~2,300 for the whole tab). For a spot
-check, one `string_agg` per `(goal_granularity, goal_name)` through the MCP
-returns a dozen rows instead of hundreds.
+`.claude/context/claude_ai_Google_Cloud_BigQuery.md`). A full comparison needs
+every sheet-sourced row at once (~700 for the six SRE targets, ~2,300 for the
+whole tab). For a spot check, one `string_agg` per
+`(goal_granularity, goal_name)` through the MCP returns a dozen rows instead of
+hundreds.
 
 ## Goals reconciliation — offer this at the start of FRESH work
 
