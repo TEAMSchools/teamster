@@ -22,14 +22,20 @@ finished — each perfectly correct, and each a different kind of "current." If
 something looks wrong, check which of these you are actually looking at before
 assuming the data is bad — see `troubleshoot.md`.
 
-**Gaps are filled, not flagged.** The query fills zeros at the start of the
-year, and carries the previous week forward for a missing later week. Both exist
-so that **expected assignments are never null**.
+**The audit does not fill gaps. Your file has to.** The dashboard looks up
+exactly one week per quarter — the operative week above — and nothing else:
 
-**So a missing or short week never surfaces as an error.** The query carries
-forward from whatever week _is_ present and serves a number that looks exactly
-like a real one — just lower. This is the same silence the skill warns about for
-an unreplaced quarter, reached a different way.
+- **That week has no row in PowerSchool** → the whole quarter drops off the
+  dashboard for that region and school level. No error; the quarter is just not
+  there.
+- **The row is there but one count is blank** → that category drops off for
+  every section in that quarter, so sections show three categories instead of
+  four.
+
+That is why every week needs a row and every count needs a number, which the
+value-filling rules below guarantee. Neither failure raises an error anywhere,
+and a missing week only shows up on the dashboard once it becomes the operative
+week.
 
 Counts are **cumulative within a quarter** — Camden Q1 runs `0,0,0,0` at week 1
 up to `15,9,9,2` at week 11 — which is why an earlier week reads as a smaller
@@ -202,7 +208,7 @@ both carry `--` in `Summative Mastery`, and the first of those is a rule 2 case.
 Carry-forward never crosses a quarter boundary; each quarter starts fresh at
 rule 2.
 
-This is the same rule the audit query applies when it meets a gap, so the file
-and the query agree rather than each patching holes their own way. It is also
-why a revisions week repeats the prior week's counts, which is correct: a week
-with no new expectations still expects everything assigned so far to be graded.
+The audit query does not patch gaps itself (see _How the audit reads this_), so
+these rules are the only thing that keeps every week complete. They are also why
+a revisions week repeats the prior week's counts, which is correct: a week with
+no new expectations still expects everything assigned so far to be graded.

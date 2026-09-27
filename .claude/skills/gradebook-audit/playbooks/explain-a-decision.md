@@ -7,9 +7,9 @@ present it as fact.
 
 1. Search the reference doc first. Filters/columns with a known-undocumented
    rationale are called out there explicitly (e.g. `section_quarter_count >= 2`
-   in `int_extracts__course_schedule_by_term` — see that model's section). Check
-   the inline SQL comment at the derivation site too; a documented gap is noted
-   in both places.
+   in `int_extracts__course_schedule_by_term`, under _Known issues, need to
+   fix_: "Single-quarter sections are never audited"). Check the inline SQL
+   comment at the derivation site too; a documented gap is noted in both places.
 2. If the reference doc is silent, check git history yourself before answering:
    `git log -S'<column or literal>' -- <path>` to find the introducing commit,
    then read its message and diff. Check the PR that introduced it
@@ -19,8 +19,8 @@ present it as fact.
    description, say so plainly rather than inferring a rationale from what the
    filter happens to exclude today.
 4. If this produces a new finding (no rationale exists, and it wasn't already
-   documented), add it to the reference doc — a short paragraph at the relevant
-   model's section stating what's known, what's not, and the introducing commit
-   — plus a one-line comment at the derivation site in the SQL pointing back to
-   the doc. This keeps the gap from being re-investigated from scratch next
-   time.
+   documented), add it to the reference doc — a short entry under _Known issues,
+   need to fix_ stating what's known, what's not, and the query that shows its
+   effect (a rationale you did find goes under _Decisions_) — plus a one-line
+   comment at the derivation site in the SQL pointing back to the doc. This
+   keeps the gap from being re-investigated from scratch next time.

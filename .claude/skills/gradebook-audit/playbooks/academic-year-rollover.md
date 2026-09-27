@@ -78,13 +78,15 @@ quarters.
 ## What stays on this side
 
 Neither half of this is complete alone: the data team cannot write to
-PowerSchool, and academics cannot run the verification. After they load, confirm
-via the query in the
-[reference doc's](../../../../docs/models/gradebook-audit-data-model.md) Step 1:
-zero null counts, week counts matching `int_students__calendar_week`, four rows
-per `region x school_level` out of
+PowerSchool, and academics cannot run the verification. After they load, run the
+query under _Verify after a load_ in the
+[reference doc](../../../../docs/models/gradebook-audit-data-model.md): zero
+null counts, week counts matching `PS Full Calendar`
+(`rpt_gsheets__gradebook_audit_all_weeks`), four rows per
+`region x school_level` for the current quarter out of
 `int_powerschool__u_expectations_qtd_unpivot`, and the four-row
-`category_summary` floor intact.
+`category_summary` floor intact (the floor query is under _Known issues, need to
+fix_).
 
 That query is also the fallback path. If academics is blocked, a data-team
 member can generate the CSVs from `int_students__calendar_week` and the planning

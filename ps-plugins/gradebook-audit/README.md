@@ -76,74 +76,19 @@ gradebook-audit/
 
 ## Access Control
 
-Access is meant to be controlled by PS group membership, with non-members
-redirected to the PS admin home page. Read the TODO below before relying on
-that: it is not enforced as described.
-
-The group is matched **by name**, not by ID — a group named exactly
-`Gradebook Group` must exist on each instance. (Older docs said "Group #51";
-that was just Newark's assigned ID and is irrelevant to access.)
+Access is managed through PS group membership. The group is matched **by name**,
+not by ID — a group named exactly `Gradebook Group` must exist on each instance.
+(Older docs said "Group #51"; that was just Newark's assigned ID and is
+irrelevant to access.)
 
 To add a user: System Management → Security → Groups → Gradebook Group →
 Members.
 
-### 🛑 TODO — access control is not enforced
+### 🛑 Known security defects
 
-Two defects, found while deploying in August 2026. Neither is fixed yet.
-
-**1. The group-membership guard is present on only one of the five pages.** The
-rest carry no check, so being in the group is not what decides who can reach
-them.
-
-**2. Where the guard is present, it fails _open_ when the group does not
-exist.** Confirmed empirically on an instance where the group had not been
-created: the page loads anyway. So on any instance without the group, the
-existing check grants access rather than denying it — and copying the same
-construct onto the other pages would inherit the weakness rather than fix it.
-
-**Current state:** on an instance without the group, every page is reachable by
-any authenticated PS admin user. Impact is limited while `U_EXPECTATIONS` is
-empty; it rises as soon as ops loads expectations data.
-
-**The fix must fail closed.** Rather than "redirect if not a member", wrap page
-content in a positive membership check so an absent or misspelled group denies
-access instead of granting it. The PS-HTML construct for this is **not covered
-by the reference PDFs** — they don't document `memberof` at all — so the
-behavior has to be verified on the shared test instance before it ships.
-
-**Nothing is blocked.** The plugin works without `Gradebook Group` existing —
-that's what failing open means. Creating and populating the group is a
-nice-to-have, not a prerequisite for use.
-
-> Which pages, which instances, and the exact construct are deliberately not in
-> this file: this repository is public. That detail, and the per-instance check
-> of whether the group exists, are in the Data Team's Asana task:
-> https://app.asana.com/1/913513768672/project/1205971774138578/task/1218825255380883
-
-### The actual decision
-
-The repo is currently between two coherent positions, which is the real problem:
-
-- **Gate by group.** Create and populate `Gradebook Group` per instance, wrap
-  all five pages in a fail-closed membership check, bump to v2.6, deploy to all
-  three regions. Access control then means something.
-- **Don't gate.** Remove the vestigial guard and document that any PS admin who
-  can reach the page can manage expectations, relying on PowerSchool's own page
-  permissions. No setup, and the docs stop describing protection that isn't
-  there.
-
-Today the second is in force by accident while the docs describe the first.
-Either end state is defensible; the gap between them is not.
-
-> ⚠️ **If the fail-closed option is chosen, order matters.** A fail-closed guard
-> deployed to an instance with no `Gradebook Group` locks out everyone,
-> including admins — so the group must exist and be populated on that instance
-> _before_ the fixed build reaches it. This is a constraint on that fix only,
-> not on using the plugin.
-
-Testing the fail-closed option needs a login that is **not** in the group.
-Confirming that members still get in proves nothing, since that already works —
-the negative case is the whole point.
+The plugin has known security defects. They are tracked privately with the Data
+Team, not in this public repository. Before changing any page that adds, edits,
+or deletes expectations, ask the Data Team for the details.
 
 ---
 

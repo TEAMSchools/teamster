@@ -220,10 +220,7 @@ To update an existing plugin installation with a new version:
 
 ## Part 3: Grant Access to Users
 
-Access is meant to be controlled by PS group membership, with non-members
-redirected to the PS admin home page. See the access-control TODO in the plugin
-README before relying on that — it is not currently enforced as described, so
-group membership is not what decides who can reach these pages.
+Access is managed through PS group membership.
 
 > ⚠️ **The group is matched by name, not by ID.** Earlier versions of this guide
 > said "Group #51" — that is simply the ID Newark happened to assign, and it has
@@ -231,12 +228,9 @@ group membership is not what decides who can reach these pages.
 > `Gradebook Group` exists, with that spelling and capitalization. On a new
 > instance, create it; don't try to force a particular ID.
 
-> 🛑 **Known gap:** the guard does not cover every page, and where it is present
-> it fails open when the group is absent. So group membership is not what
-> decides who can reach these pages today. Reaching them still requires an
-> authenticated PS admin login, so this is not public exposure. Fix pending —
-> see the access-control TODO in the plugin README, and the Data Team's Asana
-> task for the specifics.
+> 🛑 **Known security defects.** The plugin has known security defects, tracked
+> privately with the Data Team. Before changing any page that adds, edits, or
+> deletes expectations, ask the Data Team for the details.
 
 ### To find, create, or populate the group
 

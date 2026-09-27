@@ -37,7 +37,8 @@ it, and is not repeated here.
   never reach `rpt_tableau__gradebook_audit`;
 - the **layering rule** — reports (`rpt_`) must not read other reports; shared
   logic lives in the intermediate;
-- the **summer-toggle** state (see the rollover playbook);
+- the **summer-toggle** state
+  ([`../references/summer-toggle.md`](../references/summer-toggle.md));
 - both **exposures** — the Tableau workbook and the Google Sheet each consume an
   output of this pipeline.
 

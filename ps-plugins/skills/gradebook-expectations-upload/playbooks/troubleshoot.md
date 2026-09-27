@@ -53,11 +53,12 @@ draft. Never tell the person the date can't be worked out; it always can.
 
 - **A decided quarter was never loaded, or only partly loaded** (this is
   different from 2b's not-yet-decided case — this is a quarter Academics _has_
-  finalized that never made it into PowerSchool). It's silently serving last
-  year's (or no) counts — see `week-matching.md`'s "gaps are filled, not
-  flagged." This looks like real data, not an error. If this is the cause, route
-  to `refresh.md` to actually load it — troubleshooting ends here, it doesn't
-  fix it itself.
+  finalized that never made it into PowerSchool). Never loaded, it silently
+  serves last year's counts, which look like real data. Partly loaded, the
+  quarter drops off the dashboard as soon as a missing week becomes the
+  operative week — see `week-matching.md`, _How the audit reads this_. If this
+  is the cause, route to `refresh.md` to actually load it — troubleshooting ends
+  here, it doesn't fix it itself.
 - **A delete didn't fully cover what was replaced**, leaving a duplicate or a
   stale row behind. Check `whocreated`/`whencreated` in `Plugin Data Raw` — a
   row from someone else, or an older timestamp than the rest of that quarter's

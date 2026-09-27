@@ -31,6 +31,14 @@ Check in order:
      no course-level expectation grain exists (see the reference doc's
      _Course-level scope_). A Lab teacher who teaches only advisory has no rows
      in either model at all
+
+   Upstream, `int_extracts__course_schedule_by_term` also drops sections with a
+   PowerSchool student count of zero and sections whose term covers only one
+   quarter (it keeps `section_quarter_count >= 2`) — trimester specials such as
+   Paterson MS music and Spanish, and short-term Newark sections. The filter has
+   no recorded rationale (it shipped in `f8650076da`, the model's first commit).
+   A teacher or section missing entirely is more often this than a flag bug.
+
 3. **For a student-level flag, did it survive the aggregation into
    `rpt_tableau__gradebook_audit`?** `student_flags_aggregate` groups
    `int_extracts__gradebook_audit_student_flags` to
@@ -49,9 +57,10 @@ Check in order:
    `int_extracts__gradebook_audit_student_flags`, which reads it — and thus by
    both reports downstream.) Its `enrollments` CTE picks one section per
    student/course/quarter with a `row_number()` tiebreaker that is frequently a
-   true tie (see reference doc) — when it is, the teacher/section actually in
-   scope for that student that quarter is arbitrary and can differ from what
-   you'd expect from PowerSchool. Query the model directly for that
+   true tie (reference doc, _Known issues, need to fix_: "Which section a
+   student counts in can be arbitrary") — when it is, the teacher/section
+   actually in scope for that student that quarter is arbitrary and can differ
+   from what you'd expect from PowerSchool. Query the model directly for that
    student/course/quarter to check whether more than one candidate section
    exists before assuming the flag logic itself is wrong.
 

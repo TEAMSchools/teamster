@@ -10,8 +10,8 @@
      `src/teamster/code_locations/<district>/powerschool/sis/dlt/config/assets.yaml`
      (`cursor_column: whenmodified`, `intraday: true`, `nightly: false`) and
      bump that district's hardcoded asset counts in `tests/`
-   - drop the `stg_powerschool__u_expectations: +enabled: false` entry from
-     `src/dbt/<district>/dbt_project.yml`
+   - if `src/dbt/<district>/dbt_project.yml` disables
+     `stg_powerschool__u_expectations` (`+enabled: false`), drop that entry
    - add the `stg_powerschool__u_expectations` source entry to
      `src/dbt/kipptaf/models/powerschool/sources-<district>.yml`
    - add the relation to `union_relations` in

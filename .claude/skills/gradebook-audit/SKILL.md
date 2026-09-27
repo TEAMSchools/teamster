@@ -61,7 +61,7 @@ below is the _how_; `plan-a-change.md` is the _what and whether_.
 | Work on the dashboard during summer, before the new year's PowerSchool data exists (the dbt toggle)                  | [`references/summer-toggle.md`](references/summer-toggle.md)                 |
 | A flag is firing when it shouldn't, not firing when it should, or a section is missing one of its four category rows | [`playbooks/debug-a-flag.md`](playbooks/debug-a-flag.md)                     |
 | Explain why an undocumented filter, column, or threshold exists                                                      | [`playbooks/explain-a-decision.md`](playbooks/explain-a-decision.md)         |
-| List refs/lineage/sources for the dashboard, explain the model, or look up a configurable threshold                  | [`references/data-model.md`](references/data-model.md)                       |
+| Lineage/refs, a configurable threshold, the Sumner override, or changing `section_or_period`                         | [`references/data-model.md`](references/data-model.md)                       |
 | Change, build, or deploy the PowerSchool plugin itself                                                               | [`playbooks/maintain-the-plugin.md`](playbooks/maintain-the-plugin.md)       |
 | Get a plugin or skill change to Teaching & Learning (organization skills or per-user zip)                            | [`playbooks/ship-a-skill-update.md`](playbooks/ship-a-skill-update.md)       |
 | A published Sheet's source/report pair needs a matching update, or one looks out of sync                             | [`references/published-sheets.md`](references/published-sheets.md)           |

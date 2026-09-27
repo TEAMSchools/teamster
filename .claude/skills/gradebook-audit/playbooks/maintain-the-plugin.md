@@ -89,26 +89,16 @@ closing the loop with the dbt model and the end-user skill.
    actually running v2.6 is exactly the kind of drift this skill exists to
    prevent.
 
-## Known defects on the four mutation pages
+## Known security defects
 
-The `_new`, `_edit`, `_insert` and `_delete` pages carry four open defects — two
-in how they check who may use them, two in how they handle text that reaches the
-page. All four predate the plugin's move into this repo, and none is fixed. They
-are tracked, with the specifics, in the Data Team's Asana task:
-https://app.asana.com/1/913513768672/project/1205971774138578/task/1218825255380883
+The plugin has known security defects. They are tracked privately with the Data
+Team, not in this public repository. Before editing any page that adds, edits,
+or deletes expectations, or adding a new page of that kind, ask the Data Team
+for the details, and fix what they describe in one version bump rather than one
+deploy per defect.
 
-Two things follow for anyone editing the plugin:
-
-- **Fix them together, in one version bump.** They sit on the same four files.
-  Fixing one at a time means deploying to three live instances more than once
-  for what is really a single piece of work.
-- **Do not copy the list page's group guard onto them.** That is the obvious
-  move and it is wrong: the guard fails open when the group does not exist,
-  which is true on at least one instance today, so copying it spreads the defect
-  rather than fixing it. The Asana task says what the fix has to be instead.
-
-Adding a fifth page of the same shape without addressing this makes the problem
-wider. If you are about to, read the task first.
+Keep the specifics out of every file in this repo, PR, issue, and commit
+message: the repo is public, and the end-user skill ships in a distributed zip.
 
 ## Reference PDFs are not in this repo
 

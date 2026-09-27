@@ -23,11 +23,8 @@ separate logins:
 If the link is missing, or the page bounces you back to the admin home, stop and
 ask the data team. Do not work around it.
 
-That is a PowerSchool access problem, not necessarily a group one. The
-`Gradebook Group` check is not what decides whether you can reach these pages —
-on some instances it is absent entirely and everything opens regardless. So
-being let in is not proof you are in the group, and being kept out does not tell
-you which permission is missing. Either way it is the data team's to sort out.
+That is a PowerSchool access problem, and the data team sorts it out. Being kept
+out does not tell you which permission is missing, so do not guess.
 
 ## 2. Decide the path before you describe it
 

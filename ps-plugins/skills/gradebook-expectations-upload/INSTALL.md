@@ -116,8 +116,7 @@ Anyone on the team can get that far.
 account, not the skill's — the skill has no way into PowerSchool at all.
 
 If you don't have that access, you'll usually find out when the plugin screen
-isn't there — though not always, because the group check isn't reliably what
-gates it. If you can reach the page but the upload fails, that's the same
+isn't there. If you can reach the page but the upload fails, that's the same
 problem wearing a different hat. Stop either way. Send the files the skill
 produced to the data team and let them do the load.
 

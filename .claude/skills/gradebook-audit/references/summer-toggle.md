@@ -28,11 +28,10 @@ The steps below cover only the dbt-side year / grade-source toggle.
 Both problems must be fixed together. Changing only the scaffold year or only
 the `grades_type` will still produce no data.
 
-**Files to edit** (as of the July 2026 intermediate extraction — the student
-grade/comment toggle points moved out of
-`rpt_gsheets__gradebook_audit_student_flags` into the new
-`int_extracts__gradebook_audit_student_flags`, which the gsheets report now
-reads; the gsheets report itself no longer carries any toggle):
+**Files to edit** — six, each line marked `summer toggle: see skill`
+(`grep -rn "summer toggle" src/dbt/kipptaf/models` lists all eleven marks).
+`rpt_gsheets__gradebook_audit_student_flags` carries no toggle: it reads
+`int_extracts__gradebook_audit_student_flags`, where the student toggle lives.
 
 - `src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__gradebook_audit.sql`
 - `src/dbt/kipptaf/models/students/intermediate/int_extracts__gradebook_audit_student_flags.sql`
@@ -77,7 +76,7 @@ reads; the gsheets report itself no longer carries any toggle):
    until teachers start entering grades for the new year).
 
 3. In `int_powerschool__u_expectations_qtd_unpivot` — change both occurrences
-   (one filters `int_powerschool__calendar_week`, marked
+   (one filters `int_students__calendar_week` in the `term_weeks` CTE, marked
    `-- summer toggle: see skill`; one stamps the output `academic_year` column,
    marked `/* summer toggle: see skill */`):
 
@@ -106,21 +105,21 @@ reads; the gsheets report itself no longer carries any toggle):
    s.academic_year = {{ var("current_academic_year") - 1 }}
    ```
 
-   **No `grades_type`/`storedgrades` fallback here, unlike the other three
-   files** — this was tried and reverted. The other files audit MS/HS grades
-   (or, for `u_expectations_qtd_unpivot`, aren't grade-sourced at all), and
-   `stg_powerschool__storedgrades` genuinely has MS/HS archived Q-term data for
-   the prior year, so a union+fallback pattern gives correct results there.
-   `es_comments` only needs comments for ES schools, and
-   `stg_powerschool__storedgrades` has **no Q-term data at all for ES schools in
-   academic years 2021, 2024, or 2025** (confirmed empty via direct query — only
-   2020/2022/2023 exist). Adding the same union pattern here doesn't add safety;
-   it silently shows every comment as missing instead of falling back to real
-   data, because the fallback source has nothing to fall back to. The
-   single-source join works today because `base_powerschool__final_grades` still
-   holds live prior-year data even after the academic-year var rolls over
-   (confirmed empirically: AY2025 rows were still present after the var bumped
-   to 2026).
+   **No `grades_type`/`storedgrades` fallback here, unlike
+   `int_extracts__gradebook_audit_student_flags`** — this was tried and
+   reverted. That model audits MS/HS grades (the other four toggled files are
+   not grade-sourced at all), and `stg_powerschool__storedgrades` genuinely has
+   MS/HS archived Q-term data for the prior year, so a union+fallback pattern
+   gives correct results there. `es_comments` only needs comments for ES
+   schools, and `stg_powerschool__storedgrades` has **no Q-term data at all for
+   ES schools in academic years 2021, 2024, or 2025** (confirmed empty via
+   direct query — only 2020/2022/2023 exist). Adding the same union pattern here
+   doesn't add safety; it silently shows every comment as missing instead of
+   falling back to real data, because the fallback source has nothing to fall
+   back to. The single-source join works today because
+   `base_powerschool__final_grades` still holds live prior-year data even after
+   the academic-year var rolls over (confirmed empirically: AY2025 rows were
+   still present after the var bumped to 2026).
 
    If this toggle ever stops returning real comments (i.e.
    `base_powerschool__final_grades` gets cleared for the prior year before the
@@ -141,9 +140,10 @@ reads; the gsheets report itself no longer carries any toggle):
    fallback data source available; escalate instead of shipping a change that
    silently reports every comment as missing.
 
-5. In `rpt_gsheets__gradebook_audit_template` — the expectations upload template
-   T&L uses to build the PowerSchool CSV. Change all THREE occurrences, each
-   marked `-- summer toggle: see skill` except the last: one filters
+5. In `rpt_gsheets__gradebook_audit_template` — the `Template QW-Date Crosswalk`
+   tab: loaded expectations joined to the calendar, stopping at the last
+   completed week. Change all THREE occurrences, each marked
+   `-- summer toggle: see skill` except the last: one filters
    `int_students__school_directory` in the `school_levels` CTE, one filters
    `int_students__calendar_week` in the `week_school_levels` CTE, and one stamps
    the output `academic_year` column, marked `/* summer toggle: see skill */`:
@@ -159,11 +159,6 @@ reads; the gsheets report itself no longer carries any toggle):
    `school_level_alt`, so leaving it at the current year while the calendar
    filter is toggled back resolves prior-year weeks against current-year school
    levels. Today that only moves Sumner, but it is silent when wrong.
-
-   **While toggled, this model shows the PRIOR year's week grid.** It is the
-   sheet T&L exports to upload the NEW year's expectations, so do not hand it
-   over as the new-year grid until the toggle is reverted — they would be
-   editing last year's weeks.
 
 6. In `rpt_gsheets__gradebook_audit_all_weeks` — the full-year companion grid on
    the same spreadsheet. Change both occurrences, both marked
@@ -181,6 +176,12 @@ reads; the gsheets report itself no longer carries any toggle):
    Unlike the template, this model projects `academic_year` straight from
    `int_students__calendar_week` rather than stamping it as a literal, so there
    is no third occurrence to change — the column follows the filter.
+
+   **While toggled, this model (`PS Full Calendar`) shows the PRIOR year's week
+   grid.** It is the grid the end-user skill matches the NEW year's upload
+   against, so tell T&L not to run a rollover until the toggle is reverted —
+   they would be loading counts against last year's weeks. The skill's
+   `academic_year` check catches this, but only if they run it.
 
 Build and verify after all six changes:
 
