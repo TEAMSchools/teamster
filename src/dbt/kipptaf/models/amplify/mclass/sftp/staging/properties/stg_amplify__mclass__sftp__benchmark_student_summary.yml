@@ -1,10 +1,17 @@
 models:
   - name: stg_amplify__mclass__sftp__benchmark_student_summary
+    description: >-
+      Union of the Newark and Paterson package staging models for the live
+      Amplify mCLASS SFTP benchmark file, one row per student, school year,
+      benchmark period and assessment grade within each region.
+      _dbt_source_relation names the source district. Column docs live on the
+      package model yml under src/dbt/amplify/models/mclass/sftp/staging/.
     # config:
     #   materialized: table
     columns:
       - name: school_name
         data_type: string
+        description: School name as provided in the vendor file.
         data_tests:
           - relationships:
               arguments:

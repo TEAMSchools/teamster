@@ -114,8 +114,7 @@ models:
 
           Padding is academics' planning buffer, not a property of the
           assessment. Splitting it out from benchmark_goal is what lets a reader
-          tell the two apart; before this the padded figure was reported under
-          the bare name and the real standard was not reported at all.
+          tell the two apart.
       - name: required_growth_words
         data_type: float64
         description: >-

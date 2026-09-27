@@ -5,26 +5,18 @@ models:
       administration, with the student's composite level for each window and
       whether that makes them eligible for progress monitoring.
 
-      Two jobs, and the second is why the model exists. The first is to clean
-      the Benchmark scores -- union the mCLASS and DDS sources, keep only scores
-      that fall inside the region's own testing window, and drop rows where the
-      assessed grade disagrees with the enrolled grade. The second is to decide
-      PM eligibility from the composite, which the PM chain needs BEFORE it can
-      match a student to an expectation row.
-
-      That ordering is the point. The composite used to be computed inside
-      int_amplify__all_assessments, downstream of the CTE that needed it, so a
-      PM branch could not join a student to their own cohort without a circular
-      reference. Extracting the Benchmark half breaks the cycle. It is
-      value-preserving, not a rewrite -- the Benchmark rows here are identical
-      to what int_amplify__all_assessments produced before the split, verified
-      across all four academic years on every shared column.
+      Two jobs. The first is to clean the Benchmark scores -- union the mCLASS
+      and the frozen SY24 grade 7/8 DDS sources, keep only measures the
+      Benchmark expectation gate lists for the region, grade and season (and
+      does not switch off with assessment_include), and drop mCLASS rows where
+      the assessed grade disagrees with the enrolled grade. The second is to
+      decide PM eligibility from the composite, which the PM chain needs before
+      it can match a student to an expectation row.
 
       Consumers read it two ways. The Benchmark branch of
-      int_amplify__all_assessments takes the score rows whole. The PM
-      eligibility scaffold takes one row per administration via
-      rn_pm_eligibility, because eligibility is a property of the student's
-      composite and does not vary by measure.
+      int_amplify__all_assessments takes the score rows whole. Both PM branches
+      take one row per administration via rn_pm_eligibility, because eligibility
+      is a property of the student's composite and does not vary by measure.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -45,18 +37,15 @@ models:
           Composite sorts first, so the surviving row is normally the one
           eligibility derives from. It is a rank rather than a measure_standard
           = 'Composite' filter because a student can have measure rows and no
-          composite -- 524 administrations across AY2023 to AY2026 -- and a
-          filter would drop them while a rank keeps them on their alphabetically
-          first measure.
+          composite, and a filter would drop them while a rank keeps them on
+          their alphabetically first measure.
 
           The grade is in the partition because a student can be assessed at two
-          grades inside one benchmark window. Two AY2025 students were: one sat
-          the full battery at grade 3 and again at grade 4 a week later, scoring
-          lower on every measure against the harder form. Each sitting passes
-          the enrolled-grade filter on its own, so nothing upstream can collapse
-          them, and each is a real administration deserving its own eligibility
-          row. Leaving the grade out would keep one arbitrarily and could drop
-          the student from an expectation gate keyed on their enrolled grade.
+          grades inside one benchmark window. Each sitting passes the
+          enrolled-grade filter on its own, so nothing upstream collapses them,
+          and each is a real administration deserving its own eligibility row.
+          Leaving the grade out would keep one arbitrarily and could drop the
+          student from an expectation gate keyed on their enrolled grade.
         data_tests:
           - not_null
       - name: overall_probe_eligible
@@ -128,9 +117,7 @@ models:
       - name: client_date
         data_type: date
         description: >
-          Date the assessment was administered. Can be null on a DDS row, and on
-          at least one mCLASS row that otherwise looks like a real second
-          sitting.
+          Date the assessment was administered. Can be null.
       - name: sync_date
         data_type: date
         description: >
@@ -148,9 +135,9 @@ models:
       - name: measure_standard
         data_type: string
         description: >
-          Measure and benchmark level the score is reported against, such as
-          Reading Fluency (ORF). Composite is the overall score rather than a
-          single measure, and is the row PM eligibility derives from.
+          Measure the score is reported against, such as Reading Fluency (ORF).
+          Composite is the overall score rather than a single measure, and is
+          the row PM eligibility derives from.
       - name: measure_standard_score
         data_type: float64
         description: >
@@ -217,8 +204,9 @@ models:
       - name: start_date
         data_type: date
         description: >
-          First day of the region's benchmark window. Scores outside it never
-          reach this model.
+          First day of the region's benchmark window, from the expectation gate.
+          Not used to filter scores -- the gate joins on academic year, region,
+          grade, season and measure only.
       - name: end_date
         data_type: date
         description: Last day of the region's benchmark window.

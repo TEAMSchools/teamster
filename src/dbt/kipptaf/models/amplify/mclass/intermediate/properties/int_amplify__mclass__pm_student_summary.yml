@@ -1,5 +1,13 @@
 models:
   - name: int_amplify__mclass__pm_student_summary
+    description: >-
+      mCLASS DIBELS progress monitoring probes, one row per student, school
+      year, PM period, measure, probe, device date and assessed grade. Unions
+      the SFTP and API PM student summaries, resolves school, region and Dagster
+      code location through the location crosswalk on school_name, and puts
+      Miami's pre-Focus student ids onto the network student number. This is the
+      internal PM method's score source; the aimline method reads
+      int_amplify__mclass__pm_student_summary_aimline.
     config:
       materialized: table
       meta:
@@ -345,6 +353,9 @@ models:
             source_column: measure_standard_score
       - name: measure_standard_score_change
         data_type: numeric
+        description: >-
+          Change in score from the student's previous probe, as provided by
+          Amplify. Carried by the API file only, so null on SFTP rows.
       - name: academic_year
         data_type: int64
         description:
@@ -367,6 +378,10 @@ models:
             source_column: measure_name_code
       - name: region
         data_type: string
+        description: >-
+          City-form region (Camden, Miami, Newark, Paterson), extracted from the
+          crosswalk's Dagster code location. Null when school_name does not
+          match the crosswalk.
       - name: measure_name
         data_type: string
         description:
@@ -395,8 +410,13 @@ models:
             source_column: enrollment_grade_int
       - name: school
         data_type: string
+        description: >-
+          School abbreviation from the location crosswalk.
       - name: _dbt_source_project
         data_type: string
+        description: >-
+          Dagster code location for the student's school, from the location
+          crosswalk matched on school_name.
       - name: multi_district_organization_name
         data_type: string
         description: Multi-district organization name.

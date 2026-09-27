@@ -1,5 +1,9 @@
 models:
   - name: stg_google_sheets__dibels_goals_long
+    description: >-
+      Amplify DIBELS benchmark cut scores from the DIBELS goals sheet, one row
+      per measure, grade and administration, with the PM season each
+      administration's standard governs and an integer grade level added.
     columns:
       - name: Unique
         data_type: string
@@ -35,7 +39,9 @@ models:
         description:
           The PM season this administration's standard governs -- MOY maps to
           BOY->MOY, EOY to MOY->EOY, so a PM round is measured against the NEXT
-          benchmark's standard.
+          benchmark's standard. Null for BOY.
       - name: grade_level
         data_type: int64
-        description: Grade level as an integer, K mapped to 0.
+        description: >-
+          Grade level as an integer, K mapped to 0. Null when Grade is neither K
+          nor numeric.
