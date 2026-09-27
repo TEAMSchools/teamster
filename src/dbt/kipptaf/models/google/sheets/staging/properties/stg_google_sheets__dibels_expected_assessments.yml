@@ -14,6 +14,18 @@ models:
 
       The sheet, not SQL, decides what is live. Assessment_Include and
       PM_Goal_Include pass through untouched for consumers to filter.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - Academic_Year
+              - Region
+              - Grade
+              - Admin_Season
+              - Test_Code
+              - Measure_Standard
+          config:
+            severity: error
     columns:
       - name: Academic_Year
         data_type: int64

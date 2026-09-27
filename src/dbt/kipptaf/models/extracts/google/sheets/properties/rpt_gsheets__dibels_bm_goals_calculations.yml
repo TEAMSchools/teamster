@@ -22,6 +22,15 @@ models:
       T&L's planning pads apply to the expected counts and gaps: a 5-student pad
       on the expected At/Above count at BOY only, and a 1.5x multiplier on every
       gap.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - academic_year
+              - region
+              - school
+              - assessment_grade_int
+              - period
     columns:
       - name: academic_year
         data_type: int64

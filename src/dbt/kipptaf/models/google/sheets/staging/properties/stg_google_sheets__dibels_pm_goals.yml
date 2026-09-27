@@ -23,6 +23,18 @@ models:
       `benchmark_goal_padded` is a hand-pasted column, and a paste that omits it
       would make every at-grade-level comparison read 0 — `if(score >= null, 1,
       0)` returns 0, not null. Its `not_null` test fails the build instead.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - academic_year
+              - region
+              - admin_season
+              - assessment_grade_int
+              - measure_standard
+              - round_number
+          config:
+            severity: error
     columns:
       - name: benchmark_goal_padded
         data_type: float64

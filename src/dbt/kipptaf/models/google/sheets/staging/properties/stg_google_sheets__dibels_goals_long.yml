@@ -4,6 +4,15 @@ models:
       Amplify DIBELS benchmark cut scores from the DIBELS goals sheet, one row
       per measure, grade and administration, with the PM season each
       administration's standard governs and an integer grade level added.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - grade_level
+              - Measure_Standard
+              - Admin_Season
+          config:
+            severity: error
     columns:
       - name: Unique
         data_type: string

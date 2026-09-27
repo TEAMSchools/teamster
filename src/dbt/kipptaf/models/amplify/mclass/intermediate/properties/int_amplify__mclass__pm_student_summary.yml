@@ -506,3 +506,37 @@ models:
       - name: device_date
         data_type: date
         description: Date the probe was administered on the device.
+      - name: matching_season
+        data_type: string
+        description: >-
+          The benchmark season the PM period grows toward -- MOY for BOY->MOY,
+          EOY for any other period.
+      - name: aimline_status
+        data_type: string
+        description: >-
+          Amplify's aimline verdict for the probe, as carried in the SFTP PM
+          file. Null on API rows.
+      - name: aimline_value_by_date
+        data_type: string
+        description: >-
+          Amplify's aimline target score as of the probe date, as text from the
+          SFTP PM file. Null on API rows.
+      - name: growth_goal_set
+        data_type: string
+        description: >-
+          Amplify's growth-goal-set flag from the SFTP PM file. Null on API
+          rows.
+      - name: source_file_name
+        data_type: string
+        description: >-
+          Name of the SFTP file the row was loaded from. Null on API rows.
+      - name: additional_student_id_sisid
+        data_type: string
+        description: >-
+          Student SIS id from the SFTP PM file, coalesced from the suffixed and
+          unsuffixed headers. Null on API rows.
+      - name: _dbt_source_relation_2
+        data_type: string
+        description: >-
+          The relation the row was unioned from -- the SFTP or the API PM
+          student summary staging model.

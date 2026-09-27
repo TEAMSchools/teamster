@@ -7,6 +7,9 @@ models:
       Newark file only. device_date falls back to sync_date, which is dropped.
       _dbt_source_relation is rewritten to the school's dagster_code_location,
       so it routes by school rather than by the district file it came from.
+    config:
+      meta:
+        contains_pii: true
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -229,6 +232,3 @@ models:
         description: >-
           Full measure name derived from measure_name_code (e.g., 'Oral Reading
           Fluency').
-      - name: measure_standard_score_change
-        data_type: numeric
-        description: Change in measure standard score from the previous probe.

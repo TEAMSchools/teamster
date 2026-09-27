@@ -418,8 +418,9 @@ The Tableau workbook is the `literacy_dashboard` exposure in
   year).
 - Worth knowing: it is not DIBELS data; it shares the workbook. Paterson is
   excluded. Its data flows automatically from Illuminate, so upkeep is only
-  confirming at rollover that it is still used, then moving the dashboard's
-  academic year to the current year. It has no year filter in SQL.
+  asking the Managing Director of Teaching & Learning (Sabine Vilsaint) at
+  rollover whether it is still used, then moving the dashboard's academic year
+  to the current year in the workbook. It has no year filter in SQL.
 
 ## Process: PM goal setting
 
@@ -825,6 +826,56 @@ where n > 1
 group by model_type
 ```
 
+### Duplicate sight words rows
+
+A few thousand quiz, student and sight word keys repeat in
+`rpt_tableau__sight_words_dashboard`, even with the replacement flag and grade
+in the key. The uniqueness test warns on it. Start from the replacement branch,
+which joins on `grade_level != co.grade_level`, and the enrollment join.
+
+```sql
+with
+    keyed as (
+        select repository_id, student_number, sight_word, count(*) as n,
+        from `teamster-332318`.kipptaf_tableau.rpt_tableau__sight_words_dashboard
+        group by repository_id, student_number, sight_word
+    )
+
+select count(*) as duplicated_keys,
+from keyed
+where n > 1
+```
+
+### A student benchmarked at two grades gets blended composite levels
+
+In `int_amplify__benchmark_student_summary` the composite pivot is keyed on year
+and student with no grade, so a student with two sittings in one period carries
+both sittings' levels mixed together. Rare: a handful of student-periods a year.
+
+```sql
+with
+    grades as (
+        select
+            academic_year,
+            student_number,
+            `period`,
+            count(distinct assessment_grade_int) as n_grades,
+        from `teamster-332318`.kipptaf_amplify.int_amplify__benchmark_student_summary
+        group by academic_year, student_number, `period`
+    )
+
+select academic_year, countif(n_grades > 1) as two_grade_student_periods,
+from grades
+group by academic_year
+```
+
+### The archived API staging models have no uniqueness test
+
+`stg_amplify__mclass__api__benchmark_student_summary` and
+`stg_amplify__mclass__api__pm_student_summary` are frozen history, and their
+only candidate key (`surrogate_key`) is dropped in the SQL. A test needs a
+natural key agreed first.
+
 ### Internal `pm_round_status` varies within a round
 
 In `int_amplify__pm_met_criteria` a few dozen AY2025 student-rounds carry both
@@ -954,8 +1005,9 @@ for editing the sheets safely.
 10. Mid-year cancellations: switch rows off with `assessment_include` (whole
     round) or `pm_goal_include` (one measure), and keep `pm_goal_include`
     matching between Expected Assessments and the PM goals sheet.
-11. Sight words: confirm the dashboard is still used, then move its academic
-    year to the current year.
+11. Sight words: ask the Managing Director of Teaching & Learning (Sabine
+    Vilsaint) whether the dashboard is still used, then move its academic year
+    to the current year in the workbook.
 12. NJDOE screener: see its own page once PR #5471 merges.
 
 ## Pending work

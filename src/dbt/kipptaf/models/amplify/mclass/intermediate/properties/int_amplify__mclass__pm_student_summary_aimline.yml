@@ -24,6 +24,8 @@ models:
               - probe_number
               - device_date
               - assessment_grade
+          config:
+            severity: error
     columns:
       - name: student_primary_id
         data_type: int64

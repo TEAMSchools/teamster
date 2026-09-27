@@ -55,6 +55,18 @@ models:
       resulting gap to `Not Tested` -- a student who was expected to test and
       was not. So a null in an own-goal or benchmark column means a Benchmark
       row, and nothing else.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - academic_year
+              - student_number
+              - model_type
+              - expected_test
+              - expected_round_number
+              - expected_measure_standard
+          config:
+            severity: warn
     columns:
       - name: _dbt_source_relation
         data_type: string
@@ -180,6 +192,9 @@ models:
       - name: hos
         data_type: string
         description: Head of School for the student's school.
+        config:
+          meta:
+            contains_pii: true
       - name: nj_student_tier
         data_type: string
         description: New Jersey intervention tier assigned to the student.
@@ -389,6 +404,9 @@ models:
         description:
           Student number on the matched course-enrollment row. Null where no ELA
           section matched.
+        config:
+          meta:
+            contains_pii: true
       - name: teacherid
         data_type: int64
         description: PowerSchool teacher id on the matched ELA section.
@@ -412,6 +430,9 @@ models:
         description:
           Student number on the matched Amplify score row. Null where the
           student was not scored.
+        config:
+          meta:
+            contains_pii: true
       - name: assessment_grade
         data_type: string
         description: Grade level of the assessment administered.

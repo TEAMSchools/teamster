@@ -33,6 +33,22 @@ models:
           config:
             severity: error
     columns:
+      - name: assessment_type
+        data_type: string
+        description: >
+          Authored on the sheet rather than derived from admin_season. PM on
+          every row, and tested: Benchmark is never by levels, and a Benchmark
+          row here would double dashboard rows and inflate participation
+          expected counts without any other test failing.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - accepted_values:
+              arguments:
+                values: [PM]
+              config:
+                severity: error
       - name: academic_year
         data_type: int64
         description: >
@@ -121,19 +137,6 @@ models:
         description: >
           Whether a student must meet all tested standards in a round or any of
           them. AND requires every standard; null means any one is enough.
-      - name: assessment_type
-        data_type: string
-        description: >
-          Authored on the sheet rather than derived from admin_season. PM on
-          every row, and tested: Benchmark is never by levels, and a Benchmark
-          row here would double dashboard rows and inflate participation
-          expected counts without any other test failing.
-        data_tests:
-          - accepted_values:
-              arguments:
-                values: [PM]
-              config:
-                severity: error
       - name: matching_bm_season
         data_type: string
         description: >

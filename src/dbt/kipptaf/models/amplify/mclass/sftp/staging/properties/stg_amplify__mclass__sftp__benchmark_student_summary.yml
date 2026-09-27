@@ -6,8 +6,10 @@ models:
       benchmark period and assessment grade within each region.
       _dbt_source_relation names the source district. Column docs live on the
       package model yml under src/dbt/amplify/models/mclass/sftp/staging/.
-    # config:
-    #   materialized: table
+    config:
+      # materialized: table
+      meta:
+        contains_pii: true
     columns:
       - name: school_name
         data_type: string
