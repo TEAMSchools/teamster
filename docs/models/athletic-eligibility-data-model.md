@@ -132,6 +132,9 @@ Nobody runs it by hand. The sheet reads the view through Connected Sheets on the
 sheet's own refresh schedule. Teaching and Learning shares the sheet with
 schools.
 
+The data team owns the models, with Anthony Walters as owner. Teaching and
+Learning owns the report and the policy questions.
+
 ## Supporting models
 
 - `int_extracts__student_enrollments` — the base roster: grade levels,
@@ -147,7 +150,9 @@ schools.
 
 ## Decisions
 
-- **Miami is excluded.** Its athletics program is outside the tracker's scope.
+- **Miami is excluded.** Its athletics program is treated as outside the
+  tracker's scope; whether that is program scope or a gap in Miami's data is
+  still an open question.
 - **Newark, Camden, and Paterson are included from grade 5 up.**
 - **Statuses are live, not frozen at the start of a season.** See the open
   questions.
@@ -173,6 +178,15 @@ schools.
   the status comes from the running ADA and current Y1 GPA instead. In Q1 a high
   school student with no credit record gets no status. Fix: end the high school
   branches with an explicit status for missing data.
+- **Last year's GPA differs from the DeansList transcript GPA for a small share
+  of students.** Both average Y1 stored grades weighted by credit hours, but the
+  tracker groups by `studentid` and region in FLOAT64 while
+  `rpt_deanslist__transcript_gpas` groups by `student_number` and year in
+  NUMERIC. Rounding explains some of the gaps; the rest have no known cause yet.
+  To see it, join `py_y1_gpa` to
+  `rpt_deanslist__transcript_gpas.GPA_Y1_weighted` for the previous year on
+  `student_number` and count the rows that differ. Fix: find which side is off;
+  if it is the tracker, change `py_gpa` and re-run the skill's `status_diff.py`.
 
 ## Open questions
 
@@ -180,6 +194,8 @@ schools.
 - **Should middle school statuses freeze at the start of each season?** The
   policy says "at the start of the season"; the tracker shows live values. This
   has never been agreed as a change, so it stays live until Athletics decides.
+- **Is Miami's exclusion program scope or a data gap?** The tracker leaves Miami
+  out today; confirm with Athletics which it is.
 - **Do transfer credits reach PowerSchool?** The policy counts credits
   "regardless if the student was in a different school". The tracker only sees
   credits stored as Y1 grades in PowerSchool.
