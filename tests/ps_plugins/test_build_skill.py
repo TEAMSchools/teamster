@@ -18,7 +18,7 @@ _spec.loader.exec_module(build_skill)
 
 
 def test_version_is_read_from_the_frontmatter():
-    assert build_skill.skill_version(SKILL) == "1.0.0"
+    assert build_skill.skill_version(SKILL) == "1.0.1"
 
 
 def test_zip_puts_files_at_the_root(tmp_path):

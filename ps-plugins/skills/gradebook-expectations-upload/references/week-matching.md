@@ -150,6 +150,13 @@ in both regions, and Paterson carries Newark's number for a day it does teach.
 counts. Do not change the number: what Academics planned for both regions is
 theirs to revise, not yours. Flagging it is what lets them.
 
+**Camden MS and HS share a tab too, and the same check applies.** One set of
+counts serves both levels, but PowerSchool keeps a calendar per building, so
+compare Camden MS weeks against Camden HS weeks the same way. In SY27 every
+Camden week matched; that is one year's result, not a rule. A row count cannot
+catch this: both levels have the same number of weeks even when one week runs a
+day shorter.
+
 ### When a tab holds two blocks for the same quarter
 
 A tab can carry more than one set of counts for one quarter — typically a plain

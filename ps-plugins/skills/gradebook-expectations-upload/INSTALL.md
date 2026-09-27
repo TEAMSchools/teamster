@@ -23,9 +23,16 @@ In **Claude Desktop**:
 1. Click **your name** (bottom left) → **Settings** → **Skills**.
 2. Click **Add**, then **Upload skill**, and choose the zip the data team sent
    you — it is named `gradebook_expectations_upload_v<version>.zip`, e.g.
-   `gradebook_expectations_upload_v1.0.0.zip`. Upload **the zip file itself. Do
+   `gradebook_expectations_upload_v1.0.1.zip`. Upload **the zip file itself. Do
    not unzip it first.** It is already packaged the way Claude expects.
 3. The skill appears in your list. Make sure its toggle is **on**.
+
+### Replacing an earlier version
+
+The version is in the zip's file name. If you already have this skill and the
+data team sends a newer zip, remove the old one from Settings → Skills first,
+then upload the new zip as above. Two copies side by side leave you unsure which
+one Claude is using.
 
 Anthropic's own instructions, if the screens here look different:
 <https://support.claude.com/en/articles/12512198-how-to-create-custom-skills>
