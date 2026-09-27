@@ -5,7 +5,8 @@ Document mode step 7, and the walk test for any skill edit.
 ## Propose, then ask
 
 From what inventory and intake found, list what a skill for this family would
-hold:
+hold (for a family that already has one, list what to add and what to remove,
+then go on to the fact-check below):
 
 - sheet-upkeep procedures the user named at intake;
 - yearly rollover: grep the family SQL for `current_academic_year` and
@@ -75,15 +76,16 @@ The walk test proves the skill routes; it does not prove the skill is right.
 Required when document mode runs on a family that already has a skill. Dispatch
 one Opus subagent, edits allowed, to check at least 25 claims in `SKILL.md` and
 every reference (model names, columns, joins, filters, partitions, grains)
-against the SQL and fix what is wrong, plus the cut facts from the doc rewrite
-(`reference-doc.md` → Restructuring an oversized doc) and any link into a doc
-section that no longer exists. A claim about what a sheet or table holds (which
-bands a calendar carries, which years a tab covers) is checked with a prod
-query, not the SQL: the DIBELS skill said two grade bands had no `PLIT` rows
-when every band in every region had them. On DIBELS the skill still said grades
-6-8 get no BOY goals a week after a commit gave them the EOY goal, described
-three models from an unmerged PR as shipped, and told sessions to add null
-handling the aimline model already had.
+against the SQL and fix what is wrong. Give it, in the prompt, the list of facts
+the doc rewrite cut that the skill lacks (the rewrite agent reports it, with old
+line numbers readable through `git show HEAD~1:<doc>`), and have it fix any link
+into a doc section that no longer exists. A claim about what a sheet or table
+holds (which bands a calendar carries, which years a tab covers) is checked with
+a prod query, not the SQL: the DIBELS skill said two grade bands had no `PLIT`
+rows when every band in every region had them. On DIBELS the skill still said
+grades 6-8 get no BOY goals a week after a commit gave them the EOY goal,
+described three models from an unmerged PR as shipped, and told sessions to add
+null handling the aimline model already had.
 
 Before any skill text leaves the repo (moved into an issue or PR body, pasted
 into a handoff), scan it for student numbers, names, and small cells: a DIBELS
