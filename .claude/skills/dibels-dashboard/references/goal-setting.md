@@ -556,6 +556,12 @@ Then tell them to come back the day AFTER each remaining administration closes,
 and suggest they set themselves a calendar reminder for that date. Do not
 promise to remember it.
 
+Paste target: named range `src_google_sheets__dibels__pm_goals` on the same
+workbook as the BM Goals tab (spreadsheet
+`15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs`), read by
+`stg_google_sheets__dibels_pm_goals`. Rows append; nothing already there is
+edited. Then run "Check the paste before anyone trusts it" below.
+
 **Check rows equal distinct rows on the query output before anyone copies it.**
 The calculation used to fan out: measured on prod before the fix,
 `int_google_sheets__dibels_pm_expectations` held 17,102 rows against 1,835

@@ -220,9 +220,11 @@ grades 6-8 at BOY are measured against their EOY goal. K-5 are untouched: they
 carry a real MOY goal.
 
 Consequence for the rollover: a year's first BM Goals paste covers K-8. Before
-that CTE it covered K-5 only (measured 2026-09-14: 49 rows, BOY, grades 0-5, 16
-schools), so a BOY paste taken before the change is missing 6-8 by design, not
-from a broken foundation paste.
+that CTE (commit `b9c2f814fc`, 2026-09-14) it covered K-5 only, so compare a
+region's paste date with that date. The AY2026 rows were replaced in full on
+2026-09-15, after the change (`goal-setting.md` records why) (measured
+2026-09-14: 49 rows, BOY, grades 0-5, 16 schools), so a BOY paste taken before
+the change is missing 6-8 by design, not from a broken foundation paste.
 
 **Reading the foundation goals columns.** Two columns decide which goal a row
 gets, and neither name says so on its own:
