@@ -54,14 +54,14 @@ Every doc closes with:
 
 ## Restructuring an oversized doc
 
-When the existing doc is far past a manual's length (DIBELS was 3,425 lines,
-mostly investigation history), dispatch one Opus subagent to rewrite it into the
-outline above, with the boundary table, the owner, and the pending-work links in
-the prompt. Tell it to check each fact it cuts against the family skill and list
-every cut fact the skill lacks, with its old line number, instead of dropping
-it. Then route those facts into the skill (`model-skill.md` → Fact-check the
-skill). The DIBELS rewrite came to 952 lines and listed eight such facts and
-five places the skill contradicted the SQL.
+When the existing doc runs past about 1,000 lines or is mostly investigation
+history rather than a manual (DIBELS was 3,425 lines), dispatch one Opus
+subagent to rewrite it into the outline above, with the boundary table, the
+owner, and the pending-work links in the prompt. Tell it to check each fact it
+cuts against the family skill and list every cut fact the skill lacks, with its
+old line number, instead of dropping it. Then route those facts into the skill
+(`model-skill.md` → Fact-check the skill). The DIBELS rewrite came to 952 lines
+and listed eight such facts and five places the skill contradicted the SQL.
 
 ## Public-page rules
 

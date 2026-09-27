@@ -77,10 +77,13 @@ one Opus subagent, edits allowed, to check at least 25 claims in `SKILL.md` and
 every reference (model names, columns, joins, filters, partitions, grains)
 against the SQL and fix what is wrong, plus the cut facts from the doc rewrite
 (`reference-doc.md` → Restructuring an oversized doc) and any link into a doc
-section that no longer exists. On DIBELS the skill still said grades 6-8 get no
-BOY goals a week after a commit gave them the EOY goal, described three models
-from an unmerged PR as shipped, and told sessions to add null handling the
-aimline model already had.
+section that no longer exists. A claim about what a sheet or table holds (which
+bands a calendar carries, which years a tab covers) is checked with a prod
+query, not the SQL: the DIBELS skill said two grade bands had no `PLIT` rows
+when every band in every region had them. On DIBELS the skill still said grades
+6-8 get no BOY goals a week after a commit gave them the EOY goal, described
+three models from an unmerged PR as shipped, and told sessions to add null
+handling the aimline model already had.
 
 Before any skill text leaves the repo (moved into an issue or PR body, pasted
 into a handoff), scan it for student numbers, names, and small cells: a DIBELS
@@ -91,9 +94,11 @@ was already on `main`.
 
 Required for a new skill and for every edited skill file, on a task that uses
 the edit. For a new or restructured skill, write one realistic task per row of
-its route table; for an edit, one task that reaches the edited file. Ask the
-user before dispatching. One cold Sonnet subagent per task, planning only, with
-this prompt:
+its route table; for an edit, one task that reaches the edited file. Scope each
+task to one step of a multi-step mode ("start document mode on X", not "run
+document mode on X"): a whole run loads one reference per step by design, so it
+fails the limit without telling you anything. Ask the user before dispatching.
+One cold Sonnet subagent per task, planning only, with this prompt:
 
 ```text
 Walk test of a Claude Code skill. Entry file: <abs path>. Read it with the

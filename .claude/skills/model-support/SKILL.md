@@ -69,9 +69,11 @@ SQL is read. Step 2 ends only when the user confirms the family boundary.
 
 ## Update mode
 
-For a change to a family that already has a reference doc (none: run document
-mode). Find the doc and family skill with
-`rg -l '<changed model>' docs/models .claude/skills`. Find what moved with
+For a change to a family that already has a reference doc. With no doc, or for a
+refresh with no change behind it (a handover, a doc that has drifted), run
+document mode; its intake reads the existing doc and skill first. Find the doc
+and family skill with `rg -l '<changed model>' docs/models .claude/skills`. Find
+what moved with
 `git -C <worktree> diff origin/main...HEAD -- <family .sql and .yml paths>`,
 read each hunk in full, then route by the kind of change:
 
