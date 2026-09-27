@@ -180,9 +180,6 @@ models:
       - name: hos
         data_type: string
         description: Head of school name.
-        config:
-          meta:
-            contains_pii: true
       - name: cumulative_y1_gpa
         data_type: float64
         description:

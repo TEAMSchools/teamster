@@ -266,15 +266,9 @@ models:
       - name: hos
         data_type: string
         description: Head of school name in that year.
-        config:
-          meta:
-            contains_pii: true
       - name: school_leader
         data_type: string
         description: School leader name in that year.
-        config:
-          meta:
-            contains_pii: true
       - name: school_leader_tableau_username
         data_type: string
         description: School leader Tableau username (row-level security).

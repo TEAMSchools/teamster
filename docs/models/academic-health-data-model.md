@@ -707,8 +707,7 @@ The older Tableau workbook, exposure `gradebook_and_gpa_dashboard`, reads
 `rpt_tableau__gradebook_es_comments`. The Health Suite replaced it. Dagster no
 longer refreshes its extracts: the exposure carries no refresh schedule. Anthony
 Walters decides when to retire it; retiring a model here means disabling it,
-never deleting it. Until then, note that `rpt_tableau__gradebook_gpa_cumulative`
-has no uniqueness test.
+never deleting it.
 
 ## Yearly upkeep
 

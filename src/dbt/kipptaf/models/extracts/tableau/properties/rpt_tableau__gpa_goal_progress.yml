@@ -258,16 +258,10 @@ models:
         data_type: string
         description:
           Passthrough from `rpt_tableau__gpa_cumulative_year`, unchanged.
-        config:
-          meta:
-            contains_pii: true
       - name: school_leader
         data_type: string
         description:
           Passthrough from `rpt_tableau__gpa_cumulative_year`, unchanged.
-        config:
-          meta:
-            contains_pii: true
       - name: school_leader_tableau_username
         data_type: string
         description:
