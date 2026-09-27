@@ -23,7 +23,7 @@ In **Claude Desktop**:
 1. Click **your name** (bottom left) → **Settings** → **Skills**.
 2. Click **Add**, then **Upload skill**, and choose the zip the data team sent
    you — it is named `gradebook_expectations_upload_v<version>.zip`, e.g.
-   `gradebook_expectations_upload_v1.0.1.zip`. Upload **the zip file itself. Do
+   `gradebook_expectations_upload_v1.0.2.zip`. Upload **the zip file itself. Do
    not unzip it first.** It is already packaged the way Claude expects.
 3. The skill appears in your list. Make sure its toggle is **on**.
 
