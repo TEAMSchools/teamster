@@ -52,6 +52,17 @@ Every doc closes with:
 - Counts that go stale: "27 students" becomes "a few dozen".
 - Evidence tables and check dumps.
 
+## Restructuring an oversized doc
+
+When the existing doc is far past a manual's length (DIBELS was 3,425 lines,
+mostly investigation history), dispatch one Opus subagent to rewrite it into the
+outline above, with the boundary table, the owner, and the pending-work links in
+the prompt. Tell it to check each fact it cuts against the family skill and list
+every cut fact the skill lacks, with its old line number, instead of dropping
+it. Then route those facts into the skill (`model-skill.md` → Fact-check the
+skill). The DIBELS rewrite came to 952 lines and listed eight such facts and
+five places the skill contradicted the SQL.
+
 ## Public-page rules
 
 - No internal sheet URLs or IDs: write "ask the data team".
@@ -79,9 +90,13 @@ sections: <section names>). Then spot-check at least 10 specific factual
 claims against the code under <absolute worktree path>/src/dbt.
 Prioritise grain, which models read which, join keys and partitions,
 filters, and denominators. Do the reading yourself; no sub-agents; no edits.
+Then run each query under "Known issues, need to fix" read-only through the
+BigQuery MCP against prod datasets, and report whether it runs and its
+aggregate result (counts only; any count under 10 as "under 10").
 Report: wrong or overstated claims with file:line evidence; where a
 newcomer gets lost; what reads like a check dump or change log; anything
-inappropriate for a public page.
+inappropriate for a public page; per known-issue query, whether the result
+still supports the issue as written.
 ```
 
 Check each flag against the SQL yourself before editing; the reviewer can be

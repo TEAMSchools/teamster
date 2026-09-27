@@ -28,9 +28,16 @@ with cwd <worktree>,
 /workspaces/teamster/.trunk/tools/trunk check --force --no-fix <edited files> </dev/null
 and uv run dbt parse --no-partial-parse --project-dir <worktree>/src/dbt/<project>.
 Report: per file a one-line summary; FLAGS with file:line evidence (column
-lists that don't match the SQL, missing uniqueness tests, wrong grains);
+lists that don't match the SQL, missing uniqueness tests, wrong grains,
+student-level columns with no contains_pii tag, including kipptaf wrappers
+over a tagged package model, since the tag does not cross source());
 lint and parse results verbatim.
 ```
+
+When several groups run at once in one worktree, tell them not to run trunk or
+dbt, and run both yourself once they finish: concurrent dbt runs share `target/`
+and corrupt the partial-parse manifest. On DIBELS five groups flagged five
+untagged PII models between them, three of them Amplify wrappers.
 
 A subagent's report is not evidence. Check that only descriptions moved, per
 edited file, against main (so staged and committed edits count too):

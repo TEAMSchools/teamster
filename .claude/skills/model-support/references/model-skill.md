@@ -69,6 +69,24 @@ Worked example: `.claude/skills/carat-dashboard/` (`SKILL.md`, `references/`,
    `uv run python <worktree>/.claude/skills/model-support/scripts/check_links.py <skill dir>`.
 5. Trim the entry file to routing.
 
+## Fact-check the skill
+
+The walk test proves the skill routes; it does not prove the skill is right.
+Required when document mode runs on a family that already has a skill. Dispatch
+one Opus subagent, edits allowed, to check at least 25 claims in `SKILL.md` and
+every reference (model names, columns, joins, filters, partitions, grains)
+against the SQL and fix what is wrong, plus the cut facts from the doc rewrite
+(`reference-doc.md` → Restructuring an oversized doc) and any link into a doc
+section that no longer exists. On DIBELS the skill still said grades 6-8 get no
+BOY goals a week after a commit gave them the EOY goal, described three models
+from an unmerged PR as shipped, and told sessions to add null handling the
+aimline model already had.
+
+Before any skill text leaves the repo (moved into an issue or PR body, pasted
+into a handoff), scan it for student numbers, names, and small cells: a DIBELS
+skill section bound for an issue named a student by number, and the same line
+was already on `main`.
+
 ## Walk test
 
 Required for a new skill and for every edited skill file, on a task that uses
