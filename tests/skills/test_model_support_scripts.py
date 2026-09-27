@@ -104,6 +104,45 @@ def test_check_links_reports_only_broken_relative_links(tmp_path):
     assert broken == [(tmp_path / "SKILL.md", 5, "references/missing.md")]
 
 
+def test_check_links_titled_and_angle_bracket_links(tmp_path):
+    links = _load("check_links")
+    (tmp_path / "has space.md").write_text("# x\n")
+    (tmp_path / "SKILL.md").write_text(
+        '[titled ok](has%20space.md "Title")\n'
+        "[angle ok](<has space.md>)\n"
+        '[titled broken](missing.md "Title")\n'
+        "[angle broken](<no such.md>)\n"
+    )
+    broken = links.find_broken_links([tmp_path])
+    assert broken == [
+        (tmp_path / "SKILL.md", 3, "missing.md"),
+        (tmp_path / "SKILL.md", 4, "no such.md"),
+    ]
+
+
+def test_check_links_skips_inline_and_indented_code(tmp_path):
+    links = _load("check_links")
+    (tmp_path / "SKILL.md").write_text(
+        "Use `[x](inline.md)` syntax.\n"
+        "\n"
+        "    [x](indented-code.md)\n"
+        "\n"
+        "1. A list item\n"
+        "\n"
+        "    [in list](list-broken.md)\n"
+    )
+    broken = links.find_broken_links([tmp_path])
+    assert broken == [(tmp_path / "SKILL.md", 7, "list-broken.md")]
+
+
+def test_bigquery_hash_comments_are_stripped():
+    diff = _load("comment_only_diff")
+    old = "select a, # old note\n    '#' as h\nfrom t\n"
+    new = "select a,\n    '#' as h # new note\nfrom t\n"
+    assert diff.is_comment_only(old, new)
+    assert not diff.is_comment_only(old, "select a, '##' as h from t")
+
+
 def test_comment_only_edit_is_detected():
     diff = _load("comment_only_diff")
     old = "select a, -- old note\n    b\nfrom t /* block */\n{# jinja note #}\n"

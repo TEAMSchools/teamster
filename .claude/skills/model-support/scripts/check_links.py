@@ -8,9 +8,13 @@ from __future__ import annotations
 import re
 import sys
 from pathlib import Path
+from urllib.parse import unquote
 
-LINK = re.compile(r"\]\(([^)\s]+)\)")
+# [text](<target>), [text](target), or either followed by a "title".
+LINK = re.compile(r"\]\((?:<([^>]+)>|([^)\s]+))(?:\s+\"[^\"]*\")?\)")
 FENCE = re.compile(r"^\s*(`{3,}|~{3,})")
+INLINE_CODE = re.compile(r"(`+).+?\1")
+LIST_ITEM = re.compile(r"^\s*([-*+]|\d+[.)])\s")
 SKIP = ("http:", "https:", "mailto:", "#")
 
 
@@ -25,6 +29,7 @@ def find_broken_links(paths: list[Path]) -> list[tuple[Path, int, str]]:
     broken: list[tuple[Path, int, str]] = []
     for md in _md_files(paths):
         fence: str | None = None
+        in_list = prev_blank = indented_code = False
         for number, line in enumerate(md.read_text().splitlines(), start=1):
             match = FENCE.match(line)
             if match:
@@ -40,10 +45,22 @@ def find_broken_links(paths: list[Path]) -> list[tuple[Path, int, str]]:
                 continue
             if fence is not None:
                 continue
-            for target in LINK.findall(line):
+            blank = not line.strip()
+            indented = line.startswith(("    ", "\t"))
+            if LIST_ITEM.match(line):
+                in_list = True
+            elif not blank and not indented:
+                in_list = False
+            # An indented code block opens after a blank line, outside a list.
+            indented_code = indented and not in_list and (prev_blank or indented_code)
+            prev_blank = blank
+            if indented_code:
+                continue
+            for angle, bare in LINK.findall(INLINE_CODE.sub("", line)):
+                target = angle or bare
                 if target.startswith(SKIP):
                     continue
-                if not (md.parent / target.split("#", 1)[0]).exists():
+                if not (md.parent / unquote(target.split("#", 1)[0])).exists():
                     broken.append((md, number, target))
     return broken
 

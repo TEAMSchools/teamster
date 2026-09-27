@@ -39,7 +39,8 @@ assessment is issue #5434) inside the repo convention:
   does not copy it: on CARAT, a committed `expected_assessments_2026_27.json`
   duplicated a sheet tab and went stale each year.
 
-Worked example: `.claude/skills/tableau-workbook-xml/`.
+Worked example: `.claude/skills/carat-dashboard/` (`SKILL.md`, `references/`,
+`scripts/`, and one `*.example.json`).
 
 ## Restructuring an oversized skill
 

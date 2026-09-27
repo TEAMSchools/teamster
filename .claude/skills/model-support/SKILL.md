@@ -94,8 +94,10 @@ Run trunk on every changed file, with cwd in the edited checkout
 (`/workspaces/teamster/.trunk/tools/trunk check --force --no-fix <files> </dev/null`),
 and
 `uv run dbt parse --no-partial-parse --project-dir <worktree>/src/dbt/<project>`.
-Commit with messages that state what was verified, push, and open the PR. Before
-asking for review, rewrite the PR body's Summary from
+A fresh worktree has no `dbt_packages/`, so run
+`uv run dbt deps --project-dir <worktree>/src/dbt/<project>` first, in its own
+Bash call. Commit with messages that state what was verified, push, and open the
+PR. Before asking for review, rewrite the PR body's Summary from
 `git diff --stat origin/main...HEAD` and the commit list, so it describes the
 whole PR and not its first commit, and check every CI checkbox claim against
 `gh pr checks <n>`. Tell the user every judgment call they might disagree with.

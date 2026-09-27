@@ -6,7 +6,7 @@ To compare against main:
 git -C <worktree> show origin/main:<path> > <scratchpad>/old.sql
 
 String literals are compared byte for byte; whitespace collapses only outside
-them. BigQuery `#` comments are not stripped, so they report LOGIC CHANGE.
+them. Strips `--`, `#`, `/* */`, and Jinja `{# #}` comments.
 """
 
 from __future__ import annotations
@@ -53,7 +53,7 @@ def strip_comments(sql: str) -> str:
             flush()
             parts.append(sql[i:end])
             i = end
-        elif sql.startswith("--", i):
+        elif sql.startswith(("--", "#"), i):
             end = sql.find("\n", i)
             i = n if end == -1 else end
         elif sql.startswith("/*", i):
