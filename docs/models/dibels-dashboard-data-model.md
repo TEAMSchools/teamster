@@ -56,6 +56,7 @@ flowchart LR
     gs_terms --> gate_a
     gs_long --> gate_a
     gs_long --> pmexp
+    gs_terms --> pmexp
     gate_i --> bss
     gate_i --> pmexp
     bss --> all
@@ -100,10 +101,20 @@ flowchart LR
 Dotted arrows are people copying rows from a calculation into a sheet. Those
 pastes are deliberate: they freeze a goal once it is set.
 
-Every model in the family is a view except the Google Sheets staging models,
-which are tables. A view is only as fresh as the tables under it, so a new paste
-into a sheet reaches the dashboard only after its staging table rebuilds.
-Dagster refreshes the Literacy Dashboard extract each morning.
+Most models in the family are views. The tables are the Google Sheets staging
+models and the four Amplify mCLASS intermediates
+(`int_amplify__mclass__benchmark_student_summary` and its `_unpivot`,
+`int_amplify__mclass__pm_student_summary` and its `_aimline`). A view is only as
+fresh as the tables under it, so a new paste into a sheet reaches the dashboard
+only after its staging table rebuilds.
+
+The diagram leaves out two shared models every branch uses: the enrollment spine
+(`int_extracts__student_enrollments_subjects`), which drives the dashboard's
+three branches and the participation roster, and the school calendar
+(`int_students__calendar_day`), which
+`int_google_sheets__dibels_pm_expectations` counts school days from together
+with `reporting__terms`. Dagster refreshes the Literacy Dashboard extract each
+morning.
 
 ## Terms
 
@@ -186,7 +197,9 @@ and results from both sit side by side in the dashboard.
 
 ### Testing states
 
-- Fully Tested: the student sat every measure the round expected.
+- Fully Tested: the student sat every measure the round expected. A Benchmark
+  round also counts as complete when the student has a composite score, even
+  with a measure missing.
 - Round Incomplete: the student sat some but not all of the round's expected
   measures.
 - Not Tested: the student sat nothing in the round, or, at measure grain, did
@@ -250,24 +263,28 @@ and results from both sit side by side in the dashboard.
   foundation goals, frozen in the BM Goals sheet.
 - Pads: `+3` words on the internal PM target; `+5` students on the expected
   At/Above count at BOY only; `x1.5` on the BM goal gap every season.
+- `matching_season`: points the other way depending on the model. On
+  `int_amplify__benchmark_student_summary` it is the PM season a benchmark opens
+  (BOY gives `BOY->MOY`). On a PM row of `int_amplify__all_assessments` it is
+  the benchmark season the round aims at (`BOY->MOY` gives `MOY`).
 
 ## Where the data comes from
 
-| Source                                          | Owner                                         | Reaches                                                                                                                                         |
-| ----------------------------------------------- | --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| Amplify mCLASS BM file, SFTP (Newark account)   | Amplify; landed by Dagster                    | `int_amplify__mclass__benchmark_student_summary` → `int_amplify__benchmark_student_summary` → `int_amplify__all_assessments` → every view below |
-| Amplify mCLASS BM and PM, archived API tables   | Data Team (frozen history)                    | Same chains as the SFTP files, for earlier years                                                                                                |
-| Amplify DDS, SY24 grades 7-8 benchmark          | Data Team (frozen history)                    | `int_amplify__benchmark_student_summary` only                                                                                                   |
-| Amplify mCLASS PM file, SFTP                    | Amplify; landed by Dagster                    | `int_amplify__mclass__pm_student_summary` (internal) and `int_amplify__mclass__pm_student_summary_aimline` → `int_amplify__all_assessments`     |
-| Amplify aimline file, SFTP                      | Amplify; landed by Dagster                    | `int_amplify__mclass__pm_student_summary_aimline` → Aimline rows                                                                                |
-| Expected Assessments V1 and by-levels           | Data Team enters; T&L decides the content     | The two gates → all three dashboard branches, the roster, goal setting                                                                          |
-| `reporting__terms`                              | Data Team enters; T&L sets PM dates           | Both gates (round windows) and `int_google_sheets__dibels_pm_expectations` (school days); the sight words term names                            |
-| `goals_long`                                    | Data Team (copy of UO's published goals)      | `benchmark_goal` on both methods                                                                                                                |
-| Foundation goals                                | T&L provides; Data Team enters                | `rpt_gsheets__dibels_bm_goals_calculations` only                                                                                                |
-| BM Goals (frozen)                               | Data Team pastes                              | Dashboard BM branch goal columns                                                                                                                |
-| PM goals (frozen)                               | Data Team pastes; T&L edits values            | `int_amplify__pm_met_criteria` and the dashboard Internal branch; the workbook also reads it directly                                           |
-| Illuminate Sight Words Quiz repositories        | Schools enter in Illuminate                   | `rpt_tableau__sight_words_dashboard` only                                                                                                       |
-| Enrollment, school calendar, location crosswalk | SIS (PowerSchool, Focus for Miami); Ops sheet | See _Supporting models_                                                                                                                         |
+| Source                                          | Owner                                         | Reaches                                                                                                                                                   |
+| ----------------------------------------------- | --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Amplify mCLASS BM file, SFTP (Newark account)   | Amplify; landed by Dagster                    | `int_amplify__mclass__benchmark_student_summary` → `int_amplify__benchmark_student_summary` → `int_amplify__all_assessments` → every view below           |
+| Amplify mCLASS BM and PM, archived API tables   | Data Team (frozen history)                    | Same chains as the SFTP files for earlier years, except PM: the aimline model reads only the SFTP PM file, so archived PM reaches the internal chain only |
+| Amplify DDS, SY24 grades 7-8 benchmark          | Data Team (frozen history)                    | `int_amplify__benchmark_student_summary` only                                                                                                             |
+| Amplify mCLASS PM file, SFTP                    | Amplify; landed by Dagster                    | `int_amplify__mclass__pm_student_summary` (internal) and `int_amplify__mclass__pm_student_summary_aimline` → `int_amplify__all_assessments`               |
+| Amplify aimline file, SFTP                      | Amplify; landed by Dagster                    | `int_amplify__mclass__pm_student_summary_aimline` → Aimline rows                                                                                          |
+| Expected Assessments V1 and by-levels           | Data Team enters; T&L decides the content     | The two gates → all three dashboard branches, the roster, goal setting                                                                                    |
+| `reporting__terms`                              | Data Team enters; T&L sets PM dates           | Both gates (round windows) and `int_google_sheets__dibels_pm_expectations` (school days); the sight words term names                                      |
+| `goals_long`                                    | Data Team (copy of UO's published goals)      | `benchmark_goal` on both methods                                                                                                                          |
+| Foundation goals                                | T&L provides; Data Team enters                | `rpt_gsheets__dibels_bm_goals_calculations` only                                                                                                          |
+| BM Goals (frozen)                               | Data Team pastes                              | Dashboard BM branch goal columns                                                                                                                          |
+| PM goals (frozen)                               | Data Team pastes; T&L edits values            | `int_amplify__pm_met_criteria` and the dashboard Internal branch; the workbook also reads it directly                                                     |
+| Illuminate Sight Words Quiz repositories        | Schools enter in Illuminate                   | `rpt_tableau__sight_words_dashboard` only                                                                                                                 |
+| Enrollment, school calendar, location crosswalk | SIS (PowerSchool, Focus for Miami); Ops sheet | See _Supporting models_                                                                                                                                   |
 
 Amplify exports one network account, and its files land in the Newark district's
 bucket (the SFTP models also union Paterson's copy). Region comes from matching
@@ -370,8 +387,9 @@ The Tableau workbook is the `literacy_dashboard` exposure in
   in each aimline PM round, the score, the aimline target, and the verdicts and
   categories from `int_amplify__pm_met_criteria_aimline`.
 - Grain: student, expected measure standard, PM season, round.
-- Reads: `int_amplify__benchmark_student_summary` (one row per student per
-  benchmark administration) for eligibility and cohort;
+- Reads: `int_amplify__benchmark_student_summary` (one row per measure, filtered
+  to `rn_pm_eligibility = 1` for one row per student per benchmark
+  administration) for eligibility and cohort;
   `int_google_sheets__dibels__expected_assessments_by_levels` matched on the
   student's own cohort (inner join); then left joins to the Aimline scores, the
   roster's Aimline rows and `int_amplify__pm_met_criteria_aimline`.
@@ -738,20 +756,22 @@ today's label.
 ## Known issues, need to fix
 
 Each query returns aggregates only. Datasets are in the `teamster-332318`
-project.
+project. Some results break down to a school or grade with only a few students;
+do not paste raw output anywhere public.
 
 ### Miami has no dashboard rows
 
 The spine filter `not s.is_self_contained` drops every Miami student, because
 Focus has no self-contained field and the value is null. Needs a Focus placement
-field or an Ops-confirmed mapping.
+field or an Ops-confirmed mapping. PR #5559 is working on Miami's dashboard
+rows.
 
 ```sql
 select
     region,
     countif(is_self_contained is null) as null_self_contained,
     count(*) as students,
-from `teamster-332318`.kipptaf_students.int_extracts__student_enrollments_subjects
+from `teamster-332318`.kipptaf_extracts.int_extracts__student_enrollments_subjects
 where academic_year = 2026 and iready_subject = 'Reading'
 group by region
 ```
@@ -772,9 +792,11 @@ group by academic_year, region, admin_season
 
 ### Duplicate dashboard rows
 
-Two overlapping enrollment stints repeat a PM row on both methods, and more than
-one matching ELA section repeats a row on every branch. The fix is the shared
-enrollment date predicate, on both PM branches together.
+Two overlapping enrollment stints repeat a row, and more than one matching ELA
+section repeats a row on every branch. The Benchmark branch has the most
+repeated keys; it uses the same `between` check on enrollment stints as the PM
+branches. The fix is one shared enrollment date predicate, applied to all three
+branches together.
 
 ```sql
 with
@@ -881,11 +903,12 @@ where
 group by academic_year, region
 ```
 
-### MLL foundation goals are placeholders
+### IEP and MLL foundation goals are missing or placeholders
 
-The MLL goal values were entered as a stopgap, not from T&L, and flow into the
-MLL columns of the BM goals calculation. Replace them with T&L's numbers before
-anyone reports on them.
+AY2026 foundation goals cover the All population only, so the IEP and MLL
+columns of the BM goals calculation are null this year. The AY2025 MLL values
+were entered as a stopgap, not from T&L. Ask T&L for both populations' goals
+before anyone reports on them.
 
 ```sql
 select academic_year, population, count(*) as goal_rows,

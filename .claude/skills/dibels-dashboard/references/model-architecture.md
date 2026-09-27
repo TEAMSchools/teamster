@@ -5,7 +5,6 @@ grain hazards that have bitten.
 
 ## What's in here
 
-- Growth fields on `int_amplify__all_assessments`
 - Benchmark is not per data model -- it must be single-sourced
 - The participation roster spans three expectation models
 - The two chains share no model -- split at the source, not behind a flag
@@ -22,61 +21,6 @@ grain hazards that have bitten.
 - The OR criteria is spelled NULL, and it is live on history
 - all_assessments changed grain -- every consumer must NAME its model_type
 - TODO -- shared active/current schools model needs more eyes
-
-## Growth fields on `int_amplify__all_assessments`
-
-T&L asked for "% of students that made above average growth" BOY-to-MOY and
-MOY-to-EOY. Two rounds of verification were needed before building anything --
-don't skip either check on a similar ask elsewhere in this dashboard.
-
-**Round 1 -- does growth data exist and reach this model at all?** Yes.
-`measure_semester_growth` / `measure_year_growth` (both `string`) survive the
-full lineage: `stg_amplify__mclass__{sftp,api}__benchmark_student_summary` ->
-union -> unpivot -> `int_amplify__all_assessments`. Confirmed grain against live
-prod data:
-
-- **BOY** row: both null (no prior period to grow from)
-- **MOY** row's `measure_semester_growth` = BOY-to-MOY growth
-- **EOY** row's `measure_semester_growth` = MOY-to-EOY growth
-- **EOY** row's `measure_year_growth` = BOY-to-EOY (full year) -- a THIRD
-  comparison nobody asked for here. Don't conflate it with MOY-to-EOY.
-
-Values are Amplify's 5-level categorical classification (`Well Below Average` /
-`Below Average` / `Average` / `Above Average` / `Well Above Average`), `'NA'` on
-PM rows (this concept is Benchmark-only). Sanity-checked against a real student
-(107119, Newark, AY2025): raw score climbs every period (expected -- the test
-scales with grade difficulty), but the **percentile** column is what growth
-actually tracks -- percentile flat/up between two periods reads `Average`+,
-percentile down reads `Below Average`-. Growth tracks relative national
-standing, not raw score.
-
-**Round 2 -- "% of students above average growth" is NOT the categorical field
-above.** T&L's actual ask is "above the average", i.e. compute a mean growth
-number across some population and flag students who beat it -- a population
-statistic, not Amplify's pre-baked norm-referenced bucket. That statistic does
-not exist anywhere in the source. Building it needs:
-
-- **A base metric**: `measure_percentile` delta between periods, or
-  `measure_standard_score` delta. `measure_percentile` (float64, a point-in-time
-  national-norm standing) DOES flow through to `int_amplify__all_assessments`,
-  but it's a status snapshot, not a growth number -- there is no raw growth
-  percentile / SGP field anywhere in the amplify source models, confirmed by
-  grepping for `growth.*percentile|percentile.*growth` across the whole package
-  (zero hits).
-- **A reference population**: average over grade+region? grade+school?
-  network-wide per grade? T&L's call, not something to guess -- put it to them
-  as an explicit multiple-choice question if it comes up, don't build against an
-  assumed default.
-
-**Shipped so far**: `is_above_average_growth` (boolean) on
-`int_amplify__all_assessments`, derived from the categorical field only --
-`true` when `measure_semester_growth` is `Above Average` or
-`Well Above Average`, `false` for
-`Average`/`Below Average`/`Well Below Average`, `null` on `BOY` rows and on `PM`
-rows (`measure_semester_growth` is always `'NA'` there, so the concept doesn't
-apply). This satisfies "flag against Amplify's own average" -- it does NOT
-satisfy "average across our own population", which is the unresolved Round 2
-question above.
 
 ## Benchmark is not per data model -- it must be single-sourced
 
@@ -105,7 +49,7 @@ three things broke without any test or contract failing:
 - `rpt_tableau__dibels_dashboard`'s Benchmark branch inner-joins the gate on
   `assessment_type = 'Benchmark'` with **no `data_model` predicate**, so every
   Benchmark row doubled.
-- `int_students__dibels_participation_roster` computes
+- `int_students__dibels_participation_roster` computed
   `count(*) over (partition by academic_year, region, grade, admin_season, round_number)`
   as `expected_row_count`, counting both branches. Measured: prod runs 4-8
   expected rows per group, the stacked version 8-16. That halves every
@@ -141,7 +85,7 @@ for rounds they were never in.
 | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Benchmark   | region / grade / season. Steady year over year.                                                                                                  |
 | Internal PM | region / grade / season / round. Below and Well Below are tracked **together** -- they are expected to test the same measures in the same round. |
-| Aimline PM  | region / grade / season / round / **`measure_standard_level`** / measure standard.                                                               |
+| Aimline PM  | region / grade / season / round / **`measure_standard_level`**.                                                                                  |
 
 The aimline row is the one that changes behaviour, in principle: its expected
 set is per cohort, so if a round tests Well Below only, a Below student was
@@ -197,21 +141,23 @@ expected of only one), and its terms unnest is a `cross join` rather than a
 `left join`, because every row in that source is a PM round and every PM terms
 row carries a band -- there is no null-band Benchmark row to preserve.
 
-The model also opens with a `terms` CTE that explodes `reporting__terms` on
+Both gates open with a `terms` CTE that explodes `reporting__terms` on
 `grade_band` into one row per grade level, so a grade joins its own band's
-window. A Benchmark row has no band, so its `grade_level` is null and the join
-lets any grade match -- the grade is inherited from the expected-assessments
-side. Before this, the join had no grade predicate at all, which fanned AY2025
-PM out 3x (2,370 rows against 790 real ones) and let a grade pick up a band's
-dates that did not include it.
+window. On the internal gate a Benchmark row has no band, so its `grade_level`
+is null and the join lets any grade match -- the grade is inherited from the
+expected-assessments side. Before this, the join had no grade predicate at all,
+which fanned AY2025 PM out 3x (2,370 rows against 790 real ones) and let a grade
+pick up a band's dates that did not include it.
 
 ## Do not hoist a downstream filter into the shared gate
 
-Tempting and wrong: `assessment_include is null` is repeated at four consumers
-(`int_students__dibels_participation_roster`, three sites in
-`int_amplify__all_assessments`, `rpt_tableau__dibels_dashboard`), so putting it
-once in `int_google_sheets__dibels_expected_assessments` looks like a cleanup.
-Two things break.
+Tempting and wrong: `assessment_include is null` is repeated across consumers
+(`int_students__dibels_participation_roster`, both PM branches of
+`int_amplify__all_assessments`, both branches of
+`int_amplify__benchmark_student_summary`, the dashboard's BM branch, and
+`int_amplify__pm_met_criteria_aimline`), so putting it once in
+`int_google_sheets__dibels_expected_assessments` looks like a cleanup. Two
+things break.
 
 1. **`min_pm_round` / `max_pm_round` change silently.** `WHERE` is evaluated
    before window functions, so filtering in the same `SELECT` that computes them
@@ -237,8 +183,17 @@ model is a consumer and applies it itself.
 aggregated level columns and `overall_probe_eligible` inline, then reuse them in
 its PM branch. With two PM methods, both needing the same eligibility, that had
 to move upstream. The new model holds the whole Benchmark half;
-`all_assessments` selects from it and adds four columns (`illuminate_subject`
-plus typed nulls for `probe_number`, `total_number_of_probes`, `score_change`).
+`all_assessments` selects from it and pads the PM-only columns with typed nulls
+(`probe_number`, `total_number_of_probes`, `score_change`, `aimline_status`,
+`aimline_season_student_goal`, `aimline_value_by_date`,
+`met_measure_standard_goal`).
+
+Its SY24 grades 7-8 rows come from Amplify DDS, not mClass: the model unions the
+frozen table `kipptaf_amplify.int_amplify__dibels_data_farming_unpivot` through
+`source()`. The models that built that table
+(`int_amplify__dds__data_farming_unpivot`,
+`stg_google_sheets__dibels_df_student_xwalk`) are disabled, so the frozen table
+is the only copy. Do not drop it or re-enable its builders.
 
 Three things about it are load-bearing:
 
@@ -331,12 +286,14 @@ Two things the LEFT-join version taught, both still worth knowing:
   produced each column.
 
 `max_score` now partitions on
-`academic_year, student_number, model_type, round_number, expected_measure_standard`
+`academic_year, student_number, model_type, period, assessment_grade_int, round_number, expected_measure_standard`
 and orders by `measure_standard_score desc, client_date desc`. **`academic_year`
 is load-bearing**: round numbers restart every year, so without it a student's
 AY2026 round 1 competes with their AY2025 round 1 for the same measure and one
 real score is dropped. `model_type` keeps the two methods from ranking against
-each other.
+each other, and `period` and `assessment_grade_int` keep a second sitting at
+another grade from being dropped, for the same reason `rn_pm_eligibility`
+carries the grade.
 
 ## A dedup step belongs to exactly one grain
 
@@ -437,16 +394,17 @@ on `student_primary_id` is what exposes it: 978 Miami students resolve as
 `enriched` CTE, taking `c.student_primary_id`, `c.academic_year` and
 `lc.location_dagster_code_location` -- the crosswalk column directly, not the
 `_dbt_source_project` alias derived in the same SELECT, since BigQuery has no
-lateral column aliases. It must NOT go in `combined` or earlier: the full outer
-join matches the two SFTP files on their shared raw id, so offsetting before
-that join breaks the merge. `c.* except (student_primary_id)` plus the re-add
-keeps the column name.
+lateral column aliases. It must NOT go in `combined` or earlier: the join in
+`combined` matches the two SFTP files on their shared raw id, so offsetting
+before that join breaks the merge. `c.* except (student_primary_id)` plus the
+re-add keeps the column name.
 
 After the fix all four regions match between methods (Miami 961 rows / 420
 students on both), the aimline model still holds 67,984 AY2025 rows with 67,984
-distinct surrogate keys, the full outer join still merges 1:1 (0 rows with no
-base side, 2,986 base rows with no aimline goal as before), all 5,503 Miami rows
-carry the offset, and Benchmark stays byte-identical to prod.
+distinct surrogate keys, the two files still merge 1:1 (0 rows with no base
+side, 2,986 base rows with no aimline goal as before; the model has since become
+a LEFT join from the base file), all 5,503 Miami rows carry the offset, and
+Benchmark stays byte-identical to prod.
 
 **The macro is year-scoped -- keep the call anyway.** It offsets `year <= 2025`,
 so from AY2026 Miami's raw id already IS the network number and the two sides
@@ -522,12 +480,35 @@ report the sat standard's verdict as the whole measure's. Guarded by
 `rpt_tableau__dibels_dashboard__measure_code_sat_all_or_none` at
 `severity: warn`.
 
-**If someone asks about that warning**, the diagnosis query, the corrected
-rollup SQL, and why the fix reuses the aimline sibling's countif/min pattern
-rather than a third shape are in the reference document under "If the
-measure-code pairing test fires". Do not re-derive it -- and note that the fix
-is the point at which `Incomplete Measure` stops being dead and becomes the
-right value to add.
+**If the warning fires**, the source has stopped pairing the two standards:
+Amplify split a code into separately administered probes, or a code gained a
+second standard from a different sitting. The extract keeps building, and the
+code-grain numbers start overstating attainment for the affected students. The
+test stores its failures, so see which code broke and how far it spread:
+
+```sql
+select
+    model_type,
+    expected_measure_name_code,
+    count(*) as partial_groups,
+    countif(n_standards_sat = 1) as sat_exactly_one,
+from `teamster-332318`.kipptaf_dbt_test__audit.rpt_tableau__dibels_dashboard__measure_code_sat_all_or_none
+group by model_type, expected_measure_name_code
+order by partial_groups desc
+```
+
+Then make a partial group unknown rather than a pass. The internal rollup in
+`int_amplify__pm_met_criteria` is
+`if(avg(met_measure_standard_goal) over (<code partition>) = 1, 1, 0)`, and the
+model cannot see a skipped standard: it holds scored rows only. Bring the
+expected standard count per code in from
+`int_google_sheets__dibels_pm_expectations`, count the verdicted standards over
+the same partition, and return null when verdicted is below expected. Do not
+invent a third shape: copy the aimline sibling's `n_code_unpublished` /
+`code_min_met` pattern (`countif` plus `min`), which already keeps an absent
+verdict unknown. That fix is also the point at which `Incomplete Measure` stops
+being dead and becomes the right status value to add, because the aimline null
+would then mean either No Aimline Data or a participation gap.
 
 ## Filtering PM rows: `assessment_type` and `model_type` say the same thing
 
@@ -618,13 +599,12 @@ doubles, everywhere.
 **Every remaining consumer is safe for a reason it does not state.** That is the
 part to internalise, because each of these is one refactor from breaking:
 
-| How it survives                                                  | Which                                                                                                                                       |
-| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| Filters `assessment_type` explicitly                             | `rpt_gsheets__dibels_bm_goals_calculations`, `dim_assessments`, `dim_assessment_administrations`, `fct_assessment_scores_enrollment_scoped` |
-| Filters `measure_standard = 'Composite'`, which PM never carries | `int_extracts__student_enrollments_subjects`, `rpt_tableau__mtss_rti`, `rpt_gsheets__mtss_rti`, `rpt_gsheets__kippmiami_payout_roster`      |
-| Filters `measure_name = 'Composite'`, which PM never carries     | `int_topline__dibels_benchmark_weekly`                                                                                                      |
-| Benchmark seasons never equal PM seasons (`BOY` vs `BOY->MOY`)   | the dashboard's own BM branch, and its composite read                                                                                       |
-| `overall_probe_eligible` is null on EOY rows                     | the EOY exclusion in `pm_goal_setting`                                                                                                      |
+| How it survives                                                  | Which                                                                                                                                                                                                                                                                                 |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Filters `assessment_type` explicitly                             | `rpt_gsheets__dibels_bm_goals_calculations`, `dim_assessments`, `dim_assessment_administrations`, `fct_assessment_scores_enrollment_scoped`, `int_assessments__score_anchors`, `rpt_gsheets__assessment_roster`, `int_reporting__promotional_status`, `rpt_deanslist__reading_levels` |
+| Filters `measure_standard = 'Composite'`, which PM never carries | `int_extracts__student_enrollments_subjects`, `rpt_tableau__mtss_rti`, `rpt_gsheets__mtss_rti`, `rpt_gsheets__kippmiami_payout_roster`                                                                                                                                                |
+| Filters `measure_name = 'Composite'`, which PM never carries     | `int_topline__dibels_benchmark_weekly`                                                                                                                                                                                                                                                |
+| Benchmark seasons never equal PM seasons (`BOY` vs `BOY->MOY`)   | the dashboard's own BM branch, and its composite read                                                                                                                                                                                                                                 |
 
 None of those was left unscoped carelessly -- they predate `model_type`. But
 "correct because a composite filter happens to exclude PM" is not a design, and
@@ -645,12 +625,13 @@ done | sort -k2 -n
 A zero in the second column is not automatically a bug -- check what else scopes
 it -- but it is always worth reading.
 
-**Corollary for the aimline sibling:** it reads `all_assessments` too, and it
-must say `model_type = 'Aimline'` rather than infer it from whichever column
-happens to be null on the internal method. `overall_probe_eligible` will not
-serve: it is `'Yes'` on every Internal PM row and the composite level on every
-Aimline one, so it discriminates -- until someone changes what the aimline
-branch projects into it.
+**Corollary for the two criteria models:** both read `all_assessments` and both
+name their method (`model_type = 'Internal'`, `model_type = 'Aimline'`), and so
+does `rpt_gsheets__dibels_pm_goal_setting` (`model_type = 'BM'`). Keep it that
+way rather than inferring the method from a column that happens to differ.
+`overall_probe_eligible` would discriminate today -- `'Yes'` on every Internal
+PM row, the composite level on every Aimline one -- until someone changes what
+the aimline branch projects into it.
 
 ## TODO -- shared active/current schools model needs more eyes
 

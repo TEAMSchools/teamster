@@ -307,7 +307,7 @@ contradiction. It is not; it is about the benchmark-goal chain.
 
 | Pad    | Where                                       | Applies to                                  |
 | ------ | ------------------------------------------- | ------------------------------------------- |
-| `+3`   | `stg_google_sheets__dibels_pm_goals`        | `benchmark_goal_padded`, the PM bar         |
+| `+3`   | `rpt_gsheets__dibels_pm_goal_setting`       | `benchmark_goal_padded`, the PM bar         |
 | `+5`   | `rpt_gsheets__dibels_bm_goals_calculations` | expected at/above count, BOY ONLY           |
 | `x1.5` | `rpt_gsheets__dibels_bm_goals_calculations` | the expected-minus-actual gap, every season |
 
@@ -404,9 +404,9 @@ does not exist.
 
 ## The two aimline targets, and three ways to get them wrong
 
-Measured 2026-09-19 on AY2025. Full tables in the reference doc under
-[Both methods have a moving target](../../../docs/models/dibels-dashboard-data-model.md);
-what a session needs before opening a file is here.
+Measured 2026-09-19 on AY2025. The definitions are in the reference doc under
+[Goals and verdicts](../../../../docs/models/dibels-dashboard-data-model.md#goals-and-verdicts);
+the measurements a session needs before opening a file are here.
 
 **Aimline has TWO targets and they go in different extract columns. Keep them
 apart.**
@@ -480,9 +480,10 @@ before the column itself turned out to be correct.
 **Below Aimline outranks No Aimline Data, and that is settled.** Academics
 confirmed it 2026-09-22. Do not reopen it or offer to reverse it.
 
-**Academics' 2026-09-24 answers are recorded but mostly not built.** The table
-is in the reference doc under "Academics' answers on labels and the roster".
-Before building any of it:
+**Academics' 2026-09-24 answers, and what is still unbuilt.** The table, with a
+status per item, is in the reference doc under
+[Academics' answers on labels and the roster, 2026-09-24](../../../../docs/models/dibels-dashboard-data-model.md#academics-answers-on-labels-and-the-roster-2026-09-24).
+Before building on any of it:
 
 - Trajectory is being dropped (2026-09-24). Under academics' rules it duplicates
   Aimline and Benchmark exactly, and a benchmark-only version could not judge a
@@ -581,6 +582,27 @@ asked Amplify what suppresses a `goal`** -- that is the open action, and until
 it is answered the above is inference from the pattern. The `aimline_status`
 gaps in the same grades (30.5% and 35.5%) are a superset and may have a separate
 cause; not investigated.
+
+**The three aimline fields go missing together, in tiers.** AY2025 raw aimline
+file, 67,972 rows: `aimline_value_by_date` and `aimline_status` are null on
+exactly the same 11,707 rows (17.2%), and every row with no season goal (the
+file's `goal`, our `aimline_season_student_goal`; 2,974 rows, 4.4%) has neither.
+So read a missing aimline as one of three tiers, not three independent gaps:
+
+| Tier                                       | Share | Meaning                                      |
+| ------------------------------------------ | ----: | -------------------------------------------- |
+| All three present                          | 82.8% | Fully usable                                 |
+| Season goal only, no by-date value, status | 12.8% | An endpoint, but no line placing the student |
+| All three null                             |  4.4% | No aimline at all                            |
+
+The coalesce against the base PM file in
+`int_amplify__mclass__pm_student_summary_aimline` fired on zero AY2025 rows, so
+do not read it as recovering anything. By the extract, 3,312 of 35,482 sat
+Aimline rows (9.3%) have no status: the gate drops a disproportionate share of
+the null rows, it does not repair them. Status nulls skew to Reading Accuracy
+(35.2%, against 8.4% for Reading Fluency on the same row count). The file also
+carries one `Irregular Words (DEC-IW)` row, outside every measure the gates
+know.
 
 ## What the aimline verdict is judged against, and why it is not ours to change
 

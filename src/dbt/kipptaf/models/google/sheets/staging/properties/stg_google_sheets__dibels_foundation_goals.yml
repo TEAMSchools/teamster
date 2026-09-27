@@ -41,7 +41,7 @@ models:
           The benchmark administration the goal applies to -- BOY, MOY or EOY.
       - name: population
         data_type: string
-        description: Student population the goal applies to -- All, SPED or MLL.
+        description: Student population the goal applies to -- All, IEP or MLL.
       - name: grade_goal_type
         data_type: string
         description: Whether the goal is expressed as At/Above or Well Below.

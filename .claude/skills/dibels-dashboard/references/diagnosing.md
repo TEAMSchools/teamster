@@ -209,20 +209,20 @@ AY2026: grades K-5 carry both MOY and EOY foundation goals, grades 6-8 carry EOY
 alone. This is academics' intent, not a truncated paste -- confirm the shape
 before reporting a gap.
 
-That shape collides with how `benchmark_goal_season` works.
-`int_amplify__all_assessments` sets it to the goal season a row is measured
-AGAINST, which is the NEXT one: a BOY row carries `MOY`, an MOY row carries
-`EOY`, an EOY row carries null. `rpt_gsheets__dibels_bm_goals_calculations`
-joins `a.benchmark_goal_season = f.period`, so a **BOY** row needs an **MOY**
-foundation goal. Grades 6-8 have none, the LEFT join misses, `grade_goal_type`
-comes back null, and `where c.grade_goal_type = 'At/Above'` drops the row. So
-grades 6-8 produce no BOY benchmark goals at all; they appear only once MOY
-testing lands, where their EOY goal does match.
+The BM calculation fills the gap from EOY. `int_amplify__all_assessments` sets
+`benchmark_goal_season` to the goal season a row is measured AGAINST, which is
+the NEXT one: a BOY row carries `MOY`, an MOY row carries `EOY`, an EOY row
+carries null. `rpt_gsheets__dibels_bm_goals_calculations` joins
+`a.benchmark_goal_season = f.period`, so a BOY row needs an MOY foundation goal.
+Its `foundation_goals_by_season` CTE adds an MOY copy of the EOY goal for every
+(year, region, grade, population, goal type) that has no MOY row of its own, so
+grades 6-8 at BOY are measured against their EOY goal. K-5 are untouched: they
+carry a real MOY goal.
 
-Consequence for the rollover: the first paste of a year covers **K-5 only**
-(measured 2026-09-14: 49 rows, BOY, grades 0-5, 16 schools). Do not read the
-missing grades as a broken foundation paste -- the 6-8 EOY values are present
-and populated; the model never consults them at BOY.
+Consequence for the rollover: a year's first BM Goals paste covers K-8. Before
+that CTE it covered K-5 only (measured 2026-09-14: 49 rows, BOY, grades 0-5, 16
+schools), so a BOY paste taken before the change is missing 6-8 by design, not
+from a broken foundation paste.
 
 **Reading the foundation goals columns.** Two columns decide which goal a row
 gets, and neither name says so on its own:
@@ -236,23 +236,16 @@ gets, and neither name says so on its own:
   `rpt_gsheets__dibels_bm_goals_calculations` joins the two so a student is
   measured against the aggregate matching their level.
 
-The missing BOY goals for grades 6-8 (above) are correct behaviour, not a bug:
-do not widen the join to reach the EOY goal early -- an EOY target is not a
-mid-year one. K-2 is the only band with `grade_range_goal` populated. Verified
-against AY2026: grades 0-5 have 6 MOY and 6 EOY rows each, grades 6-8 have 0 MOY
-and 6 EOY, and only grades 0-2 have non-null range goals.
+K-2 is the only band with `grade_range_goal` populated. Verified against AY2026:
+grades 0-5 have 6 MOY and 6 EOY rows each, grades 6-8 have 0 MOY and 6 EOY, and
+only grades 0-2 have non-null range goals.
 
-**Do not use the AY2025 `bm_goals` tab as evidence against this.** It does
-contain grades 6-8 at `period = 'BOY'` carrying the foundation EOY goal, which
-looks like precedent for an EOY fallback. It is not: no version of
-`rpt_gsheets__dibels_bm_goals_calculations` ever produced those rows -- the join
-has been `a.benchmark_goal_season = f.period` since `aac3e5a86`, and
-`benchmark_goal_season` has always been the plain next-season map (`BOY -> MOY`,
-`MOY -> EOY`), never grade-aware. The tab is a manual-freeze snapshot, so those
-rows were hand-filled, and they carry errors that prove it: Paterson grade 6
-reads `0.53` against a foundation EOY of `0.30`, and grade 7 reads `0.34`
-against `0.33`, both of them Newark's value. This cost a full investigation
-cycle in September 2026; the tab is not a specification.
+**Do not treat the AY2025 `bm_goals` tab as a specification.** Its grades 6-8
+rows at `period = 'BOY'` were hand-filled before the calculation reused the EOY
+goal, and they carry errors that prove it: Paterson grade 6 reads `0.53` against
+a foundation EOY of `0.30`, and grade 7 reads `0.34` against `0.33`, both of
+them Newark's value. The tab is a manual-freeze record; check a goal against the
+foundation goals sheet, not against that tab.
 
 Separately, **Miami has benchmark goals in that tab but no foundation goals at
 all.** Foundation goals cover Camden, Newark and Paterson only, so Miami's
@@ -314,8 +307,8 @@ is what identified the cause in one query instead of a model-by-model hunt.
 `assessment_include` is the off switch: null means live, non-null means
 excluded, and consumers express that as `assessment_include is null`. Do not add
 year filters to the model -- flip `assessment_include` instead. Currently off:
-all AY2024 PM rows on both tabs, and 99 AY2023 Benchmark rows (upper grades did
-not sit Benchmark that year).
+all AY2024 PM rows on V1 (the by-levels range starts at AY2025), and 99 AY2023
+Benchmark rows (upper grades did not sit Benchmark that year).
 
 ## Check the paste before anyone trusts it
 

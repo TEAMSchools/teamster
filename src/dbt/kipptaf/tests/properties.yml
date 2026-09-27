@@ -1089,8 +1089,8 @@ data_tests:
 
       Warn rather than error because the condition is a source-behaviour change,
       not a build failure, and the extract is still usable while it is triaged.
-      What to do when it fires is in the DIBELS reference document under "If the
-      measure-code pairing test fires".
+      What to do when it fires is in the dibels-dashboard skill,
+      references/model-architecture.md.
     config:
       severity: warn
       meta:

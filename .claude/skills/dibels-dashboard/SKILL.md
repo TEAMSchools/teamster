@@ -26,10 +26,10 @@ description: >-
 T&L's source doc gives goals as **ranges** ("62 - 66%") and, starting AY2025, as
 **two-or-more side-by-side population blocks** (All Students, Students with
 IEPs, and MLL, whose real goal values are still outstanding -- see _MLL
-population -- shipped with placeholder values_ below). The existing single-value
-staging table already required someone to collapse each range to one number by
-hand, applying a rule nobody wrote down. That rule is now written down (below)
-and encoded in a generator script instead of memory.
+population_ in `references/goal-setting.md`). The existing single-value staging
+table already required someone to collapse each range to one number by hand,
+applying a rule nobody wrote down. That rule is now written down (below) and
+encoded in a generator script instead of memory.
 
 ## The min/max rule (verified, not guessed)
 
@@ -47,15 +47,17 @@ This file routes. Read the one page your task needs, not the whole skill. Each
 page opens with a contents list -- jump to the section you need rather than
 reading the page end to end.
 
-| If you are                                                                                         | Read                                                                 |
-| -------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| Rolling the expectations scaffold forward a year or a season, or entering PM rounds for a new year | [references/rollover.md](references/rollover.md)                     |
-| Setting, generating or pasting goals of any kind                                                   | [references/goal-setting.md](references/goal-setting.md)             |
-| Editing a Google Sheet source, a named range, or `sources-external.yml`                            | [references/sheets-and-sources.md](references/sheets-and-sources.md) |
-| Answering what an aimline label means, or reporting a rate against the aimline                     | [references/aimline-method.md](references/aimline-method.md)         |
-| Changing a model, a column, or a join in either PM chain                                           | [references/model-architecture.md](references/model-architecture.md) |
-| Explaining a number that looks wrong, or verifying a change before reporting it                    | [references/diagnosing.md](references/diagnosing.md)                 |
-| Finishing a change -- what to check, and what else must be updated                                 | [references/diagnosing.md](references/diagnosing.md)                 |
+| If you are                                                                                                                                                                                                    | Read                                                                                                                                              |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Rolling the expectations scaffold forward a year or a season, or entering PM rounds for a new year                                                                                                            | [references/rollover.md](references/rollover.md)                                                                                                  |
+| Setting, generating or pasting goals of any kind                                                                                                                                                              | [references/goal-setting.md](references/goal-setting.md)                                                                                          |
+| Editing a Google Sheet source, a named range, or `sources-external.yml`                                                                                                                                       | [references/sheets-and-sources.md](references/sheets-and-sources.md)                                                                              |
+| Answering what an aimline label means, or reporting a rate against the aimline                                                                                                                                | [references/aimline-method.md](references/aimline-method.md)                                                                                      |
+| Changing a model, a column, or a join in either PM chain                                                                                                                                                      | [references/model-architecture.md](references/model-architecture.md)                                                                              |
+| Explaining a number that looks wrong, or verifying a change before reporting it                                                                                                                               | [references/diagnosing.md](references/diagnosing.md)                                                                                              |
+| Finishing a change -- what to check, and what else must be updated                                                                                                                                            | [references/diagnosing.md](references/diagnosing.md)                                                                                              |
+| The sight words dashboard (`rpt_tableau__sight_words_dashboard`): data flows from Illuminate on its own; upkeep is confirming at rollover it is still used, then moving the dashboard's academic year forward | the reference doc, [`rpt_tableau__sight_words_dashboard`](../../../docs/models/dibels-dashboard-data-model.md#rpt_tableau__sight_words_dashboard) |
+| The NJDOE universal screener extract (`rpt_gsheets__njdoe_universal_screener_data`): in this family until the data team has a data-sharing agreement for NJDOE to pull from the vendor                        | its own reference page, on open PR [#5471](https://github.com/TEAMSchools/teamster/pull/5471)                                                     |
 
 The data model itself — every column, its domain, and the decisions behind it —
 lives in
@@ -124,9 +126,11 @@ learned, update what is missing, then push. On no, push as asked and say in the
 PR body that the reference doc and skill were not updated for this change. Ask
 again on the next push; one answer does not cover the branch.
 
-Covers the whole DIBELS dashboard suite. Documented below: the Bright Spots
-tracker / foundation goals retrofit (#4952) -- benchmark-goal work, not
-PM/aimline -- and the PM/aimline migration (#3834). As the other tracks land,
-give each its own `##` section here rather than starting a separate skill:
+Covers the whole DIBELS dashboard suite: foundation and BM goals, the two PM
+methods (internal and aimline, #3834), participation, the sight words dashboard
+and the NJDOE screener extract. As a new track lands, give it a route and a
+reference file here rather than starting a separate skill.
 
-- **Benchmark completion tracking (#4902)** -- not yet documented here.
+On hold, not in prod: the Bright Spots tracker (design and open questions on
+issue #4952, code on PR #4964) and Camden benchmark completion tracking (issue
+#4896, PR #4902).

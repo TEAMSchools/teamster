@@ -14,7 +14,7 @@ grade-band, round-numbering and calendar rule it depends on.
 - Two Expected Assessments chains ship in parallel -- one per data model
 - `measure_standard_level` cohort split (`Below` / `Well Below`)
 - `assessment_type` -- derived on the internal chain, sheet-authored on the
-  combo chain
+  by-levels chain
 - Benchmark `month_round` must match `reporting__terms`, not be copied forward
 - Calendar and school sources -- Miami is Focus-only from AY2026
 - `PLIT` boundary rule -- verified, K-2 only, one open edge case
@@ -34,15 +34,12 @@ to conflate, so keep them separate:
 1. **Seasonal rollover of Benchmark rows already in the sheet** -- adding
    MOY/EOY for a year that only has BOY. Pure mechanical duplication, covered
    below.
-2. **Entering actual PM round rows for SY26-27** -- the new per-region PM
-   schedules. As of 2026-08-31, `stg_google_sheets__dibels_expected_assessments`
-   has zero `academic_year = 2026` PM rows, but it is NOT a new concept for this
-   sheet -- AY2024 and AY2025 both have a full working PM scaffold already (see
-   _Existing PM precedent_ below). SY26-27 entry is mechanically the same
-   process, blocked on: a cohort field the sheet doesn't have yet (see the
-   issue's "Scaffolds and sheets" checklist), and the round-numbering overflow
-   below for Miami. Not covered by the script in this section, which is
-   Benchmark-only.
+2. **Entering a new year's PM round rows** -- the per-region PM schedules from
+   T&L's rounds doc. Not a new concept for the sheet: AY2024 and AY2025 both
+   have a full working PM scaffold (see _Existing PM precedent_ below), and
+   SY26-27 is entered in both ranges (see _SY26-27 NJ rollover status_). The
+   generators are in _Generating rows for both models_; the seasonal script
+   below is Benchmark-only.
 
 ## Canonical annual rollover process
 
@@ -74,31 +71,31 @@ service account) sees only what has been shared with that identity**, not the
 user's Drive. An empty result is not evidence a document does not exist -- ask
 for it to be shared, the way the region calendar sheets were.
 
-- **K-2 vs 3-8, if the aimline model holds**: K-2 keeps the in-house PM goal
-  calculation, which requires `PLIT` rows (see _`reporting__terms` grade bands_
-  below). Grades 3-8 use Amplify's aimline-provided goal-setting calculation
-  directly and never need `PLIT` rows.
+- **Both PM methods run K-8.** The internal method counts school days against
+  `PLIT` rows, so every grade band needs them (see _`reporting__terms` grade
+  bands_ below); the aimline method takes Amplify's goals and needs none.
 
 The `PLIT` date calculation is no longer an open question -- see _`PLIT`
 boundary rule_ below, verified against real NJ **and** Miami data.
 
 ## Sheet identity
 
-Same workbook as the Bright Spots tabs above: spreadsheet
+Same workbook as the foundation goals: spreadsheet
 `15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs`.
-`stg_google_sheets__dibels_expected_assessments` reads named range
-`src_google_sheets__dibels__expected_assessments` (double underscore -- see _Two
-"Expected Assessments" tabs and named ranges exist in parallel_ below for the
-single-vs-double-underscore trap this table DOES have, post-cutover), tab
-"Expected Assessments", 18 declared columns (`sources-external.yml` around line
-98). Only `assessment_include`, `pm_goal_include`, `pm_goal_criteria` (the last
+`stg_google_sheets__dibels_expected_assessments` reads the dbt source
+`src_google_sheets__dibels__expected_assessments` (double underscore), whose
+`sheet_range` is the single-underscore named range
+`src_google_sheets__dibels_expected_assessments` -- tab "Expected Assessments
+V1", 16 declared columns (`sources-external.yml` around line 98; see _Two
+Expected Assessments chains ship in parallel_ below for why the names differ).
+Only `assessment_include`, `pm_goal_include`, `pm_goal_criteria` (the last
 three) are ever blank on **Benchmark** rows. **PM rows do populate the last
 two**: `pm_goal_include` carries `true`/`false`/blank per measure, and
 `pm_goal_criteria` carries `AND` for every row as of SY26-27 (see below) --
-don't assume all 18 columns behave like the Benchmark rows do. The named range
+don't assume all 16 columns behave like the Benchmark rows do. The named range
 is NOT row-bounded (no `startRowIndex`/`endRowIndex` in its definition), so
 appending past the current last row is safe -- no truncation risk like the
-foundation_goals range above.
+foundation_goals range in `sheets-and-sources.md`.
 
 ## Benchmark seasonal rollover -- the process, since it repeats every year
 
@@ -141,9 +138,9 @@ without T&L asking for it.
 against `reporting__terms`, which uses the same three codes with real date
 ranges per region/year.
 
-**No re-staging needed after pasting.** Unlike the foundation_goals column-set
-changes above, a seasonal rollover only adds rows to columns that already exist
--- rebuild the staging model in dev
+**No re-staging needed after pasting.** Unlike a foundation_goals column-set
+change (`goal-setting.md`, Step 5), a seasonal rollover only adds rows to
+columns that already exist -- rebuild the staging model in dev
 (`dbt build --select stg_google_sheets__dibels_expected_assessments --target dev --defer --state <prod manifest>`)
 and query the rebuilt table to confirm row counts; no
 `stage_external_sources --ext_full_refresh` step needed.
@@ -178,10 +175,9 @@ wrong; they're the full K-8 scaffold for two entire prior years):
   placeholder: AY2025 NJ regions ran September/October/November/December for
   rounds 1-4, then February/March/March/April for rounds 5-8. AY2025 Miami ran
   October/November/December (1-3) then February/March/April (4-6).
-- **`PM_Goal_Criteria` is `AND` for Camden/Newark/Paterson (grades 3+, matching
-  the issue's note that all K-8 rounds use AND this year) but is never populated
-  for Miami** -- confirm with T&L whether that's deliberate before copying the
-  NJ pattern for Miami's SY26-27 rows.
+- **`PM_Goal_Criteria` was `AND` for Camden/Newark/Paterson grades 3+ in AY2025
+  and blank for Miami.** Blank is the OR rule (see `model-architecture.md`), not
+  a gap to copy: from SY26-27 every row is `AND`, Miami included.
 - **No Paterson or Miami PM data exists for AY2024** -- both regions' PM
   scaffold starts at AY2025. A rebuild that shows 0 AY2024 PM rows for either
   region is correct, not a bug.
@@ -224,7 +220,7 @@ Academics runs **both** PM data models for SY26-27, so both chains are live
 production paths. This is not a primary-plus-fallback arrangement and neither
 one is a contingency -- do not "consolidate" them.
 
-|                          | Internal, K-8                                                        | Combo, K-2 internal + 3-8 aimline                           |
+|                          | Internal, K-8                                                        | Aimline, K-8                                                |
 | ------------------------ | -------------------------------------------------------------------- | ----------------------------------------------------------- |
 | Named range              | `src_google_sheets__dibels_expected_assessments` (single underscore) | `src_google_sheets__dibels__expected_assessments_by_levels` |
 | Tab                      | "Expected Assessments V1" (sheetId `1270280562`)                     | the by-levels range on the same spreadsheet                 |
@@ -233,7 +229,7 @@ one is a contingency -- do not "consolidate" them.
 | Staging model            | `stg_google_sheets__dibels_expected_assessments`                     | `stg_google_sheets__dibels__expected_assessments_by_levels` |
 | `assessment_type`        | derived from `admin_season` in staging SQL                           | sheet-authored                                              |
 | `measure_standard_level` | absent -- rows carry no cohort                                       | present -- `Below` / `Well Below`                           |
-| Generator flag           | `--single-rows`                                                      | (default)                                                   |
+| Generator flag           | `--single-rows`                                                      | `--no-scaffold`                                             |
 
 **For the internal chain the source `name:` and its `sheet_range` disagree on
 underscores, and that is correct.** The dbt source is
@@ -241,8 +237,8 @@ underscores, and that is correct.** The dbt source is
 `sheet_range` points at the single-underscore named range. Do not "fix" either
 to match the other -- the source name is what downstream `source()` calls
 resolve, the range name is what the spreadsheet calls that region. Same
-single-vs-double-underscore trap as foundation_goals above, on the same
-spreadsheet (`15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs`).
+single-vs-double-underscore trap as foundation_goals (`sheets-and-sources.md`),
+on the same spreadsheet (`15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs`).
 
 #3834 originally cut the internal chain over to the 18-column range and widened
 `stg_google_sheets__dibels_expected_assessments`'s contract to match. That was
@@ -252,24 +248,24 @@ instead of replacing the old one. So the V1 tab is NOT a frozen historical
 snapshot -- it is the internal model's live source.
 
 A future cutover that really does move a `sheet_range` still lands as one change
-(range move + `columns:` widen + contract update + derivation drop), per the
-_Named ranges: the recurring trap_ convention above -- a `sheet_range` move with
-a stale `columns:` list re-triggers the "New sheet column vs `select *`
-contract" failure mode from `src/dbt/CLAUDE.md`.
+(range move + `columns:` widen + contract update + derivation drop), per _Named
+ranges: the recurring trap_ in `sheets-and-sources.md` -- a `sheet_range` move
+with a stale `columns:` list re-triggers the "New sheet column vs `select *`
+contract" failure mode in `.claude/rules/dbt-yaml.md`.
 
 ## `measure_standard_level` cohort split (`Below` / `Well Below`)
 
 SY26-27 needs one Expected Assessments PM row per
 `(region, grade, round, measure)` **per cohort**, not one row shared across
 cohorts -- Well Below and Below students can be assigned different measures
-starting this year (see _Upcoming changes_ in the ref doc). For SY25-26
-(`academic_year = 2025`), which is used to validate the new model against real
-historical data, T&L's PM rounds doc shows every round testing Below and Well
-Below on the **identical** measures with no differentiation -- so the correct
-SY25-26 fix is purely mechanical: treat every existing PM row as the `Below`
-copy, and duplicate it into a second row identical in every column except
-`measure_standard_level`, set to `Well Below`. Benchmark rows are untouched --
-Benchmark tests all students regardless of cohort.
+starting this year. For SY25-26 (`academic_year = 2025`), which is used to
+validate the new model against real historical data, T&L's PM rounds doc shows
+every round testing Below and Well Below on the **identical** measures with no
+differentiation -- so the correct SY25-26 fix is purely mechanical: treat every
+existing PM row as the `Below` copy, and duplicate it into a second row
+identical in every column except `measure_standard_level`, set to `Well Below`.
+Benchmark rows are untouched -- Benchmark tests all students regardless of
+cohort.
 
 This was done once with a throwaway script, and the resulting rows are in the
 sheet. It walked the whole "Expected Assessments" tab in original row order (not
@@ -294,7 +290,7 @@ measures per cohort within the same round, this mechanical duplication is the
 wrong tool -- that needs real per-cohort row entry, not a copy-with-one-field-
 changed script.
 
-## `assessment_type` -- derived on the internal chain, sheet-authored on the combo chain
+## `assessment_type` -- derived on the internal chain, sheet-authored on the by-levels chain
 
 The two chains classify Benchmark vs PM differently, and that is deliberate:
 
@@ -304,10 +300,11 @@ The two chains classify Benchmark vs PM differently, and that is deliberate:
   `if(...)` line alone** -- an earlier revision of this skill told you to drop
   it once `sheet_range` moved to the 18-column range; that move was reverted
   when academics asked for both models.
-- **Combo chain** (`stg_google_sheets__dibels__expected_assessments_by_levels`)
-  reads it from the sheet, next to `subject_area`, so the classification is
-  explicit rather than inferred downstream by a rule only the SQL knows. That
-  staging model has no `assessment_type` derivation at all.
+- **By-levels chain**
+  (`stg_google_sheets__dibels__expected_assessments_by_levels`) reads it from
+  the sheet, next to `subject_area`, so the classification is explicit rather
+  than inferred downstream by a rule only the SQL knows. That staging model has
+  no `assessment_type` derivation at all.
 
 Both produce the same values for the same rows -- the sheet column was
 backfilled with the exact rule the SQL applies.
@@ -374,29 +371,21 @@ diverges. `int_google_sheets__dibels_pm_expectations` and
 44 SY26-27 `PLIT` rows regenerated byte-identical, and `pm_round_days` was
 unchanged across every region and academic year.
 
-**The schools side is NOT yet fixed, and the obvious swap makes it worse.** The
-model still resolves region as `stg_powerschool__schools.schoolcity` with
-`state_excludefromreporting = 0`, which yields only 2 reportable Miami rows.
-`int_students__schools` is the structural analogue (PowerSchool for non-Miami,
-Focus for Miami) and does give Miami 7 schools — but its Focus branch supplies
-neither column: `schoolcity` and `state_excludefromreporting` are **NULL for all
-7 Miami rows**, so a naive ref swap drops Miami entirely on both the
-`s.schoolcity = t.region` join and the reportability filter. Doing it properly
-means resolving region from `dim_regions` (join `dagster_code_location` to
-`_dbt_source_project`; its `name` values — Camden / Miami / Newark / Paterson —
-match `reporting__terms.region` exactly) and replacing the
-`state_excludefromreporting` gate with `location_key is not null`, since the
-Focus branch's inner join to `stg_google_sheets__people__locations` already
-drops the non-instructional schools. Tracked as remaining Miami work.
+The schools side reads `int_students__school_directory` (school x grade x year,
+both SISes), joined to the calendar on `ps_schoolid` and `_dbt_source_project`
+and to `reporting__terms` on its own `region`, excluding Finalsite recruiting
+rows and high schools. Do not swap it for `stg_powerschool__schools` or
+`int_students__schools`: the first yields only 2 reportable Miami rows, and the
+second's Focus branch carries neither `schoolcity` nor
+`state_excludefromreporting`, so Miami drops out entirely.
 
 ## `PLIT` boundary rule -- verified, K-2 only, one open edge case
 
 How to pick a new `PLITn` row's `Start Date`/`End Date` was an open item for a
-long time (see the ref doc). Reverse-engineered and verified against real
-Camden/Newark/Paterson AY2025 `reporting__terms` data, using
-`int_students__calendar_day` (network-wide, SIS-neutral -- NOT
-`stg_powerschool__calendar_day`, which is PowerSchool-only and would silently
-exclude Miami since it's on Focus):
+long time. Reverse-engineered and verified against real Camden/Newark/Paterson
+AY2025 `reporting__terms` data, using `int_students__calendar_day`
+(network-wide, SIS-neutral -- NOT `stg_powerschool__calendar_day`, which is
+PowerSchool-only and would silently exclude Miami since it's on Focus):
 
 - `PLITn.start` = the first **in-session** day strictly after round `n-1`'s
   `End Date`
@@ -562,10 +551,10 @@ in the script's docstring):
 ```bash
 rounds=sy2627_expected_assessments.tsv
 
-# combo: K-2 internal scaffold + 3-8 aimline -> by-levels range, 18 columns
+# aimline applied to K-8 -> by-levels range, 18 columns
 uv run python3 \
   .claude/skills/dibels-dashboard/scripts/generate_pm_expected_assessments_rows.py \
-  --academic-year 2026 --rounds "$rounds" --out /tmp/combo.tsv
+  --academic-year 2026 --rounds "$rounds" --no-scaffold --out /tmp/aimline.tsv
 
 # internal applied to K-8 -> V1 range, 16 columns
 uv run python3 \
@@ -579,9 +568,11 @@ grade 0-8, and drops columns 6 and 7 (`assessment_type`,
 
 `--no-scaffold` empties the scaffold set instead, so every grade takes the
 aimline pattern -- rows only for rounds the doc lists, blank `pm_goal_include`.
-Use it with the default 18-column output for aimline-across-K-8. On the SY27 doc
-it yields 1,170 rows (758 NJ + 412 Miami) against the default's 1,294; the
-124-row difference is exactly the K-2 scaffold-fill rows.
+It is what the by-levels range takes. With no flag, the script emits the older
+combo set (K-2 internal scaffold plus 3-8 aimline), which is not what shipped.
+On the SY27 doc `--no-scaffold` yields 1,170 rows (758 NJ + 412 Miami) against
+the combo default's 1,294; the 124-row difference is exactly the K-2
+scaffold-fill rows.
 
 **Generating single rows from the doc is not lossy; collapsing existing split
 rows would be.** The round data carries ONE measure list per grade/round plus a
@@ -619,33 +610,34 @@ windows coincide.
 
 Watch the interaction with `int_google_sheets__dibels_pm_expectations`: its day
 count groups on `(region, year, season, round)` with **no `grade_band`**, and
-its `regexp_extract(code, r'LIT(\d+)')` is unanchored, so `PLIT1` reads as round
-1 and its window is counted alongside `LIT1`'s. Measured on Newark AY2026: the
-`LIT` window is 5 in-session days and `PLIT` adds 23/9/13/12. Since all bands
-share one group, adding 3-8 `PLIT` rows is a no-op there **only** while their
-dates match K-2's. If a band's `PLIT` dates ever diverge, the group unions both
-windows and every band's count shifts.
+its `regexp_extract(code, r'^P?LIT(\d+)$')` matches `PLIT` deliberately, so
+`PLIT1` reads as round 1 and its window is counted alongside `LIT1`'s. Measured
+on Newark AY2026: the `LIT` window is 5 in-session days and `PLIT` adds
+23/9/13/12. Since all bands share one group, adding 3-8 `PLIT` rows is a no-op
+there **only** while their dates match K-2's. If a band's `PLIT` dates ever
+diverge, the group unions both windows and every band's count shifts.
 
 **`pm_goal_criteria` stays `AND`** on every row of both models -- a T&L
 requirement for the year, not an aimline artifact.
 
 ## Paterson's grade bands changed between AY2025 and AY2026 -- don't reuse last year's override
 
-The ref doc documents Paterson's AY2025 grade bands as `3` / `5,6,7` (no grade
-4, no grade 8) rather than the `3,4` / `5,6,7,8` Newark and Camden use. **That
-enrollment has changed**: AY2026 Paterson has 120 grade-4 students and 60
-grade-8 students (zero of either in AY2025) -- confirmed via
-`int_extracts__student_enrollments`, and consistent with the SY26-27 T&L doc,
-which gives Newark and Paterson one shared grid with no per-region grade-band
-split. Generating AY2026 rows with the old Paterson-specific band override (the
-per-region band override the old band-duplication script carried) produces the
-WRONG bands -- check current enrollment before reusing any region's prior-year
-band definition, every year, not just for Paterson.
+Paterson's AY2025 grade bands were `3` / `5,6,7` (no grade 4, no grade 8) rather
+than the `3,4` / `5,6,7,8` Newark and Camden use. **That enrollment has
+changed**: AY2026 Paterson has 120 grade-4 students and 60 grade-8 students
+(zero of either in AY2025) -- confirmed via `int_extracts__student_enrollments`,
+and consistent with the SY26-27 T&L doc, which gives Newark and Paterson one
+shared grid with no per-region grade-band split. Generating AY2026 rows with the
+old Paterson-specific band override (the per-region band override the old
+band-duplication script carried) produces the WRONG bands -- check current
+enrollment before reusing any region's prior-year band definition, every year,
+not just for Paterson.
 
 ## SY26-27 NJ rollover status
 
-`reporting__terms` (K-2 `LIT`+`PLIT`, 3-4/5-8 `LIT`-only) is built and verified
-for Newark, Paterson, and Camden, and serves both data models unchanged.
+`reporting__terms` is built for Newark, Paterson, and Camden, and serves both
+data models unchanged. Every band (`0,1,2`, `3,4`, `5,6,7,8`) carries `LIT` and
+`PLIT` rows (measured 2026-09-27 on the prod staging table).
 
 **Both Expected Assessments models need their own row set.** Regenerated and
 counted at the current commit:
@@ -709,11 +701,11 @@ generators encode, all from the T&L SY27 doc's Miami tab:
 - **11 rounds, season split 5 + 6.** The MOY Benchmark window (`1/5 - 1/22`)
   falls between rounds 5 and 6. AY2025 Miami ran 6 rounds (3+3), so the shape
   changed -- do not pattern-match off last year.
-- **Grade bands stay on AY2025's scheme** (`0,1,2` with `LIT`+`PLIT`, `3,4` and
-  `5,6,7,8` `LIT`-only), NOT the doc's own K / 1-3 / 4-5 / 6-8 groupings, whose
-  `1-3` band would straddle the K-2 / 3-8 boundary and strip `PLIT` from grades
-  1-2. Every Miami round shares identical dates across bands, so the band split
-  only matters for `PLIT`. The doc's groupings still drive measures.
+- **Grade bands follow the T&L doc's Miami groupings** (`0`, `1,2,3`, `4,5`,
+  `6,7,8`), and every band carries `LIT` and `PLIT` rows (measured 2026-09-27 on
+  the prod staging table: 11 `LIT` and 10 `PLIT` per band). Since the internal
+  method now runs K-8, a band that straddles K-2 and 3-8 costs nothing. Every
+  Miami round shares identical dates across bands.
 - **Cohorts alternate by round** -- odd rounds test `Below` + `Well Below`, even
   rounds `Well Below` only. **This applies to K-2 as well as 3-8**, which NJ's
   generator did not anticipate: its K-2 branch hardcoded `Both`, correct for NJ

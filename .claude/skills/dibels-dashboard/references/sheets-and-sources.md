@@ -114,8 +114,7 @@ Where each script sits today, so a successor does not have to read them all:
 
 - Whole-tab, already compliant -- the one-shot sheet fixes (the V1 `Month/Round`
   rewrite, the derived-column backfill, the `measure_standard_level` cohort
-  split). All were run once and deleted; the sections below record what each
-  did.
+  split). All were run once and deleted; `rollover.md` records what each did.
 - Append-only, correctly partial -- `generate_pm_expected_assessments_rows.py`,
   `generate_nj_lit_plit_rows.py`, `generate_miami_lit_plit_rows.py`,
   `roll_forward_expected_assessments_season.py`.
