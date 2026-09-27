@@ -1,20 +1,21 @@
 models:
   - name: rpt_tableau__gpa_cumulative_year
     description: >-
-      Year-grain cumulative GPA companion for the rebuilt gradebook Tableau
-      dashboard — one row per student and academic year with cumulative Y1 GPA
-      as of the end of that year, joined to that year's enrollment attributes
-      (demographics are as-of-that-year, not current). The current-year row is
-      the projected row (is_projected = true) and matches the main extract's
-      projected cumulative columns exactly. Students filtered to
-      is_enrolled_recent — the year was completed or the enrollment is currently
-      active, so mid-year withdrawals drop but completed prior years of students
-      who later left are kept. Read this table on its own for the Cumulative GPA
-      Monitor — one row per student-year, so student-grain measures need no
-      relationship. Do NOT relate it to rpt_tableau__student_course_grades on
+      Year-grain cumulative GPA companion to the gradebook Tableau extract — one
+      row per student and academic year with cumulative Y1 GPA as of the end of
+      that year, joined to that year's primary (rn_year = 1) enrollment
+      attributes (demographics are as-of-that-year, not current). The
+      current-year row is the projected row (is_projected = true) and matches
+      the course-grain extract's projected cumulative columns. Students are
+      filtered to is_enrolled_recent — the year was completed or the enrollment
+      is currently active, so mid-year withdrawals drop but completed prior
+      years of students who later left are kept — and to enroll_status 0, 2, or
+      3, excluding out-of-district enrollments. The Cumulative GPA Monitor reads
+      it through rpt_tableau__gpa_goal_progress, which adds goal columns at the
+      same grain. Do NOT relate it to rpt_tableau__student_course_grades on
       student_number alone: that match carries no academic year and fans a
-      student across every year they attended. Current seniors carry up to ten
-      rows here. Scoped to the Newark and Camden regions.
+      student across every year they attended. Scoped to the Newark and Camden
+      regions.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -229,7 +230,8 @@ models:
         data_type: boolean
         description:
           True on rows of the most recent academic year that has posted Y1
-          grades. The dashboard defaults its year filter to this rather than to
-          the maximum academic year, because the current year carries loaded
-          schedules with no grades for the first months and would open on an
-          empty view.
+          grades in Newark or Camden (network-wide across both regions, not per
+          student or school). The dashboard defaults its year filter to this
+          rather than to the maximum academic year, because the current year
+          carries loaded schedules with no grades for the first months and would
+          open on an empty view.
