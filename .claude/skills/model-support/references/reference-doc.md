@@ -73,7 +73,8 @@ and listed eight such facts and five places the skill contradicted the SQL.
   issues are public. After redacting, search for the claim in other words across
   the repo, not only for the removed string: on the PowerSchool plugin, two
   prose passages restated the redacted facts, and one shipped in a distributed
-  zip.
+  zip. Redact before the first push: a squash merge keeps the text off `main`,
+  but the PR diff, the branch, and commit subjects keep it public.
 - No standalone bold line as a heading (markdownlint MD036, `docs/CLAUDE.md`).
 - Add the page to the `mkdocs.yml` nav under `Models`.
 
@@ -101,7 +102,10 @@ still supports the issue as written.
 
 Check each flag against the SQL yourself before editing; the reviewer can be
 wrong too. Fix every confirmed flag. On CARAT, a doc its author believed correct
-had 13.
+had 13; the gradebook audit and Academic Health pages had six each.
+
+Give every known issue its own query before the review. On Academic Health only
+three of six had one, and the reviewer had to write checks for the rest.
 
 ## Repoint links
 
