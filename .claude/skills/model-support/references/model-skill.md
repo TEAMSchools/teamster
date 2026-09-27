@@ -14,8 +14,15 @@ then go on to the fact-check below):
 - QA checks worth re-running after each data load, each reporting what it
   compared (`qa-mode.md` → New data landed);
 - questions people keep asking about the numbers;
-- before/after measurements that a later QA parity run compares against. Not a
-  changelog: commit messages already carry history.
+- before/after measurements that a later QA parity run compares against, dated,
+  in the QA reference. Not a changelog: commit messages already carry history.
+  Every other count stays in the session scratchpad or the PR body.
+
+For a family that already has a skill, also read its own upkeep instructions
+("update this skill", "what to write down") against these rules, and propose
+rewording any that conflict. DIBELS told sessions to write down every row count
+with its year, so each run added counts that `reference-doc.md` → _What to cut_
+then removed.
 
 If the list is empty, say so and propose no skill. Either way, wait for the
 user's answer.
