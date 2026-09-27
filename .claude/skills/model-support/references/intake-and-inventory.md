@@ -35,7 +35,12 @@ Ask in one message, before reading any SQL:
 2. Google Sheet upkeep: does anyone maintain an input sheet for this family
    (examples: CARAT goal updates, season regeneration, College Board ID
    tagging)? Each one becomes a procedure in the family skill.
-3. Who owns the family now, and who inherits it.
+3. Who owns the family now, and who inherits it. When the user remembers only a
+   first name, look it up in Cube's staff view, or in
+   `kipptaf_people.int_people__staff_roster` selecting only `formatted_name`,
+   `job_title` and `home_department_name`: the roster row also holds home
+   address, birth date, pay and personal contacts. The doc gets name and title,
+   never contact details.
 
 Source material explains intent. The SQL decides what the doc claims.
 
