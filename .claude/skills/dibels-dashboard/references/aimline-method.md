@@ -199,13 +199,12 @@ differently, on purpose:
 
 - **Internal**: `Round Incomplete` keys on `met_pm_round_criteria`, NOT on the
   overall flag -- under `AND` a measure the student sat and failed settles the
-  round however much is missing. 375 rows of 35,524 on AY2025.
+  round however much is missing.
 - **Aimline**: every round the student did not finish reads `Round Incomplete`,
-  checked first, even when a sat measure was already below. Academics' decision
-  on 2026-09-24, so schools finish the testing before the round is judged. On
-  AY2025 that moved 640 partial student-rounds from `Below Aimline`, making
-  1,115 in all, equal to the roster's `Round Incomplete` count. Do not restore
-  the settled-first order on either side to make them match.
+  checked first, whatever the measures sat so far show, below or meeting.
+  Academics' decision on 2026-09-24, so schools finish the testing before the
+  round is judged. Do not restore the settled-first order on either side to make
+  them match.
 
 **The workbook is the other half of this and is not done.** The Literacy
 Dashboard's `PM - Met Goal Selector` is a CASE returning one of the three
