@@ -18,4 +18,5 @@ where
     i._dbt_source_project in ('kippnewark', 'kippcamden', 'kipppaterson')
     and i.is_active
     and dd.is_current_academic_year
+    -- uncategorized incidents stay in the feed, as before the package flag
     and (i.is_behavioral_referral or i.category is null)
