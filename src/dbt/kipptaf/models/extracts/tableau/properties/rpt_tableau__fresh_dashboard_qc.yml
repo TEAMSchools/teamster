@@ -49,9 +49,6 @@ models:
         description: >
           Always true. The unpivot keeps only fired flags, so this column exists
           to make that filter explicit rather than to carry information.
-        config:
-          meta:
-            contains_pii: true
       - name: enrollment_academic_year
         data_type: int64
         description: >

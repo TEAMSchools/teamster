@@ -24,7 +24,8 @@ models:
         description: >
           Grade level the goal applies to. K is 0 and grades 1-12 are plain
           integers. -9 marks a whole-school total row (goal_granularity =
-          "School").
+          "School"). A failing accepted_values test that shows -1 means a
+          whole-school row in the sheet still uses the old code instead of -9.
         data_tests:
           - accepted_values:
               config:

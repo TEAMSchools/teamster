@@ -752,7 +752,7 @@ gaps between raw Finalsite numbers and the dashboard.
 - **School-granularity goals never match students in Aggregated.** Goals at
   `goal_granularity = 'School'` carry `grade_level = -9`, and every branch of
   `rpt_tableau__fresh_dashboard_aggregated` except Inquiries/Applications joins
-  students on `grade_level` (lines 58, 108, 161, 260), which no student has as
+  students on `grade_level` (lines 58, 108, 161, 261), which no student has as
   `-9`. The Inquiries/Applications branch is limited to `Region/Grade Level`. So
   `School` goal rows always show zero students:
 

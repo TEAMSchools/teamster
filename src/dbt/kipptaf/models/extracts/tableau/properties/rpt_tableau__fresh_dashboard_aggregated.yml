@@ -182,6 +182,9 @@ models:
         data_type: string
         description: >
           The student's Finalsite enrollment type -- "New" or "Returning".
+        config:
+          meta:
+            contains_pii: true
       - name: is_enrolled_fdos
         data_type: boolean
         description: >
