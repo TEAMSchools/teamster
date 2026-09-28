@@ -1,12 +1,12 @@
 sources:
+  # retired in #5110: kippmiami no longer builds the deanslist package
   - name: kippmiami_deanslist
     description: >-
-      Miami's DeansList archive. Miami stopped using DeansList; the last
-      ingestion ran 2026-07-21 and the district project no longer includes the
-      deanslist package (#5110). These tables are frozen, and the kipptaf unions
-      keep them so Miami's behavior history stays queryable. The dataset must
-      not be dropped. Declared BQ-native (plain schema, no target branch) so
-      every target reads the prod tables directly.
+      Miami's DeansList archive. Miami no longer uses DeansList, so these tables
+      are frozen and nothing rebuilds them. The kipptaf unions keep them so
+      Miami's behavior history stays queryable. The dataset must not be dropped.
+      Declared BQ-native (plain schema, no target branch) so every target reads
+      the prod tables directly.
     schema: kippmiami_deanslist
     tables:
       - name: stg_deanslist__behavior
