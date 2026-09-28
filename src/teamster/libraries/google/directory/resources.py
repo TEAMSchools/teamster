@@ -120,6 +120,11 @@ def _batch_by_distinct_org_unit(
         yield from chunk(obj=[item for item in round_ if item is not None], size=size)
 
 
+def _user_error(user: dict, exception: Exception) -> dict:
+    """Redacted per-user error: primaryEmail plus the API message, never the payload."""
+    return {"primaryEmail": user["primaryEmail"], "error": str(exception)}
+
+
 class GoogleDirectoryResource(ConfigurableResource):
     """Google Admin SDK Directory API resource.
 
@@ -582,7 +587,8 @@ class GoogleDirectoryResource(ConfigurableResource):
         each individual sub-request within it — is retried on transient errors
         (5xx, 429) with backoff.
 
-        Unlike the sibling batch helpers (which return error strings), this
+        Like :meth:`batch_update_users`, and unlike ``batch_insert_members`` /
+        ``batch_insert_role_assignments`` (which return error strings), this
         returns structured per-user errors. Callers use the returned emails to
         skip follow-on group membership for users that were not created (see
         ``members_for_created_users``), and the structured form keeps the create
@@ -613,8 +619,7 @@ class GoogleDirectoryResource(ConfigurableResource):
             )
 
             exceptions.extend(
-                {"primaryEmail": item["primaryEmail"], "error": str(e)}
-                for item, e in failures
+                _user_error(user=item, exception=e) for item, e in failures
             )
 
             if i < len(batches) - 1:
@@ -638,15 +643,21 @@ class GoogleDirectoryResource(ConfigurableResource):
             retry_on=(_TransientHttpError,),
         )
 
-    def batch_update_users(self, users: list[dict]) -> list[str]:
+    def batch_update_users(self, users: list[dict]) -> list[dict]:
         """Update multiple users in batches of 40.
+
+        Like :meth:`batch_insert_users` (and unlike the remaining batch helpers,
+        which return error strings), this returns structured per-user errors:
+        every update payload carries the password hash, and the structured form
+        keeps it out of logs and asset-check metadata.
 
         Args:
             users: User resource dicts to update; each must include
                 ``primaryEmail``.
 
         Returns:
-            Error strings for any failed requests.
+            One ``{"primaryEmail": ..., "error": ...}`` dict per user whose
+            update ultimately failed (empty if all succeeded).
         """
         exceptions = []
 
@@ -671,9 +682,9 @@ class GoogleDirectoryResource(ConfigurableResource):
                     try:
                         self._retry_update_user(user)
                     except errors.HttpError as retry_e:
-                        exceptions.append(f"{user} {retry_e}")
+                        exceptions.append(_user_error(user=user, exception=retry_e))
                 else:
-                    exceptions.append(f"{user} {e}")
+                    exceptions.append(_user_error(user=user, exception=e))
 
             if i < len(batches) - 1:
                 time.sleep(1)
