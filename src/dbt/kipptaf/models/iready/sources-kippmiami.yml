@@ -15,6 +15,7 @@ sources:
                 - stg_iready__diagnostic_results
       - name: stg_iready__instructional_usage_data
         config:
+          enabled: false
           meta:
             dagster:
               group: iready

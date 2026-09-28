@@ -662,7 +662,7 @@ exposures:
     label: NJDOE Universal Screener Data
     type: analysis
     owner:
-      name: Data Team - grangel
+      name: Data Team - awalters
     url: https://docs.google.com/spreadsheets/d/1EdsbhchfyGoRcabyofeHVohKLIKezAXXn5BXSYwL_wo
     depends_on:
       - ref("rpt_gsheets__njdoe_universal_screener_data")
