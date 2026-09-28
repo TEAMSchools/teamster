@@ -18,8 +18,4 @@ where
     i._dbt_source_project in ('kippnewark', 'kippcamden', 'kipppaterson')
     and i.is_active
     and dd.is_current_academic_year
-    and (
-        i.referral_tier is null
-        or i.referral_tier not in ('Social Work', 'Non-Behavioral')
-    )
-    and (i.category is null or i.category not like 'Documentation%')
+    and (i.is_behavioral_referral or i.category is null)
