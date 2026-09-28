@@ -17,33 +17,3 @@ select
         partition by localstudentidentifier, `subject` order by assessmentyear asc
     ) as test_index,
 from {{ ref("int_pearson__all_assessments") }}
-
-union all
-
-select
-    co.student_number,
-
-    concat(
-        cast(fl.academic_year as string), '-', cast(fl.academic_year + 1 as string)
-    ) as academic_year,
-    fl.academic_year as academic_year_int,
-    fl.administration_window as test_round,
-    'FAST' as test_type,
-    fl.discipline as `subject`,
-    fl.assessment_subject as test_name,
-    fl.scale_score,
-    fl.achievement_level as proficiency_level,
-
-    if(fl.is_proficient, 1, 0) as is_proficient,
-
-    concat(fl.achievement_level, ' (', fl.scale_score, ')') as score_display,
-
-    row_number() over (
-        partition by co.student_number, fl.assessment_subject
-        order by fl.academic_year asc, fl.administration_window asc
-    ) as test_index,
-from {{ ref("int_students__students") }} as co
-inner join
-    {{ ref("stg_fldoe__fast") }} as fl
-    on co.florida_education_identifier = fl.student_id
-    and co._dbt_source_project = 'kippmiami'
