@@ -482,9 +482,11 @@ Portal My Tasks board as of 2026-09-28: 27 tasks, all due 10/9/2026.
 - **Staging sheet ready for bulk upload**: the "CSGF Data" columns were
   reordered to match the Portal's Excel templates this cycle, so each grid is a
   copy-paste into the exported template, not cell-by-cell entry.
-- **#5432 / PR #5435** (early graduates in the 4-year graduation rate): open.
-  Walters decides whether it lands this cycle; HS Grad Data was accepted without
-  it.
+- **#5432 / PR #5435** (early graduates in the 4-year graduation rate): closed
+  without merging 2026-09-28, Walters' call for this cycle. HS Grad Data was
+  accepted under the old rate. Fix preserved in
+  [`references/known-data-risks.md`](references/known-data-risks.md) if he
+  reconsiders.
 
 ### Dates, SY2026-27 cycle
 

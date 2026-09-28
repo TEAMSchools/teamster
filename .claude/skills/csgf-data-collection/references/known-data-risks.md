@@ -73,6 +73,51 @@ definition before assuming it maps to an existing model column -- two columns
 that sound similar (here, "graduates" vs. "4-year cohort grads") can be
 genuinely different metrics.**
 
+**Counting early graduates (not adopted; PR #5435).** `grad_roster`'s
+`is_4yr_grad` only counts a graduate whose `academic_year + 1` exactly equals
+their `cohort`. A student who graduates ahead of their cohort year fails that
+equality and never reaches the numerator -- but still counts in
+`adjusted_cohort` through `is_entry_cohort`, which only asks whether they
+entered grade 9 at the school. Net effect: an early graduate depresses the
+reported rate, and early graduation is growing (2 in AY2022, 6 in AY2023, 3 in
+AY2024, 14 in AY2025, counting `exitcode = 'G1'` rows at a high school outside
+Miami).
+
+[Issue #5432](https://github.com/TEAMSchools/teamster/issues/5432) proposed
+relaxing the predicate to `academic_year + 1 <= co.cohort`, so an early graduate
+counts in the cohort they entered with -- matching how New Jersey's own adjusted
+cohort rate treats early graduates. A late graduate still would not count, since
+this stays a 4-year rate. For the class of 2026 (the cohort the model reports
+today), the change would move the network total from 374 graduates to 377; two
+of the three high schools move, one does not.
+
+[PR #5435](https://github.com/TEAMSchools/teamster/pull/5435) implemented this
+in
+`src/dbt/kipptaf/models/extracts/google/sheets/rpt_gsheets__csgf_hs_grad_data.sql`,
+its properties YAML, and `docs/models/csgf-data-model.md`. **Not adopted as of
+2026-09-28** -- the PR rests on an unconfirmed assumption (whether CSGF's own
+4-year-graduate definition matches New Jersey's adjusted-cohort treatment of
+early graduates) and was closed without merging; Walters, the collection owner,
+decided not to take it for this cycle. HS Grad Data was already submitted and
+accepted under the old equality.
+
+To apply later: confirm CSGF's definition (ask CSGF directly, or check
+`field-definitions.md` if it's since been documented there), then reintroduce
+the change. The core diff, from the `grad_roster` CTE:
+
+```diff
+             case
+-                when co.academic_year + 1 = co.cohort and co.exitcode = 'G1'
++                when co.academic_year + 1 <= co.cohort and co.exitcode = 'G1'
+                 then 1
+                 else 0
+             end as is_4yr_grad,
+```
+
+`is_cohort_grad_year`, computed one line above with the same old equality, is
+deliberately untouched by the PR -- it feeds nothing downstream today, but
+whoever revisits this may want it aligned too, or dropped.
+
 **`rpt_gsheets__csgf_enrollment` under-reported Miami before PR #5059** (the fix
 is described below). The model was driven by `stg_powerschool__schools`, a
 frozen PowerSchool-era Miami school catalog that was never updated after Miami's
