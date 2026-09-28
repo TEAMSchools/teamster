@@ -64,15 +64,15 @@ repeat the doc.
 
 ## Route by task
 
-| task                                                                    | read                                                                               |
-| ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| A count or a student's status looks wrong (school team or engineer)     | [references/troubleshooting.md](references/troubleshooting.md)                     |
-| Reconcile the goals sheet against SRE's workbook, paste back, gap rows  | [references/goals-sheet.md](references/goals-sheet.md), then the next row          |
-| Read SRE's workbook: tab maps, sourced vs derived, rounding, Sheets API | [references/sre-workbook.md](references/sre-workbook.md)                           |
-| Map a new Finalsite status in `status_crosswalk`; add a test record id  | [references/sheet-upkeep.md](references/sheet-upkeep.md)                           |
-| SRE's cycle rolled over: bump `finalsite_recruitment_year`              | [references/recruitment-year-rollover.md](references/recruitment-year-rollover.md) |
-| QC worklist flags, first-day-of-school dates, `is_enrolled_fdos`        | [references/qc-worklist.md](references/qc-worklist.md)                             |
-| What a model, column or goal means                                      | the doc section for it                                                             |
+| task                                                                    | read                                                                                                                  |
+| ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| A count or a student's status looks wrong (school team or engineer)     | [references/troubleshooting.md](references/troubleshooting.md)                                                        |
+| Reconcile the goals sheet against SRE's workbook, paste back, gap rows  | [references/sre-workbook.md](references/sre-workbook.md), then [references/goals-sheet.md](references/goals-sheet.md) |
+| Read SRE's workbook: tab maps, sourced vs derived, rounding, Sheets API | [references/sre-workbook.md](references/sre-workbook.md)                                                              |
+| Map a new Finalsite status in `status_crosswalk`; add a test record id  | [references/sheet-upkeep.md](references/sheet-upkeep.md)                                                              |
+| SRE's cycle rolled over: bump `finalsite_recruitment_year`              | [references/recruitment-year-rollover.md](references/recruitment-year-rollover.md)                                    |
+| QC worklist flags, first-day-of-school dates, `is_enrolled_fdos`        | [references/qc-worklist.md](references/qc-worklist.md)                                                                |
+| What a model, column or goal means                                      | the doc section for it                                                                                                |
 
 ## Why did this number change
 
