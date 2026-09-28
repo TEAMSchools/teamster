@@ -34,11 +34,12 @@ inner join
     and cw.week_start_monday between rt.start_date and rt.end_date
     and rt.type = 'FAST'
 inner join
-    {{ ref("int_fldoe__all_assessments") }} as fl
-    on cw.state_studentnumber = fl.student_id
+    {{ ref("int_assessments__state_scores") }} as fl
+    on cw.state_studentnumber = fl.state_student_id
     and cw.academic_year = fl.academic_year
-    and rt.name = fl.administration_window
+    and rt.name = fl.administration_period
     and cw.discipline = fl.discipline
+    and fl.score_source = 'state_fl'
 where cw.region = 'Miami' and cw.grade_level >= 3
 
 union all
@@ -56,8 +57,9 @@ select
     p.is_proficient_int,
 from subject_weeks as cw
 inner join
-    {{ ref("int_pearson__all_assessments") }} as p
-    on cw.state_studentnumber = p.statestudentidentifier
+    {{ ref("int_assessments__state_scores") }} as p
+    on cw.state_studentnumber = p.state_student_id
     and cw.academic_year = p.academic_year
     and cw.discipline = p.discipline
+    and p.score_source = 'state_nj'
 where cw.region != 'Miami'
