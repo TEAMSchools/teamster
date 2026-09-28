@@ -500,7 +500,7 @@ retention). Run this the morning of 2 October, after the nightly build, so exits
 entered on 1 October are in. It is due the same afternoon, so start early.
 
 1. Confirm `int_extracts__student_enrollments` rebuilt after 1 October
-   (`last_modified_time` in `kipptaf_students.__TABLES__`, or its latest Dagster
+   (`last_modified_time` in `kipptaf_extracts.__TABLES__`, or its latest Dagster
    materialization). If not, wait for the build or ask the data team to
    materialize it; don't pull from a pre-count-day build.
 2. Check the model before copying it:
