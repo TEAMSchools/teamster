@@ -1,5 +1,16 @@
 models:
   - name: int_topline__deanslist_incentives_weekly
+    description: >-
+      One row per student per enrolled week, flagging whether the student earned
+      a Progress to Quarterly Incentive award in DeansList that week. Awards are
+      bucketed into Sunday-start weeks and labeled by the Monday, so a
+      Sunday-dated award counts toward the following week, matching the
+      Friday-to-Thursday DeansList week it was logged in.
+    columns:
+      - name: is_receiving_incentive
+        description: >-
+          1 when the student has at least one Progress to Quarterly Incentive
+          award in the week, otherwise 0.
     config:
       materialized: table
       meta:
