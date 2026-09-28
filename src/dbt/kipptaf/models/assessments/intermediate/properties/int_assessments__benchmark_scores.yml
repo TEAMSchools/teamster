@@ -1,0 +1,143 @@
+models:
+  - name: int_assessments__benchmark_scores
+    description: >-
+      Every iReady diagnostic, STAR, and DIBELS benchmark score, one row per
+      source record. iReady rows come from int_iready__diagnostic_results, STAR
+      rows from stg_renlearn__star before any same-day retest dedupe, and DIBELS
+      rows from int_amplify__all_assessments limited to benchmark
+      administrations, with the composite as the overall row and each
+      sub-measure as a group row. Columns are renamed to one shared vocabulary,
+      and columns only one source reports are null on the others. Rows are not
+      otherwise filtered, so consumers apply their own completeness, retest and
+      year filters. The vendor subject crosswalk is joined once here, so
+      consumers read illuminate_subject_area instead of repeating the join.
+    config:
+      materialized: table
+      meta:
+        contains_pii: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - score_source
+              - _dbt_source_project
+              - student_number
+              - academic_year
+              - administration_period
+              - raw_subject
+              - test_date
+              - response_type_code
+              - rn_subj_day
+              - assessment_id
+    columns:
+      - name: score_source
+        data_type: string
+        description: >-
+          Benchmark family the score belongs to. One of iready, star, or dibels.
+      - name: source_system
+        data_type: string
+        description: >-
+          Vendor key used to match the vendor subject crosswalk. iready for
+          iReady, renlearn for STAR, and amplify for DIBELS.
+      - name: _dbt_source_project
+        data_type: string
+        description: >-
+          Region identifier (kippnewark, kippcamden, kipppaterson, kippmiami) of
+          the score. Can be null for iReady rows the location crosswalk does not
+          resolve.
+      - name: student_number
+        data_type: int64
+        description: >-
+          Student number. From student_id for iReady, student_display_id for
+          STAR, and student_number for DIBELS.
+      - name: academic_year
+        data_type: int64
+        description: Academic year of the administration, unshifted.
+      - name: administration_period
+        data_type: string
+        description: >-
+          Administration window. The iReady test round, the STAR screening
+          window name, or the DIBELS benchmark period.
+      - name: test_date
+        data_type: date
+        description: >-
+          Date the assessment was completed. The iReady completion date, the
+          STAR completed date, or the DIBELS client date.
+      - name: raw_subject
+        data_type: string
+        description: >-
+          Subject as the vendor reports it, the key matched against the vendor
+          subject crosswalk. The iReady subject, the STAR partition subject, or
+          DIBELS for every DIBELS row.
+      - name: module_code
+        data_type: string
+        description: >-
+          Assessment module identifier. The iReady subject, the STAR subject, or
+          Composite for every DIBELS row, including sub-measure rows.
+      - name: discipline
+        data_type: string
+        description: iReady discipline (ELA or Math). Null for STAR and DIBELS.
+      - name: scale_score
+        data_type: numeric
+        description: >-
+          Scale score. The iReady overall scale score, the STAR unified score,
+          or the DIBELS measure score.
+      - name: national_percentile
+        data_type: numeric
+        description: National percentile rank reported by the vendor.
+      - name: proficiency_level
+        data_type: string
+        description: >-
+          Vendor performance label. The iReady overall relative placement, the
+          STAR state benchmark category name, or the DIBELS measure level.
+      - name: proficiency_level_int
+        data_type: int64
+        description: >-
+          Numeric form of proficiency_level. The iReady relative placement
+          ordinal or the DIBELS measure level ordinal. Null for STAR.
+      - name: is_mastery
+        data_type: boolean
+        description: >-
+          Whether the score meets the benchmark as the assessment fact defines
+          it. iReady relative placement of 4 or higher, STAR state benchmark
+          proficient, or DIBELS measure level of 3 or higher.
+      - name: is_proficient
+        data_type: boolean
+        description: >-
+          Whether the score is proficient as the assessment roster defines it.
+          The iReady is_proficient flag or a DIBELS aggregated level of
+          At/Above. Null for STAR. Agrees with is_mastery on iReady and DIBELS
+          composite rows today, but the two are defined separately.
+      - name: response_type
+        data_type: string
+        description: >-
+          overall for a whole-assessment score, group for a DIBELS sub-measure.
+      - name: response_type_code
+        data_type: string
+        description: >-
+          DIBELS sub-measure code on group rows. Null on overall rows.
+      - name: response_type_description
+        data_type: string
+        description: >-
+          DIBELS sub-measure name on group rows. Null on overall rows.
+      - name: rn_subj_day
+        data_type: int64
+        description: >-
+          iReady rank of the sitting among a student's same-subject sittings on
+          the same day; 1 is the kept sitting. Null for STAR and DIBELS.
+      - name: rn_subj_round
+        data_type: int64
+        description: >-
+          iReady rank of the sitting among a student's same-subject sittings in
+          the same test round; 1 is the kept sitting. Null for STAR and DIBELS.
+      - name: assessment_id
+        data_type: string
+        description: >-
+          STAR assessment id, which separates same-day retests. Null for iReady
+          and DIBELS.
+      - name: illuminate_subject_area
+        data_type: string
+        description: >-
+          Subject area aligned to Illuminate subject values, from the vendor
+          subject crosswalk on source_system and raw_subject, falling back to
+          raw_subject when the crosswalk has no row.
