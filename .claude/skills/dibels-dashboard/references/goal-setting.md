@@ -94,6 +94,12 @@ svc = build("sheets", "v4", credentials=creds)
 svc.spreadsheets().get(spreadsheetId="<id>").execute()  # 403 -> not shared yet
 ```
 
+Miami's foundation goals come from a different workbook than NJ's: the "DIBELS"
+tab of "KIPP Miami Goals, <year>" (AY2026:
+<https://docs.google.com/spreadsheets/d/1nIPke3BamvJNtouuZ8_hMlWfV03RqqbGq7vDzOziqao/edit#gid=1486185380>).
+The generator reads it unchanged: region, grade, then MOY and EOY At/Above and
+Well Below.
+
 On a 403: tell the user to share the sheet with
 `codespaces@teamster-332318.iam.gserviceaccount.com`, then retry. This is a
 **different identity** from the Drive and BigQuery MCPs (both run as the user)
@@ -108,7 +114,8 @@ Match the `gid` to a tab title via `spreadsheets().get()`'s
 res = svc.spreadsheets().values().get(spreadsheetId="<id>", range="<Tab Name>!A1:N40").execute()
 with open("ay<year>.tsv", "w") as f:
     for row in res.get("values", []):
-        f.write("\t".join(row) + "\n")
+        # header cells can hold line breaks (Miami's do); keep one row per line
+        f.write("\t".join(c.replace("\n", " ").strip() for c in row) + "\n")
 ```
 
 One TSV per academic year. The generator auto-detects whether the tab has an IEP
@@ -148,13 +155,6 @@ workbook:
 | Foundation Goals | <https://docs.google.com/spreadsheets/d/15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs/edit#gid=1026206559> |
 | BM Goals         | <https://docs.google.com/spreadsheets/d/15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs/edit#gid=2131973914> |
 | PM Goals         | <https://docs.google.com/spreadsheets/d/15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs/edit#gid=722132792>  |
-
-Miami's foundation goals come from a different workbook than NJ's: the "DIBELS"
-tab of "KIPP Miami Goals, <year>" (AY2026:
-<https://docs.google.com/spreadsheets/d/1nIPke3BamvJNtouuZ8_hMlWfV03RqqbGq7vDzOziqao/edit#gid=1486185380>).
-Its header cells contain line breaks; replace them with spaces when writing the
-TSV or the header splits across lines. The generator reads it unchanged: region,
-grade, then MOY and EOY At/Above and Well Below.
 
 ### Step 5 -- rebuild and verify in dev
 
@@ -261,9 +261,8 @@ only, so "the whole year" and "everything the model returns" are the same set.
 Miami joined this lineage in AY2026. Before that its BM goals rows were entered
 by hand, with no foundation goals behind them. From AY2026 academics send
 Miami's foundation goals in their own workbook (see Step 4), and Miami goes
-through the same two pastes as NJ: first paste 2026-09-28, 30 foundation rows
-and 16 BM goals rows. For an earlier year, a missing Miami row is not one this
-procedure can produce.
+through the same two pastes as NJ, first on 2026-09-28. For an earlier year, a
+missing Miami row is not one this procedure can produce.
 
 **Verify by year, not by row count.** A populated prior year makes the totals
 look healthy:
@@ -556,7 +555,9 @@ time.
 
 1. **Name the season and year.** BOY finishing opens `BOY->MOY`; MOY finishing
    opens `MOY->EOY`. Pasting both at once sets MOY->EOY goals off BOY scores.
-   The year is `current_academic_year`; state it, do not assume it.
+   The year is `current_academic_year`; state it, do not assume it. The queries
+   below are written for a BOY run in AY2026; for a MOY run, swap in `LIT2`,
+   `MOY` and `MOY->EOY` in every one of them, and the current year.
 2. **Check which regions' windows have closed.** `LIT1` is BOY, `LIT2` MOY. A
    region is ready the day after its `end_date`.
 
@@ -580,7 +581,10 @@ time.
    ```
 
 4. **Check which regions the sheet already holds for that season.** A region
-   already there is frozen: never regenerate it.
+   already there is frozen: never regenerate it. The query below reads the prod
+   staging table, which lags a paste until the Sheets asset rebuilds. If anyone
+   pasted goals today, read the PM Goals tab itself through the Sheets API (as
+   in Step 1 of the foundation procedure) instead.
 
    ```sql
    select region, count(*) as goal_rows,
@@ -619,11 +623,11 @@ time.
        and region in ('<ready regions>')
    ```
 
-   Paste target: named range `src_google_sheets__dibels__pm_goals` on the same
-   workbook as the BM Goals tab (spreadsheet
-   `15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs`), read by
-   `stg_google_sheets__dibels_pm_goals`. Rows append; nothing already there is
-   edited.
+   Paste target: the PM Goals tab link in the Step 4 table above (named range
+   `src_google_sheets__dibels__pm_goals`, read by
+   `stg_google_sheets__dibels_pm_goals`), plus the start row: the tab's last
+   filled row + 1, read through the Sheets API. Rows append; nothing already
+   there is edited.
 
 8. **After the paste, rebuild and check it.** Rebuild
    `stg_google_sheets__dibels_pm_goals` in dev (the prod table is frozen at its

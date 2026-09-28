@@ -322,7 +322,10 @@ The Tableau workbook is the `literacy_dashboard` exposure in
   `rn_core_subject_year = 1`, section number not like `%SC%`), for both
   PowerSchool and Focus (Miami). `course_name` is the course-subject crosswalk
   sheet's standard label, and the Florida course codes live on that sheet, not
-  in SQL.
+  in SQL. Miami's schedule comes from Focus from AY2026 and from the frozen
+  PowerSchool archive before that. Do not swap the crosswalk join for a
+  course-title search: ACCESS course titles shorten Language Arts to `LA`, so
+  `LIKE '%LANG%'` misses them.
 - Worth knowing:
   - Filter every PM view on `model_type`. Both PM methods emit a row for the
     same student.
@@ -768,6 +771,14 @@ today's label.
 Each query returns aggregates only. Datasets are in the `teamster-332318`
 project. Some results break down to a school or grade with only a few students;
 do not paste raw output anywhere public.
+
+### The `%SC%` section exclusion over-matches on Miami's PowerSchool archive
+
+The ELA join drops sections whose number contains `SC`, a rule inherited from NJ
+self-contained sections. A Miami section in the frozen PowerSchool archive whose
+name contains those letters for another reason (a homeroom named after a college
+such as USC) reads unscheduled too, which is why Miami AY2024 shows a lower
+`scheduled` rate than other years.
 
 ### Cancelled PM rounds still count in the internal method
 

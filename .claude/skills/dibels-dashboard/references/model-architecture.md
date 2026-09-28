@@ -16,6 +16,7 @@ grain hazards that have bitten.
 - A dedup step belongs to exactly one grain
 - Miami needs focus_student_number on the aimline PM model too -- FIXED
 - Slice on `expected_*`, never on a scores-side column
+- The ELA schedule join: crosswalk, not title search; Miami's two sources
 - A code's standards are sat together, and a warn test guards the rollup
 - Filtering PM rows: `assessment_type` and `model_type` say the same thing
 - The OR criteria is spelled NULL, and it is live on history
@@ -428,6 +429,19 @@ those two values; and the score-side filter
 what isolated it -- the internal gate and internal eligibility joined to the
 AIMLINE source reproduces the aimline numbers exactly (4,476 students, 35,546
 slots), which proves the gate is innocent.
+
+## The ELA schedule join: crosswalk, not title search; Miami's two sources
+
+All three dashboard branches take the teacher and section from
+`int_students__course_enrollments`, filtered to `core_subject = 'ELA'` and
+`rn_core_subject_year = 1`. `core_subject` comes from the course-subject
+crosswalk sheet, which also holds the Florida course codes. Do not replace it
+with a course-title search: ACCESS course titles shorten Language Arts to `LA`,
+so `LIKE '%LANG%'` misses them. Miami's schedule comes from Focus (Focus staff
+id) from AY2026 and from the frozen PowerSchool archive before that, so
+`teacherid` is not unique across regions. The `%SC%` section exclusion
+over-matches on that archive (a homeroom named after USC reads unscheduled),
+which is why Miami AY2024 has a lower `scheduled` rate.
 
 ## Slice on `expected_*`, never on a scores-side column
 
