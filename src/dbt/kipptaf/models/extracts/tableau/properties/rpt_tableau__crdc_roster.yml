@@ -1,92 +1,249 @@
 models:
   - name: rpt_tableau__crdc_roster
     description: >-
-      One row per student per CRDC question section. The enrollment branch
-      covers CRDC questions `ENRL-1`, `2a`, `2b`, `3`, and `4`, and `RETN`.
+      Student roster for the Civil Rights Data Collection (CRDC) submission,
+      feeding the CRDC Tableau dashboard. Reports the previous school year
+      (current academic year minus one) for Newark, Camden, and Paterson. Miami
+      is excluded because it files its own CRDC. Each branch of the union tags
+      rows with the CRDC question section they count toward. Enrollment-only
+      sections (`ENRL`, `EXAM-1`, and the manually tagged `DSED-2`, `ATHL-3`,
+      and `ARRS-1` through `ARRS-6`) give one row per student per section.
+      Course sections (`PENR-4`, `PENR-6`, `COUR`, `COUR-7`, `COUR-14`,
+      `COUR-18`, `COUR-20`, `APIB-4`) give one row per student per qualifying
+      course, so a student in two qualifying courses appears twice. The fall
+      snapshot date is computed at the top of the model as 1 October of the
+      submission year, moved to the following Monday when it falls on a weekend.
     columns:
       - name: _dbt_source_relation
         data_type: string
+        description: >-
+          Source relation of the enrollment row, identifying the district
+          project it came from.
       - name: academic_year
         data_type: int64
+        description: >-
+          Starting year of the school year being reported, which is the current
+          academic year minus one.
       - name: region
         data_type: string
+        description:
+          Region of the student's school (Newark, Camden, or Paterson).
       - name: schoolid
         data_type: int64
+        description: PowerSchool school ID of the student's enrollment.
       - name: school
         data_type: string
+        description: Name of the student's school.
       - name: studentid
         data_type: int64
+        description: PowerSchool internal student ID (database key).
       - name: student_number
         data_type: int64
+        description: School-facing student number.
+        config:
+          meta:
+            contains_pii: true
       - name: salesforce_id
         data_type: string
+        description: >-
+          KIPP Forward Salesforce contact ID, used to match ACT and SAT attempts
+          for `EXAM-1`.
+        config:
+          meta:
+            contains_pii: true
       - name: grade_level
         data_type: int64
+        description: Student's grade level in the reported school year.
+        config:
+          meta:
+            contains_pii: true
       - name: gender
         data_type: string
+        description: Gender code as recorded in the student information system.
+        config:
+          meta:
+            contains_pii: true
       - name: ethnicity
         data_type: string
+        description: >-
+          Single-letter race and ethnicity code as recorded in the student
+          information system.
+        config:
+          meta:
+            contains_pii: true
       - name: gifted_and_talented
         data_type: string
+        description: Student's gifted and talented status.
+        config:
+          meta:
+            contains_pii: true
       - name: iep_status
         data_type: string
+        description: Student's IEP status, for example `Has IEP` or `No IEP`.
+        config:
+          meta:
+            contains_pii: true
       - name: is_504
         data_type: boolean
+        description: True when the student has a Section 504 plan.
+        config:
+          meta:
+            contains_pii: true
       - name: iep_only
         data_type: boolean
+        description: True when the student has an IEP and no 504 plan.
+        config:
+          meta:
+            contains_pii: true
       - name: iep_and_c504
         data_type: boolean
+        description: True when the student has both an IEP and a 504 plan.
+        config:
+          meta:
+            contains_pii: true
       - name: c504_only
         data_type: boolean
+        description: >-
+          True when the student's IEP status is `No IEP` and the student has a
+          504 plan.
+        config:
+          meta:
+            contains_pii: true
       - name: lep_status
         data_type: boolean
+        description: True when the student is an English learner.
+        config:
+          meta:
+            contains_pii: true
       - name: lep_parent_refusal
         data_type: boolean
+        description: >-
+          True when the student is flagged as an English learner and a parent
+          refusal date for language instruction services is on file.
+        config:
+          meta:
+            contains_pii: true
       - name: enroll_status
         data_type: int64
+        description: PowerSchool enrollment status code for the student.
+        config:
+          meta:
+            contains_pii: true
       - name: is_enrolled_oct01
         data_type: boolean
+        description: >-
+          True when the student was enrolled on 1 October of the reported school
+          year, as computed upstream. The `ENRL`, `PENR-4`, science (`COUR-14`,
+          `COUR-18`, `COUR-20`), and `APIB-4` rows require it.
+        config:
+          meta:
+            contains_pii: true
       - name: is_enrolled_recent
         data_type: boolean
+        description: >-
+          True for the student's most recent enrollment, as computed upstream.
+        config:
+          meta:
+            contains_pii: true
       - name: is_retained_year
         data_type: boolean
+        description: >-
+          True when the student was retained in grade. Read from the current
+          academic year, not the reported year, because retention is recorded
+          the year after it happens. False when no retention is found.
+        config:
+          meta:
+            contains_pii: true
       - name: crdc_demographic
         data_type: string
+        description: >-
+          Race and ethnicity category in CRDC wording, mapped from `ethnicity`.
+          Null for codes outside the mapping.
+        config:
+          meta:
+            contains_pii: true
       - name: crdc_gender
         data_type: string
+        description: >-
+          Gender in CRDC wording, mapped from `gender` — `F` to `Female`, `M` to
+          `Male`, and `X` to `Nonbinary`. The 2025-26 CRDC removes the nonbinary
+          category, so `Nonbinary` rows need a decision before that submission.
+        config:
+          meta:
+            contains_pii: true
       - name: courses_course_name
         data_type: string
+        description: >-
+          PowerSchool course name for course-based sections. Null on
+          enrollment-only rows.
       - name: sections_dcid
         data_type: int64
+        description: >-
+          PowerSchool section DCID for course-based sections. Null on
+          enrollment-only rows and credit recovery rows.
       - name: sced_course_name
         data_type: string
+        description: >-
+          Course name from the SCED code crosswalk sheet. Null when the course
+          has no crosswalk match.
       - name: crdc_course_group
         data_type: string
+        description: CRDC course group from the SCED code crosswalk sheet.
       - name: crdc_subject_group
         data_type: string
+        description: >-
+          CRDC subject group from the SCED code crosswalk sheet. Decides the
+          math (`COUR-7`) and science and computing (`COUR-14`, `COUR-18`,
+          `COUR-20`) sections.
       - name: crdc_ap_group
         data_type: string
+        description: >-
+          CRDC AP subject group from the SCED code crosswalk sheet. `APIB-4`
+          rows require it, which drops AP courses CRDC does not count.
       - name: sced_code_xwalk
         data_type: string
+        description: SCED code from the crosswalk sheet that matched the course.
       - name: is_oct_01_course
         data_type: boolean
         description: >-
-          True when the course enrollment covers the October 1 fall snapshot
-          date used for CRDC fall-term reporting.
+          True when the student's course enrollment spans the fall snapshot date
+          computed at the top of the model. Null on credit recovery and
+          enrollment-only rows.
+        config:
+          meta:
+            contains_pii: true
       - name: is_last_day_course
         data_type: boolean
         description: >-
-          True when the course enrollment was still active on the last day of
-          the term.
+          True when the student's course enrollment lasted through the last day
+          of the term. Null on credit recovery and enrollment-only rows.
+        config:
+          meta:
+            contains_pii: true
       - name: passed_course
         data_type: boolean
+        description: >-
+          True unless the student's year-end (`Y1`) stored grade starts with
+          `F`. Also true when no stored grade exists. Null on enrollment-only
+          rows.
+        config:
+          meta:
+            contains_pii: true
       - name: crdc_question_section
         data_type: string
         description: >-
-          CRDC question code this row reports against (for example `ENRL`,
-          `PENR-4`, `PENR-6`, `COUR`, `COUR-7`, `APIB-4`, `EXAM-1`, `DSED-2`,
-          `ATHL-3`, or an `ARRS` arrest code). For students tagged through the
-          manual-entry CRDC student crosswalk Google Sheet feed, this carries
-          the question section from that crosswalk.
+          CRDC question section this row counts toward. `ENRL`, `EXAM-1`, and
+          the course sections are assigned by the model. `DSED-2`, `ATHL-3`, and
+          `ARRS-1` through `ARRS-6` come from the manually maintained CRDC
+          student numbers Google Sheet.
+        config:
+          meta:
+            contains_pii: true
       - name: crdc_question_description
         data_type: string
+        description: >-
+          Plain-language label for `crdc_question_section`, for example `Student
+          Enrollment`, `Dual Enrollment`, or `Arrests`.
+        config:
+          meta:
+            contains_pii: true

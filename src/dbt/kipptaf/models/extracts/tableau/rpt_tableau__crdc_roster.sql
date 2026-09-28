@@ -45,8 +45,6 @@ with
             -- need this to join to act/sat scores
             e.salesforce_id,
 
-            me.crdc_question_section,
-
             coalesce(r.is_retained_year, false) as is_retained_year,
 
             case
@@ -77,10 +75,6 @@ with
                 then 'Two or more races'
             end as crdc_demographic,
 
-            -- bring over the manual entry student numbers that match the crdc
-            -- question tag
-            if(me.student_number is null, false, true) as crdc_question_section_status,
-
             if(e.iep_status = 'Has IEP' and not is_504, true, false) as iep_only,
 
             if(e.iep_status = 'Has IEP' and is_504, true, false) as iep_and_c504,
@@ -93,15 +87,21 @@ with
 
         from {{ ref("int_extracts__student_enrollments") }} as e
         left join retained as r on e.student_number = r.student_number
-        left join
-            {{ ref("stg_google_sheets__crdc__student_numbers") }} as me
-            on e.student_number = me.student_number
         where
             /* submission is always for the previous school year */
             e.academic_year = {{ var("current_academic_year") - 1 }}
             and e.rn_year = 1
             /* miami does their own submission */
             and e.region != 'Miami'
+    ),
+
+    manual_tags as (
+        /* one row per student per section tagged on the manual-entry sheet */
+        select e.*, me.crdc_question_section,
+        from enrollment as e
+        inner join
+            {{ ref("stg_google_sheets__crdc__student_numbers") }} as me
+            on e.student_number = me.student_number
     ),
 
     custom_schedule as (
@@ -204,10 +204,10 @@ with
             course_name,
             null as sections_dcid,
             sectionid,
-            null as ections_external_expression,
+            null as sections_external_expression,
 
             null as is_dropped_course,
-            null as s_dropped_section,
+            null as is_dropped_section,
 
             null as ap_course_subject,
             null as is_ap_course,
@@ -218,7 +218,7 @@ with
 
             null as terms_lastday,
 
-            null as ced_course_name,
+            null as sced_course_name,
             null as crdc_course_group,
             null as crdc_subject_group,
             null as crdc_ap_group,
@@ -334,7 +334,7 @@ with
         where
             score_type in ('act_composite', 'sat_total_score')
             and academic_year = {{ var("current_academic_year") - 1 }}
-        group by all
+        group by contact
     )
 
 select
@@ -391,7 +391,7 @@ select
         else 'Arrests'
     end as crdc_question_description,
 
-from enrollment
+from manual_tags
 where
     crdc_question_section
     in ('DSED-2', 'ATHL-3', 'ARRS-1', 'ARRS-2', 'ARRS-3', 'ARRS-4', 'ARRS-5', 'ARRS-6')
