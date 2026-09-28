@@ -358,6 +358,16 @@ The Tableau workbook is the `literacy_dashboard` exposure in
   - Round numbers are not unique across regions: Miami runs a different number
     of rounds per season, so filter on `expected_round_label`, not the bare
     round number.
+  - On the Aimline dashboards the BAN tiles always count `aimline_category`,
+    while the bars and the Category Status Over Time line follow the Comparison
+    Item. The default is `Aimline and Benchmark`, which reads the same column as
+    the BANs. Under `Aimline` the bars read `measure_standard_goal_status`,
+    which has no Round Incomplete, so they show a higher below-aimline rate than
+    the BAN on the same page.
+  - The Category Status Over Time line shows every round of one season, chosen
+    by its own Trend Window control, not by the Admin Window filter.
+  - The workbook filters `enroll_status = 0`, so a completed year drops Miami;
+    see _Known issues_.
 
 #### BM branch
 
@@ -970,13 +980,57 @@ from `teamster-332318`.kipptaf_google_sheets.stg_google_sheets__dibels_foundatio
 group by academic_year, population
 ```
 
+### Miami's completed years drop out of the dashboard
+
+Focus closes each year's enrollment with a drop code, and the Focus enrollment
+roster maps any non-graduation drop code to `enroll_status` 2. The workbook
+filters `enroll_status = 0`, so Miami disappears from every completed year: on
+AY2025 Aimline, 853 of 868 Miami students read 2, though 541 of them are
+enrolled in AY2026. The current year is unaffected. The fix is upstream of this
+family and tracked in
+[#5598](https://github.com/TEAMSchools/teamster/issues/5598).
+
+```sql
+select region, enroll_status, count(distinct student_number) as students,
+from `teamster-332318`.kipptaf_tableau.rpt_tableau__dibels_dashboard
+where academic_year = 2025 and model_type = 'Aimline'
+group by region, enroll_status
+```
+
+### Camden's last AY2025 round has no grade 3-8 scores
+
+Camden's `MOY->EOY` R8 (27 April to 1 May 2026) is expected for grades 3-8, but
+no student in those grades has a score on any measure, while K-2 tested. It
+reads as a round that was not given and was not switched off with
+`assessment_include`, the same shape as _Cancelled PM rounds_ above. Confirm
+with academics before switching it off; until then the last point of the
+`MOY->EOY` trend line reads Not Tested for every Camden grade 3-8 student.
+
+```sql
+select
+    grade_level_int,
+    count(distinct student_number) as expected,
+    count(
+        distinct if(aimline_category != 'Not Tested', student_number, null)
+    ) as tested,
+from `teamster-332318`.kipptaf_tableau.rpt_tableau__dibels_dashboard
+where
+    academic_year = 2025
+    and model_type = 'Aimline'
+    and region = 'Camden'
+    and expected_test = 'MOY->EOY'
+    and expected_round_number = '8'
+group by grade_level_int
+```
+
 ### Outside the warehouse: the workbook
 
 Tracked in the skill's `references/aimline-method.md`. Every PM view in the
-Literacy Dashboard must filter `model_type`; the `PM - Met Goal Selector` calc
-should return the `*_status` strings, with its No Data alias moved from null to
-`Not Tested`; and the Trajectory item and its three columns are to be removed.
-The workbook's datasource is embedded, so these checks need Tableau Desktop.
+Literacy Dashboard must filter `model_type`, and the `PM - Met Goal Selector`
+calc should return the `*_status` strings, with its No Data alias moved from
+null to `Not Tested`. The Trajectory item left the workbook on 2026-09-28; its
+three columns are still in the extract. The workbook's datasource is embedded,
+so these checks need Tableau Desktop.
 
 ## Yearly upkeep
 
@@ -1004,7 +1058,8 @@ for editing the sheets safely.
 8. Confirm the BM pads (+5 at BOY, x1.5) with T&L, then paste the year's
    foundation goals, including real MLL values.
 9. After each region's BOY window: set PM goals for `BOY->MOY` and paste BM
-   goals for that region. Repeat after MOY for `MOY->EOY`.
+   goals for that region. Repeat after MOY for `MOY->EOY`, and republish the
+   workbook with the Aimline dashboards' Trend Window on `MOY->EOY`.
 10. Mid-year cancellations: switch rows off with `assessment_include` (whole
     round) or `pm_goal_include` (one measure), and keep `pm_goal_include`
     matching between Expected Assessments and the PM goals sheet.

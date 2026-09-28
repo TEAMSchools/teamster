@@ -358,7 +358,26 @@ granularity picks the row, comparison item the column:
 | Round             | `pm_round_status`               | `round_benchmark_status`             | `aimline_round_category`                     | `round_trajectory_status`             |
 
 "Own goal" is the method's own target -- cumulative growth on Internal, the
-aimline on Aimline. The right two lenses are Aimline-only.
+aimline on Aimline. The right two lenses are Aimline-only. The workbook dropped
+Trajectory from its Comparison Item list and from Category Status on 2026-09-28;
+the three trajectory columns are still in the extract.
+
+**The BAN tiles do not follow the Comparison Item.** On the two Aimline
+dashboards the BANs always count `aimline_category`. The bars and the Category
+Status Over Time line read Category Status, which follows the selector. Under
+`Aimline` at measure-standard grain that is `measure_standard_goal_status`,
+which has no Round Incomplete, so a student who has not finished the round lands
+in Below or Meeting and one page shows two below-aimline rates: AY2025 BOY->MOY
+R3, Decoding, grades 3-8, 57.1% on the BAN and 63.1% on the line, both correct
+for their own column. Since 2026-09-28 the published default is
+`Aimline and Benchmark`, which makes both read `aimline_category`. Do not move
+the default back without changing the BANs too.
+
+**The Category Status Over Time line has its own window.** It needs every round
+in a season, so it cannot use the Admin Window filter. A Trend Window control
+(`expected_test`, single value) sits in its header. When a region's `MOY->EOY`
+season opens, republish with Trend Window on `MOY->EOY` so the default follows
+the season.
 
 **Do not file the naming inconsistency as a bug.** The five new columns use
 `<grain>_<lens>_status`; the four older ones do not. Aligning all nine was
