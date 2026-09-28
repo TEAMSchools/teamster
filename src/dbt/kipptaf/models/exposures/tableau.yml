@@ -32,7 +32,7 @@ exposures:
     label: College Admission Readiness Assessments Tracker (CARAT)
     type: dashboard
     owner:
-      name: Data Team - grangel
+      name: Data Team - awalters
     depends_on:
       - ref("rpt_tableau__ap_assessment_dashboard")
       - ref("rpt_tableau__college_assessment_dashboard_benchmark_calcs")
@@ -120,7 +120,7 @@ exposures:
     label: High School Early Warning Dashboard
     type: dashboard
     owner:
-      name: Data Team - grangel
+      name: Data Team - awalters
     depends_on:
       - ref("rpt_tableau__community_service")
       - ref("rpt_tableau__graduation_requirements")
@@ -393,7 +393,7 @@ exposures:
     label: Gradebook Audit Dashboard
     type: dashboard
     owner:
-      name: Data Team - grangel
+      name: Data Team - awalters
     depends_on:
       - ref("rpt_tableau__gradebook_audit")
     config:
@@ -409,7 +409,7 @@ exposures:
     label: Gradebook Audit - Teacher Report
     type: dashboard
     owner:
-      name: Data Team - grangel
+      name: Data Team - awalters
     depends_on:
       - ref("rpt_tableau__gradebook_audit")
       - ref("rpt_tableau__gradebook_es_comments")
@@ -448,7 +448,7 @@ exposures:
     label: APM Dashboard
     type: dashboard
     owner:
-      name: Data Team - grangel
+      name: Data Team - awalters
     depends_on:
       - ref("rpt_tableau__iready_apm")
     config:
@@ -705,7 +705,7 @@ exposures:
     label: State Testing Analysis Tool
     type: dashboard
     owner:
-      name: Data Team - grangel
+      name: Data Team - awalters
     depends_on:
       - ref("rpt_tableau__state_assessments_dashboard")
       - ref("rpt_tableau__state_assessments_dashboard_comps")
