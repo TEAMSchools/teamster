@@ -521,6 +521,10 @@ as well.
 
 ## Run goal setting per region, and only for regions that have finished testing
 
+Do these steps in order, running each query, every time. Do not answer a step
+from memory or from an earlier session: a region's window date, whether its
+scores have landed, and what the sheet already holds all change between runs.
+
 **Regions never finish benchmark testing on the same day.** `starting_words`
 averages benchmark scores, so a region whose window is still open gets goals set
 on a partial cohort -- and since goals are never recalculated, there is no
@@ -529,38 +533,87 @@ second chance.
 **"Running goal setting" is a SELECT, not a dbt invocation.**
 `rpt_gsheets__dibels_pm_goal_setting` is a view Dagster already maintains in
 `kipptaf_extracts`, and it recomputes off whatever scores have landed at read
-time. What the person needs from you is a query they can run in BigQuery and
-copy out of, with the ready regions in the `WHERE`:
+time.
 
-```sql
-select *
-from `teamster-332318`.kipptaf_extracts.rpt_gsheets__dibels_pm_goal_setting
-where
-    academic_year = 2026                -- current year only; state it, do not assume
-    and admin_season = 'BOY->MOY'       -- the season the finished benchmark opens
-    and region in ('Newark', 'Camden')  -- only regions whose window has closed
-```
+1. **Name the season and year.** BOY finishing opens `BOY->MOY`; MOY finishing
+   opens `MOY->EOY`. Pasting both at once sets MOY->EOY goals off BOY scores.
+   The year is `current_academic_year`; state it, do not assume it.
+2. **Check which regions' windows have closed.** `LIT1` is BOY, `LIT2` MOY. A
+   region is ready the day after its `end_date`.
 
-Three filters, three safeguards. The season filter matters as much as the region
-one -- the freeze happens twice a year, and pasting both at once sets MOY->EOY
-goals off BOY scores. BOY finishing opens `BOY->MOY`; MOY finishing opens
-`MOY->EOY`.
+   ```sql
+   select region, start_date, end_date,
+   from `teamster-332318`.kipptaf_google_sheets.stg_google_sheets__reporting__terms
+   where academic_year = 2026 and code = 'LIT1' and name = 'BOY'
+   ```
 
-When someone asks for help setting goals, do not hand over that query first.
-Check the request date against `stg_google_sheets__reporting__terms` for that
-benchmark administration, put only the regions whose window has closed into the
-filter, and tell the person explicitly which regions are in it, which are not,
-and the date each remaining window ends.
+   Match on `name` as well as `code`: before grade bands, a PM round could share
+   the `LIT` code.
 
-Then tell them to come back the day AFTER each remaining administration closes,
-and suggest they set themselves a calendar reminder for that date. Do not
-promise to remember it.
+3. **Check the ready regions' scores have landed** -- a closed window with no
+   scores (an export gap) is not ready either.
 
-Paste target: named range `src_google_sheets__dibels__pm_goals` on the same
-workbook as the BM Goals tab (spreadsheet
-`15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs`), read by
-`stg_google_sheets__dibels_pm_goals`. Rows append; nothing already there is
-edited. Then run "Check the paste before anyone trusts it" below.
+   ```sql
+   select region, count(distinct student_number) as students, max(client_date) as last_score,
+   from `teamster-332318`.kipptaf_amplify.int_amplify__all_assessments
+   where academic_year = 2026 and period = 'BOY' and model_type = 'BM'
+   group by region
+   ```
+
+4. **Check which regions the sheet already holds for that season.** A region
+   already there is frozen: never regenerate it.
+
+   ```sql
+   select region, count(*) as goal_rows,
+   from `teamster-332318`.kipptaf_google_sheets.stg_google_sheets__dibels_pm_goals
+   where academic_year = 2026 and admin_season = 'BOY->MOY'
+   group by region
+   ```
+
+5. **Tell the person which regions are in, which are out, and why** (already in
+   the sheet, window still open with its end date, or no scores). For a window
+   still open, tell them to come back the day after it closes and suggest a
+   calendar reminder. Do not promise to remember it.
+6. **Check the output is unique before anyone copies it** (rationale below):
+
+   ```sql
+   select
+       count(*) as n_rows,
+       count(distinct format('%T', (academic_year, region, admin_season,
+           assessment_grade_int, measure_standard, round_number))) as n_keys,
+   from `teamster-332318`.kipptaf_extracts.rpt_gsheets__dibels_pm_goal_setting
+   where academic_year = 2026 and admin_season = 'BOY->MOY'
+       and region in ('<ready regions>')
+   ```
+
+   `n_rows` must equal `n_keys`. Also confirm every grade and the season's round
+   range appear.
+
+7. **Hand over the query** with only the ready regions in the filter:
+
+   ```sql
+   select *
+   from `teamster-332318`.kipptaf_extracts.rpt_gsheets__dibels_pm_goal_setting
+   where
+       academic_year = 2026
+       and admin_season = 'BOY->MOY'
+       and region in ('<ready regions>')
+   ```
+
+   Paste target: named range `src_google_sheets__dibels__pm_goals` on the same
+   workbook as the BM Goals tab (spreadsheet
+   `15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs`), read by
+   `stg_google_sheets__dibels_pm_goals`. Rows append; nothing already there is
+   edited.
+
+8. **After the paste, rebuild and check it.** Rebuild
+   `stg_google_sheets__dibels_pm_goals` in dev (the prod table is frozen at its
+   last build), then run the four checks in [diagnosing.md](diagnosing.md) ->
+   _Check the paste before anyone trusts it_.
+9. **Confirm the dashboard.** The Internal branch of
+   `rpt_tableau__dibels_dashboard` inner-joins the goals sheet, so a region with
+   no pasted goals has zero Internal rows even while its Aimline rows show.
+   After the next prod build, the region's Internal rows appear.
 
 **Check rows equal distinct rows on the query output before anyone copies it.**
 The calculation used to fan out: measured on prod before the fix,
