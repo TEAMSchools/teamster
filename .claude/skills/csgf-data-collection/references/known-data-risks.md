@@ -79,8 +79,8 @@ their `cohort`. A student who graduates ahead of their cohort year fails that
 equality and never reaches the numerator -- but still counts in
 `adjusted_cohort` through `is_entry_cohort`, which only asks whether they
 entered grade 9 at the school. Net effect: an early graduate depresses the
-reported rate, and early graduation is growing (2 in AY2022, 6 in AY2023, 3 in
-AY2024, 14 in AY2025, counting `exitcode = 'G1'` rows at a high school outside
+reported rate, and early graduation is growing: a handful a year through AY2024,
+then 14 in AY2025 (counting `exitcode = 'G1'` rows at a high school outside
 Miami).
 
 [Issue #5432](https://github.com/TEAMSchools/teamster/issues/5432) proposed
