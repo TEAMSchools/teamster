@@ -429,7 +429,9 @@ models:
         data_type: int64
       - name: state_test_proficiency
         data_type: string
-        description: First non-null of state_test_aggregated_proficiency.
+        description:
+          Prior-year state test proficiency, NJSLA for New Jersey or FAST PM3
+          for Miami. 'No Test' when the student has no prior-year score.
       - name: iready_proficiency_eoy
         data_type: string
         description: First non-null of iready_proficiency.
