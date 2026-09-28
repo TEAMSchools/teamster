@@ -28,10 +28,9 @@ computes" table; this file is the procedure.
    tab-separated file in the session scratchpad and hand the user the path and
    the tab name; never paste student numbers into chat, a commit, or an issue.
    Replace the whole tab each cycle; last cycle's tags are for a different year.
-4. Check the tab has no repeated student and section pair, and warn the user
-   about any student tagged to two sections: the model joins on student number
-   alone and duplicates that student in every branch (reference doc → Known
-   issues 1 and 2).
+4. Check the tab has no repeated student and section pair: a repeat counts that
+   student twice in the section (reference doc → Known issue 1). A student
+   tagged to two different sections is fine; they appear once per tag.
 
    ```sql
    select
