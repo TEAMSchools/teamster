@@ -522,3 +522,17 @@ is deleted on merge), linked to #5582.
 - [ ] **Step 2:** Push, open the PR with `Closes #5582`, and watch dbt Cloud CI
       plus Trunk to green. Fetch CI warnings and compare them to main before
       declaring done (`pr-ci-review`).
+
+## Revision 2026-09-28: drop the incentive model
+
+Per the spec's revision of the same date:
+
+- Task 4 is reverted: the package model and its yml are deleted from PR 1.
+- Task 6 and Task 7 drop `int_deanslist__behavior_incentive_by_term` from their
+  selections and checks; #5580 no longer adds it to `sources-kippmiami.yml`.
+- Task 8 becomes: switch `int_topline__deanslist_incentives_weekly` and
+  `rpt_tableau__okrts_behavior` to `stg_deanslist__behavior` bucketed by
+  calendar week and quarter (date-range quarter lookup for Sunday-dated awards),
+  then disable the kipptaf `int_deanslist__behavior_incentive_by_term` and its
+  tests. Verify AY2025 flags are populated and current-year flags match prod
+  except Friday-dated Progress awards.

@@ -227,3 +227,30 @@ Cloud CI validates it.
   wrapper (dev) and the prod kipptaf model; both must be empty.
 - PR 2: dbt Cloud CI plus the same `except distinct` check on the switched
   consumers where the value change is not expected (`cs_hours`, incentive).
+
+## Revision 2026-09-28: drop the incentive model
+
+Review of section 4's consumers changed the design. The package model is removed
+from PR 1, and PR 2 retires the kipptaf model instead of wrapping it.
+
+- The model has no history. `stg_deanslist__terms` holds sub-year terms for the
+  current academic year only: the `terms` asset re-pulls one current-year
+  snapshot. The inner join to terms drops every earlier award (AY2025: 259,472
+  Progress and 21,434 Quarterly awards, 0 model rows). Both consumers read
+  `academic_year >= current - 1`, so every prior-year flag is 0.
+- Consumers read only `Weeks (Progress to Quarterly Incentive)` and `Quarters`,
+  and use `behavior` only as a presence check.
+- Calendar weeks reproduce the term boundaries: 99.5% of Progress awards are
+  logged on Thursday, which falls in the same Monday-Sunday week as the Friday-
+  Thursday DeansList week. Only Friday awards (0.2%) move.
+- Quarterly awards are bulk-dated to the first day of the next DeansList
+  quarter, and the week spine's `quarter` gives the same label for those dates
+  in the NJ regions. Sunday-dated awards need a date-range quarter lookup, since
+  a break week can be missing from the spine.
+
+PR 2 replaces section 4: `int_topline__deanslist_incentives_weekly` and
+`rpt_tableau__okrts_behavior` read `stg_deanslist__behavior` directly, bucketed
+by calendar week and quarter, and the kipptaf
+`int_deanslist__behavior_incentive_by_term` is disabled. The `except distinct`
+incentive check in Testing no longer applies; PR 2 instead confirms AY2025 flags
+are populated and current-year flags match prod except Friday awards.
