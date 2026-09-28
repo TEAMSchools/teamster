@@ -723,7 +723,8 @@ gaps between raw Finalsite numbers and the dashboard.
   models each audience depends on and whether the direct read of
   `int_tableau__finalsite_student_scaffold` can move to a `rpt_` model.
 - **What is KIPP Purpose's new student target?** SRE's workbook states two
-  different values for it on different tabs. Pending SRE; tracked on #5436.
+  different values for it on different tabs. Asked of the stakeholder; tracked
+  on #5436.
 - **A stray seat-target value on SRE's Miami tab** inflates SRE's own Legacy MS
   total. Only SRE can fix their workbook; tracked on #5436.
 - **How should the QC checks handle retained students?** Retention can put

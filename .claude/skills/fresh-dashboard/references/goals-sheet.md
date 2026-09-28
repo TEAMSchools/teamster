@@ -104,9 +104,9 @@ workbook. How to read SRE's workbook, its tab maps and its rounding are in
 
    Verified 2026-09-09: cover sheet `H11` (Purpose `New Student Target`) is the
    only literal in col `H`, reading 69 against the `Newark` tab's `P51`
-   (`=sum(P47:P50)`) of 73.97 → 74. Prod holds 74, and 74 was KEPT — the
-   divergence from the cover sheet's 69 was accepted rather than reconciled, and
-   no question went to SRE. Do not re-open it.
+   (`=sum(P47:P50)`) of 73.97 → 74. Prod holds 74. Which value is right is an
+   open question with the stakeholder (tracked on #5436); leave prod as loaded
+   until they answer.
 
    Print only a literal-vs-formula CLASSIFICATION, never the formula strings: a
    grid of formula text trips `check-output.sh`'s high-entropy scan and the
