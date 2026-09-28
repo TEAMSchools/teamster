@@ -41,7 +41,8 @@ with
         from {{ ref("stg_deanslist__terms") }}
     )
 
-select
+-- one row per student, incentive, and term: several behaviors can fall in one term
+select distinct
     b.student_school_id,
     b.behavior,
 
@@ -63,13 +64,3 @@ inner join
     and b.dl_school_id = t.school_id
     and b.term_type = t.term_type
     and b.behavior_date between t.start_date_date and t.end_date_date
-group by
-    b.student_school_id,
-    b.behavior,
-    t.academic_year,
-    t.start_date_date,
-    t.end_date_date,
-    t.school_id,
-    t.term_type,
-    t.term_name,
-    t.quarter_label
