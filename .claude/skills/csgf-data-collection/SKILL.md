@@ -459,20 +459,26 @@ the year-anchoring behind
 Tracking what CSGF has actually accepted, so a later reader doesn't re-verify
 already-closed items. Update the date whenever a status changes.
 
-- **Accepted by CSGF (confirmed 2026-09-22)**: Preliminary Questions, HS Grad
-  Data, AP Scores, AP Offerings, SAT (the last four resubmitted after the
-  `enroll_status` and `total_graduates` fixes -- see PR #5275 -- and after the
-  studentid `100034` GPA correction was applied to the official sheet), and
-  Kevin's Org Staffing Data.
-- **Still open (as of 2026-09-27)**: every enrollment task.
-  - HS Enrollment (HSDC) is waiting on questions to Casey Gibson.
-  - School Enrollment (Portal) is shared. The budget fields are Laszlo's, the
-    teacher and school leader fields Kevin's, ADA and chronic absenteeism
-    Walters', and the enrollment counts come from `rpt_gsheets__csgf_enrollment`
-    on 2 October (below).
-  - Everything else on the per-person split. Each owner has had their
-    instructions in the CSGF Slack channel; check with them directly rather than
-    assuming acceptance carries over between tasks.
+Portal My Tasks board as of 2026-09-28: 27 tasks, all due 10/9/2026.
+
+| Column                   | Tasks (Portal assignee)                                                                                                                                                                                                                              |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Completed (7)            | AP Offerings, AP Scores, High School Grad Data, SAT (Gabriela); Intended Postsecondary Pathways (Casey); Org Staffing Data (Kevin); Preliminary Questions (unassigned)                                                                               |
+| Further Edits Needed (1) | OVERGRAD Application Results (Casey)                                                                                                                                                                                                                 |
+| In Progress (3)          | Enrollment (HSDC) and Enrollment & Annual School Info (Gabriela); Schools List (Laszlo)                                                                                                                                                              |
+| Not Started (12)         | Additional Growth, Bank Info Verification, Data Collab DSA, Officer Certificate, Org Questions (Laszlo); Budget Upload, Org Finance, School Finance (Nadja); Data Summary, Org Charts Upload (Kevin); Discipline Data (Anthony); Key Contacts (Jeff) |
+| Not Applicable (4)       | ACT; NAVIANCE Application Results; OTHER Application Results (Casey); Growth Plans (Laszlo)                                                                                                                                                          |
+
+- The four HS tabs and SAT were resubmitted after the `enroll_status` and
+  `total_graduates` fixes (PR #5275) and the studentid `100034` GPA correction.
+- Enrollment (HSDC) is waiting on questions to Casey Gibson. Enrollment & Annual
+  School Info is shared: budget fields Laszlo's, teacher and school leader
+  fields Kevin's, ADA and chronic absenteeism Walters', and the enrollment
+  counts come from `rpt_gsheets__csgf_enrollment` on 2 October (below).
+- The two open enrollment tasks are assigned to Gabriela in the Portal. Reassign
+  them to Walters there so the tasks follow the collection owner.
+- Each other owner has had instructions in the CSGF Slack channel; check with
+  them directly rather than assuming acceptance carries over between tasks.
 - **Staging sheet ready for bulk upload**: the "CSGF Data" columns were
   reordered to match the Portal's Excel templates this cycle, so each grid is a
   copy-paste into the exported template, not cell-by-cell entry.
