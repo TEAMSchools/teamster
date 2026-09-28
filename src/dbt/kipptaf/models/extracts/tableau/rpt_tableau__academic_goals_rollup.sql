@@ -32,83 +32,43 @@ with
 
     state_test_union as (
         select
-            localstudentidentifier as student_number,
+            student_number,
             academic_year,
-            testscalescore as scale_score,
-            testperformancelevel as `level`,
+            scale_score,
+            performance_level as `level`,
 
-            assessment_name as assessment_type,
+            if(
+                score_source = 'state_nj', assessment_name, 'FAST PM3'
+            ) as assessment_type,
 
-            academic_year + 1 as academic_year_plus,
+            -- grade 3 FAST reads PM1 of the same year, not PM3 of the prior year
+            academic_year + if(
+                score_source = 'state_fl' and administration_period = 'PM1', 0, 1
+            ) as academic_year_plus,
 
             is_proficient_int,
             is_approaching_int,
             is_below_int,
+            raw_subject,
+            source_system,
 
-            `subject` as raw_subject,
-            'pearson' as source_system,
-            cast(null as string) as `subject`,
-
-        from {{ ref("int_pearson__all_assessments") }}
+            illuminate_subject_area as `subject`,
+        from {{ ref("int_assessments__state_scores") }}
         where
-            assessment_name = 'NJSLA'
-            and not (gradelevelwhenassessed = 8 and `subject` like 'Algebra%')
-
-        union all
-
-        select
-            f.student_number,
-
-            f.academic_year,
-            f.scale_score,
-            f.achievement_level_int as `level`,
-
-            'FAST PM3' as assessment_type,
-
-            f.academic_year + 1 as academic_year_plus,
-
-            f.is_proficient_int,
-            f.is_approaching_int,
-            f.is_below_int,
-
-            f.assessment_subject as raw_subject,
-            'fldoe' as source_system,
-            cast(null as string) as `subject`,
-
-        from {{ ref("int_fldoe__all_assessments") }} as f
-        where
-            f.assessment_name = 'FAST'
-            and f.administration_window = 'PM3'
-            and f.scale_score is not null
-            and f.assessment_grade != '3'
-
-        union all
-
-        select
-            f.student_number,
-
-            f.academic_year,
-            f.scale_score,
-            f.achievement_level_int as `level`,
-
-            'FAST PM3' as assessment_type,
-
-            f.academic_year as academic_year_plus,
-
-            f.is_proficient_int,
-            f.is_approaching_int,
-            f.is_below_int,
-
-            f.assessment_subject as raw_subject,
-            'fldoe' as source_system,
-            cast(null as string) as `subject`,
-
-        from {{ ref("int_fldoe__all_assessments") }} as f
-        where
-            f.assessment_name = 'FAST'
-            and f.administration_window = 'PM1'
-            and f.scale_score is not null
-            and f.assessment_grade = '3'
+            (
+                score_source = 'state_nj'
+                and assessment_name = 'NJSLA'
+                and not (grade_level_when_assessed = 8 and raw_subject like 'Algebra%')
+            )
+            or (
+                score_source = 'state_fl'
+                and assessment_name = 'FAST'
+                and scale_score is not null
+                and (
+                    (administration_period = 'PM3' and test_grade != 3)
+                    or (administration_period = 'PM1' and test_grade = 3)
+                )
+            )
 
         union all
 
@@ -148,15 +108,11 @@ with
             case
                 when s.source_system is null
                 then s.`subject`
-                when coalesce(x.illuminate_subject_area, s.raw_subject) = 'Text Study'
+                when s.`subject` = 'Text Study'
                 then 'Reading'
                 else 'Math'
             end as `subject`,
         from state_test_union as s
-        left join
-            {{ ref("stg_google_sheets__assessments__vendor_subject_crosswalk") }} as x
-            on s.source_system = x.source_system
-            and s.raw_subject = x.raw_subject
     ),
 
     iready as (

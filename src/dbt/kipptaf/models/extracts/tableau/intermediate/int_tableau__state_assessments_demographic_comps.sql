@@ -109,12 +109,13 @@ with
 
         from {{ ref("int_extracts__student_enrollments") }} as e
         inner join
-            {{ ref("int_pearson__all_assessments") }} as a
+            {{ ref("int_assessments__state_scores") }} as a
             on e.academic_year = a.academic_year
-            and e.pearson_local_student_identifier = a.localstudentidentifier
+            and e.pearson_local_student_identifier = a.student_number
             and e._dbt_source_project = a._dbt_source_project
-            and a.`admin` = 'Spring'
-            and a.testscalescore is not null
+            and a.score_source = 'state_nj'
+            and a.administration_round = 'Spring'
+            and a.scale_score is not null
         where
             e.rn_year = 1
             -- 2018: earliest year with available comps data
@@ -229,7 +230,7 @@ with
             a.district_state,
             a.assessment_name,
             a.is_proficient_int,
-            a.test_code,
+            a.aligned_test_code as test_code,
 
             e.ml_status,
             e.aligned_gender as gender,
@@ -269,7 +270,7 @@ with
 
         from {{ ref("int_extracts__student_enrollments") }} as e
         inner join
-            {{ ref("int_fldoe__all_assessments") }} as a
+            {{ ref("int_assessments__state_scores") }} as a
             on e.academic_year = a.academic_year
             -- network student_number, the same key the NJ legs above use;
             -- Miami state_studentnumber reads fleid, null under Focus (#5042).
@@ -277,6 +278,7 @@ with
             -- asserts this leg holds rows -- a revert re-drops Miami silently.
             and e.pearson_local_student_identifier = a.student_number
             and e._dbt_source_project = a._dbt_source_project
+            and a.score_source = 'state_fl'
             and a.results_type = 'Actual'
             and a.scale_score is not null
             and a.season = 'Spring'
