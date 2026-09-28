@@ -2,19 +2,19 @@ models:
   - name: int_gpa__student_goal_definitions
     description: >-
       Resolves each student to the GPA goal that applies to them, at the
-      network, region, and school rung, for every metric with a goal. One row
-      per student, academic year, and metric. Carries the goal definition — the
-      threshold a student must clear and the target share of students expected
-      to clear it — never a computed rate, so a consumer can compute its own
-      actual rate against whatever population is on screen. Scoped by the inner
-      join to the network-rung goal, so a student in a grade with no goal
-      produces no row at all rather than a row of nulls. A null
-      goal_proportion_region means that metric has no region-rung goal, which is
-      true of y1_gpa_weighted. A null goal_proportion_region also occurs when
-      the student's region has no region-rung goal at all, which is true of
-      Miami today — those students still carry the network goal. Scoped only by
-      rn_year = 1 and by the inner join to the network goal. It deliberately
-      does not apply the enrollment guards (is_out_of_district, enroll_status,
+      network, region, and school rung, for every metric with a network-rung
+      goal. One row per student, academic year, and metric. Carries the goal
+      definition — the threshold a student must clear and the target share of
+      students expected to clear it — never a computed rate, so a consumer can
+      compute its own actual rate against whatever population is on screen.
+      Scoped by the inner join to the network-rung goal, so a student in a grade
+      with no network goal produces no row at all rather than a row of nulls,
+      and a region- or school-rung goal for a metric with no network-rung goal
+      never appears. Region and school goals attach by left join, so a student
+      whose region or school has no goal for that metric and grade still carries
+      the network goal, with nulls at the missing rungs. Scoped only by rn_year
+      = 1 and by the inner join to the network goal. It deliberately does not
+      apply the enrollment guards (is_out_of_district, enroll_status,
       is_enrolled_recent) that sibling models use, so a consumer needing a
       scoped spine must apply its own.
     data_tests:
@@ -45,8 +45,8 @@ models:
       - name: metric
         data_type: string
         description: >-
-          Which GPA measure the goal is written against —
-          `cumulative_gpa_unweighted` or `y1_gpa_weighted`.
+          Which GPA measure the goal is written against, from the network-rung
+          goal row (values per `stg_google_sheets__gpa_goals.metric`).
         data_tests:
           - not_null:
               config:
@@ -55,7 +55,7 @@ models:
         data_type: numeric
         description: >-
           GPA a student must reach to count toward the goal. Read from the
-          network-rung row; identical across rungs.
+          network-rung row; region- and school-rung thresholds are not used.
       - name: direction
         data_type: string
         description: >-
@@ -74,13 +74,15 @@ models:
       - name: goal_proportion_region
         data_type: numeric
         description: >-
-          Target share for the student's region. NULL when the metric has no
-          region-rung goal.
+          Target share for the student's region, as a proportion. NULL when the
+          student's region has no region-rung goal for this metric covering the
+          student's grade.
       - name: goal_proportion_school
         data_type: numeric
         description: >-
-          Target share for the student's school. NULL when the metric has no
-          school-rung goal.
+          Target share for the student's school, as a proportion. NULL when the
+          student's school has no school-rung goal for this metric covering the
+          student's grade.
 
 unit_tests:
   - name: unit_gpa_student_goal_definitions
@@ -93,17 +95,16 @@ unit_tests:
       together, while the Miami student has no region- or school-rung goal
       defined for that band, proving
       `goal_proportion_region`/`goal_proportion_school` come back null rather
-      than falling back to another rung — the live Miami state. A grade-6
-      student produces no output row at all, proving the inner join to the
-      network rung — not an explicit grade filter — is what drops K-8 from this
-      model. Two overlapping network-rung bands for `y1_gpa_weighted` (`3-5` and
-      `4-4`) both match a fourth-grade student and are asserted as two separate
-      output rows: production data has no such overlap today, so this is the
-      only coverage proving a future overlap fans out rather than being silently
-      deduped — the `unique_combination_of_columns` test is what should catch it
-      against a real load. A sixth enrollment row carries `rn_year = 2` with no
-      matching `rn_year = 1` row for that student, proving the `where e.rn_year
-      = 1` filter excludes it.
+      than falling back to another rung. A grade-6 student produces no output
+      row at all, proving the inner join to the network rung — not an explicit
+      grade filter — is what drops grades without a goal. Two overlapping
+      network-rung bands for `y1_gpa_weighted` (`3-5` and `4-4`) both match a
+      fourth-grade student and are asserted as two separate output rows, proving
+      an overlap fans out rather than being silently deduped — the
+      `unique_combination_of_columns` test is what should catch it against a
+      real load. A sixth enrollment row carries `rn_year = 2` with no matching
+      `rn_year = 1` row for that student, proving the `where e.rn_year = 1`
+      filter excludes it.
     model: int_gpa__student_goal_definitions
     given:
       - input: ref('int_extracts__student_enrollments')

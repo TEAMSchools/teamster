@@ -13,13 +13,37 @@ models:
       rows arrive in Cambium's own column names from stg_cambium__njsla,
       stg_cambium__eoc and stg_cambium__njgpa, and this model maps them to the
       Pearson names, aligned demographic labels, proficiency bands and
-      subject/test-code normalization. It then repairs localstudentidentifier
-      from the crosswalk and casts the state id.
+      subject/test-code normalization. It drops Cambium rows whose test_status
+      is not 'completed', then repairs localstudentidentifier from the crosswalk
+      and casts the state id.
+
+      The test_status filter is the Cambium counterpart of the Pearson
+      testscorecomplete convention. Cambium reports an incomplete attempt as a
+      second scored row rather than superseding the first, and leaves
+      testscorecomplete null on every row, so the Pearson predicate cannot see
+      it. Both rows carry a null localstudentidentifier, so the crosswalk
+      resolves both to one student and the dashboard draws two marks in one
+      cell.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
               - studenttestuuid
+      # the vendor uuid is unique by construction, so it cannot catch a
+      # second attempt by the same student; this is the grain the
+      # dashboard reports on. Scoped to resolved ids: an unmatched row
+      # is a crosswalk gap, which test_incorrect_student_number_pearson
+      # already reports.
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - localstudentidentifier
+              - academic_year
+              - aligned_test_code
+              - admin
+          config:
+            where: localstudentidentifier is not null
+            severity: error
     columns:
       - name: assessment_version
         data_type: string
@@ -230,7 +254,7 @@ models:
         description: Numeric performance level as reported by the vendor.
 
       - name: testscalescore
-        data_type: float64
+        data_type: numeric
         description: Student's raw scale score on the assessment.
 
       - name: testscorecomplete
