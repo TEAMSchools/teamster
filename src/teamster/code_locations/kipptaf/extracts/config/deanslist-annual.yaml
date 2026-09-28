@@ -129,15 +129,6 @@ assets:
       type: schema
       value:
         table:
-          name: rpt_deanslist__star
-          schema: kipptaf_extracts
-    file_config:
-      stem: rpt_deanslist__star
-      suffix: json.gz
-  - query_config:
-      type: schema
-      value:
-        table:
           name: rpt_deanslist__family_contacts
           schema: kipptaf_extracts
     file_config:

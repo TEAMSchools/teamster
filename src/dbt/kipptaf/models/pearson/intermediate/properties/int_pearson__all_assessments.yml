@@ -254,7 +254,7 @@ models:
         description: Numeric performance level as reported by the vendor.
 
       - name: testscalescore
-        data_type: float64
+        data_type: numeric
         description: Student's raw scale score on the assessment.
 
       - name: testscorecomplete

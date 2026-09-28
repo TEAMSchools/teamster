@@ -17,14 +17,6 @@ with
                     or i.category
                     in ('School Clinic', 'Incident Report/Accident Report')
                 then 'Non-Behavioral'
-                /* Miami-only */
-                when
-                    left(i.category, 2) in ('T4', 'T3')
-                    and '{{ project_name }}' = 'kippmiami'
-                then 'Low'
-                when left(i.category, 2) = 'T1' and '{{ project_name }}' = 'kippmiami'
-                then 'High'
-                /* all other regions */
                 when left(i.category, 2) = 'T1' or left(i.category, 6) = 'Tier 1'
                 then 'Low'
                 when left(i.category, 2) = 'T2' or left(i.category, 6) = 'Tier 2'

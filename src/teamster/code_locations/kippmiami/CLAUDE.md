@@ -12,7 +12,6 @@ LOCAL_TIMEZONE = ZoneInfo("America/New_York")
 | Module      | Type          | Trigger                                                                |
 | ----------- | ------------- | ---------------------------------------------------------------------- |
 | `dbt`       | dbt assets    | `AutomationConditionSensor`                                            |
-| `deanslist` | API assets    | schedule (nightly)                                                     |
 | `finalsite` | API + SFTP    | schedule (contacts 04:00 + 12:00 ET) + couchdrop sensor                |
 | `fldoe`     | SFTP assets   | `AutomationConditionSensor`                                            |
 | `iready`    | SFTP assets   | sensor (`build_iready_sftp_sensor`)                                    |
@@ -104,3 +103,9 @@ rebuild (#5195, #5228), when the location carries about 120
 `kippmiami/powerschool/*` dbt assets; PR B removes them again. kipptaf reads the
 dataset as a BQ-native source. Do not drop the dataset or the GCS files under
 `gs://teamster-kippmiami/dagster/kippmiami/powerschool/`.
+
+DeansList is retired the same way (#5110): Miami stopped using it, and this
+location has no `deanslist` assets or schedules. `kippmiami_deanslist` is a
+frozen dataset (last ingested 2026-07-21) that kipptaf still unions for history.
+Do not drop it or the GCS files under
+`gs://teamster-kippmiami/dagster/kippmiami/deanslist/`.

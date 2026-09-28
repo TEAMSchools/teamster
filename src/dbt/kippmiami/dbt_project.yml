@@ -22,13 +22,6 @@ data_tests:
   kippmiami:
     +severity: warn
 
-# the referral_tier unit test asserts the NJ tier scale; Miami maps T1 to High,
-# and a failing unit test would skip int_deanslist__incidents in the prod build.
-# Remove with the deanslist package in #5580.
-unit_tests:
-  deanslist:
-    +enabled: false
-
 vars:
   local_timezone: America/New_York
   current_academic_year: 2026
@@ -54,11 +47,6 @@ models:
     staging:
       +contract:
         enforced: true
-  deanslist:
-    +materialized: table
-    staging:
-      stg_deanslist__followups:
-        +enabled: false
   iready:
     +materialized: table
   renlearn:

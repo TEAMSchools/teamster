@@ -29,4 +29,8 @@ source. Do not drop the dataset or the GCS files.
 ## Source Packages
 
 `focus` — `focus_schema` points to `dagster_kippmiami_dlt_focus`. Miami does not
-use `edplan`, `overgrad`, `pearson`, `powerschool`, or `titan`.
+use `deanslist`, `edplan`, `overgrad`, `pearson`, `powerschool`, or `titan`.
+
+DeansList was removed in #5110. `kippmiami_deanslist` holds the last build
+(2026-07-22), frozen, and kipptaf reads it as a BQ-native source for history. Do
+not drop the dataset.
