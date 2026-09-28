@@ -342,9 +342,9 @@ that is current somewhere is no longer selectable by number on this field, so
 cosmetic: a filter on the bare round number silently mixes NJ students
 mid-first-half with Miami students in their second half.
 
-Latent today only because Miami produces no rows in the extract at all. Do not
-"simplify" the label away on the grounds that round numbers look unique -- they
-look unique because Miami is missing.
+This is live: Miami produces rows in the extract. Do not "simplify" the label
+away on the grounds that round numbers look unique -- they only look unique in a
+view that filters Miami out.
 
 ## The switcher grid, and why its names are inconsistent
 

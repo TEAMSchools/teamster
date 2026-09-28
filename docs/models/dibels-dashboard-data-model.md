@@ -317,8 +317,12 @@ The Tableau workbook is the `literacy_dashboard` exposure in
 - Reads: the enrollment spine (`int_extracts__student_enrollments_subjects`,
   Reading only, enrolled statuses 0, 2 and 3, not self-contained, not out of
   district), then one `UNION ALL` branch per method, below. All three branches
-  also left join `base_powerschool__course_enrollments` for the ELA teacher and
-  section (PowerSchool only, so these are null for Miami).
+  also left join `int_students__course_enrollments` for the ELA teacher, course
+  and section: each student's primary ELA section (`core_subject = 'ELA'`,
+  `rn_core_subject_year = 1`, section number not like `%SC%`), for both
+  PowerSchool and Focus (Miami). `course_name` is the course-subject crosswalk
+  sheet's standard label, and the Florida course codes live on that sheet, not
+  in SQL.
 - Worth knowing:
   - Filter every PM view on `model_type`. Both PM methods emit a row for the
     same student.
@@ -344,9 +348,13 @@ The Tableau workbook is the `literacy_dashboard` exposure in
   - Round-grain columns hold one value per student and round, forced by a window
     over the round and checked by the warn test
     `rpt_tableau__dibels_dashboard__round_columns_single_valued`.
-  - Miami returns no rows today. The spine filter `not is_self_contained` reads
-    null for every Miami student, because Focus records no self-contained
-    placement. See _Known issues_.
+  - The spine filter is `is_self_contained is not true`, not
+    `not is_self_contained`. Focus records no self-contained placement, so the
+    flag is null for every Miami student, and `not` would drop all of them.
+    Consequence: NJ self-contained students are excluded, Miami's are not.
+  - Round numbers are not unique across regions: Miami runs a different number
+    of rounds per season, so filter on `expected_round_label`, not the bare
+    round number.
 
 #### BM branch
 
@@ -759,23 +767,6 @@ today's label.
 Each query returns aggregates only. Datasets are in the `teamster-332318`
 project. Some results break down to a school or grade with only a few students;
 do not paste raw output anywhere public.
-
-### Miami has no dashboard rows
-
-The spine filter `not s.is_self_contained` drops every Miami student, because
-Focus has no self-contained field and the value is null. Needs a Focus placement
-field or an Ops-confirmed mapping. PR #5559 is working on Miami's dashboard
-rows.
-
-```sql
-select
-    region,
-    countif(is_self_contained is null) as null_self_contained,
-    count(*) as students,
-from `teamster-332318`.kipptaf_extracts.int_extracts__student_enrollments_subjects
-where academic_year = 2026 and iready_subject = 'Reading'
-group by region
-```
 
 ### Cancelled PM rounds still count in the internal method
 

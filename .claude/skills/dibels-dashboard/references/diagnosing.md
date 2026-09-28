@@ -49,7 +49,10 @@ When the calendar checks above pass and an entire region still has no scores,
 gave the user three wrong causes for Miami's empty AY2026 dashboard -- a missing
 union member, a crosswalk gap, then the `is_self_contained` exclusion -- before
 checking the top of the hierarchy, where the answer was sitting: Amplify's
-SY2026-2027 export contained no Miami schools at all on that date. By 2026-09-22
+SY2026-2027 export contained no Miami schools at all on that date.
+`is_self_contained` was the wrong cause for that incident, but it is a real
+trap: keep `is_self_contained is not true`, because `not is_self_contained`
+drops every Miami row (Focus records no self-contained placement). By 2026-09-22
 Amplify had added 4 Miami schools back under a new `district_name`,
 `Kipp Florida` (the NJ schools moved to `Kipp New Jersey`). The export moves
 under you; re-run the query, do not trust the last answer.

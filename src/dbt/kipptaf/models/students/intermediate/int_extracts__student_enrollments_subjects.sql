@@ -58,7 +58,7 @@ with
 
             `subject` as raw_subject,
             'pearson' as source_system,
-            njsla_aggregated_proficiency as njsla_proficiency,
+            njsla_aggregated_proficiency as state_test_aggregated_proficiency,
 
             academic_year + 1 as academic_year_plus,
 
@@ -81,7 +81,7 @@ with
 
             assessment_subject as raw_subject,
             'fldoe' as source_system,
-            fast_aggregated_proficiency as proficiency,
+            fast_aggregated_proficiency as state_test_aggregated_proficiency,
 
             academic_year + 1 as academic_year_plus,
 
@@ -99,7 +99,7 @@ with
             p._dbt_source_project,
             p.statestudentidentifier,
             p.academic_year_plus,
-            p.njsla_proficiency,
+            p.state_test_aggregated_proficiency,
 
             coalesce(x.illuminate_subject_area, p.raw_subject) as `subject`,
 
@@ -258,7 +258,7 @@ select
 
     coalesce(a.is_iep_eligible, false) as is_grad_iep_exempt,
 
-    coalesce(py.njsla_proficiency, 'No Test') as state_test_proficiency,
+    coalesce(py.state_test_aggregated_proficiency, 'No Test') as state_test_proficiency,
 
     coalesce(pr.iready_proficiency, 'No Test') as iready_proficiency_eoy,
 
@@ -278,7 +278,9 @@ select
 
     if(ie.student_number is not null or co.is_sipps, true, false) as is_exempt_iready,
 
-    if(co.grade_level <= 3, pr.iready_proficiency, py.njsla_proficiency) as bucket_one,
+    if(
+        co.grade_level <= 3, pr.iready_proficiency, py.state_test_aggregated_proficiency
+    ) as bucket_one,
 
     if(
         co.grade_level >= 9, sj.powerschool_credittype, sj.illuminate_subject_area
