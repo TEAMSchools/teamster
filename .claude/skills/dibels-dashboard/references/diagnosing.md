@@ -125,9 +125,12 @@ When `rpt_tableau__dibels_dashboard` has the rows and the Literacy Dashboard
 does not show them, check these before touching dbt. All three came up on
 2026-09-28, the day Miami first reached the extract.
 
-- **The workbook's data source filter `User Filter 1` lists regions by name.**
-  It hid Miami completely, even on a new sheet with nothing else on it. A region
-  joining the extract needs adding there, in Desktop.
+- **The data source filter `User Filter 1 - Region` is row-level security.** It
+  maps each Tableau group (and a few named users) to the regions that group may
+  see. Miami was on none of the lists, so it was hidden from everyone, even on a
+  new sheet with nothing else on it. A region joining the extract needs adding
+  to every group that should see it, in Desktop. A render through the Tableau
+  MCP runs as one fixed identity, so it cannot prove what another group sees.
 - **A new extract column needs the extract recreated, not refreshed.**
   `benchmark_goal_gap` did not appear in the Data pane after a refresh; it
   appeared once the owner recreated the extract.
