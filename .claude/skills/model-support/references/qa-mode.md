@@ -120,6 +120,27 @@ itself matches, because workbook calculations or filters can still differ. Tell
 the user it costs a lot of tokens, and wait for a yes before any Tableau MCP
 call or loading `tableau-workbook-xml`.
 
+### Unused workbook fields
+
+Offer this after a family change retires or renames columns, or once the owner
+has finished editing a workbook. Needs one workbook download (the token rule
+above applies): `mcp__tableau__download-workbook` with `includeExtract: false`,
+then run [tableau_unused_calcs.py](../scripts/tableau_unused_calcs.py) on the
+`.twbx`.
+
+Hand the owner the script's list as numbered steps: in the Data pane,
+right-click each field, then Delete, in the order printed. The order puts every
+field after the fields that read it, so Tableau never warns about dependents.
+Name each field by its caption, and repeat any `KEEP` line: on the Literacy
+Dashboard the kept field AL Not Meeting Share is stored as `AL Kids (copy)`,
+next to a deletable AL Kids.
+
+The list is a proposal. The owner keeps some fields on purpose (IEP and City
+stayed on the Literacy Dashboard); do not re-offer those in the same session.
+After they republish, download again and re-run: only the kept fields should
+remain. Verified 2026-09-28: 17 fields listed, 15 deleted without a Tableau
+warning, re-run showed the 2 kept.
+
 ## Where results go
 
 Student-level rows stay in the terminal and the session scratchpad. GitHub gets

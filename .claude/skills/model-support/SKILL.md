@@ -115,6 +115,9 @@ to this skill in the report.
   comment-only.
 - [yaml_description_diff.py](scripts/yaml_description_diff.py): prove a YAML
   edit changed descriptions only.
+- [tableau_unused_calcs.py](scripts/tableau_unused_calcs.py): a workbook's
+  unused calculated fields, in a safe delete order (`qa-mode.md` → Unused
+  workbook fields).
 
 ## Acceptance for a run
 

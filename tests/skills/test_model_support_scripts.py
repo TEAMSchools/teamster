@@ -260,3 +260,74 @@ def test_split_keeps_heading_inside_indented_fence():
     )
     assert "## not a heading (fence indented under a list item)\n" in out["steps.md"]
     assert out["next.md"] == ["## Next\n"]
+
+
+WORKBOOK = """<?xml version='1.0' encoding='utf-8' ?>
+<workbook>
+  <datasources>
+    <datasource caption='ds' name='federated.x'>
+      <column caption='Used' name='[Calculation_1]' role='measure' type='quantitative'>
+        <calculation class='tableau' formula='[Calculation_2] + 1' />
+      </column>
+      <column caption='Read By Used' name='[Calculation_2]' role='measure' type='quantitative'>
+        <calculation class='tableau' formula='SUM([x])' />
+      </column>
+      <column caption='Dead Top' name='[Calculation_3]' role='measure' type='quantitative'>
+        <calculation class='tableau' formula='[Calculation_4] * 2' />
+      </column>
+      <column caption='Dead Base' name='[Calculation_4]' role='measure' type='quantitative'>
+        <calculation class='tableau' formula='SUM([y])' />
+      </column>
+      <column caption='Windows Only' name='[Calculation_5]' role='dimension' type='nominal'>
+        <calculation class='tableau' formula='[z]' />
+      </column>
+      <column caption='Leftover Instance' name='[Calculation_6]' role='dimension' type='nominal'>
+        <calculation class='tableau' formula='[z]' />
+      </column>
+      <column caption='Kept Copy' name='[Dead Base (copy)_7]' role='measure' type='quantitative'>
+        <calculation class='tableau' formula='SUM([y])' />
+      </column>
+      <column-instance column='[Calculation_6]' derivation='None' name='[none:Calculation_6:nk]' />
+      <style><style-rule element='mark'><encoding attr='color' field='[none:Calculation_6:nk]' /></style-rule></style>
+    </datasource>
+  </datasources>
+  <worksheets>
+    <worksheet name='Sheet'>
+      <table><rows>[federated.x].[sum:Calculation_1:qk]</rows>
+      <cols>[federated.x].[usr:Dead Base (copy)_7:qk]</cols></table>
+    </worksheet>
+  </worksheets>
+  <windows>
+    <window class='worksheet' name='Hidden'>[federated.x].[none:Calculation_5:nk]</window>
+  </windows>
+</workbook>
+"""
+
+
+def _unused(tmp_path):
+    mod = _load("tableau_unused_calcs")
+    twb = tmp_path / "wb.twb"
+    twb.write_text(WORKBOOK)
+    calcs, order, lookalikes, _ = mod.analyse(mod.load_root(str(twb)))
+    return [calcs[k]["caption"] for k in order], lookalikes
+
+
+def test_tableau_calc_read_by_a_used_calc_is_kept(tmp_path):
+    order, _ = _unused(tmp_path)
+    assert "Used" not in order and "Read By Used" not in order
+
+
+def test_tableau_windows_and_leftover_instances_do_not_count(tmp_path):
+    order, _ = _unused(tmp_path)
+    assert "Windows Only" in order and "Leftover Instance" in order
+
+
+def test_tableau_delete_order_puts_readers_first(tmp_path):
+    order, _ = _unused(tmp_path)
+    assert order.index("Dead Top") < order.index("Dead Base")
+
+
+def test_tableau_kept_copy_is_flagged(tmp_path):
+    order, lookalikes = _unused(tmp_path)
+    assert "Kept Copy" not in order
+    assert lookalikes == ["Dead Base (copy)_7"]
