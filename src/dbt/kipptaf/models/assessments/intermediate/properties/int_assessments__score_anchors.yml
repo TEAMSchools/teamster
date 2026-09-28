@@ -172,9 +172,7 @@ unit_tests:
       - input: ref('int_assessments__assessments_canonical')
         rows:
           - { canonical_assessment_id: 100, administered_date: 2024-03-04 }
-      - input: ref('int_pearson__all_assessments')
-        rows: []
-      - input: ref('int_fldoe__all_assessments')
+      - input: ref('int_assessments__state_scores')
         rows: []
       - input: ref('int_iready__diagnostic_results')
         rows: []
@@ -206,9 +204,7 @@ unit_tests:
         rows: []
       - input: ref('int_assessments__assessments_canonical')
         rows: []
-      - input: ref('int_pearson__all_assessments')
-        rows: []
-      - input: ref('int_fldoe__all_assessments')
+      - input: ref('int_assessments__state_scores')
         rows: []
       - input: ref('int_iready__diagnostic_results')
         format: sql
