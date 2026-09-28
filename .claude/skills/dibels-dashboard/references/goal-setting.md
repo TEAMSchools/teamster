@@ -138,6 +138,24 @@ explained.
 `out.tsv` has no header; rows append. Column order matches the schema table
 above.
 
+Give the person the paste target as a link to the exact tab, never as a
+spreadsheet id, plus the row to start at (the tab's last filled row + 1, read
+through the Sheets API). All three goal tabs live in the "Amplify DIBELS"
+workbook:
+
+| Tab              | Link                                                                                                      |
+| ---------------- | --------------------------------------------------------------------------------------------------------- |
+| Foundation Goals | <https://docs.google.com/spreadsheets/d/15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs/edit#gid=1026206559> |
+| BM Goals         | <https://docs.google.com/spreadsheets/d/15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs/edit#gid=2131973914> |
+| PM Goals         | <https://docs.google.com/spreadsheets/d/15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs/edit#gid=722132792>  |
+
+Miami's foundation goals come from a different workbook than NJ's: the "DIBELS"
+tab of "KIPP Miami Goals, <year>" (AY2026:
+<https://docs.google.com/spreadsheets/d/1nIPke3BamvJNtouuZ8_hMlWfV03RqqbGq7vDzOziqao/edit#gid=1486185380>).
+Its header cells contain line breaks; replace them with spaces when writing the
+TSV or the header splits across lines. The generator reads it unchanged: region,
+grade, then MOY and EOY At/Above and Well Below.
+
 ### Step 5 -- rebuild and verify in dev
 
 A Sheets external table's DDL is fixed at creation -- pasting new data into the
@@ -240,11 +258,12 @@ Treat a full-year replace as the thing that needs justifying, not the default.
 `select * except(...)` has no bearing here -- the model emits the current year
 only, so "the whole year" and "everything the model returns" are the same set.
 
-Related caution, worth checking before assuming a region is simply missing:
-**Miami has benchmark goals in the tab but no foundation goals at all.**
-Foundation goals cover Camden, Newark and Paterson only, so Miami's benchmark
-numbers do not come from this lineage and cannot be produced by generating them
-here. A Miami row absent from the tab is not a row this procedure can add.
+Miami joined this lineage in AY2026. Before that its BM goals rows were entered
+by hand, with no foundation goals behind them. From AY2026 academics send
+Miami's foundation goals in their own workbook (see Step 4), and Miami goes
+through the same two pastes as NJ: first paste 2026-09-28, 30 foundation rows
+and 16 BM goals rows. For an earlier year, a missing Miami row is not one this
+procedure can produce.
 
 **Verify by year, not by row count.** A populated prior year makes the totals
 look healthy:

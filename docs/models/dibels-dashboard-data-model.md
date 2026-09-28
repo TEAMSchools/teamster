@@ -570,8 +570,9 @@ The Data Team: foundation goals once a year when T&L sends them, BM Goals per
 region after its BOY and MOY windows close. The headcounts come from live data,
 so regenerating a region later silently replaces figures already reported
 against. Replace a whole year only when the calculation itself was wrong. Miami
-has BM goals but no foundation goals, so its rows cannot come from this process.
-The procedure is in the skill's `references/goal-setting.md`.
+has foundation goals from AY2026 and follows the same process; its earlier BM
+goals rows were entered by hand. The procedure is in the skill's
+`references/goal-setting.md`.
 
 ## Process: NJDOE universal screener extract
 

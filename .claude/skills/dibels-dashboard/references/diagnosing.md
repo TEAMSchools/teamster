@@ -252,9 +252,9 @@ a foundation EOY of `0.30`, and grade 7 reads `0.34` against `0.33`, both of
 them Newark's value. The tab is a manual-freeze record; check a goal against the
 foundation goals sheet, not against that tab.
 
-Separately, **Miami has benchmark goals in that tab but no foundation goals at
-all.** Foundation goals cover Camden, Newark and Paterson only, so Miami's
-numbers come from outside this lineage.
+Separately, Miami's rows in that tab before AY2026 were entered by hand, with no
+foundation goals behind them. From AY2026 Miami has foundation goals and goes
+through the same lineage as NJ.
 
 It is a Google Doc, not a Sheet, so
 `mcp__claude_ai_Google_Drive__read_file_content` returns the whole thing with
