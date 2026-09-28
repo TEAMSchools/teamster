@@ -194,9 +194,9 @@ administration window.
 With a hit, pull the underlying rows and compare `test_status`:
 
 ```sql
-select studenttestuuid, test_status, test_date, testscalescore,
+select student_test_uuid, test_status, test_date, test_scale_score,
 from `teamster-332318`.kipptaf_cambium.stg_cambium__njsla
-where statestudentidentifier = <the state id from the flagged row>
+where state_student_identifier = <the state id from the flagged row>
 ```
 
 A `pending` row beside a `completed` one is the known Cambium case, filtered in

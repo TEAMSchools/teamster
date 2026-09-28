@@ -149,14 +149,12 @@ superseding it when the student later sits the test again. The two rows share a
 
 `testscorecomplete`, the Pearson signal for the same thing, is null on every
 Cambium row, so the Pearson predicate cannot see this. The filter that does
-lives in `int_pearson__all_assessments`:
+lives in `int_pearson__all_assessments`, in both Cambium CTEs (NJSLA and
+end-of-course, and NJGPA), before the Cambium rows join the Pearson ones:
 
 ```sql
-where test_status is null or test_status = 'completed'
+where test_status = 'completed'
 ```
-
-The null branch passes every Pearson row, where `union_relations` null-fills the
-column.
 
 What makes this hard to spot is that both rows also arrive with a null
 `localstudentidentifier`, so both are eligible for crosswalk repair. Give each a
