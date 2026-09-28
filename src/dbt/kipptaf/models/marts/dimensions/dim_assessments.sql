@@ -261,11 +261,8 @@ with
         from ap_assessments
     ),
 
-    -- Dedup after union: state_nj and state_fl historically share module_codes
-    -- (e.g., ELA06, SCI05) for the same logical grade-level state assessment.
-    -- Per src/dbt/CLAUDE.md "Canonical attributes from a partition": pick all
-    -- attributes from a single row (ordered by title for determinism) rather
-    -- than independent min() calls that could draw from different rows.
+    -- one row per assessment_key: collapses same-key rows that differ on
+    -- non-key attributes, picking every attribute from a single row
     all_assessments as (
         {{
             dbt_utils.deduplicate(
