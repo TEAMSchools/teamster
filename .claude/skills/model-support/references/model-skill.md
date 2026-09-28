@@ -94,6 +94,12 @@ grades 6-8 get no BOY goals a week after a commit gave them the EOY goal,
 described three models from an unmerged PR as shipped, and told sessions to add
 null handling the aimline model already had.
 
+When the skill fact-check runs alongside the doc rewrite, compare the two for
+facts they state differently before committing, and settle each with a prod
+query. On FRESH the skill called a target question closed and a budget question
+settled while the doc listed both as open; prod settled one, and the stakeholder
+held the other.
+
 Before any skill text leaves the repo (moved into an issue or PR body, pasted
 into a handoff), scan it for student numbers, names, and small cells: a DIBELS
 skill section bound for an issue named a student by number, and the same line

@@ -47,6 +47,11 @@ capable one is blocked; hold doc rewrites for the capable model. On the
 gradebook audit run, all six Opus agents stopped at once with five files
 half-edited, and four Sonnet re-runs finished the audits.
 
+Tagging PII with a YAML library rewrites more than the tag: ruamel reflowed an
+unrelated description with a trailing space and turned explicit `null`s into
+blanks. Script the tags as text insertions, or diff the file and restore every
+line the tag did not need.
+
 A subagent's report is not evidence. Check that only descriptions moved, per
 edited file, against main (so staged and committed edits count too):
 

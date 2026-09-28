@@ -101,8 +101,11 @@ still supports the issue as written.
 ```
 
 Check each flag against the SQL yourself before editing; the reviewer can be
-wrong too. Fix every confirmed flag. On CARAT, a doc its author believed correct
-had 13; the gradebook audit and Academic Health pages had six each.
+wrong too. So can your own fix list: tell the fix agent to check each item
+against the code before writing it. On FRESH a fix list called the load
+partition a file date; it is the export file's school year. Fix every confirmed
+flag. On CARAT, a doc its author believed correct had 13; the gradebook audit
+and Academic Health pages had six each.
 
 Give every known issue its own query before the review. On Academic Health only
 three of six had one, and the reviewer had to write checks for the rest.
