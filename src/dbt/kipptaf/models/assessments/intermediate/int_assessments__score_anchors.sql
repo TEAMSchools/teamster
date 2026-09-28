@@ -53,13 +53,12 @@ with
             administration_period,
             raw_subject,
             _dbt_source_project,
+            source_system,
 
             test_date as anchor_date,
             score_source as source_type,
 
             cast(null as int64) as canonical_assessment_id,
-
-            if(score_source = 'state_nj', 'pearson', 'fldoe') as source_system,
         from {{ ref("int_assessments__state_scores") }}
         where test_date is not null and student_number is not null
     ),

@@ -186,3 +186,9 @@ models:
       - name: aligned_iep_status
         data_type: string
         description: Cross-state aligned IEP status. New Jersey only.
+      - name: source_system
+        data_type: string
+        description: >-
+          Vendor source system of the score, pearson for New Jersey and fldoe
+          for Florida. The source_system value the vendor subject crosswalk
+          uses.

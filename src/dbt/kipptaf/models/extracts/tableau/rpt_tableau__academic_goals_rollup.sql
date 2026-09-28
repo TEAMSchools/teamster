@@ -42,15 +42,15 @@ with
             ) as assessment_type,
 
             -- grade 3 FAST reads PM1 of the same year, not PM3 of the prior year
-            academic_year
-            + if(administration_period = 'PM1', 0, 1) as academic_year_plus,
+            academic_year + if(
+                score_source = 'state_fl' and administration_period = 'PM1', 0, 1
+            ) as academic_year_plus,
 
             is_proficient_int,
             is_approaching_int,
             is_below_int,
             raw_subject,
-
-            if(score_source = 'state_nj', 'pearson', 'fldoe') as source_system,
+            source_system,
 
             illuminate_subject_area as `subject`,
         from {{ ref("int_assessments__state_scores") }}

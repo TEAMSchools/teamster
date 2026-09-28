@@ -134,6 +134,7 @@ select
     u.aligned_ml_status,
     u.aligned_aggregate_ethnicity,
     u.aligned_iep_status,
+    u.crosswalk_source_system as source_system,
 
     coalesce(x.illuminate_subject_area, u.raw_subject) as illuminate_subject_area,
 from unioned as u

@@ -49,7 +49,7 @@ with
             and rn_student_program_year_desc = 1
     ),
 
-    prev_yr_state_test_resolved as (
+    prev_yr_state_test as (
         select
             _dbt_source_project,
 
@@ -59,9 +59,9 @@ with
 
             academic_year + 1 as academic_year_plus,
         from {{ ref("int_assessments__state_scores") }}
-        /* NJSLA is the only Pearson assessment carrying a proficiency, and it
-           runs one window a year; NJGPA's Fall and Spring rows carry none. */
         where
+            /* NJSLA is the only Pearson assessment carrying a proficiency, and
+               it runs one window a year; NJGPA's Fall and Spring rows carry none. */
             (score_source = 'state_nj' and assessment_name = 'NJSLA')
             or (
                 score_source = 'state_fl'
@@ -287,7 +287,7 @@ left join
     and co.student_number = fp.student_number
     and sj.discipline = fp.discipline
 left join
-    prev_yr_state_test_resolved as py
+    prev_yr_state_test as py
     /* TODO: find records that only match on SID */
     on co.state_studentnumber = py.statestudentidentifier
     and co.academic_year = py.academic_year_plus

@@ -89,9 +89,9 @@ with
 
             cast(null as string) as assessment_id,
             cast(null as string) as assessment_title,
-            cast(scale_score as numeric) as scale_score,
+            scale_score,
             cast(null as numeric) as percent_correct,
-            cast(performance_level as int) as performance_band_int,
+            performance_level as performance_band_int,
 
             if(score_source = 'state_nj', 'NJSLA', 'FAST') as assessment_source,
         from {{ ref("int_assessments__state_scores") }}

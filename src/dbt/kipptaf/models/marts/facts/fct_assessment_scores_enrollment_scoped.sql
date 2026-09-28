@@ -70,15 +70,6 @@ with
             illuminate_subject_area as illuminate_subject,
 
             cast(null as numeric) as percent_correct,
-
-            if(score_source = 'state_nj', 'pearson', 'fldoe') as source_system,
-
-            -- NJ keeps a null state id here: the one Cambium row with no local
-            -- id must hash as it did before the shared union (#5366)
-            coalesce(
-                cast(student_number as string),
-                if(score_source = 'state_fl', state_student_id, null)
-            ) as student_identifier,
         from {{ ref("int_assessments__state_scores") }}
         where
             scale_score is not null
@@ -478,7 +469,7 @@ select
         dbt_utils.generate_surrogate_key(
             [
                 "su._dbt_source_project",
-                "su.student_identifier",
+                "su.student_number",
                 "su.academic_year",
                 "su.administration_period",
                 "su.subject_area",
