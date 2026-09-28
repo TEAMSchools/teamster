@@ -115,5 +115,6 @@ both configs: `src/teamster/CLAUDE.md` → _Resource Model_.
 ## Disabled Integrations
 
 `adp` WFM is not integrated (no schedules or assets). Reusable library code for
-`alchemer`, `dayforce`, `fivetran`, and `adp/workforce_manager` is preserved
-under `src/teamster/libraries/` for future use.
+`alchemer`, `dayforce`, `fivetran`, `adp/workforce_manager`, and
+`powerschool/enrollment` is preserved under `src/teamster/libraries/` for future
+use.
