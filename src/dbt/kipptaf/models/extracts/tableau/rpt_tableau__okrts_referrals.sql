@@ -252,6 +252,7 @@ select
     dli.create_ts_date,
     dli.return_date_date as return_date,
     dli.category,
+    dli.referral_tier,
     dli.reported_details,
     dli.admin_summary,
     dli.infraction as incident_type,
@@ -303,26 +304,6 @@ select
     if(sr.incident_id is not null, true, false) as is_discrepant_incident,
 
     if(tr.student_school_id is not null, true, false) as is_tier3_4,
-
-    case
-        when
-            left(dli.category, 2) in ('SW', 'SS')
-            or left(dli.category, 3) in ('SSC', 'SSW')
-        then 'Social Work'
-        when (left(dli.category, 2) = 'TX' or dli.category like 'Documentation%')
-        then 'Non-Behavioral'
-        when left(dli.category, 2) = 'TB'
-        then 'Bus Referral (Miami)'
-        when left(dli.category, 2) = 'T1' or left(dli.category, 6) = 'Tier 1'
-        then 'Low'
-        when left(dli.category, 2) = 'T2' or left(dli.category, 6) = 'Tier 2'
-        then 'Middle'
-        when left(dli.category, 2) = 'T3' or left(dli.category, 6) = 'Tier 3'
-        then 'High'
-        when dli.category is null
-        then null
-        else 'Other'
-    end as referral_tier,
 
     count(distinct co.student_number) over (
         partition by co.week_start_monday, co.schoolid
