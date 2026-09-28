@@ -5,8 +5,8 @@ paths:
 
 # Worktree mechanics
 
-Loads on the first read under `.claude/worktrees/` from the main checkout only.
-After `EnterWorktree`, or for Bash-only worktree work, read this file yourself.
+Loads on the first read under `.claude/worktrees/` from the main checkout. For
+Bash-only worktree work, read this file yourself.
 
 ## Setup
 
@@ -24,13 +24,12 @@ After `EnterWorktree`, or for Bash-only worktree work, read this file yourself.
 
 ## Invocation
 
-- cwd: after `EnterWorktree` `path`, the session's cwd is the worktree and
-  persists across Bash calls. Without it, Bash cwd resets to the main checkout;
-  put `cd <worktree> &&` in the SAME command. Keep `git -C <worktree>` and
-  absolute paths either way (root _Never_): they survive a session that never
-  entered, or left. On the wrong cwd, bare `git` commits to `main`, editing the
-  main path dirties `main` so the worktree commit reports "nothing to commit",
-  and `trunk check`, `pytest`, and `sed -i` report a false "clean".
+- cwd: a Bash `cd <worktree>` persists into later Bash calls (the transcript
+  stays put; only `EnterWorktree` moves it). Do not rely on it: use
+  `git -C <worktree>` and absolute paths on every call (root _Never_). On the
+  wrong cwd, bare `git` commits to `main`, editing the main path dirties `main`
+  so the worktree commit reports "nothing to commit", and `trunk check`,
+  `pytest`, and `sed -i` report a false "clean".
 - dbt: `uv run dbt ... --project-dir <worktree>/src/dbt/<project>`. Do not use
   `uv --directory <worktree> run dbt`: it sets cwd to the worktree root, where
   `dbt_project.yml` does not exist.
