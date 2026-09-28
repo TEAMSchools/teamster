@@ -1,15 +1,16 @@
 models:
   - name: rpt_tableau__dibels_dashboard
     description: >-
-      Amplify DIBELS benchmark and progress-monitoring results. Network-wide,
-      Miami included in principle — Miami is a DIBELS region with 48 AY2026 rows
-      in the expected-assessments sheet and 20,698 AY2025 Amplify results. **In
-      practice Miami still returns no rows here.** The grain filter reads `not
-      s.is_self_contained`, which is null for every Miami row because Focus
-      records no self-contained placement. #4968 and #5038 both decline to
-      assert false for a fact the data does not carry, so Miami stays out until
-      Focus supplies a placement field or Ops confirms a mapping. Ratified on
-      #4996.
+      Amplify DIBELS benchmark and progress-monitoring results, network-wide
+      including Miami. The grain filter reads `s.is_self_contained is not true`,
+      so a row with a null self-contained flag stays in. Focus records no
+      self-contained placement, so every Miami row carries a null flag. The
+      null-safe filter's consequence: NJ self-contained students are excluded,
+      while Miami rows include any self-contained students, because Focus
+      records no placement to exclude on. The schedule columns come from
+      `int_students__course_enrollments` — each student's primary ELA section at
+      the enrolled school (`core_subject` of ELA, `rn_core_subject_year` of 1),
+      for both PowerSchool and Focus.
 
       The `*_status` and `*_category` columns form a grid: three granularities
       (measure standard, measure name code, round) crossed with four comparison
@@ -366,7 +367,11 @@ models:
           section matched.
       - name: teacherid
         data_type: int64
-        description: PowerSchool teacher id on the matched ELA section.
+        description: >-
+          Teacher id on the matched ELA section, in the SIS's own id space --
+          the PowerSchool teacher id for New Jersey and for Miami before AY2026,
+          and the Focus staff id for Miami from AY2026. Not unique across
+          regions -- pair it with `region` when grouping.
       - name: teacher_name
         data_type: string
         description: Teacher of the matched ELA section.
@@ -375,7 +380,9 @@ models:
             contains_pii: true
       - name: course_name
         data_type: string
-        description: Name of the matched ELA course.
+        description:
+          The matched ELA course's standard label, from the course-subject
+          crosswalk sheet.
       - name: course_number
         data_type: string
         description: Course number of the matched ELA section.
@@ -715,10 +722,9 @@ models:
           different halves of the year. A filter on the bare number silently
           mixes them.
 
-          The ambiguity is latent rather than live: Miami currently produces no
-          rows in this model at all (see the model description), so today every
-          round number resolves to one season. It becomes real the day Miami
-          appears.
+          The ambiguity is live, not latent: Miami produces rows in this model,
+          so a filter on the bare round number mixes Miami rows into the wrong
+          NJ season.
       - name: expected_round_selection
         data_type: string
         description: >-
@@ -803,12 +809,12 @@ models:
           into one. A LEFT JOIN miss means the student sat nothing. An explicit
           null from the intermediate means the student DID sit the round but
           Amplify published no benchmark goal for one of its measures, so the
-          rollup has nothing to judge. Measured on AY2025 the second state
-          occurs on zero rows in both methods, because the population it depends
-          on is the Miami benchmark_goal nulls and Miami produces no rows in
-          this extract -- so the conflation is latent, not live. It becomes real
-          the day Miami appears, and the honest fix then is a fourth value
-          rather than a wider Not Tested.
+          rollup has nothing to judge. Only the Aimline method returns that
+          null; the Internal method always resolves to Met or Did Not Meet
+          Benchmark. No Aimline row, in any region, takes the null state yet, so
+          Not Tested currently means the student sat nothing. If unpublished
+          goals start to appear, the honest fix is a fourth value rather than a
+          wider Not Tested.
 
           The measure-name-code rung of the benchmark lens, between
           admin_benchmark_goal_status at measure-standard grain and
@@ -827,12 +833,12 @@ models:
           into one. A LEFT JOIN miss means the student sat nothing. An explicit
           null from the intermediate means the student DID sit the round but
           Amplify published no benchmark goal for one of its measures, so the
-          rollup has nothing to judge. Measured on AY2025 the second state
-          occurs on zero rows in both methods, because the population it depends
-          on is the Miami benchmark_goal nulls and Miami produces no rows in
-          this extract -- so the conflation is latent, not live. It becomes real
-          the day Miami appears, and the honest fix then is a fourth value
-          rather than a wider Not Tested.
+          rollup has nothing to judge. Only the Aimline method returns that
+          null; the Internal method always resolves to Met or Did Not Meet
+          Benchmark. No Aimline row, in any region, takes the null state yet, so
+          Not Tested currently means the student sat nothing. If unpublished
+          goals start to appear, the honest fix is a fourth value rather than a
+          wider Not Tested.
 
           Round grain, so it repeats on every measure-standard row of that
           student's round. Count distinct students rather than rows.
@@ -913,7 +919,10 @@ models:
           measure comes from the expectation gate this model joins.
       - name: scheduled
         data_type: int64
-        description: 1 when the student matched an ELA section, else 0.
+        description: >-
+          1 when the student matched an ELA section, else 0. Also reads 0 when
+          the student's primary ELA section has a section number containing SC,
+          which the join treats as self-contained.
       - name: aimline_trajectory_category
         data_type: string
         description: >-

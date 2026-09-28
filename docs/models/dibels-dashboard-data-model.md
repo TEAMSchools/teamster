@@ -71,11 +71,7 @@ flowchart TD
         stg_schools["stg_powerschool__schools"]
         stg_cal["stg_powerschool__calendar_day"]
         stg_nj_crs["stg_powerschool__s_nj_crs_x"]
-    end
-
-    %% ── Base ──────────────────────────────────────────────────────────────────
-    subgraph BASE ["Base"]
-        base_ce["base_powerschool__\ncourse_enrollments"]
+        stg_xwalk["stg_google_sheets__\nassessments__course_subject_crosswalk"]
     end
 
     %% ── Intermediate — Amplify / mClass ──────────────────────────────────────
@@ -99,6 +95,8 @@ flowchart TD
         direction TB
         int_spenroll["int_powerschool__spenrollments"]
         int_nj_stu["int_powerschool__\ns_nj_stu_x_unpivot"]
+        int_focus_sched["int_focus__schedule"]
+        int_course_enroll["int_students__\ncourse_enrollments"]
         int_enroll["int_extracts__\nstudent_enrollments"]
         int_enroll_subj["int_extracts__\nstudent_enrollments_subjects"]
         int_dibels_roster["int_students__\ndibels_participation_roster"]
@@ -130,11 +128,13 @@ flowchart TD
     src_ps_cal   --> stg_cal
     src_ps_nj_crs --> stg_nj_crs
     src_ps_nj_stu --> int_nj_stu
+    src_gs_xwalk  --> stg_xwalk
 
-    %% ── Edges: Sources / Staging → Base ──────────────────────────────────────
-    src_ps_districts --> base_ce
-    src_gs_xwalk     --> base_ce
-    stg_nj_crs       --> base_ce
+    %% ── Edges: Sources / Staging → int_students__course_enrollments ─────────
+    src_ps_districts --> int_course_enroll
+    stg_nj_crs        --> int_course_enroll
+    stg_xwalk         --> int_course_enroll
+    int_focus_sched   --> int_course_enroll
 
     %% ── Edges: Sources → Amplify Intermediate ────────────────────────────────
     src_amp --> int_bm_sum
@@ -162,8 +162,8 @@ flowchart TD
     %% ── Edges: Student enrollment chain ──────────────────────────────────────
     int_spenroll --> int_enroll
 
-    int_enroll      --> int_enroll_subj
-    base_ce         --> int_enroll_subj
+    int_enroll        --> int_enroll_subj
+    int_course_enroll --> int_enroll_subj
     int_nj_stu      --> int_enroll_subj
     int_fast        --> int_enroll_subj
     int_pearson     --> int_enroll_subj
@@ -187,7 +187,7 @@ flowchart TD
     stg_bm           --> RPT
     int_gs_pm_exp    --> RPT
     stg_pm           --> RPT
-    base_ce          --> RPT
+    int_course_enroll --> RPT
     int_all          --> RPT
     int_dibels_roster --> RPT
     int_pm_crit      --> RPT
@@ -195,26 +195,23 @@ flowchart TD
     %% ── Styling ───────────────────────────────────────────────────────────────
     classDef source    fill:#e8f4f8,stroke:#5b9bd5,color:#000
     classDef staging   fill:#e2f0d9,stroke:#70ad47,color:#000
-    classDef base      fill:#fff2cc,stroke:#ffc000,color:#000
     classDef intmodel  fill:#fce4d6,stroke:#ed7d31,color:#000
     classDef report    fill:#d9e1f2,stroke:#4472c4,color:#000,font-weight:bold
 
     class src_amp,src_gs_exp,src_gs_bm,src_gs_pm,src_gs_long,src_gs_terms,src_gs_xwalk,src_ps_districts,src_ps_spenroll,src_ps_schools,src_ps_cal,src_ps_nj_crs,src_ps_nj_stu source
-    class stg_exp,stg_bm,stg_pm,stg_long,stg_terms,stg_schools,stg_cal,stg_nj_crs staging
-    class base_ce base
-    class int_bm_sum,int_bm_unpivot,int_pm_sum,int_all,int_pm_crit,int_gs_exp,int_gs_pm_exp,int_spenroll,int_nj_stu,int_enroll,int_enroll_subj,int_dibels_roster,int_cal,int_focus_cal,int_fast,int_pearson,int_fldoe,int_iready,int_deanslist intmodel
+    class stg_exp,stg_bm,stg_pm,stg_long,stg_terms,stg_schools,stg_cal,stg_nj_crs,stg_xwalk staging
+    class int_bm_sum,int_bm_unpivot,int_pm_sum,int_all,int_pm_crit,int_gs_exp,int_gs_pm_exp,int_spenroll,int_nj_stu,int_focus_sched,int_course_enroll,int_enroll,int_enroll_subj,int_dibels_roster,int_cal,int_focus_cal,int_fast,int_pearson,int_fldoe,int_iready,int_deanslist intmodel
     class RPT report
 ```
 
 ### Layer summary
 
-| Layer        | Count | Purpose                                                                   |
-| ------------ | ----- | ------------------------------------------------------------------------- |
-| Sources      | 13    | Raw Google Sheets, Amplify DDS, and district PowerSchool tables           |
-| Staging      | 8     | Light cleaning and type-casting of source data                            |
-| Base         | 1     | Union of 4 district `course_enrollments` tables                           |
-| Intermediate | 17    | Business logic — enrollment, DIBELS roster, assessment joins, PM criteria |
-| Report       | 1     | Final Tableau extract with both Benchmark and PM branches                 |
+| Layer        | Count | Purpose                                                                                     |
+| ------------ | ----- | ------------------------------------------------------------------------------------------- |
+| Sources      | 13    | Raw Google Sheets, Amplify DDS, and district PowerSchool tables                             |
+| Staging      | 9     | Light cleaning and type-casting of source data                                              |
+| Intermediate | 21    | Business logic — enrollment, course schedules, DIBELS roster, assessment joins, PM criteria |
+| Report       | 1     | Final Tableau extract with both Benchmark and PM branches                                   |
 
 ### Key data flows
 
@@ -234,6 +231,17 @@ Below = probe-eligible).
 
 Both the Benchmark and PM branches land in `rpt_tableau__dibels_dashboard` via a
 `UNION ALL`.
+
+**Schedule columns** — teacher, course, and section come from
+`int_students__course_enrollments`, which covers both the PowerSchool and Focus
+(Miami) branches and picks each student's primary ELA section via
+`core_subject = 'ELA'`, `rn_core_subject_year = 1`, and
+`cc_section_number not like '%SC%'` (excludes self-contained sections).
+`course_name` is the crosswalk's standard label (`standard_course_name`);
+`course_number` is the SIS course number (the PowerSchool course number, or the
+Focus course short name), which the course-subject crosswalk sheet
+(`stg_google_sheets__assessments__course_subject_crosswalk`) is joined on, for
+both SIS.
 
 ### Configuration: `stg_google_sheets__dibels_expected_assessments`
 
@@ -2141,8 +2149,8 @@ load-bearing, not cosmetic.** A filter on the bare round number mixes NJ
 students mid-first-half with Miami students in their second half, silently. The
 label renders them as `BOY->MOY: R4` and `MOY->EOY: R4`.
 
-That ambiguity is latent rather than live today, because Miami produces no rows
-in this model at all. It becomes real the day Miami appears.
+That ambiguity is live, not latent: Miami now produces rows in this model, so a
+bare round-number filter mixes NJ and Miami students exactly as described above.
 
 ##### `measure_standard_round_verdicts`: the season on one row
 
@@ -2904,32 +2912,35 @@ filtered to:
 
 - `iready_subject = 'Reading'` — Reading ELA students only
 - `enroll_status in (0, 2, 3)` — active enrollment
-- `not is_self_contained`, `not is_out_of_district`
+- `is_self_contained is not true`, `not is_out_of_district` — written to admit a
+  null self-contained flag rather than exclude it. Focus (Miami) records no
+  self-contained placement at all, so `not is_self_contained` (null fails the
+  `not`) used to drop every Miami row from all three branches below.
 
 #### BM branch
 
-| Join                | Model                                            | Type  | Effect if no match                                     |
-| ------------------- | ------------------------------------------------ | ----- | ------------------------------------------------------ |
-| Expected schedule   | `int_google_sheets__dibels_expected_assessments` | INNER | Student × measure must be in the active BM schedule    |
-| Foundation goals    | `stg_google_sheets__dibels_bm_goals`             | LEFT  | All goal count columns are NULL (goals not yet frozen) |
-| ELA course schedule | `base_powerschool__course_enrollments`           | LEFT  | Teacher / section columns are NULL                     |
-| Actual scores       | `int_amplify__all_assessments`                   | LEFT  | Score columns are NULL (student did not test)          |
-| Completion flags    | `int_students__dibels_participation_roster`      | LEFT  | Completion columns are NULL                            |
+| Join                | Model                                                                                                                                       | Type  | Effect if no match                                     |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ----- | ------------------------------------------------------ |
+| Expected schedule   | `int_google_sheets__dibels_expected_assessments`                                                                                            | INNER | Student × measure must be in the active BM schedule    |
+| Foundation goals    | `stg_google_sheets__dibels_bm_goals`                                                                                                        | LEFT  | All goal count columns are NULL (goals not yet frozen) |
+| ELA course schedule | `int_students__course_enrollments`, filtered to `core_subject = 'ELA'`, `rn_core_subject_year = 1`, and `cc_section_number not like '%SC%'` | LEFT  | Teacher / section columns are NULL                     |
+| Actual scores       | `int_amplify__all_assessments`                                                                                                              | LEFT  | Score columns are NULL (student did not test)          |
+| Completion flags    | `int_students__dibels_participation_roster`                                                                                                 | LEFT  | Completion columns are NULL                            |
 
 All PM goal fields (`average_starting_words`, `pm_round_days`, `benchmark_goal`,
 etc.) and all `met_*` flags are hardcoded `null` in BM rows.
 
 #### PM branch, Internal method
 
-| Join                 | Model                                               | Type  | Effect if no match                                                                          |
-| -------------------- | --------------------------------------------------- | ----- | ------------------------------------------------------------------------------------------- |
-| Expected PM schedule | `int_google_sheets__dibels_pm_expectations`         | INNER | Student × measure × round must be in the active PM schedule                                 |
-| PM goals spine       | `stg_google_sheets__dibels_pm_goals`                | INNER | Student is **excluded** — no goals row means no PM row                                      |
-| Probe eligibility    | `int_amplify__all_assessments` (composite)          | INNER | Student is **excluded** — must have a composite score with `overall_probe_eligible = 'Yes'` |
-| ELA course schedule  | `base_powerschool__course_enrollments`              | LEFT  | Teacher / section columns are NULL                                                          |
-| Actual PM scores     | `int_amplify__all_assessments` (by round + measure) | LEFT  | Score columns are NULL (student did not test that round)                                    |
-| Completion flags     | `int_students__dibels_participation_roster`         | LEFT  | Completion columns are NULL                                                                 |
-| Met-goal flags       | `int_amplify__pm_met_criteria`                      | LEFT  | Met-goal flags are NULL                                                                     |
+| Join                 | Model                                                                                                                                       | Type  | Effect if no match                                                                          |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ----- | ------------------------------------------------------------------------------------------- |
+| Expected PM schedule | `int_google_sheets__dibels_pm_expectations`                                                                                                 | INNER | Student × measure × round must be in the active PM schedule                                 |
+| PM goals spine       | `stg_google_sheets__dibels_pm_goals`                                                                                                        | INNER | Student is **excluded** — no goals row means no PM row                                      |
+| Probe eligibility    | `int_amplify__all_assessments` (composite)                                                                                                  | INNER | Student is **excluded** — must have a composite score with `overall_probe_eligible = 'Yes'` |
+| ELA course schedule  | `int_students__course_enrollments`, filtered to `core_subject = 'ELA'`, `rn_core_subject_year = 1`, and `cc_section_number not like '%SC%'` | LEFT  | Teacher / section columns are NULL                                                          |
+| Actual PM scores     | `int_amplify__all_assessments` (by round + measure)                                                                                         | LEFT  | Score columns are NULL (student did not test that round)                                    |
+| Completion flags     | `int_students__dibels_participation_roster`                                                                                                 | LEFT  | Completion columns are NULL                                                                 |
+| Met-goal flags       | `int_amplify__pm_met_criteria`                                                                                                              | LEFT  | Met-goal flags are NULL                                                                     |
 
 All Foundation BM goal count columns (`n_admin_season_*`) and
 `aggregated_measure_standard_level` / `foundation_measure_standard_level` are
@@ -2943,14 +2954,14 @@ out.
 
 #### PM branch, Aimline method
 
-| Join                 | Model                                                       | Type  | Effect if no match                                              |
-| -------------------- | ----------------------------------------------------------- | ----- | --------------------------------------------------------------- |
-| Eligibility + cohort | `int_amplify__benchmark_student_summary`                    | INNER | Student is **excluded** — needs `rn_pm_eligibility = 1`         |
-| Expected PM schedule | `int_google_sheets__dibels__expected_assessments_by_levels` | INNER | Must be in the schedule for the student's own cohort level      |
-| ELA course schedule  | `base_powerschool__course_enrollments`                      | LEFT  | Teacher / section columns are NULL                              |
-| Actual PM scores     | `int_amplify__all_assessments` (`model_type = 'Aimline'`)   | LEFT  | Score columns are NULL (student did not test that round)        |
-| Completion flags     | `int_students__dibels_participation_roster` (Aimline)       | LEFT  | Completion columns are NULL                                     |
-| Met-goal flags       | `int_amplify__pm_met_criteria_aimline`                      | LEFT  | Aimline flags are NULL, and `aimline_category` reads Not Tested |
+| Join                 | Model                                                                                                                                       | Type  | Effect if no match                                              |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ----- | --------------------------------------------------------------- |
+| Eligibility + cohort | `int_amplify__benchmark_student_summary`                                                                                                    | INNER | Student is **excluded** — needs `rn_pm_eligibility = 1`         |
+| Expected PM schedule | `int_google_sheets__dibels__expected_assessments_by_levels`                                                                                 | INNER | Must be in the schedule for the student's own cohort level      |
+| ELA course schedule  | `int_students__course_enrollments`, filtered to `core_subject = 'ELA'`, `rn_core_subject_year = 1`, and `cc_section_number not like '%SC%'` | LEFT  | Teacher / section columns are NULL                              |
+| Actual PM scores     | `int_amplify__all_assessments` (`model_type = 'Aimline'`)                                                                                   | LEFT  | Score columns are NULL (student did not test that round)        |
+| Completion flags     | `int_students__dibels_participation_roster` (Aimline)                                                                                       | LEFT  | Completion columns are NULL                                     |
+| Met-goal flags       | `int_amplify__pm_met_criteria_aimline`                                                                                                      | LEFT  | Aimline flags are NULL, and `aimline_category` reads Not Tested |
 
 `int_amplify__benchmark_student_summary` does two jobs here. It is the
 eligibility gate, replacing the internal branch's composite join, and it
