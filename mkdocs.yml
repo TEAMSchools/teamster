@@ -82,6 +82,7 @@ nav:
           models/njdoe-universal-screener-data-model.md
       - Athletic Eligibility Data Model:
           models/athletic-eligibility-data-model.md
+      - Academic Health Data Model: models/academic-health-data-model.md
   - Automations: reference/automations.md
 
 markdown_extensions:

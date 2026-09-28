@@ -1,49 +1,138 @@
 models:
   - name: rpt_tableau__sight_words_dashboard
+    description: >-
+      Illuminate Sight Words Quiz results for the sight words Tableau dashboard,
+      one row per quiz, sight word and student. Paterson is excluded.
+
+      Two UNION ALL branches. The first crosses every quiz with every student
+      enrolled in the quiz's grade level that year, then LEFT JOINs the
+      student's response, so an untested student keeps a row with a null value.
+      The second (is_replacement true) adds students who have a response on a
+      quiz written for a different grade level, limited to students recently
+      enrolled; it carries scored rows only.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - repository_id
+              - student_number
+              - sight_word
+          config:
+            severity: warn
     columns:
       - name: repository_id
         data_type: int64
+        description: Illuminate repository id of the quiz.
       - name: title
         data_type: string
+        description: Title of the quiz repository in Illuminate.
       - name: date_administered
         data_type: date
+        description: Date the quiz was administered.
       - name: term_name
         data_type: string
+        description:
+          Network reporting term (RT, school_id 0) the administration date falls
+          in.
       - name: academic_year
         data_type: int64
+        description:
+          Academic year of the reporting term, as the starting calendar year.
       - name: sight_word
         data_type: string
+        description: The sight word, from the quiz repository's field label.
       - name: student_number
         data_type: int64
+        description: Student Number assigned by the school.
+        config:
+          meta:
+            contains_pii: true
       - name: student_name
         data_type: string
+        description: Student's name as recorded in the SIS.
+        config:
+          meta:
+            contains_pii: true
       - name: region
         data_type: string
+        description: The city form of the region. Never Paterson.
       - name: schoolid
         data_type: int64
+        description:
+          PowerSchool school id. A database key, not a school-facing number.
       - name: school
         data_type: string
+        description: School name.
       - name: grade_level
         data_type: int64
+        description:
+          The student's enrolled grade level, with K as 0. Equals the quiz's
+          grade level on non-replacement rows and differs from it on replacement
+          rows.
       - name: team
         data_type: string
+        description: The student's advisory or homeroom.
+        config:
+          meta:
+            contains_pii: true
       - name: is_pathways
         data_type: boolean
+        description: Whether the student is in a self-contained placement.
+        config:
+          meta:
+            contains_pii: true
       - name: iep_status
         data_type: string
+        description: Special-education status as recorded in the SIS.
+        config:
+          meta:
+            contains_pii: true
       - name: lep_status
         data_type: boolean
+        description: Whether the student is identified as an English learner.
+        config:
+          meta:
+            contains_pii: true
       - name: gifted_and_talented
         data_type: string
+        description: Gifted-and-talented identification as recorded in the SIS.
+        config:
+          meta:
+            contains_pii: true
       - name: gender
         data_type: string
+        description: Gender as recorded in the SIS.
+        config:
+          meta:
+            contains_pii: true
       - name: ethnicity
         data_type: string
+        description: Race or ethnicity as recorded in the SIS.
+        config:
+          meta:
+            contains_pii: true
       - name: nj_student_tier
         data_type: string
+        description: New Jersey intervention tier assigned to the student.
+        config:
+          meta:
+            contains_pii: true
       - name: hos
         data_type: string
+        description: Head of School for the student's school.
+        config:
+          meta:
+            contains_pii: true
       - name: value
         data_type: string
+        description:
+          The student's recorded response for the sight word. Null on a
+          non-replacement row where the student has no response.
+        config:
+          meta:
+            contains_pii: true
       - name: is_replacement
         data_type: boolean
+        description:
+          True when the row comes from the replacement branch -- a student who
+          answered a quiz written for a grade level other than their own.

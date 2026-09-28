@@ -246,14 +246,14 @@ with
                 when
                     met_admin_benchmark_goal = 1
                     and met_measure_standard_goal is not null
-                then 'Meeting Aimline, On-Track'
+                then 'Meeting Aimline, Meeting Benchmark'
                 when met_measure_standard_goal = 1
-                then 'Meeting Aimline, Off-Track'
+                then 'Meeting Aimline, Not Yet at Benchmark'
                 when met_measure_standard_goal = 0
                 then 'Below Aimline'
                 when met_admin_benchmark_goal = 1
-                then 'No Aimline Data, On-Track'
-                else 'No Aimline Data, Off-Track'
+                then 'No Aimline Data, Meeting Benchmark'
+                else 'No Aimline Data, Not Yet at Benchmark'
             end as aimline_category,
 
             case
@@ -285,7 +285,7 @@ with
                 partition by academic_year, admin_season, round_number, student_number
             ) as n_round_no_aimline,
 
-            countif(aimline_category = 'Meeting Aimline, Off-Track') over (
+            countif(aimline_category = 'Meeting Aimline, Not Yet at Benchmark') over (
                 partition by academic_year, admin_season, round_number, student_number
             ) as n_round_off_track,
 
@@ -316,7 +316,7 @@ with
                     student_number
             ) as n_code_no_aimline,
 
-            countif(aimline_category = 'Meeting Aimline, Off-Track') over (
+            countif(aimline_category = 'Meeting Aimline, Not Yet at Benchmark') over (
                 partition by
                     academic_year,
                     admin_season,
@@ -425,14 +425,10 @@ select
     end as measure_name_code_goal_status,
 
     case
-        when met_pm_round_overall_criteria = 1
-        then 'Meeting Aimline'
-        when met_pm_round_criteria = 0 and pm_goal_criteria = 'AND'
-        then 'Below Aimline'
-        when met_pm_round_criteria = 0 and completed_test_round
-        then 'Below Aimline'
         when not completed_test_round
         then 'Round Incomplete'
+        when met_pm_round_overall_criteria = 1
+        then 'Meeting Aimline'
         when met_pm_round_criteria is null
         then 'No Aimline Data'
         else 'Below Aimline'
@@ -447,6 +443,8 @@ select
     end as measure_name_code_benchmark_status,
 
     case
+        when not completed_test_round
+        then 'Round Incomplete'
         when round_bm_min_met = 0
         then 'Did Not Meet Benchmark'
         when n_round_bm_unpublished > 0
@@ -462,8 +460,8 @@ select
         when n_code_no_aimline > 0
         then 'No Aimline Data'
         when n_code_off_track > 0
-        then 'Meeting Aimline, Off-Track'
-        else 'Meeting Aimline, On-Track'
+        then 'Meeting Aimline, Not Yet at Benchmark'
+        else 'Meeting Aimline, Meeting Benchmark'
     end as measure_name_code_aimline_benchmark_status,
 
     case
@@ -494,8 +492,8 @@ select
         when n_round_no_aimline > 0
         then 'No Aimline Data'
         when n_round_off_track > 0
-        then 'Meeting Aimline, Off-Track'
-        else 'Meeting Aimline, On-Track'
+        then 'Meeting Aimline, Not Yet at Benchmark'
+        else 'Meeting Aimline, Meeting Benchmark'
     end as aimline_round_category,
 
 from round_category
