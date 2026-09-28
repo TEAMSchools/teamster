@@ -464,10 +464,70 @@ already-closed items. Update the date whenever a status changes.
   `enroll_status` and `total_graduates` fixes -- see PR #5275 -- and after the
   studentid `100034` GPA correction was applied to the official sheet), and
   Kevin's Org Staffing Data.
-- **Still open**: everything else on the per-person split above (Schools List
-  fields still needed from Laz, the shared School Enrollment task, Discipline,
-  Finance, etc.) -- check each owner directly rather than assuming acceptance
-  carries over between tasks.
+- **Still open (as of 2026-09-27)**: every enrollment task.
+  - HS Enrollment (HSDC) is waiting on questions to Casey Gibson.
+  - School Enrollment (Portal) is shared. The budget fields are Laszlo's, the
+    teacher and school leader fields Kevin's, ADA and chronic absenteeism
+    Walters', and the enrollment counts come from `rpt_gsheets__csgf_enrollment`
+    on 2 October (below).
+  - Everything else on the per-person split. Each owner has had their
+    instructions in the CSGF Slack channel; check with them directly rather than
+    assuming acceptance carries over between tasks.
+- **Staging sheet ready for bulk upload**: the "CSGF Data" columns were
+  reordered to match the Portal's Excel templates this cycle, so each grid is a
+  copy-paste into the exported template, not cell-by-cell entry.
+- **#5432 / PR #5435** (early graduates in the 4-year graduation rate): open.
+  Walters decides whether it lands this cycle; HS Grad Data was accepted without
+  it.
+
+### Dates, SY2026-27 cycle
+
+From this cycle's protocol doc (Step 3); re-read it if a date is questioned.
+
+| Date               | What happens                                                                                    |
+| ------------------ | ----------------------------------------------------------------------------------------------- |
+| Thu 1 Oct 2026     | Count day. `csgf_enrollment` filters on `is_enrolled_oct01`.                                    |
+| Fri 2 Oct, 5 PM ET | Internal deadline: owners post in the CSGF Slack channel and move tasks to Ready for Review.    |
+| 5-9 Oct 2026       | Panic week: plan for anything that cannot be submitted as asked.                                |
+| Fri 9 Oct 2026     | CSGF's official deadline. Finance submits unaudited numbers.                                    |
+| January 2027       | Round 2: audited finance, 990s, and the National Student Clearinghouse export (Walters, Casey). |
+
+### 2 October: pull the enrollment counts
+
+`rpt_gsheets__csgf_enrollment` is the only one of the eight models that needs
+count day to have passed (current-year counts and the current-year side of
+retention). Run this the morning of 2 October, after the nightly build, so exits
+entered on 1 October are in. It is due the same afternoon, so start early.
+
+1. Confirm `int_extracts__student_enrollments` rebuilt after 1 October
+   (`last_modified_time` in `kipptaf_students.__TABLES__`, or its latest Dagster
+   materialization). If not, wait for the build or ask the data team to
+   materialize it; don't pull from a pre-count-day build.
+2. Check the model before copying it:
+   - one row per school on the Portal's Schools List;
+   - no blank cells: the Enrollment task rejects blanks, and
+     `total_budgeted_enrollment` stays blank until Laszlo's budget targets are
+     in the targets sheet (Known data risks below);
+   - totals by school against last cycle's accepted numbers; a large swing is a
+     question for the region before it is a submission.
+3. Refresh the Enrollment tab of "CSGF Data", copy it into the School Enrollment
+   template exported from the Portal, upload, and run the Portal's validation.
+4. Post in the CSGF Slack channel and move the task to Ready for Review by 5 PM.
+
+### Helping the collection owner through the rest of the cycle
+
+Walters is the collection owner from 1 October. When he asks where things stand,
+work through this with him rather than from memory:
+
+1. Open the Portal's My Tasks board; list each task's column. Only CSGF moves a
+   task to Done, so Ready for Review is not accepted.
+2. For each task not in Done, name the owner from the per-person split and ask
+   Walters whether they have confirmed in the CSGF Slack channel.
+3. For a task that bounced back, read CSGF's comment, then check the field in
+   `references/field-definitions.md` and the model in
+   `docs/models/csgf-data-model.md` before asking the owner anything.
+4. For anything that will miss 9 October, raise it in panic week. CSGF grants no
+   extensions; only the Round 2 items move to January.
 
 ---
 
@@ -531,10 +591,9 @@ For a one-off CSGF Google Form survey sent by email, read
 [`references/ad-hoc-surveys.md`](references/ad-hoc-surveys.md) (includes the
 2026-2027 Florida B.E.S.T. Algebra 1 worked example).
 
-## Open questions for this skill (not yet answered)
+## Collection owner
 
-- Who is the current collection owner / project manager, for reference the next
-  time this skill needs updating?
+Anthony Walters, from 1 October 2026.
 
 <!-- Next steps to capture: Salesforce Portal account setup/verification,
 working through the rest of the item list, ongoing review / Ready for Review
