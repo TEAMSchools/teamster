@@ -14,7 +14,7 @@
       "Bash(uv tool list)",
       "Edit(/.claude/scratch/**)",
       "Edit(/.claude/skills/dagster-day2/**)",
-      "Edit(/.worktrees/**)",
+      "Edit(/.claude/worktrees/**)",
       "mcp__claude_ai_Cube__meta",
       "mcp__claude_ai_Google_Cloud_BigQuery__execute_sql_readonly",
       "mcp__claude_ai_Google_Cloud_BigQuery__get_dataset_info",
@@ -90,7 +90,6 @@
       "mcp__gke__list_recommendations",
       "mcp__gke__query_logs",
       "Read(/.claude/**)",
-      "Read(/.worktrees/**)",
       "Read(//home/vscode/.claude/**)",
       "Read(//tmp/dagster/**)",
       "Read(//workspaces/teamster/**)",
@@ -216,11 +215,9 @@
     ]
   },
   "enabledPlugins": {
-    "commit-commands@claude-plugins-official": true,
     "dagster@dagster": true,
     "dbt@dbt-agent-marketplace": true,
     "pyright-lsp@claude-plugins-official": true,
-    "security-guidance@claude-plugins-official": true,
     "superpowers@superpowers-dev": true
   },
   "extraKnownMarketplaces": {

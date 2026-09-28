@@ -29,10 +29,10 @@ description:
   deferred upstreams, so prod passing and CI failing is the expected shape.
   Check git before the warehouse; it is one command and decisive.
 
-- **A mid-session Codespace restart can delete `.worktrees/` and desync local
-  git refs** (stale `main`, `git ls-remote <branch>` empty for a live branch, a
-  HEAD that reads as the pre-session commit yet holds merged content). Trust
-  GitHub over local git for ground truth: `gh api .../branches/main` and
+- **A mid-session Codespace restart can delete `.claude/worktrees/` and desync
+  local git refs** (stale `main`, `git ls-remote <branch>` empty for a live
+  branch, a HEAD that reads as the pre-session commit yet holds merged content).
+  Trust GitHub over local git for ground truth: `gh api .../branches/main` and
   `gh api .../pulls/<n>` (`merged` / `merge_commit_sha`), then re-fetch and
   recreate any lost worktree off `origin/main`.
 
