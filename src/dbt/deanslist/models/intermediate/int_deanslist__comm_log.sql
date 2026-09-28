@@ -5,7 +5,7 @@ select
 
     row_number() over (
         partition by cl.student_school_id, cl.academic_year, cl.reason
-        order by cl.call_date desc, cl.call_date_time desc
+        order by cl.call_date_time desc, cl.record_id desc
     )
     = 1 as is_latest_for_reason,
 from {{ ref("stg_deanslist__comm_log") }} as cl
