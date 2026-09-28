@@ -98,6 +98,10 @@ models:
           Grade level of the assessment. Ideally, it should match a student's
           enrolled grade.
 
+      - name: grade_level
+        data_type: int64
+        description: assessment_grade cast to an integer.
+
       - name: performance_level
         data_type: int64
         description: Numeric performance level from the source data.

@@ -189,7 +189,7 @@ with
             null as iep_status,
             null as race_ethnicity,
 
-            cast(assessment_grade as int) as test_grade,
+            grade_level as test_grade,
 
             results_type,
 

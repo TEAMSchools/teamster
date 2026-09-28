@@ -105,8 +105,7 @@ with
             performance_level as performance_band_level,
 
             assessment_name as title,
-
-            cast(assessment_grade as int) as grade_level,
+            grade_level,
 
             test_date,
             cast(null as numeric) as percent_correct,
