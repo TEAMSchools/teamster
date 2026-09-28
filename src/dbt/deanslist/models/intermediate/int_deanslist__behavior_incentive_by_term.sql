@@ -43,6 +43,7 @@ with
 
 select
     b.student_school_id,
+    b.behavior,
 
     t.academic_year,
     t.start_date_date as `start_date`,
@@ -55,8 +56,6 @@ select
         t.term_type
     ) as incentive_type,
     if(t.term_type = 'Quarters', t.quarter_label, t.term_name) as term_name,
-
-    max(b.behavior) as behavior,
 from incentive_behaviors as b
 inner join
     terms as t

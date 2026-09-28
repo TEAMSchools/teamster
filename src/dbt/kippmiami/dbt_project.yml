@@ -23,7 +23,8 @@ data_tests:
     +severity: warn
 
 # the referral_tier unit test asserts the NJ tier scale; Miami maps T1 to High,
-# and a failing unit test would skip int_deanslist__incidents in the prod build
+# and a failing unit test would skip int_deanslist__incidents in the prod build.
+# Remove with the deanslist package in #5580.
 unit_tests:
   deanslist:
     +enabled: false

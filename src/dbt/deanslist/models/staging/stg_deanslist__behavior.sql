@@ -40,7 +40,9 @@ with
             nullif(studentlastname, '') as student_last_name,
             nullif(`weight`, '') as `weight`,
 
-            regexp_extract(behavior, r'^\d+') as behavior_hours_prefix,
+            safe_cast(
+                regexp_extract(behavior, r'^\d+') as int
+            ) as behavior_hours_prefix,
         from row_numbered
         where rn = 1 and (not is_deleted or is_deleted is null)
     )
@@ -48,15 +50,13 @@ with
 select
     * except (behavior_hours_prefix),
 
-    safe_cast(
-        if(
-            behavior_category in ('Community Service', 'Community Service Hours'),
-            behavior_hours_prefix,
-            null
-        ) as int
-    ) as cs_hours,
-
     concat(staff_last_name, ', ', staff_first_name) as staff_full_name,
+
+    if(
+        behavior_category in ('Community Service', 'Community Service Hours'),
+        behavior_hours_prefix,
+        null
+    ) as cs_hours,
 
     {{
         date_to_fiscal_year(
