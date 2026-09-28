@@ -475,8 +475,8 @@ Portal My Tasks board as of 2026-09-28: 27 tasks, all due 10/9/2026.
   School Info is shared: budget fields Laszlo's, teacher and school leader
   fields Kevin's, ADA and chronic absenteeism Walters', and the enrollment
   counts come from `rpt_gsheets__csgf_enrollment` on 2 October (below).
-- The two open enrollment tasks are assigned to Gabriela in the Portal. Reassign
-  them to Walters there so the tasks follow the collection owner.
+- The two open enrollment tasks were reassigned to Walters in the Portal on
+  2026-09-28, after the board snapshot above.
 - Each other owner has had instructions in the CSGF Slack channel; check with
   them directly rather than assuming acceptance carries over between tasks.
 - **Staging sheet ready for bulk upload**: the "CSGF Data" columns were
