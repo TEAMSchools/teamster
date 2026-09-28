@@ -43,10 +43,8 @@ models:
           # tick, cost about 9.4 GiB/day together against 81.1 today.
           #
           # Not a view, and the gap versus a view is enormous here. This model
-          # is read about 853 times a day, and its 3 window functions over a
-          # full union all corresponding block column pruning, so a view read
-          # recomputes the whole model no matter how few columns the reader
-          # selects -- the shape #5035 measured on
+          # is read about 853 times a day, and as a view every read recomputes
+          # its joins and window functions -- the shape #5035 measured on
           # int_assessments__all_college_assessments, where 1 column cost
           # 1.388 GiB against a 1.390 GiB build. At 1.209 GiB a recompute that
           # is roughly 980 GiB/day, against 53.6 eager today and 9.4 here.
