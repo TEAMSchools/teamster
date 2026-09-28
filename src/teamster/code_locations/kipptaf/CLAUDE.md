@@ -26,7 +26,6 @@ LOCAL_TIMEZONE = ZoneInfo("America/New_York")
 | `nsc`                    | SFTP assets                                               | —                | —                       |
 | `overgrad`               | API assets                                                | —                | —                       |
 | `performance_management` | SFTP assets                                               | —                | —                       |
-| `powerschool`            | enrollment API                                            | schedule         | —                       |
 | `smartrecruiters`        | report assets                                             | schedule         | —                       |
 | `tableau`                | workbook refresh assets                                   | schedule         | —                       |
 | `zendesk`                | assets                                                    | schedule         | —                       |

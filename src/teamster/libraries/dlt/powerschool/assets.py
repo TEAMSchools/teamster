@@ -27,16 +27,13 @@ from teamster.libraries.ssh.resources import SSHResource
 ORACLE_SCHEMA = "ps"
 
 # All PowerSchool tables land under one dlt source/pipeline named "powerschool".
-# The `sis` asset-key segment mirrors the `powerschool/enrollment/*` namespace.
 _SOURCE_NAME = "powerschool"
 
 
 def _asset_key(code_location: str, table_name: str) -> AssetKey:
     """The asset key for one PowerSchool SIS table (single source of truth).
 
-    The `sis` segment differentiates SIS from the `powerschool/enrollment/*`
-    namespace; the dbt `powerschool_dlt` source's `asset_key` meta must match
-    this shape or the dbt-source -> dlt-asset lineage breaks.
+    The dbt `powerschool_dlt` source's `asset_key` meta must match this shape or the dbt-source -> dlt-asset lineage breaks.
     """
     return AssetKey([code_location, _SOURCE_NAME, "sis", table_name])
 
