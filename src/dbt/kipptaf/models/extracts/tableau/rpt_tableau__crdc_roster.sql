@@ -1,3 +1,9 @@
+{#- CRDC fall snapshot: 1 October of the submission year, or the next weekday
+    when it falls on a weekend. Confirm against OCR's definition each cycle. -#}
+{%- set oct_01 = modules.datetime.date(var("current_academic_year") - 1, 10, 1) -%}
+{%- set weekend_shift = {5: 2, 6: 1}.get(oct_01.weekday(), 0) -%}
+{%- set fall_snapshot = oct_01 + modules.datetime.timedelta(days=weekend_shift) -%}
+
 with
     retained as (
         select student_number, is_retained_year,
@@ -152,7 +158,8 @@ with
             false as is_credit_recovery,
 
             if(
-                c.cc_dateenrolled <= '2023-10-02' and c.cc_dateleft >= '2023-10-02',
+                c.cc_dateenrolled <= '{{ fall_snapshot }}'
+                and c.cc_dateleft >= '{{ fall_snapshot }}',
                 true,
                 false
             ) as is_oct_01_course,
