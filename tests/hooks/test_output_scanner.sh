@@ -298,4 +298,39 @@ check_output "opaque blob beside a valid Drive token is redacted" deny "${drive_
 	"$(drive_page "${drive_token}" "${drive_blob}")"
 # trunk-ignore-end(shellcheck/SC2312)
 
+echo ""
+echo -e "${YELLOW}PostToolUse: Google API pageToken exemption${NC}"
+# A googleapiclient HttpError quotes the request URL. The Directory users.list
+# cursor is base64 of userdir_tkn_st<base64>userdir_tkn_end, percent-encoded, so
+# the decode pass unwraps a 400-char inner run that trips the entropy heuristic.
+# It is exempt only as the pageToken param of a https://*.googleapis.com/ URL.
+# trunk-ignore-begin(shellcheck/SC2312)
+g_tool=mcp__dagster-plus__get_run_logs
+g_url=https://admin.googleapis.com/admin/directory/v1/users
+g_cursor=$(printf 'userdir_tkn_st%s==userdir_tkn_end' "$(printf 'kR7+ZqLm3Xw9TbPaVn2Y%.0s' {1..20})" | base64 | tr -d '\n')
+g_cursor=${g_cursor//+/%2B}
+g_cursor=${g_cursor//\//%2F}
+g_cursor=${g_cursor//=/%3D}
+g_failure() { # $1 url through ? or &, $2 pageToken, $3 query separator (default &)
+	local sep=${3:-&}
+	jq -cn --arg m "<HttpError 400 when requesting $1pageToken=$2${sep}maxResults=500${sep}projection=full${sep}alt=json returned \"Request contains an invalid argument.\">" \
+		'{items:[{event_type:"STEP_FAILURE",error:{cause:{className:"HttpError",message:$m}}}]}'
+}
+check_output "Directory HttpError with a double-encoded pageToken is clean" clean "${g_tool}" \
+	"$(g_failure "${g_url}?" "${g_cursor}")"
+g_esc=$(printf '\\%s' u0026) # JSON-escaped &
+check_output "pageToken after a JSON-escaped & separator is clean" clean "${g_tool}" \
+	"$(g_failure "${g_url}?customer=my_customer${g_esc}" "${g_cursor}" "${g_esc}")"
+check_output "pageToken on a non-Google host is redacted" deny "${g_tool}" \
+	"$(g_failure "https://googleapis.com.evil.example/v1/users?" "${g_cursor}")"
+check_output "opaque blob beside a Google pageToken is redacted" deny "${g_tool}" \
+	"$(g_failure "${g_url}?" "${g_cursor}") ${drive_blob}"
+check_output "opaque blob in another param of a Google URL is redacted" deny "${g_tool}" \
+	"$(g_failure "${g_url}?state=${drive_blob}&" "${g_cursor}")"
+check_output "Directory cursor outside a URL is redacted" deny "${g_tool}" \
+	"{\"nextPageToken\": \"${g_cursor//%3D/=}\"}"
+check_output "named secret inside a Google pageToken is redacted" deny "${g_tool}" \
+	"$(g_failure "${g_url}?" "gh""p_$(printf 'A1b2C3d4E5f6%.0s' {1..3})")"
+# trunk-ignore-end(shellcheck/SC2312)
+
 print_summary "Output Scanner"
