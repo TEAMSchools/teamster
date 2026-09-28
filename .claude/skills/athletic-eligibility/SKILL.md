@@ -28,7 +28,8 @@ Read its "Steps" section (stop at "Outputs") before changing any rule.
   tab.
 - Statuses and the inputs behind them are student-level PII. Student lists go to
   a tab-separated file in the session scratchpad; commits and PRs get counts by
-  school and status only.
+  school and status only, with any count under 10 written as "under 10", and no
+  total that lets a reader work out a hidden cell.
 - Before any status-changing PR merges, tell the user how many students lose
   eligibility (move to an Ineligible status from Eligible or Probation), so
   Teaching and Learning can be warned.

@@ -51,63 +51,24 @@ with
 
     prev_yr_state_test as (
         select
-            _dbt_source_relation,
-            _dbt_source_project,
-            localstudentidentifier,
-            is_proficient,
-
-            `subject` as raw_subject,
-            'pearson' as source_system,
-            njsla_aggregated_proficiency as njsla_proficiency,
-
-            academic_year + 1 as academic_year_plus,
-
-            cast(statestudentidentifier as string) as statestudentidentifier,
-
-        from {{ ref("int_pearson__all_assessments") }}
-        /* NJSLA is the only Pearson assessment carrying a proficiency, and it
-           runs one window a year; NJGPA's Fall and Spring rows carry none. */
-        where assessment_name = 'NJSLA'
-
-        union all
-
-        select
-            _dbt_source_relation,
             _dbt_source_project,
 
-            null as localstudentidentifier,
-
-            is_proficient,
-
-            assessment_subject as raw_subject,
-            'fldoe' as source_system,
-            fast_aggregated_proficiency as proficiency,
+            state_student_id as statestudentidentifier,
+            aggregated_proficiency as state_test_aggregated_proficiency,
+            illuminate_subject_area as `subject`,
 
             academic_year + 1 as academic_year_plus,
-
-            student_id as statestudentidentifier,
-
-        from {{ ref("int_fldoe__all_assessments") }}
+        from {{ ref("int_assessments__state_scores") }}
         where
-            scale_score is not null
-            and assessment_name = 'FAST'
-            and administration_window = 'PM3'
-    ),
-
-    prev_yr_state_test_resolved as (
-        select
-            p._dbt_source_project,
-            p.statestudentidentifier,
-            p.academic_year_plus,
-            p.njsla_proficiency,
-
-            coalesce(x.illuminate_subject_area, p.raw_subject) as `subject`,
-
-        from prev_yr_state_test as p
-        left join
-            {{ ref("stg_google_sheets__assessments__vendor_subject_crosswalk") }} as x
-            on p.source_system = x.source_system
-            and p.raw_subject = x.raw_subject
+            /* NJSLA is the only Pearson assessment carrying a proficiency, and
+               it runs one window a year; NJGPA's Fall and Spring rows carry none. */
+            (score_source = 'state_nj' and assessment_name = 'NJSLA')
+            or (
+                score_source = 'state_fl'
+                and scale_score is not null
+                and assessment_name = 'FAST'
+                and administration_period = 'PM3'
+            )
     ),
 
     prev_yr_iready as (
@@ -258,7 +219,7 @@ select
 
     coalesce(a.is_iep_eligible, false) as is_grad_iep_exempt,
 
-    coalesce(py.njsla_proficiency, 'No Test') as state_test_proficiency,
+    coalesce(py.state_test_aggregated_proficiency, 'No Test') as state_test_proficiency,
 
     coalesce(pr.iready_proficiency, 'No Test') as iready_proficiency_eoy,
 
@@ -278,7 +239,9 @@ select
 
     if(ie.student_number is not null or co.is_sipps, true, false) as is_exempt_iready,
 
-    if(co.grade_level <= 3, pr.iready_proficiency, py.njsla_proficiency) as bucket_one,
+    if(
+        co.grade_level <= 3, pr.iready_proficiency, py.state_test_aggregated_proficiency
+    ) as bucket_one,
 
     if(
         co.grade_level >= 9, sj.powerschool_credittype, sj.illuminate_subject_area
@@ -324,7 +287,7 @@ left join
     and co.student_number = fp.student_number
     and sj.discipline = fp.discipline
 left join
-    prev_yr_state_test_resolved as py
+    prev_yr_state_test as py
     /* TODO: find records that only match on SID */
     on co.state_studentnumber = py.statestudentidentifier
     and co.academic_year = py.academic_year_plus
