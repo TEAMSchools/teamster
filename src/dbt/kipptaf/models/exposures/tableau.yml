@@ -319,7 +319,7 @@ exposures:
     label: Literacy Dashboard
     type: dashboard
     owner:
-      name: Data Team - grangel
+      name: Data Team - awalters
     depends_on:
       - ref("rpt_tableau__dibels_dashboard")
       - ref("rpt_tableau__sight_words_dashboard")

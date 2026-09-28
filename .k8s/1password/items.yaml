@@ -338,14 +338,6 @@ spec:
 apiVersion: onepassword.com/v1
 kind: OnePasswordItem
 metadata:
-  name: op-powerschool-enrollment-api
-  namespace: dagster-cloud
-spec:
-  itemPath: vaults/Data Team/items/PowerSchool Enrollment
----
-apiVersion: onepassword.com/v1
-kind: OnePasswordItem
-metadata:
   name: op-overgrad-api-kippnewark
   namespace: dagster-cloud
 spec:

@@ -56,8 +56,8 @@ specifics live there.
   `--checkout` for a branch switch), then
   `git worktree add /workspaces/teamster/.claude/worktrees/<branch> <branch>`.
   The path must be absolute; a relative one nests one worktree inside another.
-  Keep worktrees under `.claude/worktrees/`: `EnterWorktree` prompts on every
-  path outside it, and no allow rule or auto mode suppresses that prompt.
+  Keep worktrees under `.claude/worktrees/`: `.claude/rules/worktrees.md` loads
+  on the first read there and nowhere else.
 - Create, without an issue (user declined):
   `git worktree add -b <branch> <abs-path> origin/main` or
   `git checkout -b <branch>`. Name `origin/main`; local `main` is often behind.
@@ -65,11 +65,11 @@ specifics live there.
   then `git worktree add`. Base other than `main` skips both `claude-review` and
   dbt Cloud CI; only Trunk runs (see `pr-ci-review`). Unset the upstream right
   after, per `.claude/rules/worktrees.md`.
-- Enter: after any `git worktree add`, call `EnterWorktree` `path=<abs-path>`,
-  then Read `.claude/rules/worktrees.md`. Inside a worktree its
-  `.claude/worktrees/**` trigger never fires (rules resolve against the worktree
-  root). Never `EnterWorktree` `name`: it creates its own branch with no issue
-  link.
+- Work: stay in the main checkout and reach the worktree by absolute path. Never
+  call `EnterWorktree` (`path` or `name`), even when a skill asks for a native
+  worktree tool. It moves the session transcript into the worktree's project
+  folder, which drops it from the VS Code session list; a session that visits
+  several worktrees is filed under the last one only.
 - Linking an existing remote branch to an issue: `mcp__github__create_branch`
   and GraphQL `createLinkedBranch` both no-op. Deleting the remote branch is
   classifier-blocked even with consent. Create the branch under a NEW name and
@@ -206,8 +206,8 @@ cells are not.
   including inside `superpowers:brainstorming` ("Write design doc"),
   `superpowers:writing-plans` ("Save plans to:"), and
   `superpowers:using-git-worktrees`. Pause the skill, run the flow, then write
-  the spec or plan on the new branch. The flow's _Enter_ step is the native tool
-  `using-git-worktrees` asks for.
+  the spec or plan on the new branch. The flow's `git worktree add` satisfies
+  `using-git-worktrees` Step 1a; do not call its native tool (see _Work_).
 - After committing a spec, push it and comment its branch URL
   (`.../blob/<branch>/docs/superpowers/specs/...`, never a commit SHA) on the
   issue. `superpowers:brainstorming` stops at commit, and Phase 2 step 5 of
