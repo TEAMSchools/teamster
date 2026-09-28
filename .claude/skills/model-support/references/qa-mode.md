@@ -70,6 +70,13 @@ Every check, here or in a family skill, reports what it compared:
 
 ## Refactor parity
 
+When current data cannot exercise the change, replay a past cycle: compile both
+versions with `--vars '{current_academic_year: <past>}'` and compare. On CRDC
+the fix for students tagged twice showed no difference on SY2025-26, because the
+tags were from SY2023-24; the SY2023-24 replay showed student counts unchanged
+and only the duplicate rows gone. Run the two compiled files through a Python
+BigQuery client under ADC, so long SQL never passes through the conversation.
+
 1. Build the changed `rpt_` views on the dev target. Invoke `dbt-local-dev`
    first: `--defer` and stale dev tables give false differences. Never build
    `--target staging` without the user's explicit go-ahead; it writes shared

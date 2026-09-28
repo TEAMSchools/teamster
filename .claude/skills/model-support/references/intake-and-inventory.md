@@ -59,6 +59,15 @@ Reading exposure YAML is local; do not open Tableau.
 Every external consumer needs an exposure (`src/dbt/kipptaf/CLAUDE.md` →
 Exposures). A missing one is a finding, not a reason to guess the branch.
 
+A periodic submission (a federal or funder report entered by hand on someone
+else's site, such as CRDC or CSGF) uses the process outline even when a Tableau
+exposure exists: the workbook is a worksheet for typing numbers in, not the
+product. Its skill carries the cycle (kickoff doc and owner table, collection
+sheet, entry, and the error flags the receiving site raises) plus a rollover
+that maps the receiver's published element changes to the code. Read the last
+cycle's folder first; on CRDC it held the owner table, deadlines, and the
+reference dates the SQL encodes.
+
 For a Google Sheet consumer, check the data team's two-tier convention: the
 Connected Sheets extraction lives in the shared drive's IMPORTRANGE Sources
 folder, named exactly after the model, and users get a friendly-named sheet in
