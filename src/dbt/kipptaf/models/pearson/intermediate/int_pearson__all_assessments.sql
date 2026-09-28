@@ -94,7 +94,8 @@ with
 
 /* Every per-row derivation lives upstream: int_pearson__all_assessments in the
    pearson package and the stg_cambium__* models in the cambium package. Only
-   the two cross-source repairs remain here. */
+   the two cross-source repairs and the incomplete-attempt filter above remain
+   here. */
 select
     s.* replace (
         cast(s.statestudentidentifier as string) as statestudentidentifier,
