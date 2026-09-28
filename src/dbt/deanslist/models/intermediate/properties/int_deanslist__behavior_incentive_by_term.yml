@@ -1,0 +1,49 @@
+models:
+  - name: int_deanslist__behavior_incentive_by_term
+    description: >-
+      One row per student, incentive type, and DeansList term in which the
+      student earned that incentive. Quarterly, monthly, and weekly incentive
+      behaviors match the term of the same length; Progress to Quarterly
+      Incentive matches weekly terms.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_school_id
+              - incentive_type
+              - academic_year
+              - term_name
+              - school_id
+    columns:
+      - name: student_school_id
+        data_type: int64
+        description: Student number the school uses for the student.
+        config:
+          meta:
+            contains_pii: true
+      - name: incentive_type
+        data_type: string
+        description: >-
+          DeansList term type the incentive was earned in (Quarters, Months, or
+          Weeks). Progress to Quarterly Incentive rows read Weeks (Progress to
+          Quarterly Incentive).
+      - name: academic_year
+        data_type: int64
+        description: Starting year of the academic year.
+      - name: term_name
+        data_type: string
+        description: >-
+          DeansList term name. Quarters are relabeled Q1 through Q4 from the
+          last character of the term name.
+      - name: start_date
+        data_type: date
+        description: First day of the term.
+      - name: end_date
+        data_type: date
+        description: Last day of the term.
+      - name: school_id
+        data_type: int64
+        description: DeansList school id of the term.
+      - name: behavior
+        data_type: string
+        description: Incentive behavior the student earned in the term.
