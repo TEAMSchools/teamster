@@ -10,6 +10,9 @@ models:
       (int_focus__student_enrollment.syear), else the lowest student_number.
       Adds standardized metadata columns (results_type, district_state,
       fast_aggregated_proficiency) for use in network-level reporting.
+    config:
+      meta:
+        contains_pii: true
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -79,10 +82,10 @@ models:
           Network student_number (the 8400-prefixed Focus student_id) resolved
           by joining student_id (FLEID) to
           int_focus__students.florida_education_identifier. Where a FLEID sits
-          on more than one Focus record (#3887), the lowest student_number wins:
-          it is the migrated record and the one enrollments carry (216 of 279
-          affected score rows attach, against 55 for the highest). Null for the
-          small number of FLDOE students with no Focus record.
+          on more than one Focus record, the record with a Focus enrollment in
+          the score's academic_year wins; when neither or both are enrolled that
+          year, the lowest student_number wins. Null for FLDOE students with no
+          Focus record.
       - name: results_type
         data_type: string
         description: Always 'Actual' for FLDOE results (no preliminary scores).

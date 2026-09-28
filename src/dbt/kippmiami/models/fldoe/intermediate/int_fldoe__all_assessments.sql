@@ -61,8 +61,8 @@ with
     ),
 
     fleid_lookup as (
-        -- 64 FLEIDs sit on more than one Focus student record (#5584): prefer
-        -- the one enrolled that year, else the lower student_number
+        -- some FLEIDs sit on more than one Focus record (#5584): prefer the one
+        -- enrolled that year, else the lower student_number
         {{
             dbt_utils.deduplicate(
                 relation="fleid_lookup_raw",
