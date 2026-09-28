@@ -52,134 +52,31 @@ with
         where rr.is_internal_assessment
     ),
 
-    state_nj as (
-        select
-            localstudentidentifier as student_number,
-            academic_year,
-            subject_area,
-            `subject` as raw_subject,
-            discipline,
-            module_code,
-            administration_period,
-            assessment_type,
-            _dbt_source_project,
-
-            cast(null as string) as state_student_id,
-
-            test_grade as grade_level,
-            testscalescore as scale_score,
-            is_proficient,
-            testperformancelevel_text as performance_band,
-            testperformancelevel as performance_band_level,
-
-            assessment_name as title,
-
-            test_date,
-            cast(null as numeric) as percent_correct,
-
-            'pearson' as source_system,
-            'state_nj' as score_source,
-        from {{ ref("int_pearson__all_assessments") }}
-        where
-            academic_year >= {{ var("current_academic_year") - 7 }}
-            and testscalescore is not null
-    ),
-
-    state_fl as (
-        select
-            student_number,
-            academic_year,
-            assessment_subject as subject_area,
-            assessment_subject as raw_subject,
-            discipline,
-            test_code as module_code,
-            scale_score,
-            is_proficient,
-            administration_window as administration_period,
-            assessment_type,
-            _dbt_source_project,
-
-            student_id as state_student_id,
-
-            achievement_level as performance_band,
-            performance_level as performance_band_level,
-
-            assessment_name as title,
-            grade_level,
-
-            test_date,
-            cast(null as numeric) as percent_correct,
-
-            'fldoe' as source_system,
-            'state_fl' as score_source,
-        from {{ ref("int_fldoe__all_assessments") }}
-        where scale_score is not null
-    ),
-
-    state_all as (
-        select
-            student_number,
-            state_student_id,
-            academic_year,
-            subject_area,
-            raw_subject,
-            source_system,
-            discipline,
-            module_code,
-            grade_level,
-            scale_score,
-            is_proficient,
-            performance_band,
-            performance_band_level,
-            administration_period,
-            title,
-            _dbt_source_project,
-            test_date,
-            percent_correct,
-            score_source,
-            assessment_type,
-        from state_nj
-
-        union all
-
-        select
-            student_number,
-            state_student_id,
-            academic_year,
-            subject_area,
-            raw_subject,
-            source_system,
-            discipline,
-            module_code,
-            grade_level,
-            scale_score,
-            is_proficient,
-            performance_band,
-            performance_band_level,
-            administration_period,
-            title,
-            _dbt_source_project,
-            test_date,
-            percent_correct,
-            score_source,
-            assessment_type,
-        from state_fl
-    ),
-
     state_union as (
         select
-            sa.*,
+            student_number,
+            academic_year,
+            subject_area,
+            module_code,
+            administration_period,
+            assessment_type,
+            scale_score,
+            is_proficient,
+            test_date,
+            score_source,
+            _dbt_source_project,
 
-            coalesce(
-                cast(sa.student_number as string), sa.state_student_id
-            ) as student_identifier,
+            performance_level_label as performance_band,
+            illuminate_subject_area as illuminate_subject,
 
-            coalesce(x.illuminate_subject_area, sa.raw_subject) as illuminate_subject,
-        from state_all as sa
-        left join
-            {{ ref("stg_google_sheets__assessments__vendor_subject_crosswalk") }} as x
-            on sa.source_system = x.source_system
-            and sa.raw_subject = x.raw_subject
+            cast(null as numeric) as percent_correct,
+        from {{ ref("int_assessments__state_scores") }}
+        where
+            scale_score is not null
+            and (
+                score_source = 'state_fl'
+                or academic_year >= {{ var("current_academic_year") - 7 }}
+            )
     ),
 
     iready_scores_raw as (
@@ -572,7 +469,7 @@ select
         dbt_utils.generate_surrogate_key(
             [
                 "su._dbt_source_project",
-                "su.student_identifier",
+                "su.student_number",
                 "su.academic_year",
                 "su.administration_period",
                 "su.subject_area",

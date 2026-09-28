@@ -11,7 +11,6 @@ from teamster.code_locations.kippmiami import (
     DBT_PROJECT,
     couchdrop,
     dbt,
-    deanslist,
     dlt,
     extracts,
     finalsite,
@@ -22,7 +21,6 @@ from teamster.code_locations.kippmiami import (
 from teamster.code_locations.kippmiami.resources import FINALSITE_RESOURCE, SSH_FOCUS
 from teamster.core.resources import (
     BIGQUERY_RESOURCE,
-    DEANSLIST_RESOURCE,
     DLT_RESOURCE,
     GCS_RESOURCE,
     GOOGLE_DRIVE_RESOURCE,
@@ -42,7 +40,6 @@ defs = Definitions(
             dbt,
             dlt,
             extracts,
-            deanslist,
             finalsite,
             fldoe,
             iready,
@@ -52,7 +49,6 @@ defs = Definitions(
     schedules=[
         *dlt.schedules,
         *extracts.schedules,
-        *deanslist.schedules,
         *finalsite.schedules,
     ],
     sensors=[
@@ -68,7 +64,6 @@ defs = Definitions(
     resources={
         "db_bigquery": BIGQUERY_RESOURCE,
         "dbt_cli": get_dbt_cli_resource(DBT_PROJECT),
-        "deanslist": DEANSLIST_RESOURCE,
         "dlt": DLT_RESOURCE,
         "finalsite": FINALSITE_RESOURCE,
         "gcs": GCS_RESOURCE,

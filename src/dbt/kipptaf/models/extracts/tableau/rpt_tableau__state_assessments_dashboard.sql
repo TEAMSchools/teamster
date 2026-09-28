@@ -138,15 +138,17 @@ with
         select
             _dbt_source_project,
             academic_year,
-            localstudentidentifier,
-            statestudentidentifier as state_id,
+            -- network student_number, matching e.pearson_local_student_identifier
+            -- (misnamed: not Pearson-specific), so the attaching join works (#5042)
+            student_number as localstudentidentifier,
+            state_student_id as state_id,
             assessment_name,
             discipline,
-            testscalescore as score,
-            testperformancelevel as performance_band_level,
+            scale_score as score,
+            performance_level as performance_band_level,
             is_proficient,
-            testperformancelevel_text as performance_band,
-            njsla_performance_band_group_label as performance_band_group_label,
+            performance_level_label as performance_band,
+            performance_band_group_label,
             aligned_performance_band_group,
             lep_status,
             is_504,
@@ -156,50 +158,18 @@ with
 
             results_type,
 
-            `admin`,
-            `admin` as season,
+            administration_round as `admin`,
+            season,
             aligned_subject as `subject`,
             aligned_test_code as test_code,
 
-        from {{ ref("int_pearson__all_assessments") }}
+        from {{ ref("int_assessments__state_scores") }}
         where
-            academic_year >= {{ var("current_academic_year") - 7 }}
-            and testscalescore is not null
-
-        union all
-
-        select
-            _dbt_source_project,
-            academic_year,
-            -- network student_number, matching e.pearson_local_student_identifier
-            -- (misnamed: not Pearson-specific), so the attaching join works (#5042)
-            student_number as localstudentidentifier,
-            student_id as state_id,
-            assessment_name,
-            discipline,
-            scale_score as score,
-            performance_level as performance_band_level,
-            is_proficient,
-            achievement_level as performance_band,
-            fast_performance_band_group_label as performance_band_group_label,
-            aligned_performance_band_group,
-
-            null as lep_status,
-            null as is_504,
-            null as iep_status,
-            null as race_ethnicity,
-
-            grade_level as test_grade,
-
-            results_type,
-
-            administration_window as `admin`,
-            season,
-            assessment_subject as `subject`,
-            test_code,
-
-        from {{ ref("int_fldoe__all_assessments") }}
-        where scale_score is not null
+            scale_score is not null
+            and (
+                score_source = 'state_fl'
+                or academic_year >= {{ var("current_academic_year") - 7 }}
+            )
 
         union all
 
