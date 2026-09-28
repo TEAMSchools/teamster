@@ -14,6 +14,7 @@ select
     concat(testperformancelevel_text, ' (', testscalescore, ')') as score_display,
 
     row_number() over (
-        partition by localstudentidentifier, `subject` order by assessmentyear asc
+        partition by localstudentidentifier, `subject`
+        order by assessmentyear asc, administration_period asc
     ) as test_index,
 from {{ ref("int_pearson__all_assessments") }}
