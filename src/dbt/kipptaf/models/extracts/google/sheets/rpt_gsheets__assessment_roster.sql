@@ -27,32 +27,6 @@ with
             )
     ),
 
-    fast as (
-        select
-            student_number,
-            academic_year,
-            administration_window as administration_round,
-            achievement_level as performance_band_label,
-            performance_level as performance_band_int,
-            is_proficient,
-            `discipline` as `subject`,
-
-            'FAST' as assessment_source,
-
-            cast(null as string) as assessment_id,
-            cast(null as string) as assessment_title,
-            cast(scale_score as numeric) as scale_score,
-            cast(null as numeric) as percent_correct,
-        from {{ ref("int_fldoe__all_assessments") }}
-        where
-            student_number is not null
-            and `discipline` in ('ELA', 'Math')
-            and academic_year in (
-                {{ var("current_academic_year") }},
-                {{ var("current_academic_year") - 1 }}
-            )
-    ),
-
     dibels_filtered as (
         select
             student_number,
@@ -104,27 +78,40 @@ with
         from dibels_deduplicated
     ),
 
-    njsla as (
+    state_tests as (
         select
-            localstudentidentifier as student_number,
+            student_number,
             academic_year,
-            admin as administration_round,
-            testperformancelevel_text as performance_band_label,
+            administration_round,
+            performance_level_label as performance_band_label,
             is_proficient,
             `discipline` as `subject`,
 
-            'NJSLA' as assessment_source,
-
             cast(null as string) as assessment_id,
             cast(null as string) as assessment_title,
-            cast(testscalescore as numeric) as scale_score,
+            cast(scale_score as numeric) as scale_score,
             cast(null as numeric) as percent_correct,
-            cast(testperformancelevel as int) as performance_band_int,
-        from {{ ref("int_pearson__all_assessments") }}
+            cast(performance_level as int) as performance_band_int,
+
+            if(score_source = 'state_nj', 'NJSLA', 'FAST') as assessment_source,
+        from {{ ref("int_assessments__state_scores") }}
         where
-            assessment_name = 'NJSLA'
-            and `discipline` in ('ELA', 'Math')
-            and academic_year = {{ var("current_academic_year") - 1 }}
+            `discipline` in ('ELA', 'Math')
+            and (
+                (
+                    score_source = 'state_nj'
+                    and assessment_name = 'NJSLA'
+                    and academic_year = {{ var("current_academic_year") - 1 }}
+                )
+                or (
+                    score_source = 'state_fl'
+                    and student_number is not null
+                    and academic_year in (
+                        {{ var("current_academic_year") }},
+                        {{ var("current_academic_year") - 1 }}
+                    )
+                )
+            )
     ),
 
     internal as (
@@ -185,7 +172,7 @@ with
             scale_score,
             percent_correct,
             `subject`,
-        from fast
+        from state_tests
 
         union all
 
@@ -203,23 +190,6 @@ with
             percent_correct,
             `subject`,
         from dibels
-
-        union all
-
-        select
-            student_number,
-            academic_year,
-            administration_round,
-            performance_band_label,
-            performance_band_int,
-            is_proficient,
-            assessment_source,
-            assessment_id,
-            assessment_title,
-            scale_score,
-            percent_correct,
-            `subject`,
-        from njsla
 
         union all
 
