@@ -46,39 +46,21 @@ with
     ),
 
     -- rows with no test date or no student cannot resolve -> dropped
-    state_nj_scores as (
-        select
-            localstudentidentifier as powerschool_student_number,
-            academic_year,
-            administration_period,
-            `subject` as raw_subject,
-            _dbt_source_project,
-
-            test_date as anchor_date,
-
-            cast(null as int64) as canonical_assessment_id,
-
-            'pearson' as source_system,
-            'state_nj' as source_type,
-        from {{ ref("int_pearson__all_assessments") }}
-        where test_date is not null and localstudentidentifier is not null
-    ),
-
-    state_fl_scores as (
+    state_scores as (
         select
             student_number as powerschool_student_number,
             academic_year,
-            administration_window as administration_period,
-            assessment_subject as raw_subject,
+            administration_period,
+            raw_subject,
             _dbt_source_project,
 
             test_date as anchor_date,
+            score_source as source_type,
 
             cast(null as int64) as canonical_assessment_id,
 
-            'fldoe' as source_system,
-            'state_fl' as source_type,
-        from {{ ref("int_fldoe__all_assessments") }}
+            if(score_source = 'state_nj', 'pearson', 'fldoe') as source_system,
+        from {{ ref("int_assessments__state_scores") }}
         where test_date is not null and student_number is not null
     ),
 
@@ -171,21 +153,7 @@ with
             _dbt_source_project,
             anchor_date,
             source_type,
-        from state_nj_scores
-
-        union all
-
-        select
-            powerschool_student_number,
-            canonical_assessment_id,
-            academic_year,
-            administration_period,
-            raw_subject,
-            source_system,
-            _dbt_source_project,
-            anchor_date,
-            source_type,
-        from state_fl_scores
+        from state_scores
 
         union all
 
