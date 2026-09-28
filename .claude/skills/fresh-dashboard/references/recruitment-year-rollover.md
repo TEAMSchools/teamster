@@ -19,6 +19,10 @@ hand-bumped var and not computed (two attempts to compute it were reverted;
 Flipping the var before the sheets carry the new year does not error; it returns
 zero rows.
 
+The dashboard holds one school year. The bump overwrites last year's data, and
+nothing recovers it afterwards. Before the bump, ask the user whether last
+year's numbers need keeping; if so, ask Charlie to snapshot the data first.
+
 **Step 0a: ask for the new SRE workbook.** Ask the user: "Do you have a new SRE
 target sheet URL for this cycle?" Read it with the Sheets API
 ([sre-workbook.md](sre-workbook.md)) and use its cover sheet as the
