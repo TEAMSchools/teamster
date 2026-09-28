@@ -593,8 +593,8 @@ goals rows were entered by hand. The procedure is in the skill's
 benchmark results into the layout NJDOE's universal screener collection asks
 for, with each region's district and school codes. It belongs to this family
 until the Data Team has a data-sharing agreement with NJDOE that lets the state
-pull directly from Amplify. Its own reference page is on open PR
-[#5471](https://github.com/TEAMSchools/teamster/pull/5471).
+pull directly from Amplify. It has its own reference page,
+[NJDOE universal screener](njdoe-universal-screener-data-model.md).
 
 ## Supporting models
 
@@ -1066,7 +1066,8 @@ for editing the sheets safely.
 11. Sight words: ask the Managing Director of Teaching & Learning (Sabine
     Vilsaint) whether the dashboard is still used, then move its academic year
     to the current year in the workbook.
-12. NJDOE screener: see its own page once PR #5471 merges.
+12. NJDOE screener: see its own page,
+    [NJDOE universal screener](njdoe-universal-screener-data-model.md).
 
 ## Pending work
 
