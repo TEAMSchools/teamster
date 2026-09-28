@@ -888,7 +888,7 @@ replaced. Kept collapsed for history; none of it describes the current pipeline.
         %% ── Intermediate – Upstream ──────────────────────────────────────────────
         subgraph INT_UP ["Intermediate · Upstream"]
             direction TB
-            int_terms["int_powerschool__terms\n+ calendar_week"]
+            int_terms["int_students__terms\n+ calendar_week"]
             int_catgr["int_powerschool__\ncategory_grades"]
             int_ga["int_powerschool__\ngradebook_assignments"]
             int_gas["int_powerschool__\ngradebook_assignments_scores"]
@@ -1127,7 +1127,7 @@ replaced. Kept collapsed for history; none of it describes the current pipeline.
     | Source                             | Scope         |
     | ---------------------------------- | ------------- |
     | `base_powerschool__sections`       | Multi-year    |
-    | `int_powerschool__terms`           | Multi-year    |
+    | `int_students__terms`              | Multi-year    |
     | `int_powerschool__calendar_week`   | Multi-year    |
     | `int_people__staff_roster`         | Year-agnostic |
     | `stg_powerschool__schools`         | Year-agnostic |
@@ -1139,7 +1139,7 @@ replaced. Kept collapsed for history; none of it describes the current pipeline.
        `int_people__staff_roster` for `teacher_tableau_username`; filters to
        `current_academic_year` and excludes zero-student sections; applies
        section-level exceptions.
-    2. `term_weeks` — joins `int_powerschool__terms` to
+    2. `term_weeks` — joins `int_students__terms` to
        `int_powerschool__calendar_week` on `yearid + schoolid + quarter`; joins
        `stg_powerschool__schools` for the school abbreviation; joins
        `int_people__leadership_crosswalk` for HoS and school leader names; computes

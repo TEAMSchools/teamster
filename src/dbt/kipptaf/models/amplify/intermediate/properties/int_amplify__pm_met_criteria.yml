@@ -171,12 +171,37 @@ models:
           level rather than on pace. Independent of met_measure_standard_goal,
           and a student can meet either without the other. The two converge in
           the season's last round, where cumulative_growth_words is set to
-          benchmark_goal outright.
+          benchmark_goal_padded outright.
+
+          The aimline sibling's column of the same name compares against the
+          UNPADDED standard, so the two methods disagree on 3,162 AY2025 rows,
+          always in the same direction. That is T&L's recorded choice, not
+          drift; see met_admin_benchmark_goal_unpadded below and the padding
+          note in the DIBELS reference.
 
           Recomputed every round and not latched — a student who clears the
           standard in one round and dips below it in the next reads 1 then 0. It
           is also a leaf — nothing in this model aggregates it, and the whole
           met/not-met chain runs on met_measure_standard_goal alone.
+      - name: met_admin_benchmark_goal_unpadded
+        data_type: int64
+        description: >-
+          The same comparison as met_admin_benchmark_goal against the bare
+          published standard — 1 when the score reaches benchmark_goal, without
+          academics' 3-word planning buffer.
+
+          Deliberately unused. Nothing reads it, no view binds it, and it is
+          null on both other branches of the reporting extract. It exists so a
+          future consumer who wants an at-grade-level figure comparable with the
+          aimline method's has the column ready without a model change, since
+          the aimline sibling's met_admin_benchmark_goal is already unpadded.
+
+          Internal only, on purpose. Adding an unpadded variant on the aimline
+          branch would ship a byte-identical copy of the column already there.
+
+          Wiring this into a view CHANGES A PUBLISHED NUMBER — it reads 1 on
+          3,162 AY2025 rows where met_admin_benchmark_goal reads 0. That is a
+          reporting decision for T&L, not an implementation detail.
       - name: met_measure_name_code_goal
         data_type: int64
         description: >-
@@ -220,14 +245,63 @@ models:
           between the three status columns instead of converting each numeric
           flag itself. Round Incomplete never applies to it — a single measure
           standard in a single round cannot be partly finished — though the
-          extract adds Not Tested to all three status columns.
+          extract adds Not Tested to all four status columns.
+      - name: measure_name_code_goal_status
+        data_type: string
+        description: >-
+          met_measure_name_code_goal as a label rather than a flag — Met or Not
+          Met. Met means the student met the goal on EVERY measure standard
+          under this measure name code, not just this one, so it is the column
+          to read when someone asks about a measure rather than a sub-score.
+          Only NWF and ORF carry more than one standard; for the other three
+          codes this equals measure_standard_goal_status by construction.
       - name: admin_benchmark_goal_status
         data_type: string
         description: >-
-          met_admin_benchmark_goal as a label rather than a flag — Met or Not
-          Met. The twin of the flag, for the same reason as
-          measure_standard_goal_status, and per round rather than latched, since
-          the flag it labels is.
+          met_admin_benchmark_goal as a label rather than a flag — Met Benchmark
+          or Did Not Meet Benchmark. The twin of the flag, for the same reason
+          as measure_standard_goal_status, and per round rather than latched,
+          since the flag it labels is.
+
+          The values name the benchmark explicitly, unlike the other status
+          columns' bare Met / Not Met, because this is the one grain where both
+          PM methods use the same wording — the benchmark standard means the
+          same thing on either. A reader seeing Met Benchmark beside Meeting
+          Aimline should be able to tell which bar was cleared.
+
+          Null is preserved rather than folded into Did Not Meet Benchmark. It
+          cannot occur here, since this model's flag is a plain if(), but the
+          aimline sibling's flag is genuinely nullable and the two columns are
+          kept the same shape.
+      - name: measure_name_code_benchmark_status
+        data_type: string
+        description: >-
+          Whether the student met the benchmark standard on EVERY measure
+          standard under this measure name code — Met Benchmark or Did Not Meet
+          Benchmark. Rolls met_admin_benchmark_goal up one grain with a min, so
+          one standard short of the bar makes the whole code short of it.
+
+          Named to match the aimline sibling of the same name, whose values are
+          identical: the benchmark standard is the one verdict here that does
+          not depend on which PM method a view is reading.
+        config:
+          meta:
+            contains_pii: true
+      - name: round_benchmark_status
+        data_type: string
+        description: >-
+          Whether the student met the benchmark standard on every measure
+          standard expected in this round — Met Benchmark or Did Not Meet
+          Benchmark. The same min rollup one grain coarser than
+          measure_name_code_benchmark_status, so it is strictly the stricter of
+          the two.
+
+          Broadcasts across every row of the round, being a round-level value on
+          a measure-standard row. Count students on it only with a measure
+          filter, or it multiplies by the measure count.
+        config:
+          meta:
+            contains_pii: true
       - name: pm_round_status
         data_type: string
         description: >-

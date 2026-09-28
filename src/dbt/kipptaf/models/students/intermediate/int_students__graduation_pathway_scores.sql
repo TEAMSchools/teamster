@@ -16,6 +16,10 @@ with
             e.ps_grad_path_code,
             e.met_fafsa_requirement as has_fafsa,
 
+            (
+                select min(x), from unnest([e.cohort, e.cohort_primary]) as x
+            ) as cut_score_cohort,
+
             case
                 when e.ps_grad_path_code in ('M', 'N')
                 then true
@@ -160,7 +164,7 @@ with
         left join attempted_subject_njgpa as nj on s.student_number = nj.student_number
         left join
             {{ ref("stg_google_sheets__student_graduation_path_cutoffs") }} as c
-            on s.cohort = c.cohort
+            on s.cut_score_cohort = c.cohort
             and s.discipline = c.discipline
         left join
             scores as p

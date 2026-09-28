@@ -2,8 +2,8 @@ models:
   - name: stg_cambium__njgpa
     description: >-
       Union of Newark and Camden stg_cambium__njgpa (the cambium package model),
-      which already carries the shared NJ-assessment shape. Column docs and
-      tests live there; this wrapper adds _dbt_source_project.
+      in Cambium's own column names. Column docs and tests live there;
+      int_pearson__all_assessments maps it to the shared NJ-assessment shape.
     config:
       materialized: table
     columns:

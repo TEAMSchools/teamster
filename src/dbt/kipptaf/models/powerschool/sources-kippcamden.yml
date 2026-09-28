@@ -473,15 +473,6 @@ sources:
                 - kippcamden
                 - powerschool
                 - stg_powerschool__termbins
-      - name: stg_powerschool__terms
-        config:
-          meta:
-            dagster:
-              group: powerschool
-              asset_key:
-                - kippcamden
-                - powerschool
-                - stg_powerschool__terms
       - name: stg_powerschool__u_clg_et_stu
         config:
           meta:
@@ -770,6 +761,15 @@ sources:
                 - kippcamden
                 - powerschool
                 - int_powerschool__gpa_term
+      - name: int_powerschool__gpa
+        config:
+          meta:
+            dagster:
+              group: powerschool
+              asset_key:
+                - kippcamden
+                - powerschool
+                - int_powerschool__gpa
       - name: int_powerschool__gradescaleitem_lookup
         config:
           meta:
@@ -1058,7 +1058,7 @@ sources:
                 - kippcamden
                 - powerschool
                 - stg_powerschool__s_stu_x
-      - name: int_powerschool__terms
+      - name: int_powerschool__terms_spine
         config:
           meta:
             dagster:
@@ -1066,4 +1066,4 @@ sources:
               asset_key:
                 - kippcamden
                 - powerschool
-                - int_powerschool__terms
+                - int_powerschool__terms_spine

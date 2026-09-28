@@ -21,12 +21,6 @@ with
         where s.is_overall_score = 1
     ),
 
-    /*
-        The goal columns have no consumer yet -- both consumers of this model
-        (_dashboard_roster and rpt_gsheets__college_assessments_wide) read only
-        the *_count_lifetime columns and rn_lifetime. Kept for the rpt views to
-        pick up. See #4658.
-    */
     attempt_goals_long as (
         select
             test_type, expected_metric_label, expected_min_score, expected_metric_goal,

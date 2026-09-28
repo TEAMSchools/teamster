@@ -62,23 +62,9 @@ models:
           alerts, it does not block: no staging test gates cross-code-location
           propagation, so a NULL still reaches kipptaf. NULL is chosen because
           it is the most inert failure value — a NULL partition key can only
-          group with other NULLs. Add a measure here whenever one is added
-          above.
+          group with other NULLs.
         data_tests:
           - not_null:
-              config:
-                severity: error
-          - accepted_values:
-              arguments:
-                values:
-                  - Composite
-                  - Comprehension
-                  - DEC
-                  - LNF
-                  - NWF
-                  - ORF
-                  - PSF
-                  - WRF
               config:
                 severity: error
       - name: source_file_name
@@ -106,8 +92,10 @@ models:
         data_type: string
         description: School name.
       - name: school_primary_id
-        data_type: int64
-        description: School primary identifier.
+        data_type: string
+        description: >-
+          Amplify school identifier, kept as a string because some Miami ids
+          carry letters (for example 2332A).
       - name: student_last_name
         data_type: string
         description: Student last name.

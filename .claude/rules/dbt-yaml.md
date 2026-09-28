@@ -413,7 +413,5 @@ the normalized value its sibling scalar columns assert.
 - YAML `description:` is for what/why a column or model computes. Don't put
   TODOs, history, migration plumbing, or tracking-issue refs (`#3142`, etc.) in
   descriptions — those go in inline SQL comments at the derivation site.
-- The reverse also holds: rationale that needs no code context belongs in
-  `description:`, not an inline SQL comment. Keep SQL comments to what a reader
-  of that line cannot see — a non-obvious fallback, why a filter exists. The
-  repo's existing multi-paragraph SQL comments are not a precedent to extend.
+- The reverse (rationale belongs in `description:`, not an inline SQL comment):
+  the inline-comment rule in `.claude/rules/dbt-sql.md`.

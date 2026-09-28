@@ -7,8 +7,6 @@ CODE_LOCATION = "kipptaf"
 LOCAL_TIMEZONE = ZoneInfo("America/New_York")
 ```
 
-GCS bucket: `teamster-kipptaf`
-
 ## Active Integrations
 
 | Module                   | Assets                                                    | Schedules        | Sensors                 |
@@ -111,10 +109,9 @@ New DLT assets must be assigned to the appropriate schedule.
 
 ## Adding a secret env var to `dagster-cloud.yaml`
 
-Env mappings duplicate across `server_k8s_config` and `run_k8s_config`, and each
-splits into a credentials block (password/username) and a host/port block — 4
-insertion points per secret. Missing `run_k8s_config` leaves run pods broken
-while the code server boots clean.
+4 insertion points per secret: `server_k8s_config` and `run_k8s_config` each
+split into a credentials block (password/username) and a host/port block. Why
+both configs: `src/teamster/CLAUDE.md` → _Resource Model_.
 
 ## Disabled Integrations
 

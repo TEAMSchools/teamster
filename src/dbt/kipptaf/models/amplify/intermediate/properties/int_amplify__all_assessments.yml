@@ -187,7 +187,7 @@ models:
             source_system: Amplify
             source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
             source_column: aimline_status
-      - name: goal
+      - name: aimline_season_student_goal
         data_type: numeric
         description: >-
           The aimline target this probe was measured against, drawn from the
@@ -199,7 +199,22 @@ models:
             source_system: Amplify
             source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
             source_column: goal
-      - name: met_aimline_goal
+      - name: aimline_value_by_date
+        data_type: numeric
+        description: >-
+          Where the student's aimline sits on the day the probe was administered
+          — Amplify's own wording is the score that is on the aimline on the day
+          that the PM test is administered. It climbs across the season toward
+          aimline_season_student_goal, which makes it the true analogue of the
+          internal method's cumulative_growth_words, and it is what
+          aimline_status is computed against. Aimline rows only.
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: aimline_value_by_date
+            contains_pii: true
+      - name: met_measure_standard_goal
         data_type: int64
         description: >-
           aimline_status as a flag — 1 for At or Above, 0 for Below, null where

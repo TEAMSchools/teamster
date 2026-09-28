@@ -40,7 +40,8 @@ with
                     'Chronic Absence: 40'
                 ]
             ) as commlog_reason
-        cross join unnest(['kippnewark', 'kippcamden']) as _dbt_source_project
+        cross join
+            unnest(['kippnewark', 'kippcamden', 'kipppaterson']) as _dbt_source_project
     ),
 
     comm_log as (

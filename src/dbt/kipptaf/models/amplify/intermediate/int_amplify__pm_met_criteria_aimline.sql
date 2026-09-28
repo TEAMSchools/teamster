@@ -32,8 +32,9 @@ with
             a.round_number,
             a.student_number,
             a.aimline_status,
-            a.goal,
-            a.met_aimline_goal,
+            a.aimline_season_student_goal,
+            a.aimline_value_by_date,
+            a.met_measure_standard_goal,
             a.period as admin_season,
             a.overall_probe_eligible as measure_standard_level,
 
@@ -72,9 +73,9 @@ with
         select
             c.*,
 
-            p.met_aimline_goal as previous_expected_met_aimline_goal,
+            p.met_measure_standard_goal as previous_expected_met_aimline_goal,
 
-            lag(c.met_aimline_goal) over (
+            lag(c.met_measure_standard_goal) over (
                 partition by
                     c.academic_year,
                     c.student_number,
@@ -116,7 +117,7 @@ with
                 else 0
             end as met_admin_benchmark_goal,
 
-            countif(met_aimline_goal is null) over (
+            countif(met_measure_standard_goal is null) over (
                 partition by
                     academic_year,
                     admin_season,
@@ -125,7 +126,7 @@ with
                     student_number
             ) as n_code_unpublished,
 
-            min(met_aimline_goal) over (
+            min(met_measure_standard_goal) over (
                 partition by
                     academic_year,
                     admin_season,
@@ -149,6 +150,24 @@ with
                 else 1
             end as met_measure_name_code_goal,
 
+            countif(met_admin_benchmark_goal is null) over (
+                partition by
+                    academic_year,
+                    admin_season,
+                    round_number,
+                    measure_name_code,
+                    student_number
+            ) as n_code_bm_unpublished,
+
+            min(met_admin_benchmark_goal) over (
+                partition by
+                    academic_year,
+                    admin_season,
+                    round_number,
+                    measure_name_code,
+                    student_number
+            ) as code_bm_min_met,
+
         from measure_flags
     ),
 
@@ -167,6 +186,14 @@ with
             max(met_measure_name_code_goal) over (
                 partition by academic_year, admin_season, round_number, student_number
             ) as round_max_met,
+
+            countif(met_admin_benchmark_goal is null) over (
+                partition by academic_year, admin_season, round_number, student_number
+            ) as n_round_bm_unpublished,
+
+            min(met_admin_benchmark_goal) over (
+                partition by academic_year, admin_season, round_number, student_number
+            ) as round_bm_min_met,
 
         from code_goal
     ),
@@ -207,6 +234,137 @@ with
             end as met_pm_round_overall_criteria,
 
         from round_criteria
+    ),
+
+    measure_category as (
+        select
+            *,
+
+            case
+                when not completed_test_round
+                then 'Round Incomplete'
+                when
+                    met_admin_benchmark_goal = 1
+                    and met_measure_standard_goal is not null
+                then 'Meeting Aimline, On-Track'
+                when met_measure_standard_goal = 1
+                then 'Meeting Aimline, Off-Track'
+                when met_measure_standard_goal = 0
+                then 'Below Aimline'
+                when met_admin_benchmark_goal = 1
+                then 'No Aimline Data, On-Track'
+                else 'No Aimline Data, Off-Track'
+            end as aimline_category,
+
+            case
+                when met_measure_standard_goal is null
+                then 'No Aimline Data'
+                when met_measure_standard_goal = 0
+                then 'Below Aimline'
+                when met_admin_benchmark_goal = 1
+                then 'On Track to Benchmark'
+                else 'On Aimline, Below Benchmark'
+            end as trajectory_row,
+
+        from round_overall
+    ),
+
+    round_category as (
+        select
+            *,
+
+            countif(aimline_category = 'Round Incomplete') over (
+                partition by academic_year, admin_season, round_number, student_number
+            ) as n_round_incomplete,
+
+            countif(aimline_category = 'Below Aimline') over (
+                partition by academic_year, admin_season, round_number, student_number
+            ) as n_round_below,
+
+            countif(aimline_category like 'No Aimline Data%') over (
+                partition by academic_year, admin_season, round_number, student_number
+            ) as n_round_no_aimline,
+
+            countif(aimline_category = 'Meeting Aimline, Off-Track') over (
+                partition by academic_year, admin_season, round_number, student_number
+            ) as n_round_off_track,
+
+            countif(aimline_category = 'Round Incomplete') over (
+                partition by
+                    academic_year,
+                    admin_season,
+                    round_number,
+                    measure_name_code,
+                    student_number
+            ) as n_code_incomplete,
+
+            countif(aimline_category = 'Below Aimline') over (
+                partition by
+                    academic_year,
+                    admin_season,
+                    round_number,
+                    measure_name_code,
+                    student_number
+            ) as n_code_below,
+
+            countif(aimline_category like 'No Aimline Data%') over (
+                partition by
+                    academic_year,
+                    admin_season,
+                    round_number,
+                    measure_name_code,
+                    student_number
+            ) as n_code_no_aimline,
+
+            countif(aimline_category = 'Meeting Aimline, Off-Track') over (
+                partition by
+                    academic_year,
+                    admin_season,
+                    round_number,
+                    measure_name_code,
+                    student_number
+            ) as n_code_off_track,
+
+            countif(trajectory_row = 'Below Aimline') over (
+                partition by
+                    academic_year,
+                    admin_season,
+                    round_number,
+                    measure_name_code,
+                    student_number
+            ) as n_code_traj_below,
+
+            countif(trajectory_row = 'No Aimline Data') over (
+                partition by
+                    academic_year,
+                    admin_season,
+                    round_number,
+                    measure_name_code,
+                    student_number
+            ) as n_code_traj_no_data,
+
+            countif(trajectory_row = 'On Aimline, Below Benchmark') over (
+                partition by
+                    academic_year,
+                    admin_season,
+                    round_number,
+                    measure_name_code,
+                    student_number
+            ) as n_code_traj_off,
+
+            countif(trajectory_row = 'Below Aimline') over (
+                partition by academic_year, admin_season, round_number, student_number
+            ) as n_round_traj_below,
+
+            countif(trajectory_row = 'No Aimline Data') over (
+                partition by academic_year, admin_season, round_number, student_number
+            ) as n_round_traj_no_data,
+
+            countif(trajectory_row = 'On Aimline, Below Benchmark') over (
+                partition by academic_year, admin_season, round_number, student_number
+            ) as n_round_traj_off,
+
+        from measure_category
     )
 
 select
@@ -219,7 +377,8 @@ select
     measure_standard_level,
     round_number,
     benchmark_goal,
-    goal,
+    aimline_season_student_goal,
+    aimline_value_by_date,
     pm_goal_criteria,
     student_number,
     measure_name_code,
@@ -229,54 +388,114 @@ select
     completed_test_round,
     completed_test_round_int,
     aimline_status,
-    met_aimline_goal,
+    met_measure_standard_goal,
     met_admin_benchmark_goal,
     met_measure_name_code_goal,
     met_pm_round_criteria,
     met_pm_round_overall_criteria,
     previous_expected_round,
     previous_met_aimline_goal,
+    aimline_category,
 
     if(
-        met_aimline_goal = 0 and previous_met_aimline_goal = 0, 1, 0
+        met_measure_standard_goal = 0 and previous_met_aimline_goal = 0, 1, 0
     ) as missed_aimline_consecutive,
 
-    if(met_admin_benchmark_goal = 1, 'Met', 'Not Met') as admin_benchmark_goal_status,
+    case
+        when met_admin_benchmark_goal = 1
+        then 'Met Benchmark'
+        when met_admin_benchmark_goal = 0
+        then 'Did Not Meet Benchmark'
+    end as admin_benchmark_goal_status,
 
     case
-        when met_aimline_goal = 1
-        then 'Met'
-        when met_aimline_goal = 0
-        then 'Not Met'
+        when met_measure_standard_goal = 1
+        then 'Meeting Aimline'
+        when met_measure_standard_goal = 0
+        then 'Below Aimline'
         else 'No Aimline Data'
     end as measure_standard_goal_status,
 
     case
+        when met_measure_name_code_goal = 1
+        then 'Meeting Aimline'
+        when met_measure_name_code_goal = 0
+        then 'Below Aimline'
+        else 'No Aimline Data'
+    end as measure_name_code_goal_status,
+
+    case
         when met_pm_round_overall_criteria = 1
-        then 'Met'
+        then 'Meeting Aimline'
         when met_pm_round_criteria = 0 and pm_goal_criteria = 'AND'
-        then 'Not Met'
+        then 'Below Aimline'
         when met_pm_round_criteria = 0 and completed_test_round
-        then 'Not Met'
+        then 'Below Aimline'
         when not completed_test_round
         then 'Round Incomplete'
         when met_pm_round_criteria is null
-        then 'No Aimline Status'
-        else 'Not Met'
+        then 'No Aimline Data'
+        else 'Below Aimline'
     end as pm_round_status,
 
     case
-        when not completed_test_round
-        then 'Round Incomplete'
-        when met_admin_benchmark_goal = 1 and met_aimline_goal is not null
-        then 'Meeting Aimline, On-Track'
-        when met_aimline_goal = 1
-        then 'Meeting Aimline, Off-Track'
-        when met_aimline_goal = 0
-        then 'Below Aimline'
-        when met_admin_benchmark_goal = 1
-        then 'No Aimline Data, On-Track'
-        else 'No Aimline Data, Off-Track'
-    end as aimline_category,
+        when code_bm_min_met = 0
+        then 'Did Not Meet Benchmark'
+        when n_code_bm_unpublished > 0
+        then null
+        else 'Met Benchmark'
+    end as measure_name_code_benchmark_status,
 
-from round_overall
+    case
+        when round_bm_min_met = 0
+        then 'Did Not Meet Benchmark'
+        when n_round_bm_unpublished > 0
+        then null
+        else 'Met Benchmark'
+    end as round_benchmark_status,
+
+    case
+        when n_code_incomplete > 0
+        then 'Round Incomplete'
+        when n_code_below > 0
+        then 'Below Aimline'
+        when n_code_no_aimline > 0
+        then 'No Aimline Data'
+        when n_code_off_track > 0
+        then 'Meeting Aimline, Off-Track'
+        else 'Meeting Aimline, On-Track'
+    end as measure_name_code_aimline_benchmark_status,
+
+    case
+        when n_code_traj_below > 0
+        then 'Below Aimline'
+        when n_code_traj_no_data > 0
+        then 'No Aimline Data'
+        when n_code_traj_off > 0
+        then 'On Aimline, Below Benchmark'
+        else 'On Track to Benchmark'
+    end as measure_name_code_trajectory_status,
+
+    case
+        when n_round_traj_below > 0
+        then 'Below Aimline'
+        when n_round_traj_no_data > 0
+        then 'No Aimline Data'
+        when n_round_traj_off > 0
+        then 'On Aimline, Below Benchmark'
+        else 'On Track to Benchmark'
+    end as round_trajectory_status,
+
+    case
+        when n_round_incomplete > 0
+        then 'Round Incomplete'
+        when n_round_below > 0
+        then 'Below Aimline'
+        when n_round_no_aimline > 0
+        then 'No Aimline Data'
+        when n_round_off_track > 0
+        then 'Meeting Aimline, Off-Track'
+        else 'Meeting Aimline, On-Track'
+    end as aimline_round_category,
+
+from round_category

@@ -11,11 +11,38 @@ models:
       Focus supplies a placement field or Ops confirms a mapping. Ratified on
       #4996.
 
-      The three `*_status` columns — `measure_standard_goal_status`,
-      `admin_benchmark_goal_status`, `pm_round_status` — are labelled twins of
-      the `met_*` flags beside them, so the dashboard's goal-type selector can
-      pick a column instead of converting a flag. They are PM-only and null on
-      every Benchmark row. On PM rows they are never null, because
+      The `*_status` and `*_category` columns form a grid: three granularities
+      (measure standard, measure name code, round) crossed with four comparison
+      lenses (the method's own goal, the benchmark standard, aimline and
+      benchmark combined, and the trajectory). A Tableau selector picks one
+      cell, so every view reads a string rather than converting a flag.
+
+      At measure-standard grain the four lenses are
+      measure_standard_goal_status, admin_benchmark_goal_status,
+      aimline_category and aimline_trajectory_category. At measure-name-code
+      grain they are measure_name_code_goal_status,
+      measure_name_code_benchmark_status,
+      measure_name_code_aimline_benchmark_status and
+      measure_name_code_trajectory_status. At round grain they are
+      pm_round_status, round_benchmark_status, aimline_round_category and
+      round_trajectory_status.
+
+      The coarser grains are strictly stricter, never looser. AY2025 Aimline
+      benchmark: 8,731 met at measure standard, 5,197 at name code, 3,004 at
+      round, with zero rows where a coarser grain reads met while a finer one
+      does not.
+
+      **The names are not uniform, and that is a known debt.** The five added on
+      2026-09-19 use `<grain>_<lens>_status`; the four that predate them use
+      `_goal_status` or `_category` with the grain in varying positions.
+      Aligning the whole set was considered and deferred: three of the older
+      names are shared with the internal method, so renaming them would force a
+      rebind of the internal Tableau tabs as well, which was not worth the risk
+      mid-build. Worth doing as a follow-up.
+
+      The two combined-lens and two trajectory columns are Aimline-only — those
+      lenses have no meaning without an aimline. Everything else is PM-only and
+      null on every Benchmark row. On PM rows they are never null, because
       `int_amplify__pm_met_criteria` carries scored rows only and this model
       coalesces the resulting gap to `Not Tested` — a student who was expected
       to test and was not. So a null here means a Benchmark row, and nothing
@@ -302,8 +329,33 @@ models:
       - name: goal
         data_type: float64
         description:
-          The running growth target the score is compared against for this round
-          -- cumulative_growth_words from the frozen PM goals sheet.
+          The moving target the score is compared against in this round. It
+          splits by method -- cumulative_growth_words from the frozen PM goals
+          sheet on Internal rows, aimline_value_by_date on Aimline rows. Both
+          climb across the season, so the two methods answer the same question
+          here and a view can read one column. Null on Benchmark rows. The
+          season endpoint is a different quantity and lives in
+          aimline_season_student_goal.
+        config:
+          meta:
+            contains_pii: true
+      - name: aimline_season_student_goal
+        data_type: float64
+        description:
+          The student's own end-of-season target on the aimline method -- where
+          the aimline lands on the last day of the season. It is individual to
+          the student, so it does not have to equal the benchmark goal. Null on
+          every internal-method and benchmark row.
+        config:
+          meta:
+            contains_pii: true
+      - name: aimline_season_student_goal_gap
+        data_type: float64
+        description:
+          Measure-standard score minus aimline_season_student_goal -- negative
+          when the student is short of the season target, positive when past it.
+          Null on every internal-method and benchmark row, and wherever either
+          input is null.
         config:
           meta:
             contains_pii: true
@@ -468,20 +520,43 @@ models:
       - name: met_measure_standard_goal
         data_type: int64
         description: >-
-          1 when the measure hit its goal for the round, else 0. Populated on
-          BOTH PM methods, against a different target each: the Internal branch
-          compares the score to the round's cumulative growth target, the
-          Aimline branch carries met_aimline_goal, which is Amplify's verdict
-          against the student's aimline. Null on an Aimline row where Amplify
-          published no verdict.
+          1 when the measure hit its goal for the round, else 0. The single
+          measure-standard verdict for both PM methods, against a different
+          target each — the Internal branch compares the score to the round's
+          cumulative growth target, the Aimline branch carries Amplify's verdict
+          against the student's own aimline. Null means the student did not sit
+          the measure, and on an Aimline row additionally means Amplify
+          published no verdict for a probe they did sit. The labelled twin
+          separates those two states. Null is never a miss.
         config:
           meta:
             contains_pii: true
       - name: met_admin_benchmark_goal
         data_type: int64
-        description:
+        description: >-
           1 when the score reaches the benchmark goal -- at grade level rather
           than on pace. Recomputed each round and not latched.
+
+          The bar differs by method, deliberately. Internal compares against
+          benchmark_goal plus academics' 3-word planning buffer; Aimline
+          compares against the bare published standard, because the pad exists
+          to make a cohort trajectory land past the bar and Aimline builds no
+          trajectory. On AY2025 that is 3,162 rows where the same student, same
+          score, same standard and same round reads 1 on Aimline and 0 on
+          Internal, and zero rows the other way. T&L's recorded choice; do not
+          reconcile the two columns or union them as one metric.
+      - name: met_admin_benchmark_goal_unpadded
+        data_type: int64
+        description: >-
+          met_admin_benchmark_goal against the bare published standard, with no
+          planning buffer. Internal rows only -- null on Benchmark rows and on
+          Aimline rows, where met_admin_benchmark_goal is already unpadded and a
+          second copy would be redundant.
+
+          Nothing consumes it. It is here so a future consumer wanting an
+          at-grade-level figure that IS comparable across the two PM methods has
+          it without a model change. Binding it to a view changes a published
+          number on 3,162 AY2025 rows, so that is T&L's call.
       - name: met_measure_name_code_goal
         data_type: int64
         description:
@@ -500,23 +575,65 @@ models:
       - name: measure_standard_goal_status
         data_type: string
         description: >-
-          met_measure_standard_goal as a label. Met or Not Met on both PM
-          methods, Not Tested where no evaluation exists, plus No Aimline Data
-          on Aimline rows where Amplify published no verdict for a probe that
-          was sat -- a state the Internal method has no equivalent for, and not
-          a miss.
+          met_measure_standard_goal as a label. The vocabulary differs by method
+          on purpose -- Met / Not Met on Internal rows, Meeting Aimline / Below
+          Aimline on Aimline rows, so a reader sees what the verdict is measured
+          against. Not Tested on both where the student did not sit the measure,
+          plus No Aimline Data on Aimline rows where Amplify published no
+          verdict for a probe that WAS sat -- a state the Internal method has no
+          equivalent for, and not a miss.
 
-          Both PM branches populate this, so one BI field reads across methods.
-          Before 2026-09-15 the Aimline branch hardcoded it to null.
+          Both PM branches populate this, so one BI field addresses either
+          method; a view combining them needs its own colour legend, since the
+          two value sets do not overlap except on Not Tested.
+        config:
+          meta:
+            contains_pii: true
+      - name: measure_name_code_goal_status
+        data_type: string
+        description: >-
+          met_measure_name_code_goal as a label, and the twin of
+          measure_standard_goal_status one grain up. Same value sets and the
+          same method split -- Met / Not Met on Internal, Meeting Aimline /
+          Below Aimline / No Aimline Data on Aimline, Not Tested on both.
+
+          It answers a different question from its sibling, and the difference
+          is large. The sibling reports one measure STANDARD; this reports
+          whether the student met the goal on every standard under the measure
+          name code. NWF and ORF have two standards each, the other three codes
+          one, so only those two differ -- but on AY2025 Internal ORF that is
+          35.3% meeting at standard grain against 20.5% here, because the two
+          ORF standards (Reading Fluency and Reading Accuracy) disagree on 41%
+          of the student-rounds where both were scored.
+
+          Use this column when a view is labelled by measure and the sibling
+          when it is labelled by measure standard. Reading a standard-grain rate
+          under a measure-grain label overstates attainment.
         config:
           meta:
             contains_pii: true
       - name: admin_benchmark_goal_status
         data_type: string
         description: >-
-          met_admin_benchmark_goal as a label -- Met or Not Met, or Not Tested
-          where no evaluation exists. Populated on both PM methods; before
-          2026-09-15 the Aimline branch hardcoded it to null.
+          met_admin_benchmark_goal as a label -- Met Benchmark, Did Not Meet
+          Benchmark, or Not Tested where the student did not sit the measure.
+          Populated on both PM methods.
+
+          The only status column whose values read identically on both, because
+          the benchmark standard is the one grain that does not depend on
+          method. The other three carry aimline vocabulary on Aimline rows and
+          internal vocabulary on Internal rows. The values name the benchmark
+          explicitly so a reader can tell Met Benchmark from Meeting Aimline at
+          a glance.
+
+          Three-valued on both, with no No Aimline Data equivalent: a verdict
+          needs only Amplify's published grade-level standard, which exists for
+          every expected row, so a student who sat the measure always has one.
+          Verified across every year -- zero null benchmark goals, zero scored
+          rows without a verdict.
+
+          The bar differs by method even though the wording does not. See
+          met_admin_benchmark_goal for the 3,162-row consequence.
         config:
           meta:
             contains_pii: true
@@ -532,29 +649,36 @@ models:
           The student's composite level at the benchmark that opened the PM
           season, Below Benchmark or Well Below Benchmark, and the cohort key
           the by-levels expectation gate is split on. Aimline rows only.
-      - name: aimline_status
-        data_type: string
-        description: >-
-          Amplify's published verdict on whether the probe sat at or above the
-          student's individual aimline. Aimline rows only; null where Amplify
-          published none.
-        config:
-          meta:
-            contains_pii: true
-      - name: met_aimline_goal
-        data_type: int64
-        description: >-
-          aimline_status as a flag -- 1 At or Above, 0 Below, null where Amplify
-          published no verdict. Null is not a miss. Aimline rows only.
-        config:
-          meta:
-            contains_pii: true
       - name: missed_aimline_consecutive
         data_type: int64
         description: >-
           1 when this round and the round the measure was previously expected in
           both fell below the aimline -- T&L's two-in-a-row signal, per measure
           and within one PM season. Aimline rows only.
+        config:
+          meta:
+            contains_pii: true
+      - name: aimline_round_category
+        data_type: string
+        description: >-
+          OPEN DECISION, not yet confirmed by academics — Below Aimline outranks
+          No Aimline Data in this rollup. A student below the aimline on one
+          measure and carrying no published aimline on another reads Below
+          Aimline. Reversing it would move 694 of 10,046 AY2025 Below Aimline
+          round groups to No Aimline Data. Every other rung of the precedence is
+          forced by the per-measure column; this one is a judgment about what a
+          leader should see.
+
+          The reporting category for the whole round rather than one measure
+          standard, so a student appears once however many measures they sat.
+          Aimline rows only, and Not Tested here where the student has no row in
+          the aimline model at all.
+
+          Read this when a view spans every measure the round expected, and
+          aimline_category when the view is scoped to a single measure standard.
+          The two disagree by design: a student below the aimline on any one
+          measure reads Below Aimline for the round, so the round-level share
+          below is the higher of the two.
         config:
           meta:
             contains_pii: true
@@ -576,6 +700,182 @@ models:
       - name: expected_round_number
         data_type: string
         description: The expected PM round, as a string for the Tableau filter.
+      - name: expected_round_label
+        data_type: string
+        description: >-
+          The PM round as a reader-facing label -- the season, a colon, and the
+          round, e.g. `BOY->MOY: R1`. PM rows only; a benchmark administration
+          has no PM round and would invent one.
+
+          NOT purely cosmetic, although it looks it. Round numbers run 1-8
+          uniquely across the year in the NJ regions, 1-4 in BOY->MOY and 5-8 in
+          MOY->EOY -- but Miami runs THREE rounds per season where NJ runs four,
+          so Miami's round 4 is in MOY->EOY while every NJ round 4 is in
+          BOY->MOY. On 2026-02-05 all four regions read round 4 and two
+          different halves of the year. A filter on the bare number silently
+          mixes them.
+
+          The ambiguity is latent rather than live: Miami currently produces no
+          rows in this model at all (see the model description), so today every
+          round number resolves to one season. It becomes real the day Miami
+          appears.
+      - name: expected_round_selection
+        data_type: string
+        description: >-
+          The round as a filter value, with one substitution: on the row that IS
+          its cohort's current round the value reads `Current` instead of the
+          round label. Every other row carries its label, e.g. `BOY->MOY: R1`.
+          Benchmark rows carry the administration season.
+
+          It exists so one filter selection follows every region to wherever it
+          actually is. Regions are not in step -- AY2025 Miami sat a week to a
+          month behind the NJ regions on every round -- so a view pinned to a
+          round number is wrong for somebody as soon as the calendars diverge.
+          Selecting `Current` returns Camden's round 3 and Newark's round 4
+          together, each being that region's present round.
+
+          The trade is deliberate: once a round is current for a region it is no
+          longer selectable by number HERE. Camden's round 3 reads `Current`
+          while Newark's round 3 reads its label, so "everyone's round 3" comes
+          from expected_round_number or expected_round_label instead. The three
+          columns are companions, not alternatives.
+
+          Current means the latest round whose window has OPENED, per academic
+          year, region and grade -- not the round whose window contains today,
+          which would go blank between rounds. Before the first round of a year
+          opens, no row is current and every row shows its label.
+
+          Non-current rows carry the label rather than the bare number because
+          round numbers are not unique network-wide: Miami runs three rounds per
+          season where NJ runs four, so Miami's round 4 is MOY->EOY while every
+          NJ round 4 is BOY->MOY.
+
+          Evaluated at query time in the local timezone, so a Tableau extract
+          freezes it at the nightly refresh and the dashboard reads as of last
+          night.
+      - name: measure_standard_round_verdicts
+        data_type: string
+        description: >-
+          Every round of this season's verdicts for this measure standard, one
+          character per round in round order, hyphen separated -- so a round 3
+          row reads something like `B-B-A` and carries the student's whole
+          season to date without the view having to stack rows.
+
+          A is at or above -- Amplify's own wording for meeting the aimline, and
+          met on the internal method. B is below, meaning below aimline or not
+          met. ? is an aimline row Amplify published no value for, and . is a
+          round the student did not test. The same letter means the same thing
+          on both methods, which is the point of using one alphabet for two
+          vocabularies, and A/B is the pair school leaders already read on
+          Amplify's own reports. No token is the hyphen, so the string stays
+          parseable when a student missed rounds -- `B-B-.` is three rounds, not
+          four.
+
+          Scoped to the administration season, so it never runs BOY->MOY into
+          MOY->EOY -- the two seasons have different goals and a string spanning
+          both would read as one trajectory when it is two. Null on Benchmark
+          rows, which have no PM round sequence.
+
+          Built over the expectation spine rather than over scored rows, so a
+          round the student skipped appears as . rather than vanishing and
+          shortening the string. The string length is therefore the number of
+          rounds expected of that student in that season.
+
+          Repeats on every row of its partition, being a season-level value on a
+          round-level row. Count students on it only with a round filter, or it
+          multiplies by the round count.
+
+          Three student-measure-season partitions per method carry a round
+          twice, from the course-enrollment fan-out that predates this column,
+          so their string holds a repeated character -- 14 rows of 44,865 on
+          AY2025. Fixing it belongs upstream at the fan-out, not here.
+        config:
+          meta:
+            contains_pii: true
+      - name: measure_name_code_benchmark_status
+        data_type: string
+        description: >-
+          Whether the student met the benchmark standard on EVERY measure
+          standard under this measure name code -- Met Benchmark, Did Not Meet
+          Benchmark, or Not Tested. Populated on both PM methods.
+
+          Not Tested carries two states that the extract's coalesce flattens
+          into one. A LEFT JOIN miss means the student sat nothing. An explicit
+          null from the intermediate means the student DID sit the round but
+          Amplify published no benchmark goal for one of its measures, so the
+          rollup has nothing to judge. Measured on AY2025 the second state
+          occurs on zero rows in both methods, because the population it depends
+          on is the Miami benchmark_goal nulls and Miami produces no rows in
+          this extract -- so the conflation is latent, not live. It becomes real
+          the day Miami appears, and the honest fix then is a fourth value
+          rather than a wider Not Tested.
+
+          The measure-name-code rung of the benchmark lens, between
+          admin_benchmark_goal_status at measure-standard grain and
+          round_benchmark_status at round grain.
+        config:
+          meta:
+            contains_pii: true
+      - name: round_benchmark_status
+        data_type: string
+        description: >-
+          Whether the student met the benchmark standard on EVERY measure
+          standard the round expected -- Met Benchmark, Did Not Meet Benchmark,
+          or Not Tested. Populated on both PM methods.
+
+          Not Tested carries two states that the extract's coalesce flattens
+          into one. A LEFT JOIN miss means the student sat nothing. An explicit
+          null from the intermediate means the student DID sit the round but
+          Amplify published no benchmark goal for one of its measures, so the
+          rollup has nothing to judge. Measured on AY2025 the second state
+          occurs on zero rows in both methods, because the population it depends
+          on is the Miami benchmark_goal nulls and Miami produces no rows in
+          this extract -- so the conflation is latent, not live. It becomes real
+          the day Miami appears, and the honest fix then is a fourth value
+          rather than a wider Not Tested.
+
+          Round grain, so it repeats on every measure-standard row of that
+          student's round. Count distinct students rather than rows.
+        config:
+          meta:
+            contains_pii: true
+      - name: measure_name_code_aimline_benchmark_status
+        data_type: string
+        description: >-
+          T&L's combined reporting category rolled up to the measure name code
+          -- the same seven values aimline_category carries at measure-standard
+          grain, applied to the worst state the student holds on any standard
+          under the code.
+
+          Aimline rows only; the lens has no meaning without an aimline.
+        config:
+          meta:
+            contains_pii: true
+      - name: measure_name_code_trajectory_status
+        data_type: string
+        description: >-
+          The trajectory category rolled up to the measure name code -- Below
+          Aimline, On Aimline Below Benchmark, On Track to Benchmark, No Aimline
+          Data, or Not Tested.
+
+          Differs from measure_name_code_aimline_benchmark_status by ignoring
+          round completion, which is the same distinction
+          aimline_trajectory_category has from aimline_category one grain down.
+          Aimline rows only.
+        config:
+          meta:
+            contains_pii: true
+      - name: round_trajectory_status
+        data_type: string
+        description: >-
+          The trajectory category rolled up to the whole round, ignoring round
+          completion. Same five values as the measure-name-code version.
+
+          Aimline rows only, round grain, so it repeats across the round's
+          measure-standard rows.
+        config:
+          meta:
+            contains_pii: true
       - name: schedule_student_grade_level
         data_type: string
         description:
@@ -625,11 +925,11 @@ models:
           Every aimline row lands in exactly one bucket, so the five sum to the
           expected rows and a percent-of-total stack needs no filtering.
 
-          It crosses the two flags directly, `met_aimline_goal` for the verdict
-          and `met_admin_benchmark_goal` for the trajectory, and that is
+          It crosses the two flags directly, `met_measure_standard_goal` for the
+          verdict and `met_admin_benchmark_goal` for the trajectory, and that is
           deliberate rather than reading `aimline_category`. The category
           applies T&L's benchmark-wins rule, so 713 AY2025 rows sit in Meeting
-          Aimline, On-Track with `met_aimline_goal = 0` — reporting a
+          Aimline, On-Track with `met_measure_standard_goal = 0` — reporting a
           below-aimline row as meeting one. For the intervention-targeting views
           these buckets feed, the verdict is what academics mean.
 
@@ -640,10 +940,10 @@ models:
           2,554 AY2025 Round Incomplete rows by design — do not union or compare
           them. `round_test_status` still carries the round question separately.
 
-          Measured against the branch build on 2026-09-15, AY2025, of 35,484
-          tested rows — `Below Aimline` 18,284, `On Aimline, Below Benchmark`
-          7,431, `On Track to Benchmark` 6,456, `No Aimline Data` 3,313. A
-          further 9,383 rows are `Not Tested`, for 44,867 expected rows in all.
+          Measured against prod on 2026-09-20, AY2025, of 35,482 tested rows —
+          `Below Aimline` 18,284, `On Aimline, Below Benchmark` 7,430, `On Track
+          to Benchmark` 6,456, `No Aimline Data` 3,312. A further 9,383 rows are
+          `Not Tested`, for 44,865 expected rows in all.
       - name: mtss_enrollment
         data_type: string
         description: MTSS programme the student is enrolled in, if any.

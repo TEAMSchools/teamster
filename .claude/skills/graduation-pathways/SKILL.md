@@ -123,10 +123,9 @@ Two coordination rules:
    failure is benign — downstream simply does not rebuild — but plan the
    sequencing.
 2. **Never judge sheet contents from the prod `stg_` table.** It is a table
-   frozen at the last build. The BigQuery MCP service account cannot read
-   Drive-backed externals at all (403, no Drive scope). Read the live sheet by
-   requesting the Drive scope explicitly from a pytest one-off, or rebuild the
-   staging model into your dev schema.
+   frozen at the last build. Query the `src_` external live through ADC, per
+   `.claude/context/claude_ai_Google_Cloud_BigQuery.md` (the BigQuery MCP cannot
+   read it).
 
 ---
 
@@ -144,6 +143,15 @@ The consequence: a retained or accelerated student sits the assessment with a
 different class than their cohort, so a cohort can legitimately need cut score
 rows for more than one assessment version. When a student's pathway looks wrong,
 check this before suspecting a bad score match.
+
+**The cut score join does not key on `cohort`.** It keys on the lesser of
+`cohort` and `cohort_primary`, the soonest class the student could graduate
+with, derived as `cut_score_cohort` in the `students` CTE of
+`int_students__graduation_pathway_scores`. Neither column works alone: a student
+who already skipped a grade needs `cohort_primary`, and a student repeating a
+grade who recovers credits over the summer needs `cohort`, because summer
+recovery leaves no enrollment row for the model to read. Do not "simplify" it
+back to either column.
 
 The actionable drift signal is a student **ahead** of their entry cohort
 (`(academic_year + 13) - grade_level < cohort`), which means a grade skip or a
@@ -171,6 +179,15 @@ names:
    FAFSA. Testing ahead of their peers usually means they are behind on credits.
    The grace period belongs only to 11th graders with no records yet, and it
    ends once results land in late June.
+
+**A student who graduates without ever being placed in grade 12 is never checked
+for FAFSA.** `fafsa_required` reads `grade_level = 12`, so an 11th grader who
+finishes over the summer is scored on pathways as a junior and then drops out of
+the model entirely when the graduation lands -- `rn_undergrad = 1` and
+`enroll_status = 0` both exclude them. Nothing in the warehouse can see those
+students, and no test can catch them. Operations owns the manual check. Do not
+try to close this by widening `fafsa_required` to grade 11: that would hold
+every junior to a deadline that does not apply to them, which is rule 2.
 
 ---
 
@@ -298,11 +315,8 @@ you are about to key a new-scale cut onto old-scale rows.
 
 The sheet is small, so replace it wholesale rather than hand-editing rows.
 
-Read the live tab — the BigQuery MCP service account **cannot** (403, no Drive
-scope) and the prod `stg_` table is frozen at the last build. Use a throwaway
-`tests/test_zz_*.py` with `google.auth.default(scopes=[".../drive.readonly"])`
-and the Sheets API, then delete it. The named range in `sources-external.yml`
-`sheet_range` tells you which tab.
+Read the live tab through the `src_` external, as in coordination rule 2 above.
+The named range in `sources-external.yml` `sheet_range` tells you which tab.
 
 Build the replacement as TSV into `.claude/scratch/` and hand the analyst the
 file to paste. Rules:
@@ -334,6 +348,14 @@ join is wrong — usually a new-scale cut applied to old-scale scores.
 A cohort with scores but no cut score row produces `final_grad_path_code = 'R'`,
 which reads as "no pathway met". That is indistinguishable from a genuine
 failure on the dashboard, so a missing row is a silent wrong answer, not a gap.
+
+Then re-run `int_students__graduation_path_codes__scores_have_cutoffs` and read
+the remainder. Three causes leave a student unscoreable and the rows you just
+entered fix only the first: a class NJDOE has not published, a twice-retained
+student whose cut score cohort key predates the assessment version they sat, and
+a student holding no NJGPA record at all. Report the remainder to the HS team
+split by cause — the second needs a records decision, the third needs nothing,
+and handing over one undifferentiated list wastes their time.
 
 ---
 

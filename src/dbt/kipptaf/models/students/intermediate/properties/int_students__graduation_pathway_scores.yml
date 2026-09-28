@@ -9,7 +9,11 @@ models:
       assessment file, hand entry in PowerSchool for transfer students, and the
       college board assessments. Students whose pathway PowerSchool already
       decided still get one row per subject so they do not disappear from
-      reporting. int_students__graduation_path_codes rolls this up into a
+      reporting. The cut score join keys on the soonest class the student could
+      graduate with, the lesser of cohort and cohort_primary. NJDOE sets
+      graduation requirements by graduating class, while cohort freezes at high
+      school entry, so the two disagree for a student who skipped or repeated a
+      grade. int_students__graduation_path_codes rolls this up into a
       per-student standing.
     config:
       materialized: table
@@ -215,6 +219,7 @@ unit_tests:
             12 as grade_level,
             0 as enroll_status,
             2027 as cohort,
+            2027 as cohort_primary,
             'ELA' as discipline,
             'ENG' as powerschool_credittype,
             true as met_fafsa_requirement,
@@ -223,16 +228,16 @@ unit_tests:
             'Newark' as region
           union all
           select 'kippnewark_powerschool', 'kippnewark', 2, 2, 2, '2', null,
-            12, 0, 2027, 'ELA', 'ENG', true, null, 1, 'Newark'
+            12, 0, 2027, 2027, 'ELA', 'ENG', true, null, 1, 'Newark'
           union all
           select 'kippnewark_powerschool', 'kippnewark', 3, 3, 3, '3', null,
-            12, 0, 2027, 'ELA', 'ENG', true, null, 1, 'Newark'
+            12, 0, 2027, 2027, 'ELA', 'ENG', true, null, 1, 'Newark'
           union all
           select 'kippnewark_powerschool', 'kippnewark', 4, 4, 4, '4', null,
-            12, 0, 2027, 'ELA', 'ENG', true, null, 1, 'Newark'
+            12, 0, 2027, 2027, 'ELA', 'ENG', true, null, 1, 'Newark'
           union all
           select 'kippnewark_powerschool', 'kippnewark', 5, 5, 5, '5', null,
-            12, 0, 2027, 'ELA', 'ENG', true, null, 1, 'Newark'
+            12, 0, 2027, 2027, 'ELA', 'ENG', true, null, 1, 'Newark'
 
       - input: ref('int_pearson__all_assessments')
         format: sql
@@ -370,4 +375,131 @@ unit_tests:
             cutoff: 725,
             scale_score: 700,
             met_pathway_cutoff: false,
+          }
+
+  - name: test_cut_score_cohort_uses_soonest_graduating_class
+    description: >-
+      The cut score sheet is keyed on the class NJDOE published the requirement
+      for, and cohort freezes at high school entry, so a student who skipped or
+      repeated a grade can hold a cohort the sheet has no row for. The join
+      therefore keys on the lesser of cohort and cohort_primary. Student 6 is a
+      senior who skipped a grade, carrying cohort 2028 against a sheet that
+      stops at 2027, and must still be scored. Student 7 is a junior who
+      repeated a grade, carrying cohort_primary 2028, and must keep the score
+      they already earned. Both are the regression this test exists to catch.
+      cohort itself stays untouched on the output, because the 4-year adjusted
+      cohort graduation rate depends on it.
+    model: int_students__graduation_pathway_scores
+    given:
+      - input: ref('int_extracts__student_enrollments_subjects')
+        format: sql
+        rows: |
+          select
+            'kippnewark_powerschool' as _dbt_source_relation,
+            'kippnewark' as _dbt_source_project,
+            6 as students_dcid,
+            6 as studentid,
+            6 as student_number,
+            '6' as state_studentnumber,
+            cast(null as string) as salesforce_id,
+            12 as grade_level,
+            0 as enroll_status,
+            2028 as cohort,
+            2027 as cohort_primary,
+            'ELA' as discipline,
+            'ENG' as powerschool_credittype,
+            true as met_fafsa_requirement,
+            cast(null as string) as ps_grad_path_code,
+            1 as rn_undergrad,
+            'Newark' as region
+          union all
+          select 'kippnewark_powerschool', 'kippnewark', 7, 7, 7, '7', null,
+            11, 0, 2027, 2028, 'ELA', 'ENG', true, null, 1, 'Newark'
+
+      - input: ref('int_pearson__all_assessments')
+        format: sql
+        rows: |
+          select
+            6 as localstudentidentifier,
+            'ELA' as discipline,
+            cast(500 as numeric) as testscalescore,
+            'ELAGP' as testcode,
+            'NJGPA' as assessment_name,
+            'NJGPA-A' as assessment_version,
+            cast(1 as numeric) as testscorecomplete
+          union all
+          select 7, 'ELA', cast(460 as numeric), 'ELAGP', 'NJGPA', 'NJGPA-A',
+            cast(1 as numeric)
+
+      - input: ref('stg_google_sheets__student_graduation_path_cutoffs')
+        format: sql
+        rows: |
+          select
+            2027 as cohort,
+            'ELA' as discipline,
+            'NJGPA' as pathway_option,
+            'ELAGP' as score_type,
+            'S' as pathway_code,
+            725 as cutoff,
+            'NJGPA' as assessment_version
+          union all
+          select 2027, 'ELA', 'NJGPA', 'ELAGP', 'S', 450, 'NJGPA-A'
+
+      - input: ref('int_powerschool__state_assessments_transfer_scores')
+        format: sql
+        rows: |
+          select
+            cast(null as int64) as studentid,
+            cast(null as string) as _dbt_source_project,
+            cast(null as string) as discipline,
+            cast(null as float64) as testscalescore,
+            cast(null as string) as testcode,
+            cast(null as string) as assessment_name,
+            cast(null as string) as assessment_version
+          limit 0
+
+      - input: ref('int_assessments__college_assessment')
+        format: sql
+        rows: |
+          select
+            cast(null as int64) as student_number,
+            cast(null as numeric) as scale_score,
+            cast(null as string) as score_type,
+            cast(null as string) as subject_area,
+            cast(null as string) as scope,
+            cast(null as string) as course_discipline
+          limit 0
+    expect:
+      rows:
+        - {
+            student_number: 6,
+            cohort: 2028,
+            assessment_version: NJGPA-A,
+            cutoff: 450,
+            scale_score: 500,
+            met_pathway_cutoff: true,
+          }
+        - {
+            student_number: 6,
+            cohort: 2028,
+            assessment_version: NJGPA,
+            cutoff: 725,
+            scale_score: null,
+            met_pathway_cutoff: null,
+          }
+        - {
+            student_number: 7,
+            cohort: 2027,
+            assessment_version: NJGPA-A,
+            cutoff: 450,
+            scale_score: 460,
+            met_pathway_cutoff: true,
+          }
+        - {
+            student_number: 7,
+            cohort: 2027,
+            assessment_version: NJGPA,
+            cutoff: 725,
+            scale_score: null,
+            met_pathway_cutoff: null,
           }

@@ -21,30 +21,37 @@ data_tests:
   +store_failures_as: view
   kipppaterson:
     +severity: warn
-  # stg_cambium__njgpa is disabled below, and disabling a model leaves its
-  # tests enabled — they would scan a relation Paterson never builds. Each
-  # name is dbt's generated test name; changing the njgpa yml's accepted
-  # values renames the test and re-orphans it here.
+  # stg_cambium__njgpa and stg_cambium__eoc are disabled below, and disabling
+  # a model leaves its tests enabled — they would scan a relation Paterson
+  # never builds. Each name is dbt's generated test name; changing a column
+  # name or accepted values list in the cambium yml renames the test and
+  # re-orphans it here.
   cambium:
     staging:
       properties:
-        unique_stg_cambium__njgpa_studenttestuuid:
+        unique_stg_cambium__njgpa_student_test_uuid:
           +enabled: false
-        not_null_stg_cambium__njgpa_studenttestuuid:
+        not_null_stg_cambium__njgpa_student_test_uuid:
           +enabled: false
         not_null_stg_cambium__njgpa_test_date:
           +enabled: false
-        not_null_stg_cambium__njgpa_period:
+        not_null_stg_cambium__njgpa__period_:
           +enabled: false
-        accepted_values_stg_cambium__njgpa_period__Spring__Fall__FALL__FallBlock:
+        accepted_values_stg_cambium__njgpa__period___Spring__Fall__FALL__FallBlock:
           +enabled: false
-        not_null_stg_cambium__njgpa_administration_period:
+        unique_stg_cambium__eoc_student_test_uuid:
           +enabled: false
-        accepted_values_stg_cambium__njgpa_administration_period__Spring__Fall:
+        not_null_stg_cambium__eoc_student_test_uuid:
           +enabled: false
-        not_null_stg_cambium__njgpa_test_grade:
+        not_null_stg_cambium__eoc_test_date:
           +enabled: false
-        accepted_values_stg_cambium__njgpa_test_grade__False__11:
+        not_null_stg_cambium__eoc__period_:
+          +enabled: false
+        accepted_values_stg_cambium__eoc__period___Spring:
+          +enabled: false
+        not_null_stg_cambium__eoc__subject_:
+          +enabled: false
+        accepted_values_stg_cambium__eoc__subject___Algebra_I__Algebra_II__Geometry:
           +enabled: false
 
 vars:
@@ -101,6 +108,8 @@ models:
     +materialized: table
     staging:
       stg_cambium__njgpa:
+        +enabled: false
+      stg_cambium__eoc:
         +enabled: false
   deanslist:
     +materialized: table
@@ -186,6 +195,8 @@ sources:
   cambium:
     cambium:
       src_cambium__njgpa:
+        +enabled: false
+      src_cambium__eoc:
         +enabled: false
   deanslist:
     deanslist:

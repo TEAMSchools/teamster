@@ -64,8 +64,8 @@ To gate an _optional_ package layer per region, split the package into
 method/source subfolders (`api/`, `sftp/` — the amplify convention) and set
 `<package>: <method>: +enabled: false` in the unwired district's
 `dbt_project.yml`. Keep network-wide feeds enabled everywhere (e.g. finalsite
-SFTP `status_report` is consumed by kipptaf in all regions; only `api` is
-Miami-only). Method subfolders don't change asset keys.
+SFTP `status_report` is consumed by kipptaf in all regions). Method subfolders
+don't change asset keys.
 
 **Merging `dbt_project.yml` package configs can silently duplicate a top-level
 key.** When two branches each add `models: <package>:` (or `sources:`) at

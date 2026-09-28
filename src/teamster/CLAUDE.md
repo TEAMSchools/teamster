@@ -1,15 +1,5 @@
 # CLAUDE.md — `src/teamster/`
 
-## Overview
-
-```text
-teamster/
-  __init__.py             # GCS_PROJECT_NAME = "teamster-332318"
-  core/                   # Shared infrastructure (IO managers, resources, utils)
-  libraries/              # Reusable asset builders, resources, and schemas
-  code_locations/         # Per-district Dagster definitions (kipptaf, kippnewark, etc.)
-```
-
 ## Library + Code Location Pattern
 
 Integrations follow a two-layer separation:
@@ -25,11 +15,10 @@ config and a few lines of Python in the code location — no library changes.
 
 ## Python Standards
 
-`requires-python = ">=3.13"`. All library resource methods require return type
-annotations. Use built-in generics (`list[str]`, `dict[str, int]`), `X | None`
-for nullable params, and `_` for unused unpacked variables. Callable-returning
-functions annotate as `Callable[[], ReturnType]` (import from
-`collections.abc`).
+All library resource methods require return type annotations. Use built-in
+generics (`list[str]`, `dict[str, int]`), `X | None` for nullable params, and
+`_` for unused unpacked variables. Callable-returning functions annotate as
+`Callable[[], ReturnType]` (import from `collections.abc`).
 
 **`defaultdict` typing**: `defaultdict(set[T])` works at runtime in 3.13
 (GenericAlias is callable) but is semantically wrong — use
@@ -69,15 +58,6 @@ at construction and crashes module-load resource wiring when the var is unset
 
 ## Library Categories
 
-Libraries fall into four patterns based on how they ingest data:
-
-| Pattern            | Libraries                                                                                           | How it works                                                    |
-| ------------------ | --------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
-| **SFTP file drop** | cambium, collegeboard, edplan, fldoe, iready, nsc, pearson, performance_management, renlearn, titan | `build_sftp_*_asset()` from `libraries/sftp/` + Avro schemas    |
-| **REST API**       | coupa, deanslist, knowbe4, level_data, overgrad, smartrecruiters                                    | Custom `build_*_asset()` factory + resource class               |
-| **Framework**      | dbt, dlt, google, airbyte, fivetran                                                                 | Dagster-native integration (`dagster-dbt`, `dagster-dlt`, etc.) |
-| **Multi-access**   | adp (API + SFTP), amplify (API + SFTP), powerschool (dlt + SFTP + API; ODBC archived)               | Multiple factories per product line                             |
-
 Schema-only libraries (collegeboard, dayforce, fldoe, nsc, pearson,
 performance_management) contain only Avro schemas — the asset is built in the
 code location using the generic SFTP factory.
@@ -94,25 +74,7 @@ that function rather than hand-writing the alternations per code location.
 integrations — adp, google, ldap, tableau, etc. — are kipptaf-only). Use it as
 the reference implementation when adding new integrations to other districts.
 
-Each code location follows the same layout:
-
-```text
-code_locations/<name>/
-  CLAUDE.md          # Module-specific context (read before working here)
-  __init__.py        # CODE_LOCATION, LOCAL_TIMEZONE, CURRENT_FISCAL_YEAR, DBT_PROJECT
-  definitions.py     # Dagster Definitions object wiring everything together
-  resources.py       # Location-specific resource instances (if any)
-  dbt/assets.py      # dbt asset definitions
-  <integration>/     # Per-integration assets, config YAML, optional sensors
-```
-
-**Identity constants** (defined in `__init__.py`):
-
-| Constant              | Example (`kippnewark`)          |
-| --------------------- | ------------------------------- |
-| `CODE_LOCATION`       | `"kippnewark"`                  |
-| `LOCAL_TIMEZONE`      | `ZoneInfo("America/New_York")`  |
-| `CURRENT_FISCAL_YEAR` | fiscal year (updated each July) |
+Each code location carries its own CLAUDE.md — read it before working there.
 
 **GCS bucket**: `teamster-<code_location>` (redirects to `teamster-test` in
 branch deployments).
@@ -229,20 +191,9 @@ billed (10 MB min/query) while `tables.get` is free metadata.
 ## Development Commands
 
 ```bash
-# Start Dagster webserver locally (all code locations)
-uv run dagster dev
-
-# Validate Dagster definitions for a code location
-uv run dagster definitions validate -m teamster.code_locations.kipptaf.definitions
-
 # Prepare and package a dbt project (required before running dbt assets)
 uv run dagster-dbt project prepare-and-package --file src/teamster/code_locations/kipptaf/__init__.py
 ```
-
-`dagster definitions validate` may mislead locally — env vars unavailable in
-codespace cause false errors unrelated to production failures. Fall back to
-`uv run python -c "import <module>"` for syntactic checks when validate fails on
-missing manifest or env vars.
 
 In the codespace, importing a district `definitions.py` first needs the dbt
 manifest (`dagster-dbt project prepare-and-package`, above). With the manifest,

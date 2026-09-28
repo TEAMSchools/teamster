@@ -610,9 +610,9 @@ sources:
             data_type: int64
           - name: test_type
             data_type: string
-          # string, not int64, to match expected_grade_level on the scaffold this
-          # joins to for thresholds — that column holds comma-separated lists
-          # ("11,12") where one row covers two grades.
+          # string, not int64, to match expected_grade_level on the scaffold,
+          # which holds comma-separated lists ("11,12") where one row covers two
+          # grades.
           - name: grade_level
             data_type: string
           - name: cohort
@@ -631,10 +631,10 @@ sources:
           - name: pct_college_ready
             data_type: float64
           # cohort-independent goals for the over time view, which reports on
-          # neither grade level nor cohort. Stated on every row, so the over time
-          # branch never falls back to a per-grade goal for a benchmark. Declared
-          # for the same reason as pct_2_plus_attempts above — autodetect drops a
-          # column that goes fully null.
+          # neither grade level nor cohort. The goals unpivot's All Grades branch
+          # uses these, falling back to the per-grade goal only where they are
+          # blank. Declared for the same reason as pct_2_plus_attempts above —
+          # autodetect drops a column that goes fully null.
           - name: pct_hs_grad_ready_over_time
             data_type: float64
           - name: pct_college_ready_over_time
@@ -2309,3 +2309,53 @@ sources:
                 - sheets
                 - people
                 - cube_access_department_rollup
+      - name: src_google_sheets__people__cube_access_individual_exceptions
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1TuH7e2AuxP-_dUImtHrWCXJ_S_KD_eYCRqWhbGcD2V4
+            sheet_range: cube_access_individual_exceptions
+            skip_leading_rows: 1
+        columns:
+          - name: google_email
+            data_type: string
+          - name: additional_student_location_scope
+            data_type: string
+          - name: additional_staff_location_scope
+            data_type: string
+          - name: additional_location_name
+            data_type: string
+          - name: staff_department_scope
+            data_type: string
+          - name: staff_pii_scope
+            data_type: string
+          - name: staff_compensation_scope
+            data_type: string
+          - name: staff_observations_scope
+            data_type: string
+          - name: staff_benefits_scope
+            data_type: string
+          - name: business_justification
+            data_type: string
+          - name: requested_by
+            data_type: string
+          - name: approved_by
+            data_type: string
+          - name: grant_date
+            data_type: date
+          - name: expiry_date
+            data_type: date
+          - name: status
+            data_type: string
+          - name: notes
+            data_type: string
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - people
+                - cube_access_individual_exceptions

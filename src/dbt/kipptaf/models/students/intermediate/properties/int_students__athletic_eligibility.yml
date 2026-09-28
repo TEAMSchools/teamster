@@ -1,15 +1,118 @@
 models:
   - name: int_students__athletic_eligibility
+    description:
+      One row per student enrolled this academic year in grade 5 or above in
+      Newark, Camden, or Paterson, with the inputs the student athlete
+      eligibility policy uses and a status for each quarter. Each status checks
+      age first. Q1 uses the previous year's credits, GPA, and ADA, with
+      first-time 9th graders and grade 5 eligible by default. Q2 uses Q1 GPA and
+      Q1 weighted ADA for high school, and the current Y1 GPA and running ADA
+      for middle school. Q3 and Q4 use semester 1 GPA, semester 1 weighted ADA,
+      and current-year credits for high school, and the same middle school
+      inputs as Q2. A student in grades 6 to 8 or 10 to 12 with no previous-year
+      GPA or ADA, such as a student new to the network, has no Q1 status; grade
+      5 and first-time 9th graders are Eligible in Q1 regardless.
 
     columns:
+      - name: student_number
+        data_type: int64
+        description: Student Number assigned by the school. Indexed.
+        data_tests:
+          - unique
+          - not_null
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: student_number
+            contains_pii: true
+            column_role: primary_key
+      - name: q1_ae_status
+        data_type: string
+        description:
+          Fall eligibility status from the previous year's credits, Y1 GPA, and
+          whole-year ADA, weighted for high school and unweighted for middle
+          school. Age is checked first. First-time 9th graders and grade 5 are
+          Eligible. High school students also need 30 previous-year credits.
+          Below 2.2 GPA is Ineligible, 2.2 to 2.49 is GPA probation, and below
+          90 percent ADA is ADA probation. Null when the student has no
+          previous-year GPA or ADA.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - Eligible
+                  - Ineligible - Age
+                  - Ineligible - Credits
+                  - Ineligible - GPA
+                  - Probation - ADA
+                  - Probation - ADA and GPA
+                  - Probation - GPA
+      - name: q2_ae_status
+        data_type: string
+        description:
+          Winter eligibility status. High school reads the previous year's
+          credits, Q1 term GPA, and Q1 weighted ADA; first-time 9th graders skip
+          the credit check. Middle school reads the current Y1 GPA and the
+          running ADA. Any student with a Q1 GPA below 2.2 is Ineligible - GPA.
+          The same GPA and ADA cut points as Q1 apply.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - Eligible
+                  - Ineligible - Age
+                  - Ineligible - Credits
+                  - Ineligible - GPA
+                  - Probation - ADA
+                  - Probation - ADA and GPA
+                  - Probation - GPA
+      - name: q3_ae_status
+        data_type: string
+        description:
+          Spring eligibility status after the February 1 credit check. High
+          school reads current-year credits (no failing Y1 grade as of Q2), Y1
+          GPA at the end of semester 1, and semester 1 weighted ADA. Middle
+          school reads the current Y1 GPA and the running ADA. Any student with
+          a current Y1 GPA below 2.2 is Ineligible - GPA, high school included.
+          The same GPA and ADA cut points as Q1 apply.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - Eligible
+                  - Ineligible - Age
+                  - Ineligible - Credits
+                  - Ineligible - GPA
+                  - Probation - ADA
+                  - Probation - ADA and GPA
+                  - Probation - GPA
+      - name: q4_ae_status
+        data_type: string
+        description: Spring eligibility status for Q4, computed exactly as Q3.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - Eligible
+                  - Ineligible - Age
+                  - Ineligible - Credits
+                  - Ineligible - GPA
+                  - Probation - ADA
+                  - Probation - ADA and GPA
+                  - Probation - GPA
+
       - name: _dbt_source_relation
         data_type: string
+        description: The regional enrollment relation the row came from.
       - name: _dbt_source_project
         data_type: string
         description: District code location derived from `_dbt_source_relation`.
 
       - name: academic_year
         data_type: int64
+        description:
+          The current academic year, named by the calendar year it starts in.
 
       - name: yearid
         data_type: int64
@@ -33,19 +136,9 @@ models:
             source_system: PowerSchool
             source_model: stg_powerschool__storedgrades
             source_column: schoolid
-      - name: student_number
-        data_type: int64
-
-        description: Student Number assigned by the school. Indexed.
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__students
-            source_column: student_number
-            contains_pii: true
-            column_role: primary_key
       - name: students_dcid
         data_type: int64
+        description: PowerSchool internal key for the student record.
 
       - name: studentid
         data_type: int64
@@ -61,10 +154,7 @@ models:
       - name: grade_level
         data_type: int64
 
-        description:
-          The grade level the student was in when the grade was stored. This
-          simply copies the students'current grade level in to this field.
-          Indexed.
+        description: The student's grade level this academic year.
         config:
           meta:
             source_system: PowerSchool
@@ -72,6 +162,9 @@ models:
             source_column: grade_level
       - name: grade_level_prev
         data_type: int64
+        description:
+          The student's grade level last academic year. Null for a student new
+          to the network.
 
       - name: dob
         data_type: date
@@ -85,81 +178,325 @@ models:
             contains_pii: true
       - name: ada
         data_type: float64
+        description:
+          Running average daily attendance for this year, weighted for high
+          school and unweighted for middle school.
 
       - name: cy_unweighted_term_q1
         data_type: float64
+        description: Unweighted ADA for Q1 of this year.
 
       - name: cy_weighted_term_q1
         data_type: float64
+        description:
+          Weighted ADA for Q1 of this year, where a tardy counts as 0.67 of a
+          day present.
 
       - name: cy_unweighted_s1_ada
         data_type: float64
+        description: Unweighted ADA for semester 1 of this year.
 
       - name: cy_weighted_s1_ada
         data_type: float64
+        description:
+          Weighted ADA for semester 1 of this year, where a tardy counts as 0.67
+          of a day present.
 
       - name: py_y1_unweighted_ada
         data_type: float64
+        description: Unweighted ADA for the whole previous academic year.
 
       - name: py_y1_weighted_ada
         data_type: float64
+        description:
+          Weighted ADA for the whole previous academic year, where a tardy
+          counts as 0.67 of a day present.
 
       - name: cy_q1_gpa
         data_type: float64
+        description: Term GPA for Q1 of this year.
 
       - name: cy_s1_gpa
         data_type: float64
+        description: Y1 GPA as of the end of Q2, the end of semester 1.
 
       - name: cy_y1_gpa
         data_type: float64
+        description: Current Y1 GPA for this year, updated as grades post.
 
       - name: py_y1_gpa
         data_type: float64
+        description:
+          Weighted Y1 GPA for the previous academic year across every Y1 stored
+          grade, including summer school grades stored without a course number.
 
       - name: py_credits
         data_type: float64
+        description:
+          Credit hours earned on the previous academic year's Y1 stored grades.
 
       - name: met_py_credits
         data_type: boolean
+        description:
+          True when the student earned at least 30 credits in the previous
+          academic year. Null when there are no previous-year stored grades.
 
       - name: met_cy_credits
         data_type: boolean
+        description:
+          True when the student has no failing (F or F*) Y1 grade as of Q2, the
+          tracker's test for being on track to earn 30 credits this year. Null
+          before Q2 grades exist.
 
       - name: is_first_time_ninth
         data_type: boolean
+        description:
+          True for a 9th grader who was not in 9th grade last year, including a
+          student new to the network.
 
       - name: is_age_eligible
         data_type: boolean
-
-      - name: q1_ae_status
-        data_type: string
-
         description:
-          The grade level the student was in when the grade was stored. This
-          simply copies the students'current grade level in to this field.
-          Indexed. Categorical mapping of grade_level, is_age_eligible,
-          is_first_time_ninth, met_py_credits, py_y1_gpa, py_y1_unweighted_ada.
-      - name: q2_ae_status
-        data_type: string
+          False when the student turned 19 before September 1 of this academic
+          year, the NJSIAA age rule. True when the date of birth is missing.
 
-        description:
-          The grade level the student was in when the grade was stored. This
-          simply copies the students'current grade level in to this field.
-          Indexed. Categorical mapping of ada, cy_q1_gpa, cy_weighted_term_q1,
-          cy_y1_gpa, grade_level, is_age_eligible, is_first_time_ninth,
-          met_py_credits.
-      - name: q3_ae_status
-        data_type: string
+unit_tests:
+  - name: test_athletic_eligibility_age_cutoff_and_ms_dual_probation
+    description:
+      Two policy rules. Age — a student whose 19th birthday falls before
+      September 1 of the academic year is ineligible, and one who turns 19 on
+      September 1 is not. Middle school — below 90 percent attendance together
+      with a 2.2 to 2.49 GPA is probation on both counts in Q2 through Q4, never
+      a blank status.
+    model: int_students__athletic_eligibility
+    overrides:
+      vars:
+        current_academic_year: 2026
+    given:
+      - input: ref('int_extracts__student_enrollments')
+        rows:
+          - student_number: 1
+            studentid: 1
+            yearid: 36
+            academic_year: 2026
+            grade_level: 10
+            grade_level_prev: 9
+            dob: 2007-08-31
+            rn_year: 1
+            enroll_status: 0
+            region: Newark
+            _dbt_source_project: kippnewark
+          - student_number: 2
+            studentid: 2
+            yearid: 36
+            academic_year: 2026
+            grade_level: 10
+            grade_level_prev: 9
+            dob: 2007-09-01
+            rn_year: 1
+            enroll_status: 0
+            region: Newark
+            _dbt_source_project: kippnewark
+          - student_number: 3
+            studentid: 3
+            yearid: 36
+            academic_year: 2026
+            grade_level: 7
+            grade_level_prev: 6
+            dob: 2013-01-01
+            ada: 0.85
+            rn_year: 1
+            enroll_status: 0
+            region: Newark
+            _dbt_source_project: kippnewark
+      - input: ref('int_powerschool__gpa_term_pivot')
+        rows:
+          - studentid: 3
+            yearid: 36
+            gpa_term_q1: 2.3
+            gpa_y1_q2: 2.3
+            gpa_y1_cur: 2.3
+            _dbt_source_project: kippnewark
+      - input: ref('stg_powerschool__storedgrades')
+        rows:
+          - studentid: 99
+            yearid: 35
+            academic_year: 2025
+            storecode: Y1
+            earnedcrhrs: 5
+            _dbt_source_project: kippnewark
+      - input: ref('base_powerschool__final_grades')
+        rows:
+          - studentid: 99
+            yearid: 36
+            storecode: Q2
+            y1_letter_grade_adjusted: A
+            _dbt_source_project: kippnewark
+    expect:
+      rows:
+        - student_number: 1
+          is_age_eligible: false
+          q2_ae_status: Ineligible - Age
+          q3_ae_status: Ineligible - Age
+          q4_ae_status: Ineligible - Age
+        - student_number: 2
+          is_age_eligible: true
+          q2_ae_status: null
+          q3_ae_status: null
+          q4_ae_status: null
+        - student_number: 3
+          is_age_eligible: true
+          q2_ae_status: Probation - ADA and GPA
+          q3_ae_status: Probation - ADA and GPA
+          q4_ae_status: Probation - ADA and GPA
 
-        description:
-          The grade level the student was in when the grade was stored. This
-          simply copies the students'current grade level in to this field.
-          Indexed. Categorical mapping of ada, cy_s1_gpa, cy_weighted_s1_ada,
-          cy_y1_gpa, grade_level, is_age_eligible, met_cy_credits.
-      - name: q4_ae_status
-        data_type: string
-        description:
-          The grade level the student was in when the grade was stored. This
-          simply copies the students'current grade level in to this field.
-          Indexed. Categorical mapping of ada, cy_s1_gpa, cy_weighted_s1_ada,
-          cy_y1_gpa, grade_level, is_age_eligible, met_cy_credits.
+  - name: test_athletic_eligibility_q1_hs_weighted_ms_unweighted_ada
+    description:
+      Q1 reads last year's weighted ADA for high school and unweighted ADA for
+      middle school. Both students below have a 2.6 GPA, 95 percent unweighted
+      ADA, and 85 percent weighted ADA, so the high schooler is on ADA probation
+      and the middle schooler is eligible.
+    model: int_students__athletic_eligibility
+    overrides:
+      vars:
+        current_academic_year: 2026
+    given:
+      - input: ref('int_extracts__student_enrollments')
+        rows:
+          - student_number: 10
+            studentid: 10
+            yearid: 36
+            academic_year: 2026
+            grade_level: 10
+            grade_level_prev: 9
+            dob: 2010-01-01
+            ada_unweighted_year_prev: 0.95
+            ada_weighted_year_prev: 0.85
+            rn_year: 1
+            enroll_status: 0
+            region: Newark
+            _dbt_source_project: kippnewark
+          - student_number: 11
+            studentid: 11
+            yearid: 36
+            academic_year: 2026
+            grade_level: 7
+            grade_level_prev: 6
+            dob: 2013-01-01
+            ada_unweighted_year_prev: 0.95
+            ada_weighted_year_prev: 0.85
+            rn_year: 1
+            enroll_status: 0
+            region: Newark
+            _dbt_source_project: kippnewark
+      - input: ref('int_powerschool__gpa_term_pivot')
+        rows:
+          - studentid: 10
+            yearid: 35
+            gpa_y1_cur: 2.6
+            _dbt_source_project: kippnewark
+          - studentid: 11
+            yearid: 35
+            gpa_y1_cur: 2.6
+            _dbt_source_project: kippnewark
+      - input: ref('stg_powerschool__storedgrades')
+        rows:
+          - studentid: 10
+            yearid: 35
+            academic_year: 2025
+            storecode: Y1
+            course_number: ENG10
+            earnedcrhrs: 30
+            potentialcrhrs: 30
+            gpa_points: 2.6
+            excludefromgpa: 0
+            _dbt_source_project: kippnewark
+          - studentid: 11
+            yearid: 35
+            academic_year: 2025
+            storecode: Y1
+            course_number: ENG07
+            earnedcrhrs: 5
+            potentialcrhrs: 5
+            gpa_points: 2.6
+            excludefromgpa: 0
+            _dbt_source_project: kippnewark
+      - input: ref('base_powerschool__final_grades')
+        rows:
+          - studentid: 99
+            yearid: 36
+            storecode: Q2
+            y1_letter_grade_adjusted: A
+            _dbt_source_project: kippnewark
+    expect:
+      rows:
+        - student_number: 10
+          q1_ae_status: Probation - ADA
+        - student_number: 11
+          q1_ae_status: Eligible
+
+  - name: test_athletic_eligibility_py_gpa_includes_summer_school
+    description:
+      Last year's Y1 GPA counts every Y1 stored grade, including summer school
+      grades, which PowerSchool stores without a course number. A 4.0 regular
+      grade and a 1.0 summer grade, each worth 5 credits, average to 2.5.
+    model: int_students__athletic_eligibility
+    overrides:
+      vars:
+        current_academic_year: 2026
+    given:
+      - input: ref('int_extracts__student_enrollments')
+        rows:
+          - student_number: 20
+            studentid: 20
+            yearid: 36
+            academic_year: 2026
+            grade_level: 10
+            grade_level_prev: 9
+            dob: 2010-01-01
+            ada_unweighted_year_prev: 0.95
+            ada_weighted_year_prev: 0.95
+            rn_year: 1
+            enroll_status: 0
+            region: Newark
+            _dbt_source_project: kippnewark
+      - input: ref('int_powerschool__gpa_term_pivot')
+        rows:
+          - studentid: 20
+            yearid: 35
+            gpa_y1_cur: 4.0
+            _dbt_source_project: kippnewark
+      - input: ref('stg_powerschool__storedgrades')
+        rows:
+          - studentid: 20
+            yearid: 35
+            academic_year: 2025
+            storecode: Y1
+            course_number: ENG10
+            earnedcrhrs: 25
+            potentialcrhrs: 5
+            gpa_points: 4.0
+            excludefromgpa: 0
+            _dbt_source_project: kippnewark
+          - studentid: 20
+            yearid: 35
+            academic_year: 2025
+            storecode: Y1
+            course_number: null
+            earnedcrhrs: 5
+            potentialcrhrs: 5
+            gpa_points: 1.0
+            excludefromgpa: 0
+            _dbt_source_project: kippnewark
+      - input: ref('base_powerschool__final_grades')
+        rows:
+          - studentid: 99
+            yearid: 36
+            storecode: Q2
+            y1_letter_grade_adjusted: A
+            _dbt_source_project: kippnewark
+    expect:
+      rows:
+        - student_number: 20
+          py_y1_gpa: 2.5
+          q1_ae_status: Eligible
