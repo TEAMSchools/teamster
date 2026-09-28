@@ -14,7 +14,7 @@ models:
       Two filters keep that scope and are load-bearing rather than cosmetic.
       `int_amplify__all_assessments` and
       `int_students__dibels_participation_roster` each carry a row per data
-      method now, so the roster join matches on `model_type` and the score side
+      method, so the roster join matches on `model_type` and the score side
       filters to `Internal`. Without both, a student's Internal and Aimline rows
       join to each other and every row multiplies.
 
@@ -23,8 +23,10 @@ models:
       that a code composed of several standards requires all of them — this is
       what makes "met ORF" mean both Reading Fluency and Reading Accuracy. Then
       the codes are combined per round by `pm_goal_criteria`, `AND` requiring
-      every code and anything else requiring one. T&L set `AND` network-wide for
-      every K-8 round from SY26-27, so the OR path applies to history only.
+      every code and null (the OR criteria) requiring one. T&L set `AND`
+      network-wide for every K-8 round from SY26-27, so the OR path applies to
+      history only. Scaffold rows (`pm_goal_include` non-null) and students who
+      are not probe-eligible are excluded before any of this.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -42,8 +44,7 @@ models:
       - name: academic_year
         data_type: int64
         description:
-          Starting calendar year of the school year, extracted from school_year
-          (e.g., 2025 from '2025-2026').
+          Academic year as the starting calendar year -- 2025 is SY25-26.
       - name: region
         data_type: string
         description:
@@ -74,7 +75,7 @@ models:
       - name: benchmark_goal
         data_type: int64
         description: >-
-          Amplify's published grade-level standard for the season, unpadded,
+          The published DIBELS 8 grade-level standard for the season, unpadded,
           from the frozen goals sheet. Reported so a reader can see the real
           standard; it is not the bar the verdict uses.
       - name: benchmark_goal_padded
@@ -84,9 +85,7 @@ models:
           met_admin_benchmark_goal compares against. Distinct from the growth
           target — it answers "at grade level yet" rather than "on pace".
 
-          The two were one column until SY26-27, holding the padded figure under
-          the bare name; the sheet was backfilled when they split, so this
-          column is populated on every year and needs no fallback. It carries a
+          Populated on every year, so it needs no fallback. It carries a
           not_null test at the staging model, because a hand-paste that omitted
           it would make every comparison read 0 rather than fail.
       - name: round_growth_words_goal
@@ -110,7 +109,7 @@ models:
           SY26-27 row is AND, so a student must now meet every measure.
       - name: student_number
         data_type: int64
-        description: Student Number assigned by the school. Indexed.
+        description: Student number assigned by the school.
         config:
           meta:
             source_system: PowerSchool
@@ -174,15 +173,16 @@ models:
           benchmark_goal_padded outright.
 
           The aimline sibling's column of the same name compares against the
-          UNPADDED standard, so the two methods disagree on 3,162 AY2025 rows,
-          always in the same direction. That is T&L's recorded choice, not
-          drift; see met_admin_benchmark_goal_unpadded below and the padding
-          note in the DIBELS reference.
+          UNPADDED standard, so the two methods disagree on some rows, always in
+          the same direction. That is T&L's recorded choice, not drift; see
+          met_admin_benchmark_goal_unpadded below and the padding note in the
+          DIBELS reference.
 
           Recomputed every round and not latched — a student who clears the
-          standard in one round and dips below it in the next reads 1 then 0. It
-          is also a leaf — nothing in this model aggregates it, and the whole
-          met/not-met chain runs on met_measure_standard_goal alone.
+          standard in one round and dips below it in the next reads 1 then 0.
+          Its only rollups are the min-based measure_name_code_benchmark_status
+          and round_benchmark_status; the met/not-met goal chain runs on
+          met_measure_standard_goal alone.
       - name: met_admin_benchmark_goal_unpadded
         data_type: int64
         description: >-
@@ -200,8 +200,9 @@ models:
           branch would ship a byte-identical copy of the column already there.
 
           Wiring this into a view CHANGES A PUBLISHED NUMBER — it reads 1 on
-          3,162 AY2025 rows where met_admin_benchmark_goal reads 0. That is a
-          reporting decision for T&L, not an implementation detail.
+          every row whose score falls inside the 3-word buffer, where
+          met_admin_benchmark_goal reads 0. That is a reporting decision for
+          T&L, not an implementation detail.
       - name: met_measure_name_code_goal
         data_type: int64
         description: >-
@@ -225,27 +226,26 @@ models:
 
           The case has an AND branch and a null branch, and that is complete —
           pm_goal_criteria never holds the string 'OR' in any year. Null IS the
-          OR criteria, and pm_goal_criteria's own case sends it to max(), which
-          lets one complete measure code satisfy the round. Academics used that
-          until SY25-26; every SY26-27 row is AND, so a student must now meet
-          every measure.
+          OR criteria, and met_pm_round_criteria's case sends it to max(), which
+          lets one met measure code satisfy the round. Academics used that until
+          SY25-26; every SY26-27 row is AND, so a student must now meet every
+          measure. Any other value, including a literal 'OR', would fall to the
+          else branch and read 0.
 
           The null branch deliberately skips completed_test_round, unlike the
-          AND branch. pm_goal_criteria governs how multiple EXPECTED measures
-          combine, so a null-criteria round has no multi-measure requirement and
-          a valid score counts without checking that every probe was finished.
-          Unexpected probes are already excluded upstream by the expectation
-          gate.
+          AND branch. Under AND a skipped measure leaves the round
+          indeterminate, so it cannot be credited; under OR one met code settles
+          the round, and nothing that was skipped can change that.
       - name: measure_standard_goal_status
         data_type: string
         description: >-
           met_measure_standard_goal as a label rather than a flag — Met or Not
           Met. A labelled twin of the flag, carrying no logic the flag does not
           already have, so that the dashboard's goal-type selector can pick
-          between the three status columns instead of converting each numeric
-          flag itself. Round Incomplete never applies to it — a single measure
-          standard in a single round cannot be partly finished — though the
-          extract adds Not Tested to all four status columns.
+          between status columns instead of converting each numeric flag itself.
+          Round Incomplete never applies to it — a single measure standard in a
+          single round cannot be partly finished — though the extract adds Not
+          Tested to the status columns.
       - name: measure_name_code_goal_status
         data_type: string
         description: >-
@@ -319,7 +319,9 @@ models:
           holds — a single pass settles it, so an incomplete round is
           unmeasurable only when everything sat was missed. Keying this off
           met_pm_round_overall_criteria = 0 instead of met_pm_round_criteria
-          overstates Round Incomplete roughly fourfold.
+          would overstate Round Incomplete. Case order — the two Round
+          Incomplete branches, then Met when met_pm_round_overall_criteria is 1,
+          then Not Met.
 
           A fourth state, Not Tested, does not and cannot appear here — this
           model holds scored rows only, so a student who was expected to test
