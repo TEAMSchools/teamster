@@ -1,11 +1,15 @@
 models:
   - name: stg_amplify__mclass__sftp__pm_student_summary_aimline
     description: >-
-      Amplify mCLASS DIBELS progress monitoring aimline data enriched with
-      region, school abbreviation, and PowerSchool school ID from the location
-      crosswalk. Rewrites _dbt_source_relation to reflect the school's actual
-      dagster_code_location, enabling correct multi-region routing as additional
-      district SFTP files become available.
+      Amplify mCLASS DIBELS progress monitoring aimline data, one row per probe,
+      enriched with region, school abbreviation, and PowerSchool school ID from
+      the location crosswalk (left join on school name). Currently sources the
+      Newark file only. device_date falls back to sync_date, which is dropped.
+      _dbt_source_relation is rewritten to the school's dagster_code_location,
+      so it routes by school rather than by the district file it came from.
+    config:
+      meta:
+        contains_pii: true
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -29,8 +33,9 @@ models:
       - name: _dbt_source_relation
         data_type: string
         description: >-
-          Source relation rewritten to reflect the school's actual
-          dagster_code_location via the location crosswalk.
+          Source relation with its kipp region prefix replaced by the school's
+          dagster_code_location from the location crosswalk. Null when the
+          school name has no crosswalk match.
         data_tests:
           - not_null
       - name: region
@@ -74,7 +79,9 @@ models:
         description: Student first name.
       - name: student_primary_id
         data_type: int64
-        description: Student primary identifier (student number).
+        description: >-
+          Student primary identifier (student number) as sent by the vendor,
+          cast to integer.
       - name: enrollment_teacher_name
         data_type: string
         description: Enrollment teacher name(s), pipe-delimited when multiple.
@@ -225,6 +232,3 @@ models:
         description: >-
           Full measure name derived from measure_name_code (e.g., 'Oral Reading
           Fluency').
-      - name: measure_standard_score_change
-        data_type: numeric
-        description: Change in measure standard score from the previous probe.
