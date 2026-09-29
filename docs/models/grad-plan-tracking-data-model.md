@@ -1,5 +1,11 @@
 # Grad Plan Tracking Data Model
 
+!!! tip "Claude Code skill available" The `grad-plan-tracking` skill in
+`.claude/skills/grad-plan-tracking/` covers the procedure side of this family:
+running PowerSchool's Data Capture routine and the sheet refresh before a
+master-scheduling push, and checking a tracker tab's row cap against its source
+tab. This page is the model reference; the skill is the runbook.
+
 ## What it is
 
 Grad Plan Tracking tells high schools which course a student is still missing to
