@@ -95,7 +95,17 @@ models:
         data_type: int64
       - name: is_earned_progress_to_quarterly
         data_type: int64
+        description: >-
+          1 when the student has a Progress to Quarterly Incentive award in the
+          week, otherwise 0. Awards are bucketed into Sunday-start weeks and
+          labeled by the Monday, so a Sunday-dated award counts toward the
+          following week.
       - name: is_earned_quarterly_incentive
         data_type: int64
+        description: >-
+          1 when the student has an Earned Quarterly Incentive award in the
+          week's quarter, otherwise 0. The quarter comes from the student's own
+          enrollment week for the award date. Awards are bulk-dated to the first
+          day of the next quarter, so they show in that quarter's weeks.
       - name: state_studentnumber
         data_type: string

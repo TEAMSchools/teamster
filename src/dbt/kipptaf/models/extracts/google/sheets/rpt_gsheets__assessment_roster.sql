@@ -3,50 +3,25 @@ with
     -- (precomputed upstream), so no dedupe CTE is needed here.
     iready as (
         select
-            student_id as student_number,
-            academic_year_int as academic_year,
-            test_round as administration_round,
-            overall_relative_placement as performance_band_label,
-            overall_relative_placement_int as performance_band_int,
+            student_number,
+            academic_year,
+            administration_period as administration_round,
+            proficiency_level as performance_band_label,
+            proficiency_level_int as performance_band_int,
             is_proficient,
             `discipline` as `subject`,
+            scale_score,
 
             'i-Ready' as assessment_source,
 
             cast(null as string) as assessment_id,
             cast(null as string) as assessment_title,
-            cast(overall_scale_score as numeric) as scale_score,
             cast(null as numeric) as percent_correct,
-        from {{ ref("int_iready__diagnostic_results") }}
+        from {{ ref("int_assessments__benchmark_scores") }}
         where
-            `discipline` in ('ELA', 'Math')
-            and rn_subj_round = 1
-            and academic_year_int in (
-                {{ var("current_academic_year") }},
-                {{ var("current_academic_year") - 1 }}
-            )
-    ),
-
-    fast as (
-        select
-            student_number,
-            academic_year,
-            administration_window as administration_round,
-            achievement_level as performance_band_label,
-            performance_level as performance_band_int,
-            is_proficient,
-            `discipline` as `subject`,
-
-            'FAST' as assessment_source,
-
-            cast(null as string) as assessment_id,
-            cast(null as string) as assessment_title,
-            cast(scale_score as numeric) as scale_score,
-            cast(null as numeric) as percent_correct,
-        from {{ ref("int_fldoe__all_assessments") }}
-        where
-            student_number is not null
+            score_source = 'iready'
             and `discipline` in ('ELA', 'Math')
+            and rn_subj_round = 1
             and academic_year in (
                 {{ var("current_academic_year") }},
                 {{ var("current_academic_year") - 1 }}
@@ -57,16 +32,16 @@ with
         select
             student_number,
             academic_year,
-            period,
-            measure_standard_score,
-            measure_standard_level,
-            measure_standard_level_int,
-            aggregated_measure_standard_level,
-            client_date,
-        from {{ ref("int_amplify__all_assessments") }}
+            administration_period as period,
+            scale_score as measure_standard_score,
+            proficiency_level as measure_standard_level,
+            proficiency_level_int as measure_standard_level_int,
+            is_proficient,
+            test_date as client_date,
+        from {{ ref("int_assessments__benchmark_scores") }}
         where
-            assessment_type = 'Benchmark'
-            and measure_standard = 'Composite'
+            score_source = 'dibels'
+            and response_type = 'overall'
             and academic_year in (
                 {{ var("current_academic_year") }},
                 {{ var("current_academic_year") - 1 }}
@@ -91,40 +66,52 @@ with
             period as administration_round,
             measure_standard_level as performance_band_label,
             measure_standard_level_int as performance_band_int,
+            measure_standard_score as scale_score,
+            is_proficient,
 
             'DIBELS' as assessment_source,
             'ELA' as `subject`,
 
             cast(null as string) as assessment_id,
             cast(null as string) as assessment_title,
-            cast(measure_standard_score as numeric) as scale_score,
             cast(null as numeric) as percent_correct,
-
-            aggregated_measure_standard_level = 'At/Above' as is_proficient,
         from dibels_deduplicated
     ),
 
-    njsla as (
+    state_tests as (
         select
-            localstudentidentifier as student_number,
+            student_number,
             academic_year,
-            admin as administration_round,
-            testperformancelevel_text as performance_band_label,
+            administration_round,
+            performance_level_label as performance_band_label,
             is_proficient,
             `discipline` as `subject`,
 
-            'NJSLA' as assessment_source,
-
             cast(null as string) as assessment_id,
             cast(null as string) as assessment_title,
-            cast(testscalescore as numeric) as scale_score,
+            scale_score,
             cast(null as numeric) as percent_correct,
-            cast(testperformancelevel as int) as performance_band_int,
-        from {{ ref("int_pearson__all_assessments") }}
+            performance_level as performance_band_int,
+
+            if(score_source = 'state_nj', 'NJSLA', 'FAST') as assessment_source,
+        from {{ ref("int_assessments__state_scores") }}
         where
-            assessment_name = 'NJSLA'
-            and `discipline` in ('ELA', 'Math')
-            and academic_year = {{ var("current_academic_year") - 1 }}
+            `discipline` in ('ELA', 'Math')
+            and (
+                (
+                    score_source = 'state_nj'
+                    and assessment_name = 'NJSLA'
+                    and academic_year = {{ var("current_academic_year") - 1 }}
+                )
+                or (
+                    score_source = 'state_fl'
+                    and student_number is not null
+                    and academic_year in (
+                        {{ var("current_academic_year") }},
+                        {{ var("current_academic_year") - 1 }}
+                    )
+                )
+            )
     ),
 
     internal as (
@@ -185,7 +172,7 @@ with
             scale_score,
             percent_correct,
             `subject`,
-        from fast
+        from state_tests
 
         union all
 
@@ -203,23 +190,6 @@ with
             percent_correct,
             `subject`,
         from dibels
-
-        union all
-
-        select
-            student_number,
-            academic_year,
-            administration_round,
-            performance_band_label,
-            performance_band_int,
-            is_proficient,
-            assessment_source,
-            assessment_id,
-            assessment_title,
-            scale_score,
-            percent_correct,
-            `subject`,
-        from njsla
 
         union all
 

@@ -2,3 +2,10 @@ models:
   - name: stg_powerschool__gpprogresssubjectenrolled
     config:
       materialized: table
+      meta:
+        contains_pii: true
+    description: >-
+      Union of each region's stg_powerschool__gpprogresssubjectenrolled (the
+      powerschool package model). Column docs live in the package. Newark and
+      Camden only; Paterson disables the grad-plan tables and Miami never had
+      them.

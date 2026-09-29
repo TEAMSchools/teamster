@@ -45,13 +45,7 @@ with
     ),
 
     comm_log as (
-        {{
-            dbt_utils.deduplicate(
-                relation=ref("int_deanslist__comm_log"),
-                partition_by="student_school_id, academic_year, reason",
-                order_by="call_date desc",
-            )
-        }}
+        select *, from {{ ref("int_deanslist__comm_log") }} where is_latest_for_reason
     ),
 
     schoolid_crosswalk as (
