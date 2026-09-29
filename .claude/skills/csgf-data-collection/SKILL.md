@@ -469,8 +469,15 @@ Portal My Tasks board as of 2026-09-28: 27 tasks, all due 10/9/2026.
 | Not Started (12)         | Additional Growth, Bank Info Verification, Data Collab DSA, Officer Certificate, Org Questions (Laszlo); Budget Upload, Org Finance, School Finance (Nadja); Data Summary, Org Charts Upload (Kevin); Discipline Data (Anthony); Key Contacts (Jeff) |
 | Not Applicable (4)       | ACT; NAVIANCE Application Results; OTHER Application Results (Casey); Growth Plans (Laszlo)                                                                                                                                                          |
 
-- The four HS tabs and SAT were resubmitted after the `enroll_status` and
-  `total_graduates` fixes (PR #5275) and the studentid `100034` GPA correction.
+- AP Offerings, AP Scores, HS Grad Data and SAT were resubmitted after the
+  `total_graduates` fix (PR #5275) and the studentid `100034` GPA correction.
+- **Reopened 2026-09-29: Enrollment (HSDC), SAT, AP Scores and AP Offerings.**
+  The HS population dropped students who finished AY2025 and left over the
+  summer (`enroll_status` filter, now removed), and the Enrollment course flags
+  were wrong. Corrected: Enrollment 1,851 students (170 added to the tab), SAT
+  and AP Scores gain the students among them who tested, and AP Offerings gains
+  grade 10 for AP US History at Newark Collegiate. Repaste those tabs from the
+  models and move the three Completed tasks back to Ready for Review.
 - Enrollment (HSDC) is waiting on questions to Casey Gibson. Enrollment & Annual
   School Info is shared: budget fields Laszlo's, teacher and school leader
   fields Kevin's, ADA and chronic absenteeism Walters', and the enrollment
@@ -560,9 +567,12 @@ treating a documented fix as submission-ready).
   -- next cycle's HS-scoped models will need a Focus course/grade source wired
   into their PowerSchool-only course and grade logic before they can cover
   Miami.
-- **HS Enrollment course flags changed 2026-09-28**, after this cycle's
-  submission: they now count only Y1 grades earned at the school of enrollment.
-  Details in `references/known-data-risks.md`.
+- **HS Enrollment course flags changed 2026-09-28**: they now count only Y1
+  grades earned at the school of enrollment. Details in
+  `references/known-data-risks.md`.
+- **Never filter the HS models on `enroll_status`.** On a past-year row it is
+  the student's current status. Use `is_enrolled_recent` for "completed the
+  year." Details in `references/known-data-risks.md`.
 - **`rpt_gsheets__csgf_hs_ap_offerings`/`hs_ap_scores` need a coverage/naming
   re-check every cycle** against CSGF's current official AP course name list
   (last checked 2026-09-11, clean).

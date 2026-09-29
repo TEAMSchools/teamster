@@ -156,8 +156,8 @@ qualifying Y1 at all reads `N`.
 
 Before this change the model read course enrollments at any school in the
 region, unioned in transfer grades from other schools, and kept one course per
-credit type per year. This cycle's HS Enrollment was submitted under that older
-logic.
+credit type per year. The SY2026-27 HS Enrollment tab was corrected to the new
+logic before submission.
 
 ### AP course naming drifts from CSGF's official list, cycle to cycle
 
@@ -266,23 +266,27 @@ school list from a fuller join across both CTEs rather than driving from
 ### The four HS-scoped student-level models must match `csgf_hs_enrollment`'s population — resolved
 
 `csgf_hs_enrollment`'s own task instructions say "ONLY INCLUDE STUDENTS WHO
-COMPLETED THE 25-26 SCHOOL YEAR," which its `enroll_status in (0, 3)` filter
-(Currently Enrolled or Graduated) correctly implements. `csgf_hs_sat`,
-`csgf_hs_act`, `csgf_hs_ap_scores`, and `csgf_hs_ap_offerings` had no such
-filter, so a student who transferred out mid-year (`enroll_status = 2`) but had
-a test score or AP course on file still appeared in those four models while
-being correctly absent from Enrollment. CSGF cross-validates every HSDC tab's
-student ID against the Enrollment tab and flags "ID not on Enrollment Tab" for
-every one of these — confirmed live via a real error report during the 2026-2027
-submission. Root cause confirmed directly: every flagged student had
-`enroll_status = 2`. Network-wide impact, measured 2026-09-11: 170 of 1,851 HS
-students network-wide had `enroll_status = 2` and were included in one or more
-of the four models before this fix. This count moves as more transfers get coded
-during the year (178 of the same 1,851 when re-checked 2026-09-23) -- re-derive
-rather than quoting either number as current. Fixed by adding
-`enroll_status in (0, 3)` to all four, matching `csgf_hs_enrollment` exactly.
-Verified after the fix, 2026-09-11: zero SAT or AP Scores student IDs were
-missing from the Enrollment tab's population.
+COMPLETED THE 25-26 SCHOOL YEAR." All five HS student-level models
+(`csgf_hs_enrollment`, `csgf_hs_sat`, `csgf_hs_act`, `csgf_hs_ap_scores`,
+`csgf_hs_ap_offerings`) implement that with the same filter: the student's
+prior-year HS row (`rn_year = 1`) has `is_enrolled_recent`, meaning the stint
+ran to the school's last calendar day that year. A student who left mid-year
+fails it. CSGF cross-validates every HSDC tab's student ID against the
+Enrollment tab and flags "ID not on Enrollment Tab" otherwise, so the five must
+share one population.
+
+Do not filter these models on `enroll_status`. PowerSchool keeps one status per
+student, on the Students table; past enrollments (ReEnrollments) have none, and
+`int_powerschool__student_enrollment_union` copies the current status onto every
+past-year row. So `enroll_status` on a 2025-26 row is the student's status
+today. From 2026-09-11 to 2026-09-29 the five models also required
+`enroll_status in (0, 3)`, which silently dropped students who completed the
+year and then left KIPP over the summer. That population kept shrinking as
+PowerSchool coded summer transfers: the SY2026-27 Enrollment tab, filled
+mid-cycle, held 15 such students that the model had since dropped. Removing the
+filter took HS Enrollment from 1,668 to 1,851 students for AY2025 and made the
+population stable. It adds no mid-year leavers, since `is_enrolled_recent`
+already excludes them.
 
 ## Exit-code reference
 

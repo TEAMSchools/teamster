@@ -4,14 +4,16 @@ Referenced from `SKILL.md`. Full forensic detail behind each risk the router
 summarizes; read this before assuming a fix already landed or that a past
 finding still applies unchanged.
 
-**Fixed 2026-09-11: SAT/ACT/AP Scores/AP Offerings must scope to the same
-population as HS Enrollment, or CSGF flags "ID not on Enrollment Tab."** HS
-Enrollment's own instructions say to only include students who completed the
-school year (`enroll_status in (0, 3)`); the other four HS-scoped models had no
-such filter and included mid-year transfers-out too. Full writeup in
+**SAT/ACT/AP Scores/AP Offerings must scope to the same population as HS
+Enrollment, or CSGF flags "ID not on Enrollment Tab."** HS Enrollment's own
+instructions say to only include students who completed the school year. All
+five HS student-level models test that with `is_enrolled_recent` on the
+prior-year row. Never add an `enroll_status` filter: on a past-year row it is
+the student's status today, so it drops students who finished the year and left
+over the summer (fixed 2026-09-29; 183 AY2025 students). Full writeup in
 `docs/models/csgf-data-model.md`. If you see this exact error on a future
-cycle's HSDC tabs, check whether a newly-added HS-scoped model has the same gap
-before assuming it's a data problem.
+cycle's HSDC tabs, check whether a newly-added HS-scoped model has a different
+filter before assuming it's a data problem.
 
 **Year anchoring across the eight `rpt_gsheets__csgf_*` models** (verified by
 reading each model's SQL directly, not just taken from prior notes -- see
@@ -208,23 +210,21 @@ this model rolls to AY2026. The other 6 HS models likely have the same
 PowerSchool-only gap somewhere in their lineage -- not yet verified per-model.
 
 **HS Enrollment course flags now count only grades earned at the school of
-enrollment (changed 2026-09-28, after this cycle's HS Enrollment was already
-submitted under the old logic).** CSGF asks whether a student "has earned a
-grade in any AP / honors / dual enrollment / CTE course at school of
-enrollment." The model used to read course _enrollments_ at any school in the
-region, add transfer grades from other schools, and keep only one course per
-credit type per year. It now counts a course only when the student has a
-non-transfer Y1 stored grade for it (any grade, an F included), in grade 9 or
-above, stored at the same school as their reporting-year enrollment row.
-Semester courses count (PowerSchool stores their final as a Y1 on the semester
-term); a section with quarter grades but no Y1 does not. A student with no
-qualifying Y1 at all reads `N`. Rerun against this cycle's data: AP moved by a
-handful of students each way, honors lost a couple of dozen Y's (about half
-transfer-only, half enrollments with no Y1) and gained a few, dual enrollment
-gained a few, and CTE stays `N` for everyone because PowerSchool has no CTE
-college credits recorded on any course. The rule is on the model's properties
-YAML `description:`. If CSGF questions a flag on a resubmission, expect it to
-differ slightly from what was submitted this cycle.
+enrollment (changed 2026-09-28, applied to this cycle's HS Enrollment tab before
+submission).** CSGF asks whether a student "has earned a grade in any AP /
+honors / dual enrollment / CTE course at school of enrollment." The model used
+to read course _enrollments_ at any school in the region, add transfer grades
+from other schools, and keep only one course per credit type per year. It now
+counts a course only when the student has a non-transfer Y1 stored grade for it
+(any grade, an F included), in grade 9 or above, stored at the same school as
+their reporting-year enrollment row. Semester courses count (PowerSchool stores
+their final as a Y1 on the semester term); a section with quarter grades but no
+Y1 does not. A student with no qualifying Y1 at all reads `N`. Rerun against
+this cycle's data: AP moved by a handful of students each way, honors lost a
+couple of dozen Y's (about half transfer-only, half enrollments with no Y1) and
+gained a few, dual enrollment gained a few, and CTE stays `N` for everyone
+because PowerSchool has no CTE college credits recorded on any course. The rule
+is on the model's properties YAML `description:`.
 
 **`rpt_gsheets__csgf_hs_enrollment`'s fixes also shipped in PR #5059 and are
 live:** `exited_hs`, `FDC` in the FRL/SED flag, and the corrected
