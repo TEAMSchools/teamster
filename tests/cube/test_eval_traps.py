@@ -154,6 +154,28 @@ def test_aggregate_reports_a_trap_rate():
     assert cell["trap_rate"][0] == 0.5
 
 
+def test_aggregate_drops_harness_errors_but_keeps_turn_limits():
+    base = {"model": "sonnet", "arm": "C4_skill", "family": 4, "trap": "t"}
+    base |= {"ground_truth_start": None}
+    recs = [
+        base | {"id": "a", "trap_fired": False, "error": None},
+        # Ran out of turns: its queries were captured, so it still scores.
+        base
+        | {
+            "id": "b",
+            "trap_fired": True,
+            "error": "Reached maximum number of turns (12)",
+        },
+        # Cut off by the harness: no queries, so the trap "fires" on nothing.
+        base
+        | {"id": "c", "trap_fired": True, "error": "You've hit your session limit"},
+    ]
+    cell = scorer.aggregate(recs)[("sonnet", "C4_skill")]
+    assert cell["n_trap"] == 2
+    assert cell["trap_rate"][0] == 0.5
+    assert cell["n_unscored"] == 1
+
+
 _COMPILER = (
     Path(__file__).resolve().parents[2]
     / "src"

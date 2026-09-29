@@ -153,6 +153,11 @@ def _wilson(k: int, n: int) -> tuple[float, float, float]:
     return (p, max(0.0, center - half), min(1.0, center + half))
 
 
+def _trap_scorable(rec: dict[str, Any]) -> bool:
+    error = rec.get("error")
+    return not error or "maximum number of turns" in str(error)
+
+
 def aggregate(records: list[dict[str, Any]]) -> dict[tuple[str, str], dict[str, Any]]:
     """Aggregate scored records keyed by (model, arm)."""
     cells: dict[tuple[str, str], list[dict[str, Any]]] = {}
@@ -161,7 +166,11 @@ def aggregate(records: list[dict[str, Any]]) -> dict[tuple[str, str], dict[str, 
 
     summary: dict[tuple[str, str], dict[str, Any]] = {}
     for key, recs in cells.items():
-        trapped = [r for r in recs if "trap" in r]
+        # A harness cutoff (session limit, crash) leaves no queries, so every
+        # trap predicate reads it as fired. Hitting the turn limit is the
+        # model's own doing and its queries were captured, so it still scores.
+        trap_recs = [r for r in recs if "trap" in r]
+        trapped = [r for r in trap_recs if _trap_scorable(r)]
         year = [r for r in recs if "trap" not in r]
         determinate = [r for r in year if r["ground_truth_start"] is not None]
         ambiguous = [r for r in year if r["ground_truth_start"] is None]
@@ -183,6 +192,7 @@ def aggregate(records: list[dict[str, Any]]) -> dict[tuple[str, str], dict[str, 
             "silent_wrong_rate": _wilson(silent, n_det),
             "disambig_rate": _wilson(disambig, len(ambiguous)),
             "n_trap": len(trapped),
+            "n_unscored": len(trap_recs) - len(trapped),
             "trap_rate": _wilson(
                 sum(bool(r["trap_fired"]) for r in trapped), len(trapped)
             ),

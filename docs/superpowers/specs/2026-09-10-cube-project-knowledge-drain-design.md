@@ -796,9 +796,60 @@ before merge confirms the pointer's key names match what `/meta` returns.
 Raw records: `src/cube/mcp/eval/out/placement_2026-09-29_haiku.jsonl`
 (gitignored, local only).
 
-Still to do before merge: the local REST check (_meta.ai_context reaches the
-model_), and the size of the full-catalog and `student_assessment_scores_view`
-`meta` responses before and after.
+The local REST check ran 2026-09-29 on Cube 1.7.43. The 2 overrides come back as
+`aiContext` on their view members only, and 25 members carry `ai_context`. The
+full `meta` catalog grows from 305,495 to 321,857 bytes (+5.4%), and the
+assessment view's entry from 47,216 to 55,652 (+17.9%).
+
+### Family 4 result
+
+Arm B passes rule 1 on Haiku after 1 revision round. The Sonnet report run
+agrees. Run 2026-09-29, 7 prompts, 3 reps, 21 conversations per arm.
+
+Trap rate over all 7 traps, with Wilson 95% intervals:
+
+| Arm        | Haiku         | Sonnet             |
+| ---------- | ------------- | ------------------ |
+| `A4_pre`   | 28.6% [14–50] | 23.8% [11–45]      |
+| `B4_post`  | 4.8% [1–23]   | 0.0% [0–15]        |
+| `C4_skill` | 14.3% [5–35]  | 0.0% [0–39], n = 6 |
+
+- **What B fixed.** On Haiku, `null_via_equals` went from 3 of 3 to 0 and
+  `most_recent_not_named_round` from 3 of 3 to 1. On Sonnet,
+  `grade_filter_on_vendor` went from 3 of 3 to 0 and `most_recent` from 2 of 3
+  to 0.
+- **What B still misses.** Haiku's 1 remaining fire is `most_recent`. On its
+  first query, B still trips a trap 17% of the time on both models, then
+  corrects itself after reading `meta`.
+- **Arm C adds nothing measurable.** On Haiku it fires the Paterson trap 2 of 3
+  times, where B fires it 0 times. The orchestrator text appears to pull the
+  answer away from the server's empty-result note. On Sonnet, 15 of C's 21
+  conversations hit the account's session limit and are not scored, so its 6
+  scored conversations settle nothing.
+- **Cost.** B reads more `meta` text, and costs about the same per conversation.
+  Median per conversation: Haiku A $0.042 and B $0.048; Sonnet A
+  $0.143 and B $0.141. B's cache-read tokens are higher (Haiku 11,768 to 28,634;
+  Sonnet 76,647 to 106,495) because cached input is cheap.
+
+Round 1 changed 2 things at once, so its effect is not attributed to either:
+
+- **The stub.** The first run's `load` stub returned the same fixed row for
+  every query. Models noticed the fake data and probed with other filters, which
+  tripped traps the text had avoided. That run scored Haiku A 33.3% against B
+  44.4% on the 6 query traps, and Sonnet A 42.9% against B 19.0% on all 7. The
+  stub now shapes its rows from the query.
+- **The text.** `proficiency_level`, `administration_period` and `date_taken`
+  gained the `notSet` and "latest named round" wording.
+
+The scorer was amended after the Sonnet run and before these numbers were
+written: a conversation the harness cut off with an error, other than the
+12-turn limit, is left out of the trap rate. A cutoff made no queries, and every
+trap predicate reads no queries as a fire. It changes only arm C's Sonnet row.
+Conversations that hit the turn limit still score, because their queries were
+captured (2 in A and 3 in B on Sonnet).
+
+Raw records: `src/cube/mcp/eval/out/family4_{haiku,sonnet}_r1.jsonl`
+(gitignored, local only).
 
 ### Why family 4 is small
 
