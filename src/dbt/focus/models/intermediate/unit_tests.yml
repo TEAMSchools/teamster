@@ -286,6 +286,108 @@ unit_tests:
           startdate: 2026-08-10
           exitdate: 2027-06-30
 
+  - name: test_int_focus__student_enrollment_roster_enroll_status_is_current
+    model: int_focus__student_enrollment_roster
+    description: >-
+      Every stint carries the student's current status, read from the most
+      recent stint, the way PowerSchool stamps one student-level value on every
+      year. Student 6 closed AY2025 with a routine year-end W01 and is enrolled
+      in AY2026, so both years read 0. Student 7 closed AY2025 the same way then
+      withdrew in AY2026 with W3A, so both years read 2. Student 8 graduated in
+      AY2025 with W06 after a routine AY2024 close, so both years read 3.
+    given:
+      - input: ref('int_focus__students')
+        format: sql
+        rows: |
+          select 6 as student_id, 6 as student_number, 'F' as first_name,
+            'Six' as last_name,
+            cast(null as string) as florida_education_identifier,
+            cast(null as string) as student_e_mail_address,
+            cast(null as date) as dob
+          union all
+          select 7, 7, 'G', 'Seven', cast(null as string), cast(null as string),
+            cast(null as date)
+          union all
+          select 8, 8, 'H', 'Eight', cast(null as string), cast(null as string),
+            cast(null as date)
+      - input: ref('int_focus__student_enrollment')
+        format: sql
+        rows: |
+          select
+            *,
+            cast(null as string) as prior_district_label,
+            cast(null as string) as prior_state_label,
+            cast(null as string) as prior_country_label,
+            cast(null as string) as educational_choice_label,
+            cast(null as string) as student_offender_transfer_label,
+          from (
+          select 60 as id, 6 as student_id, 2025 as syear,
+            100 as school_id, cast(null as int64) as grade_id,
+            cast(null as int64) as enrollment_code,
+            1 as drop_code,
+            date '2025-08-12' as start_date, date '2026-06-04' as end_date,
+            cast(null as string) as second_school,
+            timestamp '2025-07-01 00:00:00' as created_at
+          union all
+          select 61, 6, 2026, 100, cast(null as int64), cast(null as int64),
+            cast(null as int64), date '2026-08-12', cast(null as date),
+            cast(null as string), timestamp '2026-07-01 00:00:00'
+          union all
+          select 70, 7, 2025, 100, cast(null as int64), cast(null as int64),
+            1, date '2025-08-12', date '2026-06-04', cast(null as string),
+            timestamp '2025-07-01 00:00:00'
+          union all
+          select 71, 7, 2026, 100, cast(null as int64), cast(null as int64),
+            2, date '2026-08-12', date '2026-09-15', cast(null as string),
+            timestamp '2026-07-01 00:00:00'
+          union all
+          select 80, 8, 2024, 300, cast(null as int64), cast(null as int64),
+            1, date '2024-08-12', date '2025-06-04', cast(null as string),
+            timestamp '2024-07-01 00:00:00'
+          union all
+          select 81, 8, 2025, 300, cast(null as int64), cast(null as int64),
+            3, date '2025-08-12', date '2026-06-04', cast(null as string),
+            timestamp '2025-07-01 00:00:00'
+          )
+      # empty: left-joined, contributes nothing to the status under test
+      - input: ref('int_focus__schools')
+        rows: []
+      # empty: left-joined, contributes nothing to the status under test
+      - input: ref('stg_focus__school_gradelevels')
+        rows: []
+      - input: ref('stg_focus__student_enrollment_codes')
+        format: sql
+        rows: |
+          select 1 as id, 'W01' as short_name,
+            cast(null as string) as grad_type
+          union all
+          select 2, 'W3A', 'transfer'
+          union all
+          select 3, 'W06', 'graduated'
+      # empty: left-joined, contributes nothing to the status under test
+      - input: ref('int_focus__school_year_first_day')
+        rows: []
+    expect:
+      rows:
+        - student_enrollment_id: 60
+          exitcode: W01
+          enroll_status: 0
+        - student_enrollment_id: 61
+          exitcode: null
+          enroll_status: 0
+        - student_enrollment_id: 70
+          exitcode: W01
+          enroll_status: 2
+        - student_enrollment_id: 71
+          exitcode: W3A
+          enroll_status: 2
+        - student_enrollment_id: 80
+          exitcode: W01
+          enroll_status: 3
+        - student_enrollment_id: 81
+          exitcode: W06
+          enroll_status: 3
+
   - name: test_int_focus__attendance_daily_code_mapping_and_scaffold
     model: int_focus__attendance_daily
     description: >-
