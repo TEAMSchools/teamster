@@ -3,25 +3,26 @@ with
     -- (precomputed upstream), so no dedupe CTE is needed here.
     iready as (
         select
-            student_id as student_number,
-            academic_year_int as academic_year,
-            test_round as administration_round,
-            overall_relative_placement as performance_band_label,
-            overall_relative_placement_int as performance_band_int,
+            student_number,
+            academic_year,
+            administration_period as administration_round,
+            proficiency_level as performance_band_label,
+            proficiency_level_int as performance_band_int,
             is_proficient,
             `discipline` as `subject`,
+            scale_score,
 
             'i-Ready' as assessment_source,
 
             cast(null as string) as assessment_id,
             cast(null as string) as assessment_title,
-            cast(overall_scale_score as numeric) as scale_score,
             cast(null as numeric) as percent_correct,
-        from {{ ref("int_iready__diagnostic_results") }}
+        from {{ ref("int_assessments__benchmark_scores") }}
         where
-            `discipline` in ('ELA', 'Math')
+            score_source = 'iready'
+            and `discipline` in ('ELA', 'Math')
             and rn_subj_round = 1
-            and academic_year_int in (
+            and academic_year in (
                 {{ var("current_academic_year") }},
                 {{ var("current_academic_year") - 1 }}
             )
@@ -31,16 +32,16 @@ with
         select
             student_number,
             academic_year,
-            period,
-            measure_standard_score,
-            measure_standard_level,
-            measure_standard_level_int,
-            aggregated_measure_standard_level,
-            client_date,
-        from {{ ref("int_amplify__all_assessments") }}
+            administration_period as period,
+            scale_score as measure_standard_score,
+            proficiency_level as measure_standard_level,
+            proficiency_level_int as measure_standard_level_int,
+            is_proficient,
+            test_date as client_date,
+        from {{ ref("int_assessments__benchmark_scores") }}
         where
-            assessment_type = 'Benchmark'
-            and measure_standard = 'Composite'
+            score_source = 'dibels'
+            and response_type = 'overall'
             and academic_year in (
                 {{ var("current_academic_year") }},
                 {{ var("current_academic_year") - 1 }}
@@ -65,16 +66,15 @@ with
             period as administration_round,
             measure_standard_level as performance_band_label,
             measure_standard_level_int as performance_band_int,
+            measure_standard_score as scale_score,
+            is_proficient,
 
             'DIBELS' as assessment_source,
             'ELA' as `subject`,
 
             cast(null as string) as assessment_id,
             cast(null as string) as assessment_title,
-            cast(measure_standard_score as numeric) as scale_score,
             cast(null as numeric) as percent_correct,
-
-            aggregated_measure_standard_level = 'At/Above' as is_proficient,
         from dibels_deduplicated
     ),
 
