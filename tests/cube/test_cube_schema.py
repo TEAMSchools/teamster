@@ -454,3 +454,43 @@ PHRASES.update(
         "student_assessment_scores.date_taken": ["date_day and academic_year"],
     }
 )
+
+
+# --- Scores cube measures (Task 3) -------------------------------------------
+PHRASES.update(
+    {
+        "student_assessment_scores.count_assigned": [
+            "widest of 3 nested counts",
+            "use count_taken",
+        ],
+        "student_assessment_scores.count_taken": [
+            "DIBELS Tested Out subtests",
+            "how many assessments were taken",
+        ],
+        "student_assessment_scores.count_scored": [
+            "denominator of pct_proficient",
+            "the n the rate rests on",
+        ],
+        "student_assessment_scores.pct_taken": [
+            "meaningful only within Illuminate",
+            "Filter assessment_type to illuminate",
+        ],
+        "student_assessment_scores.pct_proficient": [
+            "comparable across sources",
+            "never multiply it by count_assigned",
+        ],
+        "student_assessment_scores.count_students": [
+            "has timed out at standard grain",
+            "count_taken",
+        ],
+        "student_assessment_scores.count_assessments": [
+            "not sittings",
+            "Illuminate only",
+            "thin base",
+        ],
+        "student_assessment_scores.pct_proficient_formative": [
+            "about a third of module-coded Illuminate scores",
+            'Not "all internal checkpoints"',
+        ],
+    }
+)

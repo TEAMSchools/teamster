@@ -228,15 +228,13 @@ cubes:
       # scored. Each answers a different question and they are not
       # interchangeable — see each description. Renamed from count_scores in
       # #5501, which counted the widest population under the narrowest name.
+      # COUNT(*) over the unique PK (assessment_score_key): additive, so pre-
+      # aggregations roll it up to any grain.
       - name: count_assigned
         description: >-
           Every assessment row, including the Illuminate not_taken rows where a
-          student was assigned an assessment and never sat it. This is the
-          widest of the three counts and the denominator for pct_taken. For
-          assessments actually sat use count_taken; for the population
-          pct_proficient is computed over use count_scored. COUNT(*) over the
-          unique PK (assessment_score_key) — additive, so pre-aggregations roll
-          it up to any grain.
+          student was assigned an assessment and never sat it. The widest of 3
+          nested counts: assigned contains taken contains scored.
         type: count
         public: true
         # Forces joins to student_assessments and regions so all proficiency
@@ -245,33 +243,43 @@ cubes:
         filters:
           - sql: "{student_assessments.assessment_key} IS NOT NULL"
           - sql: "{regions.region_key} IS NOT NULL"
+        meta:
+          ai_context: >-
+            For assessments actually sat use count_taken; for the population
+            pct_proficient is computed over use count_scored.
 
       - name: count_taken
         description: >-
-          Assessments a student actually sat — every row except the Illuminate
-          not_taken placeholders. Use this for "how many assessments were
-          taken". It is wider than count_scored: a student can sit an assessment
-          that carries no proficiency verdict, which is most STAR kindergarten
-          and Early Literacy rows and the DIBELS K-2 phonics subtests. Only
-          Illuminate can express non-participation, so for every other source
-          this equals count_assigned.
+          Assessments a student actually sat: every row except the Illuminate
+          not_taken placeholders. Only Illuminate records non-participation, so
+          for every other source this equals count_assigned. Wider than
+          count_scored, because a sat assessment can carry no proficiency
+          verdict: STAR rows with no level, and DIBELS Tested Out subtests.
         type: count
         public: true
         filters:
           - sql: "{CUBE}.response_type != 'not_taken'"
           - sql: "{student_assessments.assessment_key} IS NOT NULL"
           - sql: "{regions.region_key} IS NOT NULL"
+        meta:
+          ai_context: >-
+            Use this for "how many assessments were taken".
 
+      # Exact count_distinct: non-additive, so a rollup pre-aggregation cannot
+      # re-aggregate it to a coarser grain. Switch to count_distinct_approx
+      # (HLL) if this is pre-aggregated and an approximate distinct is
+      # acceptable.
       - name: count_students
         description: >-
           Distinct students (per student-year) with a score in the filtered
-          slice. Exact count_distinct — non-additive, so a rollup
-          pre-aggregation cannot re-aggregate it to a coarser grain; switch to
-          count_distinct_approx (HLL) if/when this is pre-aggregated and an
-          approximate distinct is acceptable.
+          slice.
         sql: "{student_section_enrollments.student_enrollment_key}"
         type: count_distinct
         public: true
+        meta:
+          ai_context: >-
+            Heavier than the plain counts, and has timed out at standard grain;
+            use count_taken there.
 
       - name: _sum_proficient
         description: >-
@@ -287,18 +295,29 @@ cubes:
           - sql: "{student_assessments.assessment_key} IS NOT NULL"
           - sql: "{regions.region_key} IS NOT NULL"
 
+      - name: count_assessments
+        description: >-
+          Distinct Illuminate assessments in the filtered set — not sittings,
+          not scored responses. Illuminate only: every other source has no
+          source_assessment_id, so it reads 0 there.
+        sql: "{student_assessment_administrations.source_assessment_id}"
+        type: count_distinct
+        public: true
+        # Same join-forcing filters as the other counts, so every measure
+        # shares one CTE (see count_assigned).
+        filters:
+          - sql: "{student_assessments.assessment_key} IS NOT NULL"
+          - sql: "{regions.region_key} IS NOT NULL"
+        meta:
+          ai_context: >-
+            Use this for "how many times was this assessed". A standard resting
+            on 1 assessment is a thin base for a trend; say so rather than
+            trending it.
+
       - name: count_scored
         description: >-
-          Assessments carrying a proficiency verdict (is_mastery set) — the
-          narrowest of the three counts and the denominator pct_proficient is
-          computed over. A row with no verdict cannot enter the numerator, so
-          counting it would only drag the rate down. Narrower than count_taken
-          by the rows that were sat but cannot be judged: STAR publishes no
-          proficiency benchmark for kindergarten at any subject or for Early
-          Literacy at any grade, and the DIBELS K-2 phonics subtests have no
-          benchmark level set upstream. Report this alongside pct_proficient
-          whenever the rate carries weight — it is the n the rate rests on, and
-          it is not count_assigned.
+          Assessments carrying a proficiency verdict (is_mastery set). The
+          narrowest count, and the denominator of pct_proficient.
         type: count
         public: true
         # Forces joins to student_assessments and regions so all proficiency
@@ -308,39 +327,41 @@ cubes:
           - sql: "{CUBE}.is_mastery IS NOT NULL"
           - sql: "{student_assessments.assessment_key} IS NOT NULL"
           - sql: "{regions.region_key} IS NOT NULL"
+        meta:
+          ai_context: >-
+            Report it alongside pct_proficient whenever the rate carries weight;
+            it is the n the rate rests on.
 
+      # Built from additive primitives (count_taken / count_assigned) so pre-
+      # aggregations roll it up to any grain.
       - name: pct_taken
         description: >-
-          Grain: recomputes at any query grain, but meaningful only within
-          Illuminate — pooling it across sources is a silent-failure trap
-          (numerically valid, semantically meaningless). Participation rate —
-          assessments sat / assessments assigned. Only Illuminate records
-          non-participation, so every other source reads exactly 100% by
-          construction rather than by fact, and a pooled cross-source rate is
-          diluted by sources that cannot express a no-show. Filter
-          assessment_type to illuminate before reporting this. Built from
-          additive primitives (count_taken / count_assigned) so pre-aggregations
-          roll it up to any grain.
+          Grain: meaningful only within Illuminate; pooling across sources is a
+          silent-failure trap. Participation rate: assessments sat / assessments
+          assigned. Every other source reads 100% by construction.
         sql: "1.0 * {count_taken} / NULLIF({count_assigned}, 0)"
         type: number
         format: percent
         public: true
+        meta:
+          ai_context: >-
+            Filter assessment_type to illuminate before reporting it.
 
+      # Built from additive primitives (_sum_proficient / count_scored) so
+      # pre-aggregations roll it up to any grain.
       - name: pct_proficient
         description: >-
-          Proficiency/mastery rate — proficient scores / scores carrying a
-          proficiency verdict. The headline, source-agnostic metric (the only
-          score measure comparable across the incompatible scales of internal vs
-          state assessments). Its denominator is count_scored, NOT
-          count_assigned, so multiplying this rate by count_assigned overstates
-          the proficient count, badly on the sources where many rows carry no
-          verdict. Pair it with count_scored, which is the n it rests on. Built
-          from additive primitives (_sum_proficient / count_scored) so
-          pre-aggregations roll it up to any grain.
+          Proficiency rate: proficient scores / scores carrying a verdict
+          (count_scored). The headline metric, and the only score measure
+          comparable across sources' incompatible scales.
         sql: "1.0 * {_sum_proficient} / NULLIF({count_scored}, 0)"
         type: number
         format: percent
         public: true
+        meta:
+          ai_context: >-
+            Pair it with count_scored; never multiply it by count_assigned to
+            get a proficient count.
 
       - name: _sum_percent_correct
         description: >-
@@ -424,20 +445,25 @@ cubes:
           - sql: "{regions.region_key} IS NOT NULL"
           - sql: "{student_assessments.module_type} IN ('QA', 'MQQ', 'CRQ')"
 
+      # Built from additive primitives so pre-aggregations roll it up.
       - name: pct_proficient_formative
         description: >-
-          Proficiency rate across all formative module types (Quick Assessments,
-          Multiple-Choice Quick Questions, and Constructed Response Questions).
-          CRQ is included and also available as the standalone
-          pct_proficient_crq measure. The denominator excludes rows with no
-          proficiency verdict (is_mastery unset), matching pct_proficient. Built
-          from additive primitives so pre-aggregations roll it up.
+          Proficiency rate across the QA, MQQ and CRQ module types only;
+          excludes TP, UA, ET and WPP, about a third of module-coded Illuminate
+          scores. Its denominator counts only rows with a proficiency verdict,
+          as in pct_proficient. CRQ is also available alone as
+          pct_proficient_crq.
         sql:
           "1.0 * {_sum_proficient_formative} / NULLIF({_count_scored_formative},
           0)"
         type: number
         format: percent
         public: true
+        meta:
+          ai_context: >-
+            Not "all internal checkpoints". For that, build the rollup from the
+            intended module types and flag the pooling choice as an open
+            decision.
 
       - name: _sum_proficient_crq
         description: >-

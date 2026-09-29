@@ -23,6 +23,7 @@ views:
           - count_taken
           - count_scored
           - count_students
+          - count_assessments
           - pct_taken
           - pct_proficient
           - pct_proficient_formative
