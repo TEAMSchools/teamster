@@ -398,3 +398,12 @@ models:
         data_type: string
       - name: courses_gradescaleid_unweighted
         data_type: int64
+        description: >-
+          Grade scale to use for unweighted grade points, derived from the
+          course's grade scale id. The 2019+ weighted scale (991) and the 2024
+          weighted honors scale (1075) both map to the 2019+ unweighted scale
+          (976). The 2016-2018 honors scale (712) maps to the 2016 scale (874).
+          A course with no grade scale falls back to 874. Every other scale is
+          already unweighted and passes through unchanged. Ids are those of the
+          Newark and Camden PowerSchool instances; Paterson has no weighted
+          scales, so every Paterson course passes through.
