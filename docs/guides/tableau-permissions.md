@@ -226,19 +226,21 @@ These are accepted, not undiscovered. Each is a place the gate is approximate.
 
 The Survey Dashboard's support sheets ask staff to rate how well a central
 office department supports them. Each of those questions is tagged with the
-department it rates, and you see a row only if you belong to that department's
-group.
+department it rates. What you see depends on where you sit.
 
-This applies **on top of** entity, region and school. Belonging to the
-Operations group does not show you Operations feedback from a region you cannot
-otherwise reach — both tests have to pass.
+| You are                                                                                                                                 | You see                                                                                                      |
+| --------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| School-based leadership — school leader, DSO, AP, or `Paterson TEAM Staff`                                                              | Every question, every department, for your own school                                                        |
+| Regional staff outside central office — regional ops, AcOps, School Support Directors, Special Education Directors, regional Technology | Your own department's questions and the questions that rate no department, for your region                   |
+| Central office staff                                                                                                                    | Your own department's questions, from every region. Nothing else — not the questions that rate no department |
 
-Central office staff are the exception, and the department is the **only** thing
-they are scoped by. The central office group passes the entity, region and
-school tests for every row. Then a central office staff member sees only the
-questions about their own department, from every region, and nothing else on the
-support sheets. That includes the questions that rate no department. A central
-office staff member in no department group sees nothing on these sheets.
+For regional and central office staff, the department test applies **on top of**
+entity, region and school. Belonging to the Operations group does not show you
+Operations feedback from a region you cannot otherwise reach — both tests have
+to pass. The central office group passes the entity, region and school tests for
+every row, so for central office staff the department is the only thing that
+narrows. A central office staff member in no department group sees nothing on
+these sheets.
 
 Four groups see every department regardless: the data team, TEAM Council,
 managing directors of school operations, and heads of schools. The last two sit
@@ -248,7 +250,8 @@ group the other workbooks use.
 
 #### The department groups
 
-Ask for the one matching the department whose feedback you need to read.
+For central office and regional staff: ask for the one matching the department
+whose feedback you need to read. School-based leadership does not need one.
 
 | Department rated                     | Group                                               |
 | ------------------------------------ | --------------------------------------------------- |
@@ -273,8 +276,8 @@ Ask for the one matching the department whose feedback you need to read.
     region is headed in the right direction, and the free-text boxes asking for
     any other feedback. Those carry no department, so the department test does
     not apply to them. They reach everyone who passes the entity, region and
-    school gates, **except central office staff**. School leaders, DSOs, APs and
-    regional leaders see them for their own school or region.
+    school gates, **except central office staff**. School-based leadership sees
+    them for their own school, and regional staff for their region.
 
     Central office staff see them only through one of the four groups above that
     see every department.
