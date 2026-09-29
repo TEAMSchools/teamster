@@ -40,8 +40,8 @@ with
             cast(null as date) as administered_date,
             cast(null as int64) as source_assessment_id,
             cast(null as string) as test_type,
-        from {{ ref("int_pearson__all_assessments") }}
-        where testscalescore is not null
+        from {{ ref("int_assessments__state_nj_scores") }}
+        where scale_score is not null
     ),
 
     -- grain projection, not dup-masking
