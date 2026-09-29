@@ -26,8 +26,11 @@ Enter either one.
   `tests/test_zz_publish_<slug>.py`, deleted afterward. A bare `uv run python`
   has no credentials. Neither the Dagster `ZendeskResource` (scope
   `read users:write`) nor any connected MCP can write to the Help Center.
-- Draft first. Going live is a second call with `live=True`, after the user has
-  seen the draft.
+- Draft first for a new article. Going live is a second call with `live=True`,
+  after the user has seen the draft. An article that is already live is updated
+  in place with `live=True`; the publisher refuses `live=False` on it unless
+  `unpublish=True`, because Zendesk has no draft of a live article and the page
+  would vanish for readers.
 - No image uploads without the PII gate below.
 
 ## Article folder
@@ -43,7 +46,8 @@ docs/help-center/<slug>/
 
 `author_id` is required. Visibility defaults to the "Signed-in users" segment
 and the "Agents and admins" permission group; override by name in the file.
-`user_segment: everyone` is the only way to publish to everyone.
+`user_segment: everyone` is the only way to publish to everyone. The publisher
+rewrites `article.yml` on every run, so comments in it do not survive.
 
 ## Author
 
@@ -88,7 +92,8 @@ and the "Agents and admins" permission group; override by name in the file.
 4. Show the user the draft url and the report: uploaded, reused, orphaned
    attachment ids. Orphans are reported, not deleted.
 5. On the user's yes, change `live=False` to `live=True`, run again, then delete
-   the test file.
+   the test file. For an edit to an article that is already live, skip the draft
+   step and run with `live=True` once.
 6. Ask the user to open the published page signed in and check it renders. The
    article is done when they confirm, not before.
 

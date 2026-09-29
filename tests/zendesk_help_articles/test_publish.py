@@ -27,15 +27,21 @@ class Server:
     """Enough Zendesk state to drive publish() end to end."""
 
     def __init__(self, existing: dict | None = None):
-        self.article = existing
-        self.translation = {
+        self.article: dict | None = existing
+        self.translation: dict = {
             "title": "Old",
             "body": "<p>old</p>",
             "updated_at": "2026-01-01T00:00:00Z",
         }
         self.uploads = 0
+        self.writes = 0
         self.article_updates: list[dict] = []
         self.translation_updates: list[dict] = []
+
+    @property
+    def updated_at(self) -> str:
+        assert self.article is not None
+        return self.article["updated_at"]
 
     def routes(self):
         def create(kw):
@@ -50,13 +56,16 @@ class Server:
         def get_article(_):
             return 200, {"article": self.article}
 
+        def bump():
+            self.writes += 1
+            stamp = f"2026-09-29T10:{self.writes:02d}:00Z"
+            self.article = {**(self.article or {}), "updated_at": stamp}
+            return stamp
+
         def update_article(kw):
             self.article_updates.append(kw["json"]["article"])
-            self.article = {
-                **(self.article or {}),
-                **kw["json"]["article"],
-                "updated_at": "2026-09-29T10:05:00Z",
-            }
+            self.article = {**(self.article or {}), **kw["json"]["article"]}
+            bump()
             return 200, {"article": self.article}
 
         def upload(_):
@@ -79,7 +88,7 @@ class Server:
                 "https://z/hc/article_attachments/101/a.png",
                 "/hc/article_attachments/101",
             )
-            self.translation = {**t, "body": body, "updated_at": "2026-09-29T10:05:00Z"}
+            self.translation = {**t, "body": body, "updated_at": bump()}
             return 200, {"translation": self.translation}
 
         return {
@@ -129,7 +138,8 @@ def test_first_publish_creates_draft_uploads_and_saves_state(tmp_path):
     assert "https://z/hc/article_attachments/101/a.png" in sent["body"]
     raw = yaml.safe_load((d / "article.yml").read_text())
     assert raw["article_id"] == 42
-    assert raw["last_known_updated_at"] == "2026-09-29T10:05:00Z"
+    assert raw["last_known_updated_at"] == server.updated_at
+    assert server.writes == 2  # article PUT, then translation PUT
     assert raw["attachments"]["images/a.png"]["id"] == 101
     assert 'src="images/a.png"' in (d / "article.html").read_text()
 

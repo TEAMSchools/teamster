@@ -24,9 +24,10 @@ is production.
   accepted and does not replace the live text.
 - `author_id` defaults to the token owner. Set it on create and on every update.
   An end-user account works as author but displays its email address.
-- Zendesk stores the body as sent except attachment urls, which it shortens to
-  `/hc/article_attachments/<id>`. A body that references another article's
-  attachment gets a cloned attachment with a new id.
+- Zendesk stores the body as sent except attachment urls, which it may shorten
+  to `/hc/article_attachments/<id>` (seen on one article, not another). A body
+  that references another article's attachment gets a cloned attachment with a
+  new id.
 - Reading the body back proves it was stored, not how it renders. The sanitizer
   runs on the published page. Someone signed in has to open it.
 - The translation `PUT` changes the article's `updated_at` after the article

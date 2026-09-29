@@ -9,10 +9,12 @@ references/zendesk-api.md for the endpoints.
 from __future__ import annotations
 
 import hashlib
+import mimetypes
 import os
 import re
 import time
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from pathlib import Path
 
 import requests
@@ -24,8 +26,13 @@ EVERYONE = "everyone"
 LOCALE = "en-us"
 UPLOAD_ATTEMPTS = 5
 RETRY_DELAY_SECONDS = 2
+TIMEOUT_SECONDS = 60
 
-IMG_SRC_RE = re.compile(r'(<img\b[^>]*?\bsrc=")([^"]+)(")', re.IGNORECASE)
+# Group 1: everything up to and including `src=`; group 2: the quote; group 3: the value.
+# The lookbehind keeps `data-src=` from matching.
+IMG_SRC_RE = re.compile(
+    r"(<img\b[^>]*?(?<![-\w])src=)([\"'])([^\"']+)\2", re.IGNORECASE
+)
 ATTACHMENT_ID_RE = re.compile(r"/hc/article_attachments/(\d+)")
 
 
@@ -49,6 +56,29 @@ class Article:
     _raw: dict = field(default_factory=dict, repr=False)
 
 
+def _iso_z(value) -> str | None:
+    """Normalize a timestamp to Zendesk's `YYYY-MM-DDTHH:MM:SSZ` string.
+
+    yaml.safe_load turns an unquoted ISO timestamp into a datetime, and
+    `datetime != str` is always true, which would trip the overwrite guard on
+    every run after someone hand-edits the value.
+    """
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        if value.tzinfo is None:
+            value = value.replace(tzinfo=UTC)
+        return value.astimezone(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+    text = str(value).strip()
+    try:
+        parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+    except ValueError:
+        return text
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=UTC)
+    return parsed.astimezone(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
 def load_article(article_dir: Path) -> Article:
     yml = article_dir / "article.yml"
     html_path = article_dir / "article.html"
@@ -60,6 +90,9 @@ def load_article(article_dir: Path) -> Article:
     for key in ("title", "section_id", "author_id"):
         if not raw.get(key):
             raise PublishError(f"article.yml is missing `{key}`; refusing to publish")
+    labels = raw.get("labels") or []
+    if isinstance(labels, str):
+        labels = [labels]
     return Article(
         dir=article_dir,
         title=str(raw["title"]),
@@ -67,9 +100,9 @@ def load_article(article_dir: Path) -> Article:
         author_id=int(raw["author_id"]),
         user_segment=str(raw.get("user_segment") or DEFAULT_USER_SEGMENT),
         permission_group=str(raw.get("permission_group") or DEFAULT_PERMISSION_GROUP),
-        labels=list(raw.get("labels") or []),
+        labels=[str(label) for label in labels],
         article_id=int(raw["article_id"]) if raw.get("article_id") else None,
-        last_known_updated_at=raw.get("last_known_updated_at"),
+        last_known_updated_at=_iso_z(raw.get("last_known_updated_at")),
         attachments=dict(raw.get("attachments") or {}),
         html=html_path.read_text(),
         _raw=raw,
@@ -77,20 +110,16 @@ def load_article(article_dir: Path) -> Article:
 
 
 def save_state(article: Article) -> None:
-    """Write publish state back to article.yml, keeping every user-authored field."""
+    """Write publish state back to article.yml, keeping every user-authored field.
+
+    Rewrites the whole file with yaml.safe_dump, so comments in article.yml do
+    not survive a publish.
+    """
     out = dict(article._raw)
     out["article_id"] = article.article_id
     out["last_known_updated_at"] = article.last_known_updated_at
     out["attachments"] = article.attachments
     (article.dir / "article.yml").write_text(yaml.safe_dump(out, sort_keys=False))
-
-
-MIME_BY_SUFFIX = {
-    ".png": "image/png",
-    ".jpg": "image/jpeg",
-    ".jpeg": "image/jpeg",
-    ".gif": "image/gif",
-}
 
 
 class ZendeskHelpCenter:
@@ -102,7 +131,9 @@ class ZendeskHelpCenter:
         self.session.auth = (f"{email}/token", token)
 
     def _call(self, method: str, path: str, **kwargs) -> dict:
-        response = self.session.request(method, self.base + path, **kwargs)
+        response = self.session.request(
+            method, self.base + path, timeout=TIMEOUT_SECONDS, **kwargs
+        )
         if response.status_code >= 400:
             raise PublishError(
                 f"{method} {path} returned {response.status_code}: {response.text[:500]}"
@@ -149,15 +180,18 @@ class ZendeskHelpCenter:
         the article was created (seen live 2026-09-29); the same call succeeds a
         moment later. Retry 409 only; every other error surfaces at once.
         """
-        mime = MIME_BY_SUFFIX.get(path.suffix.lower(), "application/octet-stream")
+        mime = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
         url_path = f"/help_center/articles/{article_id}/attachments.json"
-        for attempt in range(1, UPLOAD_ATTEMPTS + 1):
+        attempt = 0
+        while True:
+            attempt += 1
             with path.open("rb") as handle:
                 response = self.session.request(
                     "POST",
                     self.base + url_path,
                     files={"file": (path.name, handle, mime)},
                     data={"inline": "true"},
+                    timeout=TIMEOUT_SECONDS,
                 )
             if response.status_code == 409 and attempt < UPLOAD_ATTEMPTS:
                 time.sleep(RETRY_DELAY_SECONDS * attempt)
@@ -168,7 +202,6 @@ class ZendeskHelpCenter:
                     f"{attempt} attempt(s): {response.text[:500]}"
                 )
             return response.json()["article_attachment"]
-        raise PublishError(f"POST {url_path}: exhausted {UPLOAD_ATTEMPTS} attempts")
 
 
 def client_from_environment() -> ZendeskHelpCenter:
@@ -218,7 +251,7 @@ def _is_local(src: str) -> bool:
 def local_images(html: str) -> list[str]:
     seen: list[str] = []
     for match in IMG_SRC_RE.finditer(html):
-        src = match.group(2)
+        src = match.group(3)
         if _is_local(src) and src not in seen:
             seen.append(src)
     return seen
@@ -226,6 +259,36 @@ def local_images(html: str) -> list[str]:
 
 def sha256_of(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def check_local_images(article: Article, approved: frozenset[str]) -> dict[str, str]:
+    """Validate every local image before any network call.
+
+    Returns {src: sha256} for the images the HTML references. Raises when a
+    file is missing, sits outside the article folder, or is new or changed and
+    not in `approved` (the PII gate).
+    """
+    root = article.dir.resolve()
+    digests: dict[str, str] = {}
+    for src in local_images(article.html):
+        path = (article.dir / src).resolve()
+        if not path.is_relative_to(root):
+            raise PublishError(
+                f"{src} resolves outside the article folder {article.dir}; "
+                "images must live under images/"
+            )
+        if not path.is_file():
+            raise PublishError(
+                f"{src} is referenced in article.html but not found under {article.dir}"
+            )
+        digest = sha256_of(path)
+        entry = article.attachments.get(src)
+        if not (entry and entry.get("sha256") == digest) and src not in approved:
+            raise PublishError(
+                f"PII gate: {src} is new or changed and has not been approved for upload"
+            )
+        digests[src] = digest
+    return digests
 
 
 @dataclass
@@ -240,32 +303,25 @@ def sync_attachments(
 ) -> AttachmentReport:
     """Upload new or changed local images as inline attachments; reuse unchanged ones.
 
-    `approved` is the set of relative paths the user confirmed through the PII
-    gate. An image that needs uploading and is not in it stops the run.
+    Entries for images the HTML no longer references are dropped and reported
+    as orphans. State is saved after every upload so a failure midway loses
+    nothing already in Zendesk.
     """
     if article.article_id is None:
         raise PublishError(
             "sync_attachments needs an article_id; create the draft first"
         )
+    digests = check_local_images(article, approved)
     report = AttachmentReport()
-    srcs = local_images(article.html)
-    for src in srcs:
-        if not (article.dir / src).is_file():
-            raise PublishError(
-                f"{src} is referenced in article.html but not found under {article.dir}"
-            )
-    for src in srcs:
-        path = article.dir / src
-        digest = sha256_of(path)
+    for src in list(article.attachments):
+        if src not in digests:
+            report.orphaned_ids.append(int(article.attachments.pop(src)["id"]))
+    for src, digest in digests.items():
         entry = article.attachments.get(src)
         if entry and entry.get("sha256") == digest:
             report.reused.append(src)
             continue
-        if src not in approved:
-            raise PublishError(
-                f"PII gate: {src} is new or changed and has not been approved for upload"
-            )
-        uploaded = client.upload_attachment(article.article_id, path)
+        uploaded = client.upload_attachment(article.article_id, article.dir / src)
         if entry:
             report.orphaned_ids.append(int(entry["id"]))
         article.attachments[src] = {
@@ -274,26 +330,33 @@ def sync_attachments(
             "sha256": digest,
         }
         report.uploaded.append(src)
+        save_state(article)
+    if report.orphaned_ids and not report.uploaded:
+        save_state(article)
     return report
 
 
 def rewrite_srcs(html: str, attachments: dict[str, dict]) -> str:
     def swap(match: re.Match) -> str:
-        src = match.group(2)
-        entry = attachments.get(src)
+        entry = attachments.get(match.group(3))
         if entry is None:
             return match.group(0)
-        return f"{match.group(1)}{entry['url']}{match.group(3)}"
+        quote = match.group(2)
+        return f"{match.group(1)}{quote}{entry['url']}{quote}"
 
     return IMG_SRC_RE.sub(swap, html)
 
 
 def check_overwrite_guard(remote_article: dict, article: Article) -> None:
     """Abort when Zendesk changed since the last publish this folder knows about."""
-    known = article.last_known_updated_at
-    remote = remote_article.get("updated_at")
+    known = _iso_z(article.last_known_updated_at)
+    remote = _iso_z(remote_article.get("updated_at"))
     if known is None:
-        return
+        raise PublishError(
+            "article.yml has an article_id but no last_known_updated_at, so the overwrite "
+            f"guard cannot run. Zendesk reports updated_at {remote}. Confirm the article "
+            "body matches article.html, then set last_known_updated_at to that value."
+        )
     if remote != known:
         raise PublishError(
             "Overwrite guard: the article changed in Zendesk since the last publish. "
@@ -323,7 +386,11 @@ def verify_readback(translation: dict, article: Article) -> None:
     stored_ids = {
         int(i) for i in ATTACHMENT_ID_RE.findall(translation.get("body") or "")
     }
-    expected_ids = {int(e["id"]) for e in article.attachments.values()}
+    expected_ids = {
+        int(article.attachments[src]["id"])
+        for src in local_images(article.html)
+        if src in article.attachments
+    }
     missing = sorted(expected_ids - stored_ids)
     if missing:
         raise PublishError(
@@ -348,15 +415,21 @@ def publish(
     live: bool,
     approved_images: frozenset[str] = frozenset(),
     backup_dir: Path,
+    unpublish: bool = False,
     client: ZendeskHelpCenter | None = None,
 ) -> PublishResult:
     """Create or update the article as a draft; go live only when `live` is True.
 
-    Order: load and refuse early; resolve visibility; create draft or fetch and
-    guard; back up; sync images; rewrite srcs in memory; PUT article fields;
-    PUT translation; read back; save state.
+    Order: load and check every local image (no network yet); resolve
+    visibility; create draft or fetch and guard; back up; sync images; rewrite
+    srcs in memory; PUT article fields; PUT translation; save state; read back.
+
+    A live article is never set back to draft unless `unpublish=True`: Zendesk
+    has no separate draft of a published article, so `live=False` would take it
+    offline for readers.
     """
     article = load_article(article_dir)
+    check_local_images(article, approved_images)
     client = client or client_from_environment()
     segment_id, group_id = resolve_visibility(client, article)
 
@@ -376,14 +449,20 @@ def publish(
             },
         )
         article.article_id = int(created["id"])
+        article.last_known_updated_at = _iso_z(created.get("updated_at"))
         save_state(article)  # a later failure must not create a duplicate on re-run
         remote = created
     else:
         remote = client.get_article(article.article_id)
         check_overwrite_guard(remote, article)
-        backup = backup_translation(
-            client.get_translation(article.article_id), backup_dir, article
-        )
+        current = client.get_translation(article.article_id)
+        if current.get("draft") is False and not live and not unpublish:
+            raise PublishError(
+                f"Article {article.article_id} is live. Pass live=True to update it in "
+                "place, or unpublish=True to take it back to draft, which hides it from "
+                "readers until the next live publish."
+            )
+        backup = backup_translation(current, backup_dir, article)
 
     report = sync_attachments(client, article, approved_images)
     body = rewrite_srcs(article.html, article.attachments)
@@ -397,15 +476,18 @@ def publish(
             "label_names": article.labels,
         },
     )
+    article.last_known_updated_at = _iso_z(remote.get("updated_at"))
+    save_state(article)
     client.update_translation(
         article.article_id, {"title": article.title, "body": body, "draft": not live}
     )
-    stored = client.get_translation(article.article_id)
-    verify_readback(stored, article)
-
-    # The translation PUT changes updated_at after the article PUT returned.
-    article.last_known_updated_at = client.get_article(article.article_id)["updated_at"]
+    # The translation PUT changes updated_at again. Save before read-back so a
+    # read-back failure never leaves the guard blaming someone else's edit.
+    article.last_known_updated_at = _iso_z(
+        client.get_article(article.article_id)["updated_at"]
+    )
     save_state(article)
+    verify_readback(client.get_translation(article.article_id), article)
     return PublishResult(
         article_id=article.article_id,
         html_url=str(remote.get("html_url", "")),

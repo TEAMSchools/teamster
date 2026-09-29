@@ -40,9 +40,21 @@ def test_guard_passes_when_timestamps_match():
     check_overwrite_guard({"updated_at": "2026-09-29T10:00:00Z"}, article())
 
 
-def test_guard_passes_on_first_publish_with_no_known_timestamp():
+def test_guard_refuses_when_article_id_is_set_without_a_timestamp():
+    with pytest.raises(
+        PublishError, match="no last_known_updated_at.*2026-09-29T11:00:00Z"
+    ):
+        check_overwrite_guard(
+            {"updated_at": "2026-09-29T11:00:00Z"}, article(last_known_updated_at=None)
+        )
+
+
+def test_guard_normalizes_datetime_against_string():
+    from datetime import UTC, datetime
+
     check_overwrite_guard(
-        {"updated_at": "anything"}, article(last_known_updated_at=None)
+        {"updated_at": "2026-09-29T10:00:00Z"},
+        article(last_known_updated_at=datetime(2026, 9, 29, 10, 0, 0, tzinfo=UTC)),
     )
 
 
@@ -74,7 +86,12 @@ def test_readback_matches_attachments_by_id_after_url_shortening():
 def test_readback_fails_on_missing_attachment():
     stored = {"title": "How to access Tableau", "body": "<p>no image</p>"}
     with pytest.raises(PublishError, match="101"):
-        verify_readback(stored, article())
+        verify_readback(stored, article(html='<img src="images/a.png">'))
+
+
+def test_readback_ignores_attachments_the_html_no_longer_references():
+    stored = {"title": "How to access Tableau", "body": "<p>no image</p>"}
+    verify_readback(stored, article(html="<p>no image</p>"))
 
 
 def test_readback_fails_on_title_mismatch():
