@@ -1,7 +1,12 @@
 """Cube schema invariants — cube/view names carry no warehouse prefix."""
 
+import json
 import pathlib
+import re
+import shutil
+import subprocess
 
+import pytest
 import yaml
 
 CUBE_MODEL_DIR = pathlib.Path(__file__).parents[2] / "src" / "cube" / "model"
@@ -188,3 +193,200 @@ def test_row_level_filter_members_are_exposed_by_their_view() -> None:
         "row_level filter references a member the view doesn't expose:\n"
         + "\n".join(offenders)
     )
+
+
+REPO_ROOT = pathlib.Path(__file__).parents[2]
+DBT_MODELS_DIR = REPO_ROOT / "src" / "dbt" / "kipptaf" / "models"
+AI_CONTEXT_MAX = 2000
+
+# (cube, member) -> (dbt model, column). A Cube member that reads one column
+# directly carries the same description as that column in dbt.
+TWINS: dict[tuple[str, str], tuple[str, str]] = {}
+
+# "<cube>.<member>" or "<view>" -> phrases that must appear in that member's
+# description or ai_context (case-insensitive, whitespace-collapsed), so a later
+# edit cannot drop a moved fact silently.
+PHRASES: dict[str, list[str]] = {}
+
+
+def _norm(text: str | None) -> str:
+    return " ".join((text or "").split())
+
+
+def _cube_docs() -> dict[str, dict]:
+    docs: dict[str, dict] = {}
+    for path in (CUBE_MODEL_DIR / "cubes").rglob("*.yml"):
+        doc = yaml.safe_load(path.read_text()) or {}
+        for cube in doc.get("cubes", []):
+            docs[cube["name"]] = cube
+    return docs
+
+
+def _view_docs() -> dict[str, dict]:
+    docs: dict[str, dict] = {}
+    for path in (CUBE_MODEL_DIR / "views").rglob("*.yml"):
+        doc = yaml.safe_load(path.read_text()) or {}
+        for view in doc.get("views", []):
+            docs[view["name"]] = view
+    return docs
+
+
+def _members(cube: dict) -> dict[str, dict]:
+    return {m["name"]: m for m in cube.get("dimensions", []) + cube.get("measures", [])}
+
+
+def _resolve_member(cubes: dict[str, dict], cube_name: str, member: str) -> dict | None:
+    """Find a member on a cube, following `extends` (staff_lead_teacher)."""
+    cube = cubes.get(cube_name)
+    while cube is not None:
+        found = _members(cube).get(member)
+        if found is not None:
+            return found
+        parent = cube.get("extends")
+        cube = cubes.get(parent) if parent else None
+    return None
+
+
+def _dbt_column(model: str, column: str) -> dict:
+    for path in DBT_MODELS_DIR.rglob("*.yml"):
+        doc = yaml.safe_load(path.read_text()) or {}
+        for m in doc.get("models", []) or []:
+            if m.get("name") == model:
+                for c in m.get("columns", []):
+                    if c.get("name") == column:
+                        return c
+    raise AssertionError(f"dbt column {model}.{column} not found")
+
+
+def _view_override_texts(view: dict) -> list[tuple[str, str]]:
+    out: list[tuple[str, str]] = []
+    for block in view.get("cubes", []):
+        for inc in block.get("includes", []) or []:
+            if isinstance(inc, dict):
+                text = (inc.get("meta") or {}).get("ai_context")
+                if text:
+                    out.append((inc["name"], text))
+    return out
+
+
+def _ai_contexts() -> list[tuple[str, str]]:
+    """Every ai_context in the model: cube members, views, view overrides."""
+    out: list[tuple[str, str]] = []
+    for name, cube in _cube_docs().items():
+        for m in _members(cube).values():
+            text = (m.get("meta") or {}).get("ai_context")
+            if text:
+                out.append((f"{name}.{m['name']}", text))
+    for name, view in _view_docs().items():
+        text = (view.get("meta") or {}).get("ai_context")
+        if text:
+            out.append((name, text))
+        out += [(f"{name}:{member}", t) for member, t in _view_override_texts(view)]
+    return out
+
+
+def test_moved_facts_keep_their_key_phrases() -> None:
+    cubes, views = _cube_docs(), _view_docs()
+    missing: list[str] = []
+    for key, phrases in PHRASES.items():
+        if key in views:
+            view = views[key]
+            parts = [
+                view.get("description"),
+                (view.get("meta") or {}).get("ai_context"),
+            ]
+            parts += [t for _, t in _view_override_texts(view)]
+        else:
+            cube_name, member_name = key.split(".", 1)
+            member = _resolve_member(cubes, cube_name, member_name)
+            assert member is not None, f"{key}: member not found"
+            parts = [
+                member.get("description"),
+                (member.get("meta") or {}).get("ai_context"),
+            ]
+        text = " ".join(_norm(p) for p in parts).lower()
+        missing += [f"{key}: {p!r}" for p in phrases if _norm(p).lower() not in text]
+    assert not missing, "moved facts missing:\n" + "\n".join(missing)
+
+
+_ONE_COLUMN = re.compile(r"^\s*(?:\{CUBE\}\.)?`?(\w+)`?\s*$")
+
+
+def test_twinned_members_match_their_dbt_description() -> None:
+    cubes = _cube_docs()
+    mismatches: list[str] = []
+    for (cube_name, member_name), (model, column) in TWINS.items():
+        member = _members(cubes[cube_name])[member_name]
+        read = _ONE_COLUMN.match(str(member.get("sql", "")))
+        assert read and read.group(1) == column, (
+            f"{cube_name}.{member_name} does not read {column} directly"
+        )
+        cube_text = _norm(member.get("description"))
+        dbt_text = _norm(_dbt_column(model, column).get("description"))
+        if cube_text != dbt_text:
+            mismatches.append(
+                f"{cube_name}.{member_name} vs {model}.{column}:\n"
+                f"  cube: {cube_text}\n  dbt:  {dbt_text}"
+            )
+    assert not mismatches, "\n".join(mismatches)
+
+
+def test_ai_context_fits_the_cap() -> None:
+    too_long = [
+        f"{key}: {len(text)} chars"
+        for key, text in _ai_contexts()
+        if len(text) > AI_CONTEXT_MAX
+    ]
+    assert not too_long, (
+        f"ai_context over {AI_CONTEXT_MAX} chars (Cube truncates silently):\n"
+        + "\n".join(too_long)
+    )
+
+
+def test_view_overrides_do_not_hide_cube_ai_context() -> None:
+    """An include-level override replaces the member's whole meta in that view,
+    so it must restate any ai_context the cube member already carries."""
+    cubes = _cube_docs()
+    hidden: list[str] = []
+    for view_name, view in _view_docs().items():
+        for block in view.get("cubes", []):
+            cube_name = str(block["join_path"]).split(".")[-1].strip()
+            for inc in block.get("includes", []) or []:
+                if not isinstance(inc, dict) or "meta" not in inc:
+                    continue
+                member = _resolve_member(cubes, cube_name, inc["name"])
+                assert member is not None, (
+                    f"{view_name}: override on {cube_name}.{inc['name']} "
+                    "matches no member"
+                )
+                base = _norm((member.get("meta") or {}).get("ai_context"))
+                override = _norm((inc.get("meta") or {}).get("ai_context"))
+                if base and base not in override:
+                    hidden.append(f"{view_name}: {cube_name}.{inc['name']}")
+    assert not hidden, "overrides hide a cube-level ai_context:\n" + "\n".join(hidden)
+
+
+_COMPILER = (
+    REPO_ROOT / "src" / "cube" / "node_modules" / "@cubejs-backend" / "schema-compiler"
+)
+
+
+@pytest.mark.skipif(
+    not _COMPILER.exists() or shutil.which("node") is None,
+    reason="Cube node_modules not installed (npm ci in src/cube)",
+)
+def test_model_compiles_with_cube() -> None:
+    out = subprocess.run(
+        [
+            "node",
+            str(REPO_ROOT / "src" / "cube" / "compile-meta.js"),
+            str(CUBE_MODEL_DIR),
+        ],
+        capture_output=True,
+        text=True,
+        timeout=180,
+        check=False,
+    )
+    assert out.returncode == 0, out.stderr[-2000:]
+    names = {c["name"] for c in json.loads(out.stdout)["cubes"]}
+    assert "student_assessment_scores_view" in names
