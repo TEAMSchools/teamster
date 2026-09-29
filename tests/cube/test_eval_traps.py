@@ -207,3 +207,33 @@ def test_stub_load_empties_paterson_and_notes_it_only_on_drained_arms():
         "measures": ["student_attendance_enrollment_daily_view.count_students"]
     }
     assert run_eval_cc._stub_load(attendance, {}, server) == run_eval_cc._LOAD_RESULT
+
+
+def test_stub_load_rows_follow_the_query():
+    server = arms.load_server()
+    by_subject = q(
+        measures=[f"{V}.pct_proficient"],
+        dimensions=[f"{V}.academic_subject"],
+        filters=[f("assessment_type", values=["iready"])],
+    )
+    by_round = q(
+        measures=[f"{V}.count_scored"],
+        dimensions=[f"{V}.administration_period"],
+        filters=[f("assessment_type", values=["iready"])],
+    )
+    a = run_eval_cc._stub_load(by_subject, {"empty_note": True}, server)
+    b = run_eval_cc._stub_load(by_round, {"empty_note": True}, server)
+    assert a != b
+    assert a == run_eval_cc._stub_load(by_subject, {"empty_note": True}, server)
+    assert all(f"{V}.academic_subject" in row for row in a["data"])
+    assert all(f"{V}.pct_proficient" in row for row in a["data"])
+    assert {row[f"{V}.administration_period"] for row in b["data"]} <= {
+        "BOY",
+        "MOY",
+        "EOY",
+    }
+
+
+def test_sql_stub_does_not_look_like_an_access_denial():
+    sql = run_eval_cc._SQL_RESULT["sql"]["sql"][0]
+    assert "SELECT 1" not in sql and "1 = 0" not in sql

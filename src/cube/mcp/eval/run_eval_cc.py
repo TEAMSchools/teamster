@@ -72,8 +72,18 @@ _LOAD_RESULT = {
         }
     ]
 }
+# A plausible compiled query: a bare "SELECT 1" reads to the model as an
+# access denial and sends it chasing permissions.
 _SQL_RESULT = {
-    "sql": {"status": "ok", "sql": ["SELECT 1", []], "query_type": "regular"}
+    "sql": {
+        "status": "ok",
+        "sql": [
+            "SELECT ... FROM `kipptaf_marts`.`fct_assessment_scores_enrollment_scoped`"
+            " AS `student_assessment_scores` ... GROUP BY 1",
+            [],
+        ],
+        "query_type": "regular",
+    }
 }
 
 
@@ -115,14 +125,60 @@ def parse_args() -> argparse.Namespace:
     return p.parse_args()
 
 
-_ASSESSMENT_ROWS = {
-    "data": [
-        {
-            "student_assessment_scores_view.pct_proficient": "0.42",
-            "student_assessment_scores_view.count_scored": "1200",
-        }
-    ]
+# Values per assessment-view dimension, so canned rows follow the query. A
+# single fixed row for every query made models notice the fake data and probe
+# with other filters, which tripped traps the text had avoided.
+_DIMENSION_VALUES = {
+    "assessment_type": ["iready", "dibels", "star"],
+    "administration_period": ["BOY", "MOY", "EOY"],
+    "academic_subject": ["Math", "Reading"],
+    "region_name": ["Newark", "Camden", "Miami"],
+    "grade_level": ["3", "4", "5"],
+    "module_code": ["QA1", "QA2", "QA3"],
+    "module_type": ["QA", "MQQ", "CRQ"],
+    "proficiency_level": [
+        "1 Grade Level Below",
+        "Early On Grade Level",
+        "Mid or Above Grade Level",
+    ],
+    "academic_year_label": ["2025-2026"],
+    "academic_year": ["2025"],
 }
+
+
+def _shaped_rows(query: dict[str, Any]) -> dict[str, Any]:
+    """Deterministic rows shaped by the query: one row per value combination of
+    its dimensions (filter values echoed where the query pins them), with
+    plausible measure values seeded from the query text."""
+    import hashlib
+    import itertools
+
+    seed = int(
+        hashlib.sha256(json.dumps(query, sort_keys=True).encode()).hexdigest(), 16
+    )
+    pinned = {
+        str(f.get("member", "")).split(".")[-1]: [str(v) for v in f.get("values") or []]
+        for f in scorer_mod._flatten_filters(query.get("filters"))
+        if f.get("operator") in ("equals", "in", "inArray") and f.get("values")
+    }
+    dims = [d for d in query.get("dimensions") or [] if isinstance(d, str)]
+    choices = []
+    for d in dims:
+        short = d.split(".")[-1]
+        choices.append(pinned.get(short) or _DIMENSION_VALUES.get(short, ["A", "B"]))
+    rows = []
+    for i, combo in enumerate(itertools.product(*choices) if dims else [()]):
+        row = dict(zip(dims, combo))
+        for j, m in enumerate(query.get("measures") or []):
+            x = (seed >> (8 * ((i * 7 + j) % 24))) & 0xFF
+            short = str(m).split(".")[-1]
+            row[m] = (
+                f"{0.25 + x / 600:.2f}"
+                if short.startswith("pct_")
+                else str(300 + x * 7)
+            )
+        rows.append(row)
+    return {"data": rows[:24]}
 
 
 def _stub_load(query: Any, arm: dict[str, Any], server: Any) -> dict[str, Any]:
@@ -136,7 +192,7 @@ def _stub_load(query: Any, arm: dict[str, Any], server: Any) -> dict[str, Any]:
     if traps.is_paterson_query(query):
         empty: dict[str, Any] = {"data": []}
         return server._with_empty_result_note(empty) if arm.get("empty_note") else empty
-    return _ASSESSMENT_ROWS
+    return _shaped_rows(query)
 
 
 def _make_tools(
