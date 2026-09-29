@@ -1,5 +1,12 @@
 models:
   - name: int_google_sheets__finalsite__status_crosswalk_unpivot
+    description: >
+      Unpivots the eight funnel-group and conversion-metric columns of
+      stg_google_sheets__finalsite__status_crosswalk into long form, one row per
+      cycle, enrollment type, detailed status, and group column. BigQuery
+      UNPIVOT drops null values, so a row exists only where the sheet assigns
+      the status to a group. Adds a display order and an Ever/Current timeframe
+      for each group.
     config:
       materialized: table
     data_tests:
@@ -15,29 +22,58 @@ models:
     columns:
       - name: file_year
         data_type: int64
+        description: Cycle year, from the first four characters of the key.
       - name: _dagster_partition_key
         data_type: string
+        description: >
+          Recruitment cycle key from the crosswalk sheet; joins to the Finalsite
+          status report's partition key.
       - name: enrollment_type
         data_type: string
+        description: Finalsite enrollment type (new or returning).
       - name: detailed_status
         data_type: string
+        description: Finalsite status name being mapped.
       - name: detailed_status_ranking
         data_type: int64
+        description: Funnel order of the status, from the crosswalk sheet.
       - name: detailed_status_branched_ranking
         data_type: int64
+        description: >
+          Alternate status ordering from the sheet. Not read downstream.
       - name: valid_detailed_status
         data_type: boolean
+        description: >
+          True when the status applies to this enrollment type. Not filtered
+          here; downstream joins drop false rows.
       - name: fs_status_field
         data_type: string
+        description: Finalsite date column the status comes from.
       - name: qa_flag
         data_type: boolean
+        description: >
+          True marks a row to exclude. Not filtered here; downstream joins drop
+          true rows.
       - name: status_group_name
         data_type: string
+        description: >
+          Name of the crosswalk column the group came from (status_enrollment,
+          status_group_numerator, conversion_metric_numerator_1, and so on).
       - name: status_group_value
         data_type: string
+        description: >
+          Funnel group or conversion metric the status counts toward (e.g.
+          Inquiries, Offers, Offers to Accepted).
       - name: grouped_status_order
         data_type: int64
-        description: Categorical mapping of status_group_value.
+        description: >
+          Display order of the funnel group -- Inquiries 1, Applications 2,
+          Offers 3, Accepted 4, Currently Accepted 5, Pending Offers 6,
+          Enrollment In Progress 7, Enrolled 8. Every other value is 0.
       - name: grouped_status_timeframe
         data_type: string
-        description: Categorical mapping of status_group_value.
+        description: >
+          "Ever" (the student reached the stage at any point) for Inquiries,
+          Applications, Offers, Assigned School, Accepted, Offers to Accepted,
+          Accepted to Enrolled, and Offers to Enrolled. "Current" (the student's
+          present stage) for every other group.
