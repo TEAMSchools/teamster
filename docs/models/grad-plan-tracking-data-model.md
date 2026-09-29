@@ -305,8 +305,13 @@ owner.
   not from the course. A student enrolled in two courses in one slot gets two
   Enrolled rows, each carrying the slot's full total. As of 2026-09-29, about
   one in ten Enrolled slots had more than one course row (up to four) in both
-  Newark and Camden. Read one Enrolled row per slot, or use the
-  `subject_enrolled_credits` column, rather than adding rows up. Query:
+  Newark and Camden. The school trackers are not affected: the Sources sheet's
+  extract tabs never pull `earned_credits` or `potential_credits`, only the
+  plan, discipline and subject totals, which are correct. It matters only when
+  you query the model directly. Read one Enrolled row per slot, or use
+  `subject_enrolled_credits`, rather than adding rows up. The fix (read the
+  per-course `gpprogresssubjectenrolled.enrolledcredits` instead) is tracked on
+  #5606. Query:
 
   ```sql
   with
