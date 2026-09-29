@@ -187,3 +187,81 @@ def resolve_visibility(
         client.permission_groups(), article.permission_group, "permission group"
     )
     return segment_id, group_id
+
+
+def _is_local(src: str) -> bool:
+    lowered = src.lower()
+    return not lowered.startswith(("http://", "https://", "//", "data:", "/hc/"))
+
+
+def local_images(html: str) -> list[str]:
+    seen: list[str] = []
+    for match in IMG_SRC_RE.finditer(html):
+        src = match.group(2)
+        if _is_local(src) and src not in seen:
+            seen.append(src)
+    return seen
+
+
+def sha256_of(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+@dataclass
+class AttachmentReport:
+    uploaded: list[str] = field(default_factory=list)
+    reused: list[str] = field(default_factory=list)
+    orphaned_ids: list[int] = field(default_factory=list)
+
+
+def sync_attachments(
+    client: ZendeskHelpCenter, article: Article, approved: frozenset[str]
+) -> AttachmentReport:
+    """Upload new or changed local images as inline attachments; reuse unchanged ones.
+
+    `approved` is the set of relative paths the user confirmed through the PII
+    gate. An image that needs uploading and is not in it stops the run.
+    """
+    if article.article_id is None:
+        raise PublishError(
+            "sync_attachments needs an article_id; create the draft first"
+        )
+    report = AttachmentReport()
+    srcs = local_images(article.html)
+    for src in srcs:
+        if not (article.dir / src).is_file():
+            raise PublishError(
+                f"{src} is referenced in article.html but not found under {article.dir}"
+            )
+    for src in srcs:
+        path = article.dir / src
+        digest = sha256_of(path)
+        entry = article.attachments.get(src)
+        if entry and entry.get("sha256") == digest:
+            report.reused.append(src)
+            continue
+        if src not in approved:
+            raise PublishError(
+                f"PII gate: {src} is new or changed and has not been approved for upload"
+            )
+        uploaded = client.upload_attachment(article.article_id, path)
+        if entry:
+            report.orphaned_ids.append(int(entry["id"]))
+        article.attachments[src] = {
+            "id": int(uploaded["id"]),
+            "url": uploaded["content_url"],
+            "sha256": digest,
+        }
+        report.uploaded.append(src)
+    return report
+
+
+def rewrite_srcs(html: str, attachments: dict[str, dict]) -> str:
+    def swap(match: re.Match) -> str:
+        src = match.group(2)
+        entry = attachments.get(src)
+        if entry is None:
+            return match.group(0)
+        return f"{match.group(1)}{entry['url']}{match.group(3)}"
+
+    return IMG_SRC_RE.sub(swap, html)
