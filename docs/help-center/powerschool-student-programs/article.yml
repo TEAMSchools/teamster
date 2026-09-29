@@ -3,12 +3,12 @@ title:
 section_id: 115001057008
 author_id: 581543400
 user_segment: Signed-in users
-permission_group: Admins
+permission_group: Agents and admins
 labels:
   - powerschool
   - student-programs
 article_id: 360035629314
-last_known_updated_at: "2026-09-29T22:15:49Z"
+last_known_updated_at: "2026-09-29T22:25:22Z"
 attachments:
   images/01-courses-and-programs-menu.png:
     id: 43861835507863
