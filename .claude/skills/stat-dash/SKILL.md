@@ -19,78 +19,80 @@ description: >-
 
 ## Always read first
 
-- Reference doc:
-  [`docs/models/stat-dashboard-data-model.md`](../../../docs/models/stat-dashboard-data-model.md)
+Read
+[`docs/models/stat-dashboard-data-model.md`](../../../docs/models/stat-dashboard-data-model.md)
+from the top through _Terms_, stopping at `## Where the data comes from`, before
+answering anything. Then read the section the route below names. The doc is
+authoritative for lineage, the dual-vendor union, the two comps paths, the
+controlled vocabulary, decisions and open issues.
 
-It is authoritative for lineage, the dual-vendor union, the two comps paths, the
-controlled vocabulary, and the open issues. Read it before answering anything,
-not just before editing.
+Four facts that cause most of the wrong answers here:
 
-**Three facts that cause most of the wrong answers here:**
-
-- `academic_year` is the STARTING year of the school year. Testing happens in
-  the spring, so a source reporting "2026 results" means the 2025-2026 school
-  year, which is `academic_year = 2025`. The published label always runs one
-  ahead of the warehouse value. Confirm before generating any row.
-- **There are two comps calculations, not one.** The `state_comps` CTE inside
+- `academic_year` is the starting year of the school year. A source reporting
+  "2026 results" means `academic_year = 2025`. The published label always runs
+  one ahead. Confirm before generating any row.
+- There are two comps calculations. The `state_comps` CTE inside
   `rpt_tableau__state_assessments_dashboard` and the separate
   `rpt_tableau__state_assessments_dashboard_comps` read different things. A
   number that differs between Overview and Advanced Comps is usually that, not a
-  bug. See the reference doc.
-- `int_pearson__all_assessments` carries **both** Pearson and Cambium. Its name
-  is a known misnomer. Never assume a row in it is Pearson.
-- **The vendor changed on a date, not per assessment.** Through December 2025 it
-  is Pearson; Spring 2026 and everything after is Cambium, for all NJ state
-  testing. So the Pearson relations are history and will not gain rows -- a gap
-  in one cannot be fixed by a re-pull -- and `stg_pearson__njgpa` is moot.
+  bug.
+- `int_pearson__all_assessments` carries both Pearson and Cambium. Never assume
+  a row in it is Pearson.
+- The NJ vendor changed on a date, not per assessment: Pearson through December
+  2025, Cambium from Spring 2026 for all NJ state testing. The Pearson relations
+  are history; a gap in one cannot be fixed by a re-pull.
 
----
+## Rules for every task
 
-## Before changing this pipeline
+- Lineage: do not search the codebase. Read the exposure
+  `state_testing_analysis_tool` in
+  `src/dbt/kipptaf/models/exposures/tableau.yml`; it depends on
+  `rpt_tableau__state_assessments_dashboard` and
+  `rpt_tableau__state_assessments_dashboard_comps`. NJ and Florida official
+  scores both reach the dashboard through `int_assessments__state_scores`; the
+  score view reads `int_pearson__all_assessments` directly only to gate the
+  preliminary branch. `rpt_tableau__state_testing_accomodations` is a different
+  workbook.
+- PII. Student-level rows live in `rpt_tableau__state_assessments_dashboard` and
+  in the failure rows of `test_incorrect_student_number_pearson`, which carry
+  student names. Quote UUIDs and counts only, outside the terminal.
+- Before changing the pipeline, confirm with the requester the grain, region,
+  academic year and expected effect on the dashboard (more rows, different
+  booleans, changed labels, or none for a refactor). Then state:
+  - which comps path it touches: the sheet feeds both; the comps model feeds
+    only Advanced Comps;
+  - whether it moves a string or value on one of the nine columns the comps
+    model's Region self-join keys on. A row that loses its partner reads
+    `false`, not null;
+  - that both `rpt_` models and both sheet staging models are contract-enforced.
 
-Confirm with the requester the grain, region, academic year, and expected effect
-on the dashboard (more rows, different booleans, changed labels, or none for a
-refactor). Then state these model-specific risks before implementing:
+## Route by task
 
-- **Which of the two comps paths does this touch?** Changing the sheet touches
-  both. Changing `rpt_tableau__state_assessments_dashboard_comps` touches only
-  Advanced Comps.
-- **Does it move a string the ten-column self-join keys on?** If so, rows
-  silently lose their Region partner and read `false`, not null.
-- **PII.** Student-level rows live in `rpt_tableau__state_assessments_dashboard`
-  and in the failure rows of `test_incorrect_student_number_pearson`, which
-  carry student names. Never paste them outbound.
-- Contract enforcement on both `rpt_` models and both staging models.
+Read the one file for your task.
 
-Validate with the audit query from the relevant procedure below.
-
----
-
-## Procedure: List refs, lineage, or sources
-
-Do not search the codebase. Read the exposure `state_testing_analysis_tool` in
-`src/dbt/kipptaf/models/exposures/tableau.yml` and report its `depends_on`:
-
-- `rpt_tableau__state_assessments_dashboard`
-- `rpt_tableau__state_assessments_dashboard_comps`
-
-For which of the six Tableau views reads which of those two, use the table in
-the reference doc. `rpt_tableau__state_testing_accomodations` is a **different**
-workbook — do not pull it in.
-
----
+| Task                                                                    | Read                                                                                                                   |
+| ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| A student's score is missing, or attached to the wrong student          | [references/crosswalk.md](references/crosswalk.md)                                                                     |
+| The detector has a batch outstanding; generate or audit crosswalk rows  | [references/crosswalk.md](references/crosswalk.md)                                                                     |
+| After a Cambium load; a roster bar is part-colored; a grain test failed | [references/after-a-load.md](references/after-a-load.md)                                                               |
+| Enter interim comps from a screenshot, deck or press figure             | [references/comps-sheet.md](references/comps-sheet.md)                                                                 |
+| Replace interim comps with the official file                            | [references/comps-sheet.md](references/comps-sheet.md)                                                                 |
+| A comparison reads `false`, or a comp is missing                        | [references/comps-debugging.md](references/comps-debugging.md)                                                         |
+| Verify a comps-model change against production                          | [references/comps-debugging.md](references/comps-debugging.md)                                                         |
+| July rollover, or spring preliminary scores                             | [references/rollover.md](references/rollover.md)                                                                       |
+| Which view reads what, or what a view shows                             | doc _Dashboard outline_, stop at `## How the models work`                                                              |
+| How a model works, or a change to the NJ vendor mapping                 | doc _How the models work_ and _Supporting models_, stop at `## Inputs`; then _Decisions_ before proposing any redesign |
 
 ## Gotchas
 
-- **Never judge the current contents of either Google Sheet from the prod `stg_`
-  table.** Both are frozen at the last prod build. Read the `src_` external live
-  instead (Step 6).
-- **The Tableau MCP cannot answer "what does the workbook do with this field".**
-  It is read-only, returns no calculated-field text, and 500s on
-  `get-datasource-metadata` for the embedded extracts this workbook uses. Use
-  the `tableau-workbook-xml` skill to download and inspect the `.twb`.
-- **`rpt_tableau__state_testing_accomodations` is not part of this dashboard.**
-  Similar name, different workbook.
-- **Cambium and Pearson aligned columns are maintained in two separate
-  packages** and cannot share code. Changing a band, label, or mapping in one
-  means changing it in the other. See the reference doc.
+- Never judge the current contents of either Google Sheet from the prod `stg_`
+  table; both are frozen at the last build. Read the `src_` external live
+  through ADC from Python (the BigQuery MCP has no Drive scope).
+- The Tableau MCP cannot say what the workbook does with a field: it returns no
+  calculated-field text and errors on this workbook's embedded extracts. Use the
+  `tableau-workbook-xml` skill to read the `.twb`.
+- The race, ML and IEP mappings are written twice: in the pearson package's
+  `int_pearson__all_assessments` and in the Cambium CTEs of the kipptaf model of
+  the same name. Change one, change the other.
+- The exposure has no `cron_schedule`; Tableau Server refreshes the extracts, so
+  a model change shows nothing until that refresh.

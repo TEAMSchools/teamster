@@ -1,3 +1,5 @@
+# The comps sheet: interim and official loads
+
 ## Procedure: Bootstrap comps rows from a screenshot
 
 The November problem. Official comparison files do not arrive until roughly
@@ -21,12 +23,12 @@ stop.** Leave `total_students` empty and load the percentage. Never invent a
 denominator -- it feeds `total_proficient_students` and the weighted ALG01
 rollup, and a fabricated one corrupts both silently.
 
-Say out loud what the empty denominator costs, because it is not visible
-anywhere: the row will populate the five views fed by the `state_comps` CTE,
-which reads `avg(percent_proficient)` directly, and will arrive in **Advanced
-Comps with a NULL percentage**, because that model recomputes
-`safe_divide(sum(proficient), sum(total))`. Verified against production. The row
-is present and the number is gone.
+Say out loud what the empty denominator costs. The percentage reaches every
+view: the `state_comps` CTE reads `avg(percent_proficient)` directly, and
+`rpt_tableau__state_assessments_dashboard_comps` falls back to the reported
+percentage when a group has a single source row (every group today). What is
+lost is the counts: `total_students` and `total_proficient_students` stay empty,
+and the weighted ALG01 rollup cannot use the row.
 
 ### Step 2 — read the image, and show your reading before emitting rows
 
@@ -48,7 +50,8 @@ optional just because the user asked for rows.
 | `MAT03`–`MAT04` | `ES`           | `3-8`              | `Math`           |
 | `MAT05`–`MAT08` | `MS`           | `3-8`              | `Math`           |
 | `MATGP`         | `HS`           | `HS`               | `Math`           |
-| `ALG01`         | `MS` and `HS`  | `HS`               | `Math`           |
+| `ALG01` (MS)    | `MS`           | `3-8`              | `Math`           |
+| `ALG01` (HS)    | `HS`           | `HS`               | `Math`           |
 | `ALG02`,`GEO01` | `HS`           | `HS`               | `Math`           |
 | `SCI05`,`SCI08` | `MS`           | `3-8`              | `Science`        |
 | `SCI11`         | `HS`           | `HS`               | `Science`        |
@@ -65,10 +68,11 @@ optional just because the user asked for rows.
 | Miami                    | Science            | `Science`                       |
 | Miami                    | Social Studies     | `EOC`                           |
 
-**`assessment_name` stays `NJGPA` for Cambium-era rows.** The Cambium staging
-model sets `assessment_name = 'NJGPA'` and distinguishes the vendor on
-`assessment_version = 'NJGPA-A'`. The comps join keys on `assessment_name`, so
-writing `NJGPA-A` here silently matches nothing.
+**`assessment_name` stays `NJGPA` for Cambium-era rows.** Kipptaf
+`int_pearson__all_assessments` sets `assessment_name = 'NJGPA'` on Cambium NJGPA
+rows and distinguishes the form on `assessment_version = 'NJGPA-A'`. The comps
+join keys on `assessment_name`, so writing `NJGPA-A` here silently matches
+nothing.
 
 `season` is always `Spring`.
 
@@ -88,11 +92,11 @@ writing `NJGPA-A` here silently matches nothing.
   is worth _mentioning_ to the requester, but it is not a reason to withhold,
   smooth or footnote the figure in the sheet. We do not make the rules of
   comparison.
-- **`assessment_name` stays `NJSLA` for Cambium-era NJSLA.** The Spring 2026
-  administration is Cambium's redesigned form, but the vendor form lives in
-  `assessment_version` (`NJSLA-A`, mirroring `NJGPA-A`) on the score side, and
-  the comps join keys on `assessment_name`. Writing a version string into the
-  sheet's `assessment_name` matches nothing.
+- **`assessment_name` stays `NJSLA` for Cambium-era NJSLA.** Cambium NJSLA rows
+  carry `NJSLA` (or `NJSLA Science`) in both `assessment_name` and
+  `assessment_version`; only NJGPA has a separate Cambium version. The comps
+  join keys on `assessment_name`, so any other string in the sheet's
+  `assessment_name` matches nothing.
 - **`Neighborhood Schools` is Miami only.** A NJ statewide figure is
   `comparison_entity = 'State'`, written once per NJ region -- Camden, Newark
   and Paterson each get their own row, because the sheet is region-grained.
@@ -113,8 +117,8 @@ African American", "Econ. Disadvantaged", "SWD", "ELL". Translate. The staging
 model rewrites two historical variants for backward compatibility, but an
 `accepted_values` test at `severity: error` rejects anything outside the list —
 and the reason that test exists is that a spelling variant entered for AY2024
-silently zeroed every Black/African American comparison in NJ. See the reference
-doc's "Resolved" section.
+silently zeroed every Black/African American comparison in NJ. See the doc's
+_Controlled vocabulary_ section.
 
 ### Step 5 — emit rows in sheet column order
 

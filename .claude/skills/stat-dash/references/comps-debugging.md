@@ -1,3 +1,5 @@
+# Comps debugging and comps-model parity
+
 ## Procedure: Verify a comps model change against production
 
 Run this for any change to `rpt_tableau__state_assessments_dashboard_comps` or
@@ -46,6 +48,11 @@ Expect knock-on changes in the three booleans whenever a percentage changes, and
 say so up front. A reviewer who is told only about the percentages will read a
 moved boolean as an unexplained regression.
 
+Advanced Comps is the only published view on this model, but an earlier workbook
+read found an orphan worksheet, `Sheet 52`, bound to the comps datasource and
+placed on no dashboard (not re-checked). Before renaming or dropping a column,
+check the `.twb` for it too (`tableau-workbook-xml` skill).
+
 ---
 
 ## Procedure: A comparison reads false, or a comp is missing
@@ -57,24 +64,33 @@ Work in this order.
 2. **Is the subgroup spelling canonical?** The single most common cause. Query
    the distinct `comparison_demographic_subgroup` values in
    `rpt_tableau__state_assessments_dashboard_comps` for the region and year, and
-   compare against the Step 4 vocabulary. A value outside it finds no Region
-   partner and every comparison reads `false`.
-3. **Does a Region partner row exist at all?** About 4,000 rows, a third of all
-   non-Region rows, have no partner — overwhelmingly subgroups KTAF has no
+   compare against the vocabulary in [comps-sheet.md](comps-sheet.md) Step 4. A
+   value outside it finds no Region partner and every comparison reads `false`.
+3. **Does a Region partner row exist at all?** About a third of the non-Region
+   rows have no partner (2026-09-29), overwhelmingly subgroups KTAF has no
    students in. **That is the expected state, not a bug**, and it does not
    surface as a wrong number: Advanced Comps lays the entities out as columns,
    so a missing Region is simply an empty cell. It bites only through the
    `region_outperformed` quick filter, which cannot tell a real loss from an
-   absent comparison. Read the reference doc before investigating.
+   absent comparison. Read doc _Comparisons with no Region partner read `false`_
+   before investigating.
+
+   A whole test code with no partner is different: check `grade_range_band`.
+   `int_tableau__state_assessments_demographic_comps` takes each KTAF row's
+   `grade_range_band` from the sheet with `any_value` per test code and school
+   level, so a sheet row entered with a different band for the same code and
+   level splits the two sides. The ALG01 `MS` rows are `3-8`.
 
    When diagnosing, relax one join column at a time instead of guessing. Nine
    view-expanding subqueries exceed BigQuery's query-planning limit, so pull the
-   view once into memory and do it there — roughly 14,000 aggregate rows, no
-   PII.
+   view once into memory and do it there: about 15,000 aggregate rows
+   (2026-09-29), no PII.
 
-4. **Is the year in the sheet at all?** Comparison data stops at
-   `academic_year = 2024`. NJ has no 2019 or 2020 rows, and Paterson starts
-   at 2023.
+4. **Is the year in the sheet at all?** Official comparison data stops at
+   `academic_year = 2024`; later years hold only interim rows (as of the last
+   build, AY2025 is NJ `State`, `All Students`, no counts). NJ starts at 2018
+   with no 2019 or 2020 rows, Miami starts at 2020, and Paterson at 2023. Read
+   the live sheet, not the `stg_` table, before concluding a year is absent.
 5. **Is it the wrong comps path?** If the number in question is on Overview,
    Landing Page, Demographics, Proficiency YoY or Teacher/Student Roster, it
    came from the `state_comps` CTE — Total / All Students only, pivoted wide —
