@@ -30,7 +30,9 @@ warehouse, auth, or PII is involved.
 
 import asyncio
 import importlib.util
+import json
 import os
+import subprocess
 import sys
 from pathlib import Path
 from types import ModuleType
@@ -260,6 +262,36 @@ def build_placement_arms(server: ModuleType) -> dict[str, dict[str, Any]]:
             "meta": _placement_meta(guidance, "ai_context"),
         },
     }
+
+
+# --- Family 4 catalogs: the assessment view before and after the drain -------
+
+_FIXTURES = Path(__file__).resolve().parent / "fixtures"
+_REPO_ROOT = Path(__file__).resolve().parents[4]
+_ASSESSMENT_VIEW = "student_assessment_scores_view"
+
+
+def load_assessment_meta(which: str) -> dict[str, Any]:
+    """The assessment view's /meta entry. "pre" is the committed pre-drain
+    fixture (origin/main before #5495's text); "post" compiles the working
+    tree's model with Cube's schema compiler (src/cube/compile-meta.js)."""
+    if which == "pre":
+        return json.loads((_FIXTURES / "meta_pre_drain.json").read_text())
+    if which != "post":
+        raise ValueError(f"which must be 'pre' or 'post', got {which!r}")
+    out = subprocess.run(
+        [
+            "node",
+            str(_REPO_ROOT / "src" / "cube" / "compile-meta.js"),
+            str(_REPO_ROOT / "src" / "cube" / "model"),
+        ],
+        capture_output=True,
+        text=True,
+        timeout=180,
+        check=True,
+    )
+    full = json.loads(out.stdout)
+    return {"cubes": [c for c in full["cubes"] if c["name"] == _ASSESSMENT_VIEW]}
 
 
 def load_server() -> ModuleType:
