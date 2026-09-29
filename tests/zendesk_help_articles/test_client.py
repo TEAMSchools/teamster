@@ -1,8 +1,10 @@
+# trunk-ignore-begin(pyright/reportMissingImports): conftest.py puts the scripts folder on sys.path
+import publish_article
 import pytest
 from fakes import FakeSession
-
-# trunk-ignore(pyright/reportMissingImports): conftest.py puts the scripts folder on sys.path
 from publish_article import PublishError, ZendeskHelpCenter, client_from_environment
+
+# trunk-ignore-end(pyright/reportMissingImports)
 
 
 def make_client(routes) -> tuple[ZendeskHelpCenter, FakeSession]:
@@ -119,8 +121,6 @@ def test_client_from_environment_refuses_when_missing(monkeypatch):
 
 
 def test_upload_retries_on_transient_409(tmp_path, monkeypatch):
-    import publish_article
-
     monkeypatch.setattr(publish_article, "RETRY_DELAY_SECONDS", 0)
     img = tmp_path / "a.png"
     img.write_bytes(b"\x89PNG")
@@ -140,8 +140,6 @@ def test_upload_retries_on_transient_409(tmp_path, monkeypatch):
 
 
 def test_upload_gives_up_after_persistent_409(tmp_path, monkeypatch):
-    import publish_article
-
     monkeypatch.setattr(publish_article, "RETRY_DELAY_SECONDS", 0)
     img = tmp_path / "a.png"
     img.write_bytes(b"\x89PNG")
