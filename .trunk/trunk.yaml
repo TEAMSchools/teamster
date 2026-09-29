@@ -74,6 +74,10 @@ lint:
         - .k8s/**/values.yaml
       linters:
         - ALL
+    - paths:
+        - .claude/skills/zendesk-help-articles/references/design-system/**
+      linters:
+        - ALL
   definitions:
     - name: ruff
       commands:
