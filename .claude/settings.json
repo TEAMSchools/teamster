@@ -128,6 +128,7 @@
       "Edit(/.trunk/config/**)",
       "Edit(/.trunk/trunk.yaml)",
       "Edit(//home/vscode/.claude/shell-snapshots/**)",
+      "EnterWorktree",
       "Read(**/.env.*)",
       "Read(**/.env)",
       "Read(**/*.cer)",

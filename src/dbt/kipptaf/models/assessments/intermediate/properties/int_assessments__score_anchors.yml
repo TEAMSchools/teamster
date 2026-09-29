@@ -7,16 +7,18 @@ models:
       and anchor date. Six source branches feed it — internal Illuminate scores
       anchored on the canonical administered date, NJ state (Pearson) and FL
       state (FLDOE) scores on their test date, and iReady, STAR, and DIBELS
-      benchmark composites on their completion, screening, or client date.
-      Internal scores collapse to one row per student, canonical assessment, and
-      region on the earliest administered date. Rows with no anchor date or no
-      student are out of scope and dropped. Byte-identical duplicate rows from a
-      source (re-pulled iReady and STAR sittings) collapse; a score with two
-      different anchor dates keeps both rows, since each date is a separate
-      chance at an enrollment window. Read by
-      int_assessments__resolved_section_enrollments, which references it three
-      times; materializing it once here is what keeps that model's BigQuery plan
-      shallow.
+      benchmark composites on their completion, screening, or client date. State
+      scores come from int_assessments__state_scores and benchmark scores from
+      int_assessments__benchmark_scores, both with the subject area already
+      resolved through the vendor subject crosswalk. Internal scores collapse to
+      one row per student, canonical assessment, and region on the earliest
+      administered date. Rows with no anchor date or no student are out of scope
+      and dropped. Byte-identical duplicate rows from a source (re-pulled iReady
+      and STAR sittings) collapse; a score with two different anchor dates keeps
+      both rows, since each date is a separate chance at an enrollment window.
+      Read by int_assessments__resolved_section_enrollments, which references it
+      three times; materializing it once here is what keeps that model's
+      BigQuery plan shallow.
     config:
       materialized: table
       meta:
@@ -89,12 +91,10 @@ models:
         description: >-
           Subject area aligned to illuminate_subject_area values in
           int_assessments__course_enrollments. For state and vendor scores this
-          is resolved from each source's raw subject value via a LEFT JOIN to
-          stg_google_sheets__assessments__vendor_subject_crosswalk, falling back
-          to the raw value when a source_system/raw_subject pair has no
-          crosswalk row. For internal scores this remains the scaffold's
-          subject_area, passed through unchanged, because that branch's
-          source_system is always null and so never matches the crosswalk.
+          is the illuminate_subject_area of int_assessments__state_scores or
+          int_assessments__benchmark_scores, resolved there through the vendor
+          subject crosswalk with a fallback to the raw subject. For internal
+          scores this is the scaffold's subject_area, passed through unchanged.
         config:
           meta:
             source_column: int_assessments__scaffold.subject_area
@@ -172,17 +172,9 @@ unit_tests:
       - input: ref('int_assessments__assessments_canonical')
         rows:
           - { canonical_assessment_id: 100, administered_date: 2024-03-04 }
-      - input: ref('int_pearson__all_assessments')
+      - input: ref('int_assessments__state_scores')
         rows: []
-      - input: ref('int_fldoe__all_assessments')
-        rows: []
-      - input: ref('int_iready__diagnostic_results')
-        rows: []
-      - input: ref('stg_renlearn__star')
-        rows: []
-      - input: ref('int_amplify__all_assessments')
-        rows: []
-      - input: ref('stg_google_sheets__assessments__vendor_subject_crosswalk')
+      - input: ref('int_assessments__benchmark_scores')
         rows: []
     expect:
       rows:
@@ -206,50 +198,46 @@ unit_tests:
         rows: []
       - input: ref('int_assessments__assessments_canonical')
         rows: []
-      - input: ref('int_pearson__all_assessments')
+      - input: ref('int_assessments__state_scores')
         rows: []
-      - input: ref('int_fldoe__all_assessments')
-        rows: []
-      - input: ref('int_iready__diagnostic_results')
+      - input: ref('int_assessments__benchmark_scores')
         format: sql
         rows: |
           select
-              5 as student_id,
-              2024 as academic_year_int,
-              'BOY' as test_round,
-              'Reading' as subject,
+              'iready' as score_source,
+              5 as student_number,
+              2024 as academic_year,
+              'BOY' as administration_period,
+              'Reading' as raw_subject,
+              'Text Study' as illuminate_subject_area,
               'kippnewark' as _dbt_source_project,
-              date('2024-09-15') as completion_date,
-              650 as overall_scale_score
+              date('2024-09-15') as test_date,
+              cast(650 as numeric) as scale_score,
+              'overall' as response_type
           union all
           select
-              5 as student_id,
-              2024 as academic_year_int,
-              'BOY' as test_round,
-              'Reading' as subject,
+              'iready' as score_source,
+              5 as student_number,
+              2024 as academic_year,
+              'BOY' as administration_period,
+              'Reading' as raw_subject,
+              'Text Study' as illuminate_subject_area,
               'kippnewark' as _dbt_source_project,
-              date('2024-09-15') as completion_date,
-              650 as overall_scale_score
+              date('2024-09-15') as test_date,
+              cast(650 as numeric) as scale_score,
+              'overall' as response_type
           union all
           select
-              5 as student_id,
-              2024 as academic_year_int,
-              'BOY' as test_round,
-              'Reading' as subject,
+              'iready' as score_source,
+              5 as student_number,
+              2024 as academic_year,
+              'BOY' as administration_period,
+              'Reading' as raw_subject,
+              'Text Study' as illuminate_subject_area,
               'kippnewark' as _dbt_source_project,
-              date('2024-09-22') as completion_date,
-              655 as overall_scale_score
-      - input: ref('stg_renlearn__star')
-        rows: []
-      - input: ref('int_amplify__all_assessments')
-        rows: []
-      - input: ref('stg_google_sheets__assessments__vendor_subject_crosswalk')
-        rows:
-          - {
-              Source_System: iready,
-              Raw_Subject: Reading,
-              Illuminate_Subject_Area: Text Study,
-            }
+              date('2024-09-22') as test_date,
+              cast(655 as numeric) as scale_score,
+              'overall' as response_type
     expect:
       rows:
         - {

@@ -144,4 +144,7 @@ left join
     and ss.log_type = 'ARFR (Summer School)'
     and co._dbt_source_project = ss._dbt_source_project
 
-where co.academic_year = {{ var("current_academic_year") }} and co.rn_year = 1
+where
+    co.academic_year = {{ var("current_academic_year") }}
+    and co.rn_year = 1
+    and co.region != 'Miami'

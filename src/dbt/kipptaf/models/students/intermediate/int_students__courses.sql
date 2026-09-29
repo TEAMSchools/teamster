@@ -1,7 +1,13 @@
 with
     powerschool_conformed as (
         select
-            course_number, course_name, credittype, credit_hours, _dbt_source_project,
+            course_number,
+            course_name,
+            credittype,
+            credit_hours,
+            _dbt_source_project,
+
+            'PowerSchool' as sis,
         from {{ ref("stg_powerschool__courses") }}
     ),
 
@@ -44,14 +50,13 @@ with
     ),
 
     focus_conformed as (
-        -- trunk-ignore(sqlfluff/AM04): deduplicate resolves columns at run time
-        select * except (syear, course_id), from focus_deduplicated
+        select * except (syear, course_id), 'Focus' as sis, from focus_deduplicated
     )
 
-select *,
+select course_number, course_name, credittype, credit_hours, _dbt_source_project, sis,
 from powerschool_conformed
 
-full union all corresponding
+union all
 
-select *,
+select course_number, course_name, credittype, credit_hours, _dbt_source_project, sis,
 from focus_conformed

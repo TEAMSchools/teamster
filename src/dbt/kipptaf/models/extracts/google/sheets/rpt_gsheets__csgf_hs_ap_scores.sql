@@ -41,4 +41,3 @@ where
     and e1.school_level = 'HS'
     and e1.rn_year = 1
     and e1.is_enrolled_recent
-    and e1.enroll_status in (0, 3)

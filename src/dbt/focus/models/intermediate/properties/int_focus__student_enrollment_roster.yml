@@ -2,17 +2,17 @@ models:
   - name: int_focus__student_enrollment_roster
     description: >-
       Focus enrollment stints with student and school attributes — decoded grade
-      level (PK becomes -1, KG becomes 0), resolved entry and exit codes,
-      enroll_status (0 enrolled, 2 withdrawn, 3 graduated), a June 30 default
-      exitdate for still-open stints, network first-day-of-school point-in-time
-      flags, and rn_year / year_in_school / year_in_network counters mirroring
-      the PowerSchool enrollment-union conventions. One row per Focus enrollment
-      stint. Composed from the combined int_focus__ models
-      (int_focus__student_enrollment, int_focus__students, int_focus__schools)
-      rather than reaching back to staging, so the labels and the conformed
-      student columns are read, not re-derived. This model carries the
-      denormalized spine that used to live under the name
-      int_focus__student_enrollment; that name now follows the
+      level (PK becomes -1, KG becomes 0), resolved entry and exit codes, the
+      student's current enroll_status (0 enrolled, 2 withdrawn, 3 graduated) on
+      every stint, a June 30 default exitdate for still-open stints, network
+      first-day-of-school point-in-time flags, and rn_year / year_in_school /
+      year_in_network counters mirroring the PowerSchool enrollment-union
+      conventions. One row per Focus enrollment stint. Composed from the
+      combined int_focus__ models (int_focus__student_enrollment,
+      int_focus__students, int_focus__schools) rather than reaching back to
+      staging, so the labels and the conformed student columns are read, not
+      re-derived. This model carries the denormalized spine that used to live
+      under the name int_focus__student_enrollment; that name now follows the
       staging-plus-labels pattern its siblings follow. Internal-only — a rpt_
       view must sit between this model and any external consumer.
     columns:
@@ -128,9 +128,14 @@ models:
             contains_pii: true
       - name: enroll_status
         description: >-
-          Enrollment status sentinel — 0 for enrolled, 2 for withdrawn (a drop
-          code is present), 3 for graduated (the drop code's grad_type is
-          graduated).
+          The student's current enrollment status, repeated on every stint — 0
+          for enrolled, 2 for withdrawn, 3 for graduated — read from the most
+          recent stint (rn_all = 1). That stint reads 3 when its drop code's
+          grad_type is graduated, 2 when any other drop code is present, and 0
+          when it is still open. Student-level rather than per-stint to match
+          PowerSchool's enroll_status, since Focus closes every completed year
+          with a drop code even when the student returns. The per-stint exit
+          reason is exitcode.
       - name: school_level
         description: >-
           School level abbreviation — ES, MS, or HS — mapped from the school's
