@@ -76,8 +76,25 @@ source sheet. Check with the Drive tools: `get_file_metadata` on the exposure's
 sheet ID gives its parent folder (then `get_file_metadata` on that folder for
 its name), and `search_files` with `fullText contains '<sheet id>'` finds a
 Reports sheet that imports it. A source sheet sitting in Reports, or no Reports
-copy, goes under "Known issues, need to fix". The convention is written up in
-`docs/guides/google-sheets.md` once PR #5525 merges.
+copy, goes under "Known issues, need to fix".
+
+Then check the two ways that layout loses data without an error:
+
+- Row caps. Each Reports tab reads a fixed range, such as
+  `IMPORTRANGE(<source>, "<tab>!A1:AD3000")`. Read every tab's formula and
+  compare its cap with the source tab's row count; a cap below the count drops
+  the rest. The Grad Plan NCA tracker read 3,000 of 9,379 rows until 2026-09-28.
+  Formulas need the Sheets API: ask the user to share the Reports sheets with
+  the codespaces service account. In a shared drive only managers can share, so
+  confirm with `get_file_permissions` that the share landed before retrying
+  a 403.
+- Frozen extracts. A source sheet's Connected Sheets extract tabs are copies
+  that change only when someone refreshes them. If `get_file_metadata` shows no
+  change since the sheet was created, nobody refreshes them, and that refresh
+  becomes a procedure in the family skill.
+
+The convention is written up in `docs/guides/google-sheets.md` once PR #5525
+merges.
 
 ## Propose the boundary
 

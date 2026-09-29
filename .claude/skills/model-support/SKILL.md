@@ -32,7 +32,8 @@ the request; if it is unclear, ask.
 - No doc claim ships without the cold review; no skill edit ships without a walk
   test. Ask before each dispatch; the user may skip one for a trivial edit.
 - Student-level rows stay in the terminal and the session scratchpad. Commit
-  messages and PRs get aggregates without small cells.
+  messages, PRs, docs and skill files get aggregates without small cells; a
+  yearly count of 2 early graduates is a small cell.
 - When the user says a column or rule works differently from what the SQL shows,
   search merged PRs for the model and column names before answering, and cite
   the line and the PR once. Then ask one yes-or-no question about changing the
@@ -48,6 +49,17 @@ the request; if it is unclear, ask.
   the issue and PR bodies (with a dated correction line), the published doc, and
   the skill. Then `rg` the repo and search the tracker for the old number so no
   copy survives.
+- Check a claim about a model, yml or doc against `origin/main`
+  (`git show origin/main:<path>` or a fresh worktree), not the main checkout,
+  which lags. A "stale description" finding read off the main checkout had
+  already been fixed on main.
+- Done means the owner said it is done. Green CI and a ready-to-merge review
+  make a PR ready to ask about; they do not finish the project. Ask before
+  marking a project Done, reassigning its tracker task, or telling anyone it is
+  ready.
+- When the owner's screen and the repo disagree on a name (a PowerSchool button,
+  a Tableau field), the screen wins: fix the description to match. A cold review
+  that flags the owner's wording against an older yml has it backwards.
 - Relative paths in commands (`docs/models`, `.claude/skills`) mean the checkout
   being edited. In a worktree, run them with `cd <worktree> &&` in the same
   command; from the main checkout they read stale copies and report a false

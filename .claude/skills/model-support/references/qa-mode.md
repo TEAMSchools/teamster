@@ -120,6 +120,25 @@ itself matches, because workbook calculations or filters can still differ. Tell
 the user it costs a lot of tokens, and wait for a yes before any Tableau MCP
 call or loading `tableau-workbook-xml`.
 
+What a render catches that the warehouse does not, each seen on the Literacy
+Dashboard on 2026-09-28:
+
+- Two views on one page reading different columns. The BAN tiles counted one
+  status column while the bars followed a parameter, so the page showed 57.1%
+  and 63.1% for the same rate. Render once per value of every parameter that
+  switches a column, and compare each view with the BANs.
+- A saved filter shipped as the default. Desktop saves the filter state at
+  publish time, and a Region filter left on one region became what everyone saw.
+  After every owner publish, render with no `viewFilters` and read the filter
+  bar.
+- A region hidden by row-level security. A data source user filter maps Tableau
+  groups to regions; a region on no list is hidden from everyone. The MCP runs
+  as one fixed identity, so a render cannot show what another group sees.
+
+A region missing from a completed year is often `enroll_status`, not a join:
+Miami's closed-year enrollments read 2 (#5598), so a workbook filter on 0 drops
+them. Count by region and status before tracing joins.
+
 ### Unused workbook fields
 
 Offer this after a family change retires or renames columns, or once the owner

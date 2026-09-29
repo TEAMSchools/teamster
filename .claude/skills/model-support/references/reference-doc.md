@@ -107,6 +107,12 @@ partition a file date; it is the export file's school year. Fix every confirmed
 flag. On CARAT, a doc its author believed correct had 13; the gradebook audit
 and Academic Health pages had six each.
 
+A reviewer's evidence can be older than the owner's last edit. When a flag rests
+on a download or a sheet read (a Tableau workbook, a Sheets API pull), check its
+time against the owner's edits and re-read a fresh copy before acting. On DIBELS
+a reviewer flagged calc branches from a download taken before the owner deleted
+them.
+
 Give every known issue its own query before the review. On Academic Health only
 three of six had one, and the reviewer had to write checks for the rest.
 
