@@ -12,7 +12,7 @@ models:
       scheduling column carry a typed NULL for that column (e.g. Illuminate and
       AP carry NULL administration_period; state branches carry NULL
       source_assessment_id). NJ state administrations come from
-      int_pearson__all_assessments, which unions Pearson and Cambium TIDE
+      int_assessments__state_nj_scores, which unions Pearson and Cambium TIDE
       results, and FL state administrations from int_fldoe__all_assessments;
       both supply assessment_type and the test name as data.
     config:

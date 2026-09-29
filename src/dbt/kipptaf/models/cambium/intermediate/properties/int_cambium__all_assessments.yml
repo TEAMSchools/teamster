@@ -1,12 +1,11 @@
 models:
-  - name: int_pearson__all_assessments
+  - name: int_cambium__all_assessments
     description: >-
       Passthrough union of the Newark, Camden and Paterson
-      int_pearson__all_assessments tables: the frozen Pearson history (PARCC,
-      NJSLA, NJSLA Science, NJGPA) that the districts no longer rebuild. Column
-      docs live on the pearson package model. int_assessments__state_nj_scores
-      renames these columns to the shared NJ vocabulary and unions them with
-      Cambium.
+      int_cambium__all_assessments tables: Cambium TIDE NJGPA, NJSLA, NJSLA
+      Science and end-of-course results, already mapped to the shared NJ
+      vocabulary by the cambium package. Column docs live on the package model.
+      int_assessments__state_nj_scores unions it with the Pearson history.
     config:
       meta:
         contains_pii: true
@@ -14,7 +13,7 @@ models:
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
-              - studenttestuuid
+              - student_test_uuid
           config:
             severity: error
     columns:

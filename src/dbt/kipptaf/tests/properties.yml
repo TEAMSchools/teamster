@@ -263,7 +263,7 @@ data_tests:
       meta:
         dagster:
           ref:
-            name: int_pearson__all_assessments
+            name: int_assessments__state_nj_scores
 
   - name: test_people__locations_drift
     description: >-

@@ -4,9 +4,9 @@ with
             dbt_utils.union_relations(
                 source_column_name="_dbt_source_relation_2",
                 relations=[
-                    source("kippnewark_pearson", "int_pearson__all_assessments"),
-                    source("kippcamden_pearson", "int_pearson__all_assessments"),
-                    source("kipppaterson_pearson", "int_pearson__all_assessments"),
+                    source("kippnewark_cambium", "int_cambium__all_assessments"),
+                    source("kippcamden_cambium", "int_cambium__all_assessments"),
+                    source("kipppaterson_cambium", "int_cambium__all_assessments"),
                 ],
             )
         }}

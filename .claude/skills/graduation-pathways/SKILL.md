@@ -8,8 +8,8 @@ description: >-
   PowerSchool for state reporting, or working on
   int_students__graduation_path_codes,
   stg_google_sheets__student_graduation_path_cutoffs,
-  int_pearson__all_assessments or rpt_tableau__graduation_requirements and their
-  upstream models.
+  int_assessments__state_nj_scores or rpt_tableau__graduation_requirements and
+  their upstream models.
 ---
 
 # Graduation Pathway Codes
@@ -84,8 +84,10 @@ arrive.
 vendor's staging model, never inferred — `'NJGPA'` in the Pearson models,
 `'NJGPA-A'` in the Cambium model, and the assessment's own name in
 `stg_pearson__parcc` / `_njsla` / `_njsla_science` so no relation null-fills the
-column. `int_pearson__all_assessments` names it in the `union_relations`
-`include` list and passes it through.
+column. The pearson and cambium packages each carry it up through their
+`int_*__all_assessments` model, and `int_assessments__state_nj_scores` names it
+in both of its `union_relations` `include` lists (one for the Pearson tables,
+one for the Cambium tables) and passes it through.
 
 **Students hold scores on both versions, and the number will grow.** Eight do
 today, and two of them failed the retired test by a handful of points and then
@@ -102,8 +104,8 @@ Do not "simplify" that ordering back to the raw score.
 
 Never key a cut score on cohort alone, and never infer the version from a score
 value or a date. Confirm both scales independently from the data with
-`testperformancelevel` — level 1 tops out one point below the cut, level 2
-starts at it.
+`performance_level` — level 1 tops out one point below the cut, level 2 starts
+at it.
 
 ---
 
@@ -304,7 +306,7 @@ NJDOE posts these at `nj.gov/education/broadcasts/<year>/<mon>/<day>/...`. If
 ### Step 3 — Confirm the cut against our own data
 
 Never enter a published number without checking it. Group that administration's
-scores by `testperformancelevel`: level 1's max should sit one point below the
+scores by `performance_level`: level 1's max should sit one point below the
 published cut, and level 2's min should equal it. If they disagree, stop and
 raise it — either the file or the broadcast reading is wrong.
 
@@ -331,10 +333,12 @@ file to paste. Rules:
 
 ### Step 5 — Code changes, only if the version is new
 
-- Add the version literal to the vendor's staging model, and to
-  `int_pearson__all_assessments`'s `union_relations` `include` list.
-- Add the value to the `accepted_values` lists on `assessment_version` in both
-  `int_pearson__all_assessments` and the cut score properties YAML.
+- Add the version literal to the vendor's staging model. The column is already
+  in both `union_relations` `include` lists in
+  `int_assessments__state_nj_scores`, so no change is needed there.
+- Add the value to the `accepted_values` lists on `assessment_version` in
+  `int_assessments__state_nj_scores`, the cut score properties YAML and, for a
+  Cambium version, the cambium package's `int_cambium__all_assessments`.
 - Add the PowerSchool score field names to the transfer-scores model, and check
   whether the holder name changed.
 - Update the transfer-score user guide and this skill.

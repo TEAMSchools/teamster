@@ -2,12 +2,12 @@ models:
   - name: int_assessments__state_scores
     description: >-
       Every New Jersey and Florida state assessment score, one row per student
-      test record. New Jersey rows come from int_pearson__all_assessments, which
-      carries both Pearson NJSLA/NJGPA results and the Cambium results that
-      replaced them; Florida rows come from int_fldoe__all_assessments (FAST,
-      EOC, and science). Columns are renamed to one shared vocabulary, and
-      columns only one state reports are null on the other state's rows. The
-      vendor subject crosswalk is joined once here, so consumers read
+      test record. New Jersey rows come from int_assessments__state_nj_scores,
+      which carries both the frozen Pearson history and the Cambium results that
+      replaced it; Florida rows come from int_fldoe__all_assessments (FAST, EOC,
+      and science). Columns are renamed to one shared vocabulary, and columns
+      only one state reports are null on the other state's rows. The vendor
+      subject crosswalk is joined once here, so consumers read
       illuminate_subject_area instead of repeating the join. Read by every
       kipptaf model that unions state scores.
     config:
