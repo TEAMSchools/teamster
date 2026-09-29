@@ -1071,10 +1071,11 @@ for editing the sheets safely.
 
 ## Pending work
 
-Two on-hold tracks were combined onto one branch and PR to simplify handover;
-each was previously its own PR against `main`. Both are TBD -- neither is in
-prod -- and need to be finished with the stakeholder who asked for it, not just
-merged as-is:
+Two on-hold tracks were combined onto one branch and PR to simplify handover
+([#5603](https://github.com/TEAMSchools/teamster/issues/5603)); each was
+previously its own PR against `main`. Both are TBD -- neither is in prod -- and
+need to be finished with the stakeholder who asked for it, not just merged
+as-is:
 
 - **Bright Spots tracker**, requested by T&L: real MLL goal values (the sheet
   currently holds placeholders at half the IEP values) and the reference
