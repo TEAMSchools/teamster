@@ -161,6 +161,10 @@ this spec, but the rule loads on every Cube file they open:
   so an author whose edit fails the equality test knows why.
 - **The placement procedure** from _Placement procedure_, in about 10 lines: the
   7 steps and the tie-breaker.
+- **The include-level override quirk:** an `ai_context` override on one member
+  in a view's `includes:` works and stays scoped to that view, but Cube's YAML
+  loader emits it as `aiContext`. Use member-level or view-level `ai_context`
+  instead.
 
 ### Cube and dbt descriptions are separate strings
 
@@ -331,49 +335,79 @@ Re-measure before building, beyond the dated figures:
 
 ### Administrations cube (`student_assessment_administrations`)
 
-| Member                  | Reference text                                                                                                                                                                                                                                                           | `description:`                                                                                                                                                                                                                                                                                                                                                                                                                    | `meta.ai_context:`                                                                                                                                                                                                                                                                                                     |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `administration_period` | Shared, "`administration_period` is populated for every source except Illuminate"; i-Ready, "Administrations", "Resolving 'the most recent diagnostic'", "EOY is administered _after_ NJSLA"; each source's "Administrations" or "Time" bullet; NJ, "A Fall NJGPA slice" | Window within the academic year; the vocabulary is per source. i-Ready and DIBELS: BOY, MOY, EOY, plus Outside Round for i-Ready sittings outside the 3 windows. STAR: Fall, Winter, Spring. NJGPA: Fall (the routine retake window) and Spring. NJSLA: Spring. FL: PM1 to PM3. College: the College Board round. Null for Illuminate and AP. Vendor EOY falls after spring state testing; MOY is the last named round before it. | Only meaningful with assessment_type scoped. A BOY/MOY/EOY filter drops Outside Round, so say which windows you used. "Most recent diagnostic" is the latest named round in the latest academic_year_label, not the max date_taken. An EOY-versus-state comparison in one year is concurrent, not predictive; use MOY. |
-| `source_assessment_id`  | Illuminate, "How many times was this standard assessed"                                                                                                                                                                                                                  | Present                                                                                                                                                                                                                                                                                                                                                                                                                           | "How many times was this assessed" is a distinct count of this, not a row count; count_assessments is that count.                                                                                                                                                                                                      |
+| Member                  | Reference text                                                                                                                                                                                                                                                           | `description:`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | `meta.ai_context:`                                                                                                                                                                                                                                                                                                     |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `administration_period` | Shared, "`administration_period` is populated for every source except Illuminate"; i-Ready, "Administrations", "Resolving 'the most recent diagnostic'", "EOY is administered _after_ NJSLA"; each source's "Administrations" or "Time" bullet; NJ, "A Fall NJGPA slice" | Window within the academic year; the vocabulary is per source. i-Ready and DIBELS: BOY, MOY, EOY, plus Outside Round for i-Ready sittings outside the 3 windows. STAR: Fall, Winter, Spring. NJGPA: Fall (the routine retake window) and Spring. NJSLA and NJSLA Science: Spring. FL FAST: PM1 to PM3; FL end-of-course and science: PM3. College: the College Board round. Every source except Illuminate. i-Ready and DIBELS EOY falls after spring state testing; MOY is the last named round before it. | Only meaningful with assessment_type scoped. A BOY/MOY/EOY filter drops Outside Round, so say which windows you used. "Most recent diagnostic" is the latest named round in the latest academic_year_label, not the max date_taken. An EOY-versus-state comparison in one year is concurrent, not predictive; use MOY. |
+| `source_assessment_id`  | Illuminate, "How many times was this standard assessed"                                                                                                                                                                                                                  | Illuminate assessment id at the administration grain (the canonical id). Illuminate only; null for every other source.                                                                                                                                                                                                                                                                                                                                                                                      | "How many times was this assessed" is a distinct count of this, not a row count; count_assessments is that count.                                                                                                                                                                                                      |
 
 ### Shared cubes
 
-| Member                   | Reference text                                          | `description:`                                                                                                                                     | `meta.ai_context:`                                                              |
-| ------------------------ | ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| `locations.grade_band`   | Shared, "Three different grade fields"                  | Grade band the school serves (ES, MS, HS) — a school attribute, not a student's grade.                                                             | A grade_band filter is a school filter. For a student's grade, use grade_level. |
-| `courses.discipline`     | Shared, "Two different subject fields"                  | Present                                                                                                                                            | —                                                                               |
-| `courses.is_foundations` | Shared, "`is_foundations` marks intervention courses"   | TRUE when the section is a Foundations (intervention) course, per the course-subject crosswalk. The only intervention signal on the student views. | Treat it as course enrollment, not a record of services delivered.              |
-| `students` identifiers   | NJ, "Student identifier"                                | Present on `lea_student_identifier`, `district_student_identifier` and `state_student_identifier`                                                  | —                                                                               |
-| `staff.full_name`        | Shared, "Resolve staff names against `staff_directory`" | Present                                                                                                                                            | — the advice goes to the view instead; see below                                |
+| Member                   | Reference text                                          | `description:`                                                                                    | `meta.ai_context:`                                                              |
+| ------------------------ | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `locations.grade_band`   | Shared, "Three different grade fields"                  | Grade band the school serves (ES, MS, HS): a school attribute, not a student's grade.             | A grade_band filter is a school filter. For a student's grade, use grade_level. |
+| `courses.discipline`     | Shared, "Two different subject fields"                  | Present                                                                                           | —                                                                               |
+| `courses.is_foundations` | Shared, "`is_foundations` marks intervention courses"   | TRUE when the section is a Foundations (intervention) course, per the course-subject crosswalk.   | Treat it as course enrollment, not a record of intervention services delivered. |
+| `students` identifiers   | NJ, "Student identifier"                                | Present on `lea_student_identifier`, `district_student_identifier` and `state_student_identifier` | —                                                                               |
+| `staff.full_name`        | Shared, "Resolve staff names against `staff_directory`" | Present                                                                                           | — the advice goes to the view instead; see below                                |
 
 `staff_lead_teacher` has no members of its own: it `extends: staff`. An
 `ai_context` on `staff.full_name` would therefore also reach `staff_directory`,
 where "resolve against `staff_directory` first" is circular. The fact goes to
 the assessment view's `ai_context`.
 
+A view-level override was tested on 2026-09-29 and rejected. Cube lets a view
+give one included member its own `meta.ai_context` (`- name: full_name` with a
+`meta:` block under `includes:`). Compiled with Cube 1.7.43's schema compiler,
+the override landed on `staff_lead_teacher_full_name` only, not on its sibling
+fields and not on `staff_directory.full_name`. But Cube's YAML loader emits it
+as `aiContext`, while member-level and view-level values keep `ai_context`.
+Moving 1 sentence onto the field is not worth a second key spelling in the
+pointer and the length test.
+
 ### The view (`student_assessment_scores_view`)
 
-`description:` is present. It says what the view holds and which date each
-source's year comes from. The `ai_context:` draft, about 1,200 characters
-against the 2,000 cap:
+Views have no dbt twin, so the split is: `description:` says what the view is,
+and `ai_context:` says how to read results from it. The shipped description is
+corrected: `group` rows are not Illuminate-only, and bare "vendor" is replaced.
 
-> Enrollment-scoped: a score appears only if it resolves to a section
-> enrollment, so totals will not reconcile to vendor or state reports, and
-> i-Ready Outside Round sittings lose the most — treat those counts as a floor.
-> Coverage is uneven by region, source and year, and a source's first year can
-> be partial; check volume by region and year before calling a narrow result a
-> failure or trending across a boundary. A gap between two instruments on the
-> same students is a calibration difference until shown otherwise: report both
-> rates side by side and flag it rather than presenting an achievement gap.
-> There is no growth measure, so any growth figure is analyst-built — say so.
-> Students can sit a vendor diagnostic more than once in a window; de-duplicate
+`description:` (960 characters):
+
+> Assessment scores across Illuminate interims, NJ and FL state tests, and
+> vendor diagnostics (i-Ready, DIBELS, STAR), one row per student x assessment x
+> administration x response type. Enrollment-scoped: a score appears only if it
+> resolves to a section enrollment. pct_proficient is the source-agnostic
+> headline; scale_score is null for Illuminate rows and percent_correct is null
+> for every other source. response_type splits scores into overall, standard and
+> group rows: standard is Illuminate only, and group covers Illuminate, i-Ready
+> and DIBELS. There is no growth measure. is_foundations is the only
+> intervention signal; there is no program- or MTSS-tracking dimension. The Date
+> members resolve for every source but read different dates: the administration
+> date for Illuminate and college, the test date for state tests and vendor
+> diagnostics, so a cross-source date cut mixes the two. Contains direct student
+> identifiers; see access_policy for PII gating.
+
+`ai_context:` (1,216 of 2,000 characters):
+
+> Totals will not reconcile to vendor-diagnostic or state reports, because of
+> enrollment scoping; i-Ready Outside Round sittings lose the most, so treat
+> those counts as a floor. Coverage is uneven by region, source and year, and a
+> source's first year can be partial; check volume by region and year before
+> calling a narrow result a failure or trending across a boundary. A gap between
+> two instruments on the same students is a calibration difference until shown
+> otherwise: report both rates side by side and flag it rather than presenting
+> an achievement gap. Any growth figure is analyst-built; say so. Students can
+> sit a diagnostic more than once in a window, mostly i-Ready; de-duplicate
 > repeat sittings before any student-level count, and since which sitting counts
 > is an open decision, say which you kept. A missing current-year state result
-> is a release lag, not a defect. Query this view, not upstream vendor tables,
+> is a release lag, not a defect. Query this view, not upstream i-Ready tables,
 > which carry re-pull duplicates. A CCSS code's own grade can differ from
 > grade_level_tested; that is spiral review, not an error. Lead-teacher names
 > are stored Last, First; resolve a name against staff_directory before
 > filtering, since a zero-row result is not proof the teacher has no students.
+
+Measured 2026-09-28, behind the repeat-sittings sentence: student-windows with
+more than one test date are 2.6% on i-Ready, 0.4% on STAR, and 7 of about 61,000
+on DIBELS.
 
 Sources in the reference file:
 
@@ -416,12 +450,13 @@ Cube text says each one is open and never states a default (placement step 2).
 Each also goes on the open-decisions list in `assessment-cube-reference.md`, so
 the working group sees it.
 
-| Question                                                                                                                                       | Evidence                                                                                                                                                                                                                                              | Who can answer                                            |
-| ---------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
-| Which `academic_subject` labels count as "math" and which as "ELA"? Already on the reference file's list.                                      | Labels differ by source: state uses English Language Arts and Mathematics, i-Ready and STAR use Math and Reading, DIBELS uses Reading, Illuminate uses Text Study and course names. At K-2, Text Study is the only ELA-equivalent Illuminate subject. | Teaching & Learning                                       |
-| Should a DIBELS subtest a student tested out of count as proficient?                                                                           | `Tested Out` rows carry no `is_mastery`, so `pct_proficient` leaves them out of the denominator entirely.                                                                                                                                             | Teaching & Learning                                       |
-| What do the Illuminate module types TP, ET and WPP stand for?                                                                                  | Titles suggest Test Prep, Exit Ticket, and a Literacy writing task; UA is documented as Unit Assessment.                                                                                                                                              | Whoever maintains the Illuminate assessments AppSheet app |
-| Should grade-band reporting key on the student's `grade_level` or the assessment's `grade_level_tested`? Already on the reference file's list. | The 2 disagree where both are populated, and `grade_level_tested` is null for vendor diagnostics and NJSLA end-of-course tests, so the choice changes results and coverage.                                                                           | Teaching & Learning                                       |
+| Question                                                                                                                                                                                            | Evidence                                                                                                                                                                                                                                              | Who can answer                                            |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| Which `academic_subject` labels count as "math" and which as "ELA"? Already on the reference file's list.                                                                                           | Labels differ by source: state uses English Language Arts and Mathematics, i-Ready and STAR use Math and Reading, DIBELS uses Reading, Illuminate uses Text Study and course names. At K-2, Text Study is the only ELA-equivalent Illuminate subject. | Teaching & Learning                                       |
+| Should a DIBELS subtest a student tested out of count as proficient?                                                                                                                                | `Tested Out` rows carry no `is_mastery`, so `pct_proficient` leaves them out of the denominator entirely.                                                                                                                                             | Teaching & Learning                                       |
+| What do the Illuminate module types TP, ET and WPP stand for?                                                                                                                                       | Titles suggest Test Prep, Exit Ticket, and a Literacy writing task; UA is documented as Unit Assessment.                                                                                                                                              | Whoever maintains the Illuminate assessments AppSheet app |
+| Should grade-band reporting key on the student's `grade_level` or the assessment's `grade_level_tested`? Already on the reference file's list.                                                      | The 2 disagree where both are populated, and `grade_level_tested` is null for vendor diagnostics and NJSLA end-of-course tests, so the choice changes results and coverage.                                                                           | Teaching & Learning                                       |
+| When a student sits the same diagnostic more than once in a window, which sitting counts? Already on the reference file's list; most recent by date is the working convention, not ratified policy. | Repeat sittings are 2.6% of i-Ready student-windows, rare on STAR and DIBELS. Skipping the de-duplication inflates student-level counts and growth figures.                                                                                           | Teaching & Learning                                       |
 
 ## YAML description changes
 
