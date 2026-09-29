@@ -310,8 +310,8 @@ owner.
   plan, discipline and subject totals, which are correct. It matters only when
   you query the model directly. Read one Enrolled row per slot, or use
   `subject_enrolled_credits`, rather than adding rows up. The fix (read the
-  per-course `gpprogresssubjectenrolled.enrolledcredits` instead) is tracked on
-  #5606. Query:
+  per-course `gpprogresssubjectenrolled.enrolledcredits` instead) is written up
+  on #5602. Query:
 
   ```sql
   with
