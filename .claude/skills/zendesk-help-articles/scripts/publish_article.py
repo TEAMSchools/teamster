@@ -163,3 +163,27 @@ def client_from_environment() -> ZendeskHelpCenter:
     return ZendeskHelpCenter(
         values["ZENDESK_SUBDOMAIN"], values["ZENDESK_EMAIL"], values["ZENDESK_TOKEN"]
     )
+
+
+def _id_by_name(items: list[dict], name: str, kind: str) -> int:
+    for item in items:
+        if item.get("name") == name:
+            return int(item["id"])
+    choices = ", ".join(sorted(str(i.get("name")) for i in items))
+    raise PublishError(f"No {kind} named {name!r} in Zendesk. Available: {choices}")
+
+
+def resolve_visibility(
+    client: ZendeskHelpCenter, article: Article
+) -> tuple[int | None, int]:
+    """Map the names in article.yml to ids. Everyone only via the literal `everyone`."""
+    if article.user_segment == EVERYONE:
+        segment_id = None
+    else:
+        segment_id = _id_by_name(
+            client.user_segments(), article.user_segment, "user segment"
+        )
+    group_id = _id_by_name(
+        client.permission_groups(), article.permission_group, "permission group"
+    )
+    return segment_id, group_id
