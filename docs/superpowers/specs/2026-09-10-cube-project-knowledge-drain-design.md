@@ -135,9 +135,10 @@ below makes the answer irrelevant.
   response-size budget, and every `ai_context` adds to it. The `dates` values
   also repeat on every view that includes `dates`. Step 0 records the size of
   the full-catalog and assessment-view `meta` responses before and after.
-- **Cube Cloud.** The measurement above ran on a local server. Step 0 confirms
-  the key on the branch staging deployment before the rest of the values are
-  written.
+- **REST check on the branch.** Before merge, a local Cube server on the
+  branch's model confirms over REST `/meta` that every `ai_context` comes back:
+  member-level and view-level as `ai_context`, the 2 view overrides as
+  `aiContext`. REST is the path our MCP server and other clients use.
 
 ### The authoring rule changes in the same PR
 
@@ -551,7 +552,8 @@ keyed on the code silently drops every Illuminate group row.
 4. No view override hides a cube-level `ai_context`: an override on a member
    whose cube member carries `ai_context` must contain that text.
 
-Cube Cloud validates the model on the branch staging deployment before merge.
+A local Cube server compiles the branch's model and serves it over REST before
+merge; the `ai_context` check above runs against it.
 
 ## Server changes
 
@@ -769,8 +771,8 @@ overrides rule 2's "without the pointer"; the eval did not show the pointer
 helps. The reasons are not in the data. The pointer costs one sentence. It is
 the only mechanism that gives `ai_context` meaning to an agent, the same one the
 third-party Cube MCP server uses. And the real `ai_context` values carry
-instructions that matter more than this test's crosswalk. The staging check
-before merge confirms nothing regresses.
+instructions that matter more than this test's crosswalk. The local REST check
+before merge confirms the pointer's key names match what `/meta` returns.
 
 | Arm          | Wrong year (95% interval) | Correct | No query |
 | ------------ | ------------------------- | ------- | -------- |
@@ -794,9 +796,9 @@ before merge confirms nothing regresses.
 Raw records: `src/cube/mcp/eval/out/placement_2026-09-29_haiku.jsonl`
 (gitignored, local only).
 
-Still to do before any `ai_context` ships: confirm the key on the branch staging
-deployment, and record the size of the full-catalog and
-`student_assessment_scores_view` `meta` responses before and after.
+Still to do before merge: the local REST check (_meta.ai_context reaches the
+model_), and the size of the full-catalog and `student_assessment_scores_view`
+`meta` responses before and after.
 
 ### Why family 4 is small
 
@@ -894,16 +896,20 @@ The open decisions have one home: the orchestrator's _Flag, don't invent_ list
 
 ## PR and validation
 
-#5495 carries all of it, this spec included, and closes #5236.
+#5495 carries all of it, this spec included, and closes #5236. Validation runs
+against our own path: the MCP server and Cube's REST API, on a local Cube server
+at the pinned version for anything the model serves.
 
-| Change                                                    | Validation                                                                      |
-| --------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| Step 0: `ai_context` on the `dates` academic-year members | crosswalk eval families 1 to 3, arm C against arm B; result recorded either way |
-| Descriptions and their dbt twins, `ai_context`, the rule  | `uv run pytest tests/cube/`; Cube Cloud branch staging validates the model      |
-| `load` and `meta` docstrings, empty-result note           | `uv run pytest tests/cube/`                                                     |
-| `count_assessments`                                       | branch staging query returns quartile-shaped counts                             |
-| Reference and orchestrator trim                           | every deleted fact has a home in the diff; the PR body lists them               |
-| All of it                                                 | eval run; arm B beats arm A                                                     |
+| Change                                                             | Validation                                                                                                                                      |
+| ------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| Step 0                                                             | done 2026-09-29; result recorded under _Step 0_                                                                                                 |
+| Descriptions and their dbt twins, `ai_context`, the authoring rule | `uv run pytest tests/cube/` (the 4 schema tests); dbt Cloud CI passes                                                                           |
+| The 2 view overrides                                               | schema test 4; the local REST check shows each as `aiContext` on its view member only                                                           |
+| `ai_context` reach and size                                        | the local REST check; `meta` response sizes recorded before and after                                                                           |
+| `load` and `meta` docstrings, empty-result note                    | `uv run pytest tests/cube/`                                                                                                                     |
+| `count_assessments`                                                | a local REST `/load` returns quartile-shaped counts (1, 1, 2, 3 per standard-year, measured 2026-09-22)                                         |
+| Reference and orchestrator trim                                    | every deleted fact has a home in the diff; the 2 new questions are on _Flag, don't invent_; no pointer into a deleted section survives (`grep`) |
+| All of it                                                          | eval family 4 passes per its rules, at most 2 revision rounds; arm C and the Sonnet report run are recorded but do not gate                     |
 
 The PR body carries the markdown lines it deleted, so a reviewer can see each
 fact beside its new wording.
@@ -916,8 +922,13 @@ fact beside its new wording.
   instead is a separate issue, noted there.
 - Partitioning `fct_assessment_scores_enrollment_scoped`, and finding why
   `proficiency_rollup` serves nothing: #5557.
-- The org-level claude.ai skill. The trimmed markdown is shaped for it; the
-  skill itself is later work.
+- Building the org-level claude.ai skill. The trimmed orchestrator is its first
+  draft, and eval arm C sizes what it would add; the skill itself is later work.
+- The Cube MCP call log, and retiring the Project's session-log protocol: #5613.
+- Answering the open questions under _Open questions for the network_: Teaching
+  & Learning, plus whoever maintains the Illuminate AppSheet app for TP, ET and
+  WPP.
+- Agents that query Cube through the SQL API; see _The supported agent path_.
 - `pct_proficient_formative` semantics. Whether to widen it or add a
   module-coded rollup is a pooling decision on the open-policy list.
 - Any change to `int_assessments__response_rollup` or the reports that read it.
