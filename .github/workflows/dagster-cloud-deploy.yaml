@@ -43,7 +43,6 @@ permissions:
   id-token: write
   contents: read
   pull-requests: write
-  packages: write
 
 jobs:
   prerun:
@@ -72,6 +71,11 @@ jobs:
           - linux-amd64
           - linux-arm64
     runs-on: teamschools-${{ matrix.runner }}
+    # job-level block replaces the workflow-level one: only build pushes to GHCR
+    permissions:
+      id-token: write
+      contents: read
+      packages: write
     timeout-minutes: 60
     steps:
       - name: Prepare
@@ -126,7 +130,8 @@ jobs:
             inputs.code-location }}-${{ matrix.runner }}
           cache-to:
             type=registry,ref=ghcr.io/teamschools/teamster-buildcache:${{
-            inputs.code-location }}-${{ matrix.runner }},mode=max
+            inputs.code-location }}-${{ matrix.runner
+            }},mode=max,ignore-error=true
           platforms: ${{ env.PLATFORM_PAIR }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
