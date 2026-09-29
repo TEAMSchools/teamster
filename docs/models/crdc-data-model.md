@@ -391,6 +391,10 @@ Every query below returns aggregates only.
 
 ### Open questions
 
+Settle the first five with the data team lead at the cycle's kickoff, before the
+collection sheet goes out. The kickoff doc carries them in its open questions
+block until each has an answer.
+
 - **Who leads compliance?** The civil rights coordinator item, the harassment
   policy item, and sign-off on the discipline and restraint data need an owner.
   Question for the data team lead.
@@ -405,6 +409,11 @@ Every query below returns aggregates only.
   them Nonbinary, and the OCR form has no column for them. Decision for the data
   team lead and compliance: how these students are counted, and then a change to
   `crdc_gender` to match.
+- **Which new optional 2025-26 items does KTAF answer?** Instruction type and
+  remote instruction, students served in non-LEA facilities (with their
+  restraint and seclusion), threat assessment teams and referrals, and teachers
+  certified in bilingual education. None has a warehouse source; each one KTAF
+  answers needs an owner and rows on the collection sheet.
 - **Is there a published workbook?** The known copy of the CRDC Dashboard
   workbook is a `.twb` file in the CRDC folder on the shared drive. Nobody has
   confirmed whether a copy is published on Tableau Server.

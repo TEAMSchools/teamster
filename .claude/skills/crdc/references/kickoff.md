@@ -60,6 +60,9 @@ Keep an "Open questions" block in the doc until each is settled:
   before the entry window opens; access requests take time.
 - How do we report students recorded as nonbinary, now that OCR removed the
   category?
+- Which of the new optional items does KTAF answer? The list comes from
+  [rollover.md](rollover.md); each item answered needs an owner in the table
+  above.
 
 ## Milestones
 

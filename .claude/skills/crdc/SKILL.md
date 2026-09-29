@@ -43,8 +43,11 @@ need to fix" before trusting a count.
   getting a yes. Check counts in the warehouse first
   (`kipptaf_tableau.rpt_tableau__crdc_roster`, a view).
 - Open questions for the data team lead (compliance lead, discipline owner,
-  Paterson system access, nonbinary reporting) are asked, not answered. Do not
-  pick an answer on their behalf; list them in the kickoff doc until settled.
+  Paterson system access, nonbinary reporting, which new optional items to
+  answer) are asked, not answered. When a cycle starts, ask each one still open
+  in the reference doc's "Open questions" before drafting the kickoff doc. Do
+  not pick an answer on their behalf; list them in the kickoff doc until
+  settled.
 
 ## Route by task
 
