@@ -295,6 +295,9 @@ unit_tests:
       in AY2026, so both years read 0. Student 7 closed AY2025 the same way then
       withdrew in AY2026 with W3A, so both years read 2. Student 8 graduated in
       AY2025 with W06 after a routine AY2024 close, so both years read 3.
+      Student 9 moved campuses within AY2026, closing the first stint with W02
+      and holding the second open, so both stints read 0; the later exitdate
+      decides which same-year stint is most recent.
     given:
       - input: ref('int_focus__students')
         format: sql
@@ -309,6 +312,9 @@ unit_tests:
             cast(null as date)
           union all
           select 8, 8, 'H', 'Eight', cast(null as string), cast(null as string),
+            cast(null as date)
+          union all
+          select 9, 9, 'I', 'Nine', cast(null as string), cast(null as string),
             cast(null as date)
       - input: ref('int_focus__student_enrollment')
         format: sql
@@ -348,6 +354,14 @@ unit_tests:
           select 81, 8, 2025, 300, cast(null as int64), cast(null as int64),
             3, date '2025-08-12', date '2026-06-04', cast(null as string),
             timestamp '2025-07-01 00:00:00'
+          union all
+          select 90, 9, 2026, 100, cast(null as int64), cast(null as int64),
+            4, date '2026-08-12', date '2026-09-01', cast(null as string),
+            timestamp '2026-07-01 00:00:00'
+          union all
+          select 91, 9, 2026, 200, cast(null as int64), cast(null as int64),
+            cast(null as int64), date '2026-09-02', cast(null as date),
+            cast(null as string), timestamp '2026-09-02 00:00:00'
           )
       # empty: left-joined, contributes nothing to the status under test
       - input: ref('int_focus__schools')
@@ -364,6 +378,8 @@ unit_tests:
           select 2, 'W3A', 'transfer'
           union all
           select 3, 'W06', 'graduated'
+          union all
+          select 4, 'W02', cast(null as string)
       # empty: left-joined, contributes nothing to the status under test
       - input: ref('int_focus__school_year_first_day')
         rows: []
@@ -387,6 +403,12 @@ unit_tests:
         - student_enrollment_id: 81
           exitcode: W06
           enroll_status: 3
+        - student_enrollment_id: 90
+          exitcode: W02
+          enroll_status: 0
+        - student_enrollment_id: 91
+          exitcode: null
+          enroll_status: 0
 
   - name: test_int_focus__attendance_daily_code_mapping_and_scaffold
     model: int_focus__attendance_daily

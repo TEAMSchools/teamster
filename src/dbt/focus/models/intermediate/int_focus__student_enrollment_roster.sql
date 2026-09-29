@@ -229,9 +229,7 @@ select
 
     if(rn_year = 1, year_in_network, null) as year_in_network,
 
-    -- #5598: student-level current status, as PowerSchool stamps it. Focus
-    -- closes every year with a drop code (W01/W02 at a routine rollover), so
-    -- the per-stint derivation read nearly every completed year as withdrawn.
+    -- #5598: student-level current status; rationale in the properties yml.
     first_value(enroll_status) over (
         partition by student_number order by rn_all
     ) as enroll_status,
