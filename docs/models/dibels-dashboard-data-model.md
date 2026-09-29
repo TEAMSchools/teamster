@@ -1071,12 +1071,24 @@ for editing the sheets safely.
 
 ## Pending work
 
-- Bright Spots tracker: on hold, not in prod
-  ([#4952](https://github.com/TEAMSchools/teamster/issues/4952),
-  [PR #4964](https://github.com/TEAMSchools/teamster/pull/4964)).
-- Camden benchmark completion tracking: pending
-  ([#4896](https://github.com/TEAMSchools/teamster/issues/4896),
-  [PR #4902](https://github.com/TEAMSchools/teamster/pull/4902)).
+Two on-hold tracks were combined onto one branch and PR to simplify handover;
+each was previously its own PR against `main`. Both are TBD -- neither is in
+prod -- and need to be finished with the stakeholder who asked for it, not just
+merged as-is:
+
+- **Bright Spots tracker**, requested by T&L: real MLL goal values (the sheet
+  currently holds placeholders at half the IEP values) and the reference
+  population for "above average growth" are still open questions for T&L.
+  Formerly [PR #4964](https://github.com/TEAMSchools/teamster/pull/4964); design
+  and open questions on
+  [#4952](https://github.com/TEAMSchools/teamster/issues/4952).
+- **Camden benchmark completion tracking**, requested by KIPP Sumner Academy and
+  Lanning Square Primary (the two Camden schools whose hand-maintained sheet it
+  replaces): whether to exclude self-contained/out-of-district students, the
+  worklist's sheet-volume ceiling, and its exposure are still open with the
+  schools. Formerly
+  [PR #4902](https://github.com/TEAMSchools/teamster/pull/4902); details on
+  [#4896](https://github.com/TEAMSchools/teamster/issues/4896).
 
 ## Owner
 
