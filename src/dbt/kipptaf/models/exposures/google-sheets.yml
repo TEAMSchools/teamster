@@ -452,7 +452,7 @@ exposures:
     label: Unified KFWD Processes Document
     type: application
     owner:
-      name: Data Team - grangel
+      name: Data Team - awalters
     url: https://docs.google.com/spreadsheets/d/1mX5SnRvMXU-Gbm07raHA3UkEhvo0zhqffz0uah1GSHE
     depends_on:
       - ref("rpt_gsheets__kippfwd_contacts")
@@ -577,7 +577,7 @@ exposures:
     label: gsheets__gpa_roster
     type: application
     owner:
-      name: Data Team - grangel
+      name: Data Team - awalters
     url: https://docs.google.com/spreadsheets/d/1hXFEfXEEU9aGG5k29nvTTn459JJHEWs0b__iqVoG9-M
     depends_on:
       - ref("rpt_gsheets__gpa_roster")
@@ -675,7 +675,7 @@ exposures:
     label: College Assessments Long
     type: analysis
     owner:
-      name: Data Team - grangel
+      name: Data Team - awalters
     url: https://docs.google.com/spreadsheets/d/1ij4Ik1xXep73cput3cyR7jnVk9MGRh45L88qTlzN10A
     depends_on:
       - ref("rpt_gsheets__college_assessments_long")
@@ -688,7 +688,7 @@ exposures:
     label: College Assessments Wide
     type: analysis
     owner:
-      name: Data Team - grangel
+      name: Data Team - awalters
     url: https://docs.google.com/spreadsheets/d/1gmYyGYxtlnh_DiTAphjUoJQv1hNiYwUABliSXe6AuYk
     depends_on:
       - ref("rpt_gsheets__college_assessments_wide")
@@ -758,7 +758,7 @@ exposures:
     label: GPA Flags Report
     type: analysis
     owner:
-      name: Data Team - grangel
+      name: Data Team - awalters
     url: https://docs.google.com/spreadsheets/d/1zJUjzKBmGLmx5ldEit-q8BukqDiNREp3ihzRwDnl0H4
     depends_on:
       - ref("rpt_gsheets__gpa_flags_report")
@@ -772,7 +772,7 @@ exposures:
     label: Award Ceremony GPA
     type: analysis
     owner:
-      name: Data Team - grangel
+      name: Data Team - awalters
     url: https://docs.google.com/spreadsheets/d/1e9CvEtzNEK3zY0ObI3VOL3_K2O6-dWV65B0Lyb5106Y
     depends_on:
       - ref("rpt_gsheets__award_ceremony_gpa")
@@ -786,7 +786,7 @@ exposures:
     label: Grad Plan Tracking
     type: analysis
     owner:
-      name: Data Team - grangel
+      name: Data Team - awalters
     url: https://docs.google.com/spreadsheets/d/1pp-1OBUQrRQMskC2WwG91s79LsRWkPluv5evJ8TJS2E
     depends_on:
       - ref("rpt_gsheets__grad_plan_tracking")
@@ -800,7 +800,7 @@ exposures:
     label: Gradebook Audit Student Flags
     type: analysis
     owner:
-      name: Data Team - grangel
+      name: Data Team - awalters
     url: https://docs.google.com/spreadsheets/d/1d9hApvHMf_865-rQgXwnpxcbOLhiMaP6tkDz_YZTdSU
     depends_on:
       - ref("rpt_gsheets__gradebook_audit_student_flags")
@@ -814,7 +814,7 @@ exposures:
     label: Gradebook Audit Expectations Upload Template
     type: application
     owner:
-      name: Data Team - grangel
+      name: Data Team - awalters
     url: https://docs.google.com/spreadsheets/d/1ofCxW0pLniywn_XZT69S23vhcDs6y9ElAtJa5fTtiT0
     depends_on:
       - ref("rpt_gsheets__gradebook_audit_template")
