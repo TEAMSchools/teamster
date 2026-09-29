@@ -475,10 +475,12 @@ Portal My Tasks board as of 2026-09-28: 27 tasks, all due 10/9/2026.
 - **Reopened 2026-09-29: Enrollment (HSDC), SAT, AP Scores and AP Offerings.**
   The HS population dropped students who finished AY2025 and left over the
   summer (`enroll_status` filter, now removed), and the Enrollment course flags
-  were wrong. Corrected: Enrollment 1,851 students (170 added to the tab), SAT
-  and AP Scores gain the students among them who tested, and AP Offerings gains
-  grade 10 for AP US History at Newark Collegiate. Repaste those tabs from the
-  models and move the three Completed tasks back to Ready for Review.
+  were wrong. Corrected: Enrollment 1,851 students. The model gained 183 (the
+  168 summer leavers plus 15 the tab already had, since they were coded after it
+  was filled); the tab gained 170 (the 168 plus 2 it had left out), SAT and AP
+  Scores gain the students among them who tested, and AP Offerings gains grade
+  10 for AP US History at Newark Collegiate. Repaste those tabs from the models
+  and move the three Completed tasks back to Ready for Review.
 - Enrollment (HSDC) is waiting on questions to Casey Gibson. Enrollment & Annual
   School Info is shared: budget fields Laszlo's, teacher and school leader
   fields Kevin's, ADA and chronic absenteeism Walters', and the enrollment
