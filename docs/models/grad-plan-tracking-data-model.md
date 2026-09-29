@@ -308,8 +308,9 @@ owner.
   Newark and Camden. The school trackers are not affected: the Sources sheet's
   extract tabs never pull `earned_credits` or `potential_credits`, only the
   plan, discipline and subject totals, which are correct. It matters only when
-  you query the model directly. Read one Enrolled row per slot, or use
-  `subject_enrolled_credits`, rather than adding rows up. The fix (read the
+  you query the model directly. Read one Enrolled row per slot, or read
+  `subject_enrolled_credits` once per slot (it repeats on every row in the slot,
+  Earned rows included), rather than adding rows up. The fix (read the
   per-course `gpprogresssubjectenrolled.enrolledcredits` instead) is written up
   on #5602. Query:
 
