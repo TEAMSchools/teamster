@@ -218,13 +218,13 @@ non-transfer Y1 stored grade for it (any grade, an F included), in grade 9 or
 above, stored at the same school as their reporting-year enrollment row.
 Semester courses count (PowerSchool stores their final as a Y1 on the semester
 term); a section with quarter grades but no Y1 does not. A student with no
-qualifying Y1 at all gets a blank rather than `N`. Rerun against this cycle's
-data: AP moved by a handful of students each way, honors lost a couple of dozen
-Y's (about half transfer-only, half enrollments with no Y1) and gained a few,
-dual enrollment gained a few, and CTE stays `N` for everyone because PowerSchool
-has no CTE college credits recorded on any course. The rule is on the model's
-properties YAML `description:`. If CSGF questions a flag on a resubmission,
-expect it to differ slightly from what was submitted this cycle.
+qualifying Y1 at all reads `N`. Rerun against this cycle's data: AP moved by a
+handful of students each way, honors lost a couple of dozen Y's (about half
+transfer-only, half enrollments with no Y1) and gained a few, dual enrollment
+gained a few, and CTE stays `N` for everyone because PowerSchool has no CTE
+college credits recorded on any course. The rule is on the model's properties
+YAML `description:`. If CSGF questions a flag on a resubmission, expect it to
+differ slightly from what was submitted this cycle.
 
 **`rpt_gsheets__csgf_hs_enrollment`'s fixes also shipped in PR #5059 and are
 live:** `exited_hs`, `FDC` in the FRL/SED flag, and the corrected

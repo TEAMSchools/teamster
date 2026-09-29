@@ -57,13 +57,18 @@ select
     e.cumulative_y1_gpa as weighted_cumulative_gpa,
     e.exited_hs,
 
-    c.has_participated_in_ap_courses,
-    c.has_participated_in_honors_courses,
-    c.has_participated_in_dual_enrollment_courses,
-    c.has_participated_in_cte_courses,
-
     'NA' as has_participated_in_ib_courses,
     'NA (not offered)' as passed_integrated_math_1,
+
+    /* a student with no Y1 grade at the school reads N, not blank */
+    coalesce(c.has_participated_in_ap_courses, 'N') as has_participated_in_ap_courses,
+    coalesce(
+        c.has_participated_in_honors_courses, 'N'
+    ) as has_participated_in_honors_courses,
+    coalesce(
+        c.has_participated_in_dual_enrollment_courses, 'N'
+    ) as has_participated_in_dual_enrollment_courses,
+    coalesce(c.has_participated_in_cte_courses, 'N') as has_participated_in_cte_courses,
 
     case
         e.ethnicity

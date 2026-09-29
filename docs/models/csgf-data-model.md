@@ -152,7 +152,7 @@ joined on course number and region) and its NJ extension
 populated `ctecollegecredits`, honors is a catalog name containing "Honors",
 dual enrollment is a catalog name ending "(DE)". `ctecollegecredits` is empty on
 every course today, so the CTE flag is `N` for everyone. A student with no
-qualifying Y1 at all gets NULL rather than `N`.
+qualifying Y1 at all reads `N`.
 
 Before this change the model read course enrollments at any school in the
 region, unioned in transfer grades from other schools, and kept one course per
