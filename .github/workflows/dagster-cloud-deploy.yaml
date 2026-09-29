@@ -43,6 +43,7 @@ permissions:
   id-token: write
   contents: read
   pull-requests: write
+  packages: write
 
 jobs:
   prerun:
@@ -96,6 +97,13 @@ jobs:
       - name: gcloud auth configure-docker
         run: gcloud auth configure-docker ${{ vars.GCP_REGION }}-docker.pkg.dev
 
+      - name: Log in to GHCR
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
@@ -111,12 +119,14 @@ jobs:
         with:
           context: .
           # registry, not gha: the repo's 10 GB Actions cache evicts our layers (#5393)
+          # GHCR, not Artifact Registry: runners are GitHub-hosted, so pulling
+          # from GCP is billed as internet egress on every build
           cache-from:
-            type=registry,ref=${{ env.REGISTRY_IMAGE }}:buildcache-${{
-            matrix.runner }}
+            type=registry,ref=ghcr.io/teamschools/teamster-buildcache:${{
+            inputs.code-location }}-${{ matrix.runner }}
           cache-to:
-            type=registry,ref=${{ env.REGISTRY_IMAGE }}:buildcache-${{
-            matrix.runner }},mode=max
+            type=registry,ref=ghcr.io/teamschools/teamster-buildcache:${{
+            inputs.code-location }}-${{ matrix.runner }},mode=max
           platforms: ${{ env.PLATFORM_PAIR }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
