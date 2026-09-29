@@ -135,9 +135,10 @@ Dashboard on 2026-09-28:
   groups to regions; a region on no list is hidden from everyone. The MCP runs
   as one fixed identity, so a render cannot show what another group sees.
 
-A region missing from a completed year is often `enroll_status`, not a join:
-Miami's closed-year enrollments read 2 (#5598), so a workbook filter on 0 drops
-them. Count by region and status before tracing joins.
+Students missing from a completed year are often `enroll_status`, not a join: it
+is the student's status today, so a workbook filter on 0 drops everyone who has
+left since (`yaml-and-tests.md` → Past-year filters). Count by region and status
+before tracing joins.
 
 ### Unused workbook fields
 
