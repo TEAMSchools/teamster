@@ -10,7 +10,9 @@ Almost always an unresolved `localstudentidentifier`. Background: doc
    the thing under suspicion. A Cambium attempt with `test_status` other than
    `completed` is filtered out upstream of this model and of the detector, so it
    never shows here and no crosswalk row can bring it back (see
-   [after-a-load.md](after-a-load.md)).
+   [after-a-load.md](after-a-load.md)). No row at all, by state id, means the
+   file never loaded: check the Cambium or Pearson asset's latest
+   materialization in Dagster before anything in this procedure.
 2. Check whether the detector flags it. Run
    `test_incorrect_student_number_pearson`. Its failure rows carry
    `studenttestuuid`, both identifiers, the name, the year and the test code.
@@ -42,7 +44,8 @@ Almost always an unresolved `localstudentidentifier`. Background: doc
    join still needs year and district to match an enrollment with `rn_year = 1`.
    Without one, a sheet row changes nothing and never expires: the unmatchable
    case, an Ops question. Check the year first: the dashboard publishes a
-   rolling seven years, so an older flagged row is not worth chasing.
+   rolling window (the current year and the seven before it), so an older
+   flagged row is not worth chasing.
 
    ```sql
    select academic_year, _dbt_source_project, student_number
@@ -195,13 +198,15 @@ Outcomes: `agrees`, `ambiguous`, `no_pick_identity`, `no_pick_not_enrolled`, and
 A disagreement is serious: a sheet row points at a different student than the
 evidence supports. Investigate before assuming the rules are wrong.
 
-The 2026-09-17 audit replayed 81 rows: 66 agree, 2 ambiguous, 7
-`no_pick_identity`, 6 `no_pick_not_enrolled`, 0 disagreements. The sheet has
-grown since, so compare disagreements and the shape of the non-agreeing rows,
-not totals. The doc's _Crosswalk sheet_ section carries the interpretation:
-leave non-reproducing rows alone and look at the date of birth first. Take
-`ambiguous` counts only from runs made after the analysis gained its `ambiguous`
-bucket; older runs dropped those rows and undercount.
+Run it with [../scripts/audit_crosswalk.py](../scripts/audit_crosswalk.py) on
+the compiled analysis; it prints counts only. Baseline 2026-09-29, after the
+name normalization: 365 sheet rows, 329 agree, 0 disagree, the rest ambiguous,
+flagged for review or with no pick. The sheet grows, so compare disagreements
+and the shape of the non-agreeing rows, not totals. The doc's _Crosswalk sheet_
+section carries the interpretation: leave non-reproducing rows alone and look at
+the date of birth first. Take `ambiguous` counts only from runs made after the
+analysis gained its `ambiguous` bucket; older runs dropped those rows and
+undercount.
 
 Resist adding a tier to absorb `no_pick_identity` rows. A new tier is justified
 only by a deterministic, generalizable pattern, the same bar the College Board

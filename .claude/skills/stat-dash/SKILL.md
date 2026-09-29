@@ -22,9 +22,12 @@ description: >-
 Read
 [`docs/models/stat-dashboard-data-model.md`](../../../docs/models/stat-dashboard-data-model.md)
 from the top through _Terms_, stopping at `## Where the data comes from`, before
-answering anything. Then read the section the route below names. The doc is
-authoritative for lineage, the dual-vendor union, the two comps paths, the
-controlled vocabulary, decisions and open issues.
+answering anything. The doc is long: list its headings first with
+`rg -n '^#{2,4} ' docs/models/stat-dashboard-data-model.md` and pass `offset`
+and `limit` so the Read stops at the named heading. Then read the section the
+route below names the same way. The doc is authoritative for lineage, the
+dual-vendor union, the two comps paths, the controlled vocabulary, decisions and
+open issues.
 
 Four facts that cause most of the wrong answers here:
 
@@ -80,6 +83,7 @@ Read the one file for your task.
 | A comparison reads `false`, or a comp is missing                        | [references/comps-debugging.md](references/comps-debugging.md)                                                         |
 | Verify a comps-model change against production                          | [references/comps-debugging.md](references/comps-debugging.md)                                                         |
 | July rollover, or spring preliminary scores                             | [references/rollover.md](references/rollover.md)                                                                       |
+| Two views show different comp numbers for the same test                 | doc _The two comps paths_ (under _How the models work_), stop at `## Supporting models`                                |
 | Which view reads what, or what a view shows                             | doc _Dashboard outline_, stop at `## How the models work`                                                              |
 | How a model works, or a change to the NJ vendor mapping                 | doc _How the models work_ and _Supporting models_, stop at `## Inputs`; then _Decisions_ before proposing any redesign |
 
@@ -96,3 +100,10 @@ Read the one file for your task.
   the same name. Change one, change the other.
 - The exposure has no `cron_schedule`; Tableau Server refreshes the extracts, so
   a model change shows nothing until that refresh.
+
+## Scripts
+
+- [scripts/audit_crosswalk.py](scripts/audit_crosswalk.py): replays every
+  crosswalk sheet row through the compiled tiered matcher and prints counts;
+  exits 1 on any disagreement. Procedure in
+  [references/crosswalk.md](references/crosswalk.md).

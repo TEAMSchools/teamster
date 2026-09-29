@@ -206,6 +206,9 @@ models:
         description: >-
           Grade of the test form from the assessment record. NULL on preliminary
           rows.
+        config:
+          meta:
+            contains_pii: true
       - name: admin
         data_type: string
         description:
@@ -359,16 +362,25 @@ models:
         description: >-
           Course number of the student's course in this discipline in the
           assessment year.
+        config:
+          meta:
+            contains_pii: true
       - name: course_name
         data_type: string
         description: >-
           Course name of the student's course in this discipline in the
           assessment year.
+        config:
+          meta:
+            contains_pii: true
       - name: school_current
         data_type: string
         description: >-
           School abbreviation for the student's current-year course in the same
           credit type.
+        config:
+          meta:
+            contains_pii: true
       - name: teachernumber_current
         data_type: string
         description:
@@ -388,6 +400,9 @@ models:
           Assessment grade band. 'HS' for high-school-level test codes (ALG02,
           GEO01, MATGP, ELA09-11, ELAGP, SCI11, and ALG01 taken in grade 9 or
           above), '3-8' for all others.
+        config:
+          meta:
+            contains_pii: true
       - name: most_recent_grade_level
         data_type: int64
         description: >

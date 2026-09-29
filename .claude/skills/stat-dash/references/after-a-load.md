@@ -12,7 +12,10 @@ Run these before anyone opens the dashboard:
    resolved ids only) and on `rpt_tableau__state_assessments_dashboard`
    (`academic_year`, `student_number`, `test_code`, `admin`, `results_type`). A
    failure of either is a duplicate attempt arriving: read the failing rows
-   rather than re-running the build.
+   rather than re-running the build. A failing test holds nothing back: kipptaf
+   `int_pearson__all_assessments` and both `rpt_` models are views, so the
+   duplicates are already in what Tableau reads. Only the extract, refreshed on
+   Tableau Server, stands between them and viewers; fix before its next refresh.
 
 ## Procedure: A roster column is only part-colored
 

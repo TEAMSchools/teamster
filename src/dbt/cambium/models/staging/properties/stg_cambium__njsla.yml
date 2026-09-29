@@ -95,6 +95,9 @@ models:
         data_type: string
         description: >-
           Cambium test lifecycle status, e.g. 'completed'. Not filtered on.
+        config:
+          meta:
+            contains_pii: true
       - name: test_performance_level
         data_type: numeric
         description: >-

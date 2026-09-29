@@ -66,6 +66,8 @@ Work in this order.
    `rpt_tableau__state_assessments_dashboard_comps` for the region and year, and
    compare against the vocabulary in [comps-sheet.md](comps-sheet.md) Step 4. A
    value outside it finds no Region partner and every comparison reads `false`.
+   A whole subgroup, region or year reading `false` on every test code is this
+   signature; a single test code reading `false` is more likely step 3.
 3. **Does a Region partner row exist at all?** About a third of the non-Region
    rows have no partner (2026-09-29), overwhelmingly subgroups KTAF has no
    students in. **That is the expected state, not a bug**, and it does not

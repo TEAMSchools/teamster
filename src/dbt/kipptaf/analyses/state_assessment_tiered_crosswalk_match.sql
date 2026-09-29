@@ -83,12 +83,19 @@ with
 
             -- Letters only, accents folded, on both sides: a hyphen, apostrophe
             -- or inner space in one system's spelling otherwise defeats every
-            -- tier.
-            regexp_replace(
-                normalize_and_casefold(a.firstname, nfkd), r'[^a-z]', ''
+            -- tier. A name with no Latin letters reduces to '', which must not
+            -- equal another empty name, so it becomes null.
+            nullif(
+                regexp_replace(
+                    normalize_and_casefold(a.firstname, nfkd), r'[^a-z]', ''
+                ),
+                ''
             ) as gap_first,
-            regexp_replace(
-                normalize_and_casefold(a.lastorsurname, nfkd), r'[^a-z]', ''
+            nullif(
+                regexp_replace(
+                    normalize_and_casefold(a.lastorsurname, nfkd), r'[^a-z]', ''
+                ),
+                ''
             ) as gap_last,
         from {{ ref("int_pearson__all_assessments") }} as a
         left join
@@ -170,11 +177,13 @@ with
             dob,
             state_studentnumber,
 
-            regexp_replace(
-                normalize_and_casefold(first_name, nfkd), r'[^a-z]', ''
+            nullif(
+                regexp_replace(normalize_and_casefold(first_name, nfkd), r'[^a-z]', ''),
+                ''
             ) as ps_first,
-            regexp_replace(
-                normalize_and_casefold(last_name, nfkd), r'[^a-z]', ''
+            nullif(
+                regexp_replace(normalize_and_casefold(last_name, nfkd), r'[^a-z]', ''),
+                ''
             ) as ps_last,
         from {{ ref("base_powerschool__student_enrollments") }}
         where rn_year = 1

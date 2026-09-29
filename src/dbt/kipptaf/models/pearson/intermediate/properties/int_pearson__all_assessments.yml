@@ -111,6 +111,9 @@ models:
               config:
                 severity: error
                 where: _dbt_source_relation like '%cambium%'
+        config:
+          meta:
+            contains_pii: true
 
       - name: _dbt_source_relation
         data_type: string
@@ -159,6 +162,9 @@ models:
           sends the test DESIGN level — 'Grade 10' for ELAGP and 'Grade 11' for
           MATGP. It is NOT the student's grade; use test_grade or
           gradelevelwhenassessed for reporting grade level.
+        config:
+          meta:
+            contains_pii: true
 
       - name: assessmentyear
         data_type: string
@@ -322,6 +328,9 @@ models:
           to 1 on every row surviving the staging filter. Cambium does not
           populate it, so it is NULL on every Cambium row; consumers must
           coalesce rather than compare directly.
+        config:
+          meta:
+            contains_pii: true
 
       - name: twoormoreraces
         data_type: string

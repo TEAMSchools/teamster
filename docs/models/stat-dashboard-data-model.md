@@ -147,17 +147,16 @@ NJSLA rows come through its own ID-remapping `int_pearson__njsla` and
 
 ## Dashboard outline
 
-Six published views and one hidden dashboard, on two embedded extracts. The view
-to datasource mapping below was read from the workbook XML by an earlier
-session; it has not been re-checked for this page. What each view draws and
-filters is workbook-side and is not verified here; the descriptions come from
-the model columns and earlier notes. Any question about a calculated field needs
-the `.twb` (see the `tableau-workbook-xml` skill); the Tableau MCP cannot read
+Six published views and one hidden dashboard, on two embedded extracts. What
+each view draws and filters lives in the workbook; the descriptions below come
+from the model columns. Any question about a calculated field needs the `.twb`
+(see the `tableau-workbook-xml` skill); the Tableau MCP cannot read
 calculated-field text and errors on embedded-extract metadata.
 
 Every view except Advanced Comps has the same grain:
-`rpt_tableau__state_assessments_dashboard`, one row per student, test code and
-administration per academic year (Miami has one row per FAST window).
+`rpt_tableau__state_assessments_dashboard`, one row per student, test code,
+administration and results type (actual or preliminary) per academic year (Miami
+has one row per FAST window).
 
 ### Landing Page
 
@@ -165,7 +164,7 @@ What it shows: the entry point, with navigation to the other views.
 
 Reads: `rpt_tableau__state_assessments_dashboard`.
 
-Worth knowing: nothing on this page is verified beyond its datasource.
+Worth knowing: it carries no numbers of its own.
 
 ### Overview
 
@@ -192,9 +191,12 @@ IEP, 504, gender, lunch status).
 Reads: `rpt_tableau__state_assessments_dashboard`.
 
 Worth knowing: the columns come from two places. `race_ethnicity`, `lep_status`,
-`is_504` and `iep_status` come from the state score file on official rows and
-are null on preliminary rows. `gender`, `lunch_status` and the other student
-attributes come from `int_extracts__student_enrollments`. Comps here are still
+`is_504` and `iep_status` come from the NJ state score file on official NJ rows.
+They are null on every Miami row, because the Florida leg of
+`int_assessments__state_scores` does not carry them, and null on preliminary
+rows. So Miami's Demographics view has no race, ML, IEP or 504 breakout.
+`gender`, `lunch_status` and the other student attributes come from
+`int_extracts__student_enrollments` for every region. Comps here are still
 `Total` / `All Students` only; subgroup comps exist only on Advanced Comps.
 
 ### Teacher/Student Roster
@@ -220,9 +222,9 @@ What it shows: proficiency for the same group across years.
 Reads: `rpt_tableau__state_assessments_dashboard`, including
 `iready_proficiency_eoy` and `most_recent_grade_level`.
 
-Worth knowing: only a rolling seven years reach the workbook
-(`academic_year >= current_academic_year - 7`); the models underneath keep
-everything back to PARCC.
+Worth knowing: only a rolling window reaches the workbook
+(`academic_year >= current_academic_year - 7`, the current year and the seven
+before it); the models underneath keep everything back to PARCC.
 
 ### Advanced Comps
 
@@ -233,10 +235,9 @@ Grain: `rpt_tableau__state_assessments_dashboard_comps`, one row per academic
 year, school level, assessment, test code, region, comparison entity,
 demographic group and subgroup (its uniqueness test).
 
-Reads: `rpt_tableau__state_assessments_dashboard_comps`. An earlier workbook
-read found three worksheets on it (`Advanced Comps - 3-Column`, `- 5-column`,
-`- Header`) and the three comparison booleans used only as quick filters on the
-3-column sheet, not drawn as marks. Not re-checked.
+Reads: `rpt_tableau__state_assessments_dashboard_comps`, through three
+worksheets (`Advanced Comps - 3-Column`, `- 5-column`, `- Header`). The three
+comparison booleans are quick filters on the 3-column sheet, not drawn as marks.
 
 Worth knowing: this is the only view on the comps model, so a change confined to
 `rpt_tableau__state_assessments_dashboard_comps` moves no number on the other
@@ -269,8 +270,10 @@ The preliminary branch reads Pearson's student list report from 2024 on. It is
 gated by `valid_prelim_assessments`, which keeps a year and test type only while
 `int_pearson__all_assessments` has no Spring row with that `assessment_name`.
 Once official scores land, the preliminary rows for that test drop out on the
-next build. Preliminary rows join enrollments on the state id
-(`state_studentnumber`), not the local id.
+next build. The two reporting models attach preliminary rows differently: the
+score view joins enrollments on the state id (`state_studentnumber`), while
+`int_tableau__state_assessments_demographic_comps` joins on the local id. The
+same preliminary score can therefore reach one model and miss the other.
 
 Demographics differ by branch. In the score view, preliminary rows have null
 race, ML, IEP and 504. In `int_tableau__state_assessments_demographic_comps`,
@@ -355,8 +358,12 @@ from student rows with `grouping sets` over region and one demographic at a time
 comps sheet for `school_level`, `grade_range_band` and `discipline` per test
 code, so a test code missing from the sheet loses that metadata. It uses
 `school_level_alt` plus hand overrides (Hatch grades 3-4 in 2021-2023, PPES
-grade 5 in 2023) to put each score in the band the sheet carries. The comps
-model fans NJ-wide rows out to Camden, Newark and Paterson.
+grade 5 in 2023) to put each score in the band the sheet carries. `school_level`
+is not a grouping dimension there, though, so NJ ALG01 taken in middle school
+and in high school lands in one row with an arbitrary `school_level`, and only
+one of the sheet's MS and HS ALG01 rows can find its Region partner. Florida
+splits ALG01 by grade upstream. The comps model fans NJ-wide rows out to Camden,
+Newark and Paterson.
 
 The comps model re-derives `percent_proficient` as
 `safe_divide(sum(proficient), sum(total))` per group. Where the sheet gave no
@@ -538,8 +545,9 @@ demographic rows include every student who took the test.
   workbook; a made-up `url` is worse than none.
 - The preliminary branch gates itself on official scores landing, so nobody
   comments it in or out by hand.
-- Seven-year window. Old defects outside it are invisible to users and not worth
-  fixing; check the year before chasing a flagged row.
+- Rolling window (the current year and the seven before it). Old defects outside
+  it are invisible to users and not worth fixing; check the year before chasing
+  a flagged row.
 
 ## Known issues, need to fix
 
@@ -622,7 +630,7 @@ school and test do not change). Tracked in
 ### Detector rows outstanding
 
 `test_incorrect_student_number_pearson` warns on a handful of rows: unmatchable
-rows from academic years 2017 and 2018, outside the seven-year window, and a few
+rows from academic years 2017 and 2018, outside the rolling window, and a few
 AY2025 Cambium rows with an absent local id. The old rows need an Ops look at
 enrollment history, not a sheet row; the Cambium ones take a crosswalk row after
 the tiered match. Tracked in
@@ -672,7 +680,7 @@ refreshes.
 
 ### July: academic-year rollover
 
-- The seven-year window moves on its own when `current_academic_year` bumps.
+- The rolling window moves on its own when `current_academic_year` bumps.
 - Teacher columns for the current year (`school_current`,
   `teacher_name_current`) are null on the roster until the new year's
   PowerSchool sections exist. Expected.

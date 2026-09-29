@@ -205,8 +205,14 @@ models:
             contains_pii: true
       - name: first_high_school_math_assessment
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: firsthighschoolmathassessment
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: firstname
         data_type: string
         config:
@@ -351,6 +357,9 @@ models:
             contains_pii: true
       - name: multipletestregistration
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: nativehawaiianorotherpacificislander
         data_type: string
         config:
@@ -407,18 +416,30 @@ models:
             contains_pii: true
       - name: papersection1numberofattempteditems
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
       - name: papersection1totaltestitems
         data_type: numeric
       - name: papersection2numberofattempteditems
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
       - name: papersection2totaltestitems
         data_type: numeric
       - name: papersection3numberofattempteditems
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
       - name: papersection3totaltestitems
         data_type: numeric
       - name: papersection4numberofattempteditems
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
       - name: papersection4totaltestitems
         data_type: numeric
       - name: period
@@ -602,6 +623,9 @@ models:
             contains_pii: true
       - name: testattemptednessflag
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: testcode
         data_type: string
       - name: testcsemprobablerange
@@ -673,6 +697,9 @@ models:
             contains_pii: true
       - name: teststatus
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: testwritingcsem
         data_type: numeric
         config:
@@ -707,6 +734,9 @@ models:
         data_type: numeric
       - name: totaltestitemsattempted
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
       - name: twoormoreraces
         data_type: string
         config:
@@ -721,6 +751,9 @@ models:
         data_type: string
       - name: unit1numberofattempteditems
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
       - name: unit1onlinetestenddatetime
         data_type: string
       - name: unit1onlineteststartdatetime
@@ -731,6 +764,9 @@ models:
         data_type: string
       - name: unit2numberofattempteditems
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
       - name: unit2onlinetestenddatetime
         data_type: string
       - name: unit2onlineteststartdatetime
@@ -741,6 +777,9 @@ models:
         data_type: string
       - name: unit3numberofattempteditems
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
       - name: unit3onlinetestenddatetime
         data_type: string
       - name: unit3onlineteststartdatetime
@@ -778,6 +817,9 @@ models:
             contains_pii: true
       - name: percentofitemsattempted
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
       - name: _dagster_partition_key
         data_type: int64
       - name: assessment_name
@@ -831,6 +873,9 @@ models:
             contains_pii: true
       - name: requiredhighschoolmathassessment
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: assessment_version
         data_type: string
         description: >-
