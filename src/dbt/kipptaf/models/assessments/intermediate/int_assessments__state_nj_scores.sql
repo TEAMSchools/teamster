@@ -1,144 +1,4 @@
 with
-    pearson as (
-        {{
-            dbt_utils.union_relations(
-                source_column_name="_dbt_source_relation_2",
-                relations=[
-                    source("kippnewark_pearson", "int_pearson__all_assessments"),
-                    source("kippcamden_pearson", "int_pearson__all_assessments"),
-                    source("kipppaterson_pearson", "int_pearson__all_assessments"),
-                ],
-                include=[
-                    "_dbt_source_relation",
-                    "academic_year",
-                    "admin",
-                    "administration_period",
-                    "aligned_aggregate_ethnicity",
-                    "aligned_iep_status",
-                    "aligned_ml_status",
-                    "aligned_performance_band_group",
-                    "aligned_subject",
-                    "aligned_test_code",
-                    "americanindianoralaskanative",
-                    "asian",
-                    "assessment_name",
-                    "assessment_type",
-                    "assessment_version",
-                    "assessmentgrade",
-                    "assessmentyear",
-                    "blackorafricanamerican",
-                    "discipline",
-                    "district_state",
-                    "englishlearnerel",
-                    "firstname",
-                    "gradelevelwhenassessed",
-                    "hispanicorlatinoethnicity",
-                    "iep_status",
-                    "is_504",
-                    "is_approaching_int",
-                    "is_below_int",
-                    "is_bl_fb",
-                    "is_proficient",
-                    "is_proficient_int",
-                    "lastorsurname",
-                    "lep_status",
-                    "localstudentidentifier",
-                    "module_code",
-                    "nativehawaiianorotherpacificislander",
-                    "njsla_aggregated_proficiency",
-                    "njsla_performance_band_group_label",
-                    "period",
-                    "race_ethnicity",
-                    "results_type",
-                    "statestudentidentifier",
-                    "studenttestuuid",
-                    "studentwithdisabilities",
-                    "subject",
-                    "subject_area",
-                    "test_date",
-                    "test_grade",
-                    "testcode",
-                    "testperformancelevel",
-                    "testperformancelevel_text",
-                    "testscalescore",
-                    "testscorecomplete",
-                    "twoormoreraces",
-                    "white",
-                ],
-            )
-        }}
-    ),
-
-    cambium as (
-        {{
-            dbt_utils.union_relations(
-                source_column_name="_dbt_source_relation_2",
-                relations=[
-                    source("kippnewark_cambium", "int_cambium__all_assessments"),
-                    source("kippcamden_cambium", "int_cambium__all_assessments"),
-                    source("kipppaterson_cambium", "int_cambium__all_assessments"),
-                ],
-                include=[
-                    "_dbt_source_relation",
-                    "academic_year",
-                    "administration_period",
-                    "administration_round",
-                    "aggregated_proficiency",
-                    "aligned_aggregate_ethnicity",
-                    "aligned_iep_status",
-                    "aligned_ml_status",
-                    "aligned_performance_band_group",
-                    "aligned_subject",
-                    "aligned_test_code",
-                    "american_indian_or_alaska_native",
-                    "asian",
-                    "assessment_grade",
-                    "assessment_name",
-                    "assessment_type",
-                    "assessment_version",
-                    "assessment_year",
-                    "black_or_african_american",
-                    "discipline",
-                    "district_state",
-                    "first_name",
-                    "grade_level_when_assessed",
-                    "hispanic_or_latino_ethnicity",
-                    "iep_status",
-                    "is_504",
-                    "is_approaching_int",
-                    "is_below_int",
-                    "is_bl_fb",
-                    "is_proficient",
-                    "is_proficient_int",
-                    "last_or_surname",
-                    "lep_status",
-                    "module_code",
-                    "multilingual_learner",
-                    "native_hawaiian_or_other_pacific_islander",
-                    "performance_band_group_label",
-                    "performance_level",
-                    "performance_level_label",
-                    "period",
-                    "race_ethnicity",
-                    "raw_subject",
-                    "results_type",
-                    "scale_score",
-                    "state_student_id",
-                    "student_number",
-                    "student_test_uuid",
-                    "student_with_disabilities",
-                    "subject_area",
-                    "test_code",
-                    "test_date",
-                    "test_grade",
-                    "test_score_complete",
-                    "two_or_more_races",
-                    "white",
-                ],
-            )
-        }}
-    ),
-
     unioned as (
         select
             _dbt_source_relation,
@@ -197,7 +57,8 @@ with
             twoormoreraces as two_or_more_races,
             white,
             aligned_aggregate_ethnicity,
-        from pearson
+            _dbt_source_project,
+        from {{ ref("int_pearson__all_assessments") }}
 
         union all
 
@@ -257,7 +118,8 @@ with
             two_or_more_races,
             white,
             aligned_aggregate_ethnicity,
-        from cambium
+            _dbt_source_project,
+        from {{ ref("int_cambium__all_assessments") }}
     )
 
 select
@@ -314,12 +176,11 @@ select
     u.two_or_more_races,
     u.white,
     u.aligned_aggregate_ethnicity,
+    u._dbt_source_project,
 
     cast(u.state_student_id as string) as state_student_id,
 
     coalesce(x.student_number, u.student_number) as student_number,
-
-    {{ extract_source_project("u") }} as _dbt_source_project,
 from unioned as u
 left join
     {{ ref("stg_google_sheets__pearson__student_crosswalk") }} as x

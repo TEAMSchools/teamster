@@ -79,20 +79,23 @@ The union happens at kipptaf `int_assessments__state_nj_scores`:
 
 ```text
 kippnewark_pearson.int_pearson__all_assessments    ]
-kippcamden_pearson.int_pearson__all_assessments    ]  Pearson, frozen history
-kipppaterson_pearson.int_pearson__all_assessments  ]
+kippcamden_pearson.int_pearson__all_assessments    ]  kipptaf int_pearson__all_assessments
+kipppaterson_pearson.int_pearson__all_assessments  ]  (Pearson, frozen history)
 
 kippnewark_cambium.int_cambium__all_assessments    ]
-kippcamden_cambium.int_cambium__all_assessments    ]  Cambium, Spring 2026 on
-kipppaterson_cambium.int_cambium__all_assessments  ]
+kippcamden_cambium.int_cambium__all_assessments    ]  kipptaf int_cambium__all_assessments
+kipppaterson_cambium.int_cambium__all_assessments  ]  (Cambium, Spring 2026 on)
 ```
 
-The district Pearson tables are no longer rebuilt; they hold the last Pearson
-history as it stood. Each district's `int_cambium__all_assessments` unions the
-Cambium staging models that district has (`stg_cambium__njsla`,
-`stg_cambium__eoc`, `stg_cambium__njgpa`). The kipptaf model renames the Pearson
-columns to neutral names (`student_number`, `scale_score`,
-`administration_round` and so on) so both vendors land in one shape.
+Each kipptaf model is a plain passthrough union of the three district tables,
+following the kipptaf pattern for district sources, and derives
+`_dbt_source_project`. The district Pearson tables are no longer rebuilt; they
+hold the last Pearson history as it stood. Each district's
+`int_cambium__all_assessments` unions the Cambium staging models that district
+has (`stg_cambium__njsla`, `stg_cambium__eoc`, `stg_cambium__njgpa`). The
+kipptaf model renames the Pearson columns to neutral names (`student_number`,
+`scale_score`, `administration_round` and so on) so both vendors land in one
+shape.
 
 Cambium ships a completely different schema — snake_case headers against
 Pearson's camel case, with only 11 of 225 column names in common. The two

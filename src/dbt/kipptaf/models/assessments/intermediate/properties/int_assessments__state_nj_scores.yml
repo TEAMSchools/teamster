@@ -3,11 +3,12 @@ models:
     description:
       New Jersey state assessment results for every district and year, in one
       shape with neutral column names. Unions the frozen Pearson history (PARCC,
-      NJSLA, NJSLA Science and NJGPA through Fall 2025, read from each
-      district's last int_pearson__all_assessments table) with Cambium TIDE
-      results from Spring 2026 on (int_cambium__all_assessments per district),
-      renames the Pearson columns to the neutral names, repairs student_number
-      from the Pearson student crosswalk and casts the state id to string.
+      NJSLA, NJSLA Science and NJGPA through Fall 2025, from the kipptaf
+      int_pearson__all_assessments passthrough over each district's last table)
+      with Cambium TIDE results from Spring 2026 on (the kipptaf
+      int_cambium__all_assessments passthrough), renames the Pearson columns to
+      the neutral names, repairs student_number from the Pearson student
+      crosswalk and casts the state id to string.
     config:
       materialized: table
     data_tests:
@@ -410,4 +411,6 @@ models:
             contains_pii: true
       - name: _dbt_source_project
         data_type: string
-        description: District code location derived from _dbt_source_relation.
+        description: >-
+          District code location, passed through from the kipptaf
+          int_pearson__all_assessments and int_cambium__all_assessments unions.
