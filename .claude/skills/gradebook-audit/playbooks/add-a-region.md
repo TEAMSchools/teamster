@@ -3,7 +3,7 @@
 1. Ensure the **KIPP NJ Gradebook Audit** PS plugin is deployed to the new
    region's PowerSchool instance and the `U_EXPECTATIONS` table is populated.
    Plugin build, deploy, and versioning instructions:
-   [`maintain-the-plugin.md`](maintain-the-plugin.md).
+   [Plugin and end-user skill](../SKILL.md#plugin-and-end-user-skill).
 2. Wire the ingestion and the union — four files, in this order (Paterson's
    rollout in #4879 is the worked example):
    - add `u_expectations` to

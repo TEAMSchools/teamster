@@ -9,11 +9,9 @@ year's expectations"
 from the `gradebook-expectations-upload` Claude skill, which reads the planning
 sheet and emits the upload CSVs. That skill is the source of truth for the
 generation rules -- the week mapping, the per-column fill, the per-instance
-split -- and it lives in this repo, alongside the plugin it feeds, at
-[`ps-plugins/skills/gradebook-expectations-upload/`](../../../../ps-plugins/skills/gradebook-expectations-upload/SKILL.md).
-Building and deploying the plugin itself is covered in
-[`maintain-the-plugin.md`](maintain-the-plugin.md); shipping a change to this
-chat skill is covered in [`ship-a-skill-update.md`](ship-a-skill-update.md).
+split -- and it lives alongside the plugin it feeds in the private ps-plugins
+repo. Access, plugin builds, and shipping a skill change:
+[Plugin and end-user skill](../SKILL.md#plugin-and-end-user-skill).
 
 The `ps_plugin_data` tab (the IMPORTRANGE Sources tab feeding the
 `Template QW-Date Crosswalk` Reports tab -- see

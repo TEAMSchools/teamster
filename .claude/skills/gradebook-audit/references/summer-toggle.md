@@ -12,8 +12,8 @@ done in PowerSchool via the `U_EXPECTATIONS` plugin — not a dbt change. For
 that, see
 [Procedure: Roll the assignment expectations over to a new year](../playbooks/academic-year-rollover.md);
 for the plugin itself and who owns it, see
-[`../playbooks/maintain-the-plugin.md`](../playbooks/maintain-the-plugin.md).
-The steps below cover only the dbt-side year / grade-source toggle.
+[Plugin and end-user skill](../SKILL.md#plugin-and-end-user-skill). The steps
+below cover only the dbt-side year / grade-source toggle.
 
 **What's happening:** In July, the data engineering team bumps
 `current_academic_year` (e.g., 2025 → 2026). At that point:

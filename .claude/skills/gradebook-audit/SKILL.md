@@ -9,10 +9,10 @@ description: >-
   flag, adding a region, debugging a flag that isn't firing, rolling the
   assignment expectations over to a new year (turning T&L's expectations sheet
   into U_EXPECTATIONS count rows to upload to PowerSchool), changing or
-  deploying the `ps-plugins/gradebook-audit/` plugin, bumping or distributing a
-  new version of the gradebook-expectations-upload skill, a change to a
-  gradebook audit IMPORTRANGE/Reports sheet pair, grades, GPA, or GPA goals on
-  the Academic & Gradebook Health Suite, or working on
+  deploying the PowerSchool plugin in the private TEAMSchools/ps-plugins repo,
+  bumping or distributing a new version of the gradebook-expectations-upload
+  skill, a change to a gradebook audit IMPORTRANGE/Reports sheet pair, grades,
+  GPA, or GPA goals on the Academic & Gradebook Health Suite, or working on
   rpt_tableau__gradebook_audit or rpt_gsheets__gradebook_audit_student_flags and
   their upstream models.
 ---
@@ -63,7 +63,29 @@ below is the _how_; `plan-a-change.md` is the _what and whether_.
 | A flag is firing when it shouldn't, not firing when it should, or a section is missing one of its four category rows | [`playbooks/debug-a-flag.md`](playbooks/debug-a-flag.md)                     |
 | Explain why an undocumented filter, column, or threshold exists                                                      | [`playbooks/explain-a-decision.md`](playbooks/explain-a-decision.md)         |
 | Lineage/refs, a configurable threshold, the Sumner override, or changing `section_or_period`                         | [`references/data-model.md`](references/data-model.md)                       |
-| Change, build, or deploy the PowerSchool plugin itself                                                               | [`playbooks/maintain-the-plugin.md`](playbooks/maintain-the-plugin.md)       |
-| Get a plugin or skill change to Teaching & Learning (organization skills or per-user zip)                            | [`playbooks/ship-a-skill-update.md`](playbooks/ship-a-skill-update.md)       |
+| Change, build, or deploy the plugin, or ship a skill change to Teaching & Learning                                   | [Plugin and end-user skill](#plugin-and-end-user-skill) below                |
 | A published Sheet's source/report pair needs a matching update, or one looks out of sync                             | [`references/published-sheets.md`](references/published-sheets.md)           |
 | Grades, GPA, or GPA goals on the Academic & Gradebook Health Suite                                                   | [`references/academic-health.md`](references/academic-health.md)             |
+
+## Plugin and end-user skill
+
+The PowerSchool plugin, the `gradebook-expectations-upload` end-user skill, and
+the build that checks both against the dbt models live in the private
+[TEAMSchools/ps-plugins](https://github.com/TEAMSchools/ps-plugins) repo. It
+stays private until the plugin's access-control defects are fixed: the plugin
+source shows them.
+
+Work on it from this Codespace. The Codespace token covers teamster only, so
+clone with your own GitHub login (once per Codespace; answer No to "Authenticate
+Git"):
+
+```bash
+GITHUB_TOKEN= gh auth login
+GITHUB_TOKEN= gh repo clone TEAMSchools/ps-plugins /workspaces/ps-plugins
+git -C /workspaces/ps-plugins config credential.helper ''
+git -C /workspaces/ps-plugins config --add credential.helper '!GITHUB_TOKEN= gh auth git-credential'
+```
+
+Then `/add-dir /workspaces/ps-plugins` and read its `CLAUDE.md`. Changing or
+deploying the plugin: `docs/maintain-the-plugin.md` there. Shipping a skill
+change to Teaching & Learning: `docs/ship-a-skill-update.md` there.

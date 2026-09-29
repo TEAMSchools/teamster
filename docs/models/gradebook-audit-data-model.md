@@ -7,11 +7,11 @@ the project over.
 !!! tip "Claude Code skills" Two skills sit beside this page. The data-team
 skill, `gradebook-audit` (`.claude/skills/gradebook-audit/`), holds the
 step-by-step procedures: changing a flag, adding a region, debugging a flag, the
-summer toggle, building and deploying the PowerSchool plugin, and shipping a
-skill update. The end-user skill, `gradebook-expectations-upload`
-(`ps-plugins/skills/gradebook-expectations-upload/`), is what Teaching &
-Learning run to turn their planning sheet into upload files for PowerSchool.
-This page explains the system; the skills hold the procedures.
+summer toggle, and where the PowerSchool plugin work lives. The end-user skill,
+`gradebook-expectations-upload`, lives with the plugin in the private
+`TEAMSchools/ps-plugins` repo, and is what Teaching & Learning run to turn their
+planning sheet into upload files for PowerSchool. This page explains the system;
+the skills hold the procedures.
 
 ## What it is
 

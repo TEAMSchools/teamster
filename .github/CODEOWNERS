@@ -9,7 +9,6 @@
 /Dockerfile @TEAMSchools/admins @TEAMSchools/platform
 /scripts/ @TEAMSchools/admins @TEAMSchools/platform
 /mcp/ @TEAMSchools/admins @TEAMSchools/platform
-/ps-plugins/ @TEAMSchools/admins @TEAMSchools/data-engineers
 
 # data engineers — Dagster orchestration and tests
 /src/teamster/ @TEAMSchools/admins @TEAMSchools/data-engineers

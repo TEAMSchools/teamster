@@ -42,9 +42,9 @@ exactly the action that returns `#REF!` in every downstream `IMPORTRANGE`.
 **The fourth Reports tab, `PS Plugin CSV Template`, has no model behind it and
 no IMPORTRANGE Sources counterpart.** It's the literal CSV header row PS
 requires, kept there only so nobody retypes it by hand — nothing refreshes it
-automatically, so if the plugin's accepted header ever changes (tracked by
-`build_plugin.py`'s CSV-header contract check, see `maintain-the-plugin.md`),
-this tab has to be updated by hand, in the Reports copy only.
+automatically, so if the plugin's accepted header ever changes (tracked by the
+CSV-header contract check in ps-plugins' `scripts/build_plugin.py`), this tab
+has to be updated by hand, in the Reports copy only.
 
 The other exposure this skill owns,
 `rpt_gsheets__gradebook_audit_student_flags`, is a single-tab sheet (ops

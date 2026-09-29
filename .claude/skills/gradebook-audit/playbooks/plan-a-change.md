@@ -54,10 +54,9 @@ than editing against the one file in front of you.
   [`academic-year-rollover.md`](academic-year-rollover.md)
 - change a hardcoded threshold, or need the current lineage/refs →
   [`../references/data-model.md`](../references/data-model.md)
-- change, build, or deploy the PowerSchool plugin itself →
-  [`maintain-the-plugin.md`](maintain-the-plugin.md)
-- propagate a plugin or skill change to Teaching & Learning →
-  [`ship-a-skill-update.md`](ship-a-skill-update.md)
+- change, build, or deploy the PowerSchool plugin, or propagate a plugin or
+  skill change to Teaching & Learning →
+  [Plugin and end-user skill](../SKILL.md#plugin-and-end-user-skill)
 - update a published Sheet's source/report pair →
   [`../references/published-sheets.md`](../references/published-sheets.md)
 
