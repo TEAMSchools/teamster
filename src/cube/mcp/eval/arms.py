@@ -279,6 +279,7 @@ def load_assessment_meta(which: str) -> dict[str, Any]:
         return json.loads((_FIXTURES / "meta_pre_drain.json").read_text())
     if which != "post":
         raise ValueError(f"which must be 'pre' or 'post', got {which!r}")
+    # trunk-ignore(bandit/B603,bandit/B607): fixed arguments; node on PATH is the dev toolchain
     out = subprocess.run(
         [
             "node",
@@ -292,6 +293,119 @@ def load_assessment_meta(which: str) -> dict[str, Any]:
     )
     full = json.loads(out.stdout)
     return {"cubes": [c for c in full["cubes"] if c["name"] == _ASSESSMENT_VIEW]}
+
+
+# --- Family 4 arms ------------------------------------------------------------
+#
+#     A4_pre    pre-drain catalog and docstrings (the 5 new sentences removed)
+#     B4_post   this branch: post-drain catalog, docstrings, empty-result note
+#     C4_skill  B4_post plus the orchestrator's policy and recipe sections as
+#               the system prompt, to size the planned org-level skill
+
+# The sentences #5495 added to the load and meta docstrings; arm A removes them
+# to reproduce the pre-drain docstrings. A missing sentence raises, like the
+# crosswalk anchors.
+NEW_LOAD_SENTENCES = [
+    '`equals "null"` matches the literal string and returns zero rows; filter a'
+    " null with `notSet`.",
+    "A query with no measure groups by its dimensions, so identical rows collapse"
+    " into one; add a count or the primary key to see every row.",
+    "Student views return only the schools the user can access; before describing"
+    " a result as network-wide, check which regions or schools it covers.",
+]
+NEW_META_SENTENCES = [
+    "Refresh before concluding a member is missing.",
+    "Members may carry `meta.ai_context` (`aiContext` on some view-specific"
+    " members): usage rules written for you. Read and follow a member's"
+    " `ai_context` before building a query that uses it.",
+]
+_ORCHESTRATOR = (
+    Path(__file__).resolve().parents[1]
+    / "project_knowledge"
+    / "assessment-cube-orchestrator.md"
+)
+# Arm C carries the orchestrator's policy and recipe sections, not its
+# session-start ritual (ask a name, calibrate, keep a log), which would stop a
+# one-turn eval conversation before it queries.
+_SKILL_SECTIONS = [
+    "## Flag, don't invent",
+    "## Modeling, projections, and deliverables",
+    "## Routing",
+]
+
+
+def _flat(text: str) -> str:
+    return " ".join(text.split())
+
+
+def _strip_sentences(text: str, sentences: list[str]) -> str:
+    flat = _flat(text)
+    for sentence in sentences:
+        if sentence not in flat:
+            raise RuntimeError(
+                f"docstring sentence not found; update arms.py: {sentence[:60]}"
+            )
+        flat = _flat(flat.replace(sentence, ""))
+    return flat
+
+
+def _skill_text() -> str:
+    doc = _ORCHESTRATOR.read_text(encoding="utf-8")
+    parts = []
+    for heading in _SKILL_SECTIONS:
+        start = doc.index(heading)
+        nxt = doc.find("\n## ", start + len(heading))
+        parts.append(doc[start : nxt if nxt != -1 else len(doc)].strip())
+    return "\n\n".join(parts)
+
+
+def build_assessment_arms(server: ModuleType) -> dict[str, dict[str, Any]]:
+    """Return {arm: {"instructions", "tools", "meta", "empty_note"}}."""
+    tools = _anthropic_tools(server)
+    instructions = server.mcp.instructions or ""
+    # Flatten whitespace on every arm so the only docstring difference is the
+    # sentences themselves.
+    pre_tools = [
+        {
+            **tools["meta"],
+            "description": _strip_sentences(
+                tools["meta"]["description"], NEW_META_SENTENCES
+            ),
+        },
+        {
+            **tools["load"],
+            "description": _strip_sentences(
+                tools["load"]["description"], NEW_LOAD_SENTENCES
+            ),
+        },
+        tools["sql"],
+    ]
+    post_tools = [
+        {**tools["meta"], "description": _flat(tools["meta"]["description"])},
+        {**tools["load"], "description": _flat(tools["load"]["description"])},
+        tools["sql"],
+    ]
+    post_meta = load_assessment_meta("post")
+    return {
+        "A4_pre": {
+            "instructions": instructions,
+            "tools": pre_tools,
+            "meta": load_assessment_meta("pre"),
+            "empty_note": False,
+        },
+        "B4_post": {
+            "instructions": instructions,
+            "tools": post_tools,
+            "meta": post_meta,
+            "empty_note": True,
+        },
+        "C4_skill": {
+            "instructions": instructions + "\n\n" + _skill_text(),
+            "tools": post_tools,
+            "meta": post_meta,
+            "empty_note": True,
+        },
+    }
 
 
 def load_server() -> ModuleType:

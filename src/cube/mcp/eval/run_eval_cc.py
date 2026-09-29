@@ -47,6 +47,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import arms as arms_mod  # noqa: E402
 import scorer as scorer_mod  # noqa: E402
+import traps  # noqa: E402
 import yaml  # noqa: E402
 
 # Claude Code model aliases (resolve to claude-sonnet-4-6 / claude-haiku-4-5).
@@ -54,7 +55,9 @@ DEFAULT_MODELS = ["sonnet", "haiku"]
 DEFAULT_REPS = 5
 DEFAULT_CONCURRENCY = 5  # keep small to stay under subscription rate limits
 MAX_TURNS = 12
-PROMPTS_PATH = Path(__file__).resolve().parent / "prompts.yaml"
+EVAL_DIR = Path(__file__).resolve().parent
+PROMPT_FILES = ["prompts.yaml", "prompts_assessment.yaml"]
+FAMILY4_ARMS = ["A4_pre", "B4_post", "C4_skill"]
 DEFAULT_OUT = Path(__file__).resolve().parent / "out" / "results_cc.jsonl"
 
 # Non-zero, internally consistent stub so the model answers in one load call.
@@ -74,10 +77,11 @@ _SQL_RESULT = {
 }
 
 
-def load_prompts() -> list[dict[str, Any]]:
-    prompts = yaml.safe_load(PROMPTS_PATH.read_text(encoding="utf-8"))
+def load_prompts(name: str = "prompts.yaml") -> list[dict[str, Any]]:
+    path = EVAL_DIR / name
+    prompts = yaml.safe_load(path.read_text(encoding="utf-8"))
     if not isinstance(prompts, list) or not prompts:
-        raise RuntimeError(f"no prompts loaded from {PROMPTS_PATH}")
+        raise RuntimeError(f"no prompts loaded from {path}")
     return prompts
 
 
@@ -88,9 +92,18 @@ def parse_args() -> argparse.Namespace:
         "--arms",
         nargs="+",
         default=["A_baseline", "B_descriptions"],
-        choices=["A_baseline", "B_descriptions", *arms_mod.PLACEMENT_ARMS],
-        help="A/B vary the load docstring; F0-F3 vary where member guidance lives",
+        choices=[
+            "A_baseline",
+            "B_descriptions",
+            *arms_mod.PLACEMENT_ARMS,
+            *FAMILY4_ARMS,
+        ],
+        help=(
+            "A/B vary the load docstring; F0-F3 vary where member guidance lives; "
+            "A4/B4/C4 are family 4 (use with --prompts prompts_assessment.yaml)"
+        ),
     )
+    p.add_argument("--prompts", default="prompts.yaml", choices=PROMPT_FILES)
     p.add_argument("--reps", type=int, default=DEFAULT_REPS)
     p.add_argument("--concurrency", type=int, default=DEFAULT_CONCURRENCY)
     p.add_argument("--limit", type=int, default=0, help="cap prompts (0 = all)")
@@ -102,24 +115,50 @@ def parse_args() -> argparse.Namespace:
     return p.parse_args()
 
 
+_ASSESSMENT_ROWS = {
+    "data": [
+        {
+            "student_assessment_scores_view.pct_proficient": "0.42",
+            "student_assessment_scores_view.count_scored": "1200",
+        }
+    ]
+}
+
+
+def _stub_load(query: Any, arm: dict[str, Any], server: Any) -> dict[str, Any]:
+    """Canned load result: attendance rows for the crosswalk families; for the
+    assessment view, 0 rows on a Paterson query (with the server's empty-result
+    note on drained arms only) and a fixed rate otherwise."""
+    if not isinstance(
+        query, dict
+    ) or "student_assessment_scores_view" not in json.dumps(query):
+        return _LOAD_RESULT
+    if traps.is_paterson_query(query):
+        empty: dict[str, Any] = {"data": []}
+        return server._with_empty_result_note(empty) if arm.get("empty_note") else empty
+    return _ASSESSMENT_ROWS
+
+
 def _make_tools(
-    tool_desc: dict[str, str], meta_payload: dict[str, Any]
+    tool_desc: dict[str, str], arm: dict[str, Any], server: Any
 ) -> dict[str, Any]:
     """Build in-process SDK tools; descriptions reuse the real server's text.
 
-    meta_payload is the arm's /meta catalog: the placement (F) arms each serve
-    their own; the A/B arms serve arms.META_STUB.
+    The arm's own "meta" catalog is served when it has one (the placement and
+    family 4 arms); the A/B arms serve arms.META_STUB.
     """
     # trunk-ignore(pyright/reportMissingImports): claude-agent-sdk is a runtime --with dep
     from claude_agent_sdk import tool
 
     @tool("meta", tool_desc["meta"], {})
     async def meta_tool(_args: dict[str, Any]) -> dict[str, Any]:
-        return {"content": [{"type": "text", "text": json.dumps(meta_payload)}]}
+        payload = arm.get("meta", arms_mod.META_STUB)
+        return {"content": [{"type": "text", "text": json.dumps(payload)}]}
 
     @tool("load", tool_desc["load"], {"query": dict})
     async def load_tool(_args: dict[str, Any]) -> dict[str, Any]:
-        return {"content": [{"type": "text", "text": json.dumps(_LOAD_RESULT)}]}
+        result = _stub_load(_args.get("query"), arm, server)
+        return {"content": [{"type": "text", "text": json.dumps(result)}]}
 
     @tool("sql", tool_desc["sql"], {"query": dict})
     async def sql_tool(_args: dict[str, Any]) -> dict[str, Any]:
@@ -174,6 +213,10 @@ async def run_one(
     tool_calls: list[str] = []  # every tool name, in order — to diagnose loops
     text_parts: list[str] = []
     error: str | None = None
+    usage: dict[str, Any] = {}
+    cost_usd: float | None = None
+    num_turns: int | None = None
+    duration_ms: int | None = None
 
     try:
         async for message in query(prompt=prompt, options=options):
@@ -185,8 +228,13 @@ async def run_one(
                             load_queries.append(block.input.get("query"))
                     elif isinstance(block, TextBlock):
                         text_parts.append(block.text)
-            elif isinstance(message, ResultMessage) and message.result:
-                text_parts.append(message.result)
+            elif isinstance(message, ResultMessage):
+                if message.result:
+                    text_parts.append(message.result)
+                usage = message.usage or {}
+                cost_usd = message.total_cost_usd
+                num_turns = message.num_turns
+                duration_ms = message.duration_ms
     except Exception as exc:  # noqa: BLE001 - record, don't crash the sweep
         error = f"{type(exc).__name__}: {exc}"
 
@@ -195,6 +243,13 @@ async def run_one(
         "tool_calls": tool_calls,
         "final_text": "\n".join(text_parts),
         "error": error,
+        "input_tokens": usage.get("input_tokens"),
+        "output_tokens": usage.get("output_tokens"),
+        "cache_read_tokens": usage.get("cache_read_input_tokens"),
+        "cache_write_tokens": usage.get("cache_creation_input_tokens"),
+        "cost_usd": cost_usd,
+        "num_turns": num_turns,
+        "duration_ms": duration_ms,
     }
 
 
@@ -240,6 +295,7 @@ async def sweep(
     concurrency: int,
     tool_desc_by_arm: dict[str, dict[str, str]],
     out_path: Path,
+    server: Any,
 ) -> list[dict[str, Any]]:
     # trunk-ignore(pyright/reportMissingImports): claude-agent-sdk is a runtime --with dep
     from claude_agent_sdk import create_sdk_mcp_server
@@ -249,9 +305,7 @@ async def sweep(
     # so the servers must differ per arm — not just the system prompt.
     arm_servers = {}
     for name in arm_names:
-        arm_tools = _make_tools(
-            tool_desc_by_arm[name], arm_defs[name].get("meta", arms_mod.META_STUB)
-        )
+        arm_tools = _make_tools(tool_desc_by_arm[name], arm_defs[name], server)
         arm_servers[name] = create_sdk_mcp_server(
             name="cube",
             version="1.0.0",
@@ -297,6 +351,8 @@ async def sweep(
         rec["final_text"] = result.get("final_text", "")
         rec["load_queries"] = result.get("load_queries", [])
         rec["tool_calls"] = result.get("tool_calls", [])
+        for field in scorer_mod._COST_FIELDS:
+            rec[field] = result.get(field)
         async with write_lock:
             out_fh.write(json.dumps(rec) + "\n")
             out_fh.flush()
@@ -321,11 +377,15 @@ def main() -> None:
         **arms_mod.build_arms(server),
         **arms_mod.build_placement_arms(server),
     }
+    if args.prompts == "prompts_assessment.yaml":
+        arm_defs.update(arms_mod.build_assessment_arms(server))
+    elif set(args.arms) & set(FAMILY4_ARMS):
+        raise SystemExit("family 4 arms need --prompts prompts_assessment.yaml")
     tool_desc_by_arm = {
         name: {t["name"]: t["description"] for t in arm_defs[name]["tools"]}
         for name in arm_defs
     }
-    prompts = load_prompts()
+    prompts = load_prompts(args.prompts)
 
     if args.smoke:
         prompts = prompts[:1]
@@ -350,6 +410,7 @@ def main() -> None:
             concurrency=args.concurrency,
             tool_desc_by_arm=tool_desc_by_arm,
             out_path=args.out,
+            server=server,
         )
     )
     print(f"\nwrote {len(records)} records to {args.out}\n", file=sys.stderr)
@@ -362,6 +423,8 @@ def main() -> None:
         )
 
     print(scorer_mod.format_summary(scorer_mod.aggregate(records)))
+    print()
+    print(scorer_mod.format_cost_summary(records))
 
 
 if __name__ == "__main__":

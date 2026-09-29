@@ -15,8 +15,10 @@ Ambiguous prompts (family 3 — no correct year):
     disambig_rate    model echoed an interpretation / noted the ambiguity
 """
 
+import json
 import math
 import re
+import statistics
 from typing import Any
 
 # A year-span ("2025-2026", "2025-26", "2025–26") or the phrase "school year"
@@ -88,6 +90,24 @@ def _start_from_ay(filt: dict[str, Any] | None) -> int | None:
 def score_record(prompt: dict[str, Any], result: dict[str, Any]) -> dict[str, Any]:
     """Score one rep. ``prompt`` is a prompts.yaml entry; ``result`` a harness
     transcript summary."""
+    if "trap" in prompt:  # family 4: assessment traps
+        import traps  # local import: traps imports _flatten_filters from here
+
+        view_queries = [
+            q
+            for q in result.get("load_queries", [])
+            if isinstance(q, dict) and "student_assessment_scores_view" in json.dumps(q)
+        ]
+        return {
+            "id": prompt["id"],
+            "family": prompt["family"],
+            "ground_truth_start": None,
+            "trap": prompt["trap"],
+            "trap_fired": traps.TRAPS[prompt["trap"]](
+                view_queries, result.get("final_text") or ""
+            ),
+            "error": result.get("error"),
+        }
     gt = prompt.get("ground_truth_start")
     family = prompt["family"]
     # First load query that filters an AY member wins (even if its value is
@@ -141,8 +161,10 @@ def aggregate(records: list[dict[str, Any]]) -> dict[tuple[str, str], dict[str, 
 
     summary: dict[tuple[str, str], dict[str, Any]] = {}
     for key, recs in cells.items():
-        determinate = [r for r in recs if r["ground_truth_start"] is not None]
-        ambiguous = [r for r in recs if r["ground_truth_start"] is None]
+        trapped = [r for r in recs if "trap" in r]
+        year = [r for r in recs if "trap" not in r]
+        determinate = [r for r in year if r["ground_truth_start"] is not None]
+        ambiguous = [r for r in year if r["ground_truth_start"] is None]
         n_det = len(determinate)
         wrong = sum(1 for r in determinate if r["wrong"])
         correct = sum(1 for r in determinate if r["correct"])
@@ -160,6 +182,10 @@ def aggregate(records: list[dict[str, Any]]) -> dict[tuple[str, str], dict[str, 
             "no_query_rate": _wilson(no_query, n_det),
             "silent_wrong_rate": _wilson(silent, n_det),
             "disambig_rate": _wilson(disambig, len(ambiguous)),
+            "n_trap": len(trapped),
+            "trap_rate": _wilson(
+                sum(bool(r["trap_fired"]) for r in trapped), len(trapped)
+            ),
         }
     return summary
 
@@ -174,7 +200,7 @@ def format_summary(summary: dict[tuple[str, str], dict[str, Any]]) -> str:
     header = (
         f"{'model':<22} {'arm':<16} {'n':>4} "
         f"{'wrong':>16} {'silent_wrong':>16} {'correct':>16} "
-        f"{'no_query':>16} {'disambig':>16}"
+        f"{'no_query':>16} {'disambig':>16} {'trap_rate':>16}"
     )
     lines = [header, "-" * len(header)]
     for model, arm in sorted(summary):
@@ -183,6 +209,38 @@ def format_summary(summary: dict[tuple[str, str], dict[str, Any]]) -> str:
             f"{model:<22} {arm:<16} {s['n_determinate']:>4} "
             f"{pct(s['wrong_rate']):>16} {pct(s['silent_wrong_rate']):>16} "
             f"{pct(s['correct_rate']):>16} {pct(s['no_query_rate']):>16} "
-            f"{pct(s['disambig_rate']):>16}"
+            f"{pct(s['disambig_rate']):>16} {pct(s['trap_rate']):>16}"
         )
+    return "\n".join(lines)
+
+
+_COST_FIELDS = [
+    "input_tokens",
+    "cache_read_tokens",
+    "cache_write_tokens",
+    "output_tokens",
+    "cost_usd",
+    "num_turns",
+    "duration_ms",
+]
+
+
+def format_cost_summary(records: list[dict[str, Any]]) -> str:
+    """Median tokens, cost, turns, tool calls and duration per (model, arm)."""
+    cells: dict[tuple[str, str], list[dict[str, Any]]] = {}
+    for r in records:
+        cells.setdefault((r["model"], r["arm"]), []).append(r)
+    header = f"{'model':<22} {'arm':<16} " + " ".join(
+        f"{c:>14}" for c in [*_COST_FIELDS, "tool_calls"]
+    )
+    lines = ["median per conversation", header, "-" * len(header)]
+    for key in sorted(cells):
+        recs = cells[key]
+        vals = []
+        for field in _COST_FIELDS:
+            xs = [r[field] for r in recs if isinstance(r.get(field), int | float)]
+            vals.append(f"{statistics.median(xs):>14.4g}" if xs else f"{'-':>14}")
+        calls = [len(r.get("tool_calls") or []) for r in recs]
+        vals.append(f"{statistics.median(calls):>14.4g}" if calls else f"{'-':>14}")
+        lines.append(f"{key[0]:<22} {key[1]:<16} " + " ".join(vals))
     return "\n".join(lines)
