@@ -330,9 +330,8 @@ in the playbook linked in Part 2.
 
 These are the exact names the calculations test. `ISMEMBEROF` against a name
 that does not exist cannot fail loudly: the branch never matches, so the viewer
-sees nothing and there is no error to chase. `TS-DL-Teaching And Learning`,
-tested on the Survey Dashboard, does not exist on the Tableau site as of
-2026-09-29, so that branch grants nobody.
+sees nothing and there is no error to chase. Check a new name against the
+Tableau site's group list before putting it in a calculation.
 
 #### Your entity — everyone has one
 
@@ -420,11 +419,14 @@ Note it has no `KNJ-SG-Tableau` prefix; that is the real name.
 | School support directors               | `KNJ-SG-Tableau School Support Directors`    |
 | Special education directors            | `KNJ-SG-Tableau Special Education Directors` |
 | KIPP Forward directors                 | `KNJ-SG-Tableau KIPP Forward Directors`      |
-| Teaching and Learning                  | `TS-DL-Teaching And Learning`                |
+| Teaching and Learning                  | `KNJ-SG-Tableau All T&L`                     |
 | Technology                             | `TS-SG-R9 Technology`                        |
 
 The last two are region-wide on the Survey Dashboard's support and completion
-sheets only. On the support sheets, Technology also rates as a department.
+sheets only, and both also rate as a department on the support sheets.
+`KNJ-SG-Tableau All T&L` matches the roster's Teaching and Learning department
+exactly. Use it rather than `NJ Teaching and Learning` or `Teaching & Learning`,
+which cover only part of the department.
 
 #### Network-wide functional groups
 
