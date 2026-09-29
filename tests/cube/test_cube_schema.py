@@ -95,6 +95,12 @@ def _filter_members(filters: list[dict]) -> list[str]:
     return members
 
 
+def _include_name(include: str | dict) -> str:
+    # An includes entry is a member name, or an object ({name, meta, ...})
+    # when the view overrides that member's meta.
+    return include["name"] if isinstance(include, dict) else include
+
+
 def _view_member_to_qualified_name(view_doc: dict) -> dict[str, str]:
     # Maps each member name exposed by this view back to its cube-qualified
     # name, honoring each includes block's prefix: setting (see
@@ -104,7 +110,7 @@ def _view_member_to_qualified_name(view_doc: dict) -> dict[str, str]:
     for cube_ref in view_doc.get("cubes", []) or []:
         join_cube = cube_ref["join_path"].split(".")[-1]
         prefixed = cube_ref.get("prefix", False)
-        for member in cube_ref.get("includes", []) or []:
+        for member in map(_include_name, cube_ref.get("includes", []) or []):
             exposed = f"{join_cube}_{member}" if prefixed else member
             mapping[exposed] = f"{join_cube}.{member}"
     return mapping
@@ -119,7 +125,7 @@ def _view_exposed_members(view_doc: dict) -> set[str]:
     for cube_ref in view_doc.get("cubes", []) or []:
         join_cube = cube_ref["join_path"].split(".")[-1]
         prefixed = cube_ref.get("prefix", False)
-        for member in cube_ref.get("includes", []) or []:
+        for member in map(_include_name, cube_ref.get("includes", []) or []):
             exposed.add(f"{join_cube}_{member}" if prefixed else member)
     return exposed
 
@@ -576,6 +582,24 @@ PHRASES.update(
         ],
         "courses.is_foundations": [
             "not a record of intervention services delivered",
+        ],
+    }
+)
+
+
+# --- The assessment view (Task 6) --------------------------------------------
+PHRASES.update(
+    {
+        "student_assessment_scores_view": [
+            "Enrollment-scoped",
+            "group covers Illuminate, i-Ready and DIBELS",
+            "There is no growth measure",
+            "calibration difference",
+            "which sitting counts is an open decision",
+            "release lag",
+            "spiral review",
+            "Resolve a name against staff_directory",
+            "The only intervention signal on this view",
         ],
     }
 )

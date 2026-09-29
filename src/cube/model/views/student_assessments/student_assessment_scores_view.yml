@@ -1,20 +1,19 @@
 views:
   - name: student_assessment_scores_view
     description: >-
-      Assessment scores across internal Illuminate interims, NJ/FL state
-      assessments, and vendor benchmarks (i-Ready, DIBELS, STAR) — row-level
-      (one row per student x assessment x administration x response type) and
-      aggregate breakdowns in a single view. pct_proficient (mastery rate) is
-      the source-agnostic headline; scale_score is null for internal rows and
-      percent_correct is null for state and vendor rows. response_type /
-      response_type_code carry the standard/skill breakdown (Illuminate only).
-      State and vendor administrations have no single administered date, so the
-      Date members (academic_year, academic_year_label, date_day, month_number,
-      month_name) resolve for every source but are scoped by different dates per
-      source: the administration date for Illuminate/college, the student's
-      completion (test) date for state/vendor. A cross-source date cut (e.g.
-      "scores in May") therefore mixes those two date concepts. Contains direct
-      student identifiers — see access_policy for PII gating.
+      Assessment scores across Illuminate interims, NJ and FL state tests, and
+      vendor diagnostics (i-Ready, DIBELS, STAR), one row per student x
+      assessment x administration x response type. Enrollment-scoped: a score
+      appears only if it resolves to a section enrollment. pct_proficient is the
+      source-agnostic headline; scale_score is null for Illuminate rows and
+      percent_correct is null for every other source. response_type splits
+      scores into overall, standard and group rows: standard is Illuminate only,
+      and group covers Illuminate, i-Ready and DIBELS. There is no growth
+      measure. The Date members resolve for every source but read different
+      dates: the administration date for Illuminate and college, the test date
+      for state tests and vendor diagnostics, so a cross-source date cut mixes
+      the two. Contains direct student identifiers; see access_policy for PII
+      gating.
 
     cubes:
       - join_path: student_assessment_scores
@@ -76,7 +75,12 @@ views:
           - course_title
           - course_code
           - credit_type
-          - is_foundations
+          - name: is_foundations
+            meta:
+              ai_context: >-
+                The only intervention signal on this view; there is no program-
+                or MTSS-tracking dimension. Treat it as course enrollment, not a
+                record of intervention services delivered.
 
       - join_path: student_assessment_scores.student_section_enrollments.course_sections
         includes:
@@ -96,7 +100,12 @@ views:
       - join_path: student_assessment_scores.student_section_enrollments.staff_lead_teacher
         prefix: true
         includes:
-          - full_name
+          - name: full_name
+            meta:
+              ai_context: >-
+                Stored Last, First. Resolve a name against staff_directory
+                before filtering; a zero-row result is not proof the teacher has
+                no students.
           - first_name
           - last_name
 
@@ -158,6 +167,22 @@ views:
           - term_type
 
     meta:
+      ai_context: >-
+        Totals will not reconcile to vendor-diagnostic or state reports, because
+        of enrollment scoping; i-Ready Outside Round sittings lose the most, so
+        treat those counts as a floor. Coverage is uneven by region, source and
+        year, and a source's first year can be partial; check volume by region
+        and year before calling a narrow result a failure or trending across a
+        boundary. A gap between two instruments on the same students is a
+        calibration difference until shown otherwise: report both rates side by
+        side and flag it rather than presenting an achievement gap. Any growth
+        figure is analyst-built; say so. Students can sit a diagnostic more than
+        once in a window, mostly i-Ready; de-duplicate repeat sittings before
+        any student-level count, and since which sitting counts is an open
+        decision, say which you kept. A missing current-year state result is a
+        release lag, not a defect. Query this view, not upstream i-Ready tables,
+        which carry re-pull duplicates. A CCSS code's own grade can differ from
+        grade_level_tested; that is spiral review, not an error.
       folders:
         - name: Assessment
           members:
