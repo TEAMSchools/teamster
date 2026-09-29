@@ -308,3 +308,89 @@ def verify_readback(translation: dict, article: Article) -> None:
         raise PublishError(
             f"Read-back: attachment ids {missing} are not in the stored body"
         )
+
+
+@dataclass
+class PublishResult:
+    article_id: int
+    html_url: str
+    draft: bool
+    uploaded: list[str]
+    reused: list[str]
+    orphaned_ids: list[int]
+    backup: Path | None
+
+
+def publish(
+    article_dir: Path,
+    *,
+    live: bool,
+    approved_images: frozenset[str] = frozenset(),
+    backup_dir: Path,
+    client: ZendeskHelpCenter | None = None,
+) -> PublishResult:
+    """Create or update the article as a draft; go live only when `live` is True.
+
+    Order: load and refuse early; resolve visibility; create draft or fetch and
+    guard; back up; sync images; rewrite srcs in memory; PUT article fields;
+    PUT translation; read back; save state.
+    """
+    article = load_article(article_dir)
+    client = client or client_from_environment()
+    segment_id, group_id = resolve_visibility(client, article)
+
+    backup: Path | None = None
+    if article.article_id is None:
+        created = client.create_article(
+            article.section_id,
+            {
+                "title": article.title,
+                "body": "<p>Draft in progress.</p>",
+                "locale": LOCALE,
+                "draft": True,
+                "author_id": article.author_id,
+                "user_segment_id": segment_id,
+                "permission_group_id": group_id,
+                "label_names": article.labels,
+            },
+        )
+        article.article_id = int(created["id"])
+        save_state(article)  # a later failure must not create a duplicate on re-run
+        remote = created
+    else:
+        remote = client.get_article(article.article_id)
+        check_overwrite_guard(remote, article)
+        backup = backup_translation(
+            client.get_translation(article.article_id), backup_dir, article
+        )
+
+    report = sync_attachments(client, article, approved_images)
+    body = rewrite_srcs(article.html, article.attachments)
+
+    remote = client.update_article(
+        article.article_id,
+        {
+            "author_id": article.author_id,
+            "user_segment_id": segment_id,
+            "permission_group_id": group_id,
+            "label_names": article.labels,
+        },
+    )
+    client.update_translation(
+        article.article_id, {"title": article.title, "body": body, "draft": not live}
+    )
+    stored = client.get_translation(article.article_id)
+    verify_readback(stored, article)
+
+    # The translation PUT changes updated_at after the article PUT returned.
+    article.last_known_updated_at = client.get_article(article.article_id)["updated_at"]
+    save_state(article)
+    return PublishResult(
+        article_id=article.article_id,
+        html_url=str(remote.get("html_url", "")),
+        draft=not live,
+        uploaded=report.uploaded,
+        reused=report.reused,
+        orphaned_ids=report.orphaned_ids,
+        backup=backup,
+    )
