@@ -11,7 +11,8 @@ description: >-
   rpt_tableau__state_assessments_dashboard_comps,
   int_tableau__state_assessments_demographic_comps,
   stg_google_sheets__state_test_comparison_demographics,
-  stg_google_sheets__pearson__student_crosswalk, int_pearson__all_assessments or
+  stg_google_sheets__pearson__student_crosswalk,
+  int_assessments__state_nj_scores, int_cambium__all_assessments or
   stg_cambium__njgpa and their upstream models.
 ---
 
@@ -37,8 +38,8 @@ not just before editing.
   `rpt_tableau__state_assessments_dashboard_comps` read different things. A
   number that differs between Overview and Advanced Comps is usually that, not a
   bug. See the reference doc.
-- `int_pearson__all_assessments` carries **both** Pearson and Cambium. Its name
-  is a known misnomer. Never assume a row in it is Pearson.
+- `int_assessments__state_nj_scores` carries **both** Pearson and Cambium, under
+  neutral column names. Never assume a row in it is Pearson.
 - **The vendor changed on a date, not per assessment.** Through December 2025 it
   is Pearson; Spring 2026 and everything after is Cambium, for all NJ state
   testing. So the Pearson relations are history and will not gain rows -- a gap
@@ -82,22 +83,22 @@ workbook — do not pull it in.
 
 ## Procedure: A student's score is missing from the dashboard
 
-Almost always an unresolved `localstudentidentifier`.
+Almost always an unresolved `student_number`.
 
 1. **Confirm the score reached the warehouse.** Query
-   `int_pearson__all_assessments` for the student, by `statestudentidentifier`
+   `int_assessments__state_nj_scores` for the student, by `state_student_id`
    rather than by local id — the local id is the thing under suspicion.
 2. **Check whether the detector already flags it.** Run
    `test_incorrect_student_number_pearson`. Its failure rows carry
-   `studenttestuuid`, both identifiers, the name and the test code. Whether
-   `localstudentidentifier` is null is what tells you the mode; the test code
-   tells you the assessment.
+   `student_test_uuid`, both identifiers, the name and the test code. Whether
+   `student_number` is null is what tells you the mode; the test code tells you
+   the assessment.
 3. **Read which failure mode it is** — they need different fixes:
 
    | Symptom                                  | Mode              | Fix                 |
    | ---------------------------------------- | ----------------- | ------------------- |
-   | `localstudentidentifier` null            | absent            | crosswalk sheet row |
-   | `localstudentidentifier` present, wrong  | present-but-wrong | crosswalk sheet row |
+   | `student_number` null                    | absent            | crosswalk sheet row |
+   | `student_number` present, wrong          | present-but-wrong | crosswalk sheet row |
    | no enrollment for that year and district | unmatchable       | **not the sheet**   |
 
    **Classify by mode, not by vendor.** Either vendor can produce either mode.
@@ -105,7 +106,7 @@ Almost always an unresolved `localstudentidentifier`.
    but the Cambium reading is one administration's worth of data and is not a
    property of the vendor. See the reference doc.
 
-   The absent mode is recoverable from `statestudentidentifier` and there is a
+   The absent mode is recoverable from `state_student_id` and there is a
    standing recommendation to automate it. The present-but-wrong mode never is,
    so the sheet is permanent either way.
 
@@ -142,10 +143,10 @@ Almost always an unresolved `localstudentidentifier`.
    | `Student_Number`    | the correct network student_number |
 
    The sheet is named for Pearson but serves every NJ vendor. **Cambium
-   corrections go in this same tab** -- `int_pearson__all_assessments` aliases
-   Cambium's `student_test_uuid` to `studenttestuuid` before the join, so it
-   reaches them with no code change. One row per test, not per student: a
-   student with four bad test rows needs four rows here.
+   corrections go in this same tab** -- `int_assessments__state_nj_scores` joins
+   the sheet on `student_test_uuid` after the union, so it reaches them with no
+   code change. One row per test, not per student: a student with four bad test
+   rows needs four rows here.
 
 5. **Re-check by reading the sheet external live** through ADC
    (`.claude/context/claude_ai_Google_Cloud_BigQuery.md`):
@@ -200,13 +201,14 @@ where state_student_identifier = <the state id from the flagged row>
 ```
 
 A `pending` row beside a `completed` one is the known Cambium case, filtered in
-`int_pearson__all_assessments` as of this writing. Anything else is new: write
-down what actually distinguishes the two rows before changing any model.
+the cambium package `int_cambium__all_assessments` as of this writing. Anything
+else is new: write down what actually distinguishes the two rows before changing
+any model.
 
 ### Catch it at load time instead of in the workbook
 
 Run the first query after every Cambium load, before anyone opens the dashboard.
-The grain uniqueness test on `int_pearson__all_assessments` asserts the same
+The grain uniqueness test on `int_assessments__state_nj_scores` asserts the same
 thing, so a dbt failure on that model's `unique_combination_of_columns` is this
 defect arriving through the front door -- read the failing rows rather than
 re-running the build.
@@ -691,8 +693,8 @@ After `current_academic_year` bumps in July:
   bug.
 - The **preliminary-score branch** self-deactivates: it is gated on
   `valid_prelim_assessments`, which drops an assessment once official scores for
-  that year land in `int_pearson__all_assessments`. Do not comment it in or out
-  by hand; that gating was built specifically to remove that chore.
+  that year land in `int_assessments__state_nj_scores`. Do not comment it in or
+  out by hand; that gating was built specifically to remove that chore.
 - Comparison data for the new year will not exist. Expect the comps views to be
   empty for it until either a bootstrap or the official file lands.
 

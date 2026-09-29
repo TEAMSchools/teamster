@@ -75,36 +75,38 @@ covers the Cambium side. From Spring 2026, NJSLA, NJSLA Science and the Algebra
 I, Algebra II and Geometry end-of-course tests arrive from Cambium as well as
 NJGPA.
 
-The union happens at kipptaf `int_pearson__all_assessments`:
+The union happens at kipptaf `int_assessments__state_nj_scores`:
 
 ```text
 kippnewark_pearson.int_pearson__all_assessments    ]
-kippcamden_pearson.int_pearson__all_assessments    ]  Pearson, already aligned
+kippcamden_pearson.int_pearson__all_assessments    ]  Pearson, frozen history
 kipppaterson_pearson.int_pearson__all_assessments  ]
 
-stg_cambium__njsla  (Newark, Camden, Paterson)     ]
-stg_cambium__eoc    (Newark, Camden)               ]  Cambium, mapped here
-stg_cambium__njgpa  (Newark, Camden)               ]
+kippnewark_cambium.int_cambium__all_assessments    ]
+kippcamden_cambium.int_cambium__all_assessments    ]  Cambium, Spring 2026 on
+kipppaterson_cambium.int_cambium__all_assessments  ]
 ```
 
-**The model's name is a misnomer and a rename is pending.** It carries two
-vendors. Anything reading it should not assume Pearson.
+The district Pearson tables are no longer rebuilt; they hold the last Pearson
+history as it stood. Each district's `int_cambium__all_assessments` unions the
+Cambium staging models that district has (`stg_cambium__njsla`,
+`stg_cambium__eoc`, `stg_cambium__njgpa`). The kipptaf model renames the Pearson
+columns to neutral names (`student_number`, `scale_score`,
+`administration_round` and so on) so both vendors land in one shape.
 
 Cambium ships a completely different schema — snake_case headers against
-Pearson's camel case, with only 11 of 225 column names in common. The cambium
-package staging models keep Cambium's names, and kipptaf
-`int_pearson__all_assessments` maps them into the Pearson-shaped columns. The
-two vendors' aligned columns are computed in two different places and have to be
+Pearson's camel case, with only 11 of 225 column names in common. The two
+vendors' aligned columns are computed in two different places and have to be
 kept in step by hand:
 
 | Vendor  | Where the aligned columns are computed                    |
 | ------- | --------------------------------------------------------- |
 | Pearson | `int_pearson__all_assessments` in the **pearson** package |
-| Cambium | `int_pearson__all_assessments` in **kipptaf**             |
+| Cambium | `int_cambium__all_assessments` in the **cambium** package |
 
-A kipptaf model cannot call into the pearson package, so the race, IEP and ML
-mappings are deliberately restated rather than shared. If you change one, change
-the other.
+Neither package can call into the other, so the race, IEP and ML mappings are
+deliberately restated rather than shared. The Pearson side is frozen, so in
+practice the Cambium model has to keep matching it.
 
 `assessment_version` is what tells the two apart downstream: `NJGPA` is the
 retired Pearson form, `NJGPA-A` the Cambium adaptive form. They use different
@@ -144,33 +146,34 @@ filter rather than trusting this sentence; the constant is in the model.
 
 Cambium reports an abandoned attempt as its own scored row rather than
 superseding it when the student later sits the test again. The two rows share a
-`statestudentidentifier`, a test code and a season, and differ only in
-`test_status` -- `pending` against `completed` -- and in the score.
+`state_student_id`, a test code and a season, and differ only in `test_status`
+-- `pending` against `completed` -- and in the score.
 
-`testscorecomplete`, the Pearson signal for the same thing, is null on every
+`test_score_complete`, the Pearson signal for the same thing, is null on every
 Cambium row, so the Pearson predicate cannot see this. The filter that does
-lives in `int_pearson__all_assessments`, in both Cambium CTEs (NJSLA and
-end-of-course, and NJGPA), before the Cambium rows join the Pearson ones:
+lives in the cambium package `int_cambium__all_assessments`, in both Cambium
+CTEs (NJSLA and end-of-course, and NJGPA), before the Cambium rows join the
+Pearson ones:
 
 ```sql
 where test_status = 'completed'
 ```
 
 What makes this hard to spot is that both rows also arrive with a null
-`localstudentidentifier`, so both are eligible for crosswalk repair. Give each a
-sheet entry and the crosswalk resolves both to the same student, the enrollment
-join matches both, and on the teacher/student roster view Tableau draws two
-marks in one cell -- the colored bar covers part of the column and the rest is
-blank. It reads as a rendering fault rather than a duplicate row.
+`student_number`, so both are eligible for crosswalk repair. Give each a sheet
+entry and the crosswalk resolves both to the same student, the enrollment join
+matches both, and on the teacher/student roster view Tableau draws two marks in
+one cell -- the colored bar covers part of the column and the rest is blank. It
+reads as a rendering fault rather than a duplicate row.
 
-`studenttestuuid` is unique per row by construction, so the uniqueness test on
+`student_test_uuid` is unique per row by construction, so the uniqueness test on
 it can never catch this. The test that does is the second
-`unique_combination_of_columns` on `int_pearson__all_assessments`, over
-`localstudentidentifier` + `academic_year` + `aligned_test_code` + `admin`,
-scoped to rows whose local id resolved. Unresolved rows are excluded on purpose:
-a Cambium load that lands before someone updates the sheet would otherwise fail
-the build for a data-entry backlog that `test_incorrect_student_number_pearson`
-already reports.
+`unique_combination_of_columns` on `int_assessments__state_nj_scores`, over
+`student_number` + `academic_year` + `aligned_test_code` +
+`administration_round`, scoped to rows whose `student_number` is not null.
+Unresolved rows are excluded on purpose: a Cambium load that lands before
+someone updates the sheet would otherwise fail the build for a data-entry
+backlog that `test_incorrect_student_number_pearson` already reports.
 
 Because the filter sits upstream of the crosswalk detector, a `pending` row no
 longer reaches it, so neither the detector nor the tiered matcher will propose
@@ -178,33 +181,33 @@ one for the sheet.
 
 ## Repairing a student number that does not resolve
 
-Assessment rows arrive keyed on the vendor's `localstudentidentifier`, which is
-supposed to be the network `student_number`. Sometimes it isn't, and the
-assessment row then fails to join to an enrollment and disappears from the
-dashboard silently.
+Assessment rows arrive keyed on the vendor's local student id (Pearson
+`localstudentidentifier`, Cambium `local_student_identifier`), landing as
+`student_number`. It is supposed to be the network `student_number`. Sometimes
+it isn't, and the assessment row then fails to join to an enrollment and
+disappears from the dashboard silently.
 
-The repair chain, in kipptaf `int_pearson__all_assessments`:
+The repair chain, in kipptaf `int_assessments__state_nj_scores`:
 
 ```sql
-coalesce(x.student_number, s.localstudentidentifier) as localstudentidentifier
+coalesce(x.student_number, u.student_number) as student_number
 -- x = stg_google_sheets__pearson__student_crosswalk, on student_test_uuid
 ```
 
 **The repair is applied after the union, so it already covers every vendor.**
 There is no Pearson-specific and Cambium-specific version of this: one sheet,
 one join, keyed on the test UUID. A Cambium correction goes in the same sheet as
-a Pearson one and works with no code change, because the Cambium mapping aliases
-`student_test_uuid` to `studenttestuuid` before the join.
+a Pearson one and works with no code change, because both vendors carry the test
+UUID as `student_test_uuid` by the time of the join.
 
 The sheet is named for Pearson only because Pearson was the sole vendor when it
 was built. Renaming it is deferred, not forgotten -- see _Deferred work_ below.
 
 `test_incorrect_student_number_pearson` is the detector. It returns any row from
-2017 onward whose `localstudentidentifier` is null or fails to resolve to an
-enrollment, and its failure rows carry the `studenttestuuid` you paste into the
-sheet. It reads the unioned model, so it covers Cambium as well. Its own name is
-still Pearson-flavoured; renaming it, and renaming
-`int_pearson__all_assessments`, remain open.
+2017 onward whose `student_number` is null or fails to resolve to an enrollment,
+and its failure rows carry the `student_test_uuid` you paste into the sheet. It
+reads the unioned model, so it covers Cambium as well. Its own name is still
+Pearson-flavoured; renaming it remains open.
 
 **The detector is non-blocking, and that is deliberate.** It sets no `severity`,
 so it inherits kipptaf's project default of `warn`. A failing row does not fail
@@ -216,7 +219,7 @@ student has no enrollment that year, or an identifier no evidence resolves. An
 trains people to ignore it or to route around it. A warning that sometimes goes
 unread is the accepted cost of a check that flags genuinely unfixable things.
 
-Its failure rows contain `firstname` and `lastorsurname`. **Those are student
+Its failure rows contain `first_name` and `last_or_surname`. **Those are student
 PII — never paste them into a PR, an issue, or Slack.** Quote the UUID and the
 count.
 
@@ -225,8 +228,8 @@ count.
 The distinction that matters is how the identifier is broken, not who sent it.
 
 - **Absent.** The identifier arrives null, so the join has nothing to match on.
-  Mechanically recoverable: `statestudentidentifier` resolves to the same
-  student. No human judgement required.
+  Mechanically recoverable: `state_student_id` resolves to the same student. No
+  human judgement required.
 - **Present but wrong.** No rule recovers the intended student, so a person has
   to decide who the test belongs to. The crosswalk sheet is the only mechanism
   for this, and it is permanent.
@@ -252,11 +255,12 @@ Triage by mode; never conclude a vendor cannot produce a mode.
 Some failing rows are neither mode, and **the crosswalk cannot repair them.**
 Check for this before entering anything in the sheet.
 
-The repair only overrides `localstudentidentifier`. The join still needs
-`student_number`, `academic_year` and `_dbt_source_project` to land together on
-an enrollment with `rn_year = 1`. When the student has no enrollment in that
-year and district, no value in the sheet makes the join succeed -- the row stays
-flagged and the sheet gains an entry that does nothing and never expires.
+The repair only overrides the assessment row's `student_number`. The join still
+needs `student_number`, `academic_year` and `_dbt_source_project` to land
+together on an enrollment with `rn_year = 1`. When the student has no enrollment
+in that year and district, no value in the sheet makes the join succeed -- the
+row stays flagged and the sheet gains an entry that does nothing and never
+expires.
 
 As of 2026-09-17 this is 8 of what were 20 outstanding rows -- the other 12 have
 been repaired -- and they are 4 NJSLA and 4 PARCC, 6 Newark and 2 Camden,
@@ -284,8 +288,8 @@ repaired in dbt.
 
 ### The state id is not a substitute for the local id
 
-**`statestudentidentifier` is not reliable.** That is the reason identity
-resolution runs on `localstudentidentifier` in the first place, and it is not a
+**`state_student_id` is not reliable.** That is the reason identity resolution
+runs on the local id (`student_number`) in the first place, and it is not a
 hunch -- [#3954](https://github.com/TEAMSchools/teamster/issues/3954),
 `fix(powerschool): state_studentnumber collisions across distinct students`, is
 open on exactly this.
@@ -294,7 +298,7 @@ So a bare fallback like this is **unsafe** and should not be built:
 
 ```sql
 -- DO NOT DO THIS
-coalesce(x.student_number, s.localstudentidentifier, sid.student_number)
+coalesce(x.student_number, u.student_number, sid.student_number)
 ```
 
 A naked state-id join attaches a score to whatever student happens to share that
@@ -320,7 +324,7 @@ population a person can clear in a few minutes. The matcher stays where it is,
 proposing rows for a human to accept.
 
 The evidence that started this is still worth keeping: all 9 Cambium rows that
-were failing carried a populated `statestudentidentifier` resolving 1:1 to an
+were failing carried a populated `state_student_id` resolving 1:1 to an
 enrollment, and all 9 also matched on first and last name. That is what made
 them safe to repair -- the name agreement, not the state id on its own.
 
@@ -701,7 +705,7 @@ tab alongside the Pearson ones.
 1. **Rename it off the Pearson name.** It serves every NJ vendor. A rename
    touches the spreadsheet, the named range, the source entry, `sheet_range`,
    the staging model and its properties, the Dagster asset key, and the one
-   `ref()` in `int_pearson__all_assessments` -- and leaves two orphaned
+   `ref()` in `int_assessments__state_nj_scores` -- and leaves two orphaned
    relations in `kipptaf_google_sheets` that dbt will not drop. The August 2026
    Cambium ingestion spec logged this first.
 2. **Add a vendor column.** Provenance only; no UUID appears under both vendors
