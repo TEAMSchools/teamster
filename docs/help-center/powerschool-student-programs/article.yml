@@ -1,0 +1,52 @@
+title:
+  How to add students to PowerSchool student programs (full-year designations)
+section_id: 115001057008
+author_id: 581543400
+user_segment: Signed-in users
+permission_group: Admins
+labels:
+  - powerschool
+  - student-programs
+article_id: 360035629314
+last_known_updated_at: "2026-09-29T22:15:49Z"
+attachments:
+  images/01-courses-and-programs-menu.png:
+    id: 43861835507863
+    url: https://teamschools.zendesk.com/hc/article_attachments/43861835507863
+    sha256: a2653fd4f10460687c00fc1c0b7ec0ef4773005c91920b42f2219efc7eb0cecc
+  images/02-student-programs-new.png:
+    id: 43861848836503
+    url: https://teamschools.zendesk.com/hc/article_attachments/43861848836503
+    sha256: 54c7628440672e22bce16f3d872ab05a22018a51056d4895f6de5166a506bd04
+  images/03-new-enrollment-form.png:
+    id: 43861835628055
+    url: https://teamschools.zendesk.com/hc/article_attachments/43861835628055
+    sha256: ac6b1719b831a6e6c94554c0e63d70f02bc16e4ebe814ee9d9f158c8a6d59c9c
+  images/04-program-dropdown.png:
+    id: 43861835685399
+    url: https://teamschools.zendesk.com/hc/article_attachments/43861835685399
+    sha256: 243e9e328ee0c089a2e33227f7dd3dd8bb49f37cb59eafeeeb9221e790b990d2
+  images/05-student-programs-saved.png:
+    id: 43861848989335
+    url: https://teamschools.zendesk.com/hc/article_attachments/43861848989335
+    sha256: b0a4862435dab7e7a8e991146ca9537a1fdf58788dc02ff1078dda15a5d3cff4
+  images/06-edit-enrollment.png:
+    id: 43861835771159
+    url: https://teamschools.zendesk.com/hc/article_attachments/43861835771159
+    sha256: 8381aeddcf04308ae0cee02220b7aa5e5835c661529e7311543d537028c7f61f
+  images/07-multiselect.png:
+    id: 43861849088151
+    url: https://teamschools.zendesk.com/hc/article_attachments/43861849088151
+    sha256: 13c38e8bbfa143d12ab6672e78bebf3fe60f52ea951e58bb0b660193f1882074
+  images/08-selection-banner.png:
+    id: 43861849123095
+    url: https://teamschools.zendesk.com/hc/article_attachments/43861849123095
+    sha256: d36ddecebbb5643a7b18eff89303108efa1eff393601a8d81746fb9863083a5a
+  images/09-functions-menu.png:
+    id: 43861849177111
+    url: https://teamschools.zendesk.com/hc/article_attachments/43861849177111
+    sha256: 534cecccc5fb2d612264a4eed30143aa91a1bd435159125d4cdef59c21f6729f
+  images/10-mass-assign-dropdown.png:
+    id: 43861849337239
+    url: https://teamschools.zendesk.com/hc/article_attachments/43861849337239
+    sha256: 782d0f6cd280e64c74d69f53027f7956f8c7d012a2c98fac68b13bcfe9ae7f95
