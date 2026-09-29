@@ -1,5 +1,8 @@
 models:
   - name: int_cambium__all_assessments
+    config:
+      contract:
+        enforced: true
     description: >-
       Cambium TIDE New Jersey state assessment results (NJSLA, NJSLA Science,
       the Algebra I, Algebra II and Geometry end-of-course tests, and NJGPA) for
@@ -340,7 +343,7 @@ models:
         description: Result type, always 'Actual'.
 
       - name: state_student_id
-        data_type: string
+        data_type: int64
         description: State student identifier as reported by Cambium.
         config:
           meta:
@@ -401,7 +404,7 @@ models:
             contains_pii: true
 
       - name: test_score_complete
-        data_type: float64
+        data_type: numeric
         description: >-
           Score completeness indicator. Cambium does not populate it, so it is
           NULL on every row.

@@ -195,6 +195,7 @@ with
     ),
 
     {% if "stg_cambium__njgpa" in cambium_relations %}
+        /* Adds _dbt_source_relation, matching the NJSLA branch. */
         njgpa as (
             {{ dbt_utils.union_relations(relations=[ref("stg_cambium__njgpa")]) }}
         ),
@@ -241,10 +242,6 @@ with
                 cast(null as string) as performance_band_group_label,
                 cast(null as boolean) as is_bl_fb,
 
-                case
-                    test_code when 'ELAGP' then 11 when 'MATGP' then 11
-                end as test_grade,
-
                 if(`subject` = 'Mathematics', 'Math', 'ELA') as discipline,
 
                 if(
@@ -265,11 +262,15 @@ with
                     upper(`period`) like 'FALL%', 'Fall', `period`
                 ) as administration_round,
 
-                if(test_performance_level = 2, true, false) as is_proficient,
-
                 /* Mirrors the ELA/Math branch of the Pearson model, which flags
                    every NJGPA level below 3, so both NJGPA levels read 1. */
                 if(test_performance_level < 3, 1, 0) as is_below_int,
+
+                if(test_performance_level = 2, true, false) as is_proficient,
+
+                case
+                    test_code when 'ELAGP' then 11 when 'MATGP' then 11
+                end as test_grade,
 
                 case
                     test_performance_level
