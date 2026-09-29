@@ -69,6 +69,10 @@ vars:
   pearson_state_assessment_relations:
     - int_pearson__njsla
     - int_pearson__njsla_science
+  # Paterson receives only the NJSLA file (stg_cambium__njgpa / _eoc are
+  # disabled), so int_cambium__all_assessments reads NJSLA alone.
+  cambium_state_assessment_relations:
+    - stg_cambium__njsla
 
 models:
   kipppaterson:
