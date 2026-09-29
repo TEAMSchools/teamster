@@ -81,8 +81,15 @@ with
 
             a.aligned_test_code as test_code,
 
-            upper(trim(a.firstname)) as gap_first,
-            upper(trim(a.lastorsurname)) as gap_last,
+            -- Letters only, accents folded, on both sides: a hyphen, apostrophe
+            -- or inner space in one system's spelling otherwise defeats every
+            -- tier.
+            regexp_replace(
+                normalize_and_casefold(a.firstname, nfkd), r'[^a-z]', ''
+            ) as gap_first,
+            regexp_replace(
+                normalize_and_casefold(a.lastorsurname, nfkd), r'[^a-z]', ''
+            ) as gap_last,
         from {{ ref("int_pearson__all_assessments") }} as a
         left join
             {{ ref("base_powerschool__student_enrollments") }} as e
@@ -163,8 +170,12 @@ with
             dob,
             state_studentnumber,
 
-            upper(trim(first_name)) as ps_first,
-            upper(trim(last_name)) as ps_last,
+            regexp_replace(
+                normalize_and_casefold(first_name, nfkd), r'[^a-z]', ''
+            ) as ps_first,
+            regexp_replace(
+                normalize_and_casefold(last_name, nfkd), r'[^a-z]', ''
+            ) as ps_last,
         from {{ ref("base_powerschool__student_enrollments") }}
         where rn_year = 1
     ),
