@@ -292,8 +292,8 @@ rows with no proficiency verdict, so `pct_proficient` leaves them out. The
 shipped `count_taken` and `count_scored` descriptions attribute those rows to
 "the DIBELS K-2 phonics subtests have no benchmark level set upstream"; the PR
 corrects that wording. Whether a student who tested out of a subtest should
-count as proficient is a policy question. It goes on the reference file's
-open-decisions list, and Cube text says only that it is open.
+count as proficient is a policy question. It goes on the orchestrator's _Flag,
+don't invent_ list, and Cube text says only that it is open.
 
 Checked 2026-09-28, behind the `module_type` draft: `module_type` is entered by
 hand in a Google AppSheet app
@@ -479,16 +479,16 @@ The routing section shrinks to the assessment-family hints and a pointer to
 
 Policy and definition questions this review turned up. None is decided here.
 Cube text says each one is open and never states a default (placement step 2).
-Each also goes on the open-decisions list in `assessment-cube-reference.md`, so
-the working group sees it.
+Each also goes on the orchestrator's _Flag, don't invent_ list
+(`assessment-cube-orchestrator.md`), so the working group sees it.
 
-| Question                                                                                                                                                                                            | Evidence                                                                                                                                                                                                                                              | Who can answer                                            |
-| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
-| Which `academic_subject` labels count as "math" and which as "ELA"? Already on the reference file's list.                                                                                           | Labels differ by source: state uses English Language Arts and Mathematics, i-Ready and STAR use Math and Reading, DIBELS uses Reading, Illuminate uses Text Study and course names. At K-2, Text Study is the only ELA-equivalent Illuminate subject. | Teaching & Learning                                       |
-| Should a DIBELS subtest a student tested out of count as proficient?                                                                                                                                | `Tested Out` rows carry no `is_mastery`, so `pct_proficient` leaves them out of the denominator entirely.                                                                                                                                             | Teaching & Learning                                       |
-| What do the Illuminate module types TP, ET and WPP stand for?                                                                                                                                       | Titles suggest Test Prep, Exit Ticket, and a Literacy writing task; UA is documented as Unit Assessment.                                                                                                                                              | Whoever maintains the Illuminate assessments AppSheet app |
-| Should grade-band reporting key on the student's `grade_level` or the assessment's `grade_level_tested`? Already on the reference file's list.                                                      | The 2 disagree where both are populated, and `grade_level_tested` is null for vendor diagnostics and NJSLA end-of-course tests, so the choice changes results and coverage.                                                                           | Teaching & Learning                                       |
-| When a student sits the same diagnostic more than once in a window, which sitting counts? Already on the reference file's list; most recent by date is the working convention, not ratified policy. | Repeat sittings are 2.6% of i-Ready student-windows, rare on STAR and DIBELS. Skipping the de-duplication inflates student-level counts and growth figures.                                                                                           | Teaching & Learning                                       |
+| Question                                                                                                                                                                                          | Evidence                                                                                                                                                                                                                                              | Who can answer                                            |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| Which `academic_subject` labels count as "math" and which as "ELA"? Already on the orchestrator's list.                                                                                           | Labels differ by source: state uses English Language Arts and Mathematics, i-Ready and STAR use Math and Reading, DIBELS uses Reading, Illuminate uses Text Study and course names. At K-2, Text Study is the only ELA-equivalent Illuminate subject. | Teaching & Learning                                       |
+| Should a DIBELS subtest a student tested out of count as proficient?                                                                                                                              | `Tested Out` rows carry no `is_mastery`, so `pct_proficient` leaves them out of the denominator entirely.                                                                                                                                             | Teaching & Learning                                       |
+| What do the Illuminate module types TP, ET and WPP stand for?                                                                                                                                     | Titles suggest Test Prep, Exit Ticket, and a Literacy writing task; UA is documented as Unit Assessment.                                                                                                                                              | Whoever maintains the Illuminate assessments AppSheet app |
+| Should grade-band reporting key on the student's `grade_level` or the assessment's `grade_level_tested`? Already on the orchestrator's list.                                                      | The 2 disagree where both are populated, and `grade_level_tested` is null for vendor diagnostics and NJSLA end-of-course tests, so the choice changes results and coverage.                                                                           | Teaching & Learning                                       |
+| When a student sits the same diagnostic more than once in a window, which sitting counts? Already on the orchestrator's list; most recent by date is the working convention, not ratified policy. | Repeat sittings are 2.6% of i-Ready student-windows, rare on STAR and DIBELS. Skipping the de-duplication inflates student-level counts and growth figures.                                                                                           | Teaching & Learning                                       |
 
 ## YAML description changes
 
@@ -683,6 +683,22 @@ a hand-written `META_STUB`. This adds a second family without disturbing it.
 - The runner stays hermetic per `eval/README.md`, and runs on Haiku only, the
   weaker model and the one where Step 0 found headroom.
 
+Every run records, per conversation, what the Agent SDK's `ResultMessage`
+reports and the runner discards today: tokens in and out (with cache),
+`total_cost_usd`, `num_turns` and `duration_ms`, beside the tool calls already
+captured. The report gives each arm its median tokens, cost per conversation,
+turns and tool calls, and also the character size of the full-catalog and
+assessment-view `meta` responses before and after. Eval timing is not production
+timing, because Cube is stubbed; #5613 measures real latency.
+
+A third arm sizes the planned org-level skill without building it: **arm C** is
+arm B plus the trimmed orchestrator as the system prompt. The gap between B and
+C shows what process and recipes add beyond Cube text, and the traps C wins are
+the recipes worth writing. Arm C reports; it does not gate.
+
+The gate runs on Haiku. The before/after report adds one small Sonnet run of
+family 4, arms A and B only: 7 prompts, 3 reps, 42 conversations.
+
 The eval runs once the descriptions, docstrings and `count_assessments` are all
 on the branch. Rules, written before any run:
 
@@ -825,12 +841,17 @@ reference and count. It answers whether a shape occurs in production, not how
 often an agent falls into a trap. #5557's rollup measurement uses the same
 technique, with the same limits.
 
-The real dependency is **attribution and question text**, which the separate
-MCP-interaction recording spec provides: question, `query_json`,
-`members_referenced`, outcome, `server_sha`. Once that lands, each trap becomes
-a standing monitor instead of a pre-merge gate. That matters because the eval
-proves the descriptions work on 7 written prompts, not on what people actually
-ask or on whether they still work in November.
+The real dependency is **attribution and question text**, which #5613 provides:
+one logged row per Cube MCP call, with `staff_key`, `question`, `query_json`,
+`members_referenced`, outcome and `server_sha`. Its phase 1 (PII-free, no
+question text) is unblocked; phase 2 adds `question` and `query_json` after a
+retention decision. Once `query_json` is logged, each trap becomes a standing
+detector instead of a pre-merge gate. That matters because the eval proves the
+descriptions work on 7 written prompts, not on what people actually ask or on
+whether they still work in November.
+
+The Paterson trap cannot move to production this way: it is answer-scored, and
+#5613 does not log answers. It stays an eval-only check.
 
 The only obligation this spec takes on is keeping the trap predicates importable
 rather than inlined in the scorer's main loop.
@@ -842,17 +863,34 @@ documentation.
 
 ## Project-knowledge trim
 
-- The PR deletes every fact it moved from `assessment-cube-reference.md`.
-  Afterward the file holds the section headers, the open-decision pointers, a
-  line under each source saying the field facts live in `meta`, and the
-  corrected band-set table until #5573 removes it.
-- `assessment-cube-orchestrator.md` loses the routing entries that point at
-  deleted sections. Step 3 of the protocol changes from "filter `response_type`
-  explicitly" to "confirm `response_type` from `meta`".
-- `README.md` in that folder gains a step: after the PR merges, re-upload the
-  changed files to the Project. Its update loop says a field fact goes to the
-  Cube YAML, a query mechanic goes to `server.py`, and only protocol or policy
-  goes to these files.
+The open decisions have one home: the orchestrator's _Flag, don't invent_ list
+(`assessment-cube-orchestrator.md`, 15 items). The reference file's shorter
+"Open decisions" bullet repeats 7 of them and is deleted.
+
+- **`assessment-cube-reference.md`.** The PR deletes every fact it moved. The
+  K-2 `Text Study` evidence moves to the orchestrator, beside its open ELA
+  decision, and the 3 provenance notes go with their facts. What remains is the
+  corrected band-set table, with its `overall`-rows caveat. #5573 deletes that
+  table, and the file with it, leaving the Project on one file.
+- **`assessment-cube-orchestrator.md`.**
+  - _Flag, don't invent_ gains the 2 questions this review added: whether a
+    DIBELS `Tested Out` subtest counts as proficient, and what TP, ET and WPP
+    stand for. The second is a documentation question for whoever maintains the
+    Illuminate assessments AppSheet app, not a policy one, and says so.
+  - Protocol step 3 changes from "filter `response_type` explicitly" to "confirm
+    `response_type` from `meta`".
+  - Every pointer into the reference file becomes "see the member's description
+    in `meta`": step 3's "(Shared conventions)", the NJSLA item's "(NJ state)",
+    and "called out inline in `assessment-cube-reference.md`".
+  - _Routing_ keeps the region hint, the assessment-family hint and "ask before
+    querying". The 7-section map goes, since those sections no longer exist.
+  - The session-log and Drive-filing protocol stays untouched. #5613's server
+    log retires most of it once its phase 2 ships; that issue lists which parts
+    go and which judgments (confidence, inference flags) it keeps.
+- **`README.md` in that folder** gains a step: after the PR merges, re-upload
+  the changed files to the Project. Its update loop says a field fact goes to
+  the Cube YAML, a query mechanic goes to `server.py`, and only protocol or
+  policy goes to these files.
 
 ## PR and validation
 
