@@ -265,3 +265,46 @@ def rewrite_srcs(html: str, attachments: dict[str, dict]) -> str:
         return f"{match.group(1)}{entry['url']}{match.group(3)}"
 
     return IMG_SRC_RE.sub(swap, html)
+
+
+def check_overwrite_guard(remote_article: dict, article: Article) -> None:
+    """Abort when Zendesk changed since the last publish this folder knows about."""
+    known = article.last_known_updated_at
+    remote = remote_article.get("updated_at")
+    if known is None:
+        return
+    if remote != known:
+        raise PublishError(
+            "Overwrite guard: the article changed in Zendesk since the last publish. "
+            f"article.yml knows {known}; Zendesk reports {remote}. Someone edited it in the "
+            "editor. Pull their change into article.html and update last_known_updated_at, "
+            "or confirm the overwrite by setting last_known_updated_at to the Zendesk value."
+        )
+
+
+def backup_translation(translation: dict, backup_dir: Path, article: Article) -> Path:
+    """Save the stored title and body before overwriting. Never inside the repo."""
+    backup_dir.mkdir(parents=True, exist_ok=True)
+    stamp = re.sub(r"[^0-9]", "", translation.get("updated_at") or "") or "unknown"
+    path = backup_dir / f"zendesk-article-{article.article_id}-{stamp}.html"
+    path.write_text(
+        f"<!-- title: {translation.get('title', '')} -->\n{translation.get('body', '')}"
+    )
+    return path
+
+
+def verify_readback(translation: dict, article: Article) -> None:
+    if translation.get("title") != article.title:
+        raise PublishError(
+            f"Read-back title mismatch: sent {article.title!r}, "
+            f"stored {translation.get('title')!r}"
+        )
+    stored_ids = {
+        int(i) for i in ATTACHMENT_ID_RE.findall(translation.get("body") or "")
+    }
+    expected_ids = {int(e["id"]) for e in article.attachments.values()}
+    missing = sorted(expected_ids - stored_ids)
+    if missing:
+        raise PublishError(
+            f"Read-back: attachment ids {missing} are not in the stored body"
+        )
