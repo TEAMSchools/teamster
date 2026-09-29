@@ -1,13 +1,16 @@
 models:
   - name: rpt_gsheets__gradebook_audit_template
     description: >
-      Every school week's assignment expectations, one row per week with the
-      four category counts as columns (W, H, F, S), for building the CSV that C3
-      uploads into PowerSchool's U_EXPECTATIONS via the KIPP NJ Gradebook Audit
-      plugin. Unlike int_powerschool__u_expectations_qtd_unpivot, which
-      collapses to the most recently completed week per quarter for the audit's
-      quarter-to-date counts, this keeps every week so the upload covers the
-      full year. Coverage follows the inner join to
+      Every completed school week's assignment expectations, one row per week
+      with the four category counts as columns (W, H, F, S), for building the
+      CSV that C3 uploads into PowerSchool's U_EXPECTATIONS via the KIPP NJ
+      Gradebook Audit plugin. Unlike
+      int_powerschool__u_expectations_qtd_unpivot, which collapses to the single
+      most recently completed week per quarter for the audit's quarter-to-date
+      counts, this keeps every completed week — but like that model, it stops at
+      the last completed week, so an about-to-open quarter has no rows here yet.
+      rpt_gsheets__gradebook_audit_all_weeks is the sibling that runs ahead to
+      the full academic year. Coverage follows the inner join to
       stg_powerschool__u_expectations — Newark and Camden at MS and HS, Paterson
       at MS, no ES and no Miami.
     data_tests:
@@ -18,13 +21,22 @@ models:
               - school_level
               - quarter
               - week_number_quarter
+          config:
+            severity: error
     columns:
       - name: region
         data_type: string
         description: District region (e.g. Newark, Camden, Paterson).
       - name: school_level
         data_type: string
-        description: School level grouping (MS / HS).
+        description: >
+          School level grouping (MS / HS), resolved from school_level_alt in
+          int_students__school_directory with a fallback to
+          int_students__calendar_week's per-school school_level.
+          school_level_alt reclassifies Sumner grades 5 and up to MS from
+          AY2025, so Sumner's calendar feeds the Camden MS row even though the
+          school itself is ES. The companion
+          rpt_gsheets__gradebook_audit_all_weeks resolves it the same way.
       - name: quarter
         data_type: string
         quote: true
@@ -41,7 +53,7 @@ models:
         data_type: date
         description: >
           Last in-session day of the school week, from
-          int_powerschool__calendar_week.school_week_end_date. Friday on a full
+          int_students__calendar_week.school_week_end_date. Friday on a full
           week, but earlier (Thursday or before) when the week is shortened by a
           holiday or PD day — so a short week is visible when setting counts.
       - name: notes
