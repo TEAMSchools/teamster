@@ -603,3 +603,17 @@ PHRASES.update(
         ],
     }
 )
+
+
+# --- Eval revision round 1 (Task 13) -----------------------------------------
+PHRASES["student_assessment_scores.proficiency_level"].append("filter it with notSet")
+PHRASES["student_assessment_administrations.administration_period"].append(
+    "never sort by date_taken"
+)
+PHRASES["student_assessment_scores.date_taken"] = PHRASES.get(
+    "student_assessment_scores.date_taken", []
+) + ["not to find the most recent diagnostic"]
+# Round 1 reworded "not the max date_taken" as "never sort by date_taken".
+PHRASES["student_assessment_administrations.administration_period"].remove(
+    "not the max date_taken"
+)

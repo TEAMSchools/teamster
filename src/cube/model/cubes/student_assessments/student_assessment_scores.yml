@@ -52,10 +52,12 @@ cubes:
         public: true
         meta:
           ai_context: >-
-            A standalone date, not joined to the calendar. For year and calendar
-            rollups use date_day and academic_year, which read the
-            administration date for Illuminate and college and the test date for
-            state tests and vendor diagnostics (i-Ready, DIBELS, STAR).
+            A standalone date, not joined to the calendar, and not to find the
+            most recent diagnostic: that is the latest named round in
+            administration_period. For year and calendar rollups use date_day
+            and academic_year, which read the administration date for Illuminate
+            and college and the test date for state tests and vendor diagnostics
+            (i-Ready, DIBELS, STAR).
 
       - name: term_key
         description: FK to terms — the reporting quarter containing the score.
@@ -95,6 +97,9 @@ cubes:
           ai_context: >-
             On Illuminate standard and group rows, a band can carry more than
             one label spelling; group by performance_band_label_number there.
+            For rows with no proficiency level (a share of STAR rows, and DIBELS
+            rows with no verdict), filter it with notSet; equals "null" matches
+            the literal string and returns zero rows.
 
       - name: performance_band_label_number
         description: >-
