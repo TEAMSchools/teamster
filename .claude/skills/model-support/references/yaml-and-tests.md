@@ -157,6 +157,16 @@ shipped with one or the other:
   never falling through to "no match". Count candidates per source record per
   tier; any count above 1 must reach the ambiguous label.
 
+## Past-year filters
+
+Never filter a past school year on `enroll_status`. PowerSchool keeps one status
+per student, and `int_powerschool__student_enrollment_union` copies the current
+value onto every past-year row, so `enroll_status` on a 2025-26 row is the
+student's status today. For "completed the year" use `is_enrolled_recent` on
+that year's row, or its exit date. On CSGF, `enroll_status in (0, 3)` on AY2025
+dropped 183 students who finished the year and left over the summer (measured
+2026-09-29, PR #5572), and the count grew as summer transfers were coded.
+
 ## Status ladders
 
 When a column is a `case` that assigns a status or tier and stops at the first
