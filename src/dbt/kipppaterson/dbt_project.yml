@@ -138,6 +138,8 @@ models:
   pearson:
     +materialized: table
     # Frozen: the last prod tables stay as history (see data_tests above).
+    # Paterson's own int_pearson__njsla* remaps are disabled, with their tests,
+    # in models/pearson/intermediate/properties/.
     intermediate:
       int_pearson__all_assessments:
         +enabled: false
