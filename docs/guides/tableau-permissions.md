@@ -13,7 +13,8 @@ question what they can see, and needs no Tableau knowledge. **Part 2** is for
 Tableau developers and describes the field structure and points at the build
 reference.
 
-**Status: live** on nine workbooks, listed in Part 2.
+**Status: live** on nine workbooks, listed in Part 2. Last checked against the
+calculations in the published workbooks on 2026-09-29.
 
 ---
 
@@ -43,7 +44,12 @@ You see a row if **any one** of these is true. They are additive.
 | 5   | **Your school**          | Your school's rows, if you are in that school's staff group _and_ hold a role that permits it.    |
 
 Route 5 needs all three of the right entity, the right school, and a qualifying
-role. Missing any one of them means no access by that route.
+role. Missing any one of them means no access by that route. On most workbooks
+an assistant principal's route 5 reaches only the teachers and learning
+specialists at their school, not every row there.
+
+Most workbooks follow these five routes exactly. The ones that do not are listed
+under _Where a workbook differs_.
 
 !!! note "A sixth route exists for one named group"
 
@@ -80,12 +86,23 @@ groups in route 2.
     only the _direct_ manager. This is accepted rather than accidental — the
     reasoning is in the design spec linked at the end of this page.
 
+!!! warning "The exception: Survey Dashboard completion tracking and support
+sheets"
+
+    On those sheets the central office group grants every row in every region,
+    other central office staff included. The support sheets then narrow it by
+    department (see _The support surveys are scoped by the department being
+    rated_). Questions that rate no department, free-text boxes included, are
+    not narrowed, so they reach every member of the central office group.
+
 ### Senior leaders are shielded further
 
-On the workbooks that carry performance and development data, rows belonging to
-senior leaders are restricted to that person, their manager, and the
-network-wide groups. Peers at the same level do not see each other, including
-peers who otherwise have broad access.
+On Manager Survey Reports, Manager Survey Rollup and Leadership Development,
+rows about chief-level staff are hidden from TEAM Council. Most chiefs sit on
+TEAM Council, so this is what stops them seeing each other's rows. The rows stay
+visible to the person, their manager, and the data, Employee Relations and
+Leadership Development groups. A central office chief's row is outside the
+regional routes already, so those are the only people who see it.
 
 Seniority is read from the ADP job function rather than from job title text, so
 a newly created senior title is covered automatically without anyone editing a
@@ -96,6 +113,31 @@ titles, president, and executive director. The job function is missing on most
 historical rows, so the fallback does the work on older data rather than being a
 rare edge case. It is deliberately a shade broader than the job function itself,
 which places executive directors and deputy chiefs one tier below chief level.
+
+### Senior leaders' stipends are shielded wider
+
+The Stipend and Bonus Dashboard hides a larger group, from more routes. Stipends
+paid to anyone whose job function is chief level, "EDs, HOSs, MDOs", or "KTAF or
+Regional Managing Director" are hidden from TEAM Council, regional operations,
+regional leadership and school-based viewers.
+
+They stay visible to the person, their manager, and the data and Employee
+Relations groups, which process payments. Where the job function is missing,
+titles containing chief, president, managing director, head of schools or
+executive director count instead.
+
+### Where a workbook differs
+
+| Workbook                          | Difference from the five routes                                                                                                                                                                                                                                                                                                                                                         |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Coaching Conversation Tool        | You see your own observations only once they are released: a score form once it is locked, other observations once the coaching-conversation window opens. Observations outside a tracked cycle show straight away. Your manager sees them immediately.                                                                                                                                 |
+| SchoolMint Grow Dashboard         | Route 1 is your manager only. Your own observations are in the Coaching Conversation Tool. The norming sheets widen route 4: school leaders see their whole region on every norming sheet, and APs and DSOs see their region on the summary norming sheets. On the norming sheets that name individual teachers, APs and DSOs stay at their own school.                                 |
+| Survey Dashboard                  | Three gates, one each for Intent to Return, the support surveys and completion tracking. Intent to Return has its own section below. Support and completion tracking have no route 1, grant central office every region, and add region-wide access for Teaching and Learning, Technology, School Support Directors and Special Education Directors. APs see every row at their school. |
+| Operations Systems                | The performance-management sheets follow the five routes, but APs do not qualify for route 5. The walkthrough sheets work differently; see _The walkthrough sheets scope by the school walked_.                                                                                                                                                                                         |
+| Stipend and Bonus Dashboard       | The stipend shield above. The HR download sheets are narrower still: only the data and Employee Relations groups see them.                                                                                                                                                                                                                                                              |
+| Miami Instructional Rubrics       | New Teacher Development sees everything. NTN coordinators qualify for route 5 alongside school leaders, DSOs and APs.                                                                                                                                                                                                                                                                   |
+| Personalized Survey Links         | Your own link only. Nobody else sees it, including your manager.                                                                                                                                                                                                                                                                                                                        |
+| Leadership Development (archived) | Only school leaders qualify for route 5.                                                                                                                                                                                                                                                                                                                                                |
 
 ### The Intent to Return survey is different
 
@@ -191,9 +233,17 @@ This applies **on top of** entity, region and school. Belonging to the
 Operations group does not show you Operations feedback from a region you cannot
 otherwise reach — both tests have to pass.
 
+Central office staff are the exception. On these sheets the central office group
+passes the entity, region and school tests for every row, so the department test
+is the only one that narrows what they see. Most department groups are central
+office teams, so in practice a department group reads its feedback from every
+region.
+
 Four groups see every department regardless: the data team, TEAM Council,
 managing directors of school operations, and heads of schools. The last two sit
 across departments, so scoping them to one would hide most of what they oversee.
+On these sheets TEAM Council is `KNJ-SG-Tableau TC`, not the `Group Staff TC`
+group the other workbooks use.
 
 #### The department groups
 
@@ -203,7 +253,7 @@ Ask for the one matching the department whose feedback you need to read.
 | ------------------------------------ | --------------------------------------------------- |
 | Compliance                           | `KNJ-SG-Tableau All Compliance`                     |
 | Data                                 | `KNJ-SG-Tableau All Data`                           |
-| Development                          | `TS-DL-Development`                                 |
+| Development                          | `TS-DL-Advancement`                                 |
 | Finance, including Purchasing        | `TS-SG-R9 Finance` or `TS-SG-R9 Purchasing`         |
 | Human Resources - Employee Relations | `Group Staff Employee Relations`                    |
 | Leadership Development               | `KNJ-SG-Tableau All Leadership Development`         |
@@ -230,8 +280,9 @@ Ask for the one matching the department whose feedback you need to read.
 !!! warning "The support sheets do not show respondent names, and that is not
 the same as anonymous"
 
-    No support sheet displays a respondent's name. Treat that as the normal
-    reading experience rather than as a guarantee, because two things sit
+    The department gate drops the respondent-name question from every support
+    sheet, so none of them displays a respondent's name. Treat that as the
+    normal reading experience rather than as a guarantee, because two things sit
     outside it.
 
     The underlying data still carries the name, along with employee number and
@@ -287,7 +338,8 @@ reversible. A workbook edit is none of those things.
 
 Individual, by-name grants inside a workbook are **not permitted**. They are
 invisible to anyone auditing group membership, and they survive the person
-changing roles.
+changing roles. One is still live, on the Stipend and Bonus Dashboard's HR
+download sheets, and is tracked for removal in the playbook linked in Part 2.
 
 ### The group names to ask for
 
@@ -355,6 +407,10 @@ Rooms are deliberately absent — see _Rooms do not grant access_.
 | School leader                 | `KNJ-SG-Tableau All SL`  |
 | Director of school operations | `KNJ-SG-Tableau All DSO` |
 | Assistant principal           | `KNJ-SG-Tableau All AP`  |
+| NTN coordinator               | `TS-DL-NTN Coordinators` |
+
+The NTN coordinator group qualifies on Miami Instructional Rubrics only. Which
+roles qualify on the other workbooks is in _Where a workbook differs_.
 
 #### Paterson-wide remits
 
@@ -380,22 +436,32 @@ Note it has no `KNJ-SG-Tableau` prefix; that is the real name.
 | School support directors               | `KNJ-SG-Tableau School Support Directors`    |
 | Special education directors            | `KNJ-SG-Tableau Special Education Directors` |
 | KIPP Forward directors                 | `KNJ-SG-Tableau KIPP Forward Directors`      |
+| Teaching and Learning                  | `TS-DL-Teaching And Learning`                |
+| Technology                             | `TS-SG-R9 Technology`                        |
+
+The last two are region-wide on the Survey Dashboard's support and completion
+sheets only. On the support sheets, Technology also rates as a department.
 
 #### Network-wide functional groups
 
 These grant broadly and are not added on request from an individual — they
 follow from the function you sit in.
 
-`KNJ-SG-Tableau All Data`, `Group Staff Employee Relations`,
-`KNJ-SG-Tableau All Recruiting`, `KNJ-SG-Tableau All T&L`, `KNJ-SG-Tableau TC`,
-`KNJ-SG-Tableau All New Teacher Development`, `Leadership Development`,
-`Group Staff TEAM Council`, `TS-DL-Teaching And Learning`.
+| Group                                        | Sees everything on                                                                                                            |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `KNJ-SG-Tableau All Data`                    | every workbook except Personalized Survey Links                                                                               |
+| `Group Staff Employee Relations`             | every workbook except Operations Systems, Personalized Survey Links, and the Survey Dashboard's support and completion sheets |
+| `Leadership Development`                     | Manager Survey Reports and Rollup, Coaching Conversation Tool, SchoolMint Grow, Miami Instructional Rubrics, Intent to Return |
+| `Group Staff TC` (TEAM Council)              | most workbooks; see the senior-leader and stipend shields                                                                     |
+| `KNJ-SG-Tableau TC` (TEAM Council)           | the Survey Dashboard's support and completion sheets                                                                          |
+| `KNJ-SG-Tableau All Recruiting`              | Intent to Return                                                                                                              |
+| `KNJ-SG-Tableau All New Teacher Development` | Miami Instructional Rubrics                                                                                                   |
 
 !!! note "Not every workbook grants every group"
 
     The network-wide list above is the one tier that legitimately differs per
     workbook, so membership of one of these does not guarantee access to all nine.
-    The entity, school, and role groups behave the same way everywhere.
+    The entity and school groups behave the same way everywhere.
 
 ---
 
@@ -409,8 +475,9 @@ looking at. It is not enough to build one.
 `docs/superpowers/plans/2026-07-31-tableau-workbook-remediation.md`. It carries
 the paste-ready text of every field, the order to create them in, how to resolve
 field names, where to attach the filter, the per-workbook variants, the
-verification personas, and the outstanding work. Calc text lives only there, so
-the two cannot drift.
+verification personas, and the outstanding work. Calc text lives only there, not
+on this page. The playbook can still fall behind the workbooks: where the two
+disagree, the published workbook is what runs, so audit from its `.twbx`.
 
 ### The five fields
 
@@ -437,9 +504,17 @@ Paterson schools gets Paterson visibility by being added to the Paterson group,
 with no change to any workbook.
 
 A workbook can hold **more than one** permission field, where particular sheets
-need a different rule — the Survey Dashboard has two, SchoolMint Grow has more.
-So "the `Permissions` field is correct" does not by itself mean a workbook is
-correctly gated, and the per-sheet answer is in the playbook rather than here.
+need a different rule. So "the `Permissions` field is correct" does not by
+itself mean a workbook is correctly gated, and the per-sheet answer is in the
+playbook rather than here.
+
+| Workbook                    | Permission fields                                                                                                       |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Survey Dashboard            | `Permissions - Completion`, `Permissions - Support` with `RLS - Department Gate` beside it, `Permissions - ITR`         |
+| SchoolMint Grow Dashboard   | `Permissions`, `Permissions - Norming`, `Permissions  - Norming - Individual Data` (two spaces before the first hyphen) |
+| Stipend and Bonus Dashboard | `Permissions`, `Permissions HR Download`                                                                                |
+| Operations Systems          | one `Permissions` per datasource, with different text                                                                   |
+| Personalized Survey Links   | `Permissions - Self` only, with none of the gate fields                                                                 |
 
 ### The gated workbooks
 
@@ -474,7 +549,9 @@ so this table is the readable mapping. It is not the only one: Tableau Server
 does report a workbook's upstream datasources, embedded ones included, so the
 table can be checked against the server rather than trusted on faith. Do check
 it after any repoint — a repoint that adds the new datasource without detaching
-the old one leaves both attached, and only the server shows that. Per-workbook
+the old one leaves both attached, and only the server shows that. Manager Survey
+Rollup is in that state now: `int_surveys__manager_survey_details` is still
+attached with its old permission fields, though no sheet reads it. Per-workbook
 variants, and the two archived workbooks that predate this model, are in the
 playbook.
 
