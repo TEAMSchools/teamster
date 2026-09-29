@@ -82,6 +82,16 @@ Rejected: serving the reference file as an MCP tool or resource. The model has
 to choose to call it, resources do not reliably surface through claude.ai
 connectors, and it duplicates the planned skill.
 
+### The supported agent path
+
+Everything in this spec assumes agents reach Cube through our Cube MCP server,
+which calls the REST API. That path carries member and view `description`,
+`meta.ai_context`, the `load` and `meta` docstrings, and the empty-result note.
+The SQL API is the BI path (Superset): Cube serves `description` text there as
+Postgres column comments (`pg_catalog.pg_description`), and nothing in its code
+reads `ai_context`, the docstrings or the note. An agent that needs the SQL API
+is a new design question; its guidance would come from its own prompt or skill.
+
 ### `meta.ai_context` reaches the model
 
 Cube Cloud's UI renders only `meta.folders`. The `/meta` payload carries every
@@ -161,10 +171,13 @@ this spec, but the rule loads on every Cube file they open:
   so an author whose edit fails the equality test knows why.
 - **The placement procedure** from _Placement procedure_, in about 10 lines: the
   7 steps and the tie-breaker.
-- **The include-level override quirk:** an `ai_context` override on one member
-  in a view's `includes:` works and stays scoped to that view, but Cube's YAML
-  loader emits it as `aiContext`. Use member-level or view-level `ai_context`
-  instead.
+- **View-level overrides for shared members:** to give a member guidance in one
+  view only, override its `ai_context` in that view's `includes:` entry. The
+  override replaces the member's whole `meta` in that view, and REST `/meta`
+  returns it as `aiContext`. Use it for view-specific guidance on members of
+  shared cubes (`staff`, `locations`, `courses`, `dates`). If the cube member
+  also carries an `ai_context`, the override must restate it; a schema test
+  fails otherwise.
 
 ### Cube and dbt descriptions are separate strings
 
@@ -342,27 +355,46 @@ Re-measure before building, beyond the dated figures:
 
 ### Shared cubes
 
-| Member                   | Reference text                                          | `description:`                                                                                    | `meta.ai_context:`                                                              |
-| ------------------------ | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| `locations.grade_band`   | Shared, "Three different grade fields"                  | Grade band the school serves (ES, MS, HS): a school attribute, not a student's grade.             | A grade_band filter is a school filter. For a student's grade, use grade_level. |
-| `courses.discipline`     | Shared, "Two different subject fields"                  | Present                                                                                           | —                                                                               |
-| `courses.is_foundations` | Shared, "`is_foundations` marks intervention courses"   | TRUE when the section is a Foundations (intervention) course, per the course-subject crosswalk.   | Treat it as course enrollment, not a record of intervention services delivered. |
-| `students` identifiers   | NJ, "Student identifier"                                | Present on `lea_student_identifier`, `district_student_identifier` and `state_student_identifier` | —                                                                               |
-| `staff.full_name`        | Shared, "Resolve staff names against `staff_directory`" | Present                                                                                           | — the advice goes to the view instead; see below                                |
+| Member                   | Reference text                                          | `description:`                                                                                    | `meta.ai_context:`                                                                                                                                               |
+| ------------------------ | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `locations.grade_band`   | Shared, "Three different grade fields"                  | Grade band the school serves (ES, MS, HS): a school attribute, not a student's grade.             | A grade_band filter is a school filter. For a student's grade, use grade_level.                                                                                  |
+| `courses.discipline`     | Shared, "Two different subject fields"                  | Present                                                                                           | —                                                                                                                                                                |
+| `courses.is_foundations` | Shared, "`is_foundations` marks intervention courses"   | TRUE when the section is a Foundations (intervention) course, per the course-subject crosswalk.   | Treat it as course enrollment, not a record of intervention services delivered. The assessment view overrides this to add its view-specific sentence; see below. |
+| `students` identifiers   | NJ, "Student identifier"                                | Present on `lea_student_identifier`, `district_student_identifier` and `state_student_identifier` | —                                                                                                                                                                |
+| `staff.full_name`        | Shared, "Resolve staff names against `staff_directory`" | Present                                                                                           | — the advice goes to an override on the assessment view; see below                                                                                               |
 
 `staff_lead_teacher` has no members of its own: it `extends: staff`. An
 `ai_context` on `staff.full_name` would therefore also reach `staff_directory`,
-where "resolve against `staff_directory` first" is circular. The fact goes to
-the assessment view's `ai_context`.
+where "resolve against `staff_directory` first" is circular.
 
-A view-level override was tested on 2026-09-29 and rejected. Cube lets a view
-give one included member its own `meta.ai_context` (`- name: full_name` with a
-`meta:` block under `includes:`). Compiled with Cube 1.7.43's schema compiler,
-the override landed on `staff_lead_teacher_full_name` only, not on its sibling
-fields and not on `staff_directory.full_name`. But Cube's YAML loader emits it
-as `aiContext`, while member-level and view-level values keep `ai_context`.
-Moving 1 sentence onto the field is not worth a second key spelling in the
-pointer and the length test.
+Cube lets a view give one included member its own `meta.ai_context`
+(`- name: full_name` with a `meta:` block under `includes:`). Tested 2026-09-29
+on a local Cube 1.7.43, first with its schema compiler and then over REST
+`/meta`:
+
+- The override lands on that member in that view only, not on its sibling fields
+  and not on `staff_directory.full_name`.
+- It replaces the member's whole `meta` in that view; a cube-level `ai_context`
+  on the same member disappears there and survives in other views.
+- REST `/meta` returns it as `aiContext`, while member-level and view-level
+  values keep `ai_context`. Cube's YAML loader camel-cases the include entry,
+  and its `meta` with it.
+
+The assessment view uses 2 overrides:
+
+| View member                    | Override `ai_context`                                                                                                                                                       |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `staff_lead_teacher_full_name` | Stored Last, First. Resolve a name against staff_directory before filtering; a zero-row result is not proof the teacher has no students.                                    |
+| `is_foundations`               | The only intervention signal on this view; there is no program- or MTSS-tracking dimension. Treat it as course enrollment, not a record of intervention services delivered. |
+
+The `is_foundations` override restates the cube-level `ai_context`, because the
+override replaces it. Guards:
+
+- The `meta` pointer names both spellings (see _Server changes_).
+- The length test checks both `ai_context` and `aiContext`.
+- A schema test fails when a view override sits on a member whose cube-level
+  `ai_context` it does not contain, so a later cube-level addition cannot be
+  hidden silently.
 
 ### The view (`student_assessment_scores_view`)
 
@@ -370,7 +402,7 @@ Views have no dbt twin, so the split is: `description:` says what the view is,
 and `ai_context:` says how to read results from it. The shipped description is
 corrected: `group` rows are not Illuminate-only, and bare "vendor" is replaced.
 
-`description:` (960 characters):
+`description:` (863 characters):
 
 > Assessment scores across Illuminate interims, NJ and FL state tests, and
 > vendor diagnostics (i-Ready, DIBELS, STAR), one row per student x assessment x
@@ -379,14 +411,13 @@ corrected: `group` rows are not Illuminate-only, and bare "vendor" is replaced.
 > headline; scale_score is null for Illuminate rows and percent_correct is null
 > for every other source. response_type splits scores into overall, standard and
 > group rows: standard is Illuminate only, and group covers Illuminate, i-Ready
-> and DIBELS. There is no growth measure. is_foundations is the only
-> intervention signal; there is no program- or MTSS-tracking dimension. The Date
-> members resolve for every source but read different dates: the administration
-> date for Illuminate and college, the test date for state tests and vendor
-> diagnostics, so a cross-source date cut mixes the two. Contains direct student
-> identifiers; see access_policy for PII gating.
+> and DIBELS. There is no growth measure. The Date members resolve for every
+> source but read different dates: the administration date for Illuminate and
+> college, the test date for state tests and vendor diagnostics, so a cross-
+> source date cut mixes the two. Contains direct student identifiers; see
+> access_policy for PII gating.
 
-`ai_context:` (1,216 of 2,000 characters):
+`ai_context:` (1,050 of 2,000 characters):
 
 > Totals will not reconcile to vendor-diagnostic or state reports, because of
 > enrollment scoping; i-Ready Outside Round sittings lose the most, so treat
@@ -401,9 +432,9 @@ corrected: `group` rows are not Illuminate-only, and bare "vendor" is replaced.
 > is an open decision, say which you kept. A missing current-year state result
 > is a release lag, not a defect. Query this view, not upstream i-Ready tables,
 > which carry re-pull duplicates. A CCSS code's own grade can differ from
-> grade_level_tested; that is spiral review, not an error. Lead-teacher names
-> are stored Last, First; resolve a name against staff_directory before
-> filtering, since a zero-row result is not proof the teacher has no students.
+> grade_level_tested; that is spiral review, not an error.
+
+The lead-teacher and `is_foundations` sentences live in view overrides (above).
 
 Measured 2026-09-28, behind the repeat-sittings sentence: student-windows with
 more than one test date are 2.6% on i-Ready, 0.4% on STAR, and 7 of about 61,000
@@ -424,17 +455,18 @@ Sources in the reference file:
 
 ### Everything that does not land on a member
 
-| Reference text                                                                                                                                                                                                                          | Goes to                                                                  | Sieve step |
-| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ | ---------- |
-| Shared, "Filter a genuinely nullable field with `set` / `notSet`, never `equals "null"`"                                                                                                                                                | `load` docstring                                                         | 4          |
-| Shared, "A dimension-only pull silently de-duplicates"                                                                                                                                                                                  | `load` docstring                                                         | 4          |
-| Shared, "Section/teacher rollups" ("force-refresh `meta` if the lead-teacher fields appear to be missing")                                                                                                                              | `meta` docstring                                                         | 4          |
-| Shared, "Performance bands" — the band-set table                                                                                                                                                                                        | stays, corrected and without volumes, until #5573 ships band-set members | 1          |
-| Point-in-time figures: Text Study's score volume; the Outside Round and Newark loss shares; QA3's subject count; the median test dates; the repeat-sitting rate; the Fall NJGPA counts; STAR's yearly volume; the adaptive window dates | deleted; the qualitative claim stays in its row                          | 1          |
-| Coverage specifics: Paterson's sources and years; i-Ready's regions; DIBELS and STAR start years; the Newark 2025-26 module-code example; FL is Miami                                                                                   | deleted; the view says coverage is uneven                                | 3          |
-| Shared, "Two different subject fields" — "At K-2, `Text Study` is the _only_ ELA-equivalent subject present"                                                                                                                            | stays; evidence for the open ELA decision                                | 2          |
-| Shared, "Open decisions"; i-Ready, which sitting is authoritative; NJ, whether NJDOE reset the adaptive cut scores                                                                                                                      | stays                                                                    | 2          |
-| The i-Ready, DIBELS and STAR provenance notes ("Documented from the live schema …")                                                                                                                                                     | stays                                                                    | 2          |
+| Reference text                                                                                                                                                                                                                          | Goes to                                                                                                                                                                                                                                            | Sieve step |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| Shared, "Filter a genuinely nullable field with `set` / `notSet`, never `equals "null"`"                                                                                                                                                | `load` docstring                                                                                                                                                                                                                                   | 4          |
+| Shared, "A dimension-only pull silently de-duplicates"                                                                                                                                                                                  | `load` docstring                                                                                                                                                                                                                                   | 4          |
+| Shared, "Section/teacher rollups" ("force-refresh `meta` if the lead-teacher fields appear to be missing")                                                                                                                              | `meta` docstring                                                                                                                                                                                                                                   | 4          |
+| Shared, "Time" ("use `academic_year_label` as the canonical year filter")                                                                                                                                                               | present in the shipped `dates` descriptions and the `load` crosswalk; the markdown line is deleted. No `ai_context` is written on `dates`: Step 0 placed guidance there only for the test, and the crosswalk's one home stays the `load` docstring | 4          |
+| Shared, "Performance bands" — the band-set table                                                                                                                                                                                        | stays, corrected and without volumes, until #5573 ships band-set members; it notes that the table describes `overall` rows, and `standard` and `group` rows may use a different band scale                                                         | 1          |
+| Point-in-time figures: Text Study's score volume; the Outside Round and Newark loss shares; QA3's subject count; the median test dates; the repeat-sitting rate; the Fall NJGPA counts; STAR's yearly volume; the adaptive window dates | deleted; the qualitative claim stays in its row                                                                                                                                                                                                    | 1          |
+| Coverage specifics: Paterson's sources and years; i-Ready's regions; DIBELS and STAR start years; the Newark 2025-26 module-code example; FL is Miami                                                                                   | deleted; the view says coverage is uneven                                                                                                                                                                                                          | 3          |
+| Shared, "Two different subject fields" — "At K-2, `Text Study` is the _only_ ELA-equivalent subject present"                                                                                                                            | stays; evidence for the open ELA decision                                                                                                                                                                                                          | 2          |
+| Shared, "Open decisions"; i-Ready, which sitting is authoritative; NJ, whether NJDOE reset the adaptive cut scores                                                                                                                      | stays, and gains the 2 questions this review added: whether a DIBELS Tested Out subtest counts as proficient, and what TP, ET and WPP stand for (see _Open questions for the network_)                                                             | 2          |
+| The i-Ready, DIBELS and STAR provenance notes ("Documented from the live schema …")                                                                                                                                                     | stays                                                                                                                                                                                                                                              | 2          |
 
 ### Stays in the markdown
 
@@ -460,78 +492,99 @@ the working group sees it.
 
 ## YAML description changes
 
-Each change is a correction or an addition, worded qualitatively. Current text
-checked against `main` on 2026-09-28.
+The per-member drafts are the single source of the new wording. This section
+lists what is wrong in the shipped text today, so a reviewer can see why each
+member changes. Checked against `main` on 2026-09-28 and 2026-09-29.
 
-- `module_type`: currently "e.g., QA, CR". Becomes an open list of the values in
-  use, null for every other source, with a note that `pct_proficient_formative`
-  covers only `QA`, `MQQ`, `CRQ`.
-- `is_internal_assessment`: currently "FALSE for state and college". Adds the
-  vendors and points at `assessment_type` for source selection.
-- `grade_level_tested`: currently "Null for college-entrance assessments". Adds
-  that it is null for every vendor row and that `grade_level` is the field to
-  use there.
-- `administration_period`: currently omits vendor values. Adds `BOY`, `MOY`,
-  `EOY` for i-Ready and DIBELS, `Outside Round` for i-Ready **only** (DIBELS has
-  no such value, verified 2026-09-22), `Fall`, `Winter`, `Spring` for STAR,
-  `PM1` to `PM3` for FL, `Fall` and `Spring` for NJGPA, and `Spring` for NJSLA.
-  Says the vocabulary is only meaningful with `assessment_type` scoped. Null for
-  every Illuminate row.
+Shipped text that is wrong or incomplete:
+
+- `module_type`: "e.g., QA, CR". The values are an open list of about 28; see
+  the `module_type` draft.
+- `module_code`: "e.g., QA1, ELA05, sat_total_score". The code means something
+  different per source; see the `module_code` draft.
+- `is_internal_assessment`: "FALSE for state and college". It is FALSE for the
+  i-Ready, DIBELS and STAR diagnostics too.
+- `grade_level_tested`: "Null for college-entrance assessments". It is null for
+  every vendor diagnostic and for the NJSLA end-of-course tests.
+- `administration_period`: omits every vendor value, and the reference file
+  gives NJ as Fall, Winter and Spring, where NJSLA is Spring only.
+- `academic_subject`: lists English Language Arts as a plain example. Illuminate
+  has no such value, and i-Ready, STAR and DIBELS use Math and Reading.
 - `response_type_code`, `response_type_description` and
-  `response_type_root_description`: each currently says only "Null for state".
-  True, and incomplete enough to mislead: each is null across a different and
-  much larger slice. Measured 2026-09-23:
+  `response_type_root_description`: each says only "Null for state". Each is
+  null across a different and much larger slice (table below).
+- `performance_band_label_number`: "Null for state assessments". It is
+  Illuminate only, and not comparable across assessments or response types.
+- `count_taken` and `count_scored`: attribute the DIBELS rows with no verdict to
+  "K-2 phonics subtests have no benchmark level set upstream". They are the
+  `Tested Out` rows.
+- `date_taken`: says "internal" and "vendor" where it means Illuminate and the
+  named diagnostics.
+- The view description: "response_type / response_type_code carry the
+  standard/skill breakdown (Illuminate only)". i-Ready and DIBELS carry `group`
+  rows too.
+- The instructions #5508 wrote into `description:` on `response_type`, the 3
+  counts, `pct_taken` and `pct_proficient` move to `ai_context`.
 
-  | Member                           | Populated on                                    | Null on                                                       |
-  | -------------------------------- | ----------------------------------------------- | ------------------------------------------------------------- |
-  | `response_type_code`             | `standard`, plus `group` for i-Ready and DIBELS | every Illuminate `group` row, and all `overall` / `not_taken` |
-  | `response_type_description`      | `standard` and every `group`                    | all `overall` / `not_taken`                                   |
-  | `response_type_root_description` | Illuminate `standard` only                      | every i-Ready, DIBELS, STAR and state row                     |
+Where the 3 `response_type_*` members are populated, measured 2026-09-23:
 
-  Each description states the slice it is populated on, in those terms. The
-  load-bearing one is `response_type_code`: it is null on all 2,797,958
-  Illuminate `group` rows while `response_type_description` is populated on
-  them. So a standards-cluster cut keyed on the code silently drops every
-  Illuminate group row and keeps the i-Ready and DIBELS ones. That asymmetry is
-  advice about which member to group by, so it goes in `ai_context`.
+| Member                           | Populated on                                    | Null on                                                       |
+| -------------------------------- | ----------------------------------------------- | ------------------------------------------------------------- |
+| `response_type_code`             | `standard`, plus `group` for i-Ready and DIBELS | every Illuminate `group` row, and all `overall` / `not_taken` |
+| `response_type_description`      | `standard` and every `group`                    | all `overall` / `not_taken`                                   |
+| `response_type_root_description` | Illuminate `standard` only                      | every i-Ready, DIBELS, STAR and state row                     |
 
-- `performance_band_label_number`: currently "Null for state assessments". Adds
-  Illuminate only, and not comparable across assessments.
-- `academic_subject`: currently lists "English Language Arts" as an example.
-  Adds that values are source-dependent and Illuminate's ELA equivalent is
-  `Text Study`.
-- `response_type`, the 3 counts, `pct_taken` and `pct_proficient`: the shipped
-  definitions stay. Only their instructions move to `ai_context`.
+`response_type_code` is null on all 2,797,958 Illuminate `group` rows while
+`response_type_description` is populated on them, so a standards-cluster cut
+keyed on the code silently drops every Illuminate group row.
 
-A test in `tests/cube/test_cube_schema.py` loads the YAML and asserts one key
-phrase per moved fact, keyed by member name, so a later edit cannot drop one
-silently. Cube Cloud validates the model on the branch staging deployment before
-merge.
+### Schema tests
+
+`tests/cube/test_cube_schema.py` loads the YAML and asserts 4 things:
+
+1. One key phrase per moved fact, keyed by member name, so a later edit cannot
+   drop a fact silently.
+2. Each Cube member that reads one column directly has a `description:` equal to
+   that column's dbt `description:`.
+3. Every `ai_context` in `src/cube/model/`, including view overrides, is 2,000
+   characters or less.
+4. No view override hides a cube-level `ai_context`: an override on a member
+   whose cube member carries `ai_context` must contain that text.
+
+Cube Cloud validates the model on the branch staging deployment before merge.
 
 ## Server changes
 
 ### Docstrings
 
-`load` extends 2 existing paragraphs and its PII paragraph:
+The quoted sentences are the docstring text. Everything else in this subsection
+is the reason for it and stays in the spec: docstrings are resent on every tool
+call, so they carry the instruction only.
 
-- **Filter operators.** After the `set`/`notSet` list, add: `equals "null"`
-  matches the literal string and returns zero rows; use `notSet`.
-- **Grain.** Add: a query with no measure de-duplicates identical rows, so add a
-  count or the primary key to see row counts. The `count_students` fallback is
-  that member's `ai_context`, not this docstring.
-- **Access scope.** Add: student views return only the schools the user can
-  access. Before describing a result as network-wide, check which regions or
-  schools it covers. The row-level filter is silent, so a school- or
-  region-scoped user asking a network question gets real, non-empty numbers for
-  their own slice, and nothing else in the response says so.
+`load` gains 3 sentences, each added to an existing paragraph:
+
+- **Filter operators paragraph:** "`equals "null"` matches the literal string
+  and returns zero rows; filter a null with `notSet`."
+- **Grain paragraph:** "A query with no measure groups by its dimensions, so
+  identical rows collapse into one; add a count or the primary key to see every
+  row." A Cube query with only dimensions works like `SELECT DISTINCT`, so a
+  student with 2 identical sittings comes back as 1 row and nothing says rows
+  were merged. The `count_students` fallback lives in that member's
+  `ai_context`, not here. During the build, check whether Cube's `ungrouped`
+  query option works on these views; if it does, name it as a third fix.
+- **PII paragraph:** "Student views return only the schools the user can access;
+  before describing a result as network-wide, check which regions or schools it
+  covers." The row-level filter is silent, so a school- or region-scoped user
+  asking a network question gets real, non-empty numbers for their own slice,
+  and nothing else in the response says so.
 
 `meta` gains 2 sentences:
 
-- Refresh before concluding a member is missing.
-- The `ai_context` pointer, as tested in _Step 0_: "Members may carry
-  `meta.ai_context`: usage rules written for you. Read and follow a member's
-  `ai_context` before building a query that uses it." The test in
-  `tests/cube/test_mcp_server.py` anchors it like the other docstring phrases.
+- "Refresh before concluding a member is missing."
+- "Members may carry `meta.ai_context` (`aiContext` on some view-specific
+  members): usage rules written for you. Read and follow a member's `ai_context`
+  before building a query that uses it." This is the pointer tested in _Step 0_,
+  added as a judgment call; the second spelling covers view overrides.
 
 ### An empty-result note on `load`
 
@@ -604,29 +657,39 @@ repoint when it ships.
 a hand-written `META_STUB`. This adds a second family without disturbing it.
 
 - `prompts.yaml` gains family 4, assessment traps. Each prompt names the trap it
-  must avoid:
+  must avoid. 6 are checked on the captured `load` query:
   - an i-Ready question by grade: must filter `grade_level`, not
     `grade_level_tested`
-  - a "state scores only" question: must not use `equals "null"`
+  - "how many STAR scores have no proficiency level?": must filter with
+    `notSet`, not `equals "null"`
   - a "QA3 math" question: must pair `module_code` with a subject filter
   - a "vendor diagnostics" question: must not select on `is_internal_assessment`
   - an "all internal checkpoints" question: must not use
-    `pct_proficient_formative` alone, or must say what it excludes
+    `pct_proficient_formative` alone
   - a "most recent diagnostic" question: must scope to a named round
-  - a Paterson i-Ready question: must report coverage, not zero as a failure
-- `scorer.py` checks the captured `load` query for each trap, not the answer
-  text, and reports a trap rate per arm with Wilson intervals as today.
-- `arms.py` gains a loader that builds a `META_STUB` from the YAML under
-  `src/cube/model/` for the assessment view, so arm B measures the working tree.
-  Arm A reads `eval/fixtures/meta_pre_drain.json`, generated once from
-  `origin/main` before the PR's first description change and committed. Both
-  arms use the real `server.py` docstrings; arm A substitutes the pre-drain
+- 1 is checked on the answer text, and labeled as the only answer-scored trap: a
+  Paterson i-Ready question must report coverage, not zero as a failure. The
+  `load` stub returns 0 rows for it, and in arm B only it returns the server's
+  empty-result note too, so the eval exercises the note.
+- `scorer.py` reports a trap rate per arm with Wilson intervals, as today.
+- Both arms' catalogs come from the same Cube-compiler script used in the
+  override test: arm A compiles `origin/main`'s YAML from before the PR's first
+  description change, and arm B compiles the branch. The output is committed as
+  `eval/fixtures/meta_pre_drain.json` and regenerated for arm B on each run.
+  Both arms use the real `server.py` docstrings; arm A substitutes the pre-drain
   `load` paragraphs by anchor, the same mechanism the crosswalk arm uses.
-- The runner stays hermetic per `eval/README.md`.
+- The stub's canned `load` rows take the assessment view's shape; today they are
+  attendance-shaped.
+- The runner stays hermetic per `eval/README.md`, and runs on Haiku only, the
+  weaker model and the one where Step 0 found headroom.
 
 The eval runs once the descriptions, docstrings and `count_assessments` are all
-on the branch. Arm B must beat arm A on the trap rate for the family, or the
-description text is revised before the PR merges.
+on the branch. Rules, written before any run:
+
+1. Arm B passes when its pooled family 4 trap rate is lower than arm A's.
+2. If it does not, revise the description text and rerun, at most 2 rounds.
+3. After 2 rounds, record the result. Merge only if arm B is no worse than arm
+   A, and open an issue for each trap arm B still fails.
 
 A standards-rollup trap (must group on the canonical code) needs the member from
 #5575, so that issue adds it.
@@ -723,7 +786,9 @@ deployment, and record the size of the full-catalog and
 
 7 traps against about 50 facts looks like a sample. It is closer to the whole
 set. A trap is a predicate over a captured query, so a fact can become one only
-when the query alone proves the violation. The facts split 3 ways:
+when the query alone proves the violation. The Paterson trap is the one
+exception: it checks the answer text for a coverage statement, a narrow phrase
+check rather than a judgment of the answer. The facts split 3 ways:
 
 - **Malformed query: checkable.** For example, `is_internal_assessment` used to
   select a source, `equals "null"` where `notSet` was meant, or `module_code`
