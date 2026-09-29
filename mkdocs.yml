@@ -78,9 +78,12 @@ nav:
       - HS Early Warning Data Model: models/hs-early-warning-data-model.md
       - DIBELS Dashboard Data Model: models/dibels-dashboard-data-model.md
       - STAT Dashboard Data Model: models/stat-dashboard-data-model.md
+      - NJDOE Universal Screener Data Model:
+          models/njdoe-universal-screener-data-model.md
       - Athletic Eligibility Data Model:
           models/athletic-eligibility-data-model.md
       - Academic Health Data Model: models/academic-health-data-model.md
+      - Grad Plan Tracking Data Model: models/grad-plan-tracking-data-model.md
   - Automations: reference/automations.md
 
 markdown_extensions:

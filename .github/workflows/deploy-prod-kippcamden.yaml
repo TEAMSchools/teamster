@@ -3,6 +3,7 @@ name: kippcamden
 permissions:
   contents: read
   pull-requests: write
+  packages: write
   id-token: write
 
 on:

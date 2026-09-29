@@ -7,6 +7,8 @@ anyone trusts it.
 
 - Explain a gap before reporting it
 - A whole region missing: read Amplify's file before tracing any join
+- In the extract but not on the dashboard: three causes outside the SQL
+- The dashboard's BANs against the extract: a QA baseline
 - SY2026-2027 header rename: null ids are a column move, not missing data
 - Verifying a year that is not in prod yet -- go to the source
 - "It should match prod" means diff every column, not the row count
@@ -116,6 +118,64 @@ has not moved it yet. The sensor still matches only `/BM` and `/PM`; it never
 triggers on the archive folders. Amplify keeps refreshing the archived year
 daily (2026-09-22: the newest `/25-26/PM` file was dated 2026-09-21), so a
 re-pull lands a newer snapshot of the same export.
+
+## In the extract but not on the dashboard: three causes outside the SQL
+
+When `rpt_tableau__dibels_dashboard` has the rows and the Literacy Dashboard
+does not show them, check these before touching dbt. All three came up on
+2026-09-28, the day Miami first reached the extract.
+
+- **The data source filter `User Filter 1 - Region` is row-level security.** It
+  maps each Tableau group (and a few named users) to the regions that group may
+  see. Miami was on none of the lists, so it was hidden from everyone, even on a
+  new sheet with nothing else on it. A region joining the extract needs adding
+  to every group that should see it, in Desktop. A render through the Tableau
+  MCP runs as one fixed identity, so it cannot prove what another group sees.
+- **A new extract column needs the extract recreated, not refreshed.**
+  `benchmark_goal_gap` did not appear in the Data pane after a refresh; it
+  appeared once the owner recreated the extract.
+- **The workbook filters `enroll_status = 0`, and Miami's past years read 2.**
+  The extract keeps 0, 2 and 3; the filter is on the Tableau sheets. Focus
+  closes each year's enrollment with a drop code, so AY2025 Aimline had 853 of
+  868 Miami students at 2 (541 of them enrolled in AY2026). Miami drops out of
+  every completed year until
+  [#5598](https://github.com/TEAMSchools/teamster/issues/5598) lands. The
+  current year is unaffected. It is not a workbook bug; do not widen the filter
+  to 2, which adds every NJ student who transferred out.
+
+After any publish, render the dashboard with no `viewFilters` and read the
+filter bar. Desktop saves the filter state at publish time; a Region filter left
+on one region shipped as the default once on 2026-09-28.
+
+## The dashboard's BANs against the extract: a QA baseline
+
+The Aimline BAN tiles count `aimline_category`, whatever the Comparison Item is
+set to (see `aimline-method.md` -> The switcher grid). To QA them, run the same
+filters as the Region Overview - Aimline sheets and compare with a render:
+
+```sql
+select
+    count(distinct student_number) as ban_denominator,
+    count(distinct if(aimline_category in ('Meeting Aimline, Not Yet at Benchmark', 'Meeting Aimline, Meeting Benchmark'), student_number, null)) as ban1_meeting,
+    count(distinct if(aimline_category = 'Below Aimline', student_number, null)) as ban2_below,
+    count(distinct if(missed_aimline_consecutive = 1, student_number, null)) as ban3_missed_twice,
+    count(distinct if(aimline_category = 'Meeting Aimline, Not Yet at Benchmark', student_number, null)) as ban4_hidden_risk,
+    count(distinct if(aimline_category = 'Round Incomplete', student_number, null)) as ban5_incomplete,
+    count(distinct if(aimline_category = 'Not Tested', student_number, null)) as ban7_not_tested,
+from `teamster-332318`.kipptaf_tableau.rpt_tableau__dibels_dashboard
+where
+    academic_year = 2025
+    and model_type = 'Aimline'
+    and enroll_status = 0
+    and grade_level_int between 3 and 8
+    and expected_round_selection = 'BOY->MOY: R3'
+    and expected_measure_standard = 'Decoding (NWF-WRC)'
+```
+
+Measured 2026-09-28, all regions: 336 students; 86, 192, 152, 60, 36 and 22. The
+render matched every tile. These counts drift without any code change, because
+`enroll_status` is the student's current status, and they will move again when
+#5598 brings Miami's AY2025 students back.
 
 ## SY2026-2027 header rename: null ids are a column move, not missing data
 

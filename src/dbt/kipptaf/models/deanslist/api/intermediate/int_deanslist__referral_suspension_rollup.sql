@@ -27,7 +27,7 @@ select
     ) as referral_count_middle,
 
     count(
-        distinct if(dlp.referral_tier = 'low', dlp.incident_id, null)
+        distinct if(dlp.referral_tier = 'Low', dlp.incident_id, null)
     ) as referral_count_low,
 
     count(
@@ -67,7 +67,7 @@ inner join
     and dlp.create_ts_academic_year = rt.academic_year
     and dlp.start_date between rt.start_date and rt.end_date
     and rt.type = 'RT'
-where dlp.referral_tier not in ('Non-Behavioral', 'Social Work')
+where dlp.is_behavioral_referral
 group by dlp.student_school_id, dlp.create_ts_academic_year, rt.name
 
 union all
@@ -88,7 +88,7 @@ select
         distinct if(referral_tier = 'Middle', incident_id, null)
     ) as referral_count_middle,
 
-    count(distinct if(referral_tier = 'low', incident_id, null)) as referral_count_low,
+    count(distinct if(referral_tier = 'Low', incident_id, null)) as referral_count_low,
 
     count(
         distinct if(is_suspension, incident_penalty_id, null)
@@ -116,5 +116,5 @@ select
         if(is_suspension and suspension_type = 'ISS', num_days, null)
     ) as days_suspended_iss,
 from {{ ref("int_deanslist__incidents__penalties") }}
-where referral_tier not in ('Non-Behavioral', 'Social Work')
+where is_behavioral_referral
 group by student_school_id, create_ts_academic_year

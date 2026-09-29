@@ -60,6 +60,9 @@ models:
       - name: grade_level
         data_type: int64
         description: The student's grade level this academic year.
+        config:
+          meta:
+            contains_pii: true
       - name: gender
         data_type: string
         description: Student gender as recorded in the SIS.
@@ -75,6 +78,9 @@ models:
       - name: cohort
         data_type: int64
         description: The student's graduation cohort year.
+        config:
+          meta:
+            contains_pii: true
       - name: student_email
         data_type: string
         description: Student school email address.
@@ -86,6 +92,9 @@ models:
         description:
           The student's grade level last academic year. Null for a student new
           to the network.
+        config:
+          meta:
+            contains_pii: true
       - name: dob
         data_type: date
         description: Date of birth.
@@ -95,75 +104,129 @@ models:
       - name: cy_unweighted_term_q1
         data_type: float64
         description: Unweighted ADA for Q1 of this year.
+        config:
+          meta:
+            contains_pii: true
       - name: cy_weighted_term_q1
         data_type: float64
         description:
           Weighted ADA for Q1 of this year, where a tardy counts as 0.67 of a
           day present.
+        config:
+          meta:
+            contains_pii: true
       - name: cy_unweighted_s1_ada
         data_type: float64
         description: Unweighted ADA for semester 1 of this year.
+        config:
+          meta:
+            contains_pii: true
       - name: cy_weighted_s1_ada
         data_type: float64
         description:
           Weighted ADA for semester 1 of this year, where a tardy counts as 0.67
           of a day present.
+        config:
+          meta:
+            contains_pii: true
       - name: py_y1_unweighted_ada
         data_type: float64
         description: Unweighted ADA for the whole previous academic year.
+        config:
+          meta:
+            contains_pii: true
       - name: py_y1_weighted_ada
         data_type: float64
         description:
           Weighted ADA for the whole previous academic year, where a tardy
           counts as 0.67 of a day present.
+        config:
+          meta:
+            contains_pii: true
       - name: cy_q1_gpa
         data_type: float64
         description: Term GPA for Q1 of this year.
+        config:
+          meta:
+            contains_pii: true
       - name: cy_s1_gpa
         data_type: float64
         description: Y1 GPA as of the end of Q2, the end of semester 1.
+        config:
+          meta:
+            contains_pii: true
       - name: py_y1_gpa
         data_type: float64
         description:
           Weighted Y1 GPA for the previous academic year across every Y1 stored
           grade, including summer school grades stored without a course number.
+        config:
+          meta:
+            contains_pii: true
       - name: py_credits
         data_type: float64
         description:
           Credit hours earned on the previous academic year's Y1 stored grades.
+        config:
+          meta:
+            contains_pii: true
       - name: met_py_credits
         data_type: boolean
         description:
           True when the student earned at least 30 credits in the previous
           academic year.
+        config:
+          meta:
+            contains_pii: true
       - name: met_cy_credits
         data_type: boolean
         description:
           True when the student has no failing Y1 grade as of Q2, the tracker's
           test for being on track to earn 30 credits this year.
+        config:
+          meta:
+            contains_pii: true
       - name: is_first_time_ninth
         data_type: boolean
         description:
           True for a 9th grader who was not in 9th grade last year, including a
           student new to the network.
+        config:
+          meta:
+            contains_pii: true
       - name: is_age_eligible
         data_type: boolean
         description:
           False when the student turned 19 before September 1 of this academic
           year.
+        config:
+          meta:
+            contains_pii: true
       - name: q1_ae_status
         data_type: string
         description:
           Fall eligibility status. Blank for a student in grades 6 to 8 or 10 to
           12 with no previous-year GPA or ADA; grade 5 and first-time 9th
           graders are Eligible.
+        config:
+          meta:
+            contains_pii: true
       - name: q2_ae_status
         data_type: string
         description: Winter eligibility status.
+        config:
+          meta:
+            contains_pii: true
       - name: q3_ae_status
         data_type: string
         description:
           Spring eligibility status after the February 1 credit check.
+        config:
+          meta:
+            contains_pii: true
       - name: q4_ae_status
         data_type: string
         description: Spring eligibility status for Q4, computed exactly as Q3.
+        config:
+          meta:
+            contains_pii: true

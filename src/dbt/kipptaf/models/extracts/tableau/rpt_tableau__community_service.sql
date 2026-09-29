@@ -19,7 +19,7 @@ select
     b.notes,
     b.staff_full_name as staff_name,
 
-    coalesce(safe_cast(left(b.behavior, length(b.behavior) - 5) as int), 0) as cs_hours,
+    coalesce(b.cs_hours, 0) as cs_hours,
 
     coalesce(safe_cast(c.`9th_hours` as numeric), 0) as grade_9_hours,
     coalesce(safe_cast(c.`10th_hours` as numeric), 0) as grade_10_hours,
