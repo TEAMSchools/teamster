@@ -37,7 +37,8 @@ NEAR_MISS_RATIO = 0.95
 
 def read_trackers(path: str) -> list[tuple[str, str]]:
     with open(path, encoding="utf-8") as handle:
-        return [tuple(line.strip().split("\t")) for line in handle if line.strip()]
+        pairs = [line.strip().split("\t", 1) for line in handle if line.strip()]
+    return [(name, sheet_id) for name, sheet_id in pairs]
 
 
 def tab_titles(sheets, spreadsheet_id: str) -> list[str]:
