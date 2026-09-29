@@ -97,14 +97,14 @@ what moved with
 `git -C <worktree> diff origin/main...HEAD -- <family .sql and .yml paths>`,
 read each hunk in full, then route by the kind of change:
 
-| Change                           | Read                                                                              | Then                                                                |
-| -------------------------------- | --------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| New or renamed column            | [yaml-and-tests.md](references/yaml-and-tests.md), `reference-doc.md`             | Update the doc sections and family-skill files that name the column |
-| Join, filter, or grain change    | [yaml-and-tests.md](references/yaml-and-tests.md), `qa-mode.md`                   | Prod grain check, then refactor parity if values may move           |
-| Logic in a status or tier `case` | [yaml-and-tests.md](references/yaml-and-tests.md) → Status ladders, `qa-mode.md`  | Ladder checks, then refactor parity by transition                   |
-| New view, sheet tab, or model    | [intake-and-inventory.md](references/intake-and-inventory.md), `reference-doc.md` | Boundary check, a new doc section, a new route in the family skill  |
-| SQL comment only                 | [yaml-and-tests.md](references/yaml-and-tests.md) → SQL comments                  | Comment-only proof and the CI warning                               |
-| New known issue, no diff         | [reference-doc.md](references/reference-doc.md) → Outline, Public-page rules      | Add it under known issues; security specifics go to Asana           |
+| Change                           | Read                                                                              | Then                                                                                                                      |
+| -------------------------------- | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| New or renamed column            | [yaml-and-tests.md](references/yaml-and-tests.md), `reference-doc.md`             | Update the doc sections and family-skill files that name the column                                                       |
+| Join, filter, or grain change    | [yaml-and-tests.md](references/yaml-and-tests.md), `qa-mode.md`                   | Prod grain check, refactor parity if values may move, then fix every doc section and known issue that states the old rule |
+| Logic in a status or tier `case` | [yaml-and-tests.md](references/yaml-and-tests.md) → Status ladders, `qa-mode.md`  | Ladder checks, then refactor parity by transition                                                                         |
+| New view, sheet tab, or model    | [intake-and-inventory.md](references/intake-and-inventory.md), `reference-doc.md` | Boundary check, a new doc section, a new route in the family skill                                                        |
+| SQL comment only                 | [yaml-and-tests.md](references/yaml-and-tests.md) → SQL comments                  | Comment-only proof and the CI warning                                                                                     |
+| New known issue, no diff         | [reference-doc.md](references/reference-doc.md) → Outline, Public-page rules      | Add it under known issues; security specifics go to Asana                                                                 |
 
 A rename sweep includes `*.md`: `rg -n '<old name>' --glob '*.{sql,yml,md}'`.
 For a name written in prose, also sweep a loose pattern of its key words
