@@ -39,13 +39,10 @@ select
 
     {# TODO: refactor to gsheet #}
     case
-        /* unweighted 2019+ */
-        when cou.gradescaleid = 991
+        /* 2019+ weighted and 2024 honors (weighted) -> 2019+ unweighted */
+        when cou.gradescaleid in (991, 1075)
         then 976
-        /* unweighted 2024 honors */
-        when cou.gradescaleid = 1075
-        then 976
-        /* unweighted 2016-2018 */
+        /* 2016-2018 honors -> 2016 unweighted */
         when cou.gradescaleid = 712
         then 874
         /* MISSING GRADESCALE - default 2016+ */
