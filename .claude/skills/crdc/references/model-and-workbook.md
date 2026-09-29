@@ -75,12 +75,12 @@ computes" table; this file is the procedure.
 
 ## The workbook
 
-`CRDC Dashboard.twb` in the CRDC folder is the known copy; it reads
-`rpt_tableau__crdc_roster` (the `crdc_dashboard` exposure). Whether a published
-copy exists on Tableau Server is an open question; ask the user before looking,
-and ask before any Tableau MCP call.
+The CRDC Dashboard workbook is published to the Production project on Tableau
+Server and reads `rpt_tableau__crdc_roster` (the `crdc_dashboard` exposure). The
+`CRDC Dashboard.twb` in the CRDC folder is an older copy; do not work from it.
+Ask before any Tableau MCP call.
 
-1. The user opens the `.twb` in Tableau Desktop and refreshes the data source.
+1. The user opens the published workbook and refreshes the data source.
 2. Each sheet in the workbook matches one OCR section, split by region and by
    the form's breakdowns. The user copies each count into the matching
    collection-sheet cell, in the form's order.

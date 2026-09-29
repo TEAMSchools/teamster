@@ -176,6 +176,9 @@ models:
         description: >-
           PowerSchool course name for course-based sections. Null on
           enrollment-only rows.
+        config:
+          meta:
+            contains_pii: true
       - name: sections_dcid
         data_type: int64
         description: >-
@@ -186,23 +189,38 @@ models:
         description: >-
           Course name from the SCED code crosswalk sheet. Null when the course
           has no crosswalk match.
+        config:
+          meta:
+            contains_pii: true
       - name: crdc_course_group
         data_type: string
         description: CRDC course group from the SCED code crosswalk sheet.
+        config:
+          meta:
+            contains_pii: true
       - name: crdc_subject_group
         data_type: string
         description: >-
           CRDC subject group from the SCED code crosswalk sheet. Decides the
           math (`COUR-7`) and science and computing (`COUR-14`, `COUR-18`,
           `COUR-20`) sections.
+        config:
+          meta:
+            contains_pii: true
       - name: crdc_ap_group
         data_type: string
         description: >-
           CRDC AP subject group from the SCED code crosswalk sheet. `APIB-4`
           rows require it, which drops AP courses CRDC does not count.
+        config:
+          meta:
+            contains_pii: true
       - name: sced_code_xwalk
         data_type: string
         description: SCED code from the crosswalk sheet that matched the course.
+        config:
+          meta:
+            contains_pii: true
       - name: is_oct_01_course
         data_type: boolean
         description: >-

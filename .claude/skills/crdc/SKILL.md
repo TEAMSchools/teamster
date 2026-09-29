@@ -67,7 +67,7 @@ need to fix" before trusting a count.
 | `SY23-24 CRDC Data Submission` (Sheet, per cycle)        | Collection sheet, one tab per OCR section                                     |
 | `CRDC` (Sheet)                                           | dbt source: tabs `src_crdc__student_numbers`, `src_crdc__sced_code_crosswalk` |
 | `CRDC Data Elements` (Sheet)                             | Element list worked from OCR's form                                           |
-| `CRDC Dashboard.twb`                                     | The Tableau workbook (the known copy; see the doc's open questions)           |
+| `CRDC Dashboard.twb`                                     | Older copy of the workbook; the live one is on Tableau Server (Production)    |
 | `CRDC - Rolling Data Collection Protocol Proposal` (Doc) | Unfinished proposal; the doc keeps what still fits                            |
 | OCR form PDFs                                            | One set per cycle                                                             |
 

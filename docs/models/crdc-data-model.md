@@ -180,6 +180,9 @@ cleared, the district's CRDC contact certifies the submission.
 - Numbers on OCR's site, certified by each district, published later by OCR.
 - The filled collection sheet and kickoff doc, kept in the cycle's subfolder as
   the record of what was submitted and why.
+- The CRDC Dashboard workbook, published to the Production project on Tableau
+  Server in September 2026. An older `.twb` copy sits in the CRDC folder on the
+  shared drive; use the published one.
 
 ## Who runs it and when
 
@@ -414,9 +417,6 @@ block until each has an answer.
   restraint and seclusion), threat assessment teams and referrals, and teachers
   certified in bilingual education. None has a warehouse source; each one KTAF
   answers needs an owner and rows on the collection sheet.
-- **Is there a published workbook?** The known copy of the CRDC Dashboard
-  workbook is a `.twb` file in the CRDC folder on the shared drive. Nobody has
-  confirmed whether a copy is published on Tableau Server.
 - **Which summer do `PENR-6` rows cover?** The branch reads "KIPP Summer School"
   credit recovery grades stored under the submission year. Nobody has confirmed
   whether that is the summer before the submission year or the summer after it.
