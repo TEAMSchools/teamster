@@ -95,9 +95,6 @@ models:
       - name: teacher_name
         data_type: string
         description: Teacher last name, first name.
-        config:
-          meta:
-            contains_pii: true
       - name: teacher_employee_number
         data_type: int64
         description: Employee number of the teacher.

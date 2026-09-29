@@ -160,13 +160,14 @@ dbt model landing in BigQuery is the start of the job, not the end of it.
 | What changed in the model   | Source sheet                      | Report sheet                                                                              |
 | --------------------------- | --------------------------------- | ----------------------------------------------------------------------------------------- |
 | A new model on the exposure | Add a Connected Sheets tab for it | Add a tab with an `IMPORTRANGE` to the new source tab                                     |
-| A column added or removed   | Refresh picks it up               | **Widen or narrow the `IMPORTRANGE` range** — a fixed range silently drops the new column |
+| A column added or removed   | Edit the extract's column list    | **Widen or narrow the `IMPORTRANGE` range** — a fixed range silently drops the new column |
 | A tab renamed               | Rename it                         | Update every `IMPORTRANGE` naming that tab, or it returns `#REF!`                         |
 | A model retired             | Remove the tab                    | Remove the tab                                                                            |
 
-The column case is the dangerous one. The source sheet refreshes and looks
-correct, the report sheet keeps working, and the user simply never sees the new
-column. Nothing errors.
+The column case is the dangerous one. A Connected Sheets extract keeps the
+column list it was built with, so refresh alone does not add a new column. Miss
+either sheet and both keep refreshing without error while the user simply never
+sees the new column.
 
 After any change, open the report sheet and confirm it shows what you expect.
 That check takes seconds and is the only thing standing between a silent

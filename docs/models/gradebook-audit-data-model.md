@@ -497,11 +497,11 @@ comparing teachers against last year's numbers.
 
 #### Steps
 
-The end-user skill holds the procedure; follow it rather than any copy here. Its
-playbooks are `rollover.md` (start of year), `refresh.md` (a quarter mid-year)
-and `troubleshoot.md` (the dashboard looks wrong), and
-`references/powerschool-navigation.md` is the screen-by-screen plugin guide. In
-outline:
+The end-user skill, in TEAMSchools/ps-plugins, holds the procedure; follow it
+rather than any copy here. Its playbooks are `rollover.md` (start of year),
+`refresh.md` (a quarter mid-year) and `troubleshoot.md` (the dashboard looks
+wrong), and `references/powerschool-navigation.md` is the screen-by-screen
+plugin guide. In outline:
 
 1. Confirm `PS Full Calendar` shows the year being loaded. If it shows last
    year, the warehouse has not rolled over yet (or the summer toggle is still

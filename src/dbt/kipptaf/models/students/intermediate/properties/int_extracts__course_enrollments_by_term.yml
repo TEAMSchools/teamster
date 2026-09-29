@@ -352,9 +352,6 @@ models:
         data_type: string
       - name: advisor_lastfirst
         data_type: string
-        config:
-          meta:
-            contains_pii: true
       - name: contact_1_address_home
         data_type: string
         config:
@@ -1070,9 +1067,6 @@ models:
             contains_pii: true
       - name: contact_owner_name
         data_type: string
-        config:
-          meta:
-            contains_pii: true
       - name: region_official_name
         data_type: string
       - name: deanslist_school_id
@@ -1102,14 +1096,8 @@ models:
             contains_pii: true
       - name: hos
         data_type: string
-        config:
-          meta:
-            contains_pii: true
       - name: school_leader
         data_type: string
-        config:
-          meta:
-            contains_pii: true
       - name: school_leader_tableau_username
         data_type: string
       - name: best_guess_pathway
@@ -1439,7 +1427,6 @@ models:
         description: Teacher last name, first name.
         config:
           meta:
-            contains_pii: true
             source_system: PowerSchool
             source_model: base_powerschool__course_enrollments
             source_column: teacher_lastfirst
@@ -1472,7 +1459,6 @@ models:
         description: Formatted name of the teacher's direct manager.
         config:
           meta:
-            contains_pii: true
             source_system: People
             source_model: int_people__staff_roster
             source_column: reports_to_formatted_name
