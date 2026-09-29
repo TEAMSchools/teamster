@@ -115,8 +115,9 @@ with
             or (score_source = 'dibels' and test_date is not null)
     ),
 
-    -- Domain-level rows. module_code stays the subject, same FK-resolution
-    -- reason as DIBELS above. No 'relative_placement is not null' predicate
+    -- Domain-level rows. module_code stays the subject so these rows hash to
+    -- the same assessment_administration_key as the subject's overall row.
+    -- No 'relative_placement is not null' predicate
     -- because int_iready__domain_unpivot already enforces it (#4709).
     iready_domain_scores_raw as (
         select

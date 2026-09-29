@@ -26,6 +26,7 @@ models:
               - administration_period
               - raw_subject
               - test_date
+              - response_type
               - response_type_code
               - rn_subj_day
               - assessment_id
@@ -141,3 +142,98 @@ models:
           Subject area aligned to Illuminate subject values, from the vendor
           subject crosswalk on source_system and raw_subject, falling back to
           raw_subject when the crosswalk has no row.
+
+unit_tests:
+  - name: test_dibels_mapping_and_subject_fallback
+    description: >-
+      A DIBELS benchmark composite becomes an overall row and a sub-measure
+      becomes a group row carrying its measure code and name. Mastery and
+      proficiency follow each row's own level. A progress-monitoring row is
+      excluded. With no crosswalk row for DIBELS, illuminate_subject_area falls
+      back to the raw subject.
+    model: int_assessments__benchmark_scores
+    given:
+      - input: ref('int_iready__diagnostic_results')
+        rows: []
+      - input: ref('stg_renlearn__star')
+        rows: []
+      - input: ref('int_amplify__all_assessments')
+        format: sql
+        rows: |
+          select
+              'kippnewark' as _dbt_source_project,
+              7 as student_number,
+              2024 as academic_year,
+              'BOY' as period,
+              date('2024-09-20') as client_date,
+              400 as measure_standard_score,
+              55 as measure_percentile,
+              'At Benchmark' as measure_standard_level,
+              3 as measure_standard_level_int,
+              'At/Above' as aggregated_measure_standard_level,
+              'Composite' as measure_standard,
+              'Composite' as measure_name,
+              'Benchmark' as assessment_type
+          union all
+          select
+              'kippnewark' as _dbt_source_project,
+              7 as student_number,
+              2024 as academic_year,
+              'BOY' as period,
+              date('2024-09-20') as client_date,
+              40 as measure_standard_score,
+              20 as measure_percentile,
+              'Below Benchmark' as measure_standard_level,
+              2 as measure_standard_level_int,
+              'Below/Well Below' as aggregated_measure_standard_level,
+              'ORF' as measure_standard,
+              'Oral Reading Fluency' as measure_name,
+              'Benchmark' as assessment_type
+          union all
+          select
+              'kippnewark' as _dbt_source_project,
+              7 as student_number,
+              2024 as academic_year,
+              'PM1' as period,
+              date('2024-10-20') as client_date,
+              45 as measure_standard_score,
+              25 as measure_percentile,
+              'Below Benchmark' as measure_standard_level,
+              2 as measure_standard_level_int,
+              'Below/Well Below' as aggregated_measure_standard_level,
+              'ORF' as measure_standard,
+              'Oral Reading Fluency' as measure_name,
+              'PM' as assessment_type
+      - input: ref('stg_google_sheets__assessments__vendor_subject_crosswalk')
+        rows:
+          - {
+              Source_System: iready,
+              Raw_Subject: Reading,
+              Illuminate_Subject_Area: Text Study,
+            }
+    expect:
+      rows:
+        - {
+            score_source: dibels,
+            administration_period: BOY,
+            raw_subject: DIBELS,
+            module_code: Composite,
+            response_type: overall,
+            response_type_code: null,
+            response_type_description: null,
+            is_mastery: true,
+            is_proficient: true,
+            illuminate_subject_area: DIBELS,
+          }
+        - {
+            score_source: dibels,
+            administration_period: BOY,
+            raw_subject: DIBELS,
+            module_code: Composite,
+            response_type: group,
+            response_type_code: ORF,
+            response_type_description: Oral Reading Fluency,
+            is_mastery: false,
+            is_proficient: false,
+            illuminate_subject_area: DIBELS,
+          }

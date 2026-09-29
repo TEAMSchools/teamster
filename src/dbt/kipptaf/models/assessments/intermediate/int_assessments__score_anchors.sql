@@ -58,8 +58,9 @@ with
         where test_date is not null and student_number is not null
     ),
 
-    -- STAR rows without a crosswalk-resolved project cannot join course
-    -- enrollments and are dropped. DIBELS keeps benchmark composites only; PM
+    -- STAR rows with no _dbt_source_project cannot join course enrollments and
+    -- are dropped. iReady keeps its null-project rows on purpose, so do not add
+    -- the project predicate there. DIBELS keeps benchmark composites only; PM
     -- probes and subskill measures are out of scope.
     benchmark_scores as (
         select
