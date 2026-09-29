@@ -116,3 +116,38 @@ def test_client_from_environment_refuses_when_missing(monkeypatch):
     monkeypatch.setenv("ZENDESK_EMAIL", "e")
     with pytest.raises(PublishError, match="ZENDESK_TOKEN"):
         client_from_environment()
+
+
+def test_upload_retries_on_transient_409(tmp_path, monkeypatch):
+    import publish_article
+
+    monkeypatch.setattr(publish_article, "RETRY_DELAY_SECONDS", 0)
+    img = tmp_path / "a.png"
+    img.write_bytes(b"\x89PNG")
+    attempts: list[int] = []
+
+    def handler(_kwargs):
+        attempts.append(1)
+        if len(attempts) == 1:
+            return 409, {}
+        return 201, {"article_attachment": {"id": 9, "content_url": "u"}}
+
+    client, _ = make_client(
+        {("POST", "/help_center/articles/42/attachments.json"): handler}
+    )
+    assert client.upload_attachment(42, img) == {"id": 9, "content_url": "u"}
+    assert len(attempts) == 2
+
+
+def test_upload_gives_up_after_persistent_409(tmp_path, monkeypatch):
+    import publish_article
+
+    monkeypatch.setattr(publish_article, "RETRY_DELAY_SECONDS", 0)
+    img = tmp_path / "a.png"
+    img.write_bytes(b"\x89PNG")
+    client, session = make_client(
+        {("POST", "/help_center/articles/42/attachments.json"): (409, {})}
+    )
+    with pytest.raises(PublishError, match="409"):
+        client.upload_attachment(42, img)
+    assert len(session.calls) == publish_article.UPLOAD_ATTEMPTS

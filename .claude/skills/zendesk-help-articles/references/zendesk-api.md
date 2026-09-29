@@ -47,4 +47,28 @@ the implementation plan settles this; the outcome is recorded below.
 
 ### Verified live
 
-_Filled in by the live run._
+2026-09-29, against `teamschools.zendesk.com`, article 43853618074263 (a
+throwaway draft, deleted afterward):
+
+- The direct multipart shape works.
+  `POST /help_center/articles/{id}/attachments.json` with
+  `files={"file": (name, handle, "image/png")}` and `data={"inline": "true"}`
+  returned 201. No Guide media object and no `guide_media_id` were needed.
+- Response fields observed: `id`, `url` (the API resource), `content_url`
+  (`https://<subdomain>.zendesk.com/hc/article_attachments/<id>`),
+  `relative_path` (`/hc/article_attachments/<id>`), `file_name`,
+  `display_file_name`, `content_type`, `size`, `inline`, `locale` (null),
+  `article_id`.
+- The upload answered 409 with an empty body when it ran immediately after the
+  article was created. The identical call succeeded seconds later. The publisher
+  retries 409 up to 5 times with a growing delay and surfaces every other status
+  at once.
+- After the translation PUT, `GET` on the translation returned the `<img src>`
+  as the full `content_url`
+  (`https://teamschools.zendesk.com/hc/article_attachments/<id>`) for this
+  article's own attachment. The shortened `/hc/article_attachments/<id>` form
+  was seen earlier on the "How to access Tableau" article. Read-back matches on
+  id so both forms pass.
+- A re-run with no changes uploaded nothing and reused the recorded attachment.
+  A stale `last_known_updated_at` aborted before any write with the overwrite
+  guard message.

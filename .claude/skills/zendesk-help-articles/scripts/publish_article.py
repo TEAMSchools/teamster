@@ -11,6 +11,7 @@ from __future__ import annotations
 import hashlib
 import os
 import re
+import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -21,6 +22,8 @@ DEFAULT_USER_SEGMENT = "Signed-in users"
 DEFAULT_PERMISSION_GROUP = "Agents and admins"
 EVERYONE = "everyone"
 LOCALE = "en-us"
+UPLOAD_ATTEMPTS = 5
+RETRY_DELAY_SECONDS = 2
 
 IMG_SRC_RE = re.compile(r'(<img\b[^>]*?\bsrc=")([^"]+)(")', re.IGNORECASE)
 ATTACHMENT_ID_RE = re.compile(r"/hc/article_attachments/(\d+)")
@@ -140,14 +143,32 @@ class ZendeskHelpCenter:
         )["translation"]
 
     def upload_attachment(self, article_id: int, path: Path) -> dict:
+        """Upload one inline attachment.
+
+        Zendesk answers 409 with an empty body when the upload lands right after
+        the article was created (seen live 2026-09-29); the same call succeeds a
+        moment later. Retry 409 only; every other error surfaces at once.
+        """
         mime = MIME_BY_SUFFIX.get(path.suffix.lower(), "application/octet-stream")
-        with path.open("rb") as handle:
-            return self._call(
-                "POST",
-                f"/help_center/articles/{article_id}/attachments.json",
-                files={"file": (path.name, handle, mime)},
-                data={"inline": "true"},
-            )["article_attachment"]
+        url_path = f"/help_center/articles/{article_id}/attachments.json"
+        for attempt in range(1, UPLOAD_ATTEMPTS + 1):
+            with path.open("rb") as handle:
+                response = self.session.request(
+                    "POST",
+                    self.base + url_path,
+                    files={"file": (path.name, handle, mime)},
+                    data={"inline": "true"},
+                )
+            if response.status_code == 409 and attempt < UPLOAD_ATTEMPTS:
+                time.sleep(RETRY_DELAY_SECONDS * attempt)
+                continue
+            if response.status_code >= 400:
+                raise PublishError(
+                    f"POST {url_path} returned {response.status_code} after "
+                    f"{attempt} attempt(s): {response.text[:500]}"
+                )
+            return response.json()["article_attachment"]
+        raise PublishError(f"POST {url_path}: exhausted {UPLOAD_ATTEMPTS} attempts")
 
 
 def client_from_environment() -> ZendeskHelpCenter:
