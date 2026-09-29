@@ -3,10 +3,10 @@ models:
     description: >-
       High-school enrollment for Charter School Growth Fund reporting, one row
       per student who completed the prior school year at a KTAF high school
-      (is_enrolled_recent on that year's row, meaning the stint ran to the
-      school's last calendar day). Students who left mid-year are excluded;
-      students who finished the year and left afterward are included. Do not
-      filter on enroll_status, which is the student's current PowerSchool
+      (is_enrolled_recent on that year's row, true when a stint that year ran to
+      the school's last in-session day). Students who left mid-year are
+      excluded; students who finished the year and left afterward are included.
+      Do not filter on enroll_status, which is the student's current PowerSchool
       status, not their status that year. Network-wide, Miami included, on the
       same reasoning as `rpt_gsheets__csgf_hs_ap_offerings` -- no region filter,
       no Miami rows yet only because the window is the prior academic year.
@@ -149,7 +149,8 @@ models:
         description: >-
           School name from the prior-year enrollment row, with KIPP Cooper
           Norcross High renamed to KIPP Cooper Norcross High School to match
-          CSGF's school list.
+          CSGF's school list. Tagged as PII because on a student row it is the
+          school the student attended.
         config:
           meta:
             contains_pii: true

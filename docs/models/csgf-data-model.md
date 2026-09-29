@@ -115,8 +115,8 @@ add this year's targets before submission, not a dbt fix.
 ### Miami's first HS is a forward risk for next cycle, not this one
 
 Miami opened its first high school in AY2026 — KIPP Miami Technical High, ~95
-students, mostly grade 9. The six HS-scoped models are correctly
-Miami-irrelevant _this_ cycle (they read AY2025, when Miami had zero HS
+students, mostly grade 9. The HS models that read the prior school year are
+correctly Miami-irrelevant _this_ cycle (AY2025, when Miami had zero HS
 students), but next cycle they roll to AY2026 and will need Miami HS data for
 the first time ever.
 
@@ -124,18 +124,22 @@ For `csgf_hs_enrollment` specifically: its enrollment/demographic fields come
 through `int_extracts__student_enrollments`, which already includes Miami via
 Focus, so those will be correct. But its course flags (`earned_course_grades` →
 `stg_powerschool__storedgrades`) are PowerSchool-only with no Focus equivalent
-wired in — Miami HS students will get **NULL, not `'N'`**, for
+wired in — Miami HS students will read a silent **`N`** for
 `has_participated_in_ap_courses` / `_honors_courses` /
-`_dual_enrollment_courses` / `_cte_courses`, since the `course_tags` CTE
-produces no rows for them at all. The other five HS models likely have the same
-PowerSchool-only gap somewhere in their lineage — not yet verified per-model.
+`_dual_enrollment_courses` / `_cte_courses`, since `course_tags` produces no
+rows for them and the final select coalesces a missing flag to `N`. The flag
+tests pass on those rows, so nothing will warn. `csgf_hs_ap_offerings` has the
+same gap: it reads `base_powerschool__course_enrollments`, which is
+PowerSchool-only. `csgf_hs_sat`, `csgf_hs_act` and `csgf_hs_ap_scores` read
+College Board-derived scores joined to `int_extracts__student_enrollments`, so
+they are not PowerSchool-limited.
 
 ### `csgf_hs_enrollment` course flags count only grades earned at the school of enrollment
 
 CSGF asks whether a student "has earned a grade in any AP / honors / dual
-enrollment / CTE course at school of enrollment." Since 2026-09-28 the four
-flags follow that literally. A course counts only when the student has a stored
-Y1 final grade for it in `stg_powerschool__storedgrades` that:
+enrollment / CTE course at school of enrollment." The four flags follow that
+literally. A course counts only when the student has a stored Y1 final grade for
+it in `stg_powerschool__storedgrades` that:
 
 - is not a transfer grade (`is_transfer_grade` false), with any grade value, an
   F included;
@@ -153,11 +157,6 @@ populated `ctecollegecredits`, honors is a catalog name containing "Honors",
 dual enrollment is a catalog name ending "(DE)". `ctecollegecredits` is empty on
 every course today, so the CTE flag is `N` for everyone. A student with no
 qualifying Y1 at all reads `N`.
-
-Before this change the model read course enrollments at any school in the
-region, unioned in transfer grades from other schools, and kept one course per
-credit type per year. The SY2026-27 HS Enrollment tab was corrected to the new
-logic before submission.
 
 ### AP course naming drifts from CSGF's official list, cycle to cycle
 
@@ -263,30 +262,30 @@ students). If a future cycle's school mix changes this, the fix is deriving the
 school list from a fuller join across both CTEs rather than driving from
 `grad_roster` alone.
 
-### The four HS-scoped student-level models must match `csgf_hs_enrollment`'s population — resolved
+### The HS models must share `csgf_hs_enrollment`'s population
 
-`csgf_hs_enrollment`'s own task instructions say "ONLY INCLUDE STUDENTS WHO
-COMPLETED THE 25-26 SCHOOL YEAR." All five HS student-level models
-(`csgf_hs_enrollment`, `csgf_hs_sat`, `csgf_hs_act`, `csgf_hs_ap_scores`,
-`csgf_hs_ap_offerings`) implement that with the same filter: the student's
-prior-year HS row (`rn_year = 1`) has `is_enrolled_recent`, meaning the stint
-ran to the school's last calendar day that year. A student who left mid-year
-fails it. CSGF cross-validates every HSDC tab's student ID against the
-Enrollment tab and flags "ID not on Enrollment Tab" otherwise, so the five must
-share one population.
+The SY2026-27 cycle (the 2026-2027 HSDC workbook) reports the 2025-26 school
+year, `academic_year = 2025` in the warehouse. `csgf_hs_enrollment`'s own task
+instructions say "ONLY INCLUDE STUDENTS WHO COMPLETED THE 25-26 SCHOOL YEAR."
+The student-level models (`csgf_hs_enrollment`, `csgf_hs_sat`, `csgf_hs_act`,
+`csgf_hs_ap_scores`) and the school-level `csgf_hs_ap_offerings` implement that
+with one filter: the student's prior-year HS row (`rn_year = 1`) has
+`is_enrolled_recent`. That flag is true when any of the student's stints that
+year ran to the school's last in-session day, so a student who left mid-year
+fails it and one who moved between KIPP high schools passes. CSGF
+cross-validates the student IDs on SAT, ACT and AP Scores against the Enrollment
+tab and flags "ID not on Enrollment Tab" otherwise. AP Offerings has no student
+IDs; the filter decides which grade levels it lists for each course.
 
 Do not filter these models on `enroll_status`. PowerSchool keeps one status per
 student, on the Students table; past enrollments (ReEnrollments) have none, and
 `int_powerschool__student_enrollment_union` copies the current status onto every
 past-year row. So `enroll_status` on a 2025-26 row is the student's status
-today. From 2026-09-11 to 2026-09-29 the five models also required
-`enroll_status in (0, 3)`, which silently dropped students who completed the
-year and then left KIPP over the summer. That population kept shrinking as
-PowerSchool coded summer transfers: the SY2026-27 Enrollment tab, filled
-mid-cycle, held 15 such students that the model had since dropped. Removing the
-filter took HS Enrollment from 1,668 to 1,851 students for AY2025 and made the
-population stable. It adds no mid-year leavers, since `is_enrolled_recent`
-already excludes them.
+today, and `enroll_status in (0, 3)` drops students who completed the year and
+then left KIPP over the summer. The number dropped grows as PowerSchool codes
+summer transfers. To size it, count AY2025 HS rows (`rn_year = 1`,
+`is_enrolled_recent`) in `int_extracts__student_enrollments` with and without
+`enroll_status in (0, 3)`: 1,851 against 1,668 on 2026-09-29.
 
 ## Exit-code reference
 
@@ -315,8 +314,9 @@ of the time. Everything else above is a genuine departure.
 
 ## Open items
 
-- The other five HS-scoped models' Miami/Focus course-data gap for next cycle —
-  only verified for `csgf_hs_enrollment` so far.
+- The Miami/Focus course-data gap for next cycle, in `csgf_hs_enrollment` and
+  `csgf_hs_ap_offerings` (see Miami's first HS above). `csgf_hs_grad_data` has
+  not been checked.
 - All eight models now have a uniqueness test (resolved by this PR).
 - CSGF's own Portal school-list was missing three real Miami schools (KIPP Miami
   Technical High, KIPP Legacy Elementary, KIPP Legacy Middle) — confirmed via

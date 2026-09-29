@@ -34,10 +34,11 @@ table -- re-check it fresh each cycle, this is NOT guaranteed to repeat):
 - **Anthony Walters / Casey Gibson**: Postsecondary Pathways (Overgrad/Other
   Application Results tabs; Naviance is struck through/N-A this cycle),
   Discipline Data, the Round 2 NSC file.
-- **Anthony Walters / Gaby Rangel**: HS Enrollment, AP Scores, AP Offerings, HS
-  Grad Data (the HSDC tabs), plus the main **School Enrollment** Portal task --
-  but see Kevin and Laszlo below, who own specific FIELDS on that same shared
-  task, not separate tasks.
+- **Anthony Walters** (Gaby Rangel's share too, from 1 October 2026): HS
+  Enrollment, SAT, AP Scores, AP Offerings, HS Grad Data (the HSDC tabs), plus
+  the main **School Enrollment** Portal task -- but see Kevin and Laszlo below,
+  who own specific FIELDS on that same shared task, not separate tasks. Tasks
+  still assigned to Gabriela in the Portal need reassigning to Walters.
 - **Kevin Verhoff**: School Staffing Data, Org Staffing Summary, Org Chart
   (possibly shared with Laszlo) -- and, on the shared **School Enrollment**
   task, specifically **Teacher Retention, Teacher Count, and the school leader
@@ -114,9 +115,9 @@ independent of the dbt pipeline. Where the two intersect (e.g. verifying a
 Preliminary Question against a `rpt_gsheets__csgf_*` model), that's called out
 explicitly below.
 
-Reference doc: `docs/models/csgf-data-model.md` -- not yet published; will be
-added as part of #4897. Once it exists, read it first for the dbt-side lineage;
-this skill covers the manual/ownership side only.
+Reference doc: `docs/models/csgf-data-model.md` (published under Models). Read
+it first for the dbt-side lineage; this skill covers the manual/ownership side
+only.
 
 ## Key resources
 

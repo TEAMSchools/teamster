@@ -35,7 +35,7 @@ models:
       changes. Scoped to students who completed the prior school year at a high
       school (is_enrolled_recent) to match rpt_gsheets__csgf_hs_enrollment's
       population; see rpt_gsheets__csgf_hs_sat.yml for the full rationale (same
-      filter on all four HS-scoped student-level models).
+      filter on the HS student-level models and AP Offerings).
     columns:
       - name: school_name
         data_type: string
