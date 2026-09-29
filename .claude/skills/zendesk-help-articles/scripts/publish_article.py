@@ -80,3 +80,86 @@ def save_state(article: Article) -> None:
     out["last_known_updated_at"] = article.last_known_updated_at
     out["attachments"] = article.attachments
     (article.dir / "article.yml").write_text(yaml.safe_dump(out, sort_keys=False))
+
+
+MIME_BY_SUFFIX = {
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".gif": "image/gif",
+}
+
+
+class ZendeskHelpCenter:
+    """Thin wrapper over the Help Center REST API. Every method returns the unwrapped object."""
+
+    def __init__(self, subdomain: str, email: str, token: str, session=None):
+        self.base = f"https://{subdomain}.zendesk.com/api/v2"
+        self.session = session or requests.Session()
+        self.session.auth = (f"{email}/token", token)
+
+    def _call(self, method: str, path: str, **kwargs) -> dict:
+        response = self.session.request(method, self.base + path, **kwargs)
+        if response.status_code >= 400:
+            raise PublishError(
+                f"{method} {path} returned {response.status_code}: {response.text[:500]}"
+            )
+        return response.json()
+
+    def user_segments(self) -> list[dict]:
+        return self._call("GET", "/help_center/user_segments.json")["user_segments"]
+
+    def permission_groups(self) -> list[dict]:
+        return self._call("GET", "/guide/permission_groups.json")["permission_groups"]
+
+    def create_article(self, section_id: int, article: dict) -> dict:
+        return self._call(
+            "POST",
+            f"/help_center/sections/{section_id}/articles.json",
+            json={"article": article, "notify_subscribers": False},
+        )["article"]
+
+    def get_article(self, article_id: int) -> dict:
+        return self._call("GET", f"/help_center/articles/{article_id}.json")["article"]
+
+    def update_article(self, article_id: int, article: dict) -> dict:
+        return self._call(
+            "PUT", f"/help_center/articles/{article_id}.json", json={"article": article}
+        )["article"]
+
+    def get_translation(self, article_id: int) -> dict:
+        return self._call(
+            "GET", f"/help_center/articles/{article_id}/translations/{LOCALE}.json"
+        )["translation"]
+
+    def update_translation(self, article_id: int, translation: dict) -> dict:
+        return self._call(
+            "PUT",
+            f"/help_center/articles/{article_id}/translations/{LOCALE}.json",
+            json={"translation": translation},
+        )["translation"]
+
+    def upload_attachment(self, article_id: int, path: Path) -> dict:
+        mime = MIME_BY_SUFFIX.get(path.suffix.lower(), "application/octet-stream")
+        with path.open("rb") as handle:
+            return self._call(
+                "POST",
+                f"/help_center/articles/{article_id}/attachments.json",
+                files={"file": (path.name, handle, mime)},
+                data={"inline": "true"},
+            )["article_attachment"]
+
+
+def client_from_environment() -> ZendeskHelpCenter:
+    values = {}
+    for name in ("ZENDESK_SUBDOMAIN", "ZENDESK_EMAIL", "ZENDESK_TOKEN"):
+        value = os.environ.get(name)
+        if not value:
+            raise PublishError(
+                f"{name} is not set. Run through `uv run pytest tests/test_zz_*.py -s` so "
+                "tests/conftest.py loads it; a bare `uv run python` gets no secrets."
+            )
+        values[name] = value
+    return ZendeskHelpCenter(
+        values["ZENDESK_SUBDOMAIN"], values["ZENDESK_EMAIL"], values["ZENDESK_TOKEN"]
+    )
