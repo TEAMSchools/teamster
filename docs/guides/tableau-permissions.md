@@ -86,14 +86,14 @@ groups in route 2.
     only the _direct_ manager. This is accepted rather than accidental — the
     reasoning is in the design spec linked at the end of this page.
 
-!!! warning "The exception: Survey Dashboard completion tracking and support
-sheets"
+!!! note "The exception: Survey Dashboard completion tracking"
 
-    On those sheets the central office group grants every row in every region,
-    other central office staff included. The support sheets then narrow it by
-    department (see _The support surveys are scoped by the department being
-    rated_). Questions that rate no department, free-text boxes included, are
-    not narrowed, so they reach every member of the central office group.
+    On the completion tracking sheets the central office group sees every row in
+    every region, other central office staff included. This is deliberate.
+
+    The support sheets start from the same grant but limit central office staff
+    to the questions about their own department. See _The support surveys are
+    scoped by the department being rated_.
 
 ### Senior leaders are shielded further
 
@@ -128,16 +128,16 @@ executive director count instead.
 
 ### Where a workbook differs
 
-| Workbook                          | Difference from the five routes                                                                                                                                                                                                                                                                                                                                                         |
-| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Coaching Conversation Tool        | You see your own observations only once they are released: a score form once it is locked, other observations once the coaching-conversation window opens. Observations outside a tracked cycle show straight away. Your manager sees them immediately.                                                                                                                                 |
-| SchoolMint Grow Dashboard         | Route 1 is your manager only. Your own observations are in the Coaching Conversation Tool. The norming sheets widen route 4: school leaders see their whole region on every norming sheet, and APs and DSOs see their region on the summary norming sheets. On the norming sheets that name individual teachers, APs and DSOs stay at their own school.                                 |
-| Survey Dashboard                  | Three gates, one each for Intent to Return, the support surveys and completion tracking. Intent to Return has its own section below. Support and completion tracking have no route 1, grant central office every region, and add region-wide access for Teaching and Learning, Technology, School Support Directors and Special Education Directors. APs see every row at their school. |
-| Operations Systems                | The performance-management sheets follow the five routes, but APs do not qualify for route 5. The walkthrough sheets work differently; see _The walkthrough sheets scope by the school walked_.                                                                                                                                                                                         |
-| Stipend and Bonus Dashboard       | The stipend shield above. The HR download sheets are narrower still: only the data and Employee Relations groups see them.                                                                                                                                                                                                                                                              |
-| Miami Instructional Rubrics       | New Teacher Development sees everything. NTN coordinators qualify for route 5 alongside school leaders, DSOs and APs.                                                                                                                                                                                                                                                                   |
-| Personalized Survey Links         | Your own link only. Nobody else sees it, including your manager.                                                                                                                                                                                                                                                                                                                        |
-| Leadership Development (archived) | Only school leaders qualify for route 5.                                                                                                                                                                                                                                                                                                                                                |
+| Workbook                          | Difference from the five routes                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Coaching Conversation Tool        | You see your own observations only once they are released: a score form once it is locked, other observations once the coaching-conversation window opens. Observations outside a tracked cycle show straight away. Your manager sees them immediately.                                                                                                                                                                                         |
+| SchoolMint Grow Dashboard         | Route 1 is your manager only. Your own observations are in the Coaching Conversation Tool. The norming sheets widen route 4: school leaders see their whole region on every norming sheet, and APs and DSOs see their region on the summary norming sheets. On the norming sheets that name individual teachers, APs and DSOs stay at their own school.                                                                                         |
+| Survey Dashboard                  | Three gates, one each for Intent to Return, the support surveys and completion tracking. Intent to Return has its own section below. Support and completion tracking have no route 1, grant central office every region (limited to their own department on the support sheets), and add region-wide access for Teaching and Learning, Technology, School Support Directors and Special Education Directors. APs see every row at their school. |
+| Operations Systems                | The performance-management sheets follow the five routes, but APs do not qualify for route 5. The walkthrough sheets work differently; see _The walkthrough sheets scope by the school walked_.                                                                                                                                                                                                                                                 |
+| Stipend and Bonus Dashboard       | The stipend shield above. The HR download sheets are narrower still: only the data and Employee Relations groups see them.                                                                                                                                                                                                                                                                                                                      |
+| Miami Instructional Rubrics       | New Teacher Development sees everything. NTN coordinators qualify for route 5 alongside school leaders, DSOs and APs.                                                                                                                                                                                                                                                                                                                           |
+| Personalized Survey Links         | Your own link only. Nobody else sees it, including your manager.                                                                                                                                                                                                                                                                                                                                                                                |
+| Leadership Development (archived) | Only school leaders qualify for route 5.                                                                                                                                                                                                                                                                                                                                                                                                        |
 
 ### The Intent to Return survey is different
 
@@ -233,11 +233,12 @@ This applies **on top of** entity, region and school. Belonging to the
 Operations group does not show you Operations feedback from a region you cannot
 otherwise reach — both tests have to pass.
 
-Central office staff are the exception. On these sheets the central office group
-passes the entity, region and school tests for every row, so the department test
-is the only one that narrows what they see. Most department groups are central
-office teams, so in practice a department group reads its feedback from every
-region.
+Central office staff are the exception, and the department is the **only** thing
+they are scoped by. The central office group passes the entity, region and
+school tests for every row. Then a central office staff member sees only the
+questions about their own department, from every region, and nothing else on the
+support sheets. That includes the questions that rate no department. A central
+office staff member in no department group sees nothing on these sheets.
 
 Four groups see every department regardless: the data team, TEAM Council,
 managing directors of school operations, and heads of schools. The last two sit
@@ -271,11 +272,12 @@ Ask for the one matching the department whose feedback you need to read.
     Some questions rate the organisation rather than a department — whether your
     region is headed in the right direction, and the free-text boxes asking for
     any other feedback. Those carry no department, so the department test does
-    not apply to them and they reach everyone who passes the entity, region and
-    school gates.
+    not apply to them. They reach everyone who passes the entity, region and
+    school gates, **except central office staff**. School leaders, DSOs, APs and
+    regional leaders see them for their own school or region.
 
-    That includes the free-text boxes, so those reach the widest audience of
-    anything on the support sheets.
+    Central office staff see them only through one of the four groups above that
+    see every department.
 
 !!! warning "The support sheets do not show respondent names, and that is not
 the same as anonymous"
