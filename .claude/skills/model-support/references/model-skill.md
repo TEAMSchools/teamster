@@ -8,7 +8,8 @@ From what inventory and intake found, list what a skill for this family would
 hold (for a family that already has one, list what to add and what to remove,
 then go on to the fact-check below):
 
-- sheet-upkeep procedures the user named at intake;
+- sheet-upkeep procedures the user named at intake (a procedure the doc's
+  Process "Steps" already number gets a link to them, not a copy);
 - yearly rollover: grep the family SQL for `current_academic_year` and
   hard-coded years or term names;
 - QA checks worth re-running after each data load, each reporting what it

@@ -28,9 +28,17 @@ consumers):
 - Process: What triggers it → Inputs → Steps → Outputs (where they land, who
   reads them) → Who runs it and when.
 
-Before writing "live" or "today's data", check each model's materialization
-(`<dataset>.__TABLES__`, type 2 is a view): a view over tables is only as fresh
-as those tables' last build.
+Before writing "live", "today's data" or how a refresh reaches the output, check
+the materialization of every model up the chain to the source, in each region's
+dataset as well as kipptaf (`<dataset>.__TABLES__`, type 2 is a view), not only
+the models the sentence names. A view over tables is only as fresh as those
+tables' last build. On Grad Plan the doc said the chain recomputed on read; the
+two models it named were views, but the regional models under them were tables,
+and the cold review passed it.
+
+The Process "Steps" hold the numbered procedure. The family skill links to them
+and keeps only what a person running it needs beyond the doc (timing, checks,
+what to do after); it does not repeat the steps.
 
 Every doc closes with:
 
@@ -115,6 +123,25 @@ them.
 
 Give every known issue its own query before the review. On Academic Health only
 three of six had one, and the reviewer had to write checks for the rest.
+
+### Review the YAML and scripts too
+
+The doc review above reads the doc. Before the PR, run the same kind of cold
+review over the rest of the diff, in the same dispatch or a second one. On Grad
+Plan, `claude-review` was the first to judge the PII tags and the skill's
+script, and it found five problems the doc review could not have seen. Add to
+the prompt:
+
+```text
+Also review the YAML and script changes: `git -C <worktree> diff origin/main...HEAD
+-- '*.yml' '*.py'`. For each properties file, read .claude/rules/ferpa-pii.md
+and list student-level columns with no column-level contains_pii tag, and
+reference-data columns (plan structure, codesets, course attributes) that carry
+one. For each script, run it or read it for inputs it assumes (a hard-coded
+column, range or ID). For every inconsistency you flag (a model materialized
+unlike its siblings, a naming mismatch), check first whether a repo CLAUDE.md or
+.claude/rules file says which form is correct, and cite it.
+```
 
 ## Repoint links
 

@@ -99,8 +99,10 @@ read each hunk in full, then route by the kind of change:
 | New known issue, no diff         | [reference-doc.md](references/reference-doc.md) → Outline, Public-page rules      | Add it under known issues; security specifics go to Asana           |
 
 A rename sweep includes `*.md`: `rg -n '<old name>' --glob '*.{sql,yml,md}'`.
-Every edited doc section then gets the cold review, and every edited
-family-skill file a walk test (rules above).
+For a name written in prose, also sweep a loose pattern of its key words
+(`rg -n -i 'graduation.?progress'`): the exact string missed a second copy
+spelled `GraduationProgress`. Every edited doc section then gets the cold
+review, and every edited family-skill file a walk test (rules above).
 
 ## Step 8: close out
 
