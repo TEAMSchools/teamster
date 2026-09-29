@@ -21,7 +21,21 @@ models:
     columns:
       - name: studentid
         data_type: int64
+        description: >-
+          The student's PowerSchool student_number (the school-facing student
+          number), not the internal studentid key. CSGF's template names the
+          column studentid.
+        config:
+          meta:
+            contains_pii: true
       - name: section
         data_type: string
+        description: SAT section, Evidence-Based Reading and Writing or Math.
       - name: score
         data_type: numeric
+        description: >-
+          The student's highest scale score for the section, rounded to a whole
+          number.
+        config:
+          meta:
+            contains_pii: true

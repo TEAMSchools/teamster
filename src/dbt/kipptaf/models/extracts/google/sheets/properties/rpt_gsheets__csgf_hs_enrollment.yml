@@ -1,10 +1,15 @@
 models:
   - name: rpt_gsheets__csgf_hs_enrollment
     description: >-
-      High-school enrollment for Charter School Growth Fund reporting.
-      Network-wide, Miami included, on the same reasoning as
-      `rpt_gsheets__csgf_hs_ap_offerings` -- no region filter, no Miami rows yet
-      only because the window is the prior academic year. Ratified on #4996.
+      High-school enrollment for Charter School Growth Fund reporting, one row
+      per student who completed the prior school year at a KTAF high school
+      (is_enrolled_recent on that year's row, meaning the stint ran to the
+      school's last calendar day). Students who left mid-year are excluded;
+      students who finished the year and left afterward are included. Do not
+      filter on enroll_status, which is the student's current PowerSchool
+      status, not their status that year. Network-wide, Miami included, on the
+      same reasoning as `rpt_gsheets__csgf_hs_ap_offerings` -- no region filter,
+      no Miami rows yet only because the window is the prior academic year.
       Miami opened its first HS in AY2026 (KIPP Miami Technical High). The
       course flags (earned_course_grades, course_tags) read PowerSchool stored
       grades only, with no Focus equivalent wired in, while the enrollment and
@@ -27,32 +32,57 @@ models:
     columns:
       - name: studentid
         data_type: int64
+        description: >-
+          The student's PowerSchool student_number (the school-facing student
+          number), not the internal studentid key. CSGF's template names the
+          column studentid.
         data_tests:
           - unique
-      - name: grade
-        data_type: int64
-      - name: unweighted_cumulative_gpa
-        data_type: float64
-      - name: weighted_cumulative_gpa
-        data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: has_participated_in_ap_courses
         data_type: string
         description: >-
           Y when the student earned a qualifying grade (see the model
           description) in a course whose NJ course extension
           (stg_powerschool__s_nj_crs_x) carries an AP course subject, else N.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [Y, N]
+        config:
+          meta:
+            contains_pii: true
       - name: has_participated_in_honors_courses
         data_type: string
         description: >-
           Y when the student earned a qualifying grade (see the model
           description) in a course whose PowerSchool catalog name contains
           "Honors", else N.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [Y, N]
+        config:
+          meta:
+            contains_pii: true
       - name: has_participated_in_dual_enrollment_courses
         data_type: string
         description: >-
           Y when the student earned a qualifying grade (see the model
           description) in a course whose PowerSchool catalog name ends in
           "(DE)", else N.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [Y, N]
+        config:
+          meta:
+            contains_pii: true
       - name: has_participated_in_cte_courses
         data_type: string
         description: >-
@@ -61,20 +91,81 @@ models:
           (stg_powerschool__s_nj_crs_x) has CTE college credits populated, else
           N. That field is empty for every course today, so this is N for every
           student until PowerSchool records CTE college credits.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [Y, N]
+        config:
+          meta:
+            contains_pii: true
+      - name: grade
+        data_type: int64
+        description: Grade level on the student's prior-year enrollment row.
+        config:
+          meta:
+            contains_pii: true
+      - name: unweighted_cumulative_gpa
+        data_type: float64
+        description: >-
+          Cumulative unweighted Y1 GPA from int_extracts__student_enrollments
+          (cumulative_y1_gpa_unweighted).
+        config:
+          meta:
+            contains_pii: true
+      - name: weighted_cumulative_gpa
+        data_type: float64
+        description: >-
+          Cumulative weighted Y1 GPA from int_extracts__student_enrollments
+          (cumulative_y1_gpa).
+        config:
+          meta:
+            contains_pii: true
       - name: has_participated_in_ib_courses
         data_type: string
+        description: Always NA; KTAF offers no IB courses.
       - name: passed_integrated_math_1
         data_type: string
+        description: >-
+          Always "NA (not offered)"; KTAF's gateway math course is Algebra 1.
       - name: race_ethnicity
         data_type: string
+        description: >-
+          The PowerSchool ethnicity code decoded to CSGF's race and ethnicity
+          labels; any code outside the list reads Did Not State.
+        config:
+          meta:
+            contains_pii: true
       - name: gender
         data_type: string
+        description: >-
+          The PowerSchool gender code decoded to Female, Male, or
+          Nonbinary/Nonconforming; anything else reads Did Not State.
+        config:
+          meta:
+            contains_pii: true
       - name: school
         data_type: string
+        description: >-
+          School name from the prior-year enrollment row, with KIPP Cooper
+          Norcross High renamed to KIPP Cooper Norcross High School to match
+          CSGF's school list.
+        config:
+          meta:
+            contains_pii: true
       - name: student_has_iep
         data_type: string
+        description: Y when iep_status is Has IEP, else N.
+        config:
+          meta:
+            contains_pii: true
       - name: student_is_el
         data_type: string
+        description:
+          Y when the student has an English learner (LEP) status, else N.
+        config:
+          meta:
+            contains_pii: true
       - name: student_is_frl
         data_type: string
         description:
@@ -87,6 +178,9 @@ models:
           in their field definitions, and is also reused as-is for CSGF's
           separate "Socioeconomically Disadvantaged (SED)" field -- no separate
           SED column exists.
+        config:
+          meta:
+            contains_pii: true
       - name: exited_hs
         data_type: string
         description:
@@ -98,3 +192,6 @@ models:
           int_extracts__student_enrollments.exited_hs, shared with
           rpt_gsheets__csgf_hs_postsec_pathways -- keep both in sync, they read
           the same upstream column now rather than each computing it separately.
+        config:
+          meta:
+            contains_pii: true
