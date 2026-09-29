@@ -189,7 +189,11 @@ and results from both sit side by side in the dashboard.
   not the bare number, when comparing regions.
 - `expected_round_selection`: reads `Current` on the latest round whose window
   has opened for that region and grade, and the round label everywhere else, so
-  one filter follows each region to where it actually is.
+  one filter follows each region to where it actually is. A PM round stays
+  `Current` until the next round opens. A benchmark window is `Current` only
+  while it is open, so after BOY closes, `Current` shows the PM round alone and
+  a school that has not tested in that round reads 0%. A region with no opened
+  round yet (Miami before its first PM round) has no `Current` rows at all.
 - The `expected_*` columns: dimensions taken from the gate, filled on every row
   whether or not the student tested. The score-side columns (`period`,
   `measure_standard`, `assessment_grade` and so on) are null when nothing was

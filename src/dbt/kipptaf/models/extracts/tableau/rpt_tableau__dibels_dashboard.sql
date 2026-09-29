@@ -136,7 +136,8 @@ select
                 a.round_number,
                 null
             )
-        ) over (partition by s.academic_year, s.region, a.grade),
+        ) over (partition by s.academic_year, s.region, a.grade)
+        and a.end_date >= current_date('{{ var("local_timezone") }}'),
         'Current',
         a.admin_season
     ) as expected_round_selection,
