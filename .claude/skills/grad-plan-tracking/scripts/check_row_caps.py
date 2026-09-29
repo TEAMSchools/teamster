@@ -31,20 +31,13 @@ import google.auth
 from googleapiclient.discovery import build
 
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
-FORMULA_RE = re.compile(r'"([^"!]+)!A1:AD(\d+)"')
+FORMULA_RE = re.compile(r'"([^"!]+)!A1:[A-Z]+(\d+)"')
 NEAR_MISS_RATIO = 0.95
 
 
 def read_trackers(path: str) -> list[tuple[str, str]]:
-    trackers = []
     with open(path, encoding="utf-8") as handle:
-        for line in handle:
-            line = line.strip()
-            if not line:
-                continue
-            name, spreadsheet_id = line.split("\t")
-            trackers.append((name, spreadsheet_id))
-    return trackers
+        return [tuple(line.strip().split("\t")) for line in handle if line.strip()]
 
 
 def tab_titles(sheets, spreadsheet_id: str) -> list[str]:

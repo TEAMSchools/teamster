@@ -4,35 +4,23 @@ The full "before you use it" procedure, for a master-scheduling push or any time
 Teaching and Learning needs current numbers. Newark and Camden only — Paterson
 and Miami have no PowerSchool grad plan data (see the doc's "Decisions").
 
-## 1. Run PowerSchool's Data Capture, every grade, every high school
+## Run PowerSchool's Data Capture, then refresh the sheet
 
-PowerSchool's grad plan tables do not update on their own as students earn
-credits, and nothing recomputes this automatically. Before anyone reads the
-sheet, someone has to re-run PowerSchool's own routine:
+Follow the doc's
+[What triggers it](../../../docs/models/grad-plan-tracking-data-model.md#what-triggers-it)
+section for the numbered steps: logging into each region's PowerSchool instance,
+running Data Capture per grade per high school, then refreshing the IMPORTRANGE
+Sources sheet's extract tabs. Two things worth knowing before you start:
 
-1. Log in to each region's PowerSchool instance (one per region: Newark and
-   Camden).
-2. Switch to the high school you want. Do not run it from District Office.
-3. From the school's Start Page, click a grade level to select that grade's
-   students.
-4. Open the student-selection action menu (bottom of the page, the dropdown next
-   to "Select By Hand") and choose **Graduation Plan Progress Report Data
-   Capture**.
-5. Click **Submit** on the page that opens.
-6. Repeat for every grade level, at every high school.
-7. Check back often. Some grade levels take several minutes; plan on most of a
-   day.
+- **Budget most of a day.** Some grade levels take several minutes each, across
+  every grade at every high school in both regions.
+- **Refreshing the sheet isn't the last hop.** Between the PowerSchool sync
+  landing and the sheet reading fresh numbers, Dagster still has to rebuild the
+  regional and kipptaf table models the sheet's view sits on — see the doc
+  section above for the chain. There's no fixed wait for that rebuild; check
+  back rather than assuming a set number of minutes is enough.
 
-## 2. Refresh the source sheet's extract tabs
-
-This step comes from inspecting the sheet, not a confirmed procedure — ask the
-data team before relying on it. Refresh the IMPORTRANGE Sources sheet's extract
-tabs (one per school and diploma type) so they pick up the new Data Capture
-numbers. The dbt models behind them (`rpt_gsheets__grad_plan_tracking` and its
-parents) are views and need no separate build step; they read as-is whenever the
-sheet's Connected Sheets tab recomputes.
-
-## 3. Check the three trackers
+## Check the three trackers
 
 Once the source sheet is refreshed, spot-check each Reports tracker — KHS, NLH,
 NCA — that the tabs reflect the new numbers. Each tab reads a fixed row range

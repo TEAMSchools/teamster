@@ -46,10 +46,14 @@ flowchart LR
 ```
 
 `stg_powerschool__gpnode` and the three `stg_powerschool__gpprogresssubject*`
-staging models exist once per region (Newark, Camden) in the `powerschool`
-source-system package; a kipptaf-level union view sits on top of each so the
-rest of the chain can read one relation instead of two. The same pattern repeats
-for `int_powerschool__gpnode` and `int_powerschool__gpprogress_grades`.
+staging models are BigQuery tables in each region (Newark, Camden) in the
+`powerschool` source-system package. At the kipptaf level, a union wrapper sits
+on top of each so the rest of the chain can read one relation instead of two —
+that wrapper is also a table, except for
+`stg_powerschool__gpprogresssubjectearned`, whose kipptaf wrapper is a view. The
+next layer flips: `int_powerschool__gpnode` and
+`int_powerschool__gpprogress_grades` are tables per region, but their
+kipptaf-level unions are views.
 
 ## Terms
 
@@ -101,14 +105,24 @@ to re-run PowerSchool's own routine, then refresh the sheet:
    sheet, not from a confirmed procedure — ask the data team before relying on
    it.
 
-Once PowerSchool has fresh progress data, dbt's part of the chain needs no
-separate trigger: `rpt_gsheets__grad_plan_tracking` and the
-`int_powerschool__gpprogress_grades` models above it are views, so every read
-recomputes from whatever the underlying tables currently hold. Those tables
-(`stg_powerschool__gpnode`, the `gpprogresssubject*` staging models, stored
-grades, and current-term grades) are populated by PowerSchool's own dlt sync on
-its own schedule, so "before you use it" really means: run the Data Capture
-routine, then give the sync time to land before trusting the sheet.
+Once PowerSchool has fresh progress data, the chain still has two more hops
+before the sheet is current. PowerSchool's own dlt sync lands the regional
+tables (`stg_powerschool__gpnode`, the `gpprogresssubject*` staging models,
+stored grades, and current-term grades) on its own schedule. From there, Dagster
+rebuilds the BigQuery tables: the per-region `stg_powerschool__gp*` and
+`int_powerschool__gpprogress_grades` / `int_powerschool__gpnode` models, and
+their kipptaf-level table wrappers (`stg_powerschool__gpnode`,
+`…gpprogresssubject`, `…gpprogresssubjectenrolled`). Each rebuilds automatically
+once its upstream table materializes new data (Dagster's table automation
+condition) — there's no fixed schedule for this hop, so "give it time to land"
+means the next Dagster rebuild, not a set number of minutes. Only once those
+tables have rebuilt does the last hop read fresh:
+`rpt_gsheets__grad_plan_tracking`, the kipptaf
+`int_powerschool__gpprogress_grades` / `int_powerschool__gpnode` unions, and the
+kipptaf `stg_powerschool__gpprogresssubjectearned` wrapper are views, so they
+recompute on every read. "Before you use it" really means: run the Data Capture
+routine, then give the sync and the next Dagster rebuild time to land before
+trusting the sheet.
 
 ## Inputs
 
@@ -225,10 +239,8 @@ owner.
     count(distinct e.students_dcid) as n_hs_enrolled,
     count(distinct g.studentsdcid) as n_in_tracker
   from `teamster-332318.kipptaf_extracts.int_extracts__student_enrollments` as e
-  left join (
-    select distinct studentsdcid, _dbt_source_project
-    from `teamster-332318.kipptaf_powerschool.int_powerschool__gpprogress_grades`
-  ) as g
+  left join
+    `teamster-332318.kipptaf_powerschool.int_powerschool__gpprogress_grades` as g
     on e.students_dcid = g.studentsdcid
     and e._dbt_source_project = g._dbt_source_project
   where e.academic_year = <current academic year>
@@ -247,14 +259,6 @@ owner.
   missing from those tabs until the cap was widened. Worth re-checking after any
   large enrollment push, since the same silent truncation can recur on any tab
   whose source outgrows its cap.
-- **One of the four kipptaf `gpprogresssubject*` staging wrappers is
-  materialized differently from its siblings.** `stg_powerschool__gpnode`,
-  `stg_powerschool__gpprogresssubject`, and
-  `stg_powerschool__gpprogresssubjectenrolled` are all BigQuery tables;
-  `stg_powerschool__gpprogresssubjectearned` is a view, and its properties file
-  is the only one of the four without a `materialized: table` override. Not
-  known to cause a visible problem today, but a check anchored to it would
-  refresh only on its parents' cadence, not its own.
 
 ## Yearly upkeep
 

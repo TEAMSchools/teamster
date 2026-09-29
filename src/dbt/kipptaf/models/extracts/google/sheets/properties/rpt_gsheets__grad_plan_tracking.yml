@@ -116,38 +116,77 @@ models:
         data_type: int64
       - name: state_studentnumber
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: salesforce_id
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: student_number
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
       - name: student_name
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: grade_level
         data_type: int64
       - name: student_email
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: enroll_status
         data_type: int64
       - name: cohort
         data_type: int64
       - name: gender
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: ethnicity
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: dob
         data_type: date
+        config:
+          meta:
+            contains_pii: true
       - name: lunch_status
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: lep_status
         data_type: boolean
+        config:
+          meta:
+            contains_pii: true
       - name: gifted_and_talented
         data_type: string
       - name: iep_status
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: is_504
         data_type: boolean
+        config:
+          meta:
+            contains_pii: true
       - name: is_homeless
         data_type: boolean
+        config:
+          meta:
+            contains_pii: true
       - name: is_out_of_district
         data_type: boolean
       - name: is_self_contained
@@ -164,10 +203,16 @@ models:
         data_type: string
       - name: college_match_gpa
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
       - name: college_match_gpa_bands
         data_type: string
       - name: contact_owner_name
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: ktc_cohort
         data_type: int64
       - name: ms_attended
@@ -176,16 +221,19 @@ models:
         data_type: string
       - name: ada
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: ada_above_or_at_80
         data_type: boolean
       - name: advisory
         data_type: string
-      - name: plan_required_credits
-        description: Credits required to satisfy the grad plan.
-        data_type: float64
         config:
           meta:
             contains_pii: true
+      - name: plan_required_credits
+        description: Credits required to satisfy the grad plan.
+        data_type: float64
       - name: plan_enrolled_credits
         description: Credits currently enrolled toward the plan.
         data_type: float64
@@ -213,9 +261,6 @@ models:
       - name: discipline_required_credits
         description: Credits required to satisfy this discipline.
         data_type: float64
-        config:
-          meta:
-            contains_pii: true
       - name: discipline_enrolled_credits
         description: Credits currently enrolled toward this discipline.
         data_type: float64
@@ -243,9 +288,6 @@ models:
       - name: subject_required_credits
         description: Credits required to satisfy this subject slot.
         data_type: float64
-        config:
-          meta:
-            contains_pii: true
       - name: subject_enrolled_credits
         description: Credits currently enrolled toward this subject slot.
         data_type: float64

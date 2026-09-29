@@ -19,16 +19,15 @@ running a refresh or explaining a missing row.
 
 ## Rules for every task
 
-- **Newark and Camden only.** Paterson disables every grad-plan model
-  (`int_powerschool__gpnode`, `int_powerschool__gpprogress_grades`, and the
-  `gpprogresssubject*` staging models); Miami never ran PowerSchool grad plans.
-  A Paterson or Miami request has no data to find — say so and point at the
-  doc's "Decisions" section.
-- **The dbt side needs no trigger of its own.**
-  `rpt_gsheets__grad_plan_tracking` and its parents are views, so every read
-  recomputes from whatever PowerSchool currently holds. The only "run" step is
-  the PowerSchool Data Capture routine, plus the sheet extract refresh after it
-  — see [refresh.md](references/refresh.md).
+- **Newark and Camden only.** Paterson and Miami have no grad-plan data — the
+  doc's "Decisions" section says why. A Paterson or Miami request has no data to
+  find — say so and point there.
+- **PowerSchool Data Capture is the only manual step; Dagster does the rest.**
+  The models between Data Capture and the sheet are a mix of tables Dagster
+  rebuilds automatically and views that read those tables live — the doc's "What
+  triggers it" section has the chain. The only steps a person runs by hand are
+  the PowerSchool Data Capture routine and the sheet extract refresh after it —
+  see [refresh.md](references/refresh.md).
 - Student-level progress and credit figures are PII (`config.meta.contains_pii`
   on `rpt_gsheets__grad_plan_tracking`). Any row you pull to diagnose a tab
   stays in the terminal and the session scratchpad; a commit, PR, or issue gets
