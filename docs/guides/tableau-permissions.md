@@ -1,35 +1,34 @@
 # Tableau Permissions — People Data Dashboards
 
-How row-level security works on the Tableau dashboards built from **people
-data** — staff surveys, observations, coaching, compensation, and operations
-walkthroughs. Who can see whose data, and how it is implemented.
+The Tableau developer reference for row-level security on the dashboards built
+from **people data** — staff surveys, observations, coaching, compensation, and
+operations walkthroughs. It records exactly who can see whose data, and how the
+workbooks implement it.
+
+**Staff asking what they can see, or how to get access, belong on the help
+center article instead:**
+[How to access Tableau](https://teamschools.zendesk.com/hc/en-us/articles/360009686434).
+It carries the plain-language version of Part 1 and the request steps. When
+behavior changes, update both.
 
 Student-data dashboards are **not** governed by this page. The nine workbooks
 listed in Part 2 are the full scope: every row in each of them is about a member
 of staff.
 
-This page has two halves. **Part 1** is for anyone who wants to understand or
-question what they can see, and needs no Tableau knowledge. **Part 2** is for
-Tableau developers and describes the field structure and points at the build
-reference.
+**Part 1** is the behavior reference: the routes, the per-workbook differences,
+and the exact group names. **Part 2** describes the field structure and points
+at the build reference.
 
 **Status: live** on nine workbooks, listed in Part 2. Last checked against the
 calculations in the published workbooks on 2026-09-29.
 
 ---
 
-## Part 1 — Who can see what
+## Part 1 — Behavior reference
 
-### The short version
-
-Access is decided **per row**, not per dashboard. Opening a workbook does not
-show you everything in it; it shows you the rows you are entitled to. Two people
-looking at the same dashboard routinely see different numbers, and that is
-working as intended.
-
-Entitlement comes from **which Tableau groups you belong to**, not from your job
-title or your position in the org chart. This is deliberate — it means access
-can be granted or removed by changing a group, with no change to any workbook.
+Access is decided **per row**, from the viewer's Tableau group membership, never
+from their job title or roster row. So access changes by changing a group, with
+no workbook edit.
 
 ### The five ways you can be shown a row
 
@@ -319,37 +318,21 @@ This matters because Rooms are shared: Room 9 has occupants from more than one
 entity, so treating a Room like a school would hand people access across entity
 lines.
 
-### Why you might see less than a colleague
-
-In rough order of likelihood:
-
-1. They are in a group you are not in. Group membership is the whole mechanism.
-1. They are the person's manager and you are not.
-1. The row belongs to a senior leader, and neither of you should see it — but
-   they are in a network-wide group.
-1. The row belongs to central office, and central office rows are not visible to
-   other central office staff.
-
-### How to get access
-
-**Ask to be added to the relevant Tableau group.** Do not ask for a workbook
-change. Every route above is driven by group membership, so a group change is
-immediate, auditable, applies consistently across all workbooks, and is
-reversible. A workbook edit is none of those things.
+### No by-name grants
 
 Individual, by-name grants inside a workbook are **not permitted**. They are
 invisible to anyone auditing group membership, and they survive the person
-changing roles. One is still live, on the Stipend and Bonus Dashboard's HR
-download sheets, and is tracked for removal in the playbook linked in Part 2.
+changing roles. Grant access by group only. One by-name grant is still live, on
+the Stipend and Bonus Dashboard's HR download sheets, and is tracked for removal
+in the playbook linked in Part 2.
 
-### The group names to ask for
+### Group names
 
-Give the Tech team the **exact** name from this page. A request for a group that
-does not exist cannot fail loudly — the calculation simply never matches, so you
-would keep seeing nothing with no error to chase.
-
-Most people need one entity group plus one school group, or one of the role
-groups.
+These are the exact names the calculations test. `ISMEMBEROF` against a name
+that does not exist cannot fail loudly: the branch never matches, so the viewer
+sees nothing and there is no error to chase. `TS-DL-Teaching And Learning`,
+tested on the Survey Dashboard, does not exist on the Tableau site as of
+2026-09-29, so that branch grants nobody.
 
 #### Your entity — everyone has one
 
