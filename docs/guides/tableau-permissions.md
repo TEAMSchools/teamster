@@ -231,7 +231,7 @@ department it rates. What you see depends on where you sit.
 | You are                                                                                                                                 | You see                                                                                                      |
 | --------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
 | School-based leadership — school leader, DSO, AP, or `Paterson TEAM Staff`                                                              | Every question, every department, for your own school                                                        |
-| Regional staff outside central office — regional ops, AcOps, School Support Directors, Special Education Directors, regional Technology | Your own department's questions and the questions that rate no department, for your region                   |
+| Regional staff outside central office — regional ops, AcOps, School Support Directors, Special Education Directors, regional Technology | Your own department's questions, for your region. Nothing else — not the questions that rate no department   |
 | Central office staff                                                                                                                    | Your own department's questions, from every region. Nothing else — not the questions that rate no department |
 
 For regional and central office staff, the department test applies **on top of**
@@ -239,8 +239,8 @@ entity, region and school. Belonging to the Operations group does not show you
 Operations feedback from a region you cannot otherwise reach — both tests have
 to pass. The central office group passes the entity, region and school tests for
 every row, so for central office staff the department is the only thing that
-narrows. A central office staff member in no department group sees nothing on
-these sheets.
+narrows. Anyone outside school-based leadership who is in no department group
+sees nothing on these sheets.
 
 Four groups see every department regardless: the data team, TEAM Council,
 managing directors of school operations, and heads of schools. The last two sit
@@ -274,13 +274,9 @@ whose feedback you need to read. School-based leadership does not need one.
 
     Some questions rate the organisation rather than a department — whether your
     region is headed in the right direction, and the free-text boxes asking for
-    any other feedback. Those carry no department, so the department test does
-    not apply to them. They reach everyone who passes the entity, region and
-    school gates, **except central office staff**. School-based leadership sees
-    them for their own school, and regional staff for their region.
-
-    Central office staff see them only through one of the four groups above that
-    see every department.
+    any other feedback. Those carry no department, so nobody who is scoped by
+    department sees them. They reach only school-based leadership, for their own
+    school, and the four groups above that see every department.
 
 !!! warning "The support sheets do not show respondent names, and that is not
 the same as anonymous"
