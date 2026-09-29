@@ -1,0 +1,431 @@
+models:
+  - name: int_cambium__all_assessments
+    config:
+      contract:
+        enforced: true
+    description: >-
+      Cambium TIDE New Jersey state assessment results (NJSLA, NJSLA Science,
+      the Algebra I, Algebra II and Geometry end-of-course tests, and NJGPA) for
+      one district, in the shared New Jersey state score shape. Cambium runs
+      every administration from Spring 2026 on. Unions stg_cambium__njsla and
+      stg_cambium__eoc, maps stg_cambium__njgpa separately, and derives the
+      aligned demographic labels, proficiency bands and subject and test-code
+      normalization. The cambium_state_assessment_relations var lists which
+      staging models a district reads; the NJGPA branch compiles only when
+      stg_cambium__njgpa is listed. kipptaf applies the student crosswalk and
+      unions this model with the frozen Pearson history in
+      int_assessments__state_nj_scores.
+
+      Drops rows whose test_status is not 'completed'. Cambium reports an
+      incomplete attempt as a second scored row rather than superseding the
+      first, and leaves test_score_complete null on every row, so the Pearson
+      score-complete convention cannot see it. Both rows carry a null
+      student_number, so the crosswalk resolves both to one student and a
+      dashboard would draw two marks in one cell.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_test_uuid
+          config:
+            severity: error
+    columns:
+      - name: assessment_version
+        data_type: string
+        description: >-
+          Which version of the assessment produced the row. NJGPA-A for the
+          Cambium adaptive NJGPA form, whose score scale differs from the
+          retired Pearson NJGPA; otherwise repeats assessment_name. Graduation
+          pathway cut scores join on this value.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - accepted_values:
+              arguments:
+                values: [NJSLA, NJSLA Science, NJGPA-A]
+              config:
+                severity: error
+
+      - name: assessment_type
+        data_type: string
+        description: >-
+          Program-lineage label (state_nj_njsla, state_nj_njsla_science or
+          state_nj_njgpa). Marts hash it into assessment_key.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - accepted_values:
+              arguments:
+                values:
+                  - state_nj_njsla
+                  - state_nj_njsla_science
+                  - state_nj_njgpa
+              config:
+                severity: error
+
+      - name: test_grade
+        data_type: int64
+        description: >-
+          Grade of the test form, parsed from assessment_grade (NJSLA) or set
+          from the test code (NJGPA, always 11). NULL on end-of-course rows,
+          whose forms have no grade. A new Cambium grade label fails the tests.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+                where:
+                  raw_subject not in ('Algebra I', 'Algebra II', 'Geometry')
+          - accepted_values:
+              arguments:
+                values: [3, 4, 5, 6, 7, 8, 9, 11]
+                quote: false
+              config:
+                severity: error
+
+      - name: _dbt_source_relation
+        data_type: string
+        description: Staging relation the row came from, from union_relations.
+
+      - name: academic_year
+        data_type: int64
+        description: Academic year the assessment was administered.
+
+      - name: administration_round
+        data_type: string
+        description: >-
+          Testing period with any Fall variant normalized to 'Fall'. Same value
+          as administration_period.
+
+      - name: administration_period
+        data_type: string
+        description: Testing period with any Fall variant normalized to 'Fall'.
+
+      - name: aligned_iep_status
+        data_type: string
+        description: >-
+          'Students With Disabilities' when student_with_disabilities is IEP or
+          B, otherwise 'Students Without Disabilities'.
+        config:
+          meta:
+            contains_pii: true
+
+      - name: aligned_ml_status
+        data_type: string
+        description: "'ML' when multilingual_learner is Y, otherwise 'Not ML'."
+        config:
+          meta:
+            contains_pii: true
+
+      - name: aligned_performance_band_group
+        data_type: string
+        description: >-
+          Performance level as a network band label, Lvl 1 through Lvl 5. NJGPA
+          maps Graduation Ready to Lvl 4 and Not Yet Graduation Ready to Lvl 3.
+        config:
+          meta:
+            contains_pii: true
+
+      - name: aligned_subject
+        data_type: string
+        description: Subject area used to align subjects across assessments.
+
+      - name: aligned_test_code
+        data_type: string
+        description: Test code used to align tests across assessments.
+
+      - name: american_indian_or_alaska_native
+        data_type: string
+        description:
+          American Indian or Alaska Native race indicator (Y or null).
+        config:
+          meta:
+            contains_pii: true
+
+      - name: asian
+        data_type: string
+        description: Asian race indicator (Y or null).
+        config:
+          meta:
+            contains_pii: true
+
+      - name: assessment_name
+        data_type: string
+        description: Assessment program name (NJSLA, NJSLA Science or NJGPA).
+
+      - name: assessment_grade
+        data_type: string
+        description: >-
+          Assessment grade as reported by Cambium, e.g. 'Grade 5'. NULL on the
+          end-of-course rows. On NJGPA it is the test design level ('Grade 10'
+          for ELAGP, 'Grade 11' for MATGP), not the student's grade.
+
+      - name: assessment_year
+        data_type: string
+        description: Assessment year as reported by Cambium.
+
+      - name: black_or_african_american
+        data_type: string
+        description: Black or African American race indicator (Y or null).
+        config:
+          meta:
+            contains_pii: true
+
+      - name: discipline
+        data_type: string
+        description: Subject discipline category (Math, ELA or Science).
+
+      - name: district_state
+        data_type: string
+        description: Reporting scope label, always 'KTAF NJ'.
+
+      - name: multilingual_learner
+        data_type: string
+        description: Multilingual learner indicator as reported by Cambium.
+        config:
+          meta:
+            contains_pii: true
+
+      - name: first_name
+        data_type: string
+        description: Student first name as reported by Cambium.
+        config:
+          meta:
+            contains_pii: true
+
+      - name: grade_level_when_assessed
+        data_type: int64
+        description: >-
+          The student's grade at the time of testing. On end-of-course tests,
+          where test_grade is NULL, it is the only grade.
+        config:
+          meta:
+            contains_pii: true
+
+      - name: hispanic_or_latino_ethnicity
+        data_type: string
+        description: Hispanic or Latino ethnicity indicator (Y or null).
+        config:
+          meta:
+            contains_pii: true
+
+      - name: iep_status
+        data_type: string
+        description: >-
+          'Has IEP' when student_with_disabilities is IEP or B, otherwise 'No
+          IEP'.
+        config:
+          meta:
+            contains_pii: true
+
+      - name: is_504
+        data_type: boolean
+        description: Whether student_with_disabilities is 504 or B.
+        config:
+          meta:
+            contains_pii: true
+
+      - name: is_approaching_int
+        data_type: int64
+        description: >-
+          1 when the student scored in the approaching band (Science level 2,
+          ELA and Math level 3), otherwise 0. Always 0 for NJGPA.
+        config:
+          meta:
+            contains_pii: true
+
+      - name: is_below_int
+        data_type: int64
+        description: >-
+          1 when the student scored below the approaching band (Science below
+          level 2, ELA and Math below level 3, every NJGPA level), otherwise 0.
+        config:
+          meta:
+            contains_pii: true
+
+      - name: is_bl_fb
+        data_type: boolean
+        description: >-
+          Whether the student scored at level 2 or below. NULL for Science and
+          NJGPA.
+        config:
+          meta:
+            contains_pii: true
+
+      - name: is_proficient
+        data_type: boolean
+        description: >-
+          Whether the student met expectations (Science level 3 or above, ELA
+          and Math level 4 or above, NJGPA Graduation Ready).
+        config:
+          meta:
+            contains_pii: true
+
+      - name: is_proficient_int
+        data_type: int64
+        description: is_proficient as 1 or 0.
+        config:
+          meta:
+            contains_pii: true
+
+      - name: last_or_surname
+        data_type: string
+        description: Student last name as reported by Cambium.
+        config:
+          meta:
+            contains_pii: true
+
+      - name: lep_status
+        data_type: boolean
+        description: Whether multilingual_learner is Y.
+        config:
+          meta:
+            contains_pii: true
+
+      - name: student_number
+        data_type: int64
+        description: >-
+          Local student identifier as reported by Cambium. kipptaf repairs it
+          from the student crosswalk.
+        config:
+          meta:
+            contains_pii: true
+
+      - name: module_code
+        data_type: string
+        description: >-
+          Test code with Science codes normalized (SC05 to SCI05, SC08 to SCI08,
+          SC11 to SCI11); the assessment administration grain identifier.
+
+      - name: native_hawaiian_or_other_pacific_islander
+        data_type: string
+        description:
+          Native Hawaiian or Other Pacific Islander race indicator (Y or null).
+        config:
+          meta:
+            contains_pii: true
+
+      - name: aggregated_proficiency
+        data_type: string
+        description: >-
+          Below/Far Below (level 2 or below), Approaching (level 3) or At/Above.
+          NULL for Science and NJGPA.
+        config:
+          meta:
+            contains_pii: true
+
+      - name: performance_band_group_label
+        data_type: string
+        description: >-
+          Not Proficient (1-2), Bubble (3) or Proficient (4-5). NULL for Science
+          and NJGPA.
+        config:
+          meta:
+            contains_pii: true
+
+      - name: period
+        data_type: string
+        quote: true
+        description: Testing period as reported by Cambium.
+
+      - name: race_ethnicity
+        data_type: string
+        description: >-
+          Single race code picked from the race indicators in priority order (T,
+          H, I, A, B, P, W).
+        config:
+          meta:
+            contains_pii: true
+
+      - name: results_type
+        data_type: string
+        description: Result type, always 'Actual'.
+
+      - name: state_student_id
+        data_type: int64
+        description: State student identifier as reported by Cambium.
+        config:
+          meta:
+            contains_pii: true
+
+      - name: student_test_uuid
+        data_type: string
+        description: Unique identifier for the student's test-taking event.
+
+      - name: student_with_disabilities
+        data_type: string
+        description: Disability code as reported by Cambium (IEP, 504 or B).
+        config:
+          meta:
+            contains_pii: true
+
+      - name: raw_subject
+        data_type: string
+        description: >-
+          Full subject name as reported by Cambium (e.g. English Language
+          Arts/Literacy, Mathematics, Algebra I).
+
+      - name: subject_area
+        data_type: string
+        description: >-
+          Subject for reporting, with English Language Arts/Literacy shortened
+          to English Language Arts.
+
+      - name: test_date
+        data_type: date
+        description: Date the student took the assessment.
+
+      - name: test_code
+        data_type: string
+        description: Raw test code from Cambium (e.g. ELA05, SC08, ALG01).
+
+      - name: performance_level
+        data_type: int64
+        description: Numeric performance level as reported by Cambium.
+        config:
+          meta:
+            contains_pii: true
+
+      - name: performance_level_label
+        data_type: string
+        description: >-
+          Performance level label, e.g. Met Expectations, or Graduation Ready
+          for NJGPA.
+        config:
+          meta:
+            contains_pii: true
+
+      - name: scale_score
+        data_type: numeric
+        description: Student's scale score on the assessment.
+        config:
+          meta:
+            contains_pii: true
+
+      - name: test_score_complete
+        data_type: numeric
+        description: >-
+          Score completeness indicator. Cambium does not populate it, so it is
+          NULL on every row.
+
+      - name: two_or_more_races
+        data_type: string
+        description: Two or more races indicator (Y or null).
+        config:
+          meta:
+            contains_pii: true
+
+      - name: white
+        data_type: string
+        description: White race indicator (Y or null).
+        config:
+          meta:
+            contains_pii: true
+
+      - name: aligned_aggregate_ethnicity
+        data_type: string
+        description: race_ethnicity as a reporting label, Blank when unset.
+        config:
+          meta:
+            contains_pii: true
