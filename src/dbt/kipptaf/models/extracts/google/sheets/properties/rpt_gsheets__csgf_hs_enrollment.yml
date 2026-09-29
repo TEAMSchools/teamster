@@ -6,16 +6,24 @@ models:
       `rpt_gsheets__csgf_hs_ap_offerings` -- no region filter, no Miami rows yet
       only because the window is the prior academic year. Ratified on #4996.
       Miami opened its first HS in AY2026 (KIPP Miami Technical High). The
-      course-tag CTEs in this model (transfer_course_tags, local_course_tags)
-      read PowerSchool-only sources with no Focus equivalent wired in, while the
-      enrollment and demographic fields come through
-      int_extracts__student_enrollments, which already includes Miami via Focus.
-      Once this model rolls to AY2026 data next cycle, Miami HS students will
-      get correct enrollment and demographic fields but NULL
-      has_participated_in_ap_courses / honors / dual_enrollment / cte_courses
-      values, since the course_tags CTE produces no rows for them at all. A
-      Focus course or grade source needs to be added to those two CTEs before
-      then.
+      course flags (earned_course_grades, course_tags) read PowerSchool stored
+      grades only, with no Focus equivalent wired in, while the enrollment and
+      demographic fields come through int_extracts__student_enrollments, which
+      already includes Miami via Focus. Once this model rolls to AY2026 data
+      next cycle, Miami HS students will get correct enrollment and demographic
+      fields but NULL has_participated_in_ap_courses / honors / dual_enrollment
+      / cte_courses values, since course_tags produces no rows for them at all.
+      A Focus grade source needs to be added before then. Course flags answer
+      CSGF's "has earned a grade in any ... course at school of enrollment" and
+      share one rule. A course counts only when the student has a stored Y1
+      final grade for it (any grade value, an F included) that is not a transfer
+      grade, in grade 9 or above, in any academic year up to and including the
+      reporting year, and stored at the same school as the student's
+      reporting-year enrollment row (same school id and region). Semester
+      courses count, since PowerSchool stores a semester section's final as a Y1
+      on the semester term. A section with quarter grades but no Y1 does not
+      count, and neither do courses taken at another school, KIPP or not. A
+      student with no qualifying Y1 grade at all gets NULL rather than N.
     columns:
       - name: studentid
         data_type: int64
@@ -29,12 +37,30 @@ models:
         data_type: float64
       - name: has_participated_in_ap_courses
         data_type: string
+        description: >-
+          Y when the student earned a qualifying grade (see the model
+          description) in a course whose NJ course extension
+          (stg_powerschool__s_nj_crs_x) carries an AP course subject, else N.
       - name: has_participated_in_honors_courses
         data_type: string
+        description: >-
+          Y when the student earned a qualifying grade (see the model
+          description) in a course whose PowerSchool catalog name contains
+          "Honors", else N.
       - name: has_participated_in_dual_enrollment_courses
         data_type: string
+        description: >-
+          Y when the student earned a qualifying grade (see the model
+          description) in a course whose PowerSchool catalog name ends in
+          "(DE)", else N.
       - name: has_participated_in_cte_courses
         data_type: string
+        description: >-
+          Y when the student earned a qualifying grade (see the model
+          description) in a course whose NJ course extension
+          (stg_powerschool__s_nj_crs_x) has CTE college credits populated, else
+          N. That field is empty for every course today, so this is N for every
+          student until PowerSchool records CTE college credits.
       - name: has_participated_in_ib_courses
         data_type: string
       - name: passed_integrated_math_1

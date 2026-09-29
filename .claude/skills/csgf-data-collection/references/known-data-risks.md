@@ -198,16 +198,33 @@ For `rpt_gsheets__csgf_hs_enrollment` specifically (verified and documented on
 the model itself -- see its properties YAML `description:` for the authoritative
 version): its enrollment/demographic fields come through
 `int_extracts__student_enrollments`, which already includes Miami via Focus, so
-those will be correct. But its course-tag CTEs (`transfer_course_tags` ->
-`stg_powerschool__storedgrades`, `local_course_tags` ->
-`base_powerschool__course_enrollments`) are PowerSchool-only with no Focus
-equivalent wired in -- Miami HS students will get **NULL, not `'N'`**, for
+those will be correct. But its course flags (`earned_course_grades` ->
+`stg_powerschool__storedgrades`) are PowerSchool-only with no Focus equivalent
+wired in -- Miami HS students will get **NULL, not `'N'`**, for
 `has_participated_in_ap_courses` / `_honors_courses` /
 `_dual_enrollment_courses` / `_cte_courses`, since the `course_tags` CTE
-produces no rows for them at all. A Focus course/grade source needs to be added
-to those two CTEs before this model rolls to AY2026. The other 6 HS models
-likely have the same PowerSchool-only gap somewhere in their lineage -- not yet
-verified per-model.
+produces no rows for them at all. A Focus grade source needs to be added before
+this model rolls to AY2026. The other 6 HS models likely have the same
+PowerSchool-only gap somewhere in their lineage -- not yet verified per-model.
+
+**HS Enrollment course flags now count only grades earned at the school of
+enrollment (changed 2026-09-28, after this cycle's HS Enrollment was already
+submitted under the old logic).** CSGF asks whether a student "has earned a
+grade in any AP / honors / dual enrollment / CTE course at school of
+enrollment." The model used to read course _enrollments_ at any school in the
+region, add transfer grades from other schools, and keep only one course per
+credit type per year. It now counts a course only when the student has a
+non-transfer Y1 stored grade for it (any grade, an F included), in grade 9 or
+above, stored at the same school as their reporting-year enrollment row.
+Semester courses count (PowerSchool stores their final as a Y1 on the semester
+term); a section with quarter grades but no Y1 does not. A student with no
+qualifying Y1 at all gets a blank rather than `N`. Rerun against this cycle's
+data: AP moved by a handful of students each way, honors lost a couple of dozen
+Y's (about half transfer-only, half enrollments with no Y1) and gained a few,
+dual enrollment gained a few, and CTE stays `N` for everyone because PowerSchool
+has no CTE college credits recorded on any course. The rule is on the model's
+properties YAML `description:`. If CSGF questions a flag on a resubmission,
+expect it to differ slightly from what was submitted this cycle.
 
 **`rpt_gsheets__csgf_hs_enrollment`'s fixes also shipped in PR #5059 and are
 live:** `exited_hs`, `FDC` in the FRL/SED flag, and the corrected

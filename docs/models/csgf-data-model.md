@@ -122,14 +122,42 @@ the first time ever.
 
 For `csgf_hs_enrollment` specifically: its enrollment/demographic fields come
 through `int_extracts__student_enrollments`, which already includes Miami via
-Focus, so those will be correct. But its course-tag CTEs (`transfer_course_tags`
-→ `stg_powerschool__storedgrades`, `local_course_tags` →
-`base_powerschool__course_enrollments`) are PowerSchool-only with no Focus
-equivalent wired in — Miami HS students will get **NULL, not `'N'`**, for
+Focus, so those will be correct. But its course flags (`earned_course_grades` →
+`stg_powerschool__storedgrades`) are PowerSchool-only with no Focus equivalent
+wired in — Miami HS students will get **NULL, not `'N'`**, for
 `has_participated_in_ap_courses` / `_honors_courses` /
 `_dual_enrollment_courses` / `_cte_courses`, since the `course_tags` CTE
 produces no rows for them at all. The other five HS models likely have the same
 PowerSchool-only gap somewhere in their lineage — not yet verified per-model.
+
+### `csgf_hs_enrollment` course flags count only grades earned at the school of enrollment
+
+CSGF asks whether a student "has earned a grade in any AP / honors / dual
+enrollment / CTE course at school of enrollment." Since 2026-09-28 the four
+flags follow that literally. A course counts only when the student has a stored
+Y1 final grade for it in `stg_powerschool__storedgrades` that:
+
+- is not a transfer grade (`is_transfer_grade` false), with any grade value, an
+  F included;
+- was earned in grade 9 or above, in any academic year up to and including the
+  reporting year;
+- was stored at the same school (`schoolid`, same region) as the student's
+  reporting-year row in `int_extracts__student_enrollments`.
+
+Semester courses count, because PowerSchool stores a semester section's final as
+a Y1 on the semester term. A section with quarter grades but no Y1 does not.
+Course attributes come from the PowerSchool catalog (`stg_powerschool__courses`,
+joined on course number and region) and its NJ extension
+(`stg_powerschool__s_nj_crs_x`): AP is a populated `ap_course_subject`, CTE is a
+populated `ctecollegecredits`, honors is a catalog name containing "Honors",
+dual enrollment is a catalog name ending "(DE)". `ctecollegecredits` is empty on
+every course today, so the CTE flag is `N` for everyone. A student with no
+qualifying Y1 at all gets NULL rather than `N`.
+
+Before this change the model read course enrollments at any school in the
+region, unioned in transfer grades from other schools, and kept one course per
+credit type per year. This cycle's HS Enrollment was submitted under that older
+logic.
 
 ### AP course naming drifts from CSGF's official list, cycle to cycle
 
@@ -304,14 +332,6 @@ of the time. Everything else above is a genuine departure.
   both properties files) rather than centralized. Flagged by `claude-review` as
   low-severity reuse/duplication; not fixed here, since it doesn't affect
   correctness as long as both are updated together each cycle.
-- `rpt_gsheets__csgf_hs_enrollment`'s `transfer_course_tags` CTE still filters
-  transfer grades through a ~100-entry Algebra-I-course-name allowlist that
-  predates this PR, even though the CTE's only surviving outputs
-  (`is_ap_course`, `is_honors_course`) don't need that specific allowlist at all
-  -- a transfer student's AP or Honors course not on this historical list is
-  silently excluded from `has_participated_in_ap_courses` / `_honors_courses`.
-  Flagged by `claude-review`; worth a deliberate decision (drop the filter, or
-  confirm/document why it should stay) in a follow-up, not resolved here.
 - Column-level `description:` coverage across the eight models' properties YAML
   is uneven -- only columns whose logic changed this cycle are documented; most
   pre-existing columns (all of `csgf_hs_act`/`csgf_hs_sat`/

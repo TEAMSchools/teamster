@@ -558,7 +558,11 @@ treating a documented fix as submission-ready).
   Enrollment Targets" sheet.
 - **Miami's first HS (AY2026) is a forward risk for next cycle, not this one**
   -- next cycle's HS-scoped models will need a Focus course/grade source wired
-  into two PowerSchool-only CTEs before they can cover Miami.
+  into their PowerSchool-only course and grade logic before they can cover
+  Miami.
+- **HS Enrollment course flags changed 2026-09-28**, after this cycle's
+  submission: they now count only Y1 grades earned at the school of enrollment.
+  Details in `references/known-data-risks.md`.
 - **`rpt_gsheets__csgf_hs_ap_offerings`/`hs_ap_scores` need a coverage/naming
   re-check every cycle** against CSGF's current official AP course name list
   (last checked 2026-09-11, clean).
