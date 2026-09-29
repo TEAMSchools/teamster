@@ -1,12 +1,4 @@
 with
-    -- dcid >= 1 is the placeholder filter. See the model description for why
-    -- student_number is the join key.
-    powerschool_students as (
-        select id as studentid, student_number, _dbt_source_project,
-        from {{ ref("stg_powerschool__students") }}
-        where dcid >= 1
-    ),
-
     powerschool_conformed as (
         select
             fg._dbt_source_relation,
@@ -34,16 +26,8 @@ with
             fg.lastgradeupdate,
             fg.exclude_from_gpa,
 
-            ps.student_number,
+            fg.students_student_number as student_number,
         from {{ ref("base_powerschool__final_grades") }} as fg
-        -- left, not inner: an inner join would silently drop any final-grade row
-        -- whose student fails the dcid >= 1 placeholder filter, changing the NJ
-        -- population. Measured at zero such rows, but the join type is what
-        -- guarantees it stays that way.
-        left join
-            powerschool_students as ps
-            on fg.studentid = ps.studentid
-            and fg._dbt_source_project = ps._dbt_source_project
     ),
 
     focus_conformed as (
@@ -114,11 +98,8 @@ with
         -- or after the cutover — the same boundary, applied from the other
         -- side. Course history also carries an invariant the schedule join
         -- depends on: every row has a null `course_period_id` (15,278 of
-        -- 15,278) and drops out of that inner join anyway. One row. See
-        -- int_students__sis_cutover for why the boundary is a floor and why
-        -- it is derived from recorded attendance rather than row presence.
-        cross join {{ ref("int_students__sis_cutover") }} as sc
-        where g.academic_year >= sc.focus_start_academic_year
+        -- 15,278) and drops out of that inner join anyway.
+        where g.academic_year >= 2026
     )
 
 select *,

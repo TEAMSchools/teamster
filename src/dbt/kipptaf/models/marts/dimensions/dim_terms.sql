@@ -10,6 +10,7 @@ select
                 "t.`start_date`",
                 "t.region",
                 "t.school_id",
+                "t.grade_band",
             ]
         )
     }} as term_key,

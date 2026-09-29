@@ -19,7 +19,7 @@ from teamster.core.utils.functions import chunk
 _TRANSIENT_HTTP_CODES: frozenset[int] = frozenset({429, 500, 502, 503, 504})
 
 # Total attempts per batch (1 initial + retries) for sub-requests that fail with
-# a transient code. Matches dagster.backoff's default retry budget (1 + 4).
+# a transient code.
 _MAX_BATCH_ATTEMPTS: int = 5
 
 
@@ -29,6 +29,30 @@ class _TransientHttpError(errors.HttpError):
     Used as the ``retry_on`` target for :func:`backoff` so that client errors
     (4xx) propagate immediately instead of being retried.
     """
+
+
+def _backoff(fn: Callable[[], dict]) -> dict:
+    """Retry ``fn`` on ``_TransientHttpError`` with a budget that outlasts a 429.
+
+    ``dagster.backoff``'s defaults (4 retries, delays from 0.1s) give up after
+    1.5s, inside the same rate-limit window that produced the 429. Delays of
+    1, 2, 4, 8, 16, 32s total 63s, past a per-minute ``rateLimitExceeded``.
+
+    Args:
+        fn: Zero-arg callable from :func:`_retryable_execute`.
+
+    Returns:
+        The response dict from the first successful call.
+
+    Raises:
+        _TransientHttpError: If all 7 attempts fail.
+    """
+    return backoff(
+        fn=fn,
+        retry_on=(_TransientHttpError,),
+        max_retries=6,
+        delay_generator=exponential_delay_generator(base_delay=1.0),
+    )
 
 
 def _retryable_execute(request) -> Callable[[], dict]:
@@ -94,6 +118,11 @@ def _batch_by_distinct_org_unit(
     # case where the org units outnumber a single batch.
     for round_ in zip_longest(*by_org_unit.values()):
         yield from chunk(obj=[item for item in round_ if item is not None], size=size)
+
+
+def _user_error(user: dict, exception: Exception) -> dict:
+    """Redacted per-user error: primaryEmail plus the API message, never the payload."""
+    return {"primaryEmail": user["primaryEmail"], "error": str(exception)}
 
 
 class GoogleDirectoryResource(ConfigurableResource):
@@ -214,13 +243,12 @@ class GoogleDirectoryResource(ConfigurableResource):
         max_results = kwargs.pop("max_results", self.max_results)
 
         while True:
-            response = backoff(
-                fn=_retryable_execute(
+            response = _backoff(
+                _retryable_execute(
                     getattr(self._resource, api_name)().list(
                         pageToken=next_page_token, maxResults=max_results, **kwargs
                     )
-                ),
-                retry_on=(_TransientHttpError,),
+                )
             )
 
             next_page_token = response.get("nextPageToken")
@@ -526,9 +554,7 @@ class GoogleDirectoryResource(ConfigurableResource):
 
             # Retries a transient failure of the whole batch envelope; individual
             # sub-request failures come back through self._exceptions below.
-            backoff(
-                fn=_retryable_execute(batch_request), retry_on=(_TransientHttpError,)
-            )
+            _backoff(_retryable_execute(batch_request))
 
             if not self._exceptions:
                 return failures
@@ -561,7 +587,8 @@ class GoogleDirectoryResource(ConfigurableResource):
         each individual sub-request within it — is retried on transient errors
         (5xx, 429) with backoff.
 
-        Unlike the sibling batch helpers (which return error strings), this
+        Like :meth:`batch_update_users`, and unlike ``batch_insert_members`` /
+        ``batch_insert_role_assignments`` (which return error strings), this
         returns structured per-user errors. Callers use the returned emails to
         skip follow-on group membership for users that were not created (see
         ``members_for_created_users``), and the structured form keeps the create
@@ -592,8 +619,7 @@ class GoogleDirectoryResource(ConfigurableResource):
             )
 
             exceptions.extend(
-                {"primaryEmail": item["primaryEmail"], "error": str(e)}
-                for item, e in failures
+                _user_error(user=item, exception=e) for item, e in failures
             )
 
             if i < len(batches) - 1:
@@ -617,15 +643,21 @@ class GoogleDirectoryResource(ConfigurableResource):
             retry_on=(_TransientHttpError,),
         )
 
-    def batch_update_users(self, users: list[dict]) -> list[str]:
+    def batch_update_users(self, users: list[dict]) -> list[dict]:
         """Update multiple users in batches of 40.
+
+        Like :meth:`batch_insert_users` (and unlike the remaining batch helpers,
+        which return error strings), this returns structured per-user errors:
+        every update payload carries the password hash, and the structured form
+        keeps it out of logs and asset-check metadata.
 
         Args:
             users: User resource dicts to update; each must include
                 ``primaryEmail``.
 
         Returns:
-            Error strings for any failed requests.
+            One ``{"primaryEmail": ..., "error": ...}`` dict per user whose
+            update ultimately failed (empty if all succeeded).
         """
         exceptions = []
 
@@ -650,9 +682,9 @@ class GoogleDirectoryResource(ConfigurableResource):
                     try:
                         self._retry_update_user(user)
                     except errors.HttpError as retry_e:
-                        exceptions.append(f"{user} {retry_e}")
+                        exceptions.append(_user_error(user=user, exception=retry_e))
                 else:
-                    exceptions.append(f"{user} {e}")
+                    exceptions.append(_user_error(user=user, exception=e))
 
             if i < len(batches) - 1:
                 time.sleep(1)

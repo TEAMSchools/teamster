@@ -1,0 +1,40 @@
+models:
+  - name: int_surveys__manager_submission_subjects
+    description: >-
+      Subject-of-evaluation overlay for the Manager Survey. One row per Manager
+      Survey submission, carrying the employee number of the manager being
+      evaluated.
+
+      Kept separate from int_surveys__survey_submissions because only the
+      Manager Survey has a subject. Folding the column into the submissions
+      model would leave it null for every other survey and invite consumers to
+      read it as meaningful.
+
+      Covers both Manager Survey arms. The live Google Forms arm keys on the
+      response id; the historic Alchemer archive keys on the deterministic
+      fallback. Both arrive as effective_survey_response_id upstream, so one
+      partition serves both.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - survey_id
+              - survey_response_id
+    columns:
+      - name: survey_id
+        description: >-
+          Identifier of the Manager Survey — the Google Forms form id on the
+          live arm, the literal historic_alchemer_Manager_survey on the archive.
+
+      - name: survey_response_id
+        description: >-
+          Identifier of the submission being evaluated, matching
+          int_surveys__survey_submissions.survey_response_id so consumers join
+          on the pair.
+
+      - name: subject_employee_number
+        description: >-
+          Employee number of the staff member the respondent is evaluating.
+        config:
+          meta:
+            contains_pii: true

@@ -384,6 +384,14 @@ models:
         data_type: string
         description:
           School level (ES, MS, HS), sourced from stg_powerschool__schools.
+      - name: school_level_alt
+        data_type: string
+        description: >-
+          School level with one override applied — grade 5 and above at KIPP
+          Sumner Academy from academic year 2025 forward reads MS, where the
+          school is classified ES but those grades operate as a middle school.
+          Every other row carries school_level unchanged. Consumers that need
+          the override should read this rather than re-deriving it.
       - name: teachernumber
         data_type: string
       - name: teacher_lastfirst

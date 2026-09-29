@@ -35,6 +35,22 @@ models:
           Single school-level code (ES, MS, HS). For Miami, derived from Focus's
           school-level label; null for closed schools, which carry no
           school-level label in Focus.
+      - name: low_grade
+        description: >-
+          Lowest grade level served. Null for Miami; Focus does not carry it.
+      - name: high_grade
+        description: >-
+          Highest grade level served. Null for Miami; Focus does not carry it.
+      - name: schoolcity
+        description: School city. Null for Miami; Focus does not carry it.
+      - name: schoolstate
+        description: School state abbreviation.
+      - name: schoolzip
+        description: School ZIP code. Null for Miami; Focus does not carry it.
+      - name: state_excludefromreporting
+        description: >-
+          1 when the school is excluded from state reporting, else 0. For Miami,
+          derived from Focus's exclude-from-state-reporting flag.
       - name: _dbt_source_project
         description:
           District code location, passed through from the source union view.

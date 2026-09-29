@@ -65,6 +65,7 @@ left join
     and ir.subject = up.subject
     and ir.start_date = up.start_date
     and ir.completion_date = up.completion_date
+    and ir.rn_subj_day = up.rn_subj_day
 where
     co.academic_year = {{ var("current_academic_year") }}
     and co.rn_year = 1

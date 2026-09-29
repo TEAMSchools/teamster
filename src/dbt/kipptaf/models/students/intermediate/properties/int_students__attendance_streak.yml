@@ -31,8 +31,10 @@ models:
       - name: academic_year
         description: >-
           Academic year -- the primary, system-agnostic year column. Native on
-          Focus rows; derived as yearid + 1990 on PowerSchool rows. Consumers
-          should join/group on this rather than yearid going forward.
+          Focus rows; read from int_powerschool__attendance_streak on
+          PowerSchool rows, where the powerschool package derives it from
+          yearid. Consumers should join/group on this rather than yearid going
+          forward.
       - name: yearid
         description: >-
           Academic year minus 1990. Legacy PowerSchool year encoding, retained

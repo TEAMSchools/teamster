@@ -38,7 +38,6 @@ with
             and location_name != 'KIPP Whittier Elementary'
     ),
 
-    -- trunk-ignore(sqlfluff/ST03)
     internal_assessments as (
         select
             a.assessment_id,
@@ -123,17 +122,44 @@ with
             and ce.illuminate_grade_level_id >= 10
     ),
 
-    deduplicate as (
+    internal_assessments_ranked as (
         /* we need to join to `int_assessments__course_enrollments` according to
         enrollment dates, but some students have multiple enrollments for the same
         course */
-        {{
-            dbt_utils.deduplicate(
-                relation="internal_assessments",
-                partition_by="assessment_id, illuminate_student_id",
-                order_by="cc_dateleft desc, cc_dateenrolled desc",
-            )
-        }}
+        select
+            *,
+
+            row_number() over (
+                partition by assessment_id, illuminate_student_id
+                order by cc_dateleft desc, cc_dateenrolled desc
+            ) as rn,
+        from internal_assessments
+    ),
+
+    internal_assessments_deduped as (
+        select
+            assessment_id,
+            title,
+            administered_at,
+            performance_band_set_id,
+            academic_year_clean,
+            subject_area,
+            scope,
+            module_type,
+            module_code,
+            region,
+            grade_level_id,
+            canonical_assessment_id,
+            illuminate_student_id,
+            powerschool_student_number,
+            powerschool_school_id,
+            cc_dateenrolled,
+            cc_dateleft,
+            discipline,
+            cc_dcid,
+            cc_source_project,
+        from internal_assessments_ranked
+        where rn = 1
     )
 
 select
@@ -165,7 +191,7 @@ select
 
     true as is_internal_assessment,
     false as is_replacement,
-from deduplicate as ia
+from internal_assessments_deduped as ia
 left join
     {{ ref("stg_illuminate__dna_assessments__students_assessments") }} as sa
     on ia.illuminate_student_id = sa.student_id

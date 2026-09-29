@@ -12,9 +12,7 @@ inner join
     on cc.studentid = s.id
     and cc._dbt_source_project = s._dbt_source_project
     and s.enroll_status in (0, -1)
-where
-    cc.dateleft >= current_date('{{ var("local_timezone") }}')
-    and {{ exclude_frozen("cc._dbt_source_project") }}
+where cc.dateleft >= current_date('{{ var("local_timezone") }}')
 
 union all
 
@@ -29,4 +27,4 @@ select
 
     student_number as student_id,
 from {{ ref("stg_powerschool__students") }}
-where enroll_status in (0, -1) and {{ exclude_frozen("_dbt_source_project") }}
+where enroll_status in (0, -1)

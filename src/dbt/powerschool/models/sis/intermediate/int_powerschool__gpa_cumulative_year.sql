@@ -101,30 +101,53 @@ with
             and gc.schoolid = enr.schoolid
             and enr.academic_year = {{ var("current_academic_year") }}
             and enr.rn_year = 1
+    ),
+
+    unioned as (
+        select
+            studentid,
+            schoolid,
+            academic_year,
+            grade_level,
+            earned_credits_cum,
+            potential_gpa_credits_cum,
+            cumulative_y1_gpa,
+            cumulative_y1_gpa_unweighted,
+            is_projected,
+        from completed_years
+
+        union all
+
+        select
+            studentid,
+            schoolid,
+            academic_year,
+            grade_level,
+            earned_credits_cum,
+            potential_gpa_credits_cum,
+            cumulative_y1_gpa,
+            cumulative_y1_gpa_unweighted,
+            is_projected,
+        from projected_current_year
     )
 
 select
-    studentid,
-    schoolid,
-    academic_year,
-    grade_level,
-    earned_credits_cum,
-    potential_gpa_credits_cum,
-    cumulative_y1_gpa,
-    cumulative_y1_gpa_unweighted,
-    is_projected,
-from completed_years
+    u.studentid,
+    u.schoolid,
+    u.academic_year,
+    u.grade_level,
+    u.earned_credits_cum,
+    u.potential_gpa_credits_cum,
+    u.cumulative_y1_gpa,
+    u.cumulative_y1_gpa_unweighted,
+    u.is_projected,
 
-union all
+    s.dcid as students_dcid,
+    s.student_number as students_student_number,
 
-select
-    studentid,
-    schoolid,
-    academic_year,
-    grade_level,
-    earned_credits_cum,
-    potential_gpa_credits_cum,
-    cumulative_y1_gpa,
-    cumulative_y1_gpa_unweighted,
-    is_projected,
-from projected_current_year
+    sch.name as school_name,
+    sch.abbreviation as school_abbreviation,
+    sch.school_level,
+from unioned as u
+left join {{ ref("stg_powerschool__students") }} as s on u.studentid = s.id
+left join {{ ref("stg_powerschool__schools") }} as sch on u.schoolid = sch.school_number

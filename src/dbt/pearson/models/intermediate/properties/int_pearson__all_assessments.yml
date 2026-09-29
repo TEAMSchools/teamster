@@ -62,11 +62,6 @@ models:
         description: >-
           Single-character race/ethnicity code from the Pearson indicator flags,
           priority T, H, I, A, B, P, W.
-      - name: illuminate_subject
-        data_type: string
-        description: >-
-          ELA subjects map to 'Text Study'; Algebra I, Algebra II and Geometry
-          map to 'Mathematics'; all others pass through.
       - name: njsla_aggregated_proficiency
         data_type: string
         description: >-

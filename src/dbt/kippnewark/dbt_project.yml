@@ -17,9 +17,10 @@ clean-targets:
   - dbt_packages
 
 data_tests:
-  +severity: warn
   +store_failures: true
   +store_failures_as: view
+  kippnewark:
+    +severity: warn
 
 vars:
   local_timezone: America/New_York
@@ -65,9 +66,6 @@ models:
         +enabled: false
   iready:
     +materialized: table
-    staging:
-      stg_iready__instructional_usage_data:
-        +enabled: false
   overgrad:
     +materialized: table
     staging:

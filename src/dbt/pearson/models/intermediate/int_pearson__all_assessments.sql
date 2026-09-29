@@ -23,6 +23,7 @@ with
                     "discipline",
                     "englishlearnerel",
                     "firstname",
+                    "gradelevelwhenassessed",
                     "hispanicorlatinoethnicity",
                     "is_bl_fb",
                     "is_proficient",
@@ -88,14 +89,6 @@ with
                 when white = 'Y'
                 then 'W'
             end as race_ethnicity,
-
-            case
-                when `subject` like 'English Language Arts%'
-                then 'Text Study'
-                when `subject` in ('Algebra I', 'Algebra II', 'Geometry')
-                then 'Mathematics'
-                else `subject`
-            end as illuminate_subject,
 
             case
                 when assessment_name = 'NJSLA' and testperformancelevel <= 2

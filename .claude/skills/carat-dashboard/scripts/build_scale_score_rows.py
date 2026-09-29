@@ -54,7 +54,7 @@ SCALE_RANGE = {
 # below missing one. Verified against the rendered PDF, not just extracted text.
 # Corrected to 720, which is both that row's own UPPER value and the section
 # maximum. This deviates from the published table, and no downstream check can
-# detect that -- it is recorded in SKILL.md and the CARAT reference doc.
+# detect that -- it is recorded in references/practice-psat-scoring-tables.md and the CARAT reference doc.
 SCALE_CORRECTIONS = {
     (226308, "Reading and Writing"): {66: 720},
 }

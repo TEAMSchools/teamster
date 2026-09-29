@@ -1,5 +1,16 @@
 models:
   - name: int_topline__college_matriculation_weekly
+    description: >-
+      College application outcomes carried onto the enrollment week spine, one
+      row per enrolled 12th-grade student-week in the current and prior academic
+      year. The outcome flags come from snapshot_kippadb__app_rollup, matched on
+      the student's Salesforce id to the snapshot version in effect at the
+      instant the week closes, so each week reports the freshest values known
+      during it. That boundary instant is built in the local timezone, and
+      comparing it against the version's validity span as a half-open interval
+      resolves every week to exactly one version. Students with no application
+      record, or weeks before their first snapshot version, carry null flags.
+      Feeds int_topline__student_metrics.
     config:
       materialized: table
       meta:
@@ -9,3 +20,54 @@ models:
           # midnight tick (deps-in-progress guard serializes). Refs #4153
           automation_condition:
             cron_schedule: 0 0 * * *
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - academic_year
+              - week_start_monday
+          config:
+            severity: error
+    columns:
+      - name: student_number
+        description: KIPP student number of the enrolled student.
+        config:
+          meta:
+            contains_pii: true
+      - name: academic_year
+        description: Academic year the enrollment week belongs to.
+      - name: week_start_monday
+        description: Monday that opens the enrollment week.
+      - name: week_end_sunday
+        description:
+          Sunday that closes the enrollment week, and the date the snapshot
+          boundary instant is built from.
+      - name: is_submitted_ba
+        description:
+          Whether the student had submitted a bachelor's degree application as
+          of the week's close.
+        config:
+          meta:
+            contains_pii: true
+      - name: is_accepted_ba
+        description:
+          Whether the student had been accepted to a bachelor's degree program
+          as of the week's close.
+        config:
+          meta:
+            contains_pii: true
+      - name: is_matriculated_ba
+        description:
+          Whether the student had matriculated into a bachelor's degree program
+          as of the week's close.
+        config:
+          meta:
+            contains_pii: true
+      - name: is_submitted_quality_bar_4yr_int
+        description:
+          Whether the student had submitted an application to a four-year school
+          meeting the quality bar, as of the week's close.
+        config:
+          meta:
+            contains_pii: true

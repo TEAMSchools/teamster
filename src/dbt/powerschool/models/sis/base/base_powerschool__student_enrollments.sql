@@ -120,6 +120,8 @@ select
     sch.name as school_name,
     sch.abbreviation as school_abbreviation,
 
+    entry_sch.abbreviation as entry_school_abbreviation,
+
     scf.spedlep,
     scf.lep_status,
     scf.homeless_code,
@@ -157,6 +159,9 @@ select
 from with_boy_status_window as enr
 inner join
     {{ ref("stg_powerschool__schools") }} as sch on enr.schoolid = sch.school_number
+left join
+    {{ ref("stg_powerschool__schools") }} as entry_sch
+    on enr.entry_schoolid = entry_sch.school_number
 left join
     {{ ref("stg_powerschool__studentcorefields") }} as scf
     on enr.students_dcid = scf.studentsdcid

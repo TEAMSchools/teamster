@@ -24,13 +24,15 @@ with
             fs.schoolid,
         from {{ ref("stg_focus__marking_periods") }} as mp
         inner join focus_schools as fs on mp.school_id = fs.focus_school_id
-        -- Progress periods have no PowerSchool `terms` equivalent. The 2018
-        -- floor is Miami's first school year: Focus carries a full
-        -- year/semester/quarter set for 2 schools in every syear back to 1980,
+        -- Progress periods have no PowerSchool `terms` equivalent. The 2026
+        -- floor is the SIS cutover year: before it the frozen PowerSchool
+        -- archive owns Miami's terms, while Focus carries a full
+        -- year/semester/quarter set back to 1980 for a handful of schools,
         -- which would fabricate history here. Both filters stay in this model
-        -- rather than in staging, because 321 report card grade rows point at
-        -- pre-2018 marking periods and flooring the staging model orphans them.
-        where mp.type in ('year', 'semester', 'quarter') and mp.syear >= 2018
+        -- rather than in staging, because Focus report card grades point at
+        -- pre-cutover marking periods that flooring the staging model would
+        -- orphan.
+        where mp.type in ('year', 'semester', 'quarter') and mp.syear >= 2026
     ),
 
     focus_conformed as (
@@ -56,66 +58,82 @@ with
             if(`type` = 'quarter', quarter_semester, null) as semester,
             if(`type` = 'quarter', is_within_dates, null) as is_current_term,
         from focus_marking_periods
-    ),
-
-    powerschool_quarters as (
-        select
-            schoolid,
-            yearid,
-            academic_year,
-            term,
-            term_start_date,
-            term_end_date,
-            semester,
-            is_current_term,
-            _dbt_source_project,
-        from {{ ref("int_powerschool__terms") }}
-    ),
-
-    -- A small number of historical quarters exist in `int_powerschool__terms`
-    -- via its `termbins` join but have no corresponding Q1-Q4 row in the raw
-    -- `terms` table — a handful of non-instructional schoolids, mostly
-    -- pre-2018, verified against prod (kippnewark and kippcamden schoolids
-    -- 73252, 73253, 133570965, 179902). A left join from the raw side would
-    -- silently drop those quarters' dates. Full join instead, so an unmatched
-    -- quarter survives as its own row and every raw-only column null-fills,
-    -- which matches a row Focus never carried.
-    powerschool_joined as (
-        select
-            p.* except (
-                semester, rn, schoolid, yearid, academic_year, _dbt_source_project
-            ),
-
-            q.term,
-            q.term_start_date,
-            q.term_end_date,
-            q.semester,
-            q.is_current_term,
-
-            coalesce(p.schoolid, q.schoolid) as schoolid,
-            coalesce(p.yearid, q.yearid) as yearid,
-            coalesce(
-                p._dbt_source_project, q._dbt_source_project
-            ) as _dbt_source_project,
-            coalesce(p.academic_year, q.academic_year) as academic_year,
-        from {{ ref("stg_powerschool__terms") }} as p
-        full join
-            powerschool_quarters as q
-            on p.schoolid = q.schoolid
-            and p.yearid = q.yearid
-            and p.abbreviation = q.term
-            and p._dbt_source_project = q._dbt_source_project
-            and p.rn = 1
-    ),
-
-    powerschool_conformed as (
-        select *, from powerschool_joined where _dbt_source_project != 'kippmiami'
     )
 
-select *,
-from powerschool_conformed
+select
+    _dbt_source_relation,
+    dcid,
+    `name`,
+    firstday,
+    lastday,
+    abbreviation,
+    importmap,
+    terminfo_guid,
+    psguid,
+    ip_address,
+    whomodifiedtype,
+    transaction_date,
+    id,
+    noofdays,
+    yearlycredithrs,
+    termsinyear,
+    portion,
+    autobuildbin,
+    isyearrec,
+    periods_per_day,
+    days_per_cycle,
+    attendance_calculation_code,
+    sterms,
+    suppresspublicview,
+    whomodifiedid,
+    fiscal_year,
+    term,
+    term_start_date,
+    term_end_date,
+    semester,
+    is_current_term,
+    schoolid,
+    yearid,
+    _dbt_source_project,
+    academic_year,
+from {{ ref("int_powerschool__terms_spine") }}
 
-full union all corresponding
+union all
 
-select *,
+select
+    _dbt_source_relation,
+    cast(null as int64) as dcid,
+    `name`,
+    firstday,
+    lastday,
+    abbreviation,
+    cast(null as string) as importmap,
+    cast(null as string) as terminfo_guid,
+    cast(null as string) as psguid,
+    cast(null as string) as ip_address,
+    cast(null as string) as whomodifiedtype,
+    cast(null as timestamp) as transaction_date,
+    cast(null as int64) as id,
+    cast(null as int64) as noofdays,
+    cast(null as float64) as yearlycredithrs,
+    cast(null as int64) as termsinyear,
+    cast(null as int64) as portion,
+    cast(null as int64) as autobuildbin,
+    isyearrec,
+    cast(null as int64) as periods_per_day,
+    cast(null as int64) as days_per_cycle,
+    cast(null as int64) as attendance_calculation_code,
+    cast(null as int64) as sterms,
+    cast(null as int64) as suppresspublicview,
+    cast(null as int64) as whomodifiedid,
+    fiscal_year,
+    term,
+    term_start_date,
+    term_end_date,
+    semester,
+    is_current_term,
+    schoolid,
+    yearid,
+    _dbt_source_project,
+    academic_year,
 from focus_conformed

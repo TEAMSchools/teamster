@@ -29,13 +29,11 @@ with
             fa.academic_year - 1990 as yearid,
             coalesce(fa.streak_value, 'P') as att_code,
         from {{ ref("int_focus__attendance_streak") }} as fa
-        -- One row. See int_students__sis_cutover for why the boundary is a
-        -- floor derived from recorded attendance rather than from Focus row
-        -- presence. Required, not belt-and-braces: without it Focus's AY2020
-        -- rows would land beside PowerSchool's real AY2020-AY2025 rows for
-        -- Miami and break this model's own grain test.
-        cross join {{ ref("int_students__sis_cutover") }} as c
-        where fa.academic_year >= c.focus_start_academic_year
+        -- A floor, not a scope on the years Focus carries: its rows run back
+        -- to AY2020 as a scaffold. Required, not belt-and-braces: without it
+        -- Focus's AY2020 rows would land beside PowerSchool's real
+        -- AY2020-AY2025 rows for Miami and break this model's own grain test.
+        where fa.academic_year >= 2026
     )
 
 -- The frozen PowerSchool archive ends at AY2025 (rebuilt with that bound,
@@ -53,8 +51,7 @@ select
     streak_length_membership,
     streak_length_calendar,
     _dbt_source_project,
-
-    yearid + 1990 as academic_year,
+    academic_year,
 from {{ ref("int_powerschool__attendance_streak") }}
 
 union all

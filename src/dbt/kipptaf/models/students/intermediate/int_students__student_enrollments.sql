@@ -105,6 +105,7 @@ with
             enr.region,
             enr.academic_year,
             enr.exitdate,
+            enr.exitdate as last_enrolled_date,
             enr.enroll_status,
             enr.entrycode,
             enr.exitcode,
@@ -286,6 +287,8 @@ with
 
             regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as _dbt_source_project,
 
+            date_sub(exitdate, interval 1 day) as last_enrolled_date,
+
             initcap(regexp_extract(_dbt_source_relation, r'kipp(\w+)_')) as region,
         from union_relations
     ),
@@ -304,6 +307,7 @@ with
             schoolid,
             entrydate,
             exitdate,
+            last_enrolled_date,
             entrycode,
             exitcode,
             lunchstatus,
@@ -395,6 +399,7 @@ with
             schoolid,
             entrydate,
             exitdate,
+            last_enrolled_date,
             entrycode,
             exitcode,
             lunchstatus,
@@ -549,12 +554,12 @@ select
 
     ill.student_id as illuminate_student_id,
 
-    -- suf covers all four districts and previously carried Miami's PowerSchool
-    -- value; Miami's students_dcid is now always null (Focus has no
-    -- equivalent), so suf never matches a Miami row and ar.gifted_and_talented
-    -- (from int_focus__students, via focus_conformed) is the fallback.
+    -- gifted_and_talented only ever existed on the Miami relation of
+    -- stg_powerschool__u_studentsuserfields, dropped from that union; suf
+    -- never contributed a real value here. ar.gifted_and_talented (from
+    -- int_focus__students, via focus_conformed) covers Miami instead.
     coalesce(
-        njs.gifted_and_talented, suf.gifted_and_talented, ar.gifted_and_talented, 'N'
+        njs.gifted_and_talented, ar.gifted_and_talented, 'N'
     ) as gifted_and_talented,
 
     -- njr and suf join through students_dcid, which Focus never populates, so
@@ -641,7 +646,7 @@ select
         when ar.region = 'Miami'
         then ar.lunchstatus
         when ar.rn_year = 1
-        then coalesce(if(tpd.is_directly_certified, 'F', null), tpd.eligibility_name)
+        then tpd.eligibility_name
     end as lunch_status,
 
     case

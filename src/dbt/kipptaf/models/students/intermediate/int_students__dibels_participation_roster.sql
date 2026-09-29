@@ -1,4 +1,72 @@
 with
+    -- the two expectation gates, aggregated from measure grain to round grain.
+    -- count(*) after the include filters equals the gates' own
+    -- expected_row_count; recomputing it here makes the grain explicit.
+    expected_tests as (
+        select
+            academic_year,
+            region,
+            grade,
+            assessment_type,
+            admin_season,
+            round_number,
+            `start_date`,
+            end_date,
+
+            -- 'BM' rather than 'Benchmark', so this joins
+            -- int_amplify__all_assessments model_type directly
+            if(assessment_type = 'PM', 'Internal', 'BM') as model_type,
+
+            -- see student_expectations below. Benchmark is not eligibility-gated,
+            -- so it takes a sentinel every student carries; the internal method
+            -- wants only probe-eligible students.
+            if(assessment_type = 'PM', 'Yes', 'All') as eligibility_key,
+
+            count(*) as expected_row_count,
+        from {{ ref("int_google_sheets__dibels_expected_assessments") }}
+        where assessment_include is null and pm_goal_include is null
+        group by
+            academic_year,
+            region,
+            grade,
+            assessment_type,
+            admin_season,
+            round_number,
+            `start_date`,
+            end_date
+
+        union all
+
+        select
+            academic_year,
+            region,
+            grade,
+            assessment_type,
+            admin_season,
+            round_number,
+            `start_date`,
+            end_date,
+
+            'Aimline' as model_type,
+
+            -- aimline matches a cohort rather than a flag
+            measure_standard_level as eligibility_key,
+
+            count(*) as expected_row_count,
+        from {{ ref("int_google_sheets__dibels__expected_assessments_by_levels") }}
+        where assessment_include is null and pm_goal_include is null
+        group by
+            academic_year,
+            region,
+            grade,
+            assessment_type,
+            admin_season,
+            round_number,
+            `start_date`,
+            end_date,
+            measure_standard_level
+    ),
+
     students as (
         select
             academic_year,
@@ -8,57 +76,86 @@ with
             grade_level,
             entrydate,
             exitdate,
-
-            if(
-                dibels_boy_composite in ('Below Benchmark', 'Well Below Benchmark'),
-                'Yes',
-                'No'
-            ) as boy_probe_eligible,
-
-            if(
-                dibels_moy_composite in ('Below Benchmark', 'Well Below Benchmark'),
-                'Yes',
-                'No'
-            ) as moy_probe_eligible,
+            boy_probe_eligible,
+            moy_probe_eligible,
+            dibels_boy_composite,
+            dibels_moy_composite,
 
         from {{ ref("int_extracts__student_enrollments_subjects") }}
         where discipline = 'ELA' and enroll_status in (0, 2, 3) and grade_level <= 8
     ),
 
-    expected_tests as (
-        select
-            academic_year,
-            region,
-            grade,
-            assessment_type,
-            admin_season,
-            round_number,
-            start_date,
-            end_date,
-
-            count(*) over (
-                partition by academic_year, region, grade, admin_season, round_number
-            ) as expected_row_count,
-
-        from {{ ref("int_google_sheets__dibels_expected_assessments") }}
-        where assessment_include is null and pm_goal_include is null
+    -- the seven (season, method) combinations a student could owe testing for
+    expectation_keys as (
+        select admin_season, model_type,
+        from
+            unnest(
+                [
+                    struct('BOY' as admin_season, 'BM' as model_type),
+                    ('MOY', 'BM'),
+                    ('EOY', 'BM'),
+                    ('BOY->MOY', 'Internal'),
+                    ('MOY->EOY', 'Internal'),
+                    ('BOY->MOY', 'Aimline'),
+                    ('MOY->EOY', 'Aimline')
+                ]
+            )
     ),
 
-    roster_enrollment_dates as (
+    -- one row per student per (model, season), each carrying that combination's
+    -- own eligibility value. This is what lets three different eligibility rules
+    -- -- none for Benchmark, a probe-eligible flag for internal, a cohort match
+    -- for aimline -- resolve to one equality against expected_tests rather than
+    -- three UNION branches.
+    student_expectations as (
         select
             s.academic_year,
             s.region,
             s.student_number,
             s.enroll_status,
             s.grade_level,
+            s.entrydate,
+            s.exitdate,
 
+            k.admin_season,
+            k.model_type,
+
+            case
+                when k.model_type = 'BM'
+                then 'All'
+                when k.model_type = 'Internal' and k.admin_season = 'BOY->MOY'
+                then s.boy_probe_eligible
+                when k.model_type = 'Internal'
+                then s.moy_probe_eligible
+                when k.model_type = 'Aimline' and k.admin_season = 'BOY->MOY'
+                then s.dibels_boy_composite
+                else s.dibels_moy_composite
+            end as eligibility_key,
+
+        from students as s
+        cross join expectation_keys as k
+    ),
+
+    roster_enrollment_dates as (
+        select
+            e.academic_year,
+            e.region,
             e.assessment_type,
+            e.model_type,
             e.admin_season,
             e.round_number,
             e.expected_row_count,
 
+            s.student_number,
+            s.enroll_status,
+            s.grade_level,
+
             coalesce(a.actual_row_count, 0) as actual_row_count,
 
+            -- the composite fallbacks only ever fire on a Benchmark row, since a
+            -- PM row's admin_season is BOY->MOY or MOY->EOY. A student can hold a
+            -- composite without having sat every measure, and that still counts
+            -- as completing the benchmark round.
             case
                 when e.expected_row_count = a.actual_row_count
                 then true
@@ -71,139 +168,45 @@ with
                 else false
             end as completed_test_round,
 
+            -- a student with two enrollment stints inside one round window
+            -- matches twice; the later stint's enroll_status wins
             row_number() over (
                 partition by
-                    s.academic_year,
-                    s.region,
-                    s.student_number,
-                    s.grade_level,
+                    e.academic_year,
+                    e.region,
+                    e.model_type,
                     e.admin_season,
-                    e.round_number
+                    e.round_number,
+                    s.student_number,
+                    s.grade_level
+                order by s.exitdate desc
             ) as rn,
 
-        from students as s
+        from expected_tests as e
         inner join
-            expected_tests as e
-            on s.academic_year = e.academic_year
-            and s.region = e.region
-            and s.grade_level = e.grade
-            and e.assessment_type = 'Benchmark'
+            student_expectations as s
+            on e.academic_year = s.academic_year
+            and e.region = s.region
+            and e.grade = s.grade_level
+            and e.admin_season = s.admin_season
+            and e.model_type = s.model_type
+            -- At/Above Benchmark and 'No Test' match no by-levels row, and a
+            -- student who is not probe-eligible matches no internal PM row. Both
+            -- are the intended outcome.
+            and e.eligibility_key = s.eligibility_key
             and (
                 e.start_date between s.entrydate and s.exitdate
                 or e.end_date between s.entrydate and s.exitdate
             )
         left join
             {{ ref("int_amplify__all_assessments") }} as a
-            on s.academic_year = a.academic_year
+            on e.admin_season = a.period
+            and e.round_number = a.round_number
+            and e.model_type = a.model_type
+            and s.academic_year = a.academic_year
             and s.region = a.region
             and s.student_number = a.student_number
             and s.grade_level = a.assessment_grade_int
-            and e.admin_season = a.period
-            and e.round_number = a.round_number
-
-        union all
-
-        select
-            s.academic_year,
-            s.region,
-            s.student_number,
-            s.enroll_status,
-            s.grade_level,
-
-            e.assessment_type,
-            e.admin_season,
-            e.round_number,
-            e.expected_row_count,
-
-            coalesce(a.actual_row_count, 0) as actual_row_count,
-
-            if(
-                e.expected_row_count = a.actual_row_count, true, false
-            ) as completed_test_round,
-
-            row_number() over (
-                partition by
-                    s.academic_year,
-                    s.region,
-                    s.student_number,
-                    s.grade_level,
-                    e.admin_season,
-                    e.round_number
-            ) as rn,
-
-        from students as s
-        inner join
-            expected_tests as e
-            on s.academic_year = e.academic_year
-            and s.region = e.region
-            and s.grade_level = e.grade
-            and (
-                e.start_date between s.entrydate and s.exitdate
-                or e.end_date between s.entrydate and s.exitdate
-            )
-            and e.admin_season = 'BOY->MOY'
-        left join
-            {{ ref("int_amplify__all_assessments") }} as a
-            on s.academic_year = a.academic_year
-            and s.region = a.region
-            and s.student_number = a.student_number
-            and s.grade_level = a.assessment_grade_int
-            and s.boy_probe_eligible = a.boy_probe_eligible
-            and e.admin_season = a.period
-            and e.round_number = a.round_number
-        where s.boy_probe_eligible = 'Yes'
-
-        union all
-
-        select
-            s.academic_year,
-            s.region,
-            s.student_number,
-            s.enroll_status,
-            s.grade_level,
-
-            e.assessment_type,
-            e.admin_season,
-            e.round_number,
-            e.expected_row_count,
-
-            coalesce(a.actual_row_count, 0) as actual_row_count,
-
-            if(
-                e.expected_row_count = a.actual_row_count, true, false
-            ) as completed_test_round,
-
-            row_number() over (
-                partition by
-                    s.academic_year,
-                    s.region,
-                    s.student_number,
-                    s.grade_level,
-                    e.admin_season,
-                    e.round_number
-            ) as rn,
-
-        from students as s
-        inner join
-            expected_tests as e
-            on s.academic_year = e.academic_year
-            and s.region = e.region
-            and s.grade_level = e.grade
-            and (
-                e.start_date between s.entrydate and s.exitdate
-                or e.end_date between s.entrydate and s.exitdate
-            )
-            and e.admin_season = 'MOY->EOY'
-        left join
-            {{ ref("int_amplify__all_assessments") }} as a
-            on s.academic_year = a.academic_year
-            and s.region = a.region
-            and s.student_number = a.student_number
-            and s.grade_level = a.assessment_grade_int
-            and s.moy_probe_eligible = a.moy_probe_eligible
-            and e.admin_season = a.period
-            and e.round_number = a.round_number
-        where s.moy_probe_eligible = 'Yes'
     )
 
 select
@@ -213,11 +216,31 @@ select
     grade_level,
     enroll_status,
     assessment_type,
+    model_type,
     admin_season,
     round_number,
     expected_row_count,
     actual_row_count,
     completed_test_round,
+
+    case
+        when assessment_type = 'Benchmark'
+        then 'Combo'
+        when model_type = 'Internal' and grade_level <= 2
+        then 'Combo'
+        when model_type = 'Aimline' and grade_level >= 3
+        then 'Combo'
+        else 'Not Combo'
+    end as participation_group,
+
+    case
+        when actual_row_count = 0
+        then 'Not Tested'
+        when completed_test_round
+        then 'Fully Tested'
+        else 'Round Incomplete'
+    end as round_test_status,
+
     if(completed_test_round, 1, 0) as completed_test_round_int,
 
 from roster_enrollment_dates

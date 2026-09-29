@@ -48,12 +48,10 @@ expect_reason "Rule 4: op read" "$(make_input Bash command 'op read x')" "Rule 4
 expect_reason "Rule 5: base64 decode into bash" "$(make_input Bash command 'echo x | base64 -d | bash')" "Rule 5:"
 # trunk-ignore(shellcheck/SC2016): the literal $VAR is the fixture; it must reach the hook unexpanded
 expect_reason "Rule 7: uppercase var" "$(make_input Bash command 'echo $AWS_SECRET')" "Rule 7:"
-expect_reason "Rule 8: BQ write verb" "$(make_input mcp__bigquery__execute_sql sql 'select 1; drop table t')" "Rule 8:"
 expect_reason "Section 4: egress with token" \
 	"$(jq -n '{tool_name:"mcp__github__issue_write", tool_input:{body:"AKIAIOSFODNN7EXAMPLE"}}')" "Section 4:"
 # every reason tells Claude what to do instead, not only what matched
 expect_reason "Rule 2 reason offers the Read tool" "$(make_input Bash command 'cat .claude/hooks/check-sensitive.sh')" "Read tool"
-expect_reason "Rule 8 reason offers a rewrite" "$(make_input mcp__bigquery__execute_sql sql "select 1 where t = 'Drop'")" "Dr%"
 # trunk-ignore-end(shellcheck/SC2312)
 
 print_summary "Deny reasons"

@@ -51,4 +51,53 @@ check_output "doc placeholder: api_key caps" clean "api_key: YOUR_API_KEY_GOES_H
 check_output "doc placeholder: example token" clean "access_token: replace-with-your-token"
 check_output "env-var name mention" clean "Set GITHUB_TOKEN in CI; the secret is injected at deploy time."
 
+echo ""
+echo -e "${YELLOW}dbt / BigQuery / GitHub identifiers (2026-09 false positives)${NC}"
+# The 120-char heuristic fired on dot-free paths and identifier runs; every
+# case here is a real tool-output shape that must stay clean.
+hex32=0123456789abcdef0123456789abcdef
+hex40=9b1246a89c0ffee1234567890abcdef12345678
+check_output "dbt compiled test path (120 chars, dot-free)" clean "compiled code at target/compiled/kipptaf/models/powerschool/staging/tests/dbt_utils_unique_combination_o_${hex32}.sql"
+check_output "ls error with absolute compiled path" clean "ls: cannot access '/workspaces/teamster/target/compiled/kipptaf/models/powerschool/staging/tests/dbt_utils_unique_combination_o_${hex32}': No such file or directory"
+check_output "dbt test node id (32-hex hash)" clean "test.kipptaf.dbt_utils_unique_combination_o_${hex32}"
+check_output "dbt Cloud CI dataset name" clean "dbt_cloud_pr_70403104388001_5241_students"
+check_output "BigQuery anonymous dataset (40 hex)" clean "_${hex40}"
+check_output "hex ids joined by underscores (150 chars)" clean "_${hex40}/anon${hex40}_${hex32}_${hex32}"
+check_output "dbt Cloud run JSON (ids + git_sha)" clean mcp__dbt__get_job_run_details "{\"id\": 70403224236955, \"trigger_id\": 70403224236900, \"account_id\": 70403103922126, \"environment_id\": 70403104388001, \"job_definition_id\": 70403104388009, \"status\": 20, \"git_sha\": \"${hex40}\", \"href\": \"https://cloud.getdbt.com/deploy/70403103922126/projects/70403103925177/runs/70403224236955/\"}"
+check_output "dbt log invocation_id + node ids" clean "23:14:02  invocation_id: 7f3a9c2e-1b4d-4e8a-9c2f-0a1b2c3d4e5f
+23:14:09  2 of 812 START test dbt_utils_unique_combination_o_${hex32}  [RUN]
+23:14:12    compiled code at target/compiled/kipptaf/models/powerschool/staging/tests/dbt_utils_unique_combination_o_${hex32}.sql"
+check_output "markdown rule of 130 dashes" clean "$(printf -- '-%.0s' {1..130})"
+
+# dagster-dbt names an asset check after the full dbt test name, which embeds
+# the model's Title_Case column names: a dot-free, mixed-case run of 135-290
+# chars with an underscore every few letters (2026-09-22, get_run_logs).
+mdl="stg_amplify__mclass__sftp__pm_student_summary"
+cols="Student_Primary_ID__School_Year__Benchmark_Period__Assessment_Measure__Assessment_Grade"
+check_output "dagster asset check planned event (dbt test name)" clean \
+	"__ASSET_JOB intends to execute asset check dbt_utils_unique_combination_of_columns_${mdl}_${cols} on asset [\"kippnewark\", \"amplify\", \"${mdl}\"]"
+check_output "dbt accepted_values test name with short upper codes" clean \
+	"asset check accepted_values_${mdl}__Benchmark_Period__BOY__MOY__EOY__PM1__PM2__PM3__PM4__PM5__PM6"
+
+# A GitHub blob URL is one run from past `github.com` to `.md`: 129-169 chars
+# for claude-* spec branches, mixed case from the org name, no underscores
+# (2026-09-22, issue_read get_comments on #5381).
+check_output "GitHub blob URL for a spec branch" clean mcp__github__issue_read \
+	"Spec: https://github.com/TEAMSchools/teamster/blob/cbini/fix/claude-attendance-interventions-snapshot-fanout/docs/superpowers/specs/2026-09-17-attendance-interventions-snapshot-fanout-design.md"
+
+# A 1Password reference names a vault; the bare scheme, or a template whose
+# vault is a placeholder, names nothing (tests/conftest.py, tests/CLAUDE.md).
+scheme="op:""//"
+check_output "1Password ref template in code" clean Read \
+	"        [\"op\", \"read\", f\"${scheme}{vault}/{item}/{filename}\"],"
+check_output "1Password scheme named in prose" clean Read \
+	"fixtures (\`${scheme}\`, key headers, cloud tokens) get redacted"
+
+# Asana PAT rule (\b[12]/<digits>(/<digits>)?:<32 hex>): gid-bearing Asana
+# URLs, ratios, and hex digests after a colon are not PATs.
+check_output "Asana task URL with gids" clean mcp__asana__get_task \
+	"https://app.asana.com/0/1200000000000001/1200000000000002"
+check_output "ratio then a git sha" clean "merged 1/2 files; head at 0123456789abcdef0123456789abcdef01234567"
+check_output "md5 digest after a key" clean "md5:0123456789abcdef0123456789abcdef"
+
 print_summary "FP corpus"

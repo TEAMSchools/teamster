@@ -319,7 +319,7 @@ exposures:
     label: Literacy Dashboard
     type: dashboard
     owner:
-      name: Data Team - grangel
+      name: Data Team - awalters
     depends_on:
       - ref("rpt_tableau__dibels_dashboard")
       - ref("rpt_tableau__sight_words_dashboard")
@@ -359,8 +359,10 @@ exposures:
       name: Data Team - awalters
     depends_on:
       - ref("rpt_tableau__gpa_goals")
+      - ref("rpt_tableau__gpa_goal_progress")
       - ref("rpt_tableau__gpa_cumulative_year")
       - ref("rpt_tableau__student_course_grades")
+      - ref("rpt_tableau__gradebook_audit")
     config:
       meta:
         dagster:
@@ -374,7 +376,7 @@ exposures:
     label: Gradebook and GPA Dashboard
     type: dashboard
     owner:
-      name: Data Team - grangel
+      name: Data Team - awalters
     depends_on:
       - ref("rpt_tableau__gradebook_gpa")
       - ref("rpt_tableau__gradebook_gpa_cumulative")
@@ -387,7 +389,6 @@ exposures:
           asset:
             metadata:
               id: 5046a976-ed0e-4c77-93fe-78b732cb5548
-              cron_schedule: 0 4 * * *
   - name: gradebook_audit
     label: Gradebook Audit Dashboard
     type: dashboard
@@ -396,6 +397,7 @@ exposures:
     depends_on:
       - ref("rpt_tableau__gradebook_audit")
     config:
+      enabled: false
       meta:
         dagster:
           kinds:
@@ -795,7 +797,7 @@ exposures:
     label: FRESH Dashboard
     type: dashboard
     owner:
-      name: Data Team - grangel
+      name: Data Team - awalters
     depends_on:
       - ref("rpt_tableau__fresh_dashboard_aggregated")
       - ref("rpt_tableau__fresh_dashboard_progress_to_goals")

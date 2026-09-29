@@ -19,3 +19,4 @@ where
     and e.school_level = 'HS'
     and e.rn_year = 1
     and e.is_enrolled_recent
+    and e.enroll_status in (0, 3)

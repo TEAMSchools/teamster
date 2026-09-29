@@ -62,7 +62,7 @@
 - [ ] If adding or changing a schedule or sensor, regenerate the automations
       catalog: `uv run scripts/gen-automations-doc.py`
 - [ ] If adding a new integration to a code location, update that location's
-      `CLAUDE.md` by running `/claude-md-management:revise-claude-md`
+      `CLAUDE.md`
 
 ## CI checks
 

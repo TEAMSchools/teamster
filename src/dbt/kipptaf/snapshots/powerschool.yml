@@ -17,6 +17,25 @@ snapshots:
       meta:
         dagster:
           group: powerschool
+          # 1x/day instead of eager. A snapshot inherits
+          # dbt_table_automation_condition() (materialized is 'snapshot', not
+          # view/ephemeral). Its upstream int_powerschool__gpa_cumulative is
+          # itself materialized: table (not a view), so the churn comes from
+          # plain any_deps_updated() firing on that table's own eager
+          # rebuilds, not from ancestor-updated view-chain recursion — 147
+          # merges and 2.23 slot hours a day.
+          #
+          # 23:00 and not 00:00: chosen for int_powerschool__gpa_term_lookback,
+          # which matches versions against a local-midnight boundary instant.
+          # 23:00 clears that boundary with an hour of margin; 00:00 lands
+          # just past it and can resolve one day stale on sub-second
+          # run-start timing. The topline models derive their date with
+          # date(..., local_timezone), so the cron hour doesn't affect their
+          # attribution either way.
+          #
+          # Intra-day versions are lost. No consumer reads them. Refs #5218
+          automation_condition:
+            cron_schedule: 0 23 * * *
           asset_key:
             - kipptaf
             - powerschool
@@ -39,6 +58,22 @@ snapshots:
       meta:
         dagster:
           group: powerschool
+          # 1x/day instead of eager, for the same reason as
+          # snapshot_powerschool__gpa_cumulative above — 138 merges and 3.90
+          # slot hours a day. This one really does churn through view-chain
+          # recursion: dagster-dbt makes no asset for the ephemeral
+          # int_powerschool__gpa_term_current, so the snapshot's dep is
+          # int_powerschool__gpa_term, a view, and _build_any_ancestor_updated
+          # follows views to the district source tables.
+          #
+          # Consumers int_topline__gpa_term_weekly and
+          # int_powerschool__gpa_term_lookback both resolve at day grain, and
+          # the lookback matches the first instant of the day after
+          # current_date - N, so an end-of-day capture is what its
+          # "value in effect at the END of that lookback day" contract needs.
+          # Refs #5218
+          automation_condition:
+            cron_schedule: 0 23 * * *
           asset_key:
             - kipptaf
             - powerschool

@@ -184,8 +184,15 @@ with
 
             d.days_course_enrolled,
 
+            -- must match int_extracts__course_schedule_by_term's expression:
+            -- both label HS sections, and a period alone is not unique when two
+            -- sections of one course share a teacher and period. array_to_string
+            -- skips nulls, so a null external_expression yields the bare
+            -- section_number rather than a null label
             if(
-                e.school_level_alt = 'HS', s.external_expression, s.section_number
+                e.school_level_alt = 'HS',
+                array_to_string([s.external_expression, s.section_number], ' '),
+                s.section_number
             ) as section_or_period,
 
             safe_divide(

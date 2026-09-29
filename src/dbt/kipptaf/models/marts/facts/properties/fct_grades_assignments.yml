@@ -16,6 +16,16 @@ models:
       sole gradebook source. Focus records no missing flag and no numeric grade
       distinct from the points score, so is_missing and numeric_grade_earned are
       null on every Miami row.
+    config:
+      materialized: table
+      meta:
+        dagster:
+          # Nightly: every data test on this view recomputed it in full, and
+          # dbt Cloud CI ran that on nearly every PR. No Cube cube or Tableau
+          # exposure reads this mart, so nightly clears its break-even with
+          # room to spare. Refs #5217
+          automation_condition:
+            cron_schedule: 0 3 * * *
     columns:
       - name: grades_assignment_key
         data_type: string
@@ -25,6 +35,7 @@ models:
         constraints:
           - type: primary_key
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           # TODO(#3915): remove the warn override once PS source cleanup
           # completes; residual ~71 duplicate rows are historical PowerSchool

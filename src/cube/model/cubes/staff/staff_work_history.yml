@@ -5,8 +5,8 @@ cubes:
     # during which the worker's status, job, worker type, home org unit,
     # location, primary-position flag, AND point-in-time manager all held
     # simultaneously. Reads the dim_staff_work_history mart (the intersection is
-    # materialized there, not in cube sql — src/cube/CLAUDE.md "Transformation
-    # lives in dbt"). Each period carries exactly one manager, so a single-day
+    # materialized there, not in cube sql — .claude/rules/cube-authoring.md,
+    # "Transformation lives in dbt"). Each period carries exactly one manager, so a single-day
     # query (via the dates BETWEEN join below) returns one row per person. That
     # dates BETWEEN range join stays in cube — a sanctioned join-sql use, not a
     # cube-body multi-table join.

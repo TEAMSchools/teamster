@@ -359,3 +359,10 @@ sequencing dependency, for PR 2.
 - The 8 kipptaf vendor-file callers of `focus_student_number`
   (`stg_renlearn__star`, `int_iready__*`, `int_amplify__mclass__*`). They
   renumber bare Miami ids from files, not from PowerSchool.
+
+## Revision 2026-09-10 (#5193)
+
+Steps 4 and 5 are superseded by `2026-09-10-miami-history-unions-design.md`. 11
+unions keep the `kippmiami` relation permanently: stored grades, attendance, and
+course enrollments. The other 9 dropped it. `exclude_frozen` and its var were
+deleted; the 7 live call sites are inline literals.

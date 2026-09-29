@@ -7,7 +7,7 @@ with
 
             cast(school_number as string) as school_id,
         from {{ ref("stg_powerschool__schools") }}
-        where _dbt_source_project != 'kippmiami' and state_excludefromreporting = 0
+        where state_excludefromreporting = 0
     ),
 
     ops_leaders as (

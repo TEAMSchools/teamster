@@ -85,4 +85,18 @@ expect_deny_json "asana delete_task w/ 1pw reference (delete verb)" \
 	"$(jq -n '{tool_name:"mcp__claude_ai_Asana__delete_task", tool_input:{note:"op://vault/item/field"}}')"
 # trunk-ignore-end(shellcheck/SC2312)
 
+echo ""
+echo -e "${YELLOW}Asana PAT (mirrors check-output.sh secret_re)${NC}"
+# Split so this file carries no PAT shape; bash rebuilds it at run time.
+pat_v2="2/1200000000000001/1200000000000002"":0123456789abcdef0123456789abcdef"
+pat_v1="1/1200000000001"":fedcba9876543210fedcba9876543210"
+# trunk-ignore-begin(shellcheck/SC2312)
+expect_deny_json "github issue_write body w/ Asana PAT (2/...)" \
+	"$(make_input mcp__github__issue_write body "token: ${pat_v2}")"
+expect_deny_json "slack send_message w/ Asana PAT (1/...)" \
+	"$(make_input mcp__Slack__slack_send_message message "token ${pat_v1}")"
+expect_allow_json "asana create_tasks w/ Asana task URL (gids, no PAT)" \
+	"$(make_input mcp__Asana__create_tasks notes "see https://app.asana.com/0/1200000000000001/1200000000000002")"
+# trunk-ignore-end(shellcheck/SC2312)
+
 print_summary "Egress value-scan"

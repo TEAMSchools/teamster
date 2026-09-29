@@ -12,10 +12,6 @@ with
                         "stg_powerschool__u_studentsuserfields",
                     ),
                     source(
-                        "kippmiami_powerschool",
-                        "stg_powerschool__u_studentsuserfields",
-                    ),
-                    source(
                         "kipppaterson_powerschool",
                         "stg_powerschool__u_studentsuserfields",
                     ),

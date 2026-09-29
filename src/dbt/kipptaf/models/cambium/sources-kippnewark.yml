@@ -13,3 +13,21 @@ sources:
                 - kippnewark
                 - cambium
                 - stg_cambium__njgpa
+      - name: stg_cambium__njsla
+        config:
+          meta:
+            dagster:
+              group: cambium
+              asset_key:
+                - kippnewark
+                - cambium
+                - stg_cambium__njsla
+      - name: stg_cambium__eoc
+        config:
+          meta:
+            dagster:
+              group: cambium
+              asset_key:
+                - kippnewark
+                - cambium
+                - stg_cambium__eoc

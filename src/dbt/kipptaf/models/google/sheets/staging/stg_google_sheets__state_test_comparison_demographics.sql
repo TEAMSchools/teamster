@@ -18,11 +18,16 @@ with
                 comparison_demographic_group
             ) as comparison_demographic_group,
 
-            if(
-                comparison_demographic_subgroup = 'Grade - 08',
-                'All Students',
-                comparison_demographic_subgroup
-            ) as comparison_demographic_subgroup,
+            case
+                when comparison_demographic_subgroup = 'Grade - 08'
+                then 'All Students'
+                -- these two spellings never reach the Region self-join; see yml
+                when comparison_demographic_subgroup = 'Black Or African American'
+                then 'African American'
+                when comparison_demographic_subgroup = 'Non-Econ. Disadvantaged'
+                then 'Non Economically Disadvantaged'
+                else comparison_demographic_subgroup
+            end as comparison_demographic_subgroup,
 
             percent_proficient,
             total_students,

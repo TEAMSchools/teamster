@@ -51,42 +51,24 @@ with
 
     prev_yr_state_test as (
         select
-            _dbt_source_relation,
-            _dbt_source_project,
-            localstudentidentifier,
-            is_proficient,
-
-            illuminate_subject as `subject`,
-            njsla_aggregated_proficiency as njsla_proficiency,
-
-            academic_year + 1 as academic_year_plus,
-
-            cast(statestudentidentifier as string) as statestudentidentifier,
-
-        from {{ ref("int_pearson__all_assessments") }}
-
-        union all
-
-        select
-            _dbt_source_relation,
             _dbt_source_project,
 
-            null as localstudentidentifier,
-
-            is_proficient,
-
-            illuminate_subject as `subject`,
-            fast_aggregated_proficiency as proficiency,
+            state_student_id as statestudentidentifier,
+            aggregated_proficiency as state_test_aggregated_proficiency,
+            illuminate_subject_area as `subject`,
 
             academic_year + 1 as academic_year_plus,
-
-            student_id as statestudentidentifier,
-
-        from {{ ref("int_fldoe__all_assessments") }}
+        from {{ ref("int_assessments__state_scores") }}
         where
-            scale_score is not null
-            and assessment_name = 'FAST'
-            and administration_window = 'PM3'
+            /* NJSLA is the only Pearson assessment carrying a proficiency, and
+               it runs one window a year; NJGPA's Fall and Spring rows carry none. */
+            (score_source = 'state_nj' and assessment_name = 'NJSLA')
+            or (
+                score_source = 'state_fl'
+                and scale_score is not null
+                and assessment_name = 'FAST'
+                and administration_period = 'PM3'
+            )
     ),
 
     prev_yr_iready as (
@@ -131,6 +113,8 @@ with
             boy_composite,
             moy_composite,
             eoy_composite,
+            boy_probe_eligible,
+            moy_probe_eligible,
 
             'Reading' as iready_subject,
 
@@ -138,7 +122,7 @@ with
                 partition by student_number, academic_year order by client_date desc
             ) as rn_year,
 
-        from {{ ref("int_amplify__all_assessments") }}
+        from {{ ref("int_amplify__benchmark_student_summary") }}
         where measure_standard = 'Composite'
     ),
 
@@ -235,13 +219,15 @@ select
 
     coalesce(a.is_iep_eligible, false) as is_grad_iep_exempt,
 
-    coalesce(py.njsla_proficiency, 'No Test') as state_test_proficiency,
+    coalesce(py.state_test_aggregated_proficiency, 'No Test') as state_test_proficiency,
 
     coalesce(pr.iready_proficiency, 'No Test') as iready_proficiency_eoy,
 
     coalesce(db.boy_composite, 'No Test') as dibels_boy_composite,
     coalesce(db.moy_composite, 'No Test') as dibels_moy_composite,
     coalesce(db.eoy_composite, 'No Test') as dibels_eoy_composite,
+    coalesce(db.boy_probe_eligible, 'No Test') as boy_probe_eligible,
+    coalesce(db.moy_probe_eligible, 'No Test') as moy_probe_eligible,
 
     coalesce(
         dr.measure_standard_level, 'No Composite Score Available'
@@ -253,7 +239,9 @@ select
 
     if(ie.student_number is not null or co.is_sipps, true, false) as is_exempt_iready,
 
-    if(co.grade_level <= 3, pr.iready_proficiency, py.njsla_proficiency) as bucket_one,
+    if(
+        co.grade_level <= 3, pr.iready_proficiency, py.state_test_aggregated_proficiency
+    ) as bucket_one,
 
     if(
         co.grade_level >= 9, sj.powerschool_credittype, sj.illuminate_subject_area

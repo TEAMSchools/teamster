@@ -7,29 +7,27 @@ every line as a hypothesis. Do not cite this file as evidence; run the probe.
 
 ## Publish and hand-over
 
-- **Download-then-republish may drop embedded connection credentials.** The
-  expectation is that `workbooks.download()` does not return embedded
-  credentials and `workbooks.publish()` without a `connections=[...]` list
-  republishes with none. The scratch copy hides this because the packaged
-  extract still renders; the owner would see a failing refresh or a credential
-  prompt days later. Probe: inspect the published scratch workbook's connections
-  through the REST API before and after a publish, and ask the owner whether
-  production embeds credentials. Until probed, say in the hand-over that
-  credentials were not carried deliberately.
+- **Putting embedded connection credentials back after a publish.** That a
+  publish drops them is now Verified (#5230; see
+  [build-workflow.md](build-workflow.md)). Which call restores them is not:
+  #5230 names `update_connection` with `oauth = True`, but the installed
+  library's `update_connection` request never emits `oauth`, and
+  `publish(connections=[...])` reported success on a live-connection workbook
+  while leaving `embed_password` false. Probe: on a scratch copy, try each call,
+  then read the connection back through the REST API and trigger a refresh.
+  Until then, say in the hand-over that credentials were not carried.
 - **`show_tabs=True` may change a user-visible setting.** Probe: read
   `wb.show_tabs` off the downloaded item and publish with the same value, then
   compare the two scratch copies.
 - **Extract refresh schedules and permissions may or may not survive an
   Overwrite.** Probe: list tasks and permissions for the scratch workbook before
   and after an Overwrite and print the LUID both times.
-- **Overwrite may match on name within project.** If so, an unchanged
-  `ZZ-REVIEW` name overwrites a previous session's review copy. The skill now
-  requires a date in the name; probe by publishing twice with the same name and
+- **Overwrite may match on name within project.** Verified so far (#5230): an
+  Overwrite of the same target kept its LUID and `content_url` across about a
+  dozen publishes. Still open: whether a second session's same-named workbook
+  would be matched and overwritten. The skill requires a date in the review
+  name; probe by publishing twice with the same name from two sessions and
   checking whether one workbook or two exist.
-- **Workbook revision history may be the owner's real rollback.** If the site
-  keeps revisions, an Overwrite creates one and the owner can restore from the
-  UI without a publish. Probe: check the scratch workbook's revisions after a
-  publish. Tell the owner either way.
 
 ## Dynamic text
 

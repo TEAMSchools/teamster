@@ -19,7 +19,8 @@
 -- Tiebreak - when Tiers A-D together yield >1 distinct student_number for
 -- a gap, narrow using first_name (case-fold/diacritic-strip, plus
 -- stripping non-alphanumeric characters so an apostrophe in a name
--- doesn't block the match).
+-- doesn't block the match). A gap the tiebreak can't narrow to one student
+-- is bucketed 'ambiguous', apart from 'no_match' (no candidate at all).
 --
 -- Tier C/D corroboration (Tier A/B skip both -- already tight enough):
 -- gender_ok  - HARD GATE. Compare CB gender vs PS gender for the matched
@@ -252,8 +253,11 @@ with
             rc.tiers,
             g.enrollment_school_year,
 
+            -- tiers is an ordered string_agg, so an A/B match always starts it
+            starts_with(rc.tiers, 'A_B') as has_tier_ab,
+
             case
-                when rc.tiers = 'A_B' then true else g.cb_gender = p.gender
+                when starts_with(rc.tiers, 'A_B') then true else g.cb_gender = p.gender
             end as gender_ok,
         from resolved_candidate as rc
         inner join gaps_norm as g on rc.ap_number_ap_id = g.ap_number_ap_id
@@ -266,7 +270,7 @@ with
     cd_candidates as (
         select ap_number_ap_id, student_number, enrollment_school_year,
         from with_gender_check
-        where tiers != 'A_B' and gender_ok
+        where not has_tier_ab and gender_ok
     ),
 
     raw_unpivot_all as (
@@ -374,13 +378,25 @@ left join course_enrollment_check as cec on wgc.ap_number_ap_id = cec.ap_number_
 union all
 
 select
-    g.ap_number_ap_id,
+    pg.ap_number_ap_id,
+    cast(null as int64) as student_number,
+    cast(null as string) as tiers,
+    cast(null as bool) as enrolled_in_matching_course,
+
+    'ambiguous' as bucket,
+from per_gap as pg
+left join resolved_candidate as rc on pg.ap_number_ap_id = rc.ap_number_ap_id
+where pg.n_combined > 1 and rc.ap_number_ap_id is null
+
+union all
+
+select
+    ap_number_ap_id,
     cast(null as int64) as student_number,
     cast(null as string) as tiers,
     cast(null as bool) as enrolled_in_matching_course,
 
     'no_match' as bucket,
-from gaps_norm as g
-left join resolved_candidate as rc on g.ap_number_ap_id = rc.ap_number_ap_id
-where rc.ap_number_ap_id is null
+from per_gap
+where n_combined = 0
 order by bucket, ap_number_ap_id

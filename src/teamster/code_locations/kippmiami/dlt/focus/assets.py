@@ -35,5 +35,23 @@ assets = [
         sql_database_credentials=sql_database_credentials,
         code_location=CODE_LOCATION,
         tables=tables,
+        # Memory only: `K8sConfigMergeBehavior` defaults to DEEP, so naming just
+        # `limits.memory` leaves the shared step-pod block's `limits.cpu`
+        # (1750m) and both requests in `.k8s/dagster/values-override.yaml`
+        # untouched. A SHALLOW merge would replace `resources` wholesale and
+        # drop the cpu sizing silently.
+        #
+        # Do not lower this against a sampled figure. The alert behind it caught
+        # 92.6% of the old 2.5Gi limit, but GCP samples memory every 60s and
+        # these pods live ~110s, so any measured peak is a floor. Peak scales
+        # with how many tables a tick selects (5 concurrent dlt extract workers,
+        # `FOCUS_CHUNK_SIZE` rows buffered each). If 3.0Gi also runs short, the
+        # next lever is the `dlt_extract_workers` run tag, not more memory.
+        # Incident detail: tests/libraries/test_dlt_focus_memory_limit.py.
+        op_tags={
+            "dagster-k8s/config": {
+                "container_config": {"resources": {"limits": {"memory": "3.0Gi"}}}
+            }
+        },
     )
 ]

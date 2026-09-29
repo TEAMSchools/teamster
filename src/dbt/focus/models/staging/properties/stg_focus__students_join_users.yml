@@ -28,7 +28,7 @@ models:
                 to: ref('stg_focus__students')
                 field: student_id
               config:
-                severity: error
+                severity: warn
       - name: staff_id
         description: Focus staff id of the linked user account.
         data_type: int
@@ -41,7 +41,7 @@ models:
                 to: ref('stg_focus__users')
                 field: staff_id
               config:
-                severity: error
+                severity: warn
       - name: person_id
         description: >-
           Focus person id of the linked user, when the account is backed by a

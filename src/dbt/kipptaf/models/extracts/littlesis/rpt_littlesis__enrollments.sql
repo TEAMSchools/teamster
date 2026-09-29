@@ -22,7 +22,7 @@ with
 
             sas.google_email as student_gsuite_email,
 
-            sch.name as school_name,
+            sec.school_name,
 
             scw.google_email as teacher_gsuite_email,
 
@@ -36,10 +36,6 @@ with
         inner join
             {{ ref("stg_people__student_logins") }} as sas
             on sec.students_student_number = sas.student_number
-        inner join
-            {{ ref("stg_powerschool__schools") }} as sch
-            on sec.sections_schoolid = sch.school_number
-            and sec._dbt_source_project = sch._dbt_source_project
         inner join
             staff_roster as scw on sec.teachernumber = scw.powerschool_teacher_number
         where

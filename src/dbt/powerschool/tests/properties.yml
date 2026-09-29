@@ -12,6 +12,7 @@ data_tests:
       reference one of PowerSchool's 999999-scoped FTEs, not a real-school FTE
       carried over from prior enrollment.
     config:
+      severity: warn
       meta:
         dagster:
           ref:
@@ -29,13 +30,14 @@ data_tests:
       `ps_membership_reg` stays at one row per student-day while Ops fixes the
       stints, but the source defect is only visible here. The existing
       `(studentid, entrydate)` and `(studentid, exitdate)` uniqueness tests miss
-      overlaps whose dates differ. Runs at the consuming district's default warn
-      severity. Failing with 56 stints as of 2026-09-08 (kippnewark 36,
-      kippcamden 3, kipppaterson 17), most of them cross-school stints from
-      yearid 26. None reach an in-session calendar day, so the clip changes 0
-      rows today. The 2026-08-20 Newark incident (#5160) produced 558 duplicate
-      student-days before Ops corrected the stints.
+      overlaps whose dates differ. Runs at warn severity. Failing with 56 stints
+      as of 2026-09-08 (kippnewark 36, kippcamden 3, kipppaterson 17), most of
+      them cross-school stints from yearid 26. None reach an in-session calendar
+      day, so the clip changes 0 rows today. The 2026-08-20 Newark incident
+      (#5160) produced 558 duplicate student-days before Ops corrected the
+      stints.
     config:
+      severity: warn
       meta:
         dagster:
           ref:
@@ -48,9 +50,10 @@ data_tests:
       not share a boundary date. A `lead(entrydate)` value equal to the current
       row's `exitdate` indicates a same-day exit and re-entry that fans out
       half-open date-range joins on the boundary day (e.g. survey attribution,
-      attendance windows). Source defect surfaced by issue #3902 — currently 78
-      violations across ~100k stints network-wide.
+      attendance windows). Currently 78 violations across ~100k stints
+      network-wide.
     config:
+      severity: warn
       meta:
         dagster:
           ref:
@@ -67,10 +70,11 @@ data_tests:
       includes them and the comparison is no longer like-for-like). Identical
       filters and rounding make this exact in practice; the comparison threshold
       is 0.015 so the one-cent rounding-boundary flip from float summation-order
-      noise passes while real drift (0.02 or more) still warns. Runs at the
-      project default warn severity so a transient discrepancy surfaces without
-      blocking district prod builds — investigate any warning immediately.
+      noise passes while real drift (0.02 or more) still warns. Runs at warn
+      severity so a transient discrepancy surfaces without blocking district
+      prod builds — investigate any warning immediately.
     config:
+      severity: warn
       meta:
         dagster:
           ref:
@@ -86,12 +90,13 @@ data_tests:
       the source-side defect behind the cc date-range fan-out (#3900, Ops
       cleanup #3915). Moved here from kipptaf, where it read the network-level
       union and was therefore blind to Miami, whose PowerSchool archive holds no
-      AY2026 rows. Runs at each consuming district project's default warn
-      severity. Failing with 10,807 rows as of 2026-08-28: kippnewark 7,901,
-      kippcamden 2,783, kipppaterson 123. Note: kippmiami does not consume the
-      powerschool package — its legacy PowerSchool stack was removed in #4441
-      once the SIS had moved to Focus — so Miami is not monitored by this test.
+      AY2026 rows. Runs at warn severity. Failing with 10,807 rows as of
+      2026-08-28: kippnewark 7,901, kippcamden 2,783, kipppaterson 123. Note:
+      kippmiami does not consume the powerschool package — its legacy
+      PowerSchool stack was removed in #4441 once the SIS had moved to Focus —
+      so Miami is not monitored by this test.
     config:
+      severity: warn
       meta:
         dagster:
           ref:

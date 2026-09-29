@@ -1,5 +1,16 @@
 models:
   - name: int_topline__star_assessment_weekly
+    description: >-
+      Weekly STAR state-benchmark proficiency for Miami students in grade 2 and
+      below, one row per student, discipline and week inside a STAR reporting
+      term in the current and prior academic year. Each week carries the
+      student's most recent STAR result for that discipline and screening
+      window. Star Early Literacy and Star Reading both report ELA; a student
+      who took both in one window keeps the more recently completed test, or
+      Star Reading when both finished the same day. A student whose enrollment
+      stint changes during a week keeps one row, taken from the stint enrolled
+      on the Monday, or the later stint when both are. Feeds
+      int_topline__student_metrics.
     config:
       materialized: table
       meta:
@@ -9,3 +20,34 @@ models:
           # Refs #4153
           automation_condition:
             cron_schedule: 0 0 * * *
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - academic_year
+              - week_start_monday
+              - discipline
+          config:
+            severity: error
+    columns:
+      - name: student_number
+        description: KIPP student number of the enrolled student.
+        config:
+          meta:
+            contains_pii: true
+      - name: academic_year
+        description: Academic year the week belongs to.
+      - name: week_start_monday
+        description: Monday that opens the week.
+      - name: week_end_sunday
+        description: Sunday that closes the week.
+      - name: discipline
+        description: Subject discipline the row reports on.
+      - name: is_state_benchmark_proficient_int
+        description:
+          1 when the STAR result meets the state benchmark, 0 when it does not,
+          null when STAR reports no benchmark category.
+        config:
+          meta:
+            contains_pii: true

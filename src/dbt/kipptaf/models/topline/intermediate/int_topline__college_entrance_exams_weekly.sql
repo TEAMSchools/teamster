@@ -1,26 +1,31 @@
 with
-    sat_total as (
+    enrollment_weeks as (
         select
-            school_specific_id as student_number,
-            dbt_valid_to,
-            test_type,
-            score,
+            student_number,
+            academic_year,
+            schoolid,
+            week_start_monday,
+            week_end_sunday,
 
-            cast(dbt_valid_from as date) as dbt_valid_from_date,
-            cast(dbt_valid_to as date) as dbt_valid_to_date,
-        from {{ ref("snapshot_kippadb__standardized_test_rollup") }}
+            /* first instant of the day AFTER the week closes, local — i.e. the
+               value in effect at the END of the week */
+            timestamp(
+                date_add(week_end_sunday, interval 1 day), '{{ var("local_timezone") }}'
+            ) as week_end_boundary,
+        from {{ ref("int_extracts__student_enrollments_weeks") }}
         where
-            test_type in ('SAT', 'PSAT NMSQT', 'PSAT 8/9') and test_subject = 'Combined'
+            is_enrolled_week
+            and school_level = 'HS'
+            and academic_year >= {{ var("current_academic_year") - 1 }}
     ),
 
-    deduplicate as (
-        {{
-            dbt_utils.deduplicate(
-                relation="sat_total",
-                partition_by="student_number, test_type, dbt_valid_from_date",
-                order_by="dbt_valid_to desc",
-            )
-        }}
+    sat_total as (
+        select school_specific_id, test_type, score, dbt_valid_from, dbt_valid_to,
+        from {{ ref("snapshot_kippadb__standardized_test_rollup") }}
+        where
+            test_type in ('SAT', 'PSAT NMSQT', 'PSAT 8/9')
+            and test_subject = 'Combined'
+            and score is not null
     )
 
 select
@@ -32,13 +37,9 @@ select
 
     sat.test_type,
     sat.score,
-from {{ ref("int_extracts__student_enrollments_weeks") }} as co
-left join
-    deduplicate as sat
-    on co.student_number = sat.student_number
-    and co.week_start_monday between sat.dbt_valid_from_date and sat.dbt_valid_to_date
-where
-    co.is_enrolled_week
-    and co.school_level = 'HS'
-    and sat.score is not null
-    and co.academic_year >= {{ var("current_academic_year") - 1 }}
+from enrollment_weeks as co
+inner join
+    sat_total as sat
+    on co.student_number = sat.school_specific_id
+    and co.week_end_boundary > sat.dbt_valid_from
+    and co.week_end_boundary <= sat.dbt_valid_to

@@ -104,6 +104,14 @@ def dict_reader_to_records(
     if slugify_replacements is None:
         slugify_replacements = []
 
+    # slugify applies `replacements` as plain string substitutions in list order, so
+    # a shorter key that prefixes a longer one wins and corrupts it: `1. ` rewrites
+    # the head of `11. Category` and silently yields `1category_1`. Longest first
+    # removes the hazard for every caller instead of asking each to order its list.
+    slugify_replacements = sorted(
+        slugify_replacements, key=lambda r: len(r[0]), reverse=True
+    )
+
     if slugify_cols:
         dict_reader.fieldnames = [
             slugify(text=text, separator="_", replacements=slugify_replacements)

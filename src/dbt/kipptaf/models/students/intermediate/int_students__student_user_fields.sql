@@ -3,16 +3,16 @@ with
         select
             suf._dbt_source_relation,
             suf._dbt_source_project,
-            suf.fleid,
-            suf.gifted_and_talented,
 
             s.student_number,
+
+            cast(null as string) as fleid,
+            cast(null as string) as gifted_and_talented,
         from {{ ref("stg_powerschool__u_studentsuserfields") }} as suf
         inner join
             {{ ref("stg_powerschool__students") }} as s
             on suf.studentsdcid = s.dcid
             and suf._dbt_source_project = s._dbt_source_project
-        where s._dbt_source_project != 'kippmiami'
     ),
 
     focus_conformed as (

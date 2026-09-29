@@ -54,7 +54,9 @@ with
             e.iep_status,
             e.grad_iep_exempt_status_overall,
             e.cumulative_y1_gpa,
+            e.cumulative_y1_gpa_unweighted,
             e.cumulative_y1_gpa_projected,
+            e.cumulative_y1_gpa_projected_unweighted,
             e.college_match_gpa,
             e.college_match_gpa_bands,
 
@@ -71,6 +73,8 @@ with
             sh.sat_total_superscore,
             sh.sat_ebrw_highest,
             sh.sat_math_highest,
+
+            gt.gpa_y1,
 
             /* The bucket the three subject blocks below pivot on. Official rows
                carry it in aligned_subject, which folds SAT EBRW and ACT Reading
@@ -100,6 +104,16 @@ with
             {{ ref("int_students__ccr_schedule") }} as c
             on e.student_number = c.student_number
             and e.academic_year = c.academic_year
+        /* is_current stays in the ON clause: in WHERE it would collapse this
+           left join to an inner and drop every student with no PowerSchool GPA
+           row, including all of Miami. */
+        left join
+            {{ ref("int_powerschool__gpa_term") }} as gt
+            on e.studentid = gt.studentid
+            and e.yearid = gt.yearid
+            and e.schoolid = gt.schoolid
+            and e._dbt_source_project = gt._dbt_source_project
+            and gt.is_current
         where
             e.academic_year = {{ var("current_academic_year") }}
             and e.graduation_year >= {{ var("current_academic_year") + 1 }}
@@ -127,7 +141,10 @@ with
             iep_status,
             grad_iep_exempt_status_overall,
             cumulative_y1_gpa,
+            cumulative_y1_gpa_unweighted,
             cumulative_y1_gpa_projected,
+            cumulative_y1_gpa_projected_unweighted,
+            gpa_y1,
             college_match_gpa,
             college_match_gpa_bands,
 
@@ -254,7 +271,10 @@ with
             iep_status,
             grad_iep_exempt_status_overall,
             cumulative_y1_gpa,
+            cumulative_y1_gpa_unweighted,
             cumulative_y1_gpa_projected,
+            cumulative_y1_gpa_projected_unweighted,
+            gpa_y1,
             college_match_gpa,
             college_match_gpa_bands,
             ccr_course,
@@ -269,50 +289,55 @@ with
     )
 
 select
-    region,
-    schoolid,
-    school,
-    student_number,
-    salesforce_id,
-    student_name,
-    student_first_name,
-    student_last_name,
-    grade_level,
-    student_email,
-    enroll_status,
-    ktc_cohort,
-    graduation_year,
-    year_in_network,
-    iep_status,
-    grad_iep_exempt_status_overall,
-    cumulative_y1_gpa,
-    cumulative_y1_gpa_projected,
-    college_match_gpa,
-    college_match_gpa_bands,
-    ccr_course,
-    ccr_teacher_name,
-    ccr_section,
+    region as `Region`,
+    schoolid as `School ID`,
+    school as `School`,
+    student_number as `Student Number`,
+    salesforce_id as `Salesforce ID`,
+    student_name as `Student Name`,
+    student_first_name as `Student First Name`,
+    student_last_name as `Student Last Name`,
+    grade_level as `Grade Level`,
+    student_email as `Student Email`,
+    enroll_status as `Enroll Status`,
+    ktc_cohort as `KTC Cohort`,
+    graduation_year as `Graduation Year`,
+    year_in_network as `Year in Network`,
+    iep_status as `IEP Status`,
+    grad_iep_exempt_status_overall as `Grad IEP Exempt Status Overall`,
+
+    cumulative_y1_gpa as `Cumulative Y1 GPA`,
+    cumulative_y1_gpa_unweighted as `Cumulative Y1 GPA Unweighted`,
+    cumulative_y1_gpa_projected as `Projected Cumulative Y1 GPA`,
+    cumulative_y1_gpa_projected_unweighted as `Projected Cumulative Y1 GPA Unweighted`,
+    gpa_y1 as `Current Y1 GPA Weighted`,
+    college_match_gpa as `College Match GPA`,
+    college_match_gpa_bands as `College Match GPA Bands`,
+
+    ccr_course as `CCR Course`,
+    ccr_teacher_name as `CCR Teacher Name`,
+    ccr_section as `CCR Section`,
 
     sat_total_superscore as `SAT Composite Superscore`,
     sat_ebrw_highest as `SAT Highest EBRW Score`,
     sat_math_highest as `SAT Highest Math Score`,
 
-    test_type,
-    administration_type,
-    test_date,
+    test_type as `Test Type`,
+    administration_type as `Administration Type`,
+    test_date as `Test Date`,
 
     total_scale_score as `Composite Score`,
-    total_highest_score_by_test,
+    total_highest_score_by_test as `Highest Score by Test - Composite`,
     total_hs_grad_ready as `Meeting High School Grad Benchmark - Composite`,
     total_college_ready as `Meeting College Ready Benchmark - Composite`,
 
     ebrw_reading_scale_score as `EBRW Score`,
-    ebrw_reading_highest_score_by_test,
+    ebrw_reading_highest_score_by_test as `Highest Score by Test - EBRW`,
     ebrw_reading_hs_grad_ready as `Meeting HS Grad Benchmark - EBRW`,
     ebrw_reading_college_ready as `Meeting College Ready Benchmark - EBRW`,
 
     math_scale_score as `Math Score`,
-    math_highest_score_by_test,
+    math_highest_score_by_test as `Highest Score by Test - Math`,
     math_hs_grad_ready as `Meeting High School Grad Benchmark - Math`,
     math_college_ready as `Meeting College Ready Benchmark - Math`,
 

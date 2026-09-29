@@ -290,12 +290,6 @@ models:
           Local-time completion calendar date of the attempt, cast from the
           completed_date_local datetime string. Distinct from the raw string
           completed_date column.
-      - name: illuminate_subject
-        data_type: string
-        description: >-
-          Course-subject mapping used by the assessment section-enrollment
-          resolver — Math partitions map to Mathematics; Reading and Early
-          Literacy map to Text Study.
       - name: _dbt_source_project
         data_type: string
         description: >-

@@ -13,6 +13,7 @@
  * or wait for the int_surveys__survey_submissions extraction (#3918).
  */
 with
+    -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
     response_identifiers as (
         select
             fr.form_id as survey_id,
@@ -45,29 +46,25 @@ with
             and fr.question_id = '315a6c37'
     ),
 
+    /*
+     * One respondent can submit the Manager Survey more than once for the same
+     * subject in the same reporting term: 205 of 7,731 partitions collide and
+     * 216 rows are dropped. The latest submission is the one that counts, and
+     * survey_response_id breaks an exact timestamp tie, so the pick is
+     * deterministic. The row_number() this replaced carried no ORDER BY, which
+     * left the surviving response id unreproducible between builds.
+     */
     deduped_ri as (
-        select
-            survey_id,
-            survey_title,
-            survey_response_id,
-            respondent_email,
-            campaign_academic_year,
-            campaign_name,
-            campaign_reporting_term,
-            respondent_df_employee_number,
-            subject_df_employee_number,
-            date_started,
-            date_submitted,
-
-            row_number() over (
-                partition by
-                    survey_id,
-                    campaign_academic_year,
-                    campaign_reporting_term,
-                    respondent_df_employee_number,
-                    subject_df_employee_number
-            ) as rn_cur,
-        from response_identifiers
+        {{
+            dbt_utils.deduplicate(
+                relation="response_identifiers",
+                partition_by=(
+                    "survey_id, campaign_academic_year, campaign_reporting_term,"
+                    " respondent_df_employee_number, subject_df_employee_number"
+                ),
+                order_by="date_submitted desc, survey_response_id desc",
+            )
+        }}
     )
 
 select
@@ -127,7 +124,6 @@ inner join
 inner join
     {{ ref("int_people__staff_roster") }} as sr
     on ri.subject_df_employee_number = sr.employee_number
-where ri.rn_cur = 1
 
 union all
 

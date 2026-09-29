@@ -17,33 +17,35 @@ Injected on the first `Agent` or `Workflow` call in a session.
   long `dbt build` strands itself waiting on the notification and returns having
   written nothing. Never run two dbt subagents against one worktree at once:
   they share `target/` and corrupt the partial-parse manifest.
-- Worktree dispatches spell out the absolute worktree path and mandate
-  `git -C <worktree>` plus `uv run` from it. A subagent starts in the MAIN
-  checkout, so bare edits hit `main`. State that IDE Pyright errors on worktree
-  files (`reportMissingImports`, "not accessed", "not iterable") are expected
-  false positives.
+- Worktree dispatches spell out the absolute worktree path, mandate
+  `git -C <worktree>` plus `uv run` from it, and state that IDE Pyright errors
+  on worktree files (`reportMissingImports`, "not accessed", "not iterable") are
+  expected false positives.
+- A subagent starts in the session's cwd, normally the MAIN checkout, and loads
+  the main checkout's CLAUDE.md, so a branch-only CLAUDE.md change reaches it
+  only if the prompt says so.
 - Subagents name specific files in `git add`, never `-u`, `-A`, or `.`.
-- Subagents cannot Write report files; the harness refuses with "Subagents
-  should return findings as text". Have them return the report as final text and
-  persist it to the scratchpad yourself.
 
-## Price ratios
+## Model and effort
 
-The decision rules are in the root CLAUDE.md _Subagents_ section. Numbers behind
-them:
+The decision rules are in the root CLAUDE.md _Subagents_ section. Behind them:
 
 - Per token, Fable costs 5x Sonnet and Opus 2.5x. On Opus the gap is smaller, so
   inline wins more often.
 - A cached context token costs a fraction of a cold one, which is why a small
   inline edit beats a cold subagent.
+- The orchestrator pays for its own context on every later turn; a subagent's
+  context is paid once. That is why bulky output belongs in a subagent even on
+  the same tier.
 - A retry costs more than the tier you saved. When in doubt, go up a tier.
 - A skill's own model guidance wins over these rules.
-- Effort is settable only on Workflow `agent()`, not `Agent`.
+- Workflow `agent()` also takes an effort setting.
 
 ## Verifying the result
 
 - Subagents abandon multi-step tasks partway. Scope each dispatch to one file or
-  one commit, and inspect the diff and `git log` before marking it complete.
+  one commit, and inspect `git diff --stat` for scope, then the diff and
+  `git log`, before marking it complete.
 - A subagent's "pre-existing failure" baseline is the working tree AS
   DISPATCHED, including your uncommitted edits. Check whether your own change
   caused the failure before accepting that framing.
@@ -58,9 +60,9 @@ them:
 - A dead run's journal
   (`~/.claude/projects/<proj>/subagents/workflows/wf_<id>/journal.jsonl`) stops
   growing for about 2 minutes with no live `dbt` or agent processes.
-- `isolation:'worktree'` dirs live at `.claude/worktrees/wf_<id>-N`, not the
-  repo `.worktrees/`. Orphaned ones are left `locked`: `git worktree unlock`,
-  then `remove --force`.
+- `isolation:'worktree'` dirs live at `.claude/worktrees/wf_<id>-N`, beside the
+  branch worktrees; the `wf_` prefix tells them apart. Orphaned ones are left
+  `locked`: `git worktree unlock`, then `remove --force`.
 - `TaskStop` only sees tasks launched in the CURRENT session. A Workflow from a
   reloaded session is not in the registry; clean it at the process and worktree
   level.
