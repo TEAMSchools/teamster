@@ -25,20 +25,16 @@ with
         where sc.is_internal_assessment and not sc.is_replacement
     ),
 
-    -- no crosswalk lookup here: subject_area already comes from the scaffold,
-    -- so raw_subject just carries it through and source_system stays null,
-    -- which misses the crosswalk join below and falls back to raw_subject
     internal_scores as (
         select
             powerschool_student_number,
             canonical_assessment_id,
-            subject_area as raw_subject,
+            subject_area,
             _dbt_source_project,
             anchor_date,
 
             cast(null as int64) as academic_year,
             cast(null as string) as administration_period,
-            cast(null as string) as source_system,
 
             'internal' as source_type,
         from internal_anchored
@@ -46,104 +42,50 @@ with
     ),
 
     -- rows with no test date or no student cannot resolve -> dropped
-    state_nj_scores as (
-        select
-            localstudentidentifier as powerschool_student_number,
-            academic_year,
-            administration_period,
-            `subject` as raw_subject,
-            _dbt_source_project,
-
-            test_date as anchor_date,
-
-            cast(null as int64) as canonical_assessment_id,
-
-            'pearson' as source_system,
-            'state_nj' as source_type,
-        from {{ ref("int_pearson__all_assessments") }}
-        where test_date is not null and localstudentidentifier is not null
-    ),
-
-    state_fl_scores as (
+    state_scores as (
         select
             student_number as powerschool_student_number,
             academic_year,
-            administration_window as administration_period,
-            assessment_subject as raw_subject,
+            administration_period,
+            illuminate_subject_area as subject_area,
             _dbt_source_project,
 
             test_date as anchor_date,
+            score_source as source_type,
 
             cast(null as int64) as canonical_assessment_id,
-
-            'fldoe' as source_system,
-            'state_fl' as source_type,
-        from {{ ref("int_fldoe__all_assessments") }}
+        from {{ ref("int_assessments__state_scores") }}
         where test_date is not null and student_number is not null
     ),
 
-    iready_scores as (
-        select
-            student_id as powerschool_student_number,
-            academic_year_int as academic_year,
-            test_round as administration_period,
-            `subject` as raw_subject,
-            _dbt_source_project,
-
-            completion_date as anchor_date,
-
-            cast(null as int64) as canonical_assessment_id,
-
-            'iready' as source_system,
-            'iready' as source_type,
-        from {{ ref("int_iready__diagnostic_results") }}
-        where completion_date is not null and overall_scale_score is not null
-    ),
-
-    -- rows without a crosswalk-resolved project cannot join course
-    -- enrollments and are dropped
-    star_scores as (
-        select
-            student_display_id as powerschool_student_number,
-            academic_year,
-            screening_period_window_name as administration_period,
-            _dagster_partition_subject as raw_subject,
-            _dbt_source_project,
-
-            completed_date_value as anchor_date,
-
-            cast(null as int64) as canonical_assessment_id,
-
-            'renlearn' as source_system,
-            'star' as source_type,
-        from {{ ref("stg_renlearn__star") }}
-        where
-            completed_date_value is not null
-            and unified_score is not null
-            and _dbt_source_project is not null
-    ),
-
-    -- benchmark composites only; PM probes and subskill measures are out of
-    -- scope
-    dibels_scores as (
+    -- STAR rows with no _dbt_source_project cannot join course enrollments and
+    -- are dropped. iReady keeps its null-project rows on purpose, so do not add
+    -- the project predicate there. DIBELS keeps benchmark composites only; PM
+    -- probes and subskill measures are out of scope.
+    benchmark_scores as (
         select
             student_number as powerschool_student_number,
             academic_year,
-            `period` as administration_period,
+            administration_period,
+            illuminate_subject_area as subject_area,
             _dbt_source_project,
 
-            client_date as anchor_date,
+            test_date as anchor_date,
+            score_source as source_type,
 
             cast(null as int64) as canonical_assessment_id,
-
-            'DIBELS' as raw_subject,
-            'amplify' as source_system,
-            'dibels' as source_type,
-        from {{ ref("int_amplify__all_assessments") }}
+        from {{ ref("int_assessments__benchmark_scores") }}
         where
-            assessment_type = 'Benchmark'
-            and measure_standard = 'Composite'
-            and client_date is not null
+            test_date is not null
+            and (
+                (score_source = 'iready' and scale_score is not null)
+                or (
+                    score_source = 'star'
+                    and scale_score is not null
+                    and _dbt_source_project is not null
+                )
+                or (score_source = 'dibels' and response_type = 'overall')
+            )
     ),
 
     scores as (
@@ -152,8 +94,7 @@ with
             canonical_assessment_id,
             academic_year,
             administration_period,
-            raw_subject,
-            source_system,
+            subject_area,
             _dbt_source_project,
             anchor_date,
             source_type,
@@ -166,12 +107,11 @@ with
             canonical_assessment_id,
             academic_year,
             administration_period,
-            raw_subject,
-            source_system,
+            subject_area,
             _dbt_source_project,
             anchor_date,
             source_type,
-        from state_nj_scores
+        from state_scores
 
         union all
 
@@ -180,72 +120,11 @@ with
             canonical_assessment_id,
             academic_year,
             administration_period,
-            raw_subject,
-            source_system,
+            subject_area,
             _dbt_source_project,
             anchor_date,
             source_type,
-        from state_fl_scores
-
-        union all
-
-        select
-            powerschool_student_number,
-            canonical_assessment_id,
-            academic_year,
-            administration_period,
-            raw_subject,
-            source_system,
-            _dbt_source_project,
-            anchor_date,
-            source_type,
-        from iready_scores
-
-        union all
-
-        select
-            powerschool_student_number,
-            canonical_assessment_id,
-            academic_year,
-            administration_period,
-            raw_subject,
-            source_system,
-            _dbt_source_project,
-            anchor_date,
-            source_type,
-        from star_scores
-
-        union all
-
-        select
-            powerschool_student_number,
-            canonical_assessment_id,
-            academic_year,
-            administration_period,
-            raw_subject,
-            source_system,
-            _dbt_source_project,
-            anchor_date,
-            source_type,
-        from dibels_scores
-    ),
-
-    scores_resolved as (
-        select
-            s.powerschool_student_number,
-            s.canonical_assessment_id,
-            s.academic_year,
-            s.administration_period,
-            s._dbt_source_project,
-            s.anchor_date,
-            s.source_type,
-
-            coalesce(x.illuminate_subject_area, s.raw_subject) as subject_area,
-        from scores as s
-        left join
-            {{ ref("stg_google_sheets__assessments__vendor_subject_crosswalk") }} as x
-            on s.source_system = x.source_system
-            and s.raw_subject = x.raw_subject
+        from benchmark_scores
     ),
 
     scores_keyed as (
@@ -272,7 +151,7 @@ with
                     ]
                 )
             }} as score_grain_key,
-        from scores_resolved
+        from scores
     )
 
 -- grain projection, not dup-masking: every projected column is in the grain

@@ -46,3 +46,10 @@ models:
           Source-project discriminator (`kippnewark`, `kippcamden`, `kippmiami`,
           `kipppaterson`).
         data_type: string
+      - name: sis
+        description: >-
+          The SIS the course row comes from, `PowerSchool` or `Focus`. Miami
+          carries both — its frozen PowerSchool archive and its Focus catalog.
+          Matches the course-subject crosswalk sheet's `SIS`, so a join to the
+          sheet keys on SIS and course number together.
+        data_type: string

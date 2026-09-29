@@ -1,5 +1,21 @@
 models:
   - name: stg_google_sheets__dibels_bm_goals
+    description: >
+      Hand-entered DIBELS Benchmark goals per academic year, region, school,
+      grade and Benchmark administration, with the student counts behind each
+      goal for all students, students with an IEP and multilingual learners. A
+      straight passthrough of the sheet.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - academic_year
+              - region
+              - school
+              - assessment_grade_int
+              - period
+          config:
+            severity: error
     columns:
       - name: academic_year
         data_type: int64

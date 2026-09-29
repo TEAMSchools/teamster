@@ -259,6 +259,8 @@ with
                 then 'Lvl 5'
             end as aligned_performance_band_group,
         from cambium_njsla_leveled
+        /* An incomplete attempt arrives as its own scored row; see yml. */
+        where test_status = 'completed'
     ),
 
     cambium_njgpa_aligned as (
@@ -340,6 +342,8 @@ with
                 test_performance_level when 2 then 'Lvl 4' when 1 then 'Lvl 3'
             end as aligned_performance_band_group,
         from {{ ref("stg_cambium__njgpa") }}
+        /* An incomplete attempt arrives as its own scored row; see yml. */
+        where test_status = 'completed'
     ),
 
     cambium_aligned as (
