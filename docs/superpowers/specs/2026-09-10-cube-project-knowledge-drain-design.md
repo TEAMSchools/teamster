@@ -105,11 +105,29 @@ measure, then were reverted:
 - **Our MCP server does no field filtering.** `meta` returns each cube dict
   verbatim (`src/cube/mcp/server.py`).
 - **`ai_context` gets no special weight on our path.** It arrives as one more
-  JSON key beside `description`. The gain is separation: query guidance stops
-  competing for room in a string that analysts read as a tooltip.
+  JSON key beside `description`. Open-source Cube does nothing with it either;
+  only Cube Cloud's hosted agent reads it (see _Step 0_). The gain is
+  separation: `description:` holds what is true of the data and stays equal to
+  its dbt twin, while Cube-specific usage lives in `ai_context:`.
 
 Cube's constraints: `ai_context` goes on views and members only, never at cube
-level. The cap is 2,000 characters, and Cube truncates silently past that.
+level. The cap is 2,000 characters: Cube's docs say a longer value "is silently
+truncated before it reaches the agent", meaning Cube's own agent. Whether the
+`/meta` payload our server reads is truncated too is untested; the length guard
+below makes the answer irrelevant.
+
+3 guards follow from those constraints:
+
+- **Length.** The schema test asserts that every `ai_context` in
+  `src/cube/model/` is 2,000 characters or less, so a value that grows past the
+  cap fails the test instead of being cut off.
+- **Response size.** The `meta` docstring already says the full catalog nears a
+  response-size budget, and every `ai_context` adds to it. The `dates` values
+  also repeat on every view that includes `dates`. Step 0 records the size of
+  the full-catalog and assessment-view `meta` responses before and after.
+- **Cube Cloud.** The measurement above ran on a local server. Step 0 confirms
+  the key on the branch staging deployment before the rest of the values are
+  written.
 
 ### The authoring rule changes in the same PR
 
@@ -126,11 +144,23 @@ says 3 things:
 - Every `meta.*` key reaches the model, because our MCP server returns each
   cube's `/meta` entry unchanged. Use `ai_context`, because Cube documents it
   and Cube Cloud's own agent reads it. Do not invent other keys.
-- `description:` says what a member is, because analysts read it as a tooltip.
-  `meta.ai_context:` says how to use it, within 2,000 characters.
+- `description:` says what a member is: text that holds against the raw dbt
+  column, kept equal to its dbt twin. `meta.ai_context:` says how to use the
+  member in Cube, within 2,000 characters.
 
 It drops the `meta.usage` / `meta.synonyms` examples. Neither key appears
-anywhere in the model, and naming them invites someone to use them.
+anywhere in the model, and naming them invites someone to use them. `usage`
+would duplicate `ai_context`, and only our server would read either key; Cube's
+own agent reads `ai_context` alone. Synonyms and acronyms go inside
+`ai_context`, which is where Cube's docs put them.
+
+The rule file also gains 2 conventions from this spec. Future authors never read
+this spec, but the rule loads on every Cube file they open:
+
+- **The dbt twin rule** from _Cube and dbt descriptions are separate strings_,
+  so an author whose edit fails the equality test knows why.
+- **The placement procedure** from _Placement procedure_, in about 10 lines: the
+  7 steps and the tie-breaker.
 
 ### Cube and dbt descriptions are separate strings
 
@@ -168,32 +198,45 @@ first match.**
    what the data means, not how much of it there is. Configuration that no
    member carries needs a model change, and stays in the markdown, corrected,
    until that change ships.
-2. **Is it derivable live?** Which region has which source in which years is a
+2. **Is it process or unratified policy?** It stays in the markdown. Cube text
+   may say that a decision is open, but never states a default for it. This step
+   runs before the instruction step because an unratified default is usually
+   worded as an instruction ("keep the most recent sitting"), and would
+   otherwise land in Cube as if it were settled.
+3. **Is it derivable live?** Which region has which source in which years is a
    query. Delete the specifics; say that coverage is uneven and how to check.
-3. **Does it hold for more than one view?** `notSet` versus `equals "null"`, and
+4. **Does it hold for more than one view?** `notSet` versus `equals "null"`, and
    the de-duplicating dimension-only pull, are Cube mechanics. They go in the
    `load` or `meta` docstring.
-4. **Is it about the answer rather than the query?** Examples: a
+5. **Is it about the answer, and not tied to one member?** Examples: a
    cross-instrument gap is a calibration artifact; totals do not reconcile to
    vendor reports; a missing current-year state result is a release lag. The
    query is correct and the reading is at risk. These go in the view's
-   `ai_context`.
-5. **Is it a definition?** What a value means, which values exist, what is null
+   `ai_context`. Answer-level guidance about one member, such as "tier-movement
+   rates are not comparable across instruments" on `proficiency_level`, goes to
+   that member's `ai_context` under step 7.
+6. **Is it a definition?** What a value means, which values exist, what is null
    and when. That member's `description:`.
-6. **Is it an instruction?** Do this, do not do that, use X instead. That
+7. **Is it an instruction?** Do this, do not do that, use X instead. That
    member's `ai_context:`.
-7. **Is it process or unratified policy?** It stays in the markdown.
 
-Most rows split rather than move, because of steps 5 and 6. A bullet in the
+Most rows split rather than move, because of steps 6 and 7. A bullet in the
 reference file usually carries a definition and an instruction together. So it
 matches both and gets cut in 2: the member keeps what it is and sheds what to do
 about it.
 
-**Tie-breaker when steps 5 and 6 both fit.** Ask who is harmed when the sentence
-is missing. An analyst reading a tooltip who cannot tell what a value means:
-`description:`. An agent building a query that will be wrong: `ai_context:`. For
-`count_students`, "exact distinct count" is the definition, while "heavy at fine
-grain, fall back to a plain count" only ever helps the agent.
+**Tie-breaker when steps 6 and 7 both fit.** Ask whether the sentence would be
+true and useful against the raw dbt column. If it would, it goes in
+`description:`, which is twinned with dbt, even when it reads like a warning
+("not comparable across assessments"). If it depends on Cube (members, measures,
+the view) or tells the agent what to do, it goes in `ai_context:`. For
+`count_students`, "distinct students per student-year" is the definition, while
+"heavy at fine grain, fall back to count_taken" only makes sense in Cube.
+
+The analysts-and-tooltips rationale for the split no longer applies: KTAF is not
+buying Cube Cloud seats for analysts, and agents are the audience. The split
+stays because it keeps the dbt twin rule a plain equality: `description:` holds
+what is true of the data, and `ai_context:` holds how to use it in Cube.
 
 2 things hold the placement in place. The schema test asserts one key phrase per
 moved fact, keyed by member name, so a later edit cannot silently drop one. The
@@ -208,25 +251,59 @@ numbers. "Present" means the shipped text already says it. Review may reword a
 value, but moving a sentence to the other channel needs a sieve step that says
 why.
 
+Every draft follows 2 wording conventions:
+
+- **Name the population a member covers, not what it excludes.** "Illuminate
+  only; null for every other source" stays true when a source is added; "null
+  for state and vendor rows" does not.
+- **Never write a bare "vendor".** Illuminate is a vendor platform too. Write
+  "vendor diagnostic (i-Ready, DIBELS, STAR)" on first use in a string, or name
+  the sources.
+
+Measured 2026-09-28, behind the `performance_band_label_number` draft: on
+Illuminate, the band number is set on every row and null everywhere else. Within
+one assessment, a band number carries exactly one `proficiency_level` label on
+`overall` rows, but a few bands carry 2 or more spellings on `standard` and
+`group` rows, and most assessments label the same band number differently on
+`standard`/`group` rows than on `overall` rows. That suggests standard-level
+scores use a different band scale; the labels were measured, not the cut points.
+
+Measured 2026-09-28, behind the `proficiency_level` and count drafts: DIBELS
+carries a fifth value, `Tested Out`, on `group` (subtest) rows only, and
+`is_mastery` is null on every one of them. They are nearly all of the DIBELS
+rows with no proficiency verdict, so `pct_proficient` leaves them out. The
+shipped `count_taken` and `count_scored` descriptions attribute those rows to
+"the DIBELS K-2 phonics subtests have no benchmark level set upstream"; the PR
+corrects that wording. Whether a student who tested out of a subtest should
+count as proficient is a policy question. It goes on the reference file's
+open-decisions list, and Cube text says only that it is open.
+
+Re-measure before building, beyond the dated figures:
+
+- Whether Illuminate `group` rows carry whitespace variants of the same
+  `response_type_description`. The variants were measured on `standard` rows
+  only, and the `response_type_code` draft tells the agent to group Illuminate
+  `group` rows by this label.
+
 ### Scores cube (`student_assessment_scores`)
 
-| Member                                   | Reference text                                                                                                             | `description:`                                                                                                                                                                                                                                                                                                                             | `meta.ai_context:`                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `response_type`                          | Shared, "`response_type` — always filter it explicitly"; Illuminate, "`response_type`"                                     | The shipped value list, minus its instruction: never null; overall (every source), group (Illuminate, i-Ready and DIBELS), standard and not_taken (Illuminate only). not_taken marks an assessment a student was assigned and never sat.                                                                                                   | Not additive across values. Filter it on every query; default to overall unless a standard or group breakdown is asked for.                                                                                                                                                                                                                                                                                                                                         |
-| `response_type_code`                     | Illuminate, "Normalize standard codes before any standards-level rollup"                                                   | Breakdown identifier — the standard code on Illuminate standard rows, the domain on i-Ready group rows, the subtest on DIBELS group rows. Null on Illuminate group rows and on every overall and not_taken row. Some CCSS Math standards carry 2 spellings (8.EE.C.8.b and 8.EE.C.8b), and a small share of older rows have an empty code. | For a standards rollup, merge the 2 spellings first: remove a dot only when it sits right before a trailing lowercase letter. Then recompute the rate from the merged counts (pct_proficient × count_scored, summed, over summed count_scored); never average the 2 reported rates. For an Illuminate group-level cut, group on response_type_description — this code is null there, so keying on it drops every Illuminate group row and keeps i-Ready and DIBELS. |
-| `response_type_description`              | Illuminate, "Normalize standard codes" (the `y = mx + b` variants)                                                         | Human-readable breakdown label. Populated on standard rows and every group row; null on overall and not_taken. A few standards carry whitespace variants of the same label.                                                                                                                                                                | —                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| `response_type_root_description`         | Shared, "Domain rollup"; Illuminate, "`response_type_root_description` … is reliable here"; FL, last bullet                | CCSS domain the standard rolls up to. Populated on Illuminate standard rows only.                                                                                                                                                                                                                                                          | Unreliable for Illuminate content aligned to Florida's own standards. Null on every i-Ready, DIBELS, STAR and state row, so never group a cross-source query by it.                                                                                                                                                                                                                                                                                                 |
-| `performance_band_label_number`          | Shared, "Performance bands are Illuminate-only"; Illuminate, "Bands"                                                       | Position of the score's band within its assessment's performance band set. Illuminate only; null for state and vendor rows. Band sets differ in cut points, in band count, and in which band starts mastery, so band 5 is not always the top.                                                                                              | Never compare or pool band numbers across assessments; each assessment has its own band set. Within one assessment, prefer this number to proficiency_level text, which has many spellings per band.                                                                                                                                                                                                                                                                |
-| `proficiency_level`                      | i-Ready, "Proficiency"; DIBELS, "Proficiency" and "Tier-movement rates are not comparable"; STAR, NJ and FL, "Proficiency" | Proficiency label; the vocabulary is per source. i-Ready: 5 placement levels, 3 or More Grade Levels Below through Mid or Above Grade Level. DIBELS: Well Below, Below, At and Above Benchmark. STAR: Level 1 to Level 5, null on a share of rows. State: the achievement level. Illuminate: the band label.                               | Tier-movement rates are not comparable across instruments — fewer, wider tiers mechanically raise the stayed-the-same rate. Compare each instrument with itself over time.                                                                                                                                                                                                                                                                                          |
-| `is_mastery`                             | Shared, "Headline metric"; Shared, "Performance bands" (the mastery bar); i-Ready, "Proficiency cutoff"; FL, "Proficiency" | Per-row proficient flag that pct_proficient is built from. The bar is per source — for i-Ready, Early On Grade Level and Mid or Above Grade Level; for FL, Level 3 and up; for Illuminate, set by each assessment's band set, so it is not one fixed standard across Illuminate.                                                           | i-Ready's bar includes Early On Grade Level, the lower of its 2 on-grade placements; for a Mid or Above bar, filter proficiency_level directly. An Illuminate rate mixes assessments with different bars, so say which assessments it covers.                                                                                                                                                                                                                       |
-| `scale_score`                            | i-Ready, "Growth is not in the model, and scale scores do not normalize across grade bands"                                | Scale score achieved. Null for Illuminate (percent-correct) rows. Scales differ by source, and within i-Ready the scale compresses at higher grades.                                                                                                                                                                                       | Report a scale-score change within one grade band, never pooled across ES and MS. i-Ready's growth norms are not in this view; do not label a computed delta with the vendor's growth-measure name.                                                                                                                                                                                                                                                                 |
-| `enrollment_resolution`                  | Shared, "Section/teacher rollups"                                                                                          | How the section enrollment was resolved — subject_section or homeroom. (Shipped text, minus its instruction.)                                                                                                                                                                                                                              | Filter to subject_section for course- and section-level rollups.                                                                                                                                                                                                                                                                                                                                                                                                    |
-| `date_taken`                             | Shared, "Time"                                                                                                             | Present                                                                                                                                                                                                                                                                                                                                    | —                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| `count_students`                         | Shared, "Grain"                                                                                                            | Present                                                                                                                                                                                                                                                                                                                                    | Heavier than the plain counts, and has timed out at standard grain; count_taken is the reliable fallback there.                                                                                                                                                                                                                                                                                                                                                     |
-| `pct_proficient` and the 3 counts        | Shared, "Headline metric" and "Three nested counts"                                                                        | The shipped text, minus the instructions in the next column                                                                                                                                                                                                                                                                                | Moved from the shipped `description:`. pct_proficient: pair it with count_scored, the n it rests on, and never multiply it by count_assigned. pct_taken: filter assessment_type to illuminate before reporting it. count_scored: report it alongside pct_proficient whenever the rate carries weight.                                                                                                                                                               |
-| `count_assessments` (new)                | Illuminate, "How many times was this standard assessed"                                                                    | Distinct Illuminate assessments in the filtered set — not sittings, not scored responses. Illuminate only: every other source has no source_assessment_id, so it reads 0 there.                                                                                                                                                            | Use this for "how many times was this assessed". A standard resting on one assessment is a thin base for a trend; say so rather than trending it.                                                                                                                                                                                                                                                                                                                   |
-| `avg_scale_score`, `avg_percent_correct` | Shared, "Headline metric" ("scope-bound")                                                                                  | Present. The leading `Grain:` clause stays in `description:` under the #4476 convention: a pooled average misleads an analyst reading the tooltip as much as it misleads an agent.                                                                                                                                                         | —                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| `pct_proficient_formative`               | Illuminate, "Measures — `pct_proficient_formative` does not cover all formative work"                                      | Proficiency rate across the QA, MQQ and CRQ module types only; excludes TP, UA, ET and WPP. CRQ is also available alone as pct_proficient_crq.                                                                                                                                                                                             | Not "all internal checkpoints". For that, build the rollup from the intended module types and flag the pooling choice as an open decision.                                                                                                                                                                                                                                                                                                                          |
+| Member                                   | Reference text                                                                                                             | `description:`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | `meta.ai_context:`                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `response_type`                          | Shared, "`response_type` — always filter it explicitly"; Illuminate, "`response_type`"                                     | The shipped value list, minus its instruction: never null; overall (every source), group (Illuminate, i-Ready and DIBELS), standard and not_taken (Illuminate only). not_taken marks an assessment a student was assigned and never sat. Not additive across values.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | Filter it on every query; default to overall unless a standard or group breakdown is asked for.                                                                                                                                                                                                                                                                                                                                                                     |
+| `response_type_code`                     | Illuminate, "Normalize standard codes before any standards-level rollup"                                                   | Breakdown identifier — the standard code on Illuminate standard rows, the domain on i-Ready group rows, the subtest on DIBELS group rows. Null on Illuminate group rows and on every overall and not_taken row. Some CCSS Math standards carry 2 spellings (8.EE.C.8.b and 8.EE.C.8b), and a small share of older rows have an empty code (an empty string, not null).                                                                                                                                                                                                                                                                                                                                                                                            | For a standards rollup, merge the 2 spellings first: remove a dot only when it sits right before a trailing lowercase letter. Then recompute the rate from the merged counts (pct_proficient × count_scored, summed, over summed count_scored); never average the 2 reported rates. For an Illuminate group-level cut, group on response_type_description — this code is null there, so keying on it drops every Illuminate group row and keeps i-Ready and DIBELS. |
+| `response_type_description`              | Illuminate, "Normalize standard codes" (the `y = mx + b` variants)                                                         | Human-readable breakdown label. Populated on standard rows and every group row; null on overall and not_taken. A few standards carry whitespace variants of the same label.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | —                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `response_type_root_description`         | Shared, "Domain rollup"; Illuminate, "`response_type_root_description` … is reliable here"; FL, last bullet                | CCSS domain the standard rolls up to. Populated on Illuminate standard rows only. Unreliable for Illuminate content aligned to Florida's own standards, whose codes do not fit the CCSS hierarchy.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | —                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `performance_band_label_number`          | Shared, "Performance bands are Illuminate-only"; Illuminate, "Bands"                                                       | Position of the score's band within the performance band set it was scored against. Illuminate only; null for every other source. Band sets differ in cut points, in band count, and in which band starts mastery, so band 5 is not always the top. Not comparable across assessments, or across response types within one assessment: standard and group rows can carry different band labels than the assessment's overall rows.                                                                                                                                                                                                                                                                                                                                | Compare band numbers within one assessment and one response_type. There, prefer this number to proficiency_level text for grouping and ordering; on standard and group rows a few bands carry more than one label spelling.                                                                                                                                                                                                                                         |
+| `proficiency_level`                      | i-Ready, "Proficiency"; DIBELS, "Proficiency" and "Tier-movement rates are not comparable"; STAR, NJ and FL, "Proficiency" | Proficiency label; the vocabulary is per source. i-Ready: 3 or More Grade Levels Below, 2 Grade Levels Below, 1 Grade Level Below, Early On Grade Level, Mid or Above Grade Level. DIBELS: Well Below Benchmark, Below Benchmark, At Benchmark, Above Benchmark, and Tested Out on some subtest (group) rows. STAR and FL state: Level 1 to Level 5; STAR is null on a share of rows. NJSLA and NJSLA Science: Did Not Yet Meet Expectations, Partially Met Expectations, Approached Expectations, Met Expectations, Exceeded Expectations. NJGPA: Graduation Ready, Not Yet Graduation Ready. Illuminate: the performance band label. Tier-movement rates are not comparable across instruments: fewer, wider tiers mechanically raise the stayed-the-same rate. | On Illuminate standard and group rows, a band can carry more than one label spelling; group by performance_band_label_number there.                                                                                                                                                                                                                                                                                                                                 |
+| `is_mastery`                             | Shared, "Headline metric"; Shared, "Performance bands" (the mastery bar); i-Ready, "Proficiency cutoff"; FL, "Proficiency" | Per-row proficient flag that pct_proficient is built from. The bar is per source: i-Ready, Early On Grade Level and Mid or Above Grade Level — Early On is a looser bar than at or above grade level; DIBELS, At and Above Benchmark; STAR and FL, Level 3 and up; NJSLA, Met and Exceeded Expectations; NJGPA, Graduation Ready; Illuminate, set by each assessment's band set, so an Illuminate rate mixes different bars. Null where the source gives no verdict: Illuminate not_taken rows, DIBELS Tested Out subtests, and STAR rows with no level.                                                                                                                                                                                                          | For i-Ready at or above grade level, filter proficiency_level to Mid or Above Grade Level instead. When reporting an Illuminate rate, say which assessments it covers.                                                                                                                                                                                                                                                                                              |
+| `scale_score`                            | i-Ready, "Growth is not in the model, and scale scores do not normalize across grade bands"                                | Scale score achieved. Every source except Illuminate, which reports percent_correct instead. Scales differ by source and are not comparable across sources or subjects; within i-Ready the scale also compresses at higher grades, so a change in score is not comparable between elementary and middle grades.                                                                                                                                                                                                                                                                                                                                                                                                                                                   | Report a scale-score change separately for elementary and middle grades, and as a point difference, not a percent of the BOY score. Do not label a computed change with i-Ready's growth-measure names; those norms are not in this view.                                                                                                                                                                                                                           |
+| `enrollment_resolution`                  | Shared, "Section/teacher rollups"                                                                                          | How the section enrollment was resolved: subject_section or homeroom.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | Filter to subject_section for course- and section-level rollups.                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `date_taken`                             | Shared, "Time"                                                                                                             | Date the assessment was taken (completion date). Every source; null or wrong on a small share of Illuminate rows.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | A standalone date, not joined to the calendar. For year and calendar rollups use dates_date_day and academic_year, which read the administration date for Illuminate and college and the test date for state tests and vendor diagnostics (i-Ready, DIBELS, STAR).                                                                                                                                                                                                  |
+| `count_students`                         | Shared, "Grain"                                                                                                            | Distinct students (per student-year) with a score in the filtered slice. The shipped note about switching to count_distinct_approx moves to a YAML comment.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Heavier than the plain counts, and has timed out at standard grain; use count_taken there.                                                                                                                                                                                                                                                                                                                                                                          |
+| `pct_proficient` and the 3 counts        | Shared, "Headline metric" and "Three nested counts"                                                                        | The shipped text, minus the instructions in the next column                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Moved from the shipped `description:`. pct_proficient: pair it with count_scored, the n it rests on, and never multiply it by count_assigned. pct_taken: filter assessment_type to illuminate before reporting it. count_scored: report it alongside pct_proficient whenever the rate carries weight.                                                                                                                                                               |
+| `count_assessments` (new)                | Illuminate, "How many times was this standard assessed"                                                                    | Distinct Illuminate assessments in the filtered set — not sittings, not scored responses. Illuminate only: every other source has no source_assessment_id, so it reads 0 there.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | Use this for "how many times was this assessed". A standard resting on one assessment is a thin base for a trend; say so rather than trending it.                                                                                                                                                                                                                                                                                                                   |
+| `avg_scale_score`, `avg_percent_correct` | Shared, "Headline metric" ("scope-bound")                                                                                  | Present. The leading `Grain:` clause stays in `description:` under the #4476 convention: a pooled average misleads an analyst reading the tooltip as much as it misleads an agent.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | —                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `pct_proficient_formative`               | Illuminate, "Measures — `pct_proficient_formative` does not cover all formative work"                                      | Proficiency rate across the QA, MQQ and CRQ module types only; excludes TP, UA, ET and WPP. CRQ is also available alone as pct_proficient_crq.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Not "all internal checkpoints". For that, build the rollup from the intended module types and flag the pooling choice as an open decision.                                                                                                                                                                                                                                                                                                                          |
 
 ### Assessments cube (`student_assessments`)
 
@@ -276,14 +353,14 @@ against the 2,000 cap:
 > same students is a calibration difference until shown otherwise: report both
 > rates side by side and flag it rather than presenting an achievement gap.
 > There is no growth measure, so any growth figure is analyst-built — say so.
-> Students can sit a vendor diagnostic more than once in a window; keep the most
-> recent date_taken per student per window before any student-level count. A
-> missing current-year state result is a release lag, not a defect. Query this
-> view, not upstream vendor tables, which carry re-pull duplicates. A CCSS
-> code's own grade can differ from grade_level_tested; that is spiral review,
-> not an error. Lead-teacher names are stored Last, First; resolve a name
-> against staff_directory before filtering, since a zero-row result is not proof
-> the teacher has no students.
+> Students can sit a vendor diagnostic more than once in a window; de-duplicate
+> repeat sittings before any student-level count, and since which sitting counts
+> is an open decision, say which you kept. A missing current-year state result
+> is a release lag, not a defect. Query this view, not upstream vendor tables,
+> which carry re-pull duplicates. A CCSS code's own grade can differ from
+> grade_level_tested; that is spiral review, not an error. Lead-teacher names
+> are stored Last, First; resolve a name against staff_directory before
+> filtering, since a zero-row result is not proof the teacher has no students.
 
 Sources in the reference file:
 
@@ -291,7 +368,7 @@ Sources in the reference file:
   growth measure", "The view is enrollment-scoped", "Region coverage is uneven",
   "Resolve staff names".
 - Illuminate: "Sanity-check watch-out" (calibration), "A CCSS code's own grade
-  can differ" (sieve step 4).
+  can differ" (sieve step 5).
 - i-Ready: "`Outside Round` is also the least complete round", "`is_replacement`
   is Illuminate-only by design" (repeat sittings), "Query this view, not the
   upstream i-Ready model".
@@ -302,15 +379,15 @@ Sources in the reference file:
 
 | Reference text                                                                                                                                                                                                                          | Goes to                                                                  | Sieve step |
 | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ | ---------- |
-| Shared, "Filter a genuinely nullable field with `set` / `notSet`, never `equals "null"`"                                                                                                                                                | `load` docstring                                                         | 3          |
-| Shared, "A dimension-only pull silently de-duplicates"                                                                                                                                                                                  | `load` docstring                                                         | 3          |
-| Shared, "Section/teacher rollups" ("force-refresh `meta` if the lead-teacher fields appear to be missing")                                                                                                                              | `meta` docstring                                                         | 3          |
+| Shared, "Filter a genuinely nullable field with `set` / `notSet`, never `equals "null"`"                                                                                                                                                | `load` docstring                                                         | 4          |
+| Shared, "A dimension-only pull silently de-duplicates"                                                                                                                                                                                  | `load` docstring                                                         | 4          |
+| Shared, "Section/teacher rollups" ("force-refresh `meta` if the lead-teacher fields appear to be missing")                                                                                                                              | `meta` docstring                                                         | 4          |
 | Shared, "Performance bands" — the band-set table                                                                                                                                                                                        | stays, corrected and without volumes, until #5573 ships band-set members | 1          |
 | Point-in-time figures: Text Study's score volume; the Outside Round and Newark loss shares; QA3's subject count; the median test dates; the repeat-sitting rate; the Fall NJGPA counts; STAR's yearly volume; the adaptive window dates | deleted; the qualitative claim stays in its row                          | 1          |
-| Coverage specifics: Paterson's sources and years; i-Ready's regions; DIBELS and STAR start years; the Newark 2025-26 module-code example; FL is Miami                                                                                   | deleted; the view says coverage is uneven                                | 2          |
-| Shared, "Two different subject fields" — "At K-2, `Text Study` is the _only_ ELA-equivalent subject present"                                                                                                                            | stays; evidence for the open ELA decision                                | 7          |
-| Shared, "Open decisions"; i-Ready, which sitting is authoritative; NJ, whether NJDOE reset the adaptive cut scores                                                                                                                      | stays                                                                    | 7          |
-| The i-Ready, DIBELS and STAR provenance notes ("Documented from the live schema …")                                                                                                                                                     | stays                                                                    | 7          |
+| Coverage specifics: Paterson's sources and years; i-Ready's regions; DIBELS and STAR start years; the Newark 2025-26 module-code example; FL is Miami                                                                                   | deleted; the view says coverage is uneven                                | 3          |
+| Shared, "Two different subject fields" — "At K-2, `Text Study` is the _only_ ELA-equivalent subject present"                                                                                                                            | stays; evidence for the open ELA decision                                | 2          |
+| Shared, "Open decisions"; i-Ready, which sitting is authoritative; NJ, whether NJDOE reset the adaptive cut scores                                                                                                                      | stays                                                                    | 2          |
+| The i-Ready, DIBELS and STAR provenance notes ("Documented from the live schema …")                                                                                                                                                     | stays                                                                    | 2          |
 
 ### Stays in the markdown
 
@@ -369,21 +446,58 @@ phrase per moved fact, keyed by member name, so a later edit cannot drop one
 silently. Cube Cloud validates the model on the branch staging deployment before
 merge.
 
-## Server docstring changes
+## Server changes
 
-`load` extends 2 existing paragraphs rather than adding new ones:
+### Docstrings
+
+`load` extends 2 existing paragraphs and its PII paragraph:
 
 - **Filter operators.** After the `set`/`notSet` list, add: `equals "null"`
   matches the literal string and returns zero rows; use `notSet`.
 - **Grain.** Add: a query with no measure de-duplicates identical rows, so add a
   count or the primary key to see row counts. The `count_students` fallback is
   that member's `ai_context`, not this docstring.
+- **Access scope.** Add: student views return only the schools the user can
+  access. Before describing a result as network-wide, check which regions or
+  schools it covers. The row-level filter is silent, so a school- or
+  region-scoped user asking a network question gets real, non-empty numbers for
+  their own slice, and nothing else in the response says so.
 
 `meta` gains one sentence: refresh before concluding a member is missing.
 
-A test in `tests/cube/test_mcp_server.py` asserts the anchor phrases, the same
-way the crosswalk is anchored today. Redeploy and connector refresh follow the
-existing procedure in `src/cube/mcp/CLAUDE.md`.
+### An empty-result note on `load`
+
+When `load` returns 0 rows, the server adds a note to the response. Draft
+wording: "0 rows. The data may not exist for this slice, or your access may not
+include it. Check which regions and schools come back before concluding the data
+does not exist."
+
+Why a server note rather than more text: text only makes the check more likely.
+The note fires every time, at the moment of risk. It also covers every trap in
+this spec whose symptom is zero rows with no error: a wrong `academic_subject`
+label, `grade_level_tested` on a vendor diagnostic, `equals "null"`, and a
+region that does not carry the source.
+
+Limits:
+
+- It cannot catch a partial result, such as a network-wide answer that silently
+  covers 3 regions. The view's `ai_context` and the access-scope sentence carry
+  that case.
+- The wording stays neutral, because some zero-row answers are real.
+- Before building, check whether Cube's `/load` response says when row-level
+  access removed rows. If it does, the note names the cause instead of offering
+  both.
+- The eval cannot test the access case: its `META_STUB` carries no access rules.
+
+`load` returns Cube's response unchanged today (`src/cube/mcp/server.py`), so
+the note is one check on the length of `data`.
+
+### Tests and deploy
+
+A test in `tests/cube/test_mcp_server.py` asserts the docstring anchor phrases,
+the same way the crosswalk is anchored today, and that the note appears on an
+empty `data` array and not on a non-empty one. Redeploy and connector refresh
+follow the existing procedure in `src/cube/mcp/CLAUDE.md`.
 
 ## Model changes
 
@@ -449,33 +563,84 @@ description text is revised before the PR merges.
 A standards-rollup trap (must group on the canonical code) needs the member from
 #5575, so that issue adds it.
 
-### Step 0: does `ai_context` move the crosswalk eval?
+### Step 0: does the field matter?
 
-This runs first, before any other `ai_context` value is written, because its
-result sizes all of them. It is the first measurement of the channel in this
-repo.
+Open-source Cube does nothing with `ai_context`. In `cube-js/cube` the key
+appears only in documentation, which names Cube Cloud's hosted agent as its
+reader, and our MCP server returns it as one more JSON key beside `description`.
+An agent treats `ai_context` specially only if a prompt tells it to. The one
+third-party Cube MCP server that mentions the key works that way. So the
+question is not whether `ai_context` reaches the model, but whether putting
+guidance there, with or without a pointer, changes behavior compared with the
+same text in `description:`.
 
-- Add `meta.ai_context` to `dates.academic_year` and `dates.academic_year_label`
-  in `src/cube/model/cubes/conformed/dates.yml`. The value is agent-only
-  crosswalk guidance: filter on the label, and read the integer as the start
-  year. `dates` is conformed, so the value reaches every view that includes it:
-  the attendance views the crosswalk eval uses, and the assessment view, which
-  carries both members.
-- The crosswalk eval does not read YAML; `arms.py` holds a hand-written
-  `META_STUB`. Add arm C: arm B plus the same `ai_context` strings on the stub's
-  `dates_academic_year` and `dates_academic_year_label` members, as the `meta`
-  key `/meta` returns them in.
-- Run families 1 to 3 on arms B and C, and report the wrong-answer rate per arm
-  with Wilson intervals.
+The first design compared no text against text in `ai_context`, which cannot
+separate the field from the extra text. It is replaced by 4 placement arms in
+`src/cube/mcp/eval/arms.py`, run on the crosswalk prompts (families 1 to 3):
 
-Done when the spec records whether the wrong-answer rate moved. A null or
-negative result is kept and written down, not rerun until it passes. If arm C
-does not beat arm B, the per-member `ai_context` drafts are re-decided before
-they are written.
+| Arm          | Guidance lives in                                    | Isolates                     |
+| ------------ | ---------------------------------------------------- | ---------------------------- |
+| `F0_none`    | nowhere; plain definitions only                      | floor: is there headroom?    |
+| `F1_desc`    | appended to the year members' `description`          | description-only             |
+| `F2_ctx`     | the same members' `meta.ai_context`                  | does the field alone matter? |
+| `F3_ctx_ptr` | `ai_context`, plus a `meta` docstring line to use it | does a pointer matter?       |
 
-Step 0 breaks the one-home rule on purpose. The crosswalk already lives in the
-`load` docstring (sieve step 3), so arm C measures the channel, not a placement.
-If arm C wins, the crosswalk picks one home before the PR merges.
+Every arm uses the `load` docstring without its crosswalk paragraph, and the
+guidance is that paragraph lifted verbatim, so the words are identical across
+arms. Run 2026-09-29 on Haiku only, 3 reps, 288 conversations. Haiku is the
+weaker model, so it is where placement is most likely to matter; a Sonnet run
+was stopped after 35 conversations to save Agent SDK credit.
+
+Decision rules, written before the results. The primary metric is the wrong-year
+rate on the determinate prompts (families 1 and 2), with Wilson 95% intervals;
+the family 3 disambiguation rate is secondary.
+
+Amended 2026-09-29, while the run was in progress and before any result was
+read: the user chose the `description:`/`ai_context:` split on simplicity
+grounds, because it keeps the dbt twin test a plain equality. The run no longer
+picks the design. It guards against `ai_context` doing worse than `description:`
+and decides whether the `meta` docstring needs the pointer.
+
+1. **No headroom.** If `F0_none` is near zero and inside `F1_desc`'s interval,
+   the run cannot tell placements apart. Keep the split, without the pointer.
+2. **No difference.** If `F2_ctx` and `F3_ctx_ptr` fall inside `F1_desc`'s
+   interval, keep the split without the pointer.
+3. **The pointer helps.** If `F3_ctx_ptr` beats `F2_ctx` with non-overlapping
+   intervals, add the pointer to the `meta` docstring.
+4. **`ai_context` hurts.** If `F2_ctx` and `F3_ctx_ptr` are both worse than
+   `F1_desc` with non-overlapping intervals, reopen the split: usage text moves
+   to `description:` and the twin test changes to a prefix match.
+
+A null or negative result is kept and written down, not rerun until it passes.
+
+**Result, 2026-09-29 (Haiku, 288 conversations, 60 determinate per arm).** Rule
+2 fires: keep the split, without the pointer.
+
+| Arm          | Wrong year (95% interval) | Correct | No query |
+| ------------ | ------------------------- | ------- | -------- |
+| `F0_none`    | 28.3% [19–41]             | 71.7%   | 0%       |
+| `F1_desc`    | 0.0% [0–6]                | 100%    | 0%       |
+| `F2_ctx`     | 1.7% [0–9]                | 96.7%   | 1.7%     |
+| `F3_ctx_ptr` | 0.0% [0–6]                | 96.7%   | 3.3%     |
+
+- There is headroom: with no guidance, Haiku gets the year wrong 28% of the
+  time. Guidance in any of the 3 placements takes that to about zero, and the 3
+  intervals overlap.
+- `F2_ctx`'s one wrong answer is the family 2 trap: it filtered `2026-2027` for
+  an SY26 question.
+- Every arm surfaced its interpretation on all family 3 (ambiguous) prompts.
+- 9 conversations hit the 12-turn limit, all on "by school" prompts, spread
+  across the 4 arms (4 in `F3_ctx_ptr`). The stub returns no school breakdown,
+  so the model retries; this is a harness artifact, not a placement effect.
+- A Sonnet run was stopped after 35 conversations. Those records are not part of
+  this result.
+
+Raw records: `src/cube/mcp/eval/out/placement_2026-09-29_haiku.jsonl`
+(gitignored, local only).
+
+Still to do before any `ai_context` ships: confirm the key on the branch staging
+deployment, and record the size of the full-catalog and
+`student_assessment_scores_view` `meta` responses before and after.
 
 ### Why family 4 is small
 
@@ -490,7 +655,7 @@ when the query alone proves the violation. The facts split 3 ways:
   rule, totals not reconciling to vendor or state reports, a missing
   current-year state result being a release lag, uneven coverage, scale scores
   compressing at higher grades. Nothing in the query is wrong, so no predicate
-  over query shape can fire. This limit is permanent, and it is why step 4 of
+  over query shape can fire. This limit is permanent, and it is why step 5 of
   the placement procedure routes these facts to prose.
 - **Definitions: nothing to violate.** Value lists, FL's Level 3 mastery bar,
   `module_type`'s open list.
@@ -555,7 +720,7 @@ documentation.
 | --------------------------------------------------------- | ------------------------------------------------------------------------------- |
 | Step 0: `ai_context` on the `dates` academic-year members | crosswalk eval families 1 to 3, arm C against arm B; result recorded either way |
 | Descriptions and their dbt twins, `ai_context`, the rule  | `uv run pytest tests/cube/`; Cube Cloud branch staging validates the model      |
-| `load` and `meta` docstrings                              | `uv run pytest tests/cube/`                                                     |
+| `load` and `meta` docstrings, empty-result note           | `uv run pytest tests/cube/`                                                     |
 | `count_assessments`                                       | branch staging query returns quartile-shaped counts                             |
 | Reference and orchestrator trim                           | every deleted fact has a home in the diff; the PR body lists them               |
 | All of it                                                 | eval run; arm B beats arm A                                                     |

@@ -88,7 +88,8 @@ def parse_args() -> argparse.Namespace:
         "--arms",
         nargs="+",
         default=["A_baseline", "B_descriptions"],
-        choices=["A_baseline", "B_descriptions"],
+        choices=["A_baseline", "B_descriptions", *arms_mod.PLACEMENT_ARMS],
+        help="A/B vary the load docstring; F0-F3 vary where member guidance lives",
     )
     p.add_argument("--reps", type=int, default=DEFAULT_REPS)
     p.add_argument("--concurrency", type=int, default=DEFAULT_CONCURRENCY)
@@ -101,14 +102,20 @@ def parse_args() -> argparse.Namespace:
     return p.parse_args()
 
 
-def _make_tools(tool_desc: dict[str, str]) -> dict[str, Any]:
-    """Build in-process SDK tools; descriptions reuse the real server's text."""
+def _make_tools(
+    tool_desc: dict[str, str], meta_payload: dict[str, Any]
+) -> dict[str, Any]:
+    """Build in-process SDK tools; descriptions reuse the real server's text.
+
+    meta_payload is the arm's /meta catalog: the placement (F) arms each serve
+    their own; the A/B arms serve arms.META_STUB.
+    """
     # trunk-ignore(pyright/reportMissingImports): claude-agent-sdk is a runtime --with dep
     from claude_agent_sdk import tool
 
     @tool("meta", tool_desc["meta"], {})
     async def meta_tool(_args: dict[str, Any]) -> dict[str, Any]:
-        return {"content": [{"type": "text", "text": json.dumps(arms_mod.META_STUB)}]}
+        return {"content": [{"type": "text", "text": json.dumps(meta_payload)}]}
 
     @tool("load", tool_desc["load"], {"query": dict})
     async def load_tool(_args: dict[str, Any]) -> dict[str, Any]:
@@ -200,7 +207,20 @@ def do_dry_run(
         allowed = [f"mcp__cube__{n}" for n in _arm_tool_names(name)]
         load_desc = next(t["description"] for t in arm["tools"] if t["name"] == "load")
         has_crosswalk = "resolve it yourself" in load_desc
+        meta_desc = next(t["description"] for t in arm["tools"] if t["name"] == "meta")
+        dims = [
+            d
+            for c in arm.get("meta", arms_mod.META_STUB)["cubes"]
+            for d in c["dimensions"]
+            if "academic_year" in d["name"]
+        ]
         print(f"=== {name} ===")
+        print(
+            f"  year members: {len(dims)}; "
+            f"max description {max(len(d['description']) for d in dims)} chars; "
+            f"with ai_context {sum('meta' in d for d in dims)}; "
+            f"meta pointer: {arms_mod.AI_CONTEXT_POINTER in meta_desc}"
+        )
         print(f"  system-prompt (replace): {len(arm['instructions'])} chars")
         print(
             f"  load description: {len(load_desc)} chars "
@@ -229,7 +249,9 @@ async def sweep(
     # so the servers must differ per arm — not just the system prompt.
     arm_servers = {}
     for name in arm_names:
-        arm_tools = _make_tools(tool_desc_by_arm[name])
+        arm_tools = _make_tools(
+            tool_desc_by_arm[name], arm_defs[name].get("meta", arms_mod.META_STUB)
+        )
         arm_servers[name] = create_sdk_mcp_server(
             name="cube",
             version="1.0.0",
@@ -295,7 +317,10 @@ async def sweep(
 def main() -> None:
     args = parse_args()
     server = arms_mod.load_server()
-    arm_defs = arms_mod.build_arms(server)
+    arm_defs = {
+        **arms_mod.build_arms(server),
+        **arms_mod.build_placement_arms(server),
+    }
     tool_desc_by_arm = {
         name: {t["name"]: t["description"] for t in arm_defs[name]["tools"]}
         for name in arm_defs

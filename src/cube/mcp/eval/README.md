@@ -42,6 +42,23 @@ Every Cube tool is stubbed (`harness.py`): `meta` returns a fixed catalog,
 `load`/`sql` record the query the model built and return a dummy result. No
 warehouse, no auth, no PII.
 
+### Placement arms (F0–F3)
+
+A second experiment, added for #5236: does it matter which catalog field member
+guidance lives in? All 4 arms use arm A's `load` description (crosswalk removed)
+and plain year-member descriptions, then place the crosswalk paragraph,
+verbatim, in one spot per arm:
+
+| Arm          | Guidance lives in                                    |
+| ------------ | ---------------------------------------------------- |
+| `F0_none`    | nowhere                                              |
+| `F1_desc`    | the year members' `description`                      |
+| `F2_ctx`     | the same members' `meta.ai_context`                  |
+| `F3_ctx_ptr` | `ai_context`, plus a `meta` docstring line to use it |
+
+Only `run_eval_cc.py` serves per-arm catalogs. Result (2026-09-29, Haiku): no
+placement difference; see the knowledge-drain spec's _Step 0_.
+
 ## Prompts (`prompts.yaml`)
 
 - **Family 1** (16): determinate intent, 4 phrasings (`SY26`, `2025-2026`,
