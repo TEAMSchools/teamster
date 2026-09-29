@@ -165,7 +165,10 @@ value onto every past-year row, so `enroll_status` on a 2025-26 row is the
 student's status today. For "completed the year" use `is_enrolled_recent` on
 that year's row, or its exit date. On CSGF, `enroll_status in (0, 3)` on AY2025
 dropped 183 students who finished the year and left over the summer (measured
-2026-09-29, PR #5572), and the count grew as summer transfers were coded.
+2026-09-29, PR #5572), and the count grew as summer transfers were coded. Date
+when a filter arrived with `git log -S '<filter>' -- <model>.sql`, not from the
+PR that last touched it: the CSGF doc dated the filter to the PR that copied it
+into four models, while HS Enrollment had carried it for a year.
 
 ## Status ladders
 

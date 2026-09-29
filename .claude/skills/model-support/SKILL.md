@@ -21,9 +21,17 @@ the request; if it is unclear, ask.
 - No Tableau MCP call and no `tableau-workbook-xml` load without telling the
   user it costs a lot of tokens and getting a yes. QA goes to the warehouse
   first.
-- Sheet changes go out as the whole tab or block, as a tab-separated file in the
-  session scratchpad, handed over as a path with the sheet link and tab name.
-  Never comma-separated; never pasted into chat.
+- Sheet changes go out as the whole tab or block, as a tab-separated file,
+  handed over with the sheet link and tab name. Never comma-separated; never
+  pasted into chat. In VS Code a link to the session scratchpad (`/tmp`) does
+  not open, so put the file in the gitignored `.claude/scratch/` under a
+  distinctive name, and delete it once the owner has pasted.
+- Before building a whole-tab replacement, diff the live tab (a CSV the owner
+  exports) against the model on the tab's key, and list for the owner every cell
+  outside the intended change, with the tab row and column. The tab can be an
+  older snapshot or carry deliberate edits; the owner decides which wins. Also
+  match the tab's column order (ask for a screenshot of its header) and its
+  number format: a rounded `numeric` column prints as `2.000000000`.
 - Read the source the user is editing (a Sheets external through ADC from
   Python), not a reshaped staging table.
 - State how a pipeline behaves only from code or a before/after observation,
