@@ -494,3 +494,50 @@ PHRASES.update(
         ],
     }
 )
+
+
+# --- Assessments cube (Task 4) -----------------------------------------------
+TWINS.update(
+    {
+        ("student_assessments", "assessment_type"): ("dim_assessments", "type"),
+        **{
+            ("student_assessments", c): ("dim_assessments", c)
+            for c in [
+                "is_internal_assessment",
+                "module_type",
+                "module_code",
+                "academic_subject",
+                "grade_level_tested",
+            ]
+        },
+    }
+)
+PHRASES.update(
+    {
+        "student_assessments.assessment_type": ["computer-adaptive", "select a source"],
+        "student_assessments.is_internal_assessment": [
+            "Illuminate (KIPP-authored interims) only",
+            "Filter assessment_type instead",
+        ],
+        "student_assessments.module_type": [
+            "UA (Unit Assessment)",
+            "not documented",
+            "Do not expand TP, ET or WPP",
+        ],
+        "student_assessments.module_code": [
+            "DIBELS: Composite",
+            "Always pair it with academic_subject",
+            "median date_taken",
+        ],
+        "student_assessments.academic_subject": [
+            "Math and Reading",
+            "Text Study",
+            "open decision",
+        ],
+        "student_assessments.grade_level_tested": [
+            "0 is kindergarten",
+            "end-of-course",
+            "filter grade_level instead",
+        ],
+    }
+)
