@@ -45,17 +45,17 @@ cubes:
 
       - name: date_taken
         description: >-
-          Date the assessment was taken (completion date), as a standalone date
-          dimension not joined to a calendar cube. date_taken is corrupt for a
-          small share of internal rows, so calendar and academic-year rollups
-          use the date_day / academic_year members instead (backed by
-          assessment_date_key: the administration date for internal and college,
-          the reliable test date for state and vendor). Populated for state and
-          vendor rows; nullable for a small share of internal rows lacking a
-          recorded sitting.
+          Date the assessment was taken (completion date). Every source; null or
+          wrong on a small share of Illuminate rows.
         sql: CAST(test_date_key AS TIMESTAMP)
         type: time
         public: true
+        meta:
+          ai_context: >-
+            A standalone date, not joined to the calendar. For year and calendar
+            rollups use date_day and academic_year, which read the
+            administration date for Illuminate and college and the test date for
+            state tests and vendor diagnostics (i-Ready, DIBELS, STAR).
 
       - name: term_key
         description: FK to terms — the reporting quarter containing the score.
@@ -64,42 +64,92 @@ cubes:
 
       - name: enrollment_resolution
         description: >-
-          How the section enrollment was resolved: subject_section or homeroom.
-          Filter to subject_section for course/section-level rollups.
+          How the section enrollment was resolved: subject_section (the section
+          for the assessment's subject, active on the test date) or homeroom
+          (the student's HR section, used when no subject section resolved).
         sql: enrollment_resolution
         type: string
         public: true
+        meta:
+          ai_context: >-
+            Filter to subject_section for course- and section-level rollups.
 
       - name: proficiency_level
         description: >-
-          Proficiency band label (performance band for internal, achievement
-          level for state).
+          Proficiency label; the vocabulary is per source. i-Ready: 3 or More
+          Grade Levels Below, 2 Grade Levels Below, 1 Grade Level Below, Early
+          On Grade Level, Mid or Above Grade Level. DIBELS: Well Below
+          Benchmark, Below Benchmark, At Benchmark, Above Benchmark, and Tested
+          Out on some subtest (group) rows. STAR and FL state: Level 1 to Level
+          5; STAR is null on a share of rows. NJSLA and NJSLA Science: Did Not
+          Yet Meet Expectations, Partially Met Expectations, Approached
+          Expectations, Met Expectations, Exceeded Expectations. NJGPA:
+          Graduation Ready, Not Yet Graduation Ready. Illuminate: the
+          performance band label. Tier-movement rates are not comparable across
+          instruments: fewer, wider tiers mechanically raise the stayed-the-same
+          rate.
         sql: proficiency_level
         type: string
         public: true
+        meta:
+          ai_context: >-
+            On Illuminate standard and group rows, a band can carry more than
+            one label spelling; group by performance_band_label_number there.
 
       - name: performance_band_label_number
         description: >-
-          Numeric ordering of the performance band label within the band scale.
-          Null for state assessments.
+          Position of the score's band within the performance band set it was
+          scored against. Illuminate only; null for every other source. Band
+          sets differ in cut points, in band count, and in which band starts
+          mastery, so band 5 is not always the top. Not comparable across
+          assessments, or across response types within one assessment: standard
+          and group rows can carry different band labels than the assessment's
+          overall rows.
         sql: performance_band_label_number
         type: number
         public: true
+        meta:
+          ai_context: >-
+            Compare band numbers within one assessment and one response_type.
+            There, prefer this number to proficiency_level text for grouping and
+            ordering; on standard and group rows a few bands carry more than one
+            label spelling.
 
       - name: is_mastery
         description: >-
-          TRUE if the student met the mastery/proficiency threshold for this
-          assessment.
+          Per-row proficient flag that pct_proficient is built from. The bar is
+          per source: i-Ready, Early On Grade Level and Mid or Above Grade Level
+          — Early On is a looser bar than at or above grade level; DIBELS, At
+          and Above Benchmark; STAR and FL, Level 3 and up; NJSLA, Met and
+          Exceeded Expectations; NJGPA, Graduation Ready; Illuminate, set by
+          each assessment's band set, so an Illuminate rate mixes different
+          bars. Null where the source gives no verdict: Illuminate not_taken
+          rows, DIBELS Tested Out subtests, and STAR rows with no level.
         sql: is_mastery
         type: boolean
         public: true
+        meta:
+          ai_context: >-
+            For i-Ready at or above grade level, filter proficiency_level to Mid
+            or Above Grade Level instead. When reporting an Illuminate rate, say
+            which assessments it covers.
 
       - name: scale_score
-        description:
-          Scale score achieved. Null for internal (percent-correct) rows.
+        description: >-
+          Scale score achieved. Every source except Illuminate, which reports
+          percent_correct instead. Scales differ by source and are not
+          comparable across sources or subjects; within i-Ready the scale also
+          compresses at higher grades, so a change in score is not comparable
+          between elementary and middle grades.
         sql: scale_score
         type: number
         public: true
+        meta:
+          ai_context: >-
+            Report a scale-score change separately for elementary and middle
+            grades, and as a point difference, not a percent of the BOY score.
+            Do not label a computed change with i-Ready's growth-measure names;
+            those norms are not in this view.
 
       - name: percent_correct
         description: Percent correct. Null for state assessments.
@@ -109,29 +159,56 @@ cubes:
 
       - name: response_type
         description: >-
-          Response-type breakdown. Never null; four values — overall (every
-          source), standard and not_taken (Illuminate only), and group
-          (Illuminate, i-Ready and DIBELS). Not additive across values, so
-          filter it explicitly; default to overall.
+          Response-type breakdown. Never null; 4 values: overall (a subject,
+          course-level or composite score; every source), group (a strand or
+          domain rollup within a subject; Illuminate, i-Ready and DIBELS),
+          standard (one Illuminate standard; Illuminate only) and not_taken (an
+          Illuminate assessment a student was assigned and never sat, with no
+          recorded response). Not additive across values.
         sql: response_type
         type: string
         public: true
+        meta:
+          ai_context: >-
+            Filter it on every query; default to overall unless a standard or
+            group breakdown is asked for.
 
       - name: response_type_code
-        description: Short code identifying the response type. Null for state.
+        description: >-
+          Breakdown identifier — the standard code on Illuminate standard rows,
+          the domain on i-Ready group rows, the subtest on DIBELS group rows.
+          Null on Illuminate group rows and on every overall and not_taken row.
+          Some CCSS Math standards carry 2 spellings (8.EE.C.8.b and 8.EE.C.8b),
+          and a small share of older rows have an empty code (an empty string,
+          not null).
         sql: response_type_code
         type: string
         public: true
+        meta:
+          ai_context: >-
+            For a standards rollup, merge the 2 spellings first: remove a dot
+            only when it sits right before a trailing lowercase letter. Then
+            recompute the rate from the merged counts (pct_proficient ×
+            count_scored, summed, over summed count_scored); never average the 2
+            reported rates. For an Illuminate group-level cut, group on
+            response_type_description — this code is null there, so keying on it
+            drops every Illuminate group row and keeps i-Ready and DIBELS.
 
       - name: response_type_description
-        description: Human-readable response-type description. Null for state.
+        description: >-
+          Human-readable breakdown label. Populated on standard rows and every
+          group row; null on overall and not_taken. A few standards carry
+          whitespace variants of the same label.
         sql: response_type_description
         type: string
         public: true
 
       - name: response_type_root_description
         description: >-
-          Description of the root (top-level) response type. Null for state.
+          CCSS domain the standard rolls up to. Populated only on Illuminate
+          standard rows that resolve a parent standard. Unreliable for
+          Illuminate content aligned to Florida's own standards, whose codes do
+          not fit the CCSS hierarchy.
         sql: response_type_root_description
         type: string
         public: true

@@ -390,3 +390,67 @@ def test_model_compiles_with_cube() -> None:
     assert out.returncode == 0, out.stderr[-2000:]
     names = {c["name"] for c in json.loads(out.stdout)["cubes"]}
     assert "student_assessment_scores_view" in names
+
+
+# --- Scores cube dimensions (Task 2) ---------------------------------------
+TWINS.update(
+    {
+        ("student_assessment_scores", c): ("fct_assessment_scores_enrollment_scoped", c)
+        for c in [
+            "response_type",
+            "response_type_code",
+            "response_type_description",
+            "response_type_root_description",
+            "performance_band_label_number",
+            "proficiency_level",
+            "is_mastery",
+            "scale_score",
+            "enrollment_resolution",
+        ]
+    }
+)
+PHRASES.update(
+    {
+        "student_assessment_scores.response_type": [
+            "not_taken",
+            "strand or domain rollup",
+            "Not additive across values",
+            "default to overall",
+        ],
+        "student_assessment_scores.response_type_code": [
+            "8.EE.C.8b",
+            "an empty string, not null",
+            "never average",
+            "group on response_type_description",
+        ],
+        "student_assessment_scores.response_type_description": ["whitespace variants"],
+        "student_assessment_scores.response_type_root_description": [
+            "Florida's own standards",
+            "resolve a parent standard",
+        ],
+        "student_assessment_scores.performance_band_label_number": [
+            "Illuminate only; null for every other source",
+            "Not comparable across assessments",
+            "across response types",
+        ],
+        "student_assessment_scores.proficiency_level": [
+            "Tested Out",
+            "Graduation Ready",
+            "Tier-movement rates are not comparable",
+        ],
+        "student_assessment_scores.is_mastery": [
+            "Early On is a looser bar",
+            "Illuminate rate mixes different bars",
+            "Mid or Above Grade Level instead",
+        ],
+        "student_assessment_scores.scale_score": [
+            "compresses at higher grades",
+            "not a percent of the BOY score",
+        ],
+        "student_assessment_scores.enrollment_resolution": [
+            "active on the test date",
+            "Filter to subject_section",
+        ],
+        "student_assessment_scores.date_taken": ["date_day and academic_year"],
+    }
+)
