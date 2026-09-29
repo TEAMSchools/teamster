@@ -1,4 +1,4 @@
--- Cambium column names; int_pearson__all_assessments maps them to Pearson names.
+-- Cambium column names; int_cambium__all_assessments maps them to the NJ shape.
 with
     union_relations as (
         {{

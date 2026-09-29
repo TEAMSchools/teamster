@@ -1,5 +1,7 @@
 models:
   - name: int_pearson__all_assessments
+    config:
+      enabled: false
     description: >
       Network-level union of state assessment results (PARCC, NJSLA, NJSLA
       Science, NJGPA) enriched with student crosswalk lookups and standardized
@@ -29,6 +31,8 @@ models:
           arguments:
             combination_of_columns:
               - studenttestuuid
+          config:
+            enabled: false
       # the vendor uuid is unique by construction, so it cannot catch a
       # second attempt by the same student; this is the grain the
       # dashboard reports on. Scoped to resolved ids: an unmatched row
@@ -44,6 +48,7 @@ models:
           config:
             where: localstudentidentifier is not null
             severity: error
+            enabled: false
     columns:
       - name: assessment_version
         data_type: string
@@ -58,11 +63,13 @@ models:
         data_tests:
           - not_null:
               config:
+                enabled: false
                 severity: error
           - accepted_values:
               arguments:
                 values: [PARCC, NJSLA, NJSLA Science, NJGPA, NJGPA-A]
               config:
+                enabled: false
                 severity: error
 
       - name: assessment_type
@@ -76,6 +83,7 @@ models:
         data_tests:
           - not_null:
               config:
+                enabled: false
                 severity: error
           - accepted_values:
               arguments:
@@ -85,6 +93,7 @@ models:
                   - state_nj_njsla_science
                   - state_nj_njgpa
               config:
+                enabled: false
                 severity: error
 
       - name: test_grade
@@ -97,6 +106,7 @@ models:
         data_tests:
           - not_null:
               config:
+                enabled: false
                 severity: error
                 where: |
                   _dbt_source_relation like '%cambium%'
@@ -106,6 +116,7 @@ models:
                 values: [3, 4, 5, 6, 7, 8, 9, 11]
                 quote: false
               config:
+                enabled: false
                 severity: error
                 where: _dbt_source_relation like '%cambium%'
 
