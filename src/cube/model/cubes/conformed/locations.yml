@@ -37,10 +37,16 @@ cubes:
         public: true
 
       - name: grade_band
-        description: Grade band served (ES, MS, HS).
+        description: >-
+          Grade band the school serves (ES, MS, HS): a school attribute, not a
+          student's grade.
         sql: grade_band
         type: string
         public: true
+        meta:
+          ai_context: >-
+            A grade_band filter is a school filter. For a student's grade, use
+            grade_level.
 
       - name: campus
         description: Physical campus name. Multiple schools may share a campus.

@@ -63,7 +63,8 @@ models:
       - name: grade_band
         data_type: string
         description: >-
-          Grade band served (ES, MS, HS).
+          Grade band the school serves (ES, MS, HS): a school attribute, not a
+          student's grade.
 
       - name: campus
         data_type: string

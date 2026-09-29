@@ -541,3 +541,41 @@ PHRASES.update(
         ],
     }
 )
+
+
+# --- Administrations and shared cubes (Task 5) ------------------------------
+TWINS.update(
+    {
+        ("student_assessment_administrations", "administration_period"): (
+            "dim_assessment_administrations",
+            "administration_period",
+        ),
+        ("student_assessment_administrations", "source_assessment_id"): (
+            "dim_assessment_administrations",
+            "source_assessment_id",
+        ),
+        ("locations", "grade_band"): ("dim_locations", "grade_band"),
+        ("courses", "is_foundations"): ("dim_courses", "is_foundations"),
+    }
+)
+PHRASES.update(
+    {
+        "student_assessment_administrations.administration_period": [
+            "Outside Round",
+            "FL end-of-course and science: PM3",
+            "not the max date_taken",
+            "use MOY",
+        ],
+        "student_assessment_administrations.source_assessment_id": [
+            "Illuminate only; null for every other source",
+            "count_assessments",
+        ],
+        "locations.grade_band": [
+            "a school attribute, not a student's grade",
+            "use grade_level",
+        ],
+        "courses.is_foundations": [
+            "not a record of intervention services delivered",
+        ],
+    }
+)

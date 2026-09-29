@@ -41,8 +41,12 @@ cubes:
 
       - name: is_foundations
         description: >-
-          TRUE if this is a Foundations (intervention) course, per the
+          TRUE when the section is a Foundations (intervention) course, per the
           course-subject crosswalk.
         sql: is_foundations
         type: boolean
         public: true
+        meta:
+          ai_context: >-
+            Treat it as course enrollment, not a record of intervention services
+            delivered.
