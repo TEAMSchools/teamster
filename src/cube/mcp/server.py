@@ -413,11 +413,16 @@ async def meta(
     (not an error) — see the `load` tool's grain rule before dropping a
     dimension.
 
+    Members may carry `meta.ai_context` (`aiContext` on some view-specific
+    members): usage rules written for you. Read and follow a member's
+    `ai_context` before building a query that uses it.
+
     Cached per (email, requested scope) for one hour (in-memory, with disk
     fallback across process restarts) — a filtered call never reads or writes
     the full-catalog cache entry, or another view-set's, though it does reuse
     the full catalog's cached fetch to build its filtered result. Pass
-    `force_refresh=True` after a model deploy.
+    `force_refresh=True` after a model deploy. Refresh before concluding a member
+    is missing.
     """
     email = await _get_user_email(ctx)
     scope = _meta_scope_key(views)
@@ -459,7 +464,9 @@ async def load(ctx: Context, query: dict[str, Any]) -> dict[str, Any]:
     just which columns come back. (This includes count_distinct measures like
     count_students: at a coarser grain Cube computes a correct distinct count
     for that grain — the "non-additive" note on some measures refers to
-    pre-aggregation rollup, not query-time grain.)
+    pre-aggregation rollup, not query-time grain.) A query with no measure
+    groups by its dimensions, so identical rows collapse into one; add a count
+    or the primary key to see every row.
 
     Example — same filters and measure (pct_proficient), two grains: dimensions
     [is_iep, module_code, academic_year] returns one proficiency rate per (IEP
@@ -480,7 +487,8 @@ async def load(ctx: Context, query: dict[str, Any]) -> dict[str, Any]:
 
     Filter operators are named, not SQL: `equals`, `notEquals`, `contains`,
     `gt`/`gte`/`lt`/`lte`, `set`/`notSet`, `inDateRange`, `beforeDate`,
-    `afterDate`. SQL-style `=`/`IN`/`LIKE` won't parse.
+    `afterDate`. SQL-style `=`/`IN`/`LIKE` won't parse. `equals "null"` matches
+    the literal string and returns zero rows; filter a null with `notSet`.
 
     Date dimensions: for a single date use `filters` with `equals`; for a range
     or when you need `granularity` (day/week/month/etc.), use `timeDimensions`
@@ -513,7 +521,9 @@ async def load(ctx: Context, query: dict[str, Any]) -> dict[str, Any]:
     full_name, birth_date, state/lea IDs) unless drill-down is explicitly
     requested. Staff sensitive fields (personal contact, birth date,
     demographics) live in `staff_pii`, gated separately from the open
-    `staff_directory` roster. Keep any identifying values — student or staff —
+    `staff_directory` roster. Student views return only the schools the user
+    can access; before describing a result as network-wide, check which regions
+    or schools it covers. Keep any identifying values — student or staff —
     in the local conversation only, never to PR comments, issues, Slack, or
     scheduled-agent outputs.
 

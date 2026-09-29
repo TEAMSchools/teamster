@@ -516,3 +516,35 @@ def test_load_and_sql_send_utc_timezone_by_default(
         server.load(ctx, {"measures": ["x.count"], "timezone": "America/New_York"})
     )
     assert sent[2]["json"]["query"]["timezone"] == "America/New_York"
+
+
+LOAD_DOC_SENTENCES = [
+    '`equals "null"` matches the literal string and returns zero rows; filter a'
+    " null with `notSet`.",
+    "A query with no measure groups by its dimensions, so identical rows collapse"
+    " into one; add a count or the primary key to see every row.",
+    "Student views return only the schools the user can access; before describing"
+    " a result as network-wide, check which regions or schools it covers.",
+]
+META_DOC_SENTENCES = [
+    "Refresh before concluding a member is missing.",
+    "Members may carry `meta.ai_context` (`aiContext` on some view-specific"
+    " members): usage rules written for you. Read and follow a member's"
+    " `ai_context` before building a query that uses it.",
+]
+
+
+def _tool_descriptions(server: ModuleType) -> dict[str, str]:
+    tools = asyncio.run(server.mcp.list_tools())
+    return {t.name: " ".join((t.description or "").split()) for t in tools}
+
+
+def test_load_and_meta_docstrings_carry_the_drained_mechanics(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    server = _load_server(monkeypatch)
+    desc = _tool_descriptions(server)
+    for sentence in LOAD_DOC_SENTENCES:
+        assert sentence in desc["load"], sentence
+    for sentence in META_DOC_SENTENCES:
+        assert sentence in desc["meta"], sentence
