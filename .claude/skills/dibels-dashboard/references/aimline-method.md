@@ -334,13 +334,15 @@ gate:
 Two consequences. `expected_round_selection` exists so a view can say "wherever
 each cohort actually is" instead of hard-coding a number -- it reads `Current`
 on the latest round whose window has OPENED, partitioned by year, region and
-grade, and carries that round's label on every other row. A string, not a
-boolean, so one filter selection follows each region; the cost is that a round
-that is current somewhere is no longer selectable by number on this field, so
-"everyone's round 3" comes from `expected_round_number` or
-`expected_round_label`. And `expected_round_label` is load-bearing, NOT
-cosmetic: a filter on the bare round number silently mixes NJ students
-mid-first-half with Miami students in their second half.
+grade, and carries that round's label on every other row. Benchmark rows are
+`Current` only while their window is open (owner decision, 2026-09-29): a closed
+BOY left tagged `Current` blended its near-100% completion into the landing
+page's PM-round participation. A string, not a boolean, so one filter selection
+follows each region; the cost is that a round that is current somewhere is no
+longer selectable by number on this field, so "everyone's round 3" comes from
+`expected_round_number` or `expected_round_label`. And `expected_round_label` is
+load-bearing, NOT cosmetic: a filter on the bare round number silently mixes NJ
+students mid-first-half with Miami students in their second half.
 
 This is live: Miami produces rows in the extract. Do not "simplify" the label
 away on the grounds that round numbers look unique -- they only look unique in a
