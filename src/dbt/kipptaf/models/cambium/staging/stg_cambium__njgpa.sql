@@ -1,4 +1,3 @@
--- Cambium column names; int_pearson__all_assessments maps them to Pearson names.
 with
     union_relations as (
         {{
