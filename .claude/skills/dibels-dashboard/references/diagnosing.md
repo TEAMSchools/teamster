@@ -134,14 +134,13 @@ does not show them, check these before touching dbt. All three came up on
 - **A new extract column needs the extract recreated, not refreshed.**
   `benchmark_goal_gap` did not appear in the Data pane after a refresh; it
   appeared once the owner recreated the extract.
-- **The workbook filters `enroll_status = 0`, and Miami's past years read 2.**
-  The extract keeps 0, 2 and 3; the filter is on the Tableau sheets. Focus
-  closes each year's enrollment with a drop code, so AY2025 Aimline had 853 of
-  868 Miami students at 2 (541 of them enrolled in AY2026). Miami drops out of
-  every completed year until
-  [#5598](https://github.com/TEAMSchools/teamster/issues/5598) lands. The
-  current year is unaffected. It is not a workbook bug; do not widen the filter
-  to 2, which adds every NJ student who transferred out.
+- **The workbook filters `enroll_status = 0`, the student's status today.** The
+  extract keeps 0, 2 and 3; the filter is on the Tableau sheets. On a completed
+  year it keeps only students still enrolled, in every region; Miami's past
+  years follow the same rule since
+  [#5607](https://github.com/TEAMSchools/teamster/pull/5607). It is not a
+  workbook bug; do not widen the filter to 2, which adds every student who
+  transferred out.
 
 After any publish, render the dashboard with no `viewFilters` and read the
 filter bar. Desktop saves the filter state at publish time; a Region filter left
@@ -174,8 +173,9 @@ where
 
 Measured 2026-09-28, all regions: 336 students; 86, 192, 152, 60, 36 and 22. The
 render matched every tile. These counts drift without any code change, because
-`enroll_status` is the student's current status, and they will move again when
-#5598 brings Miami's AY2025 students back.
+`enroll_status` is the student's current status. #5607 also moved Miami's AY2025
+students to their current status, so re-measure before comparing with this
+baseline.
 
 ## SY2026-2027 header rename: null ids are a column move, not missing data
 

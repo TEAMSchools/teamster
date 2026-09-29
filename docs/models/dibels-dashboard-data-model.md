@@ -366,8 +366,9 @@ The Tableau workbook is the `literacy_dashboard` exposure in
     the BAN on the same page.
   - The Category Status Over Time line shows every round of one season, chosen
     by its own Trend Window control, not by the Admin Window filter.
-  - The workbook filters `enroll_status = 0`, so a completed year drops Miami;
-    see _Known issues_.
+  - The workbook filters `enroll_status = 0`, the student's status today, so a
+    completed year shows only students who are still enrolled; see _Known
+    issues_.
 
 #### BM branch
 
@@ -980,15 +981,16 @@ from `teamster-332318`.kipptaf_google_sheets.stg_google_sheets__dibels_foundatio
 group by academic_year, population
 ```
 
-### Miami's completed years drop out of the dashboard
+### A completed year shows only students who are still enrolled
 
-Focus closes each year's enrollment with a drop code, and the Focus enrollment
-roster maps any non-graduation drop code to `enroll_status` 2. The workbook
-filters `enroll_status = 0`, so Miami disappears from every completed year: on
-AY2025 Aimline, 853 of 868 Miami students read 2, though 541 of them are
-enrolled in AY2026. The current year is unaffected. The fix is upstream of this
-family and tracked in
-[#5598](https://github.com/TEAMSchools/teamster/issues/5598).
+`enroll_status` is the student's status today, copied onto every year's row, in
+every region. For Miami that holds since
+[#5607](https://github.com/TEAMSchools/teamster/pull/5607); before it, Focus
+drop codes put almost every Miami student at 2 on past years. The workbook
+filters `enroll_status = 0`, so a completed year keeps only students still
+enrolled today and drops everyone who has left since, in NJ and Miami alike. The
+current year is unaffected. Filtering past years on `is_enrolled_recent` instead
+is the follow-up #5607 names.
 
 ```sql
 select region, enroll_status, count(distinct student_number) as students,
