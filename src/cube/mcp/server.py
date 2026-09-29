@@ -290,6 +290,23 @@ def _with_default_timezone(query: dict[str, Any]) -> dict[str, Any]:
     return {**query, "timezone": DEFAULT_QUERY_TIMEZONE}
 
 
+EMPTY_RESULT_NOTE = (
+    "0 rows. The data may not exist for this slice, or your access may not "
+    "include it. Check which regions and schools come back before concluding "
+    "the data does not exist."
+)
+
+
+def _with_empty_result_note(payload: dict[str, Any]) -> dict[str, Any]:
+    """Add a note to a load result with an empty data array, so a zero is not
+    read as "no data exists"; leave any other payload (rows, errors, no data
+    key) unchanged."""
+    data = payload.get("data")
+    if isinstance(data, list) and not data:
+        return {**payload, "note": EMPTY_RESULT_NOTE}
+    return payload
+
+
 def _meta_scope_key(views: list[str] | None) -> str:
     """Distinguish a filtered fetch from the full `/meta` catalog in the cache
     key — a filtered call must never read or write the full catalog's cache
@@ -531,13 +548,14 @@ async def load(ctx: Context, query: dict[str, Any]) -> dict[str, Any]:
     explicit `timezone` only when wall-clock conversion is intended.
     """
     email = await _get_user_email(ctx)
-    return await _request(
+    result = await _request(
         "POST",
         "/load",
         json={"query": _with_default_timezone(query)},
         email=email,
         poll=True,
     )
+    return _with_empty_result_note(result)
 
 
 @mcp.tool()

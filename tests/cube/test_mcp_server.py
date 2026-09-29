@@ -548,3 +548,29 @@ def test_load_and_meta_docstrings_carry_the_drained_mechanics(
         assert sentence in desc["load"], sentence
     for sentence in META_DOC_SENTENCES:
         assert sentence in desc["meta"], sentence
+
+
+def test_empty_load_result_gets_a_note(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("AUTHKIT_DOMAIN", raising=False)
+    server = _load_server(monkeypatch)
+    monkeypatch.setenv("CUBE_USER_EMAIL", "engineer@apps.teamschools.org")
+
+    async def fake_request(*args: object, **kwargs: object) -> dict[str, Any]:
+        del args, kwargs
+        return {"data": [], "annotation": {}}
+
+    monkeypatch.setattr(server, "_request", fake_request)
+    out = asyncio.run(server.load(MagicMock(), {"measures": ["x.count"]}))
+    assert out["note"] == server.EMPTY_RESULT_NOTE
+    assert out["data"] == []
+
+
+def test_non_empty_and_non_result_payloads_are_untouched(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    server = _load_server(monkeypatch)
+    rows = {"data": [{"x.count": "3"}]}
+    assert "note" not in server._with_empty_result_note(dict(rows))
+    error = {"error": "Continue wait"}
+    assert server._with_empty_result_note(dict(error)) == error
+    assert server._with_empty_result_note({"data": None}) == {"data": None}
