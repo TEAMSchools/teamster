@@ -1,0 +1,70 @@
+from pathlib import Path
+
+import pytest
+import yaml
+
+# trunk-ignore(pyright/reportMissingImports): conftest.py puts the scripts folder on sys.path
+from publish_article import (
+    DEFAULT_PERMISSION_GROUP,
+    DEFAULT_USER_SEGMENT,
+    PublishError,
+    load_article,
+    save_state,
+)
+
+
+def write_article(tmp_path: Path, meta: dict, html: str = "<p>hi</p>") -> Path:
+    (tmp_path / "article.yml").write_text(yaml.safe_dump(meta))
+    (tmp_path / "article.html").write_text(html)
+    return tmp_path
+
+
+def test_load_applies_visibility_defaults(tmp_path):
+    d = write_article(tmp_path, {"title": "T", "section_id": 1, "author_id": 2})
+    a = load_article(d)
+    assert a.user_segment == DEFAULT_USER_SEGMENT
+    assert a.permission_group == DEFAULT_PERMISSION_GROUP
+    assert a.labels == []
+    assert a.article_id is None
+    assert a.attachments == {}
+    assert a.html == "<p>hi</p>"
+
+
+def test_load_refuses_without_author_id(tmp_path):
+    d = write_article(tmp_path, {"title": "T", "section_id": 1})
+    with pytest.raises(PublishError, match="author_id"):
+        load_article(d)
+
+
+def test_load_refuses_without_section_id(tmp_path):
+    d = write_article(tmp_path, {"title": "T", "author_id": 2})
+    with pytest.raises(PublishError, match="section_id"):
+        load_article(d)
+
+
+def test_load_refuses_without_html(tmp_path):
+    (tmp_path / "article.yml").write_text(
+        yaml.safe_dump({"title": "T", "section_id": 1, "author_id": 2})
+    )
+    with pytest.raises(PublishError, match="article.html"):
+        load_article(tmp_path)
+
+
+def test_save_state_round_trips_and_keeps_user_fields(tmp_path):
+    d = write_article(
+        tmp_path,
+        {"title": "T", "section_id": 1, "author_id": 2, "labels": ["x"]},
+    )
+    a = load_article(d)
+    a.article_id = 99
+    a.last_known_updated_at = "2026-09-29T00:00:00Z"
+    a.attachments["images/a.png"] = {"id": 5, "url": "u", "sha256": "h"}
+    save_state(a)
+    raw = yaml.safe_load((d / "article.yml").read_text())
+    assert raw["labels"] == ["x"]
+    assert raw["article_id"] == 99
+    assert raw["last_known_updated_at"] == "2026-09-29T00:00:00Z"
+    assert raw["attachments"]["images/a.png"]["id"] == 5
+    again = load_article(d)
+    assert again.article_id == 99
+    assert again.attachments == a.attachments

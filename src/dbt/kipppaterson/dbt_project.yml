@@ -53,6 +53,15 @@ data_tests:
           +enabled: false
         accepted_values_stg_cambium__eoc__subject___Algebra_I__Algebra_II__Geometry:
           +enabled: false
+  # The Pearson score models are frozen: Cambium replaced Pearson from Spring
+  # 2026, and kipptaf reads the last int_pearson__all_assessments table as
+  # history. Its test is disabled by generated name for the same reason as
+  # above.
+  pearson:
+    intermediate:
+      properties:
+        dbt_utils_unique_combination_of_columns_int_pearson__all_assessments_studenttestuuid:
+          +enabled: false
 
 vars:
   local_timezone: America/New_York
@@ -69,6 +78,10 @@ vars:
   pearson_state_assessment_relations:
     - int_pearson__njsla
     - int_pearson__njsla_science
+  # Paterson receives only the NJSLA file (stg_cambium__njgpa / _eoc are
+  # disabled), so int_cambium__all_assessments reads NJSLA alone.
+  cambium_state_assessment_relations:
+    - stg_cambium__njsla
 
 models:
   kipppaterson:
@@ -124,7 +137,17 @@ models:
         +enabled: false
   pearson:
     +materialized: table
+    # Frozen: the last prod tables stay as history (see data_tests above).
+    # Paterson's own int_pearson__njsla* remaps are disabled, with their tests,
+    # in models/pearson/intermediate/properties/.
+    intermediate:
+      int_pearson__all_assessments:
+        +enabled: false
     staging:
+      stg_pearson__njsla:
+        +enabled: false
+      stg_pearson__njsla_science:
+        +enabled: false
       stg_pearson__njgpa:
         +enabled: false
       stg_pearson__parcc:

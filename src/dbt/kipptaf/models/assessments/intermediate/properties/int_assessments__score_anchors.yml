@@ -75,7 +75,7 @@ models:
           the resolver matches.
         config:
           meta:
-            source_column: int_pearson__all_assessments.academic_year
+            source_column: int_assessments__state_nj_scores.academic_year
       - name: administration_period
         data_type: string
         description: >-
@@ -85,7 +85,7 @@ models:
           Outside Round) from `test_round`.
         config:
           meta:
-            source_column: int_pearson__all_assessments.administration_period
+            source_column: int_assessments__state_nj_scores.administration_period
       - name: subject_area
         data_type: string
         description: >-

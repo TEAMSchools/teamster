@@ -223,6 +223,9 @@ cells are not.
   `pip install`.
 - Ponytail yields to superpowers process skills. It governs the size of what
   gets built inside them, not whether they run.
+- executing-plans: a task's ledger line is not a stopping point. Run task-start
+  for the next task in the same turn; only the skill's four stop conditions end
+  the run.
 
 ## Compact Instructions
 
@@ -241,6 +244,10 @@ When summarizing the conversation, always preserve:
   verbatim error messages.
 - Dead ends already tried, gotchas discovered, and workarounds applied this
   session.
+- During plan execution (executing-plans or subagent-driven-development): the
+  plan file path, the ledger path, which tasks are complete, and that execution
+  continues through every remaining task without check-ins. The next step names
+  the remaining task range, not only the current task.
 
 Discard freely: full file contents already on disk, verbose tool output, and
 exploration that led nowhere (keep only the conclusion).

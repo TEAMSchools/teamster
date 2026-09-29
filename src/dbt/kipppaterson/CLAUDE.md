@@ -29,9 +29,13 @@ Endpoint-level notes:
   model keeps its tests, and they would scan a relation Paterson never builds.
   Quoted columns (`period`, `subject`) get a trailing underscore in the test
   name. Enable EOC when Paterson receives the file
-- `pearson` — `stg_pearson__njsla` and `stg_pearson__njsla_science` enabled;
-  `stg_pearson__njgpa`, `stg_pearson__parcc`, `stg_pearson__student_test_update`
-  disabled in `dbt_project.yml`
+- `pearson` — `stg_pearson__student_list_report` and
+  `int_pearson__student_list_report` only. The score models
+  (`stg_pearson__njsla*`, the local `int_pearson__njsla*` remaps and
+  `int_pearson__all_assessments`) are disabled with their tests, leaving the
+  last prod tables frozen as history for kipptaf. `stg_pearson__njgpa`,
+  `stg_pearson__parcc` and `stg_pearson__student_test_update` were never enabled
+  here
 - `amplify` — both `dds` and `mclass/api` disabled
 - `finalsite`
 - `titan` — `stg_titan__person_data` only; `stg_titan__income_form_data`
