@@ -55,12 +55,44 @@ next layer flips: `int_powerschool__gpnode` and
 `int_powerschool__gpprogress_grades` are tables per region, but their
 kipptaf-level unions are views.
 
+## How the plan tree is stored
+
+PowerSchool stores every grad plan as one table of nodes (`gpnode`). Each node
+has an `id`, a `parentid` pointing at the node above it, a `name`, and a credit
+capacity. A plan is four levels deep. Part of the HS Distinction Diploma:
+
+| Level           | id    | parentid | name                                  |
+| --------------- | ----- | -------- | ------------------------------------- |
+| Plan            | 15159 | (none)   | HS Distinction Diploma                |
+| Overall credits | 15160 | 15159    | Overall credits                       |
+| Discipline      | 15161 | 15160    | English                               |
+| Subject         | 15162 | 15161    | English 9                             |
+| Subject         | 15163 | 15161    | English 10                            |
+| Subject         | 15164 | 15161    | English 11                            |
+| Subject         | 15165 | 15161    | English 12                            |
+| Discipline      | 15176 | 15160    | World Language (no subjects under it) |
+| Discipline      | 15182 | 15160    | Elective (no subjects under it)       |
+
+`int_powerschool__gpnode` flattens the tree with four joins:
+
+1. Plan to overall credits: the plan (`parentid` is null) joins to the node
+   whose `parentid` is the plan's `id`.
+2. Overall credits to discipline: the same, one level down.
+3. Discipline to subject: the same again, as a left join, for disciplines that
+   split into subjects (English 9 to 12).
+4. A discipline with no subjects (World Language, Elective): the left join finds
+   nothing, so the discipline stands in as its own subject. In effect it joins
+   to itself, `id` to `id`, through `coalesce(subject, discipline)`.
+
+The ids above are from one plan version; every region and plan version has its
+own. Newark and Camden both follow this shape.
+
 ## Terms
 
 - **Grad plan** — PowerSchool's configured hierarchy of plan, discipline, and
   subject slots, each with a credit capacity a student must meet
-  (`int_powerschool__gpnode`). A subject with no separate sub-subjects re-uses
-  its discipline as its own subject.
+  (`int_powerschool__gpnode`). A discipline with no subjects under it re-uses
+  itself as its own subject. See _How the plan tree is stored_ below.
 - **Earned vs. Enrolled** — every row in the progress data is one or the other.
   Earned means a completed course, matched against the student's Y1 stored grade
   history. Enrolled means a course the student is currently taking this year,
