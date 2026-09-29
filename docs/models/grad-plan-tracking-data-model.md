@@ -34,7 +34,7 @@ flowchart LR
     sg[stg_powerschool__storedgrades] --> gpg
     fg[base_powerschool__final_grades] --> gpg
     sch[stg_powerschool__schools] --> gpg
-    gpnu --> gpg
+    gpni --> gpg
 
     gpg --> gpgu[int_powerschool__gpprogress_grades<br/>kipptaf union]
     enr[int_extracts__student_enrollments] --> rpt[rpt_gsheets__grad_plan_tracking]
@@ -92,12 +92,13 @@ own. Newark and Camden both follow this shape.
 - **Grad plan** — PowerSchool's configured hierarchy of plan, discipline, and
   subject slots, each with a credit capacity a student must meet
   (`int_powerschool__gpnode`). A discipline with no subjects under it re-uses
-  itself as its own subject. See _How the plan tree is stored_ below.
+  itself as its own subject. See _How the plan tree is stored_ above.
 - **Earned vs. Enrolled** — every row in the progress data is one or the other.
   Earned means a completed course, matched against the student's Y1 stored grade
   history. Enrolled means a course the student is currently taking this year,
-  matched against this year's current-term grades; its earned credit still
-  counts as zero until the course finishes with a passing grade.
+  matched against this year's current-term grades; it counts its credits as
+  earned right away, and drops to zero only while the student's current Y1 grade
+  is an F or blank.
 - **Data Capture** — PowerSchool's Graduation Plan Progress Report Data Capture
   routine. It is what recalculates a student's progress against their grad plan;
   PowerSchool does not do this automatically as students earn credits. See "What
@@ -138,10 +139,10 @@ to re-run PowerSchool's own routine, then refresh the sheet:
    it.
 
 Once PowerSchool has fresh progress data, the chain still has two more hops
-before the sheet is current. PowerSchool's own dlt sync lands the regional
-tables (`stg_powerschool__gpnode`, the `gpprogresssubject*` staging models,
-stored grades, and current-term grades) on its own schedule. From there, Dagster
-rebuilds the BigQuery tables: the per-region `stg_powerschool__gp*` and
+before the sheet is current. PowerSchool's own dlt sync lands the raw
+PowerSchool source tables (grad plan nodes and progress, stored grades, and
+current-term grades) on its own schedule. From there, Dagster rebuilds the
+BigQuery tables: the per-region `stg_powerschool__gp*` and
 `int_powerschool__gpprogress_grades` / `int_powerschool__gpnode` models, and
 their kipptaf-level table wrappers (`stg_powerschool__gpnode`,
 `…gpprogresssubject`, `…gpprogresssubjectenrolled`). Each rebuilds automatically
@@ -165,8 +166,9 @@ subject slot:
   capacities, from the grad plan structure;
 - one row per completed (Earned) course, with the letter grade, credit type, and
   credits earned, joined from the student's Y1 stored grades;
-- one row per currently enrolled (Enrolled) course this year, with credits
-  projected at zero until the course is passed, joined from current-term grades;
+- one row per currently enrolled (Enrolled) course this year, with its credits
+  counted as earned unless the current Y1 grade is an F or blank, joined from
+  current-term grades;
 - required, enrolled, requested, earned, and waived credit totals at the plan,
   discipline, and subject level.
 
@@ -184,8 +186,10 @@ branches and combines them:
   credits default to the stored grade's own credit hours.
 - **Enrolled**: the same node-to-subject join, but to
   `gpprogresssubjectenrolled`, then to the student's current-year, current-term
-  course record. Earned credits are the course's credit hours when the current
-  letter grade does not start with F, otherwise zero.
+  course record. Earned credits are the enrolled credits PowerSchool's Data
+  Capture recorded (`gpprogresssubjectenrolled.enrolledcredits`) when the
+  current Y1 letter grade does not start with F, otherwise zero. A blank grade
+  also gives zero.
 
 A row is flagged as a transfer grade when its stored grade's school name has no
 match among the district's own schools — meaning it was earned somewhere outside
@@ -291,6 +295,10 @@ owner.
   missing from those tabs until the cap was widened. Worth re-checking after any
   large enrollment push, since the same silent truncation can recur on any tab
   whose source outgrows its cap.
+- **The transfer-grade flag matches on school name.** A stored grade is flagged
+  as a transfer when its school name has no match in `stg_powerschool__schools`,
+  so a stored grade with a blank school name, or one from a district school that
+  has since been renamed, is also flagged as a transfer.
 
 ## Yearly upkeep
 
