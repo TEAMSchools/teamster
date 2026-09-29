@@ -6,6 +6,8 @@ models:
       int_pearson__all_assessments maps it to the shared NJ-assessment shape.
     config:
       materialized: table
+      meta:
+        contains_pii: true
     columns:
       - name: _dbt_source_project
         data_type: string

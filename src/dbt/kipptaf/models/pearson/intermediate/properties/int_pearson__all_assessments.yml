@@ -1,21 +1,19 @@
 models:
   - name: int_pearson__all_assessments
     description: >
-      Network-level union of state assessment results (PARCC, NJSLA, NJSLA
-      Science, NJGPA) enriched with student crosswalk lookups and standardized
-      metadata. NJGPA is dual-vendor -- Pearson through the Fall 2025
-      administration, Cambium TIDE starting Spring 2026 -- unioned into this
-      same shape. NJSLA, NJSLA Science and the Algebra I, Algebra II and
-      Geometry end-of-course tests are Cambium from Spring 2026 too. The model's
-      Pearson-only name is a known misnomer now that a second vendor feeds it; a
-      rename is pending. Pearson rows arrive already aligned from
-      int_pearson__all_assessments in the pearson package per district. Cambium
-      rows arrive in Cambium's own column names from stg_cambium__njsla,
-      stg_cambium__eoc and stg_cambium__njgpa, and this model maps them to the
-      Pearson names, aligned demographic labels, proficiency bands and
-      subject/test-code normalization. It drops Cambium rows whose test_status
-      is not 'completed', then repairs localstudentidentifier from the crosswalk
-      and casts the state id.
+      One row per student test event across the New Jersey state assessments
+      (PARCC, NJSLA, NJSLA Science, the Algebra I, Algebra II and Geometry
+      end-of-course tests, and NJGPA), in Pearson's column shape. Two vendors
+      feed it. Pearson history (through the Fall 2025 administration) arrives
+      already aligned, via source(), from int_pearson__all_assessments in the
+      Newark, Camden and Paterson district projects. Cambium TIDE results (from
+      Spring 2026) arrive in Cambium's own column names from stg_cambium__njsla,
+      stg_cambium__eoc and stg_cambium__njgpa; this model renames them to the
+      Pearson names and derives the aligned demographic labels, proficiency
+      bands, performance-level text and subject/test-code normalization. It
+      drops Cambium rows whose test_status is not 'completed', repairs
+      localstudentidentifier from stg_google_sheets__pearson__student_crosswalk
+      (joined on studenttestuuid), and casts statestudentidentifier to string.
 
       The test_status filter is the Cambium counterpart of the Pearson
       testscorecomplete convention. Cambium reports an incomplete attempt as a
@@ -48,13 +46,15 @@ models:
       - name: assessment_version
         data_type: string
         description: >-
-          Which version of the assessment produced the row, set as a literal by
-          each vendor's staging model. NJGPA splits into NJGPA for the retired
-          Pearson form and NJGPA-A for the Cambium adaptive form, which use
-          different score scales and therefore different cut scores. Every other
-          assessment repeats assessment_name, having only one version.
-          Graduation pathway cut scores join on this value, so a score is only
-          ever compared against the threshold set for its own scale.
+          Which version of the assessment produced the row. Pearson rows carry
+          the upstream value; on Cambium rows this model sets it. NJGPA splits
+          into NJGPA for the retired Pearson form and NJGPA-A for the Cambium
+          adaptive form, which use different score scales and therefore
+          different cut scores. Every other assessment repeats assessment_name
+          from both vendors, so Cambium NJSLA rows read 'NJSLA' and Cambium
+          science rows 'NJSLA Science'. Graduation pathway cut scores join on
+          this value, so a score is only ever compared against the threshold set
+          for its own scale.
         data_tests:
           - not_null:
               config:
@@ -69,10 +69,12 @@ models:
         data_type: string
         description: >-
           Program-lineage label ('state_nj_parcc' / '..._njsla' /
-          '..._njsla_science' / '..._njgpa') computed upstream. Marts hash it
-          into assessment_key. Tested here because union_relations null-fills a
-          column a relation forgot to supply: a null or unknown value means a
-          feeding relation lost its aligned columns.
+          '..._njsla_science' / '..._njgpa'). Pearson rows carry the upstream
+          value; Cambium rows get it here (end-of-course tests read
+          'state_nj_njsla'). Marts hash it into assessment_key. Tested here
+          because union_relations null-fills a column a relation forgot to
+          supply, so a null or unknown value means a feeding relation lost its
+          aligned columns.
         data_tests:
           - not_null:
               config:
@@ -90,8 +92,9 @@ models:
       - name: test_grade
         data_type: int64
         description: >-
-          Grade of the test form, parsed from assessmentgrade (NJSLA) or set
-          from the test code (NJGPA, always 11). NULL on end-of-course rows,
+          Grade of the test form. Pearson rows carry the upstream value. On
+          Cambium rows it is parsed from assessmentgrade (NJSLA) or set from the
+          test code (NJGPA, always 11), and it is NULL on end-of-course rows,
           whose forms have no grade. The tests cover Cambium rows only, where
           this model derives the value; a new Cambium grade label fails them.
         data_tests:
@@ -111,13 +114,16 @@ models:
 
       - name: _dbt_source_relation
         data_type: string
-        description: Source relation identifier from dbt_utils.union_relations.
+        description: >-
+          Relation the row came from, carried through from the district Pearson
+          model or the Cambium staging union. Contains 'cambium' on Cambium
+          rows, which the column tests use to scope themselves.
 
       - name: _dbt_source_project
         data_type: string
         description: >-
-          Dagster code-location identifier propagated from the staging union;
-          identifies the district source project (e.g. kippnewark).
+          District code location (e.g. kippnewark), derived in this model from
+          _dbt_source_relation.
 
       - name: academic_year
         data_type: int64
@@ -126,12 +132,19 @@ models:
       - name: americanindianoralaskanative
         data_type: string
         description: >
-          American Indian or Alaska Native race indicator from Pearson ('Y' or
-          null).
+          American Indian or Alaska Native race indicator as reported by the
+          vendor ('Y' when set).
+        config:
+          meta:
+            contains_pii: true
 
       - name: asian
         data_type: string
-        description: Asian race indicator from Pearson ('Y' or null).
+        description:
+          Asian race indicator as reported by the vendor ('Y' when set).
+        config:
+          meta:
+            contains_pii: true
 
       - name: assessment_name
         data_type: string
@@ -149,54 +162,77 @@ models:
 
       - name: assessmentyear
         data_type: string
-        description: Assessment year as reported by Pearson (string format).
+        description: Assessment year as reported by the vendor (string format).
 
       - name: test_date
         data_type: date
         description: >-
-          Date the student took the assessment (per-student testing date,
-          derived from the per-student online unit start datetime). Null for
-          legacy records that carry no recorded testing date.
+          Date the student took the assessment. Null for legacy records that
+          carry no recorded testing date.
 
       - name: blackorafricanamerican
         data_type: string
         description:
-          Black or African American race indicator from Pearson ('Y' or null).
+          Black or African American race indicator as reported by the vendor
+          ('Y' when set).
+        config:
+          meta:
+            contains_pii: true
 
       - name: discipline
         data_type: string
-        description: Subject discipline category (Math, ELA, Science, etc.).
+        description: Subject discipline category (Math, ELA or Science).
 
       - name: hispanicorlatinoethnicity
         data_type: string
         description:
-          Hispanic or Latino ethnicity indicator from Pearson ('Y' or null).
+          Hispanic or Latino ethnicity indicator as reported by the vendor ('Y'
+          when set).
+        config:
+          meta:
+            contains_pii: true
 
       - name: is_proficient
         data_type: boolean
-        description:
-          Whether the student scored at or above the proficiency threshold.
+        description: >-
+          Whether the student met the proficiency bar. On Cambium rows that is
+          level 4 or above for ELA and Math, level 3 or above for Science, and
+          level 2 (Graduation Ready) for NJGPA.
+        config:
+          meta:
+            contains_pii: true
 
       - name: is_bl_fb
         data_type: boolean
-        description: >
-          Whether the student scored at the Below or Far Below proficiency band.
+        description: >-
+          Whether the student scored in the two lowest performance levels (Below
+          or Far Below). NULL on Science and NJGPA rows.
+        config:
+          meta:
+            contains_pii: true
 
       - name: nativehawaiianorotherpacificislander
         data_type: string
         description: >
-          Native Hawaiian or Other Pacific Islander race indicator from Pearson
-          ('Y' or null).
+          Native Hawaiian or Other Pacific Islander race indicator as reported
+          by the vendor ('Y' when set).
+        config:
+          meta:
+            contains_pii: true
 
       - name: period
         data_type: string
         description: >
-          Testing period from Pearson (e.g. Spring, FallBlock); used to derive
-          admin and season. Spring is the only period officially reported.
+          Testing period as reported by the vendor (e.g. Spring, FallBlock);
+          admin and administration_period derive from it. Spring is the only
+          period officially reported.
 
       - name: firstname
         data_type: string
-        description: Student first name as reported by Pearson.
+        description: Student first name as reported by the vendor.
+        config:
+          meta:
+            contains_pii: true
 
       - name: gradelevelwhenassessed
         data_type: int64
@@ -205,88 +241,280 @@ models:
           grade-level tests. On the Algebra I, Algebra II and Geometry
           end-of-course tests, where test_grade is NULL, it is the only grade.
           NULL for NJGPA rows from Pearson, which did not send it.
+        config:
+          meta:
+            contains_pii: true
 
       - name: lastorsurname
         data_type: string
-        description: Student last name or surname as reported by Pearson.
+        description: Student last name or surname as reported by the vendor.
+        config:
+          meta:
+            contains_pii: true
 
       - name: subject
         data_type: string
         quote: true
         description:
-          Full subject name as reported by Pearson (e.g. English Language
-          Arts/Literacy, Mathematics).
+          Full subject name as reported by the vendor (e.g. English Language
+          Arts/Literacy, Mathematics, Algebra I).
 
       - name: subject_area
         data_type: string
         description: >
-          Subject area from the staging model, used for stacked reporting across
-          assessment programs.
+          Subject name used for stacked reporting across assessment programs. On
+          Cambium rows it is subject with 'English Language Arts/Literacy'
+          shortened to 'English Language Arts'.
 
       - name: module_code
         data_type: string
         description: >
-          Module code from the staging model, used as the assessment
-          administration grain identifier.
+          Test code used as the assessment administration grain identifier. On
+          Cambium rows it is testcode, with the science codes SC05, SC08 and
+          SC11 rewritten to SCI05, SCI08 and SCI11 to match Pearson.
 
       - name: administration_period
         data_type: string
         description: >
-          Testing administration period as reported by Pearson (e.g. Spring,
-          FallBlock).
+          Testing administration period. Pearson rows carry the upstream value;
+          on Cambium rows it is period with any value starting 'FALL' collapsed
+          to 'Fall'.
 
       - name: testcode
         data_type: string
-        description: Raw test code from Pearson (e.g. ELA05, SC08, ALG01).
+        description: Raw test code from the vendor (e.g. ELA05, SC08, ALG01).
 
       - name: studenttestuuid
         data_type: string
-        description:
-          Globally unique identifier for the student's test-taking event.
+        description: >-
+          Vendor identifier for the student's test-taking event; the join key to
+          the student crosswalk sheet.
 
       - name: testperformancelevel_text
         data_type: string
-        description:
-          Performance level label as reported by Pearson (e.g. 'Level 4').
+        description: >-
+          Performance level label, such as 'Met Expectations' or 'Graduation
+          Ready'. Cambium rows derive it here from testperformancelevel, on a
+          four-level scale for Science, five for ELA and Math, and two for
+          NJGPA.
+        config:
+          meta:
+            contains_pii: true
 
       - name: testperformancelevel
         data_type: int64
         description: Numeric performance level as reported by the vendor.
+        config:
+          meta:
+            contains_pii: true
 
       - name: testscalescore
         data_type: numeric
-        description: Student's raw scale score on the assessment.
+        description: Student's scale score on the assessment.
+        config:
+          meta:
+            contains_pii: true
 
       - name: testscorecomplete
         data_type: float64
         description: >-
           Score completeness indicator as reported by the vendor. Pearson set it
           to 1 on every row surviving the staging filter. Cambium does not
-          populate it, so it is NULL for all Cambium NJGPA rows; consumers must
+          populate it, so it is NULL on every Cambium row; consumers must
           coalesce rather than compare directly.
 
       - name: twoormoreraces
         data_type: string
-        description: Two or more races indicator from Pearson ('Y' or null).
+        description:
+          Two or more races indicator as reported by the vendor ('Y' when set).
+        config:
+          meta:
+            contains_pii: true
 
       - name: white
         data_type: string
-        description: White race indicator from Pearson ('Y' or null).
+        description:
+          White race indicator as reported by the vendor ('Y' when set).
+        config:
+          meta:
+            contains_pii: true
 
       - name: statestudentidentifier
         data_type: string
-        description: State student identifier cast to string.
+        description: State student identifier (NJ SID), cast to string.
+        config:
+          meta:
+            contains_pii: true
 
       - name: localstudentidentifier
         data_type: int64
         description: >
-          Local student identifier — resolved from the Pearson student crosswalk
-          when available, otherwise the raw value from the source file. Used to
-          work around incorrect studentidentifiers provided during testing.
+          Local student identifier (student_number), taken from the student
+          crosswalk sheet when the row's studenttestuuid matches, otherwise the
+          raw vendor value. Repairs ids reported wrong or left blank at testing.
+        config:
+          meta:
+            contains_pii: true
 
       - name: admin
         data_type: string
         quote: true
         description: >
-          Testing administration period with 'FallBlock' normalized to 'Fall';
-          reserved word alias for Tableau.
+          Testing administration period with any fall value (e.g. 'FallBlock')
+          normalized to 'Fall'; reserved word alias for Tableau.
+
+      - name: aligned_test_code
+        data_type: string
+        description: >-
+          Test code used across reporting and the comparison sheet. Equals
+          module_code, so the Cambium science codes read SCI05, SCI08 and SCI11.
+
+      - name: aligned_subject
+        data_type: string
+        description: >-
+          Subject label shared by both vendors; equals subject_area on Cambium
+          rows.
+
+      - name: aligned_performance_band_group
+        data_type: string
+        description: >-
+          Performance level as 'Lvl 1' to 'Lvl 5'. On Cambium NJGPA rows,
+          Graduation Ready reads 'Lvl 4' and Not Yet Graduation Ready 'Lvl 3'.
+        config:
+          meta:
+            contains_pii: true
+
+      - name: aligned_aggregate_ethnicity
+        data_type: string
+        description: >-
+          Race and ethnicity label matching the comparison sheet vocabulary
+          (African American, Asian, American Indian, Hispanic, Native Hawaiian,
+          Other for two or more races, White), 'Blank' when no flag is set.
+        config:
+          meta:
+            contains_pii: true
+
+      - name: race_ethnicity
+        data_type: string
+        description: >-
+          One-letter race and ethnicity code from the vendor flags, first match
+          wins in this order: two or more races (T), Hispanic (H), American
+          Indian (I), Asian (A), Black (B), Native Hawaiian (P), White (W).
+        config:
+          meta:
+            contains_pii: true
+
+      - name: studentwithdisabilities
+        data_type: string
+        description: >-
+          Disability status as reported by the vendor. 'IEP', '504', 'B' for
+          both, or 'N' for neither.
+        config:
+          meta:
+            contains_pii: true
+
+      - name: iep_status
+        data_type: string
+        description: >-
+          'Has IEP' when studentwithdisabilities is 'IEP' or 'B', otherwise 'No
+          IEP'.
+        config:
+          meta:
+            contains_pii: true
+
+      - name: aligned_iep_status
+        data_type: string
+        description: >-
+          'Students With Disabilities' when studentwithdisabilities is 'IEP' or
+          'B', otherwise 'Students Without Disabilities'.
+        config:
+          meta:
+            contains_pii: true
+
+      - name: is_504
+        data_type: boolean
+        description: >-
+          True when studentwithdisabilities is '504' or 'B'; false otherwise,
+          including when it is null.
+        config:
+          meta:
+            contains_pii: true
+
+      - name: englishlearnerel
+        data_type: string
+        description: >-
+          English learner indicator as reported by the vendor ('Y' when set).
+        config:
+          meta:
+            contains_pii: true
+
+      - name: lep_status
+        data_type: boolean
+        description: True when englishlearnerel is 'Y'.
+        config:
+          meta:
+            contains_pii: true
+
+      - name: aligned_ml_status
+        data_type: string
+        description: >-
+          'ML' when englishlearnerel is 'Y', otherwise 'Not ML'.
+        config:
+          meta:
+            contains_pii: true
+
+      - name: is_proficient_int
+        data_type: int64
+        description: is_proficient as 1 or 0, for summing.
+        config:
+          meta:
+            contains_pii: true
+
+      - name: is_approaching_int
+        data_type: int64
+        description: >-
+          1 when the student scored one level below proficient (level 3 for ELA
+          and Math, level 2 for Science), otherwise 0. Always 0 on Cambium NJGPA
+          rows.
+        config:
+          meta:
+            contains_pii: true
+
+      - name: is_below_int
+        data_type: int64
+        description: >-
+          1 when the student scored below the approaching level (below 3 for
+          ELA, Math and NJGPA, below 2 for Science), otherwise 0. Both NJGPA
+          levels read 1.
+        config:
+          meta:
+            contains_pii: true
+
+      - name: njsla_aggregated_proficiency
+        data_type: string
+        description: >-
+          'Below/Far Below' (levels 1-2), 'Approaching' (3) or 'At/Above' (4-5).
+          NULL on Science and NJGPA rows.
+        config:
+          meta:
+            contains_pii: true
+
+      - name: njsla_performance_band_group_label
+        data_type: string
+        description: >-
+          'Not Proficient (1-2)', 'Bubble (3)' or 'Proficient (4-5)'. NULL on
+          Science and NJGPA rows.
+        config:
+          meta:
+            contains_pii: true
+
+      - name: results_type
+        data_type: string
+        description: >-
+          Whether the row is an official score; 'Actual' on every row here. The
+          dashboard's preliminary-score rows are added downstream.
+
+      - name: district_state
+        data_type: string
+        description: >-
+          Network roll-up label for the row, 'KTAF NJ' on every New Jersey row.
