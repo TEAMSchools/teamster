@@ -168,7 +168,7 @@ def _shaped_rows(query: dict[str, Any]) -> dict[str, Any]:
         choices.append(pinned.get(short) or _DIMENSION_VALUES.get(short, ["A", "B"]))
     rows = []
     for i, combo in enumerate(itertools.product(*choices) if dims else [()]):
-        row = dict(zip(dims, combo))
+        row: dict[str, str] = dict(zip(dims, combo, strict=True))
         for j, m in enumerate(query.get("measures") or []):
             x = (seed >> (8 * ((i * 7 + j) % 24))) & 0xFF
             short = str(m).split(".")[-1]
