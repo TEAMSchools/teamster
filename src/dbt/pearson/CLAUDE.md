@@ -4,9 +4,9 @@ Source-system project for **Pearson** New Jersey state assessments — PARCC,
 NJSLA, NJSLA Science, and NJGPA — plus supplementary student-list and
 test-update feeds. Staging plus two intermediates.
 
-`kipppaterson` enables only the NJSLA models — see `dbt/kipppaterson/CLAUDE.md`.
-
-`int_pearson__all_assessments` unions the staging models named in the
-`pearson_state_assessment_relations` var and adds the aligned reporting columns.
-A district overrides the var to drop disabled models or substitute its own
-ID-remapped `int_pearson__*` models (kipppaterson does both).
+Cambium replaced Pearson from Spring 2026. Every district disables the score
+models (`stg_pearson__njgpa`, `_njsla`, `_njsla_science`, `_parcc` and
+`int_pearson__all_assessments`) and their tests. The last prod
+`int_pearson__all_assessments` tables stay in place as frozen history, and
+kipptaf reads them. The student-list report models (preliminary scores) and, in
+Newark and Camden, `stg_pearson__student_test_update` still build.

@@ -17,12 +17,14 @@ on:
       - Dockerfile
       - uv.lock
       - src/dbt/amplify/**
+      - src/dbt/cambium/**
       - src/dbt/deanslist/**
       - src/dbt/edplan/**
       - src/dbt/finalsite/**
       - src/dbt/kipppaterson/**
       - src/dbt/pearson/**
       - src/dbt/powerschool/**
+      - src/dbt/titan/**
       - src/teamster/code_locations/kipppaterson/**
       - src/teamster/core/**
       - src/teamster/libraries/amplify/**
