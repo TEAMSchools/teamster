@@ -13,3 +13,12 @@ sources:
                 - kipppaterson
                 - cambium
                 - stg_cambium__njsla
+      - name: int_cambium__all_assessments
+        config:
+          meta:
+            dagster:
+              group: cambium
+              asset_key:
+                - kipppaterson
+                - cambium
+                - int_cambium__all_assessments
