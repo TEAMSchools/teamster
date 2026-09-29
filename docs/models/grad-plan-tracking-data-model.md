@@ -187,9 +187,9 @@ branches and combines them:
 - **Enrolled**: the same node-to-subject join, but to
   `gpprogresssubjectenrolled`, then to the student's current-year, current-term
   course record. Earned credits are the enrolled credits PowerSchool's Data
-  Capture recorded (`gpprogresssubjectenrolled.enrolledcredits`) when the
-  current Y1 letter grade does not start with F, otherwise zero. A blank grade
-  also gives zero.
+  Capture recorded for the student's subject slot
+  (`gpprogresssubject.enrolledcredits`) when the current Y1 letter grade does
+  not start with F, otherwise zero. A blank grade also gives zero.
 
 A row is flagged as a transfer grade when its stored grade's school name has no
 match among the district's own schools — meaning it was earned somewhere outside
@@ -299,6 +299,32 @@ owner.
   as a transfer when its school name has no match in `stg_powerschool__schools`,
   so a stored grade with a blank school name, or one from a district school that
   has since been renamed, is also flagged as a transfer.
+- **Enrolled rows repeat the subject slot's total, so summing them double
+  counts.** An Enrolled row's `potential_credits` and `earned_credits` come from
+  the student's subject-slot progress row (`gpprogresssubject.enrolledcredits`),
+  not from the course. A student enrolled in two courses in one slot gets two
+  Enrolled rows, each carrying the slot's full total. As of 2026-09-29, about
+  one in ten Enrolled slots had more than one course row (up to four) in both
+  Newark and Camden. Read one Enrolled row per slot, or use the
+  `subject_enrolled_credits` column, rather than adding rows up. Query:
+
+  ```sql
+  with
+      slots as (
+          select _dbt_source_project, studentsdcid, subject_id, count(*) as n_rows,
+          from
+              `teamster-332318.kipptaf_powerschool.int_powerschool__gpprogress_grades`
+          where credit_status = 'Enrolled'
+          group by _dbt_source_project, studentsdcid, subject_id
+      )
+
+  select
+      _dbt_source_project,
+      count(*) as n_slots,
+      countif(n_rows > 1) as n_multi_course_slots,
+  from slots
+  group by _dbt_source_project
+  ```
 
 ## Yearly upkeep
 
