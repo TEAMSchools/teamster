@@ -67,7 +67,7 @@ with
             test_code as module_code,
             test_code as aligned_test_code,
 
-            cast(assessment_grade as int) as test_grade,
+            grade_level as test_grade,
             cast(null as int64) as grade_level_when_assessed,
 
             scale_score,

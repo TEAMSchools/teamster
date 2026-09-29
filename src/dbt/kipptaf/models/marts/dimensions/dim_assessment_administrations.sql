@@ -57,8 +57,8 @@ with
             academic_year,
             administration_window as administration_period,
             _dbt_source_project,
+            grade_level,
 
-            cast(assessment_grade as int) as grade_level,
             cast(null as date) as administered_date,
             cast(null as int64) as source_assessment_id,
             cast(null as string) as test_type,

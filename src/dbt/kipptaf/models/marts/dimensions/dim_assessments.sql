@@ -60,11 +60,11 @@ with
             assessment_subject as subject_area,
             discipline as scope,
             test_code as module_code,
+            grade_level,
 
             false as is_internal_assessment,
             'enrollment' as assessment_scope,
 
-            cast(assessment_grade as int) as grade_level,
             cast(null as int64) as source_assessment_id,
             cast(null as string) as module_type,
             cast(null as string) as combined_academic_subject,

@@ -36,12 +36,14 @@ models:
           that does exist. The two need different fixes -- create or link the
           record, versus correct a status. is_missing_finalsite_record is the
           mirror image, and fires when a student is currently enrolled in the
-          SIS but no Finalsite record exists for them under any cycle. Its rows
-          are the ones missing from the Progress to Goals student count, since
-          that view counts Finalsite records rather than SIS enrollments. The
-          anti-join is deliberately unscoped by year -- a record filed under an
-          adjacent cycle, or one with no status dates to unpivot, means
-          Finalsite does know the student and is not this problem.
+          SIS for the recruitment year but their Finalsite id (infosnap_id, or
+          the Finalsite contact crosswalk for Miami) is missing or matches no
+          Finalsite record under any cycle. These students are also missing from
+          the Progress to Goals student count, since that view counts Finalsite
+          records rather than SIS enrollments. The anti-join is deliberately
+          unscoped by year -- a record filed under an adjacent cycle, or one
+          with no status dates to unpivot, means Finalsite does know the student
+          and is not this problem.
       - name: flag_value
         data_type: bool
         description: >
@@ -57,7 +59,7 @@ models:
         description: The same cycle in hyphenated short form, e.g. "2026-27".
       - name: org
         data_type: string
-        description: Always "KTAF" (verified constant, network-wide).
+        description: Always "KTAF".
       - name: region
         data_type: string
         description: One of "Newark", "Camden", "Miami", "Paterson".
@@ -119,17 +121,26 @@ models:
           themselves). Compare against sis_grade_level. On
           is_missing_finalsite_record rows it carries the SIS grade level and
           always equals sis_grade_level.
+        config:
+          meta:
+            contains_pii: true
       - name: self_contained
         data_type: string
         description: >
           Finalsite self-contained special-education indicator. Source values
           are mixed ("Yes", "No", and a literal "false"), so treat it as a label
           rather than a clean boolean.
+        config:
+          meta:
+            contains_pii: true
       - name: enrollment_type
         data_type: string
         description: >
           "New" or "Returning" -- whether Finalsite is recruiting this student
           into the network or re-enrolling them.
+        config:
+          meta:
+            contains_pii: true
       - name: latest_status
         data_type: string
         description: >
@@ -139,22 +150,33 @@ models:
           is_missing_finalsite_record rows, along with enrollment_type,
           self_contained and finalsite_expected_enroll_status -- all four read
           only from Finalsite, and those rows have no Finalsite record.
+        config:
+          meta:
+            contains_pii: true
       - name: sis_enroll_status
         data_type: int64
         description: >
           Enrollment status from the matched SIS record (PowerSchool, or Focus
           for Miami) -- 0 currently enrolled, 2 withdrawn, 3 graduated. Null
-          means no SIS record matched, which is what is_missing_sis_record
-          flags. Named sis_ here to pair with finalsite_expected_enroll_status;
-          the upstream column on int_tableau__finalsite_student_scaffold is
-          still enroll_status, because the other two fresh_dashboard views
-          expose it under that name.
+          means no SIS record matched; is_missing_sis_record flags that case
+          when Finalsite says Enrolled. Always 0 on is_missing_finalsite_record
+          rows, which are drawn only from currently enrolled students. Called
+          enroll_status on int_tableau__finalsite_student_scaffold.
+        config:
+          meta:
+            contains_pii: true
       - name: sis_grade_level
         data_type: int64
         description: Grade level from the matched SIS enrollment record.
+        config:
+          meta:
+            contains_pii: true
       - name: sis_schoolid
         data_type: int64
         description: School id from the matched SIS enrollment record.
+        config:
+          meta:
+            contains_pii: true
       - name: sis_school
         data_type: string
         description: >
@@ -165,6 +187,9 @@ models:
           Miami. On is_missing_finalsite_record rows it is the abbreviation in
           every region, because those rows read
           int_extracts__student_enrollments directly.
+        config:
+          meta:
+            contains_pii: true
       - name: finalsite_expected_enroll_status
         data_type: int64
         description: >
@@ -182,3 +207,6 @@ models:
           finished enrolling (Accepted, Assigned School, Did Not Enroll, Campus
           Transfer Requested, Parent Declined, Enrollment In Progress). Which
           situation a row came from is still readable from latest_status.
+        config:
+          meta:
+            contains_pii: true
