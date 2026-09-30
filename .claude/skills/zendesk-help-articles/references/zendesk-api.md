@@ -79,3 +79,20 @@ throwaway draft, deleted afterward):
 - A re-run with no changes uploaded nothing: the body already pointed at the
   attachment's url. A stale `last_known_updated_at` aborted before any write
   with the overwrite guard message.
+
+### Verified live, scratchpad flow
+
+2026-09-30, against `teamschools.zendesk.com`:
+
+- `pull` of article 360035629314 matched all 10 `<img>` tags to attachment ids.
+  All 10 used the full `content_url` form; the locale-prefixed form was not
+  seen. `GET /help_center/articles/{id}/attachments.json` returned
+  `article_attachments`.
+- A throwaway draft (id 43864880854423, archived afterward) uploaded one image
+  on create, nothing on a same-folder re-run, and nothing when pulled into a
+  fresh folder and published unchanged, with no orphans.
+- A translation `PUT` between `pull` and publish changed the article's
+  `updated_at`, and the overwrite guard refused.
+- `DELETE /help_center/articles/{id}.json` returned 204 and archived the draft;
+  a later `GET` on it returned 404.
+- The checkout's `git status` was unchanged by the run.
