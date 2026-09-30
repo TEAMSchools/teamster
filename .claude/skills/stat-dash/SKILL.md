@@ -74,19 +74,20 @@ Four facts that cause most of the wrong answers here:
 
 Read the one file for your task.
 
-| Task                                                                    | Read                                                                                                                   |
-| ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| A student's score is missing, or attached to the wrong student          | [references/crosswalk.md](references/crosswalk.md)                                                                     |
-| The detector has a batch outstanding; generate or audit crosswalk rows  | [references/crosswalk.md](references/crosswalk.md)                                                                     |
-| After a Cambium load; a roster bar is part-colored; a grain test failed | [references/after-a-load.md](references/after-a-load.md)                                                               |
-| Enter interim comps from a screenshot, deck or press figure             | [references/comps-sheet.md](references/comps-sheet.md)                                                                 |
-| Replace interim comps with the official file                            | [references/comps-sheet.md](references/comps-sheet.md)                                                                 |
-| A comparison reads `false`, or a comp is missing                        | [references/comps-debugging.md](references/comps-debugging.md)                                                         |
-| Verify a comps-model change against production                          | [references/comps-debugging.md](references/comps-debugging.md)                                                         |
-| July rollover, or spring preliminary scores                             | [references/rollover.md](references/rollover.md)                                                                       |
-| Two views show different comp numbers for the same test                 | doc _The two comps paths_ (under _How the models work_), stop at `## Supporting models`                                |
-| Which view reads what, or what a view shows                             | doc _Dashboard outline_, stop at `## How the models work`                                                              |
-| How a model works, or a change to the NJ vendor mapping                 | doc _How the models work_ and _Supporting models_, stop at `## Inputs`; then _Decisions_ before proposing any redesign |
+| Task                                                                    | Read                                                                                                                            |
+| ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| A student's score is missing, or attached to the wrong student          | [references/crosswalk.md](references/crosswalk.md)                                                                              |
+| The detector has a batch outstanding; generate or audit crosswalk rows  | [references/crosswalk.md](references/crosswalk.md)                                                                              |
+| After a Cambium load; a roster bar is part-colored; a grain test failed | [references/after-a-load.md](references/after-a-load.md)                                                                        |
+| Enter interim comps from a screenshot, deck or press figure             | [references/comps-sheet.md](references/comps-sheet.md)                                                                          |
+| Load a year's official comps (NJDOE files, FLDOE downloads)             | [references/state-comps-files.md](references/state-comps-files.md)                                                              |
+| Replace interim comps with the official file                            | [references/state-comps-files.md](references/state-comps-files.md), then [references/comps-sheet.md](references/comps-sheet.md) |
+| A comparison reads `false`, or a comp is missing                        | [references/comps-debugging.md](references/comps-debugging.md)                                                                  |
+| Verify a comps-model change against production                          | [references/comps-debugging.md](references/comps-debugging.md)                                                                  |
+| July rollover, or spring preliminary scores                             | [references/rollover.md](references/rollover.md)                                                                                |
+| Two views show different comp numbers for the same test                 | doc _The two comps paths_ (under _How the models work_), stop at `## Supporting models`                                         |
+| Which view reads what, or what a view shows                             | doc _Dashboard outline_, stop at `## How the models work`                                                                       |
+| How a model works, or a change to the NJ vendor mapping                 | doc _How the models work_ and _Supporting models_, stop at `## Inputs`; then _Decisions_ before proposing any redesign          |
 
 ## Gotchas
 
@@ -109,3 +110,7 @@ Read the one file for your task.
   crosswalk sheet row through the compiled tiered matcher and prints counts;
   exits 1 on any disagreement. Procedure in
   [references/crosswalk.md](references/crosswalk.md).
+- [scripts/build_nj_comps.py](scripts/build_nj_comps.py) and
+  [scripts/build_fl_comps.py](scripts/build_fl_comps.py): build a year's comps
+  sheet rows from the NJDOE and FLDOE files. Procedure in
+  [references/state-comps-files.md](references/state-comps-files.md).
