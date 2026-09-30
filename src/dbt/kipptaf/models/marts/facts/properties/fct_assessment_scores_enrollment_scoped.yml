@@ -190,7 +190,8 @@ models:
       - name: percent_correct
         data_type: numeric
         description: >-
-          Percent of questions answered correctly. Null for state assessments.
+          Percent of questions answered correctly. Illuminate only; null for
+          every other source.
 
       - name: national_percentile
         data_type: numeric
@@ -264,8 +265,8 @@ models:
         description: >-
           Illuminate-only flag. TRUE when a K-8 student sat a
           replacement-curriculum assessment off their enrolled grade level. Null
-          for all non-Illuminate sources (state and vendor), which have no
-          replacement-curriculum concept.
+          for every other source (the state tests and the i-Ready, DIBELS and
+          STAR diagnostics), which have no replacement-curriculum concept.
 
       - name: performance_band_label_number
         data_type: numeric

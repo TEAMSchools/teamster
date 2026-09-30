@@ -292,18 +292,29 @@ def _with_default_timezone(query: dict[str, Any]) -> dict[str, Any]:
 
 EMPTY_RESULT_NOTE = (
     "0 rows. The data may not exist for this slice, or your access may not "
-    "include it. Check which regions and schools come back before concluding "
-    "the data does not exist."
+    "include it. Before concluding it does not exist, re-run without the "
+    "narrowing filter, grouped by region or school, and check the filter values "
+    "against the values the member's `meta` description lists."
 )
 
 
 def _with_empty_result_note(payload: dict[str, Any]) -> dict[str, Any]:
     """Add a note to a load result with an empty data array, so a zero is not
-    read as "no data exists"; leave any other payload (rows, errors, no data
-    key) unchanged."""
+    read as "no data exists". A multi-query response (`results`, e.g.
+    compareDateRange) gets the note on each empty result. Any other payload
+    (rows, errors, no data key) is returned unchanged."""
     data = payload.get("data")
     if isinstance(data, list) and not data:
         return {**payload, "note": EMPTY_RESULT_NOTE}
+    results = payload.get("results")
+    if isinstance(results, list):
+        return {
+            **payload,
+            "results": [
+                _with_empty_result_note(r) if isinstance(r, dict) else r
+                for r in results
+            ],
+        }
     return payload
 
 

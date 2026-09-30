@@ -1,5 +1,6 @@
 """Cube schema invariants — cube/view names carry no warehouse prefix."""
 
+import functools
 import json
 import pathlib
 import re
@@ -253,15 +254,21 @@ def _resolve_member(cubes: dict[str, dict], cube_name: str, member: str) -> dict
     return None
 
 
-def _dbt_column(model: str, column: str) -> dict:
+@functools.cache
+def _dbt_columns() -> dict[tuple[str, str], dict]:
+    index: dict[tuple[str, str], dict] = {}
     for path in DBT_MODELS_DIR.rglob("*.yml"):
         doc = yaml.safe_load(path.read_text()) or {}
         for m in doc.get("models", []) or []:
-            if m.get("name") == model:
-                for c in m.get("columns", []):
-                    if c.get("name") == column:
-                        return c
-    raise AssertionError(f"dbt column {model}.{column} not found")
+            for c in m.get("columns", []) or []:
+                index[(m["name"], c["name"])] = c
+    return index
+
+
+def _dbt_column(model: str, column: str) -> dict:
+    found = _dbt_columns().get((model, column))
+    assert found is not None, f"dbt column {model}.{column} not found"
+    return found
 
 
 def _view_override_texts(view: dict) -> list[tuple[str, str]]:
@@ -372,6 +379,38 @@ def test_view_overrides_do_not_hide_cube_ai_context() -> None:
     assert not hidden, "overrides hide a cube-level ai_context:\n" + "\n".join(hidden)
 
 
+def _exposed_name(block: dict, member: str) -> str:
+    if block.get("prefix"):
+        return f"{str(block['join_path']).split('.')[-1].strip()}_{member}"
+    return member
+
+
+def test_grade_band_points_to_grade_level_only_where_it_exists() -> None:
+    """locations is shared with staff_directory, which has no grade_level, so
+    the pointer lives in per-view overrides, not on the cube member."""
+    cubes = _cube_docs()
+    base = _norm(
+        (_members(cubes["locations"])["grade_band"].get("meta") or {}).get("ai_context")
+    )
+    wrong: list[str] = []
+    for view_name, view in _view_docs().items():
+        names = {_include_name(i) for b in view.get("cubes", []) for i in b["includes"]}
+        for block in view.get("cubes", []):
+            if not str(block["join_path"]).strip().endswith("locations"):
+                continue
+            for inc in block["includes"]:
+                if _include_name(inc) != "grade_band":
+                    continue
+                text = base
+                if isinstance(inc, dict) and "meta" in inc:
+                    text = _norm(inc["meta"].get("ai_context"))
+                if ("grade_level" in names) != ("use grade_level" in text):
+                    wrong.append(view_name)
+    assert not wrong, "grade_band pointer to grade_level is wrong in: " + ", ".join(
+        wrong
+    )
+
+
 _COMPILER = (
     REPO_ROOT / "src" / "cube" / "node_modules" / "@cubejs-backend" / "schema-compiler"
 )
@@ -394,29 +433,75 @@ def test_model_compiles_with_cube() -> None:
         check=False,
     )
     assert out.returncode == 0, out.stderr[-2000:]
-    names = {c["name"] for c in json.loads(out.stdout)["cubes"]}
-    assert "student_assessment_scores_view" in names
+    compiled = {c["name"]: c for c in json.loads(out.stdout)["cubes"]}
+    assert "student_assessment_scores_view" in compiled
+
+    # Every YAML override must land on its member as aiContext, the key REST
+    # /meta serves overrides under.
+    misplaced: list[str] = []
+    for view_name, view in _view_docs().items():
+        members = {
+            m["name"]: m
+            for m in compiled[view_name]["dimensions"] + compiled[view_name]["measures"]
+        }
+        for block in view.get("cubes", []):
+            for inc in block.get("includes", []) or []:
+                if not isinstance(inc, dict) or "meta" not in inc:
+                    continue
+                name = f"{view_name}.{_exposed_name(block, inc['name'])}"
+                got = (members.get(name, {}).get("meta") or {}).get("aiContext")
+                if _norm(got) != _norm(inc["meta"].get("ai_context")):
+                    misplaced.append(name)
+    assert not misplaced, "overrides not served as aiContext:\n" + "\n".join(misplaced)
 
 
-# --- Scores cube dimensions (Task 2) ---------------------------------------
+_SCORES_FACT = "fct_assessment_scores_enrollment_scoped"
+
 TWINS.update(
     {
-        ("student_assessment_scores", c): ("fct_assessment_scores_enrollment_scoped", c)
-        for c in [
-            "response_type",
-            "response_type_code",
-            "response_type_description",
-            "response_type_root_description",
-            "performance_band_label_number",
-            "proficiency_level",
-            "is_mastery",
-            "scale_score",
-            "enrollment_resolution",
-        ]
+        **{
+            ("student_assessment_scores", c): (_SCORES_FACT, c)
+            for c in [
+                "response_type",
+                "response_type_code",
+                "response_type_description",
+                "response_type_root_description",
+                "performance_band_label_number",
+                "proficiency_level",
+                "is_mastery",
+                "scale_score",
+                "percent_correct",
+                "is_replacement",
+                "enrollment_resolution",
+            ]
+        },
+        ("student_assessments", "assessment_type"): ("dim_assessments", "type"),
+        **{
+            ("student_assessments", c): ("dim_assessments", c)
+            for c in [
+                "is_internal_assessment",
+                "module_type",
+                "module_code",
+                "academic_subject",
+                "grade_level_tested",
+            ]
+        },
+        ("student_assessment_administrations", "administration_period"): (
+            "dim_assessment_administrations",
+            "administration_period",
+        ),
+        ("student_assessment_administrations", "source_assessment_id"): (
+            "dim_assessment_administrations",
+            "source_assessment_id",
+        ),
+        ("locations", "grade_band"): ("dim_locations", "grade_band"),
+        ("courses", "is_foundations"): ("dim_courses", "is_foundations"),
     }
 )
+
 PHRASES.update(
     {
+        # Scores cube dimensions
         "student_assessment_scores.response_type": [
             "not_taken",
             "strand or domain rollup",
@@ -443,6 +528,8 @@ PHRASES.update(
             "Tested Out",
             "Graduation Ready",
             "Tier-movement rates are not comparable",
+            "filter it with notSet",
+            "no verdict nearly all carry Tested Out",
         ],
         "student_assessment_scores.is_mastery": [
             "Early On is a looser bar",
@@ -453,18 +540,19 @@ PHRASES.update(
             "compresses at higher grades",
             "not a percent of the BOY score",
         ],
+        "student_assessment_scores.percent_correct": [
+            "Illuminate only; null for every other source",
+        ],
+        "student_assessment_scores.is_replacement": ["i-Ready, DIBELS and STAR"],
         "student_assessment_scores.enrollment_resolution": [
             "active on the test date",
             "Filter to subject_section",
         ],
-        "student_assessment_scores.date_taken": ["date_day and academic_year"],
-    }
-)
-
-
-# --- Scores cube measures (Task 3) -------------------------------------------
-PHRASES.update(
-    {
+        "student_assessment_scores.date_taken": [
+            "date_day and academic_year",
+            "not to find the most recent diagnostic",
+        ],
+        # Scores cube measures
         "student_assessment_scores.count_assigned": [
             "widest of 3 nested counts",
             "use count_taken",
@@ -488,39 +576,30 @@ PHRASES.update(
         "student_assessment_scores.count_students": [
             "has timed out at standard grain",
             "count_taken",
+            "report it as assessments taken, not students",
         ],
         "student_assessment_scores.count_assessments": [
             "not sittings",
             "Illuminate only",
             "thin base",
         ],
+        "student_assessment_scores.avg_percent_correct": [
+            "Illuminate only; null for every other source",
+        ],
+        "student_assessment_scores._count_scale_score": [
+            "every source except Illuminate",
+        ],
         "student_assessment_scores.pct_proficient_formative": [
             "about a third of module-coded Illuminate scores",
             'Not "all internal checkpoints"',
         ],
-    }
-)
-
-
-# --- Assessments cube (Task 4) -----------------------------------------------
-TWINS.update(
-    {
-        ("student_assessments", "assessment_type"): ("dim_assessments", "type"),
-        **{
-            ("student_assessments", c): ("dim_assessments", c)
-            for c in [
-                "is_internal_assessment",
-                "module_type",
-                "module_code",
-                "academic_subject",
-                "grade_level_tested",
-            ]
-        },
-    }
-)
-PHRASES.update(
-    {
-        "student_assessments.assessment_type": ["computer-adaptive", "select a source"],
+        # Assessments cube
+        "student_assessments.assessment_type": [
+            "computer-adaptive",
+            "select a source",
+            "college (SAT, ACT and PSAT, Official and Practice)",
+            "carry no scores on this view today",
+        ],
         "student_assessments.is_internal_assessment": [
             "Illuminate (KIPP-authored interims) only",
             "Filter assessment_type instead",
@@ -545,32 +624,13 @@ PHRASES.update(
             "end-of-course",
             "filter grade_level instead",
         ],
-    }
-)
-
-
-# --- Administrations and shared cubes (Task 5) ------------------------------
-TWINS.update(
-    {
-        ("student_assessment_administrations", "administration_period"): (
-            "dim_assessment_administrations",
-            "administration_period",
-        ),
-        ("student_assessment_administrations", "source_assessment_id"): (
-            "dim_assessment_administrations",
-            "source_assessment_id",
-        ),
-        ("locations", "grade_band"): ("dim_locations", "grade_band"),
-        ("courses", "is_foundations"): ("dim_courses", "is_foundations"),
-    }
-)
-PHRASES.update(
-    {
+        # Administrations and shared cubes
         "student_assessment_administrations.administration_period": [
             "Outside Round",
             "FL end-of-course and science: PM3",
-            "not the max date_taken",
             "use MOY",
+            "never sort by date_taken",
+            "Null for Illuminate and AP",
         ],
         "student_assessment_administrations.source_assessment_id": [
             "Illuminate only; null for every other source",
@@ -578,57 +638,23 @@ PHRASES.update(
         ],
         "locations.grade_band": [
             "a school attribute, not a student's grade",
-            "use grade_level",
+            "A grade_band filter is a school filter",
         ],
         "courses.is_foundations": [
             "not a record of intervention services delivered",
         ],
-    }
-)
-
-
-# --- The assessment view (Task 6) --------------------------------------------
-PHRASES.update(
-    {
+        # The assessment view
         "student_assessment_scores_view": [
             "Enrollment-scoped",
             "group covers Illuminate, i-Ready and DIBELS",
             "There is no growth measure",
             "calibration difference",
             "which sitting counts is an open decision",
+            "Repeat sittings inflate pct_proficient and count_scored",
             "release lag",
             "spiral review",
             "Resolve a name against staff_directory",
             "The only intervention signal on this view",
         ],
     }
-)
-
-
-# --- Eval revision round 1 (Task 13) -----------------------------------------
-PHRASES["student_assessment_scores.proficiency_level"].append("filter it with notSet")
-PHRASES["student_assessment_administrations.administration_period"].append(
-    "never sort by date_taken"
-)
-PHRASES["student_assessment_scores.date_taken"] = PHRASES.get(
-    "student_assessment_scores.date_taken", []
-) + ["not to find the most recent diagnostic"]
-# Round 1 reworded "not the max date_taken" as "never sort by date_taken".
-PHRASES["student_assessment_administrations.administration_period"].remove(
-    "not the max date_taken"
-)
-
-
-# --- Final review fixes -------------------------------------------------------
-PHRASES["student_assessment_scores.proficiency_level"].append(
-    "DIBELS rows with no verdict carry Tested Out"
-)
-PHRASES["student_assessment_scores.count_students"].append(
-    "report it as assessments taken, not students"
-)
-PHRASES["student_assessment_administrations.administration_period"].append(
-    "Null for Illuminate and AP"
-)
-PHRASES["student_assessments.assessment_type"].append(
-    "college (SAT, ACT and PSAT, Official and Practice)"
 )

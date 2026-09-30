@@ -13,6 +13,11 @@ import pytest
 
 SCRIPT_PATH = Path(__file__).resolve().parents[2] / "src" / "cube" / "mcp" / "server.py"
 
+sys.path.insert(0, str(SCRIPT_PATH.parent / "eval"))
+
+# trunk-ignore(pyright/reportMissingImports): eval modules load from src/cube/mcp/eval via sys.path
+import arms  # noqa: E402
+
 
 def _load_server(monkeypatch: pytest.MonkeyPatch) -> ModuleType:
     """Load src/cube/mcp/server.py under sys.modules['cube_mcp_server'].
@@ -518,22 +523,6 @@ def test_load_and_sql_send_utc_timezone_by_default(
     assert sent[2]["json"]["query"]["timezone"] == "America/New_York"
 
 
-LOAD_DOC_SENTENCES = [
-    '`equals "null"` matches the literal string and returns zero rows; filter a'
-    " null with `notSet`.",
-    "A query with no measure groups by its dimensions, so identical rows collapse"
-    " into one; add a count or the primary key to see every row.",
-    "Student views return only the schools the user can access; before describing"
-    " a result as network-wide, check which regions or schools it covers.",
-]
-META_DOC_SENTENCES = [
-    "Refresh before concluding a member is missing.",
-    "Members may carry `meta.ai_context` (`aiContext` on some view-specific"
-    " members): usage rules written for you. Read and follow a member's"
-    " `ai_context` before building a query that uses it.",
-]
-
-
 def _tool_descriptions(server: ModuleType) -> dict[str, str]:
     tools = asyncio.run(server.mcp.list_tools())
     return {t.name: " ".join((t.description or "").split()) for t in tools}
@@ -544,9 +533,9 @@ def test_load_and_meta_docstrings_carry_the_drained_mechanics(
 ) -> None:
     server = _load_server(monkeypatch)
     desc = _tool_descriptions(server)
-    for sentence in LOAD_DOC_SENTENCES:
+    for sentence in arms.NEW_LOAD_SENTENCES:
         assert sentence in desc["load"], sentence
-    for sentence in META_DOC_SENTENCES:
+    for sentence in arms.NEW_META_SENTENCES:
         assert sentence in desc["meta"], sentence
 
 
@@ -563,6 +552,19 @@ def test_empty_load_result_gets_a_note(monkeypatch: pytest.MonkeyPatch) -> None:
     out = asyncio.run(server.load(MagicMock(), {"measures": ["x.count"]}))
     assert out["note"] == server.EMPTY_RESULT_NOTE
     assert out["data"] == []
+    # The check it asks for must be runnable when nothing came back.
+    assert "re-run without the narrowing filter" in server.EMPTY_RESULT_NOTE
+
+
+def test_multi_query_results_get_the_note_per_empty_result(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    server = _load_server(monkeypatch)
+    payload = {"results": [{"data": []}, {"data": [{"x.count": "3"}]}]}
+    out = server._with_empty_result_note(payload)
+    assert out["results"][0]["note"] == server.EMPTY_RESULT_NOTE
+    assert "note" not in out["results"][1]
+    assert "note" not in out
 
 
 def test_non_empty_and_non_result_payloads_are_untouched(

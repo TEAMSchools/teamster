@@ -179,9 +179,10 @@ leadership:
   assessments AppSheet app, not a policy one; until it is answered, do not
   expand the codes
 
-Some members also name a narrower open question in their `meta` text: for
-example, `academic_subject` on K-2 Text Study, and the view on which repeat
-i-Ready sitting counts. Flag them the same way when you hit one.
+Some members also name an open question in their `meta` text. For example,
+`academic_subject` says "which labels count as 'math' or 'ELA' across sources is
+an open decision", and the view says "which sitting counts is an open decision".
+Flag them the same way when you hit one.
 
 ## Modeling, projections, and deliverables
 

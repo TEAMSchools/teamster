@@ -99,8 +99,9 @@ cubes:
             one label spelling; group by performance_band_label_number there.
             For STAR rows with no proficiency level, filter it with notSet;
             equals "null" matches the literal string and returns zero rows.
-            DIBELS rows with no verdict carry Tested Out here, not null. To find
-            every row with no verdict, filter is_mastery with notSet.
+            DIBELS rows with no verdict nearly all carry Tested Out here, not
+            null. To find every row with no verdict, filter is_mastery with
+            notSet.
 
       - name: performance_band_label_number
         description: >-
@@ -158,7 +159,9 @@ cubes:
             those norms are not in this view.
 
       - name: percent_correct
-        description: Percent correct. Null for state assessments.
+        description: >-
+          Percent of questions answered correctly. Illuminate only; null for
+          every other source.
         sql: percent_correct
         type: number
         public: true
@@ -223,8 +226,8 @@ cubes:
         description: >-
           Illuminate-only flag. TRUE when a K-8 student sat a
           replacement-curriculum assessment off their enrolled grade level. Null
-          for all non-Illuminate sources (state and vendor: iReady, DIBELS,
-          STAR), which have no replacement-curriculum concept.
+          for every other source (the state tests and the i-Ready, DIBELS and
+          STAR diagnostics), which have no replacement-curriculum concept.
         sql: is_replacement
         type: boolean
         public: true
@@ -302,6 +305,10 @@ cubes:
           - sql: "{student_assessments.assessment_key} IS NOT NULL"
           - sql: "{regions.region_key} IS NOT NULL"
 
+      # Exact count_distinct: non-additive, so proficiency_rollup cannot serve
+      # it and every query using it reads the fact. Measured 2026-09-30 at
+      # standard grain (one year, Illuminate, by response_type_code): 7.5s,
+      # well inside the MCP deadline, so it carries no timeout caveat.
       - name: count_assessments
         description: >-
           Distinct Illuminate assessments in the filtered set — not sittings,
@@ -392,8 +399,9 @@ cubes:
           Grain: recomputes at any query grain, but meaningful only within a
           single subject/standard — pooling percent-correct across assessments
           is a silent-failure trap (numerically valid, semantically
-          meaningless). Average percent correct, internal-effective (null for
-          state), built from additive primitives so pre-aggregations roll it up.
+          meaningless). Average percent correct. Illuminate only; null for every
+          other source. Built from additive primitives so pre-aggregations roll
+          it up.
         sql: "{_sum_percent_correct} / NULLIF({_count_percent_correct}, 0)"
         type: number
         public: true
@@ -408,8 +416,8 @@ cubes:
 
       - name: _count_scale_score
         description: >-
-          Count of rows with a non-null scale_score (state scores). Building
-          block for avg_scale_score.
+          Count of rows with a non-null scale_score (every source except
+          Illuminate). Building block for avg_scale_score.
         type: count
         public: false
         filters:

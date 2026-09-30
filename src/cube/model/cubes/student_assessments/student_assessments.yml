@@ -41,24 +41,25 @@ cubes:
 
       - name: assessment_type
         description: >-
-          Source-system category. Values that currently carry scores in the
-          enrollment-scoped scores fact: illuminate (internal interims), iready,
-          dibels, star, and the state assessments state_nj_njsla,
-          state_nj_njsla_science, state_nj_njgpa, state_fl_fast,
-          state_fl_science, state_fl_eoc. Values with no scores there today:
-          college (SAT, ACT and PSAT, Official and Practice), ap,
-          state_nj_parcc, state_fl_fsa, and the _unknown fallbacks. Treat both
-          lists as current, not closed. From spring 2026, NJSLA and NJGPA are
-          computer-adaptive, and no field separates adaptive from fixed-form
-          scores. NJSLA Science did not change.
+          Source-system category — illuminate (KIPP-authored internal interims);
+          iready, dibels and star (vendor diagnostics); college (SAT, ACT and
+          PSAT, Official and Practice); ap; the NJ state tests state_nj_njsla,
+          state_nj_njsla_science, state_nj_njgpa and state_nj_parcc; the FL
+          state tests state_fl_fast, state_fl_science, state_fl_eoc and
+          state_fl_fsa; and the _unknown fallbacks. An open list. From spring
+          2026, NJSLA and NJGPA are computer-adaptive, and no field separates
+          adaptive from fixed-form scores. NJSLA Science did not change.
         sql: "{CUBE}.`type`"
         type: string
         public: true
         meta:
           ai_context: >-
-            Use this member to select a source. Flag any NJSLA or NJGPA
-            comparison that crosses spring 2026 as possibly comparing 2 scales;
-            never present that trend as settled.
+            Use this member to select a source. college, ap, state_nj_parcc,
+            state_fl_fsa and the _unknown fallbacks carry no scores on this view
+            today, so zero rows for them is coverage, not a failure; treat that
+            list as current, not closed. Flag any NJSLA or NJGPA comparison that
+            crosses spring 2026 as possibly comparing 2 scales; never present
+            that trend as settled.
 
       - name: category
         description: >-

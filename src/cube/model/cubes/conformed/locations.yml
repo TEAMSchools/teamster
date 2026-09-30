@@ -44,9 +44,10 @@ cubes:
         type: string
         public: true
         meta:
+          # Shared with staff_directory, which has no grade_level; the student
+          # views add the grade_level pointer in their own overrides.
           ai_context: >-
-            A grade_band filter is a school filter. For a student's grade, use
-            grade_level.
+            A grade_band filter is a school filter.
 
       - name: campus
         description: Physical campus name. Multiple schools may share a campus.

@@ -149,7 +149,11 @@ views:
           - location_name
           - abbreviation
           - region_key
-          - grade_band
+          - name: grade_band
+            meta:
+              ai_context: >-
+                A grade_band filter is a school filter. For a student's grade,
+                use grade_level.
           - campus
           - city
 
@@ -177,8 +181,9 @@ views:
         calibration difference until shown otherwise: report both rates side by
         side and flag it rather than presenting an achievement gap. Any growth
         figure is analyst-built; say so. Students can sit a diagnostic more than
-        once in a window, mostly i-Ready; de-duplicate repeat sittings before
-        any student-level count, and since which sitting counts is an open
+        once in a window, mostly i-Ready. Repeat sittings inflate pct_proficient
+        and count_scored (count_students is already distinct); de-duplicate them
+        before a student-level rate, and since which sitting counts is an open
         decision, say which you kept. A missing current-year state result is a
         release lag, not a defect. Query this view, not upstream i-Ready tables,
         which carry re-pull duplicates. A CCSS code's own grade can differ from
