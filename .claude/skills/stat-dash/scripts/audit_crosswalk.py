@@ -12,6 +12,7 @@ It reads the sheet external under ADC and prints aggregates only.
 import re
 import sys
 from collections import Counter
+from pathlib import Path
 
 from google.cloud import bigquery
 
@@ -57,7 +58,7 @@ left join m on xw.Student_Test_UUID = m.student_test_uuid
 
 
 def main(argv: list[str]) -> int:
-    sql = build_audit(open(argv[1]).read())
+    sql = build_audit(Path(argv[1]).read_text())
     rows = list(bigquery.Client(project="teamster-332318").query(sql).result())
     print(len(rows), "sheet rows")
     for (outcome, tiers), n in sorted(

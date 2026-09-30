@@ -3,9 +3,8 @@ models:
     description: >-
       Pearson NJGPA (New Jersey Graduation Proficiency Assessment) summative
       score records, one row per student test (studenttestuuid). Keeps only rows
-      with summativeflag and testattemptednessflag both 'Y'. Pearson stopped
-      administering NJ state tests after December 2025, so this relation no
-      longer gains rows.
+      with summativeflag and testattemptednessflag both 'Y'. Frozen history; no
+      new rows are expected.
     columns:
       - name: statestudentidentifier
         data_type: int64

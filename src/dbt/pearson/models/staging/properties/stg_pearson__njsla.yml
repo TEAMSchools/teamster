@@ -4,9 +4,8 @@ models:
       Pearson NJSLA ELA and Math summative score records, one row per student
       test (studenttestuuid). Keeps only rows with summativeflag and
       testattemptednessflag both 'Y'. Source columns pass through with a star
-      select, with codes and scores cast to numeric types. Pearson stopped
-      administering NJ state tests after December 2025, so this relation no
-      longer gains rows.
+      select, with codes and scores cast to numeric types. Frozen history; no
+      new rows are expected.
     columns:
       - name: accountabledistrictcode
         data_type: int64

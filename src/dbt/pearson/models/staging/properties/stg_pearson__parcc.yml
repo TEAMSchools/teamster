@@ -5,7 +5,7 @@ models:
       test before NJSLA, one row per student test (studenttestuuid). Keeps only
       rows with summativeflag and testattemptednessflag both 'Y'. Source columns
       pass through with a star select, with codes and scores cast to numeric
-      types. This relation is frozen history and no longer gains rows.
+      types. Frozen history; no new rows are expected.
     columns:
       - name: accountabledistrictcode
         data_type: int64

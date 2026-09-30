@@ -3,8 +3,7 @@ models:
     description: >-
       Pearson student test update records, the registration and accommodation
       rows sent to Pearson before testing. Every source column passes through
-      unchanged as a string. Pearson stopped administering NJ state tests after
-      December 2025, so this relation no longer gains rows.
+      unchanged as a string. Frozen history; no new rows are expected.
     columns:
       - name: accountable_district_code
         data_type: string
