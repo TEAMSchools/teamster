@@ -45,4 +45,24 @@ so every write is production. Rate limit 700 requests per minute.
 
 ## Verified live
 
-Filled in by the live verification task, with the date and the ticket id used.
+2026-09-30, against `teamschools.zendesk.com`, ticket 483526 (Data group):
+
+- `research` printed the header, one public comment, 39 requester-history rows,
+  no same-category rows (the ticket had no Category), and 3 keyword rows.
+  Comment keys observed: `attachments`, `audit_id`, `author_id`, `body`,
+  `created_at`, `html_body`, `id`, `metadata`, `plain_body`, `public`, `type`,
+  `via`. The ticket had no attachments, so the attachment shape is unverified.
+- Repeated `group_id:` terms widen: `/search/count.json` gave 279 for Data, 123
+  for Teaching & Learning, 402 for both in one query.
+- `custom_field_20721852:<tag>` matches: 4606 tickets for one tag.
+- Search returns `count`, `next_page`, `previous_page`, `facets`, `results`. The
+  first `queue` run stopped at 100 rows with the newest tickets cut off;
+  `search` now follows `next_page` up to 1000 results. The full queue was 402
+  rows and took about 30 seconds.
+- `users/show_many` silently drops ids past the first 100. `queue` on 402 rows
+  showed raw ids until the client chunked the call.
+- The macro preview returned `assignee_id`, `comment`, `custom_fields`,
+  `group_id`, `priority`, `status`, `tags`, `type`: the ticket's current values
+  plus the macro's changes, not a diff. Placeholders were rendered
+  (`Hi <first name>`). `comment.body` came back as HTML with `<p>` tags and
+  `comment.public: true`, so the PUT sends it as `html_body`.

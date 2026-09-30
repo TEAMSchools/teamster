@@ -70,7 +70,40 @@ def test_search_unwraps_results_and_passes_sort():
         "sort_by": "created_at",
         "sort_order": "desc",
         "per_page": 100,
+        "page": 1,
     }
+
+
+def _search_pages(kw):
+    page = kw["params"].get("page", 1)
+    if page == 1:
+        return 200, {
+            "results": [{"id": 1, "result_type": "ticket"}],
+            "next_page": "https://sub.zendesk.com/api/v2/search.json?page=2&query=x",
+            "count": 2,
+        }
+    return 200, {
+        "results": [{"id": 2, "result_type": "ticket"}],
+        "next_page": None,
+        "count": 2,
+    }
+
+
+def test_search_follows_next_page_until_exhausted():
+    client, session = make_client({("GET", "/search.json"): _search_pages})
+    assert client.search("type:ticket x") == [
+        {"id": 1, "result_type": "ticket"},
+        {"id": 2, "result_type": "ticket"},
+    ]
+    assert [kw["params"]["page"] for _, _, kw in session.calls] == [1, 2]
+
+
+def test_search_stops_at_max_results():
+    client, session = make_client({("GET", "/search.json"): _search_pages})
+    assert client.search("type:ticket x", max_results=1) == [
+        {"id": 1, "result_type": "ticket"}
+    ]
+    assert len(session.calls) == 1
 
 
 def _macro_pages(kw):
@@ -100,6 +133,21 @@ def test_users_show_many_joins_ids():
     )
     assert client.users_show_many([1, 2]) == [{"id": 1}, {"id": 2}]
     assert session.calls[0][2]["params"] == {"ids": "1,2"}
+
+
+def test_users_show_many_chunks_by_100():
+    client, session = make_client(
+        {
+            ("GET", "/users/show_many.json"): lambda kw: (
+                200,
+                {"users": [{"id": int(i)} for i in kw["params"]["ids"].split(",")]},
+            )
+        }
+    )
+    users = client.users_show_many(list(range(1, 251)))
+    assert [u["id"] for u in users] == list(range(1, 251))
+    sizes = [len(kw["params"]["ids"].split(",")) for _, _, kw in session.calls]
+    assert sizes == [100, 100, 50]
 
 
 def test_macro_preview_unwraps_result_ticket():

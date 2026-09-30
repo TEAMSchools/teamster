@@ -19,6 +19,7 @@ import requests
 
 TIMEOUT_SECONDS = 60
 PAGE_SIZE = 100
+SEARCH_MAX_RESULTS = 1000  # Zendesk's own ceiling on search result offsets
 CATEGORY_FIELD_ID = 20721852
 DEFAULT_GROUPS = ("Data", "Teaching & Learning")
 HISTORY_DAYS = 180
@@ -40,6 +41,7 @@ WRITABLE_KEYS = frozenset(
     }
 )
 SIGNATURE = "Posted via Claude by {runner}"
+HTML_TAG_RE = re.compile(r"<[a-zA-Z][^>]*>")
 
 
 class TicketError(Exception):
@@ -106,15 +108,27 @@ class ZendeskTickets:
         return self._call("GET", f"/organizations/{org_id}.json")["organization"]
 
     def search(
-        self, query: str, sort_by: str = "created_at", sort_order: str = "desc"
+        self,
+        query: str,
+        sort_by: str = "created_at",
+        sort_order: str = "desc",
+        max_results: int = SEARCH_MAX_RESULTS,
     ) -> list[dict]:
+        """Follow `next_page` until the results run out or `max_results` is reached."""
         params = {
             "query": query,
             "sort_by": sort_by,
             "sort_order": sort_order,
             "per_page": PAGE_SIZE,
+            "page": 1,
         }
-        return self._call("GET", "/search.json", params=params)["results"]
+        results: list[dict] = []
+        while True:
+            data = self._call("GET", "/search.json", params=params)
+            results.extend(data["results"])
+            if not data.get("next_page") or len(results) >= max_results:
+                return results[:max_results]
+            params = params | {"page": params["page"] + 1}
 
     def ticket_field(self, field_id: int) -> dict:
         return self._call("GET", f"/ticket_fields/{field_id}.json")["ticket_field"]
@@ -128,10 +142,16 @@ class ZendeskTickets:
         )
 
     def users_show_many(self, ids: list[int]) -> list[dict]:
-        joined = ",".join(str(i) for i in ids)
-        return self._call("GET", "/users/show_many.json", params={"ids": joined})[
-            "users"
-        ]
+        """`show_many` takes at most 100 ids per call; chunk and concatenate."""
+        users: list[dict] = []
+        for start in range(0, len(ids), PAGE_SIZE):
+            joined = ",".join(str(i) for i in ids[start : start + PAGE_SIZE])
+            users.extend(
+                self._call("GET", "/users/show_many.json", params={"ids": joined})[
+                    "users"
+                ]
+            )
+        return users
 
     def macros(self) -> list[dict]:
         return self._list_all("/macros.json", "macros", params={"active": "true"})
@@ -533,6 +553,14 @@ def _changes(ticket: dict, new: dict, catalog: Catalog, users: list[dict]) -> li
     return lines
 
 
+def _html_to_text(html: str) -> str:
+    """Block tags become newlines, other tags vanish; for the draft display only."""
+    text = re.sub(r"</(p|div|li|h\d)>|<br\s*/?>", "\n", html, flags=re.IGNORECASE)
+    text = HTML_TAG_RE.sub("", text)
+    text = text.replace("&nbsp;", " ").replace("&amp;", "&")
+    return "\n".join(line.strip() for line in text.splitlines()).strip()
+
+
 def _write_draft(
     ticket: dict, payload: dict, catalog: Catalog, users: list[dict], drafts_dir
 ) -> Draft:
@@ -543,7 +571,8 @@ def _write_draft(
         f"comment: {kind}",
     ]
     if comment:
-        display_lines += ["", comment["body"], ""]
+        text = comment.get("body") or _html_to_text(comment.get("html_body", ""))
+        display_lines += ["", text, ""]
     display_lines += _changes(ticket, payload["ticket"], catalog, users) or [
         "no field changes"
     ]
@@ -629,12 +658,19 @@ def draft_macro(
     update = {k: v for k, v in preview.items() if k in WRITABLE_KEYS}
     comment = update.get("comment")
     if comment:
-        update["comment"] = {
-            "body": comment.get("body") or comment.get("html_body", ""),
-            "public": bool(comment.get("public", True)),
-        }
-        if not update["comment"]["public"]:
-            update["comment"]["body"] += f"\n\n{SIGNATURE.format(runner=runner)}"
+        text = comment.get("body") or comment.get("html_body", "")
+        public = bool(comment.get("public", True))
+        signature = SIGNATURE.format(runner=runner)
+        if HTML_TAG_RE.search(text):
+            # The preview renders the macro's rich text as HTML. Sent as `body`
+            # the tags would post as literal text (seen live 2026-09-30).
+            if not public:
+                text += f"<p>{signature}</p>"
+            update["comment"] = {"html_body": text, "public": public}
+        else:
+            if not public:
+                text += f"\n\n{signature}"
+            update["comment"] = {"body": text, "public": public}
     if update.get("assignee_id"):
         users = users + client.users_show_many([update["assignee_id"]])
     return _write_draft(ticket, {"ticket": update}, catalog, users, drafts_dir)

@@ -169,6 +169,40 @@ def test_draft_macro_keeps_writable_keys_and_marks_public(tmp_path, capsys):
     assert "PUBLIC" in out and "status: open -> solved" in out and NOTICE in out
 
 
+def test_draft_macro_sends_html_comment_as_html_body(tmp_path, capsys):
+    r = routes()
+    r[("GET", f"/tickets/12/macros/{CLOSE_OUT}/apply.json")] = (
+        200,
+        {
+            "result": {
+                "ticket": {
+                    "status": "solved",
+                    "comment": {
+                        "body": "<p>Hi Rae - </p><p>closing this out.</p>",
+                        "public": False,
+                    },
+                }
+            }
+        },
+    )
+    client, _ = make_client(r)
+    draft = draft_macro(
+        12,
+        "Data - Close Out Older Ticket",
+        drafts_dir=tmp_path,
+        runner="Ada",
+        client=client,
+    )
+    comment = draft.payload["ticket"]["comment"]
+    assert "body" not in comment
+    assert comment["html_body"] == (
+        "<p>Hi Rae - </p><p>closing this out.</p><p>Posted via Claude by Ada</p>"
+    )
+    out = capsys.readouterr().out
+    assert "<p>" not in out
+    assert "Hi Rae -" in out and "closing this out." in out
+
+
 def test_draft_macro_refuses_outside_allowlist(tmp_path):
     client, _ = make_client()
     with pytest.raises(TicketError):
