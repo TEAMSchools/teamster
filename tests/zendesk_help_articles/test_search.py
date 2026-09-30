@@ -5,6 +5,17 @@ from publish_article import ZendeskHelpCenter, search_articles
 # trunk-ignore-end(pyright/reportMissingImports)
 
 
+def test_search_articles_clamps_limit_to_the_api_range(capsys):
+    session = FakeSession(
+        {("GET", "/help_center/articles/search.json"): (200, {"results": []})}
+    )
+    client = ZendeskHelpCenter("sub", "me@example.org", "tok", session=session)
+    search_articles("x", limit=500, client=client)
+    search_articles("x", limit=0, client=client)
+    capsys.readouterr()
+    assert [kw["params"]["per_page"] for _, _, kw in session.calls] == [100, 1]
+
+
 def test_search_articles_hits_help_center_search_and_prints(capsys):
     session = FakeSession(
         {

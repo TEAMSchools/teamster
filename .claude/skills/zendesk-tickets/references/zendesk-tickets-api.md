@@ -46,6 +46,29 @@ so every write is production. Rate limit 700 requests per minute.
 - `updated_at` changes on every comment and field edit, including ones made by
   triggers and automations. The apply guard compares it exactly.
 
+## Guards on `apply`
+
+Each one came out of an adversarial review on 2026-09-30.
+
+- `public` on `draft_comment` must be the bool `True` or `False`. `None`, `0`,
+  or a string would display INTERNAL yet post publicly, because Zendesk reads a
+  null or truthy `public` as public.
+- The draft file stores `payload_sha256`. `apply` recomputes it and refuses a
+  file whose payload was edited after the draft was printed, so what the user
+  saw is what posts.
+- `apply` refuses when a draft was written in the same Python process. Draft and
+  apply are two pytest runs, with the user reading the draft in between.
+- The payload may hold only `{"ticket": {...}}` with keys in `WRITABLE_KEYS`;
+  `updated_at` must be a non-empty string; an unreadable or non-JSON file is a
+  `TicketError`, not a traceback.
+- The PUT carries `safe_update: true` and `updated_stamp: <updated_at>`, so
+  Zendesk itself answers 409 if the ticket moved between the guard's GET and the
+  PUT.
+- `drafts_dir` under a git checkout is refused: draft files hold ticket text.
+- A macro draft keeps only the keys the preview changed, and an `Assign to`
+  macro whose preview sets status to solved or closed is refused whatever its
+  title says.
+
 ## Verified live
 
 2026-09-30, against `teamschools.zendesk.com`, ticket 483526 (Data group):

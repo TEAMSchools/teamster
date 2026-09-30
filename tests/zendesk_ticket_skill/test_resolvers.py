@@ -123,6 +123,30 @@ def test_resolve_assignee_by_first_name_full_name_or_email():
     assert catalog.resolve_assignee("brook@example.org", 21474460)["id"] == 2
 
 
+def test_resolve_assignee_skips_empty_names_and_refuses_blank_query():
+    routes = dict(ROUTES)
+    routes[("GET", "/users/show_many.json")] = (
+        200,
+        {
+            "users": [
+                {"id": 1, "name": "Sam Adams", "email": "sam@example.org"},
+                {"id": 3, "name": "", "email": None},
+            ]
+        },
+    )
+    session = FakeSession(routes)
+    catalog = Catalog(ZendeskTickets("sub", "me@example.org", "tok", session=session))
+    assert catalog.resolve_assignee("Sam", 21474460)["id"] == 1
+    with pytest.raises(TicketError):
+        catalog.resolve_assignee("   ", 21474460)
+
+
+def test_resolve_group_is_case_insensitive():
+    catalog, _ = make_catalog()
+    assert catalog.resolve_group("data")["id"] == 21474460
+    assert catalog.resolve_group("teaching & learning")["id"] == 31319068
+
+
 def test_resolve_assignee_unknown_lists_members():
     catalog, _ = make_catalog()
     with pytest.raises(TicketError) as info:

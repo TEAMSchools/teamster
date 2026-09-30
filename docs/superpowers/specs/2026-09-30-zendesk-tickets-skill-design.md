@@ -270,3 +270,11 @@ macro preview's HTML comment is sent as `html_body`; the draft display shows
 every custom-field change and any `email_ccs`, not Category alone; and the
 offline tests live in `tests/zendesk_ticket_skill/` because a directory named
 `zendesk_tickets` shadows the module for pyright.
+
+An adversarial review the same day hardened `apply` beyond "reads the file and
+posts it": the draft file carries a payload hash that `apply` verifies, so a
+hand-edited file is refused rather than posted; `apply` refuses in the same
+process as a draft; `public` must be a real bool; the payload is restricted to
+`WRITABLE_KEYS`; the PUT uses Zendesk's `safe_update`; `drafts_dir` inside a
+checkout is refused; a macro draft carries only changed keys and an `Assign to`
+macro that would solve or close is refused.

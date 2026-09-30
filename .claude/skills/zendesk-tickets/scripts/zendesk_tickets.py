@@ -8,6 +8,8 @@ references/zendesk-tickets-api.md for the endpoints.
 
 from __future__ import annotations
 
+import hashlib
+import html as html_module
 import json
 import os
 import re
@@ -41,7 +43,26 @@ WRITABLE_KEYS = frozenset(
     }
 )
 SIGNATURE = "Posted via Claude by {runner}"
-HTML_TAG_RE = re.compile(r"<[a-zA-Z][^>]*>")
+HTML_TAG_RE = re.compile(r"</?[a-zA-Z][^>]*>")
+# An "Assign to" macro hands a ticket over; one that also closes it is not the
+# macro the allowlist meant, whatever its title says.
+ASSIGN_FORBIDDEN_STATUSES = frozenset({"solved", "closed"})
+
+# Set by _write_draft. `apply` refuses while it is set, so a draft and its apply
+# can never run in one pytest process: the user has to see the draft in between.
+_drafted_in_process = False
+
+
+def reset_process_guard() -> None:
+    """For tests that draft and apply in one process. A session never calls this."""
+    global _drafted_in_process
+    _drafted_in_process = False
+
+
+def payload_sha256(payload: dict) -> str:
+    return hashlib.sha256(
+        json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
+    ).hexdigest()
 
 
 class TicketError(Exception):
@@ -244,8 +265,9 @@ class Catalog:
     def resolve_group(self, name: str) -> dict:
         if self._groups is None:
             self._groups = [g for g in self.client.groups() if not g.get("deleted")]
+        wanted = name.strip().lower()
         for group in self._groups:
-            if group["name"] == name:
+            if group["name"].lower() == wanted:
                 return group
         raise TicketError(
             f"No group named {name!r}. Available: "
@@ -260,17 +282,20 @@ class Catalog:
 
     def resolve_assignee(self, name: str, group_id: int) -> dict:
         wanted = name.strip().lower()
+        if not wanted:
+            raise TicketError("Assignee name is empty.")
         members = self.group_members(group_id)
-        hits = [
-            u
-            for u in members
-            if wanted
-            in {
-                u["name"].lower(),
-                u["name"].split()[0].lower(),
+        hits = []
+        for u in members:
+            full = (u.get("name") or "").strip().lower()
+            candidates = {
+                full,
+                (full.split() or [""])[0],
                 (u.get("email") or "").lower(),
             }
-        ]
+            candidates.discard("")
+            if wanted in candidates:
+                hits.append(u)
         if len(hits) == 1:
             return hits[0]
         if len(hits) > 1:
@@ -313,8 +338,8 @@ def age_days(value: str) -> int:
     return (datetime.now(UTC) - parse_ts(value)).days
 
 
-def keywords(subject: str) -> list[str]:
-    words = re.findall(r"[a-z0-9]+", subject.lower())
+def keywords(subject: str | None) -> list[str]:
+    words = re.findall(r"[a-z0-9]+", (subject or "").lower())
     return [w for w in words if w not in STOPWORDS and len(w) > 1][:6]
 
 
@@ -383,6 +408,8 @@ def _tickets_only(results: list[dict]) -> list[dict]:
 
 
 def _group_terms(catalog: Catalog, groups) -> str:
+    if isinstance(groups, str):
+        groups = [groups]
     return " ".join(f"group_id:{catalog.resolve_group(g)['id']}" for g in groups)
 
 
@@ -392,6 +419,7 @@ def _client(client: ZendeskTickets | None) -> ZendeskTickets:
 
 def research(ticket_id: int, *, client: ZendeskTickets | None = None) -> dict:
     """Ticket, thread, requester, requester history, and similar tickets in one report."""
+    ticket_id = int(ticket_id)
     client = _client(client)
     catalog = Catalog(client)
     data = client.get_ticket(ticket_id)
@@ -466,6 +494,7 @@ def research(ticket_id: int, *, client: ZendeskTickets | None = None) -> dict:
 
 
 def thread(ticket_id: int, *, client: ZendeskTickets | None = None) -> list[dict]:
+    ticket_id = int(ticket_id)
     client = _client(client)
     data = client.get_ticket(ticket_id)
     comments, users = client.comments(ticket_id)
@@ -567,11 +596,21 @@ def _changes(ticket: dict, new: dict, catalog: Catalog, users: list[dict]) -> li
     return lines
 
 
+def _refuse_inside_checkout(folder: Path) -> None:
+    """Draft files hold ticket text. A folder under a git checkout can be committed."""
+    for parent in [folder.resolve(), *folder.resolve().parents]:
+        if (parent / ".git").exists():
+            raise TicketError(
+                f"{folder} is inside the git checkout at {parent}. Draft files hold "
+                "ticket text; use a folder in the session scratchpad instead."
+            )
+
+
 def _html_to_text(html: str) -> str:
     """Block tags become newlines, other tags vanish; for the draft display only."""
     text = re.sub(r"</(p|div|li|h\d)>|<br\s*/?>", "\n", html, flags=re.IGNORECASE)
     text = HTML_TAG_RE.sub("", text)
-    text = text.replace("&nbsp;", " ").replace("&amp;", "&")
+    text = html_module.unescape(text).replace("\xa0", " ")
     return "\n".join(line.strip() for line in text.splitlines()).strip()
 
 
@@ -597,7 +636,9 @@ def _write_draft(
     display_lines += ["", NOTICE_TEMPLATE.format(owner=owner)]
     display = "\n".join(display_lines)
 
+    global _drafted_in_process
     drafts_dir = Path(drafts_dir)
+    _refuse_inside_checkout(drafts_dir)
     drafts_dir.mkdir(parents=True, exist_ok=True)
     now = datetime.now(UTC)
     path = drafts_dir / f"{ticket['id']}-{now.strftime('%Y%m%dT%H%M%S%f')}.json"
@@ -608,12 +649,14 @@ def _write_draft(
                 "subject": ticket["subject"],
                 "updated_at": ticket["updated_at"],
                 "payload": payload,
+                "payload_sha256": payload_sha256(payload),
                 "display": display,
                 "created_at": now.isoformat(),
             },
             indent=2,
         )
     )
+    _drafted_in_process = True
     print(display)
     print(f"\ndraft file: {path}")
     return Draft(
@@ -634,6 +677,11 @@ def draft_comment(
     client: ZendeskTickets | None = None,
 ) -> Draft:
     """Build and print the exact ticket update. Posts nothing; `apply` does that."""
+    if public is not True and public is not False:
+        # `None`, 0, or "no" would display INTERNAL yet post publicly: Zendesk
+        # reads a null or truthy `public` as public.
+        raise TicketError("`public` must be True or False, nothing else.")
+    ticket_id = int(ticket_id)
     client = _client(client)
     catalog = Catalog(client)
     data = client.get_ticket(ticket_id)
@@ -667,14 +715,32 @@ def draft_macro(
     client: ZendeskTickets | None = None,
 ) -> Draft:
     """Preview an allowlisted macro and save its rendered result as a draft."""
+    ticket_id = int(ticket_id)
     client = _client(client)
     catalog = Catalog(client)
     macro = catalog.resolve_macro(macro_title)
     data = client.get_ticket(ticket_id)
     ticket, users = data["ticket"], data.get("users", [])
     preview = client.macro_preview(ticket_id, macro["id"])
-    update = {k: v for k, v in preview.items() if k in WRITABLE_KEYS}
+    # The preview is the whole ticket with the macro applied. Keep only what the
+    # macro changed, so unchanged tags, ccs and fields are not re-sent.
+    update = {
+        k: v
+        for k, v in preview.items()
+        if k in WRITABLE_KEYS
+        and (k == "comment" or (v != ticket.get(k) and (v or ticket.get(k))))
+    }
+    if (
+        macro_title not in MACRO_EXACT
+        and update.get("status") in ASSIGN_FORBIDDEN_STATUSES
+    ):
+        raise TicketError(
+            f"Macro {macro_title!r} would set status to {update['status']!r}. An "
+            "'Assign to' macro hands a ticket over; one that closes it is refused."
+        )
     comment = update.get("comment")
+    if not comment:
+        update.pop("comment", None)
     if comment:
         text = comment.get("body") or comment.get("html_body", "")
         public = bool(comment.get("public", True))
@@ -696,18 +762,49 @@ def draft_macro(
 
 def apply(draft_path, *, client: ZendeskTickets | None = None) -> str:
     """PUT exactly what the draft file holds, after checking the ticket has not moved."""
-    client = _client(client)
+    if _drafted_in_process:
+        raise TicketError(
+            "apply refused: a draft was written in this same process. The user has "
+            "to see the printed draft first; run apply in a separate pytest run."
+        )
     path = Path(draft_path)
-    saved = json.loads(path.read_text())
-    ticket_id = saved["ticket_id"]
+    try:
+        saved = json.loads(path.read_text())
+        ticket_id = int(saved["ticket_id"])
+        payload = saved["payload"]
+        stamp = saved["updated_at"]
+        recorded_hash = saved["payload_sha256"]
+    except (OSError, ValueError, KeyError, TypeError) as error:
+        raise TicketError(
+            f"{path} is not a draft this skill wrote ({error!r}). Draft again."
+        ) from error
+    if payload_sha256(payload) != recorded_hash:
+        raise TicketError(
+            f"{path.name} does not match the draft that was displayed; the payload "
+            "was edited after it was written. Draft again instead of editing the file."
+        )
+    if not isinstance(stamp, str) or not stamp:
+        raise TicketError(f"{path.name} has no updated_at to guard on. Draft again.")
+    extra = set(payload.get("ticket", {})) - WRITABLE_KEYS
+    if extra or set(payload) != {"ticket"}:
+        raise TicketError(
+            f"{path.name} carries keys the skill never writes: "
+            f"{sorted(extra) or sorted(set(payload) - {'ticket'})}. Draft again."
+        )
+
+    client = _client(client)
     current = client.get_ticket(ticket_id)["ticket"]
-    if current["updated_at"] != saved["updated_at"]:
+    if current.get("updated_at") != stamp:
         raise TicketError(
             f"Ticket #{ticket_id} changed since this draft: drafted at updated_at "
-            f"{saved['updated_at']}, now {current['updated_at']}. Re-read the thread "
+            f"{stamp}, now {current.get('updated_at')}. Re-read the thread "
             f"with `thread({ticket_id})`, then draft again."
         )
-    client.update_ticket(ticket_id, saved["payload"])
+    # Zendesk's own guard for the moment between the GET above and this PUT.
+    guarded = {
+        "ticket": payload["ticket"] | {"safe_update": True, "updated_stamp": stamp}
+    }
+    client.update_ticket(ticket_id, guarded)
     path.unlink()
     url = client.ticket_url(ticket_id)
     print(f"posted: {url}")

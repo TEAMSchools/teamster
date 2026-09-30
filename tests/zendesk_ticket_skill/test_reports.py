@@ -69,7 +69,10 @@ def search_handler(kwargs):
     query = kwargs["params"]["query"]
     if "requester:10" in query:
         return 200, {
-            "results": [_ticket(7, "solved", "Old one", "2026-08-01T00:00:00Z")]
+            "results": [
+                _ticket(12, "open", "self", "2026-09-01T00:00:00Z"),
+                _ticket(7, "solved", "Old one", "2026-08-01T00:00:00Z"),
+            ]
         }
     if "custom_field_20721852:data_power_school" in query:
         return 200, {
@@ -198,6 +201,26 @@ def test_thread_returns_comments(capsys):
     comments = thread(12, client=client)
     assert [c["id"] for c in comments] == [1, 2]
     assert "Checking SSO." in capsys.readouterr().out
+
+
+def test_keywords_tolerates_missing_subject():
+    assert keywords(None) == []
+    assert keywords("") == []
+
+
+def test_research_with_string_id_still_excludes_itself(capsys):
+    client, _ = make_client()
+    result = research("12", client=client)
+    capsys.readouterr()
+    assert 12 not in [t["id"] for t in result["history"]]
+    assert 12 not in [t["id"] for t in result["similar_by_category"]]
+
+
+def test_queue_accepts_a_single_group_name(capsys):
+    client, session = make_client()
+    queue(groups="Data", client=client)
+    capsys.readouterr()
+    assert "group_id:21474460" in _last_search_params(session)["query"]
 
 
 def test_research_similarity_searches_stop_after_one_page(capsys):

@@ -196,7 +196,7 @@ class ZendeskHelpCenter:
         return self._call(
             "GET",
             "/help_center/articles/search.json",
-            params={"query": query, "per_page": limit},
+            params={"query": query, "per_page": max(1, min(int(limit), 100))},
         )["results"]
 
     def create_article(self, section_id: int, article: dict) -> dict:

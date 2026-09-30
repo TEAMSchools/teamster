@@ -74,7 +74,7 @@ Ask the runner's name once per session; it signs internal notes.
 ```python
 from pathlib import Path
 
-from zendesk_tickets import apply, draft_comment, draft_macro
+from zendesk_tickets import draft_comment, draft_macro
 
 drafts = Path("<session scratchpad>/zendesk-drafts")
 
@@ -83,20 +83,32 @@ draft_comment(
     status="pending", assignee="<first name>", category="<option name>",
 )
 draft_macro(<id>, "Data - Close Out Older Ticket", runner="<name>", drafts_dir=drafts)
-apply(drafts / "<id>-<stamp>.json")
 ```
 
-Before a `draft_comment` call, ask public or internal, every time. Run the draft
-call, show the printed draft verbatim, tell the user it is theirs to paste into
-Zendesk, and stop. Do not mention `apply`. If the user insists on posting
-through the API, give the not-recommended warning from the non-negotiables and
-wait for a second yes; only then run `apply` on the printed draft file path. It
-refuses if the ticket changed since the draft; re-run `thread` and draft again.
-A field-only change (status, assignee, category) is still a draft: the user
-makes the change in Zendesk. Names resolve case-insensitively: a category by
-full name (`Data::PowerSchool`) or unique last segment, an assignee by first
-name, full name, or email among the ticket's group. A `TicketError` message is
-written for the user; show it verbatim.
+Before a `draft_comment` call, ask public or internal, every time; pass a real
+`True` or `False`, nothing else. `drafts_dir` must be in the session scratchpad;
+a folder inside the checkout is refused. Run the draft call, show the printed
+draft verbatim, tell the user it is theirs to paste into Zendesk, and stop. Do
+not mention `apply`. A field-only change (status, assignee, category) is still a
+draft: the user makes the change in Zendesk. Names resolve case-insensitively: a
+category by full name (`Data::PowerSchool`) or unique last segment, an assignee
+by first name, full name, or email among the ticket's group, a group by name. A
+`TicketError` message is written for the user; show it verbatim.
+
+### Only after the second yes
+
+If the user insists on posting through the API, give the not-recommended warning
+from the non-negotiables and wait for a second yes. Only then write a NEW
+throwaway test with the one call below and run it. `apply` refuses to run in the
+same process as a draft, refuses a draft file whose payload was edited after it
+was printed, and refuses if the ticket changed since the draft; on any refusal,
+re-run `thread` and draft again. Never edit a draft file.
+
+```python
+from zendesk_tickets import apply
+
+apply("<the draft file path the draft run printed>")
+```
 
 ## When to reach for the warehouse
 
