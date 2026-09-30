@@ -1,113 +1,377 @@
 models:
   - name: rpt_tableau__graduation_requirements
     description: >-
-      **Excludes Miami by design.** This tracks New Jersey graduation-path
-      credit requirements, which do not apply in Florida; the model already
-      filters `e.region != 'Miami'` explicitly. Ratified on #4996.
+      Graduation pathway roster behind the graduation requirements dashboard.
+      The intended grain is one row per student, subject (discipline) and
+      pathway test (test_type). The roster is every student's current-year
+      enrollment (rn_year 1) in each of ELA and Math, for cohorts from the year
+      before the current academic year through five years after it. Miami is
+      excluded by design, because New Jersey graduation pathways do not apply in
+      Florida, and so is the graduate placeholder school (schoolid 999999). Each
+      student-subject row is joined to the best sitting (rn_highest 1) of every
+      pathway the student holds a score for in
+      int_students__graduation_path_codes, including pathways PowerSchool
+      already decided. A student with no score, or one no longer enrolled, keeps
+      a single row per subject with the pathway columns null. The student's
+      College and Career course section is left-joined for the teacher and
+      section columns. That course join can repeat rows -- a student enrolled in
+      more than one College and Career course gets every row once per course,
+      which breaks the intended grain.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - discipline
+              - test_type
     columns:
       - name: _dbt_source_relation
         data_type: string
+        description: >-
+          Source relation identifier from dbt_utils.union_relations, naming the
+          district PowerSchool instance the enrollment came from.
       - name: academic_year
         data_type: int64
+        description: >-
+          Starting calendar year of the school year. Always the current academic
+          year.
       - name: academic_year_display
         data_type: string
+        description: >-
+          Academic year written as the starting year, a hyphen, and the last two
+          digits of the ending year.
       - name: region
         data_type: string
+        description: >-
+          KTAF region the student's school belongs to. Never Miami.
       - name: schoolid
         data_type: int64
+        description: PowerSchool school number of the student's school.
       - name: school_name
         data_type: string
+        description: Full name of the student's school.
       - name: school
         data_type: string
+        description: Abbreviated name of the student's school.
       - name: students_dcid
         data_type: int64
+        description: PowerSchool durable identifier for the student.
       - name: studentid
         data_type: int64
+        description: >-
+          PowerSchool student identifier, unique only within its own instance.
       - name: state_studentnumber
         data_type: string
+        description: State-assigned student number.
+        config:
+          meta:
+            contains_pii: true
       - name: student_number
         data_type: int64
+        description: >-
+          Student number assigned by the school. Part of the intended grain.
+        config:
+          meta:
+            contains_pii: true
       - name: student_name
         data_type: string
+        description: Student's full name, last name first.
+        config:
+          meta:
+            contains_pii: true
       - name: student_first_name
         data_type: string
+        description: Student's first name.
+        config:
+          meta:
+            contains_pii: true
       - name: student_last_name
         data_type: string
+        description: Student's last name.
+        config:
+          meta:
+            contains_pii: true
       - name: grade_level
         data_type: int64
+        description: Grade the student is in this academic year.
       - name: enroll_status
         data_type: int64
+        description: >-
+          PowerSchool enrollment status, where 0 is currently enrolled. Not
+          filtered, so a student who left during the year stays on the roster,
+          but with the pathway columns null, because
+          int_students__graduation_path_codes keeps currently enrolled students
+          only.
       - name: cohort
         data_type: int64
+        description: >-
+          Graduating class the student entered high school with. Frozen at first
+          year in the school, so a retained or accelerated student can sit an
+          assessment alongside a different class.
       - name: advisory
         data_type: string
+        description: >-
+          Student's advisory. At high school this is the advisor's name.
       - name: iep_status
         data_type: string
+        description: >-
+          Has IEP or No IEP, from the PowerSchool special education field.
+        config:
+          meta:
+            contains_pii: true
       - name: is_504
         data_type: boolean
+        description: Whether the student has a 504 plan.
+        config:
+          meta:
+            contains_pii: true
       - name: lep_status
         data_type: boolean
+        description: >-
+          Whether the student is classified as limited English proficient.
+        config:
+          meta:
+            contains_pii: true
       - name: is_retained_year
         data_type: boolean
+        description: >-
+          Whether the student is repeating a grade this year, meaning the same
+          grade level as the year before.
+        config:
+          meta:
+            contains_pii: true
       - name: is_retained_ever
         data_type: boolean
+        description: Whether the student has repeated a grade in any year.
+        config:
+          meta:
+            contains_pii: true
       - name: student_email_google
         data_type: string
+        description: Student's Google email address.
+        config:
+          meta:
+            contains_pii: true
       - name: kippadb_contact_id
         data_type: string
+        description: >-
+          Student's KIPP Forward contact identifier, the Salesforce contact id.
+        config:
+          meta:
+            contains_pii: true
       - name: ktc_cohort
         data_type: int64
+        description: >-
+          Graduating class KIPP Forward tracks the student under.
       - name: discipline
         data_type: string
+        description: >-
+          Subject, ELA or Math. Every student gets one roster row per subject.
+          Part of the intended grain.
       - name: courses_course_name
         data_type: string
+        description: >-
+          Name of the student's College and Career course this year. Null when
+          the student is not enrolled in one. A student enrolled in more than
+          one gets every row repeated once per course.
       - name: teacher_lastfirst
         data_type: string
+        description: >-
+          Lead teacher of the student's College and Career section, last name
+          first.
       - name: sections_external_expression
         data_type: string
+        description: >-
+          PowerSchool period and day expression for the student's College and
+          Career section.
       - name: section_number
         data_type: string
+        description: Section number of the student's College and Career section.
       - name: pathway_option
         data_type: string
+        description: >-
+          Assessment that could satisfy the pathway -- NJGPA, ACT, SAT, PSAT10
+          or PSAT NMSQT. Both NJGPA versions share the value NJGPA. For a
+          pathway PowerSchool already decided, the label for that decision
+          instead -- DLM, Portfolio, Met No Requirements or Incomplete Credits.
+        config:
+          meta:
+            contains_pii: true
       - name: test_type
         data_type: string
+        description: >-
+          Label for the pathway test the row shows, and part of the intended
+          grain. The subject area code for the state assessment, the assessment
+          and subject area together for ACT, SAT and the PSATs, and the decision
+          label for a pathway PowerSchool already decided. Null for a student
+          with no scored pathway in the subject.
+        config:
+          meta:
+            contains_pii: true
       - name: subject_area
         data_type: string
+        description: >-
+          Subject the score belongs to, as the source system labels it. The
+          discipline for a pathway PowerSchool already decided.
       - name: scale_score
         data_type: float64
+        description: >-
+          Best score the student earned for this pathway, picked by whether it
+          passed and then by how far it cleared its own cut score. Zero, not a
+          real score, for a pathway PowerSchool already decided.
+        config:
+          meta:
+            contains_pii: true
       - name: cutoff
         data_type: int64
+        description: >-
+          Lowest score that satisfies this pathway for the student's class,
+          subject and assessment version. Null for a pathway PowerSchool already
+          decided, since no cut score applies.
       - name: met_pathway_cutoff
         data_type: boolean
+        description: >-
+          Whether this score reached its cut score. For a pathway PowerSchool
+          already decided, true for DLM and Portfolio and false for Met No
+          Requirements and Incomplete Credits.
+        config:
+          meta:
+            contains_pii: true
       - name: points_short
         data_type: float64
+        description: >-
+          Score minus cut score. Negative means the student fell short, positive
+          means they cleared it. Null for a pathway PowerSchool already decided.
+        config:
+          meta:
+            contains_pii: true
       - name: ps_grad_path_code
         data_type: string
+        description: >-
+          Pathway code already recorded in PowerSchool for this subject. M is
+          IEP, N is portfolio appeal, O is attempted but passed nothing, P is
+          incomplete credits. Any of those four means PowerSchool has decided
+          and no cut score applies.
+        config:
+          meta:
+            contains_pii: true
       - name: njgpa_attempt
         data_type: boolean
+        description: >-
+          Whether the student sat the NJGPA in this row's subject. Sitting it is
+          a prerequisite for any other pathway in the subject to count.
+        config:
+          meta:
+            contains_pii: true
       - name: attempted_njgpa_ela
         data_type: boolean
+        description: >-
+          Whether the student sat the NJGPA in English language arts at all.
+          True for a student PowerSchool coded M.
+        config:
+          meta:
+            contains_pii: true
       - name: attempted_njgpa_math
         data_type: boolean
+        description: >-
+          Whether the student sat the NJGPA in mathematics at all. True for a
+          student PowerSchool coded M.
+        config:
+          meta:
+            contains_pii: true
       - name: met_njgpa
         data_type: boolean
+        description: >-
+          Whether any of the student's NJGPA scores in this subject cleared its
+          cut score, on either the retired or the adaptive version.
+        config:
+          meta:
+            contains_pii: true
       - name: met_act
         data_type: boolean
+        description: >-
+          Whether any of the student's ACT scores in this subject cleared its
+          cut score.
+        config:
+          meta:
+            contains_pii: true
       - name: met_sat
         data_type: boolean
+        description: >-
+          Whether any of the student's SAT scores in this subject cleared its
+          cut score.
+        config:
+          meta:
+            contains_pii: true
       - name: met_psat10
         data_type: boolean
+        description: >-
+          Whether any of the student's PSAT10 scores in this subject cleared its
+          cut score.
+        config:
+          meta:
+            contains_pii: true
       - name: met_psat_nmsqt
         data_type: boolean
+        description: >-
+          Whether any of the student's PSAT/NMSQT scores in this subject cleared
+          its cut score.
+        config:
+          meta:
+            contains_pii: true
       - name: met_ela
         data_type: boolean
+        description: >-
+          Whether the student met a pathway in ELA by any route. Through DLM
+          alone when PowerSchool coded the subject M, and otherwise counted only
+          if the student sat the NJGPA in ELA. Repeats on every row for the
+          student.
+        config:
+          meta:
+            contains_pii: true
       - name: met_math
         data_type: boolean
+        description: >-
+          Whether the student met a pathway in Math by any route. Through DLM
+          alone when PowerSchool coded the subject M, and otherwise counted only
+          if the student sat the NJGPA in Math. Repeats on every row for the
+          student.
+        config:
+          meta:
+            contains_pii: true
       - name: final_grad_path_code
         data_type: string
+        description: >-
+          Letter New Jersey uses to report which pathway the student met in this
+          subject, and the value written back to PowerSchool for the state
+          submission. See int_students__graduation_path_codes for how it is
+          chosen.
+        config:
+          meta:
+            contains_pii: true
       - name: final_grad_path_name
         data_type: string
+        description: >-
+          Display label for final_grad_path_code, such as NJGPA, SAT, DLM or
+          Default. Null only where the code is null.
+        config:
+          meta:
+            contains_pii: true
       - name: grad_eligibility
         data_type: string
+        description: >-
+          Where the student stands against the graduation requirement overall,
+          combining both subjects and FAFSA. One value per student, repeated on
+          every row.
+        config:
+          meta:
+            contains_pii: true
       - name: has_fafsa
         data_type: string
+        description: >-
+          Yes or No -- whether the student has met the FAFSA requirement, either
+          through a FAFSA recorded on their KIPP Forward contact or through a
+          FAFSA opt-out recorded in Overgrad.
+        config:
+          meta:
+            contains_pii: true
