@@ -383,9 +383,14 @@ access policies above). `cube.js` exports exactly `driverFactory`,
   query time for viewers with narrower access. A `queryRewrite` member-strip
   approach (detect and remove inaccessible members before execution) is tracked
   in [#4268](https://github.com/TEAMSchools/teamster/issues/4268).
-- **`canSwitchSqlUser`** only allows the SQL super-user to impersonate
-  `@apps.teamschools.org` accounts (Superset integration). Do not broaden the
-  suffix check.
+- **`canSwitchSqlUser`** only allows the SQL super-user
+  (`CUBEJS_SQL_SUPER_USER`) to switch to an address on
+  `access.NETWORK_EMAIL_DOMAINS` (`apps.teamschools.org`, `kippmiami.org`) — the
+  Superset impersonation path, triggered by a `WHERE __user = '<email>'` filter.
+  It is an exact-domain allowlist, not a suffix test, so it bounds the
+  super-user to real staff addresses. Add a domain only when staff sign in with
+  it (check `dim_staff_cube_access.google_email`); never widen it to a suffix or
+  wildcard (#5517).
 
 ## Semi-additive / period-end snapshot measures
 
