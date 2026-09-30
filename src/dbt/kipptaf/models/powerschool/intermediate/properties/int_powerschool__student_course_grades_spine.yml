@@ -7,7 +7,7 @@ models:
 
 
       NJ-only by design: this unions the district PowerSchool packages, and
-      Miami's gradebook is in Focus, not PowerSchool. Ratified on #4996.
+      Miami's gradebook is in Focus, not PowerSchool.
 
 
       Every column except _dbt_source_relation and _dbt_source_project comes

@@ -21,6 +21,15 @@ data_tests:
   +store_failures_as: view
   kippcamden:
     +severity: warn
+  # The Pearson score models below are frozen: Cambium replaced Pearson from
+  # Spring 2026, and kipptaf reads the last int_pearson__all_assessments
+  # table as history. Disabling a model leaves its tests enabled, so each is
+  # disabled by dbt's generated name.
+  pearson:
+    intermediate:
+      properties:
+        dbt_utils_unique_combination_of_columns_int_pearson__all_assessments_studenttestuuid:
+          +enabled: false
 
 vars:
   local_timezone: America/New_York
@@ -66,6 +75,19 @@ models:
         +enabled: false
   pearson:
     +materialized: table
+    # Frozen: the last prod tables stay as history (see data_tests above).
+    intermediate:
+      int_pearson__all_assessments:
+        +enabled: false
+    staging:
+      stg_pearson__njgpa:
+        +enabled: false
+      stg_pearson__njsla:
+        +enabled: false
+      stg_pearson__njsla_science:
+        +enabled: false
+      stg_pearson__parcc:
+        +enabled: false
   powerschool:
     +materialized: table
     sis:

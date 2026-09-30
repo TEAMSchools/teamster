@@ -21,9 +21,9 @@ Injected on the first `Agent` or `Workflow` call in a session.
   `git -C <worktree>` plus `uv run` from it, and state that IDE Pyright errors
   on worktree files (`reportMissingImports`, "not accessed", "not iterable") are
   expected false positives.
-- A subagent starts in the session's cwd: the MAIN checkout unless the session
-  ran `EnterWorktree`. It loads the main checkout's CLAUDE.md either way, so a
-  branch-only CLAUDE.md change reaches it only if the prompt says so.
+- A subagent starts in the session's cwd, normally the MAIN checkout, and loads
+  the main checkout's CLAUDE.md, so a branch-only CLAUDE.md change reaches it
+  only if the prompt says so.
 - Subagents name specific files in `git add`, never `-u`, `-A`, or `.`.
 
 ## Model and effort
