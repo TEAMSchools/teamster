@@ -100,3 +100,14 @@ def test_check_workdir_resolves_dotdot_before_comparing(tmp_path, monkeypatch):
     with pytest.raises(PublishError, match="inside the checkout"):
         check_workdir(outside / ".." / "repo" / "zendesk")
     check_workdir(outside / "zendesk")
+
+
+def test_check_workdir_refuses_the_main_checkout_from_a_worktree(tmp_path, monkeypatch):
+    main = tmp_path / "main"
+    (main / ".git").mkdir(parents=True)
+    worktree = main / ".claude" / "worktrees" / "branch"
+    worktree.mkdir(parents=True)
+    monkeypatch.setattr(publish_article, "REPO_ROOT", worktree.resolve())
+    with pytest.raises(PublishError, match="inside the checkout"):
+        check_workdir(main / "docs" / "article")
+    check_workdir(tmp_path / "scratch")

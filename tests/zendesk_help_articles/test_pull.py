@@ -26,13 +26,21 @@ def remote_article(**overrides) -> dict:
     return base
 
 
-def pull_client(article: dict) -> tuple[ZendeskHelpCenter, FakeSession]:
+def pull_client(
+    article: dict, draft: bool = False
+) -> tuple[ZendeskHelpCenter, FakeSession]:
     session = FakeSession(
         {
             ("GET", "/help_center/articles/42.json"): (200, {"article": article}),
             ("GET", "/help_center/articles/42/translations/en-us.json"): (
                 200,
-                {"translation": {"title": "How to add students", "body": BODY}},
+                {
+                    "translation": {
+                        "title": "How to add students",
+                        "body": BODY,
+                        "draft": draft,
+                    }
+                },
             ),
             ("GET", "/help_center/user_segments.json"): (
                 200,
@@ -65,6 +73,7 @@ def test_pull_writes_body_and_fields(tmp_path):
         "permission_group": "Admins",
         "article_id": 42,
         "last_known_updated_at": "2026-09-29T22:15:49Z",
+        "draft": False,
     }
     assert (tmp_path / "42" / "article.html").read_text() == BODY
     assert a.article_id == 42 and a.html == BODY
@@ -153,3 +162,19 @@ def test_preview_escapes_the_title(tmp_path):
     (tmp_path / "article.html").write_text("<p>x</p>")
     page = preview(tmp_path).read_text()
     assert '<h1 class="hc-title">A &amp; B &lt;c&gt;</h1>' in page
+
+
+def test_pull_records_that_the_article_is_a_draft(tmp_path):
+    client, _ = pull_client(remote_article(), draft=True)
+    pull(42, tmp_path / "42", client=client)
+    raw = yaml.safe_load((tmp_path / "42" / "article.yml").read_text())
+    assert raw["draft"] is True
+
+
+def test_live_publish_of_a_pulled_draft_refuses_before_network(tmp_path):
+    client, _ = pull_client(remote_article(), draft=True)
+    pull(42, tmp_path / "42", client=client)
+    client2, session = client_for(pulled_server())
+    with pytest.raises(PublishError, match="draft when pulled"):
+        publish(tmp_path / "42", live=True, client=client2)
+    assert session.calls == []

@@ -96,13 +96,20 @@ def _iso_z(value) -> str | None:
 
 
 def check_workdir(path: Path) -> None:
-    """Refuse a folder inside the checkout. Articles are gated; the repo is public."""
-    if path.resolve().is_relative_to(REPO_ROOT):
-        raise PublishError(
-            f"{path} is inside the checkout ({REPO_ROOT}). Help Center articles are "
-            "restricted to signed-in users and this repo is public, so the working "
-            "folder must live in the session scratchpad."
-        )
+    """Refuse a folder inside the checkout. Articles are gated; the repo is public.
+
+    Run from a worktree under .claude/worktrees/, REPO_ROOT is the worktree, so
+    every ancestor holding a `.git` (the main checkout) is refused too.
+    """
+    resolved = path.resolve()
+    roots = [REPO_ROOT, *(p for p in REPO_ROOT.parents if (p / ".git").exists())]
+    for root in roots:
+        if resolved.is_relative_to(root):
+            raise PublishError(
+                f"{path} is inside the checkout ({root}). Help Center articles are "
+                "restricted to signed-in users and this repo is public, so the "
+                "working folder must live in the session scratchpad."
+            )
 
 
 def load_article(article_dir: Path) -> Article:
@@ -450,6 +457,12 @@ def publish(
     check_workdir(article_dir)
     check_workdir(backup_dir)
     article = load_article(article_dir)
+    if live and article._raw.get("draft") is True:
+        raise PublishError(
+            f"Article {article.article_id} was a draft when pulled. Publish with "
+            "live=False to keep it a draft. To take it live, delete `draft: true` "
+            "from article.yml and publish with live=True."
+        )
     check_local_images(article, approved_images)
     client = client or client_from_environment()
     segment_id, group_id = resolve_visibility(client, article)
@@ -563,6 +576,7 @@ def pull(
         "permission_group": group,
         "article_id": article_id,
         "last_known_updated_at": _iso_z(remote["updated_at"]),
+        "draft": bool(translation.get("draft")),
     }
     workdir.mkdir(parents=True, exist_ok=True)
     (workdir / "article.yml").write_text(yaml.safe_dump(meta, sort_keys=False))

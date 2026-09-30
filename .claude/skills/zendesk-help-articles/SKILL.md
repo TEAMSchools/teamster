@@ -50,7 +50,7 @@ article, and `publish` writes it back.
   article.html   body only, no <html> shell
   article.yml    title, section_id, author_id, labels; optional user_segment,
                  permission_group; publisher-owned article_id,
-                 last_known_updated_at
+                 last_known_updated_at; draft (written by pull)
   images/        new screenshots, referenced by relative path
   preview.html   written by preview()
   backups/       the stored body before each overwrite
@@ -120,7 +120,10 @@ Swap the call in `test_run` for the step at hand, then
    only if the browser's Zendesk session reaches them; text and layout always
    render. Stop until they approve, then stop the server.
 4. PII gate for any new image.
-5. Auto-mode check, then `publish(WORKDIR, live=True, approved_images=...)`.
+5. Auto-mode check, then `publish(WORKDIR, live=True, approved_images=...)`. If
+   `article.yml` says `draft: true`, the article was a draft when pulled: use
+   `live=False` to keep it one. The publisher refuses `live=True` on it until
+   the user asks to take it live and you delete that line.
 6. Show the report. Ask the user to open the page signed in and confirm it
    renders. Delete the test file.
 
