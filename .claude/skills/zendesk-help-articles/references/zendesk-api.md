@@ -6,18 +6,20 @@ is production.
 
 ## Calls in publish order
 
-| Step      | Call                                                     | Notes                                                                      |
-| --------- | -------------------------------------------------------- | -------------------------------------------------------------------------- |
-| Resolve   | `GET /help_center/user_segments.json`                    | `user_segments[].{id,name}`; everyone is `user_segment_id: null`           |
-| Resolve   | `GET /guide/permission_groups.json`                      | `permission_groups[].{id,name}`; note the `/guide/` prefix                 |
-| Search    | `GET /help_center/articles/search.json`                  | `query`, `per_page`; `results[].{id,title,html_url,section_id,updated_at}` |
-| Create    | `POST /help_center/sections/{section_id}/articles.json`  | body `{"article": {...}, "notify_subscribers": false}`, `draft: true`      |
-| Fetch     | `GET /help_center/articles/{id}.json`                    | `updated_at` drives the overwrite guard                                    |
-| Back up   | `GET /help_center/articles/{id}/translations/en-us.json` | the stored `title` and `body`                                              |
-| Images    | `POST /help_center/articles/{id}/attachments.json`       | see _Attachments_                                                          |
-| Fields    | `PUT /help_center/articles/{id}.json`                    | `author_id`, `user_segment_id`, `permission_group_id`, `label_names`       |
-| Publish   | `PUT /help_center/articles/{id}/translations/en-us.json` | `title`, `body`, `draft`                                                   |
-| Read back | `GET /help_center/articles/{id}/translations/en-us.json` | compare attachment ids, not urls                                           |
+| Step      | Call                                                                | Notes                                                                                         |
+| --------- | ------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Search    | `GET /help_center/articles/search.json`                             | `query`, `per_page`; `results[].{id,title,html_url,section_id,updated_at}`                    |
+| Pull      | `GET /help_center/articles/{id}.json`, then the `en-us` translation | fields, `user_segment_ids`, `updated_at`; stored `title` and `body`                           |
+| Resolve   | `GET /help_center/user_segments.json`                               | `user_segments[].{id,name}`; everyone is `user_segment_id: null`                              |
+| Resolve   | `GET /guide/permission_groups.json`                                 | `permission_groups[].{id,name}`; note the `/guide/` prefix                                    |
+| Create    | `POST /help_center/sections/{section_id}/articles.json`             | body `{"article": {...}, "notify_subscribers": false}`, `draft: true`                         |
+| Fetch     | `GET /help_center/articles/{id}.json`                               | `updated_at` must equal the value `pull` or the last publish recorded                         |
+| Back up   | `GET /help_center/articles/{id}/translations/en-us.json`            | the stored `title` and `body`                                                                 |
+| Images    | `POST /help_center/articles/{id}/attachments.json`                  | see _Attachments_                                                                             |
+| Fields    | `PUT /help_center/articles/{id}.json`                               | `author_id`, `user_segment_id`, `permission_group_id`, `label_names`                          |
+| Publish   | `PUT /help_center/articles/{id}/translations/en-us.json`            | `title`, `body`, `draft`                                                                      |
+| Read back | `GET /help_center/articles/{id}/translations/en-us.json`            | compare attachment ids, not urls                                                              |
+| Orphans   | `GET /help_center/articles/{id}/attachments.json`                   | `article_attachments[].{id,inline}`; only `inline: true` can be an orphan; follow `next_page` |
 
 ## Traps
 
@@ -32,7 +34,11 @@ is production.
 - Reading the body back proves it was stored, not how it renders. The sanitizer
   runs on the published page. Someone signed in has to open it.
 - The translation `PUT` changes the article's `updated_at` after the article
-  `PUT` returned. Fetch the article again before saving `last_known_updated_at`.
+  `PUT` returned. Fetch the article again before saving `last_known_updated_at`
+  to the working folder's `article.yml`.
+- Attachment urls come in three forms: the full `content_url`, the shortened
+  `/hc/article_attachments/<id>`, and on older articles possibly the
+  locale-prefixed `/hc/en-us/article_attachments/<id>`. Match on the id.
 
 ## Attachments
 
@@ -71,6 +77,23 @@ throwaway draft, deleted afterward):
   article's own attachment. The shortened `/hc/article_attachments/<id>` form
   was seen earlier on the "How to access Tableau" article. Read-back matches on
   id so both forms pass.
-- A re-run with no changes uploaded nothing and reused the recorded attachment.
-  A stale `last_known_updated_at` aborted before any write with the overwrite
-  guard message.
+- A re-run with no changes uploaded nothing: the body already pointed at the
+  attachment's url. A stale `last_known_updated_at` aborted before any write
+  with the overwrite guard message.
+
+### Verified live, scratchpad flow
+
+2026-09-30, against `teamschools.zendesk.com`:
+
+- `pull` of article 360035629314 matched all 10 `<img>` tags to attachment ids.
+  All 10 used the full `content_url` form; the locale-prefixed form was not
+  seen. `GET /help_center/articles/{id}/attachments.json` returned
+  `article_attachments`.
+- A throwaway draft (id 43864880854423, archived afterward) uploaded one image
+  on create, nothing on a same-folder re-run, and nothing when pulled into a
+  fresh folder and published unchanged, with no orphans.
+- A translation `PUT` between `pull` and publish changed the article's
+  `updated_at`, and the overwrite guard refused.
+- `DELETE /help_center/articles/{id}.json` returned 204 and archived the draft;
+  a later `GET` on it returned 404.
+- The checkout's `git status` was unchanged by the run.

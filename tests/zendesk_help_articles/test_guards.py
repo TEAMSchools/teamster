@@ -11,11 +11,14 @@ from publish_article import (
     verify_readback,
 )
 
+TITLE = "How to access Tableau"
+SENT = '<img src="https://z/hc/article_attachments/101/a.png">'
+
 
 def article(**overrides) -> Article:
     base = dict(
         dir=Path("."),
-        title="How to access Tableau",
+        title=TITLE,
         section_id=1,
         author_id=2,
         user_segment="Signed-in users",
@@ -23,13 +26,6 @@ def article(**overrides) -> Article:
         labels=[],
         article_id=42,
         last_known_updated_at="2026-09-29T10:00:00Z",
-        attachments={
-            "images/a.png": {
-                "id": 101,
-                "url": "https://z/hc/article_attachments/101/a.png",
-                "sha256": "h",
-            }
-        },
         html="",
     )
     base.update(overrides)
@@ -40,9 +36,9 @@ def test_guard_passes_when_timestamps_match():
     check_overwrite_guard({"updated_at": "2026-09-29T10:00:00Z"}, article())
 
 
-def test_guard_refuses_when_article_id_is_set_without_a_timestamp():
+def test_guard_refuses_without_a_timestamp_and_points_at_pull():
     with pytest.raises(
-        PublishError, match="no last_known_updated_at.*2026-09-29T11:00:00Z"
+        PublishError, match="no last_known_updated_at.*2026-09-29T11:00:00Z.*pull"
     ):
         check_overwrite_guard(
             {"updated_at": "2026-09-29T11:00:00Z"}, article(last_known_updated_at=None)
@@ -60,12 +56,13 @@ def test_guard_normalizes_datetime_against_string():
 
 def test_guard_aborts_with_both_timestamps():
     with pytest.raises(
-        PublishError, match="2026-09-29T10:00:00Z.*2026-09-29T11:30:00Z"
+        PublishError,
+        match="Overwrite guard.*2026-09-29T10:00:00Z.*2026-09-29T11:30:00Z",
     ):
         check_overwrite_guard({"updated_at": "2026-09-29T11:30:00Z"}, article())
 
 
-def test_backup_writes_title_and_body_outside_the_repo(tmp_path):
+def test_backup_writes_title_and_body_to_the_given_folder(tmp_path):
     path = backup_translation(
         {"title": "Old", "body": "<p>old</p>"}, tmp_path, article()
     )
@@ -76,25 +73,22 @@ def test_backup_writes_title_and_body_outside_the_repo(tmp_path):
 
 
 def test_readback_matches_attachments_by_id_after_url_shortening():
-    stored = {
-        "title": "How to access Tableau",
-        "body": '<img src="/hc/article_attachments/101">',
-    }
-    verify_readback(stored, article())
+    stored = {"title": TITLE, "body": '<img src="/hc/article_attachments/101">'}
+    verify_readback(stored, TITLE, SENT)
 
 
 def test_readback_fails_on_missing_attachment():
-    stored = {"title": "How to access Tableau", "body": "<p>no image</p>"}
+    stored = {"title": TITLE, "body": "<p>no image</p>"}
     with pytest.raises(PublishError, match="101"):
-        verify_readback(stored, article(html='<img src="images/a.png">'))
+        verify_readback(stored, TITLE, SENT)
 
 
-def test_readback_ignores_attachments_the_html_no_longer_references():
-    stored = {"title": "How to access Tableau", "body": "<p>no image</p>"}
-    verify_readback(stored, article(html="<p>no image</p>"))
+def test_readback_allows_extra_stored_attachments():
+    stored = {"title": TITLE, "body": '<img src="/hc/article_attachments/101">'}
+    verify_readback(stored, TITLE, "<p>no image</p>")
 
 
 def test_readback_fails_on_title_mismatch():
     stored = {"title": "Other", "body": '<img src="/hc/article_attachments/101">'}
     with pytest.raises(PublishError, match="title"):
-        verify_readback(stored, article())
+        verify_readback(stored, TITLE, SENT)
