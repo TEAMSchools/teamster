@@ -114,11 +114,12 @@ Swap the call in `test_run` for the step at hand, then
 2. Edit `article.html`. For a new or replaced screenshot, save it under
    `images/` and point the `src` at it.
 3. `preview(WORKDIR)`, then serve the folder with
-   `uv run python -m http.server 8765 --directory <WORKDIR>` as a background
-   Bash job. VS Code forwards the port; ask the user to open `/preview.html` on
-   it in a browser or VS Code's Simple Browser. Images already on Zendesk render
-   only if the browser's Zendesk session reaches them; text and layout always
-   render. Stop until they approve, then stop the server.
+   `uv run python -m http.server 8765 --bind 127.0.0.1 --directory <WORKDIR>` as
+   a background Bash job. The folder holds `backups/` of the gated body, so keep
+   the loopback bind. VS Code forwards the port; ask the user to open
+   `/preview.html` on it in a browser or VS Code's Simple Browser. Images
+   already on Zendesk render only if the browser's Zendesk session reaches them;
+   text and layout always render. Stop until they approve, then stop the server.
 4. PII gate for any new image.
 5. Auto-mode check, then `publish(WORKDIR, live=True, approved_images=...)`. If
    `article.yml` says `draft: true`, the article was a draft when pulled: use
@@ -138,7 +139,7 @@ in it.
 ## Report
 
 `publish` returns `uploaded` (local images uploaded this run), `orphaned_ids`
-(attachments on the article the body no longer references; reported, never
-deleted), `backup`, `html_url` and `draft`. A `PublishError` message is written
-for the user. Show it verbatim. The overwrite guard names both timestamps and
-how to proceed.
+(inline images on the article the body no longer references; download
+attachments are left out; reported, never deleted), `backup`, `html_url` and
+`draft`. A `PublishError` message is written for the user. Show it verbatim. The
+overwrite guard names both timestamps and how to proceed.

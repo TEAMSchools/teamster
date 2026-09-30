@@ -57,3 +57,54 @@ def test_orphans_follow_next_page():
         }
     )
     assert find_orphans(c, 42, "") == [1, 2]
+
+
+def test_download_attachments_are_not_orphans():
+    c = client(
+        {
+            ("GET", LIST): (
+                200,
+                {
+                    "article_attachments": [
+                        {"id": 101, "inline": True},
+                        {"id": 102, "inline": False},
+                        {"id": 103},
+                    ],
+                    "next_page": None,
+                },
+            )
+        }
+    )
+    assert find_orphans(c, 42, "") == [101, 103]
+
+
+def test_user_segments_and_permission_groups_follow_next_page():
+    base = "https://z.zendesk.com/api/v2"
+    c = client(
+        {
+            ("GET", "/help_center/user_segments.json"): (
+                200,
+                {
+                    "user_segments": [{"id": 1}],
+                    "next_page": f"{base}/help_center/user_segments.json?page=2",
+                },
+            ),
+            ("GET", "/help_center/user_segments.json?page=2"): (
+                200,
+                {"user_segments": [{"id": 2}], "next_page": None},
+            ),
+            ("GET", "/guide/permission_groups.json"): (
+                200,
+                {
+                    "permission_groups": [{"id": 3}],
+                    "next_page": f"{base}/guide/permission_groups.json?page=2",
+                },
+            ),
+            ("GET", "/guide/permission_groups.json?page=2"): (
+                200,
+                {"permission_groups": [{"id": 4}], "next_page": None},
+            ),
+        }
+    )
+    assert [s["id"] for s in c.user_segments()] == [1, 2]
+    assert [g["id"] for g in c.permission_groups()] == [3, 4]

@@ -6,19 +6,19 @@ is production.
 
 ## Calls in publish order
 
-| Step      | Call                                                                | Notes                                                                 |
-| --------- | ------------------------------------------------------------------- | --------------------------------------------------------------------- |
-| Pull      | `GET /help_center/articles/{id}.json`, then the `en-us` translation | fields, `user_segment_ids`, `updated_at`; stored `title` and `body`   |
-| Resolve   | `GET /help_center/user_segments.json`                               | `user_segments[].{id,name}`; everyone is `user_segment_id: null`      |
-| Resolve   | `GET /guide/permission_groups.json`                                 | `permission_groups[].{id,name}`; note the `/guide/` prefix            |
-| Create    | `POST /help_center/sections/{section_id}/articles.json`             | body `{"article": {...}, "notify_subscribers": false}`, `draft: true` |
-| Fetch     | `GET /help_center/articles/{id}.json`                               | `updated_at` must equal the value `pull` or the last publish recorded |
-| Back up   | `GET /help_center/articles/{id}/translations/en-us.json`            | the stored `title` and `body`                                         |
-| Images    | `POST /help_center/articles/{id}/attachments.json`                  | see _Attachments_                                                     |
-| Fields    | `PUT /help_center/articles/{id}.json`                               | `author_id`, `user_segment_id`, `permission_group_id`, `label_names`  |
-| Publish   | `PUT /help_center/articles/{id}/translations/en-us.json`            | `title`, `body`, `draft`                                              |
-| Read back | `GET /help_center/articles/{id}/translations/en-us.json`            | compare attachment ids, not urls                                      |
-| Orphans   | `GET /help_center/articles/{id}/attachments.json`                   | `article_attachments[].id`; follow `next_page`                        |
+| Step      | Call                                                                | Notes                                                                                         |
+| --------- | ------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Pull      | `GET /help_center/articles/{id}.json`, then the `en-us` translation | fields, `user_segment_ids`, `updated_at`; stored `title` and `body`                           |
+| Resolve   | `GET /help_center/user_segments.json`                               | `user_segments[].{id,name}`; everyone is `user_segment_id: null`                              |
+| Resolve   | `GET /guide/permission_groups.json`                                 | `permission_groups[].{id,name}`; note the `/guide/` prefix                                    |
+| Create    | `POST /help_center/sections/{section_id}/articles.json`             | body `{"article": {...}, "notify_subscribers": false}`, `draft: true`                         |
+| Fetch     | `GET /help_center/articles/{id}.json`                               | `updated_at` must equal the value `pull` or the last publish recorded                         |
+| Back up   | `GET /help_center/articles/{id}/translations/en-us.json`            | the stored `title` and `body`                                                                 |
+| Images    | `POST /help_center/articles/{id}/attachments.json`                  | see _Attachments_                                                                             |
+| Fields    | `PUT /help_center/articles/{id}.json`                               | `author_id`, `user_segment_id`, `permission_group_id`, `label_names`                          |
+| Publish   | `PUT /help_center/articles/{id}/translations/en-us.json`            | `title`, `body`, `draft`                                                                      |
+| Read back | `GET /help_center/articles/{id}/translations/en-us.json`            | compare attachment ids, not urls                                                              |
+| Orphans   | `GET /help_center/articles/{id}/attachments.json`                   | `article_attachments[].{id,inline}`; only `inline: true` can be an orphan; follow `next_page` |
 
 ## Traps
 

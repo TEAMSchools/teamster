@@ -175,11 +175,22 @@ class ZendeskHelpCenter:
             )
         return response.json()
 
+    def _list(self, path: str, key: str) -> list[dict]:
+        """Every item from a list endpoint, following next_page."""
+        next_path: str | None = path
+        items: list[dict] = []
+        while next_path:
+            page = self._call("GET", next_path)
+            items.extend(page[key])
+            next_page = page.get("next_page")
+            next_path = next_page.removeprefix(self.base) if next_page else None
+        return items
+
     def user_segments(self) -> list[dict]:
-        return self._call("GET", "/help_center/user_segments.json")["user_segments"]
+        return self._list("/help_center/user_segments.json", "user_segments")
 
     def permission_groups(self) -> list[dict]:
-        return self._call("GET", "/guide/permission_groups.json")["permission_groups"]
+        return self._list("/guide/permission_groups.json", "permission_groups")
 
     def create_article(self, section_id: int, article: dict) -> dict:
         return self._call(
@@ -209,15 +220,10 @@ class ZendeskHelpCenter:
         )["translation"]
 
     def list_attachments(self, article_id: int) -> list[dict]:
-        """Every attachment on the article, following next_page."""
-        path: str | None = f"/help_center/articles/{article_id}/attachments.json"
-        items: list[dict] = []
-        while path:
-            page = self._call("GET", path)
-            items.extend(page["article_attachments"])
-            next_page = page.get("next_page")
-            path = next_page.removeprefix(self.base) if next_page else None
-        return items
+        return self._list(
+            f"/help_center/articles/{article_id}/attachments.json",
+            "article_attachments",
+        )
 
     def upload_attachment(self, article_id: int, path: Path) -> dict:
         """Upload one inline attachment.
@@ -298,7 +304,8 @@ def resolve_visibility(
 
 def _is_local(src: str) -> bool:
     lowered = src.lower()
-    return not lowered.startswith(("http://", "https://", "//", "data:", "/hc/"))
+    # Any root-relative src (/hc/, /guide-media/, //host) is already on Zendesk.
+    return not lowered.startswith(("http://", "https://", "/", "data:"))
 
 
 def local_images(html: str) -> list[str]:
@@ -374,8 +381,16 @@ def attachment_ids(html: str) -> set[int]:
 
 
 def find_orphans(client: ZendeskHelpCenter, article_id: int, body: str) -> list[int]:
-    """Attachment ids on the article that `body` does not reference. Never deleted."""
-    on_article = {int(a["id"]) for a in client.list_attachments(article_id)}
+    """Inline attachment ids on the article that `body` does not reference.
+
+    Non-inline attachments are downloads listed under the article, never
+    referenced from the body, so they are not orphans. Never deleted.
+    """
+    on_article = {
+        int(a["id"])
+        for a in client.list_attachments(article_id)
+        if a.get("inline", True)
+    }
     return sorted(on_article - attachment_ids(body))
 
 

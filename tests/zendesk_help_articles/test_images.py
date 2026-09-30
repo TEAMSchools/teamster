@@ -133,3 +133,8 @@ def test_upload_needs_an_article_id(tmp_path):
     a.article_id = None
     with pytest.raises(PublishError, match="article_id"):
         upload_local_images(upload_client([]), a, frozenset())
+
+
+def test_root_relative_srcs_are_not_local():
+    html = '<img src="/guide-media/abc.png"><img src="/attachments/token/x">'
+    assert local_images(html) == []
