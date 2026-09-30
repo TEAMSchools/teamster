@@ -39,7 +39,6 @@ exclude_docs: |
   launch/RUNBOOK.md
   launch/README.md
   launch/PROJECT.md
-  help-center/
 
 nav:
   - Home: README.md
