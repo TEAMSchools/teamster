@@ -107,7 +107,7 @@ inherits `contract: enforced: true` and the `extracts` schema from
 | Node                               | Purpose                                                            |
 | ---------------------------------- | ------------------------------------------------------------------ |
 | `seed_ignite__treatment_sections`  | 18 treated sections, one still pending; identifiers only, no names |
-| `seed_ignite__school_nces_ids`     | `schoolid` to NCES school id, supplied by hand                     |
+| `seed_ignite__school_nces_ids`     | `schoolid` to NCES school id; one id covers both Newark schools    |
 | `int_ignite__student_id_crosswalk` | `student_number` to masked numeric `stu_id`; retained, never sent  |
 | `int_ignite__attendance`           | `days_present` and `days_enrolled` per student per school per year |
 | `int_ignite__state_assessment`     | NJSLA and NJGPA reshaped into the math and reading families        |
@@ -125,11 +125,15 @@ governs.
 NCES school identifiers are absent from the warehouse — every existing `nces_id`
 column refers to a **college**, and every `nces_course_id` is a SCED course
 code. Only three KIPP NJ schools enrol grades 9-12, so the seed holds three
-rows. **If the two Newark schools share one NCES id**, `school_id` cannot
-distinguish the two treatment sites and Mathematica must key school-level
-analysis on `school_name` instead; this also means a student who transferred
-between them would collide on `(stu_id, school_id, school_year)`, which the
-longest-enrolled rule avoids by emitting one row per student-year.
+rows. **The two Newark schools do share one NCES id** — confirmed against the
+NCES school listing on 2026-09-30, which returns a single school for each KIPP
+NJ district: `340007000529` for Newark and `340077703307` for Camden. KIPP's
+campus structure is an internal delineation with no federal counterpart, so
+there is no finer identifier to obtain. `school_id` therefore cannot distinguish
+the two Newark treatment sites and Mathematica must key school-level analysis on
+`school_name` instead; this also means a student who transferred between them
+would collide on `(stu_id, school_id, school_year)`, which the longest-enrolled
+rule avoids by emitting one row per student-year.
 
 ### Upstreams
 

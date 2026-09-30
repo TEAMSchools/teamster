@@ -92,18 +92,22 @@ seeds:
 
   - name: seed_ignite__school_nces_ids
     description:
-      NCES school identifiers for the three KIPP NJ schools enrolling grades
-      9-12, which Mathematica requires as `school_id`. These identifiers are
-      public Common Core of Data values and exist nowhere in the warehouse —
-      every `nces_id` column elsewhere in this project refers to a college, and
-      every `nces_course_id` is a SCED course code. Values must be supplied by
-      hand.
+      NCES identifiers for the three KIPP NJ schools enrolling grades 9-12,
+      which Mathematica requires as `school_id`. These are public Common Core of
+      Data values and exist nowhere in the warehouse — every `nces_id` column
+      elsewhere in this project refers to a college, and every `nces_course_id`
+      is a SCED course code. Both KIPP NJ regions are single-school districts in
+      the Common Core of Data, so the campus structure KIPP uses internally has
+      no federal counterpart — the two Newark high schools share one school
+      identifier, and there is no finer one to reach for. Values verified
+      against the NCES school listing for each district on 2026-09-30.
     config:
       column_types:
         schoolid: int64
         school_name: string
         region: string
-        nces_school_id: int64
+        nces_lea_id: string
+        nces_school_id: string
     columns:
       - name: schoolid
         description: PowerSchool school id, the join key to enrollment data.
@@ -121,9 +125,16 @@ seeds:
       - name: region
         description: KIPP NJ region, either Newark or Camden.
 
+      - name: nces_lea_id
+        description:
+          NCES local education agency identifier, seven digits. Retained to
+          record where the school identifier came from and to make the
+          single-school structure legible; it is not sent to Mathematica.
+
       - name: nces_school_id
         description:
-          NCES school identifier sent to Mathematica as `school_id`. Null until
-          supplied; a null here means the outbound `school_id` is blank for
-          every student at that school, so this is checked before submission
-          rather than left to the reviewer to notice.
+          NCES school identifier sent to Mathematica as `school_id`, twelve
+          digits. Held as text rather than a number because it is an identifier
+          no arithmetic applies to, and because a twelve-digit number renders in
+          scientific notation when the outbound workbook is opened in Excel. The
+          two Newark rows deliberately share a value — see the seed description.
