@@ -92,6 +92,11 @@ consumed by reporting tools and applications.
   regexp_replace(normalize(name_col, NFD), r'\pM', '')
   ```
 
+  That keeps case, spaces, and punctuation, so use it for display values. To
+  compare names across systems, use the kipptaf `normalize_name()` macro
+  instead: it folds accents, lowercases, keeps letters only, and returns null
+  for a name with no Latin letters.
+
 - **Time travel** — query a table as it existed at a point in time:
 
   ```sql

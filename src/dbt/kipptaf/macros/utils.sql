@@ -8,6 +8,16 @@
     initcap(regexp_extract({{ table }}._dbt_source_project, r'kipp(\w+)'))
 {% endmacro %}
 
+{# A person-name match key: accents folded, lowercase, letters only. Spaces,
+   hyphens, apostrophes and digits drop out, so "De La Cruz" and "Delacruz"
+   compare equal. A name with no Latin letters left becomes null, so two such
+   names never match each other as ''. #}
+{% macro normalize_name(column) -%}
+    nullif(
+        regexp_replace(normalize_and_casefold({{ column }}, nfkd), r'[^a-z]', ''), ''
+    )
+{%- endmacro %}
+
 {# Miami vendor files through SY2025 carry the bare pre-Focus student number; the
    Focus student_number, and so the network student_number, is that number with an
    8400 prefix (#5149). `year` is the row's academic year and `project` the code
