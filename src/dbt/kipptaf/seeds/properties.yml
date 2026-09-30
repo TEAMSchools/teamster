@@ -3,11 +3,10 @@ seeds:
     description:
       The IGNITE site-lead classroom list, resolved to PowerSchool course and
       section numbers. One row per class the site leads reported running an R2I
-      practice in. Fifteen rows are resolved; one is a duplicate of a section
-      already resolved under another row, and one awaits confirmation from
-      school staff on which of several candidate sections was meant, carrying
-      null identifiers with `status = 'pending'` until answered. Teacher names
-      are deliberately absent — they are staff PII and the resolution worksheet
+      practice in. Seventeen rows are resolved and one is a duplicate of a
+      section already resolved under another row, so every class the site leads
+      reported now maps to an exact course and section number. Teacher names are
+      deliberately absent — they are staff PII and the resolution worksheet
       holding them stays in local scratch. Match a `ref_id` beginning `Q` to the
       correspondingly numbered question in that worksheet. Resolution used class
       period plus the ICR/ICS suffix PowerSchool carries in section numbers,
@@ -76,10 +75,11 @@ seeds:
       - name: status
         description:
           One of `resolved`, `pending` or `duplicate`. Only `resolved` rows are
-          read downstream, so a pending section contributes no treated students.
-          A `duplicate` row names a section another row already resolves — it is
-          kept so the question it answers stays auditable, and excluded so the
-          section join cannot fan out.
+          read downstream, so a pending section would contribute no treated
+          students; no row is pending as of 2026-09-30. A `duplicate` row names
+          a section another row already resolves — it is kept so the question it
+          answers stays auditable, and excluded so the section join cannot fan
+          out.
         data_tests:
           - accepted_values:
               arguments:

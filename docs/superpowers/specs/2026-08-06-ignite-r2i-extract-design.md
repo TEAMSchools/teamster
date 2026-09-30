@@ -221,21 +221,23 @@ section. On that basis 12 of 17 live classes resolved to an exact course and
 section number; four further rows were withdrawn by the researchers themselves,
 and five were sent back to school staff as numbered questions.
 
-Four of those five answers resolved on 2026-09-30. One question resolved to a
-section another row already covers, so it adds no students and is kept only as
-an audit trail. One answer named two sections rather than one, and both are
-treated. One answer named a course that does not exist at that school, but both
-readings of it point at sections already in the treatment set, so the ambiguity
-cannot change the population. The last remains open.
+All five answers came back on 2026-09-30 and every class now maps to an exact
+course and section number. Three resolved directly. One answer named two
+sections rather than one, and both are treated. One named a course that does not
+exist at that school, but both readings of it point at sections already in the
+treatment set, so the ambiguity cannot change the population and the row is kept
+only as an audit trail. The remaining answer ruled out the sole candidate its
+question offered and identified a section taught under another teacher's name,
+which school staff confirmed separately.
 
 The resolved identifiers live in `seed_ignite__treatment_sections`, a seed of 18
 rows carrying course and section numbers only. **Teacher names are deliberately
 absent** — they are staff PII and must not enter a commit; the working
 resolution sheet that holds them stays in `.claude/scratch/`. A row marked
-`pending` carries null identifiers and contributes no treated students, so
-filling that one row and rebuilding is the entire update path. A row marked
-`duplicate` names a section another row already resolves and is excluded so the
-section join cannot fan out.
+`pending` would carry null identifiers and contribute no treated students;
+filling such a row and rebuilding is the whole update path, and none is pending
+now. A row marked `duplicate` names a section another row already resolves and
+is excluded so the section join cannot fan out.
 
 `int_ignite__treatment_assignment` expands that seed to the students enrolled in
 each resolved section. Student-level flags roll up from the course grain: a
