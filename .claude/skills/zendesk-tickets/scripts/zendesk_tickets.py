@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import os
 import re
+from datetime import UTC, datetime, timedelta
 
 import requests
 
@@ -268,3 +269,222 @@ class Catalog:
             if macro["title"] == title:
                 return macro
         raise TicketError(f"No active macro titled {title!r}.")
+
+
+STOPWORDS = frozenset(
+    "a an and are as at be but by for from has have how i in is it its my not of on "
+    "or our please that the their there this to was we what when where who will with "
+    "you your re fw fwd".split()
+)
+
+
+def parse_ts(value: str) -> datetime:
+    return datetime.fromisoformat(value.replace("Z", "+00:00"))
+
+
+def age_days(value: str) -> int:
+    return (datetime.now(UTC) - parse_ts(value)).days
+
+
+def keywords(subject: str) -> list[str]:
+    words = re.findall(r"[a-z0-9]+", subject.lower())
+    return [w for w in words if w not in STOPWORDS and len(w) > 1][:6]
+
+
+def format_rows(rows: list[dict], columns: list[str]) -> str:
+    cells = [
+        [str(r.get(c, "") if r.get(c) is not None else "") for c in columns]
+        for r in rows
+    ]
+    widths = [
+        max(len(c), *(len(row[i]) for row in cells)) if cells else len(c)
+        for i, c in enumerate(columns)
+    ]
+
+    def line(row: list[str]) -> str:
+        return "  ".join(v.ljust(widths[i]) for i, v in enumerate(row)).rstrip()
+
+    return "\n".join([line(columns), *[line(r) for r in cells]])
+
+
+def ticket_custom_value(ticket: dict, field_id: int) -> str | None:
+    for field in ticket.get("custom_fields", []):
+        if field["id"] == field_id:
+            return field.get("value")
+    return None
+
+
+def _name(users: list[dict], user_id: int | None) -> str:
+    for user in users:
+        if user["id"] == user_id:
+            return user["name"]
+    return "" if user_id is None else str(user_id)
+
+
+def format_header(
+    ticket: dict, catalog: Catalog, users: list[dict], groups: list[dict]
+) -> str:
+    group = next((g["name"] for g in groups if g["id"] == ticket.get("group_id")), "")
+    category = catalog.category_name(ticket_custom_value(ticket, CATEGORY_FIELD_ID))
+    return "\n".join(
+        [
+            f"#{ticket['id']}  {ticket['subject']}",
+            f"status: {ticket['status']}   group: {group}   "
+            f"assignee: {_name(users, ticket.get('assignee_id'))}",
+            f"requester: {_name(users, ticket.get('requester_id'))}",
+            f"category: {category}",
+            f"created: {ticket['created_at']}   updated: {ticket['updated_at']}",
+        ]
+    )
+
+
+def format_thread(comments: list[dict], users: list[dict]) -> str:
+    blocks = []
+    for comment in comments:
+        kind = "PUBLIC" if comment.get("public") else "INTERNAL"
+        author = _name(users, comment.get("author_id"))
+        head = f"--- {author}  {kind}  {comment['created_at']}"
+        body = (comment.get("plain_body") or comment.get("body") or "").strip()
+        files = ", ".join(a["file_name"] for a in comment.get("attachments", []))
+        lines = [head, body] + ([f"attachments: {files}"] if files else [])
+        blocks.append("\n".join(lines))
+    return "\n\n".join(blocks)
+
+
+def _tickets_only(results: list[dict]) -> list[dict]:
+    return [r for r in results if r.get("result_type") == "ticket"]
+
+
+def _group_terms(catalog: Catalog, groups) -> str:
+    return " ".join(f"group_id:{catalog.resolve_group(g)['id']}" for g in groups)
+
+
+def _client(client: ZendeskTickets | None) -> ZendeskTickets:
+    return client or client_from_environment()
+
+
+def research(ticket_id: int, *, client: ZendeskTickets | None = None) -> dict:
+    """Ticket, thread, requester, requester history, and similar tickets in one report."""
+    client = _client(client)
+    catalog = Catalog(client)
+    data = client.get_ticket(ticket_id)
+    ticket, users, groups = (
+        data["ticket"],
+        data.get("users", []),
+        data.get("groups", []),
+    )
+    comments, comment_users = client.comments(ticket_id)
+    known = {u["id"] for u in users}
+    users = users + [u for u in comment_users if u["id"] not in known]
+
+    requester = client.get_user(ticket["requester_id"])
+    organization = (
+        client.get_organization(requester["organization_id"])
+        if requester.get("organization_id")
+        else None
+    )
+    since = (datetime.now(UTC) - timedelta(days=HISTORY_DAYS)).strftime("%Y-%m-%d")
+    history_query = f"type:ticket requester:{requester['id']} created>{since}"
+    history = [
+        t for t in _tickets_only(client.search(history_query)) if t["id"] != ticket_id
+    ]
+
+    category_value = ticket_custom_value(ticket, CATEGORY_FIELD_ID)
+    similar_by_category: list[dict] = []
+    if category_value:
+        query = (
+            f"type:ticket custom_field_{CATEGORY_FIELD_ID}:{category_value} "
+            f"{_group_terms(catalog, DEFAULT_GROUPS)}"
+        )
+        similar_by_category = [
+            t for t in _tickets_only(client.search(query)) if t["id"] != ticket_id
+        ][:SIMILAR_LIMIT]
+    words = keywords(ticket["subject"])
+    similar_by_keywords: list[dict] = []
+    if words:
+        similar_by_keywords = [
+            t
+            for t in _tickets_only(client.search("type:ticket " + " ".join(words)))
+            if t["id"] != ticket_id
+        ][:SIMILAR_LIMIT]
+
+    columns = ["id", "status", "subject", "created_at"]
+    print(format_header(ticket, catalog, users, groups))
+    print(
+        f"organization: {organization['name']}"
+        if organization
+        else "organization: none"
+    )
+    print()
+    print(format_thread(comments, users))
+    print(f"\nRequester history (last {HISTORY_DAYS} days)")
+    print(format_rows(history, columns) if history else "none")
+    print("\nSimilar tickets, same category")
+    print(format_rows(similar_by_category, columns) if similar_by_category else "none")
+    print(f"\nSimilar tickets, subject keywords {words}")
+    print(format_rows(similar_by_keywords, columns) if similar_by_keywords else "none")
+    return {
+        "ticket": ticket,
+        "comments": comments,
+        "requester": requester,
+        "organization": organization,
+        "history": history,
+        "similar_by_category": similar_by_category,
+        "similar_by_keywords": similar_by_keywords,
+    }
+
+
+def thread(ticket_id: int, *, client: ZendeskTickets | None = None) -> list[dict]:
+    client = _client(client)
+    data = client.get_ticket(ticket_id)
+    comments, users = client.comments(ticket_id)
+    users = data.get("users", []) + users
+    print(f"#{ticket_id}  {data['ticket']['subject']}\n")
+    print(format_thread(comments, users))
+    return comments
+
+
+def search(
+    query: str, groups=None, *, client: ZendeskTickets | None = None
+) -> list[dict]:
+    client = _client(client)
+    catalog = Catalog(client)
+    full = "type:ticket " + query
+    if groups:
+        full += " " + _group_terms(catalog, groups)
+    results = _tickets_only(client.search(full))
+    columns = ["id", "status", "subject", "requester_id", "created_at", "updated_at"]
+    print(format_rows(results, columns))
+    return results
+
+
+def queue(groups=DEFAULT_GROUPS, *, client: ZendeskTickets | None = None) -> list[dict]:
+    """Unsolved tickets in the named groups, oldest first."""
+    client = _client(client)
+    catalog = Catalog(client)
+    query = f"type:ticket status<solved {_group_terms(catalog, groups)}"
+    results = _tickets_only(
+        client.search(query, sort_by="created_at", sort_order="asc")
+    )
+    ids: list[int] = sorted(
+        {int(t["assignee_id"]) for t in results if t.get("assignee_id")}
+        | {int(t["requester_id"]) for t in results if t.get("requester_id")}
+    )
+    users = client.users_show_many(ids) if ids else []
+    rows = [
+        {
+            "id": t["id"],
+            "status": t["status"],
+            "age": age_days(t["created_at"]),
+            "requester": _name(users, t.get("requester_id")),
+            "subject": t["subject"],
+            "category": catalog.category_name(
+                ticket_custom_value(t, CATEGORY_FIELD_ID)
+            ),
+            "assignee": _name(users, t.get("assignee_id")),
+        }
+        for t in results
+    ]
+    columns = ["id", "status", "age", "requester", "subject", "category", "assignee"]
+    print(format_rows(rows, columns))
+    return rows
