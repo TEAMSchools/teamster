@@ -2,6 +2,24 @@
 
 Ask: which flag, region, school level, and quarter.
 
+## A student who left the section
+
+When a category reads _Invalid scores entered_ or _Under 90% graded_ and the
+teacher sees no blank scores, check for a student who has since left the section
+before querying anything. `int_powerschool__gradebook_assignments_scores`
+expects a score for every assignment with `duedate` from `cc_dateenrolled` up to
+(not including) `cc_dateleft`, so blanks due before the exit date still keep the
+assignment from counting. PowerTeacher Pro hides dropped students from the
+roster, which is why the teacher cannot find them. Nothing in dbt is wrong.
+
+Send the teacher
+[PowerTeacher Pro :: Fixing Blank Scores for a Student Who Left Your Class](https://teamschools.zendesk.com/hc/en-us/articles/43864087130391):
+**Students**, then **Show Dropped**, select the student, and score or exempt
+each blank due before the exit date. The article lives in
+`docs/help-center/withdrawn-student-gradebook/`.
+
+## A flag that isn't firing
+
 First establish which flag: `has_grade_above_100` /
 `has_grade_below_70_no_comment` (student-level, aggregated from
 `int_extracts__gradebook_audit_student_flags`), `not_enough_assignments`
