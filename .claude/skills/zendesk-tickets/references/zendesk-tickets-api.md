@@ -66,3 +66,8 @@ so every write is production. Rate limit 700 requests per minute.
   plus the macro's changes, not a diff. Placeholders were rendered
   (`Hi <first name>`). `comment.body` came back as HTML with `<p>` tags and
   `comment.public: true`, so the PUT sends it as `html_body`.
+- `apply` posted an internal note with the signature line, on the user's yes.
+  The thread read back showed it as the last comment with `public: false`, and
+  the draft file was deleted. The `updated_at` guard passed because nothing
+  touched the ticket between draft and apply; the refusal path is covered
+  offline only.
