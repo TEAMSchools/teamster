@@ -1,11 +1,13 @@
 from pathlib import Path
 
+# trunk-ignore-begin(pyright/reportMissingImports): conftest.py puts the scripts folder on sys.path
+import publish_article
 import pytest
 import yaml
 from fakes import FakeSession
-
-# trunk-ignore(pyright/reportMissingImports): conftest.py puts the scripts folder on sys.path
 from publish_article import PublishError, ZendeskHelpCenter, publish
+
+# trunk-ignore-end(pyright/reportMissingImports)
 
 SEGMENTS = (200, {"user_segments": [{"id": 11, "name": "Signed-in users"}]})
 GROUPS = (200, {"permission_groups": [{"id": 21, "name": "Agents and admins"}]})
@@ -229,4 +231,38 @@ def test_missing_author_refuses_before_network(tmp_path):
     client, session = client_for(Server())
     with pytest.raises(PublishError, match="author_id"):
         publish(d, live=False, backup_dir=tmp_path / "bak", client=client)
+    assert session.calls == []
+
+
+def test_workdir_inside_checkout_refuses_before_network(tmp_path, monkeypatch):
+    monkeypatch.setattr(publish_article, "REPO_ROOT", tmp_path.resolve())
+    (tmp_path / "inside").mkdir()
+    d = write_article(tmp_path / "inside")
+    client, session = client_for(Server())
+    with pytest.raises(PublishError, match="inside the checkout"):
+        publish(
+            d,
+            live=False,
+            approved_images=frozenset({"images/a.png"}),
+            backup_dir=tmp_path / "bak",
+            client=client,
+        )
+    assert session.calls == []
+
+
+def test_backup_dir_inside_checkout_refuses_before_network(tmp_path, monkeypatch):
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    monkeypatch.setattr(publish_article, "REPO_ROOT", repo.resolve())
+    (tmp_path / "work").mkdir()
+    d = write_article(tmp_path / "work")
+    client, session = client_for(Server())
+    with pytest.raises(PublishError, match="inside the checkout"):
+        publish(
+            d,
+            live=False,
+            approved_images=frozenset({"images/a.png"}),
+            backup_dir=repo / "bak",
+            client=client,
+        )
     assert session.calls == []

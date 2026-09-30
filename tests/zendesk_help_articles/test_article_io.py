@@ -1,5 +1,7 @@
 from pathlib import Path
 
+# trunk-ignore(pyright/reportMissingImports): conftest.py puts the scripts folder on sys.path
+import publish_article
 import pytest
 import yaml
 
@@ -8,6 +10,7 @@ from publish_article import (
     DEFAULT_PERMISSION_GROUP,
     DEFAULT_USER_SEGMENT,
     PublishError,
+    check_workdir,
     load_article,
     save_state,
 )
@@ -68,3 +71,26 @@ def test_save_state_round_trips_and_keeps_user_fields(tmp_path):
     again = load_article(d)
     assert again.article_id == 99
     assert again.attachments == a.attachments
+
+
+def test_repo_root_is_the_checkout():
+    root = publish_article.REPO_ROOT
+    assert (root / "pyproject.toml").is_file()
+    assert (root / ".claude" / "skills" / "zendesk-help-articles").is_dir()
+
+
+def test_check_workdir_refuses_a_folder_inside_the_checkout(tmp_path, monkeypatch):
+    monkeypatch.setattr(publish_article, "REPO_ROOT", tmp_path.resolve())
+    with pytest.raises(PublishError, match="inside the checkout"):
+        check_workdir(tmp_path / "zendesk" / "42")
+
+
+def test_check_workdir_resolves_dotdot_before_comparing(tmp_path, monkeypatch):
+    repo = tmp_path / "repo"
+    outside = tmp_path / "outside"
+    repo.mkdir()
+    outside.mkdir()
+    monkeypatch.setattr(publish_article, "REPO_ROOT", repo.resolve())
+    with pytest.raises(PublishError, match="inside the checkout"):
+        check_workdir(outside / ".." / "repo" / "zendesk")
+    check_workdir(outside / "zendesk")

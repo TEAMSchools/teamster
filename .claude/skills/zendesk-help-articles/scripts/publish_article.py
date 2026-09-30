@@ -1,8 +1,10 @@
-"""Publish a help article folder to the Zendesk Help Center.
+"""Publish a help article working folder to the Zendesk Help Center.
 
 Runs only under pytest: the session fixture in tests/conftest.py loads
-ZENDESK_SUBDOMAIN, ZENDESK_EMAIL and ZENDESK_TOKEN from 1Password. See
-.claude/skills/zendesk-help-articles/SKILL.md for the flow and
+ZENDESK_SUBDOMAIN, ZENDESK_EMAIL and ZENDESK_TOKEN from 1Password. The working
+folder lives in the session scratchpad; every entry point refuses one inside
+the checkout, because Help Center articles are gated and this repo is public.
+See .claude/skills/zendesk-help-articles/SKILL.md for the flow and
 references/zendesk-api.md for the endpoints.
 """
 
@@ -27,6 +29,8 @@ LOCALE = "en-us"
 UPLOAD_ATTEMPTS = 5
 RETRY_DELAY_SECONDS = 2
 TIMEOUT_SECONDS = 60
+# scripts/ -> zendesk-help-articles/ -> skills/ -> .claude/ -> checkout root
+REPO_ROOT = Path(__file__).resolve().parents[4]
 
 # Group 1: everything up to and including `src=`; group 2: the quote; group 3: the value.
 # The lookbehind keeps `data-src=` from matching.
@@ -77,6 +81,16 @@ def _iso_z(value) -> str | None:
     if parsed.tzinfo is None:
         parsed = parsed.replace(tzinfo=UTC)
     return parsed.astimezone(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def check_workdir(path: Path) -> None:
+    """Refuse a folder inside the checkout. Articles are gated; the repo is public."""
+    if path.resolve().is_relative_to(REPO_ROOT):
+        raise PublishError(
+            f"{path} is inside the checkout ({REPO_ROOT}). Help Center articles are "
+            "restricted to signed-in users and this repo is public, so the working "
+            "folder must live in the session scratchpad."
+        )
 
 
 def load_article(article_dir: Path) -> Article:
@@ -428,6 +442,8 @@ def publish(
     has no separate draft of a published article, so `live=False` would take it
     offline for readers.
     """
+    check_workdir(article_dir)
+    check_workdir(backup_dir)
     article = load_article(article_dir)
     check_local_images(article, approved_images)
     client = client or client_from_environment()
