@@ -45,9 +45,17 @@ with
             pearson_accommodations as ac on ps.studenttestuuid = ac.studenttestuuid
     ),
 
-    /* Cambium replaced Pearson as New Jersey's vendor, and its file carries no
-     accommodation or exemption fields, so the three columns are padded null
-     rather than defaulted to a flag value. */
+    /* Cambium replaced Pearson as New Jersey's vendor. Its file DOES carry
+     unique_accommodation, ml_accommodation and iep_exempt_from_passing, but
+     stg_cambium__njsla projects 28 of the file's 228 columns and does not
+     include them, so they cannot be read here yet. Padded null rather than
+     defaulted, because null is the honest value for "not available to this
+     model" — see the TODO below.
+     TODO(#4753): stage the three columns through the cambium package and
+     int_cambium__all_assessments, then read them here. 33 IGNITE students in
+     SY2025-2026 carry ml_accommodation = 'Y' and are reported null today.
+     Note iep_exempt_from_passing is NOT the Pearson Y/N flag: Cambium uses
+     N plus the codes B, E and M, so a '= Y' test would never fire. */
     cambium as (
         select
             student_number,

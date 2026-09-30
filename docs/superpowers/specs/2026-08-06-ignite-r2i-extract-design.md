@@ -298,14 +298,23 @@ Interim columns are populated where data exists and left null elsewhere.
 Mathematica should be told which cells are structurally empty rather than left
 to infer it from blanks.
 
-### The iReady source duplicates a school year across partitions
+### The iReady partition duplication has cleared
 
-`int_iready__diagnostic_results` carries school year 2025-2026 under **both**
-`_dagster_partition_academic_year = 2025` and `= 2026`, with matching distinct
-student counts under each. An unconstrained read double-counts, and filtering
-`rn_subj_round = 1` does not resolve it. `int_ignite__interim_assessment` must
-constrain the partition explicitly. This looks like an upstream defect and
-warrants its own issue.
+When this was written, `int_iready__diagnostic_results` carried school year
+2025-2026 under **both** `_dagster_partition_academic_year = 2025` and `= 2026`
+with matching distinct student counts, so an unconstrained read double-counted
+and `rn_subj_round = 1` did not resolve it.
+
+Rechecked 2026-09-30: it no longer does. Each partition now maps to exactly one
+academic year — 2024 to 2024-2025, 2025 to 2025-2026, 2026 to 2026-2027 — and
+partition 2026 holds only BOY and Outside Round rows, which is what a school
+year a month old looks like rather than a copy of a finished one. Across
+partitions 2025 and 2026 only 117 of 19,079 records share a student, subject,
+round and score, consistent with coincidence rather than duplication.
+
+`int_ignite__interim_assessment` still filters `academic_year_int`, which is
+still correct, but now because SY2026-2027 is genuinely out of scope rather than
+because it is a duplicate. No issue needs filing.
 
 ### Column mapping — student level
 
@@ -417,9 +426,18 @@ Confirm access before a file is ready rather than after.
 4. **Are accommodation and exemption codes available** for NJSLA and NJGPA at
    the grain Mathematica wants, including students with multiple accommodations?
    Partly resolved. Pearson supplied yes/no flags and no codes, and populated
-   them sparsely. Cambium, which replaced Pearson for SY2025-2026, supplies
-   neither flags nor codes, so every SY2025-2026 row is null on all four
-   accommodation and exemption columns. The models emit null rather than zero
-   there, because the fact being recorded is that the state gave no answer, not
-   that the answer was no. Confirm Mathematica would rather have a blank than a
-   zero; if they want a zero, the change is one `case` branch per column.
+   them sparsely. Cambium, which replaced Pearson for SY2025-2026, **does**
+   supply them — `unique_accommodation`, `ml_accommodation` and
+   `iep_exempt_from_passing` are all present in the District Summative Record
+   File — but `stg_cambium__njsla` projects 28 of that file's 228 columns and
+   does not include them, so they are unreachable downstream today. Every
+   SY2025-2026 row is therefore null on all four accommodation and exemption
+   columns, which understates the truth for 33 IGNITE students carrying
+   `ml_accommodation = 'Y'`. Wiring them through is a cross-project change: the
+   columns must be added to the cambium package and
+   `int_cambium__all_assessments`, and reach kipptaf only after a district prod
+   rebuild. It also needs a mapping rather than a passthrough, because Cambium
+   redefined the exemption field from Pearson's `Y`/`N` flag to `N` plus the
+   codes `B`, `E` and `M`, so a `= 'Y'` test would never fire. Separately,
+   confirm whether Mathematica would rather have a blank than a zero where no
+   answer exists at all.

@@ -9,13 +9,18 @@ models:
       `int_cambium__all_assessments` for SY2025-2026 — unioned before the
       per-subject pick. Accommodation and exemption flags come from
       `stg_pearson__njsla`, which the Pearson intermediate does not carry
-      forward. Three limitations are structural rather than fixable here. First,
-      New Jersey administers no separate writing assessment, so Mathematica's
-      optional `_w` family has no source and is omitted. Second, NJGPA carries
-      no accommodation or exemption fields at all. Third, the Cambium file
-      carries none either, so every SY2025-2026 row is in that position. Both
-      cases yield null rather than zero, because the distinction being recorded
-      is that the state supplied no answer, not that the answer was no.
+      forward. Two limitations are structural — New Jersey administers no
+      separate writing assessment, so Mathematica's optional `_w` family has no
+      source and is omitted, and NJGPA carries no accommodation or exemption
+      fields at all. A third is current rather than structural. The Cambium file
+      does carry accommodation and exemption columns, but `stg_cambium__njsla`
+      projects 28 of its 228 columns and does not include them, so no
+      SY2025-2026 row can reach them from here yet. All three cases yield null
+      rather than zero, because the value recorded is the absence of an answer
+      rather than a negative answer. Cambium also redefined the exemption field
+      — Pearson used a yes/no flag where Cambium uses `N` plus the codes `B`,
+      `E` and `M` — so wiring the column through needs a mapping, not a
+      passthrough.
     config:
       meta:
         contains_pii: true
