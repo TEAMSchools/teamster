@@ -16,6 +16,7 @@ import re
 import time
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
+from html import escape
 from pathlib import Path
 
 import requests
@@ -30,6 +31,15 @@ RETRY_DELAY_SECONDS = 2
 TIMEOUT_SECONDS = 60
 # scripts/ -> zendesk-help-articles/ -> skills/ -> .claude/ -> checkout root
 REPO_ROOT = Path(__file__).resolve().parents[4]
+SHELL_PATH = (
+    Path(__file__).resolve().parents[1]
+    / "references"
+    / "design-system"
+    / "sample-article.html"
+)
+BODY_OPEN = '<div class="article-body">'
+SIDE_OPEN = '<div class="hc-side">'
+HC_TITLE_RE = re.compile(r'<h1 class="hc-title">.*?</h1>', re.DOTALL)
 
 # Group 1: everything up to and including `src=`; group 2: the quote; group 3: the value.
 # The lookbehind keeps `data-src=` from matching.
@@ -254,6 +264,13 @@ def _id_by_name(items: list[dict], name: str, kind: str) -> int:
             return int(item["id"])
     choices = ", ".join(sorted(str(i.get("name")) for i in items))
     raise PublishError(f"No {kind} named {name!r} in Zendesk. Available: {choices}")
+
+
+def _name_by_id(items: list[dict], item_id: int, kind: str) -> str:
+    for item in items:
+        if int(item["id"]) == int(item_id):
+            return str(item["name"])
+    raise PublishError(f"No {kind} with id {item_id} in Zendesk")
 
 
 def resolve_visibility(
@@ -501,3 +518,72 @@ def publish(
         orphaned_ids=find_orphans(client, article.article_id, article.html),
         backup=backup,
     )
+
+
+def pull(
+    article_id: int, workdir: Path, *, client: ZendeskHelpCenter | None = None
+) -> Article:
+    """Seed a working folder from what Zendesk has now, for an edit.
+
+    Writes article.html (the stored body) and article.yml (fields, visibility
+    by name, and the article's updated_at for the overwrite guard). Refuses an
+    existing article.html so in-progress edits survive. Every network call runs
+    before anything is written.
+    """
+    check_workdir(workdir)
+    if (workdir / "article.html").exists():
+        raise PublishError(
+            f"{workdir / 'article.html'} already exists. Pull into a new folder so "
+            "in-progress edits are not lost."
+        )
+    client = client or client_from_environment()
+    remote = client.get_article(article_id)
+    segment_ids = remote.get("user_segment_ids") or []
+    if len(segment_ids) > 1:
+        raise PublishError(
+            f"Article {article_id} is visible to {len(segment_ids)} user segments "
+            f"{segment_ids}. The publisher sets one segment and would drop the rest; "
+            "change this article's visibility in Guide instead."
+        )
+    translation = client.get_translation(article_id)
+    segment_id = remote.get("user_segment_id")
+    if segment_id is None:
+        segment = EVERYONE
+    else:
+        segment = _name_by_id(client.user_segments(), segment_id, "user segment")
+    group = _name_by_id(
+        client.permission_groups(), remote["permission_group_id"], "permission group"
+    )
+    meta = {
+        "title": translation["title"],
+        "section_id": remote["section_id"],
+        "author_id": remote["author_id"],
+        "labels": list(remote.get("label_names") or []),
+        "user_segment": segment,
+        "permission_group": group,
+        "article_id": article_id,
+        "last_known_updated_at": _iso_z(remote["updated_at"]),
+    }
+    workdir.mkdir(parents=True, exist_ok=True)
+    (workdir / "article.yml").write_text(yaml.safe_dump(meta, sort_keys=False))
+    (workdir / "article.html").write_text(translation.get("body") or "")
+    return load_article(workdir)
+
+
+def preview(workdir: Path) -> Path:
+    """Wrap article.html in the design system's sample shell. No network.
+
+    Zendesk-hosted images render only if the browser's signed-in Zendesk
+    session reaches them from the preview's origin; text and layout always do.
+    """
+    check_workdir(workdir)
+    article = load_article(workdir)
+    shell = SHELL_PATH.read_text()
+    start = shell.index(BODY_OPEN) + len(BODY_OPEN)
+    end = shell.index(SIDE_OPEN)
+    page = f"{shell[:start]}\n{article.html}\n    </div>\n    {shell[end:]}"
+    heading = f'<h1 class="hc-title">{escape(article.title)}</h1>'
+    page = HC_TITLE_RE.sub(lambda _match: heading, page, count=1)
+    out = workdir / "preview.html"
+    out.write_text(page)
+    return out
