@@ -1,4 +1,6 @@
 with
+    /* grain projection: one row per student from a multi-stint upstream, and
+     student_number is the only column projected. Not a mask for duplicates. */
     population as (
         select distinct student_number,
         from {{ ref("int_extracts__student_enrollments") }}

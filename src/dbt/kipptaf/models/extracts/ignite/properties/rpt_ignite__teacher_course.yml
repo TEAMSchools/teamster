@@ -46,6 +46,16 @@ models:
         description:
           Four-digit year at the END of the school year, matching Tables 1 and
           2.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - accepted_values:
+              arguments:
+                values: [2025, 2026]
+                quote: false
+              config:
+                severity: error
 
       - name: school_name
         data_type: string

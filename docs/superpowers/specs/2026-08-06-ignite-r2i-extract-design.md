@@ -113,6 +113,7 @@ inherits `contract: enforced: true` and the `extracts` schema from
 | `int_ignite__state_assessment`     | NJSLA and NJGPA reshaped into the math and reading families        |
 | `int_ignite__interim_assessment`   | iReady beginning-of-year and end-of-year by subject                |
 | `int_ignite__treatment_assignment` | the seam; treated sections to students to the class-level flags    |
+| `int_ignite__student_treatment`    | class-level flags rolled up to one row per student per year        |
 | `rpt_ignite__student_level`        | Table 1                                                            |
 | `rpt_ignite__course_level`         | Table 2                                                            |
 | `rpt_ignite__teacher_course`       | anonymized classroom file returned to Mathematica                  |
@@ -147,8 +148,11 @@ All already exist:
   `membershipvalue`
 - `int_pearson__all_assessments` — NJSLA, NJGPA through SY2024-2025
 - `int_cambium__all_assessments` — NJSLA, NJGPA from SY2025-2026
-- `int_iready__diagnostic_results` — iReady diagnostics
-- `stg_google_sheets__crdc__sced_code_crosswalk` — course to subject mapping
+- `int_iready__diagnostic_results` — iReady diagnostics Course subject is
+  derived from PowerSchool's `credit_type` with a four-branch `case`, not from
+  `stg_google_sheets__crdc__sced_code_crosswalk`. The crosswalk is keyed on
+  `nces_subject_area` plus `nces_course_id`, which this extract never needs, so
+  joining it would add a dependency to reach four constants.
 
 ## Data flow
 
@@ -339,7 +343,10 @@ warrants its own issue.
 
 `semester` maps to `1` for fall and `2` for spring per the template codebook.
 `course_grade` must be a letter in A, B, C, D, F, or W; numeric scales require a
-letter mapping.
+letter mapping. Mathematica allows W, but `storecode = 'Y1'` never carries one
+here — the population holds only A, B, C, D, F and nulls — so the
+`accepted_values` test deliberately omits it, and a W appearing later should be
+investigated rather than waved through.
 
 ## Sequencing around the blocker
 
@@ -373,8 +380,8 @@ starting work.
   `course_number`, `section_number`, and `semester` for Table 2
 - `dbt_utils.expression_is_true` asserting `days_present` is at most
   `days_enrolled`
-- `accepted_values` on `course_grade` limited to A, B, C, D, F, W, paired with
-  `not_null` — `accepted_values` alone passes NULLs
+- `accepted_values` on `course_grade` limited to the letters the population
+  actually produces, A, B, C, D and F
 - `relationships` from `rpt_ignite__course_level.stu_id` to the crosswalk
 - unmatched site-lead rows test on the seam
 - `not_null` on every field Mathematica marks required

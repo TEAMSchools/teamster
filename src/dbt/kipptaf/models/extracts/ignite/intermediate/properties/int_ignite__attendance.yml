@@ -9,6 +9,9 @@ models:
       mid-year. Values stay fractional here, since a half-day attendance code
       contributes 0.5; the outbound model rounds to whole days to satisfy
       Mathematica's "number, no decimals" format.
+    config:
+      meta:
+        contains_pii: true
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

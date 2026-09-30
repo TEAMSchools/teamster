@@ -18,6 +18,9 @@ models:
       columns are omitted deliberately — the warehouse carries
       score-plus-growth, not the growth amount Mathematica's optional fields ask
       for, and sending the former under the latter's name would be wrong.
+    config:
+      meta:
+        contains_pii: true
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

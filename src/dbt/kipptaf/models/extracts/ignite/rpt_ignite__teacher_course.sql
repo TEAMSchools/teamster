@@ -9,9 +9,9 @@ with
             course_name,
             section_or_period,
             student_number,
+            sectionid,
 
             cast(grade_level as string) as grade_level_string,
-            cast(sectionid as string) as sectionid_string,
         from {{ ref("int_extracts__course_enrollments_by_term") }}
         where
             academic_year in ({{ var("ignite_academic_years") | join(", ") }})
@@ -30,7 +30,7 @@ with
 
             min(credit_type) as credit_type,
             min(course_name) as course_name,
-            min(sectionid_string) as classid,
+            min(sectionid) as classid_number,
             count(distinct student_number) as student_count,
             string_agg(
                 distinct grade_level_string order by grade_level_string
@@ -57,10 +57,11 @@ with
 
             d.credit_type,
             d.course_name,
-            d.classid,
             d.grade_levels,
             d.periods,
             d.student_count,
+
+            cast(d.classid_number as string) as classid,
         from {{ ref("seed_ignite__treatment_sections") }} as s
         left join
             section_detail as d

@@ -10,6 +10,9 @@ models:
       are read, so sections still awaiting school confirmation contribute no
       treated students rather than guessed ones. Filling the seed's pending rows
       and rebuilding is the whole update path.
+    config:
+      meta:
+        contains_pii: true
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

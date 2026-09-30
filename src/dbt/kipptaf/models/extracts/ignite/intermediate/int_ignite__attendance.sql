@@ -1,20 +1,10 @@
-{%- set ignite_yearids = [] -%}
-{%- for ay in var("ignite_academic_years") -%}
-    {%- do ignite_yearids.append(ay - 1990) -%}
-{%- endfor -%}
-
 with
     daily as (
         select
-            student_number,
-            schoolid,
-            attendancevalue,
-            membershipvalue,
-
-            yearid + 1990 as academic_year,
-        from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }}
+            student_number, schoolid, academic_year, attendancevalue, membershipvalue,
+        from {{ ref("int_students__attendance_daily") }}
         where
-            yearid in ({{ ignite_yearids | join(", ") }})
+            academic_year in ({{ var("ignite_academic_years") | join(", ") }})
             and grade_level in ({{ var("ignite_grade_levels") | join(", ") }})
             and student_number is not null
     )

@@ -17,6 +17,9 @@ models:
       stretch-growth columns are omitted because the warehouse holds
       score-plus-growth rather than the growth amount, and reporting one under
       the other's name would be wrong.
+    config:
+      meta:
+        contains_pii: true
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

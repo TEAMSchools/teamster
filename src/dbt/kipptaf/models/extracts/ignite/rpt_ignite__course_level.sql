@@ -80,17 +80,6 @@ with
         }}
     ),
 
-    student_treatment as (
-        select
-            student_number,
-            academic_year,
-            max(cls_treatment_cp) as treatment_cp,
-            max(cls_treatment_rdc) as treatment_rdc,
-            max(cls_treatment_rr) as treatment_rr,
-        from {{ ref("int_ignite__treatment_assignment") }}
-        group by student_number, academic_year
-    ),
-
     assembled as (
         select
             e.academic_year,
@@ -143,7 +132,7 @@ with
             and e.course_number = t.course_number
             and e.section_number = t.section_number
         left join
-            student_treatment as st
+            {{ ref("int_ignite__student_treatment") }} as st
             on e.student_number = st.student_number
             and e.academic_year = st.academic_year
     ),

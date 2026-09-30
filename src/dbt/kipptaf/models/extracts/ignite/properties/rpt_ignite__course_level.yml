@@ -9,6 +9,9 @@ models:
       straight into their workbook. Carries no student or state identifier —
       students appear only under the masked `stu_id` from
       `int_ignite__student_id_crosswalk`.
+    config:
+      meta:
+        contains_pii: true
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

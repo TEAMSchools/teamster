@@ -1,4 +1,7 @@
 with
+    /* grain projection: the upstream carries one row per enrollment stint and
+     every column here is functionally determined by (student_number,
+     academic_year, schoolid). Not a mask for upstream duplicates. */
     enrollments as (
         select distinct
             student_number,
@@ -59,17 +62,6 @@ with
         }}
     ),
 
-    student_treatment as (
-        select
-            student_number,
-            academic_year,
-            max(cls_treatment_cp) as treatment_cp,
-            max(cls_treatment_rdc) as treatment_rdc,
-            max(cls_treatment_rr) as treatment_rr,
-        from {{ ref("int_ignite__treatment_assignment") }}
-        group by student_number, academic_year
-    ),
-
     assembled as (
         select
             s.academic_year,
@@ -116,7 +108,7 @@ with
         left join
             {{ ref("seed_ignite__school_nces_ids") }} as n on s.schoolid = n.schoolid
         left join
-            student_treatment as t
+            {{ ref("int_ignite__student_treatment") }} as t
             on s.student_number = t.student_number
             and s.academic_year = t.academic_year
         left join
