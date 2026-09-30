@@ -3,9 +3,8 @@ models:
     description: >-
       Pearson student list report rows, the preliminary per-student scores
       Pearson released before final score files. test_type, administration and
-      fiscal_year come from the Dagster partition keys. Pearson stopped
-      administering NJ state tests after December 2025, so this relation no
-      longer gains rows.
+      fiscal_year come from the Dagster partition keys. Frozen history; no new
+      rows are expected.
     columns:
       - name: state_student_identifier
         data_type: int64
