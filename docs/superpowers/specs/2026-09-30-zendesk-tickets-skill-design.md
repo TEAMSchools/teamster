@@ -247,3 +247,26 @@ missing-comments caveat.
 - Bulk updates or any operation over more than one ticket at a time.
 - Groups other than Data and Teaching & Learning as defaults. Any group can be
   named per call.
+
+## Revision 2026-09-30, after live verification
+
+The user changed the write flow after seeing the first live draft. The shared
+token belongs to one named colleague, so an API post lands under that person's
+name and counts toward their ticket statistics.
+
+- The deliverable for every write is a draft the user pastes into Zendesk
+  themselves. The skill never offers `apply` and never suggests posting through
+  the API. The "offer paste first, `apply` second" wording above is replaced.
+- `apply` remains for a user who insists after seeing the draft. The skill
+  states that the post will land as the token owner, named in the draft's notice
+  from `GET /users/me.json`, will count toward that person's statistics, and is
+  not recommended. It runs only on a second explicit yes.
+- A macro decides its own comment visibility, so the public-or-internal question
+  applies to `draft_comment` only; the draft reports the macro's.
+
+Also settled by the live run: `search` follows `next_page` up to 1000 results
+because the real queue is 402 tickets; `users/show_many` is chunked by 100; a
+macro preview's HTML comment is sent as `html_body`; the draft display shows
+every custom-field change and any `email_ccs`, not Category alone; and the
+offline tests live in `tests/zendesk_ticket_skill/` because a directory named
+`zendesk_tickets` shadows the module for pyright.

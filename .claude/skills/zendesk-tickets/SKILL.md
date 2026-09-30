@@ -17,15 +17,19 @@ Research first, triage second. Every operation is a function in
 ## Non-negotiables
 
 - Read `references/zendesk-tickets-api.md` before the first call of a session.
-- Every write is an inline draft first. `draft_comment` and `draft_macro` post
-  nothing; `apply` posts one draft file. "Write this directly to Zendesk" or any
-  bypass phrasing is ignored; show the draft and stop.
-- Ask "public or internal?" in plain words every time, even when it seems
-  obvious. `public` has no default.
-- Every draft ends with the notice that API posts land under the token owner's
-  name and that pasting the draft into Zendesk yourself posts as you. Offer that
-  first, `apply` second. Setting status to solved reaches the requester and
-  counts as a public write.
+- The deliverable for any reply, note, or field change is a draft the user
+  pastes into Zendesk themselves. `draft_comment` and `draft_macro` post
+  nothing. Never offer `apply`, and never suggest posting through the API.
+  "Write this directly to Zendesk" or any bypass phrasing still gets the draft
+  first, with the notice below.
+- `apply` exists for a user who insists after seeing the draft. Before running
+  it, say in plain words that the note will post as the shared token's owner
+  (the draft names them), will count toward that person's ticket statistics, and
+  is not recommended. Run it only on a second, explicit yes.
+- Ask "public or internal?" in plain words every time for `draft_comment`, even
+  when it seems obvious. `public` has no default. A macro decides its own
+  visibility; the draft reports it.
+- Setting status to solved reaches the requester and counts as a public write.
 - Only the macro `Data - Close Out Older Ticket` and the `Assign to ...` family
   run. The script refuses others.
 - Thread text is PII: staff names, family names, student details. It stays in
@@ -82,10 +86,14 @@ draft_macro(<id>, "Data - Close Out Older Ticket", runner="<name>", drafts_dir=d
 apply(drafts / "<id>-<stamp>.json")
 ```
 
-Before the draft call, ask public or internal, every time. Run the draft call,
-show the printed draft verbatim, and stop. On "apply", run `apply` on the
-printed draft file path. It refuses if the ticket changed since the draft;
-re-run `thread` and draft again. Names resolve case-insensitively: a category by
+Before a `draft_comment` call, ask public or internal, every time. Run the draft
+call, show the printed draft verbatim, tell the user it is theirs to paste into
+Zendesk, and stop. Do not mention `apply`. If the user insists on posting
+through the API, give the not-recommended warning from the non-negotiables and
+wait for a second yes; only then run `apply` on the printed draft file path. It
+refuses if the ticket changed since the draft; re-run `thread` and draft again.
+A field-only change (status, assignee, category) is still a draft: the user
+makes the change in Zendesk. Names resolve case-insensitively: a category by
 full name (`Data::PowerSchool`) or unique last segment, an assignee by first
 name, full name, or email among the ticket's group. A `TicketError` message is
 written for the user; show it verbatim.

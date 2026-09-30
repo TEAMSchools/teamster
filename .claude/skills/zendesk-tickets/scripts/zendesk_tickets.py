@@ -104,6 +104,10 @@ class ZendeskTickets:
     def get_user(self, user_id: int) -> dict:
         return self._call("GET", f"/users/{user_id}.json")["user"]
 
+    def me(self) -> dict:
+        """The token owner: the identity every API write lands under."""
+        return self._call("GET", "/users/me.json")["user"]
+
     def get_organization(self, org_id: int) -> dict:
         return self._call("GET", f"/organizations/{org_id}.json")["organization"]
 
@@ -419,16 +423,20 @@ def research(ticket_id: int, *, client: ZendeskTickets | None = None) -> dict:
             f"type:ticket custom_field_{CATEGORY_FIELD_ID}:{category_value} "
             f"{_group_terms(catalog, DEFAULT_GROUPS)}"
         )
+        # One page is plenty for a "did we see this before" table; a common
+        # Category matches thousands of tickets (seen live 2026-09-30).
+        results = client.search(query, max_results=SIMILAR_LIMIT + 1)
         similar_by_category = [
-            t for t in _tickets_only(client.search(query)) if t["id"] != ticket_id
+            t for t in _tickets_only(results) if t["id"] != ticket_id
         ][:SIMILAR_LIMIT]
     words = keywords(ticket["subject"])
     similar_by_keywords: list[dict] = []
     if words:
+        results = client.search(
+            "type:ticket " + " ".join(words), max_results=SIMILAR_LIMIT + 1
+        )
         similar_by_keywords = [
-            t
-            for t in _tickets_only(client.search("type:ticket " + " ".join(words)))
-            if t["id"] != ticket_id
+            t for t in _tickets_only(results) if t["id"] != ticket_id
         ][:SIMILAR_LIMIT]
 
     columns = ["id", "status", "subject", "created_at"]
@@ -513,10 +521,10 @@ def queue(groups=DEFAULT_GROUPS, *, client: ZendeskTickets | None = None) -> lis
     return rows
 
 
-NOTICE = (
-    "Posting through the API lands under the token owner's name. The usual move is "
-    "to copy this draft into Zendesk yourself so it posts as you. Say 'apply' to post "
-    "it through the API."
+NOTICE_TEMPLATE = (
+    "This draft is for you to paste into Zendesk so it posts as you. Posting it "
+    "through the API is not recommended: it posts as {owner}, the shared token's "
+    "owner, and counts toward {owner}'s ticket statistics."
 )
 
 
@@ -538,18 +546,24 @@ def _changes(ticket: dict, new: dict, catalog: Catalog, users: list[dict]) -> li
     if "assignee_id" in new and new["assignee_id"] != ticket.get("assignee_id"):
         old = _name(users, ticket.get("assignee_id"))
         lines.append(f"assignee: {old} -> {_name(users, new['assignee_id'])}")
-    if "custom_fields" in new:
-        old_value = ticket_custom_value(ticket, CATEGORY_FIELD_ID)
-        new_value = ticket_custom_value(
-            {"custom_fields": new["custom_fields"]}, CATEGORY_FIELD_ID
-        )
-        if new_value != old_value:
+    for field in new.get("custom_fields", []):
+        old_value = ticket_custom_value(ticket, field["id"])
+        new_value = field.get("value")
+        if new_value == old_value:
+            continue
+        if field["id"] == CATEGORY_FIELD_ID:
             lines.append(
                 f"category: {catalog.category_name(old_value)} -> "
                 f"{catalog.category_name(new_value)}"
             )
+        else:
+            lines.append(
+                f"custom_field {field['id']}: {old_value or ''} -> {new_value}"
+            )
     if "tags" in new and new["tags"] != ticket.get("tags"):
         lines.append(f"tags: {ticket.get('tags')} -> {new['tags']}")
+    if new.get("email_ccs"):
+        lines.append(f"email_ccs: {new['email_ccs']}")
     return lines
 
 
@@ -565,7 +579,10 @@ def _write_draft(
     ticket: dict, payload: dict, catalog: Catalog, users: list[dict], drafts_dir
 ) -> Draft:
     comment = payload["ticket"].get("comment")
-    kind = "PUBLIC" if comment and comment.get("public") else "INTERNAL"
+    if comment is None:
+        kind = "none"
+    else:
+        kind = "PUBLIC" if comment.get("public") else "INTERNAL"
     display_lines = [
         f"DRAFT for #{ticket['id']}  {ticket['subject']}",
         f"comment: {kind}",
@@ -576,7 +593,8 @@ def _write_draft(
     display_lines += _changes(ticket, payload["ticket"], catalog, users) or [
         "no field changes"
     ]
-    display_lines += ["", NOTICE]
+    owner = catalog.client.me().get("name") or "the token owner"
+    display_lines += ["", NOTICE_TEMPLATE.format(owner=owner)]
     display = "\n".join(display_lines)
 
     drafts_dir = Path(drafts_dir)

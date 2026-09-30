@@ -99,6 +99,11 @@ def search_handler(kwargs):
                 9, "pending", "PowerSchool gradebook locked", "2026-06-01T00:00:00Z"
             )
         ]
+        + [
+            _ticket(100 + i, "solved", f"Gradebook {i}", "2026-05-01T00:00:00Z")
+            for i in range(20)
+        ],
+        "next_page": "https://sub.zendesk.com/api/v2/search.json?page=2",
     }
 
 
@@ -193,6 +198,18 @@ def test_thread_returns_comments(capsys):
     comments = thread(12, client=client)
     assert [c["id"] for c in comments] == [1, 2]
     assert "Checking SSO." in capsys.readouterr().out
+
+
+def test_research_similarity_searches_stop_after_one_page(capsys):
+    client, session = make_client()
+    research(12, client=client)
+    keyword_calls = [
+        kw
+        for _, p, kw in session.calls
+        if p == "/search.json" and "cannot log" in kw["params"]["query"]
+    ]
+    assert len(keyword_calls) == 1
+    capsys.readouterr()
 
 
 def test_search_prepends_type_and_group_terms(capsys):

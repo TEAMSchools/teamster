@@ -4,7 +4,6 @@ import json
 import pytest
 from fakes import FakeSession
 from zendesk_tickets import (
-    NOTICE,
     TicketError,
     ZendeskTickets,
     apply,
@@ -30,6 +29,7 @@ USERS = [
     {"id": 20, "name": "Ada Example", "email": "ada@example.org"},
 ]
 CLOSE_OUT = 360047059914
+ASSIGN_TECH = 37089224
 
 
 def routes(updated_at="2026-09-02T12:00:00Z", put=None):
@@ -65,11 +65,32 @@ def routes(updated_at="2026-09-02T12:00:00Z", put=None):
             {"group_memberships": [{"user_id": 20}], "meta": {"has_more": False}},
         ),
         ("GET", "/users/show_many.json"): (200, {"users": USERS[1:]}),
+        ("GET", "/users/me.json"): (200, {"user": {"id": 99, "name": "Tok Owner"}}),
         ("GET", "/macros.json"): (
             200,
             {
-                "macros": [{"id": CLOSE_OUT, "title": "Data - Close Out Older Ticket"}],
+                "macros": [
+                    {"id": CLOSE_OUT, "title": "Data - Close Out Older Ticket"},
+                    {"id": ASSIGN_TECH, "title": "Assign to Technology"},
+                ],
                 "meta": {"has_more": False},
+            },
+        ),
+        ("GET", f"/tickets/12/macros/{ASSIGN_TECH}/apply.json"): (
+            200,
+            {
+                "result": {
+                    "ticket": {
+                        "id": 12,
+                        "status": "open",
+                        "group_id": 20148286,
+                        "custom_fields": [
+                            {"id": 20721852, "value": None},
+                            {"id": 20723572, "value": "room9"},
+                        ],
+                        "email_ccs": [{"user_id": 5, "action": "put"}],
+                    }
+                }
             },
         ),
         ("GET", f"/tickets/12/macros/{CLOSE_OUT}/apply.json"): (
@@ -122,7 +143,9 @@ def test_internal_draft_needs_runner_and_gets_signature(tmp_path, capsys):
     assert comment["body"] == "note\n\nPosted via Claude by Ada"
     assert session.paths("PUT") == []
     out = capsys.readouterr().out
-    assert "INTERNAL" in out and NOTICE in out
+    assert (
+        "INTERNAL" in out and "posts as Tok Owner" in out and "not recommended" in out
+    )
     saved = json.loads(draft.path.read_text())
     assert saved["payload"] == draft.payload
     assert saved["updated_at"] == "2026-09-02T12:00:00Z"
@@ -166,7 +189,12 @@ def test_draft_macro_keeps_writable_keys_and_marks_public(tmp_path, capsys):
     assert ticket["comment"]["public"] is True
     assert "Posted via Claude" not in ticket["comment"]["body"]
     out = capsys.readouterr().out
-    assert "PUBLIC" in out and "status: open -> solved" in out and NOTICE in out
+    assert (
+        "PUBLIC" in out
+        and "status: open -> solved" in out
+        and "posts as Tok Owner" in out
+        and "not recommended" in out
+    )
 
 
 def test_draft_macro_sends_html_comment_as_html_body(tmp_path, capsys):
@@ -201,6 +229,21 @@ def test_draft_macro_sends_html_comment_as_html_body(tmp_path, capsys):
     out = capsys.readouterr().out
     assert "<p>" not in out
     assert "Hi Rae -" in out and "closing this out." in out
+
+
+def test_draft_macro_without_comment_shows_every_field_change(tmp_path, capsys):
+    client, _ = make_client()
+    draft = draft_macro(
+        12, "Assign to Technology", drafts_dir=tmp_path, runner="Ada", client=client
+    )
+    ticket = draft.payload["ticket"]
+    assert "comment" not in ticket
+    out = capsys.readouterr().out
+    assert "comment: none" in out
+    assert "INTERNAL" not in out
+    assert "group_id: 21474460 -> 20148286" in out
+    assert "custom_field 20723572:  -> room9" in out
+    assert "email_ccs:" in out
 
 
 def test_draft_macro_refuses_outside_allowlist(tmp_path):

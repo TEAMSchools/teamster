@@ -6,19 +6,19 @@ so every write is production. Rate limit 700 requests per minute.
 
 ## Calls per operation
 
-| Operation       | Call                                              | Notes                                                                |
-| --------------- | ------------------------------------------------- | -------------------------------------------------------------------- |
-| research, draft | `GET /tickets/{id}.json?include=users,groups`     | side-loads `users[]` (requester, assignee) and `groups[]`            |
-| research        | `GET /tickets/{id}/comments.json?include=users`   | cursor pages; `comments[].{author_id,public,plain_body,attachments}` |
-| research        | `GET /users/{id}.json`, `GET /organizations/{id}` | requester and their organization                                     |
-| research, queue | `GET /search.json?query=...&sort_by=&sort_order=` | `results[]` mixed types; filter `result_type == "ticket"`; 100 max   |
-| resolve         | `GET /ticket_fields/20721852.json`                | `custom_field_options[].{name,value}`; name `A::B`, value a tag      |
-| resolve         | `GET /groups.json`                                | skip `deleted: true`                                                 |
-| resolve         | `GET /groups/{id}/memberships.json`               | `group_memberships[].user_id`                                        |
-| resolve, queue  | `GET /users/show_many.json?ids=1,2`               | names for ids                                                        |
-| resolve         | `GET /macros.json?active=true`                    | cursor pages                                                         |
-| draft_macro     | `GET /tickets/{id}/macros/{macro_id}/apply.json`  | `result.ticket` is the rendered change set; nothing is committed     |
-| apply           | `PUT /tickets/{id}.json`                          | body `{"ticket": {...}}`                                             |
+| Operation       | Call                                              | Notes                                                                                                                    |
+| --------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| research, draft | `GET /tickets/{id}.json?include=users,groups`     | side-loads `users[]` (requester, assignee) and `groups[]`                                                                |
+| research        | `GET /tickets/{id}/comments.json?include=users`   | cursor pages; `comments[].{author_id,public,plain_body,attachments}`                                                     |
+| research        | `GET /users/{id}.json`, `GET /organizations/{id}` | requester and their organization                                                                                         |
+| research, queue | `GET /search.json?query=...&sort_by=&sort_order=` | `results[]` mixed types; filter `result_type == "ticket"`; offset pages of 100, followed to `max_results` (default 1000) |
+| resolve         | `GET /ticket_fields/20721852.json`                | `custom_field_options[].{name,value}`; name `A::B`, value a tag                                                          |
+| resolve         | `GET /groups.json`                                | skip `deleted: true`                                                                                                     |
+| resolve         | `GET /groups/{id}/memberships.json`               | `group_memberships[].user_id`                                                                                            |
+| resolve, queue  | `GET /users/show_many.json?ids=1,2`               | names for ids                                                                                                            |
+| resolve         | `GET /macros.json?active=true`                    | cursor pages                                                                                                             |
+| draft_macro     | `GET /tickets/{id}/macros/{macro_id}/apply.json`  | `result.ticket` is the rendered change set; nothing is committed                                                         |
+| apply           | `PUT /tickets/{id}.json`                          | body `{"ticket": {...}}`                                                                                                 |
 
 ## Search syntax used
 
@@ -32,8 +32,11 @@ so every write is production. Rate limit 700 requests per minute.
 ## Traps
 
 - Cursor pagination: `meta.has_more` and `meta.after_cursor`, request param
-  `page[after]`. Search uses offset pagination and is capped here at one page
-  of 100.
+  `page[after]`. Search uses offset pagination (`page=N`, `next_page` url); the
+  client follows it to `max_results`, 1000 by default and Zendesk's own ceiling.
+  `research` passes 11 for each similarity search, `queue` uses the default.
+- Every draft ends with a notice naming the token owner from
+  `GET /users/me.json`; that is who an `apply` posts as.
 - The ticket's `custom_fields[]` carries tag values, not option names. Map
   through the field's `custom_field_options`.
 - A comment's `public: false` is an internal note. The requester never sees it.
