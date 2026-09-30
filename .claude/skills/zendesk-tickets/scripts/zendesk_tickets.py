@@ -8,9 +8,12 @@ references/zendesk-tickets-api.md for the endpoints.
 
 from __future__ import annotations
 
+import json
 import os
 import re
+from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 
 import requests
 
@@ -488,3 +491,170 @@ def queue(groups=DEFAULT_GROUPS, *, client: ZendeskTickets | None = None) -> lis
     columns = ["id", "status", "age", "requester", "subject", "category", "assignee"]
     print(format_rows(rows, columns))
     return rows
+
+
+NOTICE = (
+    "Posting through the API lands under the token owner's name. The usual move is "
+    "to copy this draft into Zendesk yourself so it posts as you. Say 'apply' to post "
+    "it through the API."
+)
+
+
+@dataclass
+class Draft:
+    ticket_id: int
+    subject: str
+    updated_at: str
+    payload: dict
+    display: str
+    path: Path
+
+
+def _changes(ticket: dict, new: dict, catalog: Catalog, users: list[dict]) -> list[str]:
+    lines = []
+    for key in ("status", "priority", "type", "group_id"):
+        if key in new and new[key] != ticket.get(key):
+            lines.append(f"{key}: {ticket.get(key) or ''} -> {new[key]}")
+    if "assignee_id" in new and new["assignee_id"] != ticket.get("assignee_id"):
+        old = _name(users, ticket.get("assignee_id"))
+        lines.append(f"assignee: {old} -> {_name(users, new['assignee_id'])}")
+    if "custom_fields" in new:
+        old_value = ticket_custom_value(ticket, CATEGORY_FIELD_ID)
+        new_value = ticket_custom_value(
+            {"custom_fields": new["custom_fields"]}, CATEGORY_FIELD_ID
+        )
+        if new_value != old_value:
+            lines.append(
+                f"category: {catalog.category_name(old_value)} -> "
+                f"{catalog.category_name(new_value)}"
+            )
+    if "tags" in new and new["tags"] != ticket.get("tags"):
+        lines.append(f"tags: {ticket.get('tags')} -> {new['tags']}")
+    return lines
+
+
+def _write_draft(
+    ticket: dict, payload: dict, catalog: Catalog, users: list[dict], drafts_dir
+) -> Draft:
+    comment = payload["ticket"].get("comment")
+    kind = "PUBLIC" if comment and comment.get("public") else "INTERNAL"
+    display_lines = [
+        f"DRAFT for #{ticket['id']}  {ticket['subject']}",
+        f"comment: {kind}",
+    ]
+    if comment:
+        display_lines += ["", comment["body"], ""]
+    display_lines += _changes(ticket, payload["ticket"], catalog, users) or [
+        "no field changes"
+    ]
+    display_lines += ["", NOTICE]
+    display = "\n".join(display_lines)
+
+    drafts_dir = Path(drafts_dir)
+    drafts_dir.mkdir(parents=True, exist_ok=True)
+    now = datetime.now(UTC)
+    path = drafts_dir / f"{ticket['id']}-{now.strftime('%Y%m%dT%H%M%S%f')}.json"
+    path.write_text(
+        json.dumps(
+            {
+                "ticket_id": ticket["id"],
+                "subject": ticket["subject"],
+                "updated_at": ticket["updated_at"],
+                "payload": payload,
+                "display": display,
+                "created_at": now.isoformat(),
+            },
+            indent=2,
+        )
+    )
+    print(display)
+    print(f"\ndraft file: {path}")
+    return Draft(
+        ticket["id"], ticket["subject"], ticket["updated_at"], payload, display, path
+    )
+
+
+def draft_comment(
+    ticket_id: int,
+    body: str,
+    *,
+    public: bool,
+    drafts_dir,
+    runner: str | None = None,
+    status: str | None = None,
+    assignee: str | None = None,
+    category: str | None = None,
+    client: ZendeskTickets | None = None,
+) -> Draft:
+    """Build and print the exact ticket update. Posts nothing; `apply` does that."""
+    client = _client(client)
+    catalog = Catalog(client)
+    data = client.get_ticket(ticket_id)
+    ticket, users = data["ticket"], data.get("users", [])
+
+    if not public:
+        if not runner:
+            raise TicketError(
+                "An internal note needs `runner=<your name>` for its signature line."
+            )
+        body = f"{body.rstrip()}\n\n{SIGNATURE.format(runner=runner)}"
+    update: dict = {"comment": {"body": body, "public": public}}
+    if status:
+        update["status"] = status
+    if assignee:
+        member = catalog.resolve_assignee(assignee, ticket["group_id"])
+        update["assignee_id"] = member["id"]
+        users = users + [member]
+    if category:
+        value = catalog.resolve_category(category)["value"]
+        update["custom_fields"] = [{"id": CATEGORY_FIELD_ID, "value": value}]
+    return _write_draft(ticket, {"ticket": update}, catalog, users, drafts_dir)
+
+
+def draft_macro(
+    ticket_id: int,
+    macro_title: str,
+    *,
+    drafts_dir,
+    runner: str,
+    client: ZendeskTickets | None = None,
+) -> Draft:
+    """Preview an allowlisted macro and save its rendered result as a draft."""
+    client = _client(client)
+    catalog = Catalog(client)
+    macro = catalog.resolve_macro(macro_title)
+    data = client.get_ticket(ticket_id)
+    ticket, users = data["ticket"], data.get("users", [])
+    preview = client.macro_preview(ticket_id, macro["id"])
+    update = {k: v for k, v in preview.items() if k in WRITABLE_KEYS}
+    comment = update.get("comment")
+    if comment:
+        update["comment"] = {
+            "body": comment.get("body") or comment.get("html_body", ""),
+            "public": bool(comment.get("public", True)),
+        }
+        if not update["comment"]["public"]:
+            update["comment"]["body"] += f"\n\n{SIGNATURE.format(runner=runner)}"
+    if update.get("assignee_id"):
+        users = users + client.users_show_many([update["assignee_id"]])
+    return _write_draft(ticket, {"ticket": update}, catalog, users, drafts_dir)
+
+
+def apply(draft_path, *, client: ZendeskTickets | None = None) -> str:
+    """PUT exactly what the draft file holds, after checking the ticket has not moved."""
+    client = _client(client)
+    path = Path(draft_path)
+    saved = json.loads(path.read_text())
+    ticket_id = saved["ticket_id"]
+    current = client.get_ticket(ticket_id)["ticket"]
+    if current["updated_at"] != saved["updated_at"]:
+        raise TicketError(
+            f"Ticket #{ticket_id} changed since this draft: drafted at updated_at "
+            f"{saved['updated_at']}, now {current['updated_at']}. Re-read the thread "
+            f"with `thread({ticket_id})`, then draft again."
+        )
+    client.update_ticket(ticket_id, saved["payload"])
+    path.unlink()
+    url = client.ticket_url(ticket_id)
+    print(f"posted: {url}")
+    return url
