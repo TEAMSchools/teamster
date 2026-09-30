@@ -388,6 +388,11 @@ select
         0
     ) as is_suspended_y1_iss_2plus_int,
 
+    sum(if(dli.is_suspension, dli.num_days, 0)) over (
+        partition by co.academic_year, co.student_number
+    )
+    >= 2 as is_suspended_y1_2plus_days,
+
     if(
         dli.incident_id is null,
         null,

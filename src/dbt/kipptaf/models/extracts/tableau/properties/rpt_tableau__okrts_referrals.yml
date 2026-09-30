@@ -162,6 +162,16 @@ models:
         data_type: int64
       - name: is_suspended_y1_iss_2plus_int
         data_type: int64
+      - name: is_suspended_y1_2plus_days
+        data_type: boolean
+        description:
+          True when the student's suspension days for the academic year, summed
+          across every suspension penalty at any school, total two or more.
+          Counts days, not incidents, unlike is_suspended_y1_2plus_int. Repeats
+          on every row for the student and year, so it works as a roster filter.
+        config:
+          meta:
+            contains_pii: true
       - name: is_tier3_4
         data_type: boolean
       - name: ssds_period
