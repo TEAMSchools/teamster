@@ -26,6 +26,7 @@ CATEGORY_FIELD_ID = 20721852
 DEFAULT_GROUPS = ("Data", "Teaching & Learning")
 HISTORY_DAYS = 180
 SIMILAR_LIMIT = 10
+SIMILAR_KEYWORDS = 3
 MACRO_EXACT = frozenset({"Data - Close Out Older Ticket"})
 MACRO_PATTERN = re.compile(r"^(Data - )?(Re-)?Assign to ")
 # Keys Zendesk's macro preview returns that a ticket PUT accepts.
@@ -144,7 +145,7 @@ class ZendeskTickets:
             "query": query,
             "sort_by": sort_by,
             "sort_order": sort_order,
-            "per_page": PAGE_SIZE,
+            "per_page": max(1, min(PAGE_SIZE, max_results)),
             "page": 1,
         }
         results: list[dict] = []
@@ -457,7 +458,9 @@ def research(ticket_id: int, *, client: ZendeskTickets | None = None) -> dict:
         similar_by_category = [
             t for t in _tickets_only(results) if t["id"] != ticket_id
         ][:SIMILAR_LIMIT]
-    words = keywords(ticket["subject"])
+    # Zendesk ANDs bare terms. Live counts on 2026-09-30: all 4-6 subject words
+    # matched 1-9 tickets (often only the ticket itself); 3 words matched 1-161.
+    words = keywords(ticket["subject"])[:SIMILAR_KEYWORDS]
     similar_by_keywords: list[dict] = []
     if words:
         results = client.search(
@@ -632,6 +635,11 @@ def _write_draft(
     display_lines += _changes(ticket, payload["ticket"], catalog, users) or [
         "no field changes"
     ]
+    if payload["ticket"].get("status") in ASSIGN_FORBIDDEN_STATUSES:
+        display_lines.append(
+            "note: solving reaches the requester (Zendesk emails them), even with "
+            "an internal comment"
+        )
     owner = catalog.client.me().get("name") or "the token owner"
     display_lines += ["", NOTICE_TEMPLATE.format(owner=owner)]
     display = "\n".join(display_lines)
@@ -697,6 +705,11 @@ def draft_comment(
     if status:
         update["status"] = status
     if assignee:
+        if not ticket.get("group_id"):
+            raise TicketError(
+                f"Ticket #{ticket_id} has no group, so there is no member list to "
+                "resolve an assignee against. Set the group in Zendesk first."
+            )
         member = catalog.resolve_assignee(assignee, ticket["group_id"])
         update["assignee_id"] = member["id"]
         users = users + [member]
@@ -804,7 +817,16 @@ def apply(draft_path, *, client: ZendeskTickets | None = None) -> str:
     guarded = {
         "ticket": payload["ticket"] | {"safe_update": True, "updated_stamp": stamp}
     }
-    client.update_ticket(ticket_id, guarded)
+    try:
+        client.update_ticket(ticket_id, guarded)
+    except TicketError as error:
+        if "returned 409" in str(error):
+            raise TicketError(
+                f"Ticket #{ticket_id} changed since this draft (Zendesk refused the "
+                f"safe update). Re-read the thread with `thread({ticket_id})`, then "
+                "draft again."
+            ) from error
+        raise
     path.unlink()
     url = client.ticket_url(ticket_id)
     print(f"posted: {url}")

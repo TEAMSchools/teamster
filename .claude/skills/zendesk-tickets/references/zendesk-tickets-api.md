@@ -27,7 +27,9 @@ so every write is production. Rate limit 700 requests per minute.
 - `status<solved` for new, open, pending, hold.
 - `requester:<user_id> created><YYYY-MM-DD>` for requester history.
 - `custom_field_20721852:<tag>` for same-category tickets.
-- Bare words search subject and body.
+- Bare words search subject and body, ANDed. `research` uses the first 3 subject
+  keywords: on 2026-09-30, all 4-6 words of eight recent Data subjects matched
+  1-9 tickets (often only the ticket itself) while 3 words matched 1-161.
 
 ## Traps
 

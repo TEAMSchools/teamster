@@ -368,6 +368,52 @@ def test_draft_macro_without_comment_shows_every_field_change(tmp_path, capsys):
     assert "email_ccs:" in out
 
 
+def test_assignee_on_ungrouped_ticket_is_a_plain_refusal(tmp_path):
+    r = routes()
+    r[("GET", "/tickets/12.json")] = (
+        200,
+        {"ticket": TICKET | {"group_id": None}, "users": USERS, "groups": []},
+    )
+    client, session = make_client(r)
+    with pytest.raises(TicketError) as info:
+        draft_comment(
+            12,
+            "hi",
+            public=False,
+            drafts_dir=tmp_path,
+            runner="Ada",
+            assignee="ada",
+            client=client,
+        )
+    assert "no group" in str(info.value)
+    assert all("/groups/None/" not in p for p in session.paths("GET"))
+
+
+def test_solving_draft_says_it_reaches_the_requester(tmp_path, capsys):
+    client, _ = make_client()
+    draft_comment(
+        12,
+        "done",
+        public=False,
+        drafts_dir=tmp_path,
+        runner="Ada",
+        status="solved",
+        client=client,
+    )
+    out = capsys.readouterr().out
+    assert "reaches the requester" in out
+
+
+def test_apply_maps_a_409_to_the_changed_since_message(tmp_path):
+    client, _ = make_client(routes(put=(409, {"error": "UpdateConflict"})))
+    draft = internal_draft(client, tmp_path)
+    separate_process()
+    with pytest.raises(TicketError) as info:
+        apply(draft.path, client=client)
+    assert "changed since this draft" in str(info.value)
+    assert draft.path.exists()
+
+
 def test_draft_macro_refuses_outside_allowlist(tmp_path):
     client, _ = make_client()
     with pytest.raises(TicketError):

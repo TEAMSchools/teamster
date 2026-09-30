@@ -98,12 +98,13 @@ def test_search_follows_next_page_until_exhausted():
     assert [kw["params"]["page"] for _, _, kw in session.calls] == [1, 2]
 
 
-def test_search_stops_at_max_results():
+def test_search_stops_at_max_results_and_shrinks_the_page():
     client, session = make_client({("GET", "/search.json"): _search_pages})
     assert client.search("type:ticket x", max_results=1) == [
         {"id": 1, "result_type": "ticket"}
     ]
     assert len(session.calls) == 1
+    assert session.calls[0][2]["params"]["per_page"] == 1
 
 
 def _macro_pages(kw):

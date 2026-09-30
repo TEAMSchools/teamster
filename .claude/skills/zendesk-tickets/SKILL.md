@@ -60,7 +60,8 @@ Research first, triage second. Every operation is a function in
    `search("<zendesk query>", groups=["Data"])`.
 4. If the answer is a help article, invoke `zendesk-help-articles` and run its
    `search_articles`. Do not search the Help Center before reading the thread.
-5. Delete the test file when the ticket is done.
+5. Delete the test file and any draft files for the ticket when it is done. Both
+   hold thread text.
 
 ## Queue
 
