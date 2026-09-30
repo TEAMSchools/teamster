@@ -60,12 +60,7 @@
   },
   "terminal.integrated.env.linux": {
     "DAGSTER_HOME": "${workspaceFolder}/.dagster/home",
-    "DBT_PROFILES_DIR": "${workspaceFolder}/.dbt",
-    "GOOGLE_CLOUD_PROJECT": "teamster-332318",
-    "PYTHONDONTWRITEBYTECODE": "1",
-    "TRUNK_TELEMETRY": "off",
-    "UV_LINK_MODE": "copy",
-    "UV_RESOLUTION": "highest"
+    "DBT_PROFILES_DIR": "${workspaceFolder}/.dbt"
   },
   "yaml.customTags": [
     "tag:yaml.org,2002:python/name:material.extensions.emoji.twemoji scalar",

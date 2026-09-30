@@ -12,7 +12,6 @@ data_tests:
       reference one of PowerSchool's 999999-scoped FTEs, not a real-school FTE
       carried over from prior enrollment.
     config:
-      # TODO(#5305): failing today; resolve then drop the warn
       severity: warn
       meta:
         dagster:
@@ -38,7 +37,6 @@ data_tests:
       (#5160) produced 558 duplicate student-days before Ops corrected the
       stints.
     config:
-      # TODO(#5305): failing today; resolve then drop the warn
       severity: warn
       meta:
         dagster:
@@ -52,10 +50,9 @@ data_tests:
       not share a boundary date. A `lead(entrydate)` value equal to the current
       row's `exitdate` indicates a same-day exit and re-entry that fans out
       half-open date-range joins on the boundary day (e.g. survey attribution,
-      attendance windows). Source defect surfaced by issue #3902 — currently 78
-      violations across ~100k stints network-wide.
+      attendance windows). Currently 78 violations across ~100k stints
+      network-wide.
     config:
-      # TODO(#5305): failing today; resolve then drop the warn
       severity: warn
       meta:
         dagster:
@@ -99,7 +96,6 @@ data_tests:
       PowerSchool stack was removed in #4441 once the SIS had moved to Focus —
       so Miami is not monitored by this test.
     config:
-      # TODO(#5305): failing today; resolve then drop the warn
       severity: warn
       meta:
         dagster:

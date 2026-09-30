@@ -99,5 +99,9 @@ with
     )
 
 select
-    *, date_diff(streak_end_date, streak_start_date, day) + 1 as streak_length_calendar,
+    *,
+
+    yearid + 1990 as academic_year,
+
+    date_diff(streak_end_date, streak_start_date, day) + 1 as streak_length_calendar,
 from streaks_agg

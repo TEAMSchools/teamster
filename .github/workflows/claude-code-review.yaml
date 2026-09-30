@@ -37,7 +37,7 @@ jobs:
 
       - name: Run Claude Code Review
         id: claude-review
-        uses: anthropics/claude-code-action@9cdae7f0d995e3ba7c33f226087fdf82a59cd520 # v1.0.223
+        uses: anthropics/claude-code-action@756cc22e19660d20e8cc9496b4f242475a7f7790 # v1.0.235
         with:
           # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
           # or https://code.claude.com/docs/en/cli-reference for available options
@@ -57,10 +57,14 @@ jobs:
             ponytail@ponytail
           track_progress: true
           prompt: >-
-            /superpowers:requesting-code-review ${{ github.repository
-            }}/pull/${{ github.event.pull_request.number }}.
+            Review ${{ github.repository }}/pull/${{
+            github.event.pull_request.number }}. Load
+            superpowers:requesting-code-review and use its code-reviewer.md
+            checklist and severity scale, but do the review yourself: this job
+            cannot dispatch subagents, and the PR author, not you, acts on the
+            findings.
 
-            Apply dagster-expert for Dagster assets and pipelines, and
+            Apply dagster:dagster-expert for Dagster assets and pipelines, and
             dbt:using-dbt-for-analytics-engineering for dbt models and
             transformations.
 
@@ -85,12 +89,12 @@ jobs:
             altitude. Flag a model built at kipptaf that recomputes a hash its
             source package already derives.
 
-            Environment: you run in GitHub Actions with NO warehouse or data
-            access. No BigQuery connection, and none of the cube, dbt, dagster,
-            or bigquery MCP servers are available. You cannot run queries, `dbt
-            show`, `dbt compile`, or materialize any model. Do not state
-            data-dependent claims (row counts, null rates, join fan-out, grain
-            or duplicate violations, value distributions) as fact. When a
+            Environment: you run in GitHub Actions with no warehouse or data
+            access. There is no BigQuery connection, and none of the cube, dbt,
+            dagster, or bigquery MCP servers are available. You cannot run
+            queries, `dbt show`, `dbt compile`, or materialize any model. Do not
+            state data-dependent claims (row counts, null rates, join fan-out,
+            grain or duplicate violations, value distributions) as fact. When a
             finding depends on the data, label it "needs local verification" and
             give the exact query or dbt command the author should run.
 
@@ -118,11 +122,9 @@ jobs:
             Execution model: this job is a single non-interactive turn sequence.
             There is no wake-up and no second invocation — when you stop
             producing output the process exits and any unfinished work is lost.
-            Never end a turn waiting on background work. If you dispatch review
-            subagents, dispatch them synchronously (run_in_background: false)
-            and collect their results in the same turn; otherwise review inline.
-            Posting the review with update_claude_comment must be your final
-            action, and must happen even if some checks are still incomplete.
+            Never end a turn waiting on background work. Posting the review with
+            update_claude_comment must be your final action, and must happen
+            even if some checks are still incomplete.
           allowed_bots: dbt-cloud
           include_fix_links: false
           use_sticky_comment: true
@@ -138,7 +140,7 @@ jobs:
           # posted nothing. Not gated by --allowedTools, so denying them
           # explicitly is the only guard.
           claude_args: >-
-            --model sonnet --effort xhigh --allowedTools "Skill,Bash(git
-            diff:*),Bash(git log:*),Bash(git show:*),Bash(git
+            --model claude-opus-5-5 --effort medium --allowedTools
+            "Skill,Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(git
             rev-parse:*),Bash(git merge-base:*)" --disallowedTools
             "Agent,ScheduleWakeup,SendMessage,Monitor,Workflow"

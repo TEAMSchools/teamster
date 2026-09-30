@@ -168,7 +168,6 @@ acceptable; both forms are `config.meta.contains_pii: true`.
   redact values from any tier-1 through tier-4 column to `Student A` or to the
   column name before posting. Aggregates with no small cell may go out as
   numbers. The row content of a query result is PII even when the query had no
-  name column. Asana and the `#data_team` Slack channel are internal staff
-  surfaces and take unredacted values; for any other Slack channel, ask first.
+  name column.
 - **Staff data** is outside FERPA but not outside policy. `staff_pii` in Cube
   and the root CLAUDE.md line about staff contact information govern it.

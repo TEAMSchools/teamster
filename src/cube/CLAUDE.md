@@ -29,9 +29,9 @@ src/cube/
       <domain>/<name>.yml   # Analyst-facing views — the only public surface
 ```
 
-One cube or view per file. Filename matches `name:`. New cubes go under
-`cubes/<domain>/`; cross-domain shared dims (dates, regions, locations, terms,
-school_calendars) go in `cubes/conformed/`.
+One cube or view per file. New cubes go under `cubes/<domain>/`; cross-domain
+shared dims (dates, regions, locations, terms, school_calendars) go in
+`cubes/conformed/`.
 
 ## MCP access (cube)
 

@@ -13,11 +13,15 @@ with
 
     location_xref as (
         select
-            ur.*,
+            ur.* except (school_primary_id),
 
             x.location_abbreviation as school,
-            x.location_powerschool_school_id as schoolid,
             x.location_dagster_code_location as _dbt_source_project,
+
+            -- string on both sides: Amplify ids can carry letters (2332A), and
+            -- the district copy is still int64 until it rebuilds
+            cast(ur.school_primary_id as string) as school_primary_id,
+            cast(x.location_powerschool_school_id as string) as schoolid,
 
             initcap(
                 regexp_extract(x.location_dagster_code_location, r'kipp(\w+)')

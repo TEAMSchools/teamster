@@ -40,17 +40,12 @@ with
                     'Chronic Absence: 40'
                 ]
             ) as commlog_reason
-        cross join unnest(['kippnewark', 'kippcamden']) as _dbt_source_project
+        cross join
+            unnest(['kippnewark', 'kippcamden', 'kipppaterson']) as _dbt_source_project
     ),
 
     comm_log as (
-        {{
-            dbt_utils.deduplicate(
-                relation=ref("int_deanslist__comm_log"),
-                partition_by="student_school_id, academic_year, reason",
-                order_by="call_date desc",
-            )
-        }}
+        select *, from {{ ref("int_deanslist__comm_log") }} where is_latest_for_reason
     ),
 
     schoolid_crosswalk as (

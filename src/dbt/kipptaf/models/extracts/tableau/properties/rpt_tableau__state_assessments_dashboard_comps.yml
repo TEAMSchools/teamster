@@ -56,7 +56,17 @@ models:
         description: Total number of tested students in the aggregation group.
       - name: percent_proficient
         data_type: float64
-        description: Proportion of tested students scoring proficient or above.
+        description: >
+          Proportion of tested students scoring proficient or above, recomputed
+          from the summed counts rather than carried through, so a group
+          assembled from several source rows is weighted by size rather than
+          averaged. A source that publishes a percentage and no denominator
+          cannot be recomputed that way, and for those the reported percentage
+          is used instead -- guarded on the group having a single source row, so
+          a future grain change degrades to null rather than silently averaging
+          percentages unweighted. Interim comparison figures taken from press
+          coverage are the case that needs this; without the fallback they
+          reached this model with the percentage destroyed.
       - name: region_matched
         data_type: boolean
         description: >

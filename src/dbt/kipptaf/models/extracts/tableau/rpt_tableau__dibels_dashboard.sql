@@ -59,20 +59,23 @@ select
     a.grade as grade_level,
     a.grade_level_text as expected_grade_level,
 
-    null as average_starting_words,
-    null as pm_round_days,
-    null as pm_days,
-    null as benchmark_goal,
-    null as benchmark_goal_padded,
-    null as required_growth_words,
-    null as daily_growth_rate,
-    null as round_growth_words_goal,
-    null as goal,
+    cast(null as int64) as average_starting_words,
+    cast(null as int64) as pm_round_days,
+    cast(null as int64) as pm_days,
+    cast(null as float64) as benchmark_goal,
+    cast(null as float64) as benchmark_goal_padded,
+    cast(null as int64) as required_growth_words,
+    cast(null as float64) as daily_growth_rate,
+    cast(null as int64) as round_growth_words_goal,
+    cast(null as float64) as goal,
+    cast(null as float64) as aimline_season_student_goal,
+    cast(null as float64) as aimline_season_student_goal_gap,
+    cast(null as float64) as benchmark_goal_gap,
 
     c.students_student_number as schedule_student_number,
     c.cc_teacherid as teacherid,
     c.teacher_lastfirst as teacher_name,
-    c.courses_course_name as course_name,
+    c.standard_course_name as course_name,
     c.cc_course_number as course_number,
     c.cc_section_number as section_number,
 
@@ -104,29 +107,50 @@ select
     r.participation_group,
     r.round_test_status,
 
-    null as met_measure_standard_goal,
-    null as met_admin_benchmark_goal,
-    null as met_measure_name_code_goal,
-    null as met_pm_round_criteria,
-    null as met_pm_round_overall_criteria,
-    null as measure_standard_goal_status,
-    null as admin_benchmark_goal_status,
-    null as pm_round_status,
-    null as aimline_cohort_level,
-    null as aimline_status,
-    null as met_aimline_goal,
-    null as missed_aimline_consecutive,
-    null as aimline_category,
+    cast(null as int64) as met_measure_standard_goal,
+    cast(null as int64) as met_admin_benchmark_goal,
+    cast(null as int64) as met_admin_benchmark_goal_unpadded,
+    cast(null as int64) as met_measure_name_code_goal,
+    cast(null as int64) as met_pm_round_criteria,
+    cast(null as int64) as met_pm_round_overall_criteria,
+    cast(null as string) as measure_standard_goal_status,
+    cast(null as string) as measure_name_code_goal_status,
+    cast(null as string) as admin_benchmark_goal_status,
+    cast(null as string) as pm_round_status,
+    cast(null as string) as measure_name_code_benchmark_status,
+    cast(null as string) as round_benchmark_status,
+    cast(null as string) as measure_name_code_aimline_benchmark_status,
+    cast(null as string) as measure_name_code_trajectory_status,
+    cast(null as string) as round_trajectory_status,
+    cast(null as string) as aimline_cohort_level,
+    cast(null as int64) as missed_aimline_consecutive,
+    cast(null as string) as aimline_category,
 
     cast(a.round_number as string) as expected_round_number,
+    cast(null as string) as expected_round_label,
 
-    right(c.courses_course_name, 1) as schedule_student_grade_level,
+    if(
+        a.round_number = max(
+            if(
+                a.start_date <= current_date('{{ var("local_timezone") }}'),
+                a.round_number,
+                null
+            )
+        ) over (partition by s.academic_year, s.region, a.grade)
+        and a.end_date >= current_date('{{ var("local_timezone") }}'),
+        'Current',
+        a.admin_season
+    ) as expected_round_selection,
+    cast(null as string) as measure_standard_round_verdicts,
+
+    right(c.standard_course_name, 1) as schedule_student_grade_level,
 
     if(b.measure_standard is null, 'Not Tested', 'Tested') as measure_test_status,
 
     if(c.students_student_number = s.student_number, 1, 0) as scheduled,
 
     cast(null as string) as aimline_trajectory_category,
+    cast(null as string) as aimline_round_category,
 
 from {{ ref("int_extracts__student_enrollments_subjects") }} as s
 inner join
@@ -148,26 +172,14 @@ left join
     and a.admin_season = g.period
     and s.school = g.school
 left join
-    {{ ref("base_powerschool__course_enrollments") }} as c
+    {{ ref("int_students__course_enrollments") }} as c
     on s.academic_year = c.cc_academic_year
     and s.schoolid = c.cc_schoolid
     and s.student_number = c.students_student_number
     and s._dbt_source_project = c._dbt_source_project
-    and c.rn_course_number_year = 1
-    and not c.is_dropped_section
+    and c.core_subject = 'ELA'
+    and c.rn_core_subject_year = 1
     and c.cc_section_number not like '%SC%'
-    and c.courses_course_name in (
-        'ELA GrK',
-        'ELA K',
-        'ELA Gr1',
-        'ELA Gr2',
-        'ELA Gr3',
-        'ELA Gr4',
-        'ELA Gr5',
-        'ELA Gr6',
-        'ELA Gr7',
-        'ELA Gr8'
-    )
 left join
     {{ ref("int_amplify__all_assessments") }} as b
     on a.academic_year = b.academic_year
@@ -183,7 +195,7 @@ left join
     and s.student_number = r.student_number
 where
     s.iready_subject = 'Reading'
-    and not s.is_self_contained
+    and s.is_self_contained is not true
     and not s.is_out_of_district
     and s.enroll_status in (0, 2, 3)
 
@@ -233,19 +245,19 @@ select
     e.expected_measure_name,
     e.expected_measure_standard,
 
-    null as admin_goal_season,
-    null as admin_goal,
-    null as admin_goal_grade_range,
-    null as n_admin_season_school_gl_all,
-    null as n_admin_season_school_gl_at_above,
-    null as n_admin_season_school_gl_bl_wb,
-    null as n_admin_season_school_gl_at_above_expected,
-    null as n_admin_season_school_gl_at_above_gap,
-    null as n_admin_season_region_gl_all,
-    null as n_admin_season_region_gl_at_above,
-    null as n_admin_season_region_gl_bl_wb,
-    null as n_admin_season_region_gl_at_above_expected,
-    null as n_admin_season_region_gl_at_above_gap,
+    cast(null as string) as admin_goal_season,
+    cast(null as float64) as admin_goal,
+    cast(null as float64) as admin_goal_grade_range,
+    cast(null as int64) as n_admin_season_school_gl_all,
+    cast(null as int64) as n_admin_season_school_gl_at_above,
+    cast(null as int64) as n_admin_season_school_gl_bl_wb,
+    cast(null as int64) as n_admin_season_school_gl_at_above_expected,
+    cast(null as float64) as n_admin_season_school_gl_at_above_gap,
+    cast(null as int64) as n_admin_season_region_gl_all,
+    cast(null as int64) as n_admin_season_region_gl_at_above,
+    cast(null as int64) as n_admin_season_region_gl_bl_wb,
+    cast(null as int64) as n_admin_season_region_gl_at_above_expected,
+    cast(null as float64) as n_admin_season_region_gl_at_above_gap,
 
     g.assessment_grade_int as grade_level,
     g.assessment_grade as expected_grade_level,
@@ -258,11 +270,14 @@ select
     g.daily_growth_rate,
     g.round_growth_words_goal,
     g.cumulative_growth_words as goal,
+    cast(null as float64) as aimline_season_student_goal,
+    cast(null as float64) as aimline_season_student_goal_gap,
+    a.measure_standard_score - g.benchmark_goal as benchmark_goal_gap,
 
     c.students_student_number as schedule_student_number,
     c.cc_teacherid as teacherid,
     c.teacher_lastfirst as teacher_name,
-    c.courses_course_name as course_name,
+    c.standard_course_name as course_name,
     c.cc_course_number as course_number,
     c.cc_section_number as section_number,
 
@@ -286,8 +301,8 @@ select
     r.moy_composite,
     r.eoy_composite,
 
-    null as aggregated_measure_standard_level,
-    null as foundation_measure_standard_level,
+    cast(null as string) as aggregated_measure_standard_level,
+    cast(null as string) as foundation_measure_standard_level,
 
     rs.expected_row_count,
     rs.actual_row_count,
@@ -298,6 +313,7 @@ select
 
     pm.met_measure_standard_goal,
     pm.met_admin_benchmark_goal,
+    pm.met_admin_benchmark_goal_unpadded,
     pm.met_measure_name_code_goal,
     pm.met_pm_round_criteria,
     pm.met_pm_round_overall_criteria,
@@ -309,24 +325,89 @@ select
         pm.measure_standard_goal_status, 'Not Tested'
     ) as measure_standard_goal_status,
     coalesce(
+        pm.measure_name_code_goal_status, 'Not Tested'
+    ) as measure_name_code_goal_status,
+    coalesce(
         pm.admin_benchmark_goal_status, 'Not Tested'
     ) as admin_benchmark_goal_status,
-    coalesce(pm.pm_round_status, 'Not Tested') as pm_round_status,
-    null as aimline_cohort_level,
-    null as aimline_status,
-    null as met_aimline_goal,
-    null as missed_aimline_consecutive,
-    null as aimline_category,
+    coalesce(
+        max(pm.pm_round_status) over (
+            partition by
+                s.academic_year,
+                s.region,
+                s.student_number,
+                e.admin_season,
+                e.round_number
+        ),
+        'Not Tested'
+    ) as pm_round_status,
+    coalesce(
+        pm.measure_name_code_benchmark_status, 'Not Tested'
+    ) as measure_name_code_benchmark_status,
+    coalesce(
+        max(pm.round_benchmark_status) over (
+            partition by
+                s.academic_year,
+                s.region,
+                s.student_number,
+                e.admin_season,
+                e.round_number
+        ),
+        'Not Tested'
+    ) as round_benchmark_status,
+    cast(null as string) as measure_name_code_aimline_benchmark_status,
+    cast(null as string) as measure_name_code_trajectory_status,
+    cast(null as string) as round_trajectory_status,
+    cast(null as string) as aimline_cohort_level,
+    cast(null as int64) as missed_aimline_consecutive,
+    cast(null as string) as aimline_category,
 
     cast(e.round_number as string) as expected_round_number,
+    concat(
+        e.admin_season, ': R', cast(e.round_number as string)
+    ) as expected_round_label,
 
-    right(c.courses_course_name, 1) as schedule_student_grade_level,
+    if(
+        e.round_number = max(
+            if(
+                e.start_date <= current_date('{{ var("local_timezone") }}'),
+                e.round_number,
+                null
+            )
+        ) over (partition by s.academic_year, s.region, e.grade),
+        'Current',
+        concat(e.admin_season, ': R', cast(e.round_number as string))
+    ) as expected_round_selection,
+    string_agg(
+        case
+            when pm.measure_standard_goal_status is null
+            then '.'
+            when pm.met_measure_standard_goal = 1
+            then 'A'
+            when pm.met_measure_standard_goal = 0
+            then 'B'
+            else '?'
+        end,
+        '-'
+    ) over (
+        partition by
+            s.academic_year,
+            s.region,
+            s.student_number,
+            e.expected_measure_standard,
+            e.admin_season
+        order by e.round_number
+        rows between unbounded preceding and unbounded following
+    ) as measure_standard_round_verdicts,
+
+    right(c.standard_course_name, 1) as schedule_student_grade_level,
 
     if(a.measure_standard is null, 'Not Tested', 'Tested') as measure_test_status,
 
     if(c.students_student_number = s.student_number, 1, 0) as scheduled,
 
     cast(null as string) as aimline_trajectory_category,
+    cast(null as string) as aimline_round_category,
 
 from {{ ref("int_extracts__student_enrollments_subjects") }} as s
 inner join
@@ -357,26 +438,14 @@ inner join
     and r.measure_standard = 'Composite'
     and r.overall_probe_eligible = 'Yes'
 left join
-    {{ ref("base_powerschool__course_enrollments") }} as c
+    {{ ref("int_students__course_enrollments") }} as c
     on s.academic_year = c.cc_academic_year
     and s.schoolid = c.cc_schoolid
     and s.student_number = c.students_student_number
     and s._dbt_source_project = c._dbt_source_project
-    and c.rn_course_number_year = 1
-    and not c.is_dropped_section
+    and c.core_subject = 'ELA'
+    and c.rn_core_subject_year = 1
     and c.cc_section_number not like '%SC%'
-    and c.courses_course_name in (
-        'ELA GrK',
-        'ELA K',
-        'ELA Gr1',
-        'ELA Gr2',
-        'ELA Gr3',
-        'ELA Gr4',
-        'ELA Gr5',
-        'ELA Gr6',
-        'ELA Gr7',
-        'ELA Gr8'
-    )
 -- this branch is the INTERNAL method's: it reads the internal expectation gate,
 -- the frozen custom goals sheet and int_amplify__pm_met_criteria. Both joins
 -- below now carry a row per data method, so without model_type each one matches
@@ -408,7 +477,7 @@ left join
     and s.student_number = pm.student_number
 where
     s.iready_subject = 'Reading'
-    and not s.is_self_contained
+    and s.is_self_contained is not true
     and not s.is_out_of_district
     and s.enroll_status in (0, 2, 3)
 
@@ -458,39 +527,43 @@ select
     e.expected_measure_name,
     e.expected_measure_standard,
 
-    null as admin_goal_season,
-    null as admin_goal,
-    null as admin_goal_grade_range,
-    null as n_admin_season_school_gl_all,
-    null as n_admin_season_school_gl_at_above,
-    null as n_admin_season_school_gl_bl_wb,
-    null as n_admin_season_school_gl_at_above_expected,
-    null as n_admin_season_school_gl_at_above_gap,
-    null as n_admin_season_region_gl_all,
-    null as n_admin_season_region_gl_at_above,
-    null as n_admin_season_region_gl_bl_wb,
-    null as n_admin_season_region_gl_at_above_expected,
-    null as n_admin_season_region_gl_at_above_gap,
+    cast(null as string) as admin_goal_season,
+    cast(null as float64) as admin_goal,
+    cast(null as float64) as admin_goal_grade_range,
+    cast(null as int64) as n_admin_season_school_gl_all,
+    cast(null as int64) as n_admin_season_school_gl_at_above,
+    cast(null as int64) as n_admin_season_school_gl_bl_wb,
+    cast(null as int64) as n_admin_season_school_gl_at_above_expected,
+    cast(null as float64) as n_admin_season_school_gl_at_above_gap,
+    cast(null as int64) as n_admin_season_region_gl_all,
+    cast(null as int64) as n_admin_season_region_gl_at_above,
+    cast(null as int64) as n_admin_season_region_gl_bl_wb,
+    cast(null as int64) as n_admin_season_region_gl_at_above_expected,
+    cast(null as float64) as n_admin_season_region_gl_at_above_gap,
 
     e.grade as grade_level,
     e.grade_level_text as expected_grade_level,
 
-    null as average_starting_words,
-    null as pm_round_days,
-    null as pm_days,
+    cast(null as int64) as average_starting_words,
+    cast(null as int64) as pm_round_days,
+    cast(null as int64) as pm_days,
 
     e.benchmark_goal,
 
-    null as benchmark_goal_padded,
-    null as required_growth_words,
-    null as daily_growth_rate,
-    null as round_growth_words_goal,
-    null as goal,
+    cast(null as float64) as benchmark_goal_padded,
+    cast(null as int64) as required_growth_words,
+    cast(null as float64) as daily_growth_rate,
+    cast(null as int64) as round_growth_words_goal,
+    pm.aimline_value_by_date as goal,
+    pm.aimline_season_student_goal,
+    a.measure_standard_score
+    - pm.aimline_season_student_goal as aimline_season_student_goal_gap,
+    a.measure_standard_score - e.benchmark_goal as benchmark_goal_gap,
 
     c.students_student_number as schedule_student_number,
     c.cc_teacherid as teacherid,
     c.teacher_lastfirst as teacher_name,
-    c.courses_course_name as course_name,
+    c.standard_course_name as course_name,
     c.cc_course_number as course_number,
     c.cc_section_number as section_number,
 
@@ -514,8 +587,8 @@ select
     r.moy_composite,
     r.eoy_composite,
 
-    null as aggregated_measure_standard_level,
-    null as foundation_measure_standard_level,
+    cast(null as string) as aggregated_measure_standard_level,
+    cast(null as string) as foundation_measure_standard_level,
 
     rs.expected_row_count,
     rs.actual_row_count,
@@ -524,8 +597,9 @@ select
     rs.participation_group,
     rs.round_test_status,
 
-    pm.met_aimline_goal as met_measure_standard_goal,
+    pm.met_measure_standard_goal,
     pm.met_admin_benchmark_goal,
+    cast(null as int64) as met_admin_benchmark_goal_unpadded,
     pm.met_measure_name_code_goal,
     pm.met_pm_round_criteria,
     pm.met_pm_round_overall_criteria,
@@ -534,21 +608,99 @@ select
         pm.measure_standard_goal_status, 'Not Tested'
     ) as measure_standard_goal_status,
     coalesce(
+        pm.measure_name_code_goal_status, 'Not Tested'
+    ) as measure_name_code_goal_status,
+    coalesce(
         pm.admin_benchmark_goal_status, 'Not Tested'
     ) as admin_benchmark_goal_status,
-    coalesce(pm.pm_round_status, 'Not Tested') as pm_round_status,
+    coalesce(
+        max(pm.pm_round_status) over (
+            partition by
+                s.academic_year,
+                s.region,
+                s.student_number,
+                e.admin_season,
+                e.round_number
+        ),
+        'Not Tested'
+    ) as pm_round_status,
+    coalesce(
+        pm.measure_name_code_benchmark_status, 'Not Tested'
+    ) as measure_name_code_benchmark_status,
+    coalesce(
+        max(pm.round_benchmark_status) over (
+            partition by
+                s.academic_year,
+                s.region,
+                s.student_number,
+                e.admin_season,
+                e.round_number
+        ),
+        'Not Tested'
+    ) as round_benchmark_status,
+    coalesce(
+        pm.measure_name_code_aimline_benchmark_status, 'Not Tested'
+    ) as measure_name_code_aimline_benchmark_status,
+    coalesce(
+        pm.measure_name_code_trajectory_status, 'Not Tested'
+    ) as measure_name_code_trajectory_status,
+    coalesce(
+        max(pm.round_trajectory_status) over (
+            partition by
+                s.academic_year,
+                s.region,
+                s.student_number,
+                e.admin_season,
+                e.round_number
+        ),
+        'Not Tested'
+    ) as round_trajectory_status,
 
     r.overall_aimline_composite_level as aimline_cohort_level,
 
-    pm.aimline_status,
-    pm.met_aimline_goal,
     pm.missed_aimline_consecutive,
 
     coalesce(pm.aimline_category, 'Not Tested') as aimline_category,
 
     cast(e.round_number as string) as expected_round_number,
+    concat(
+        e.admin_season, ': R', cast(e.round_number as string)
+    ) as expected_round_label,
 
-    right(c.courses_course_name, 1) as schedule_student_grade_level,
+    if(
+        e.round_number = max(
+            if(
+                e.start_date <= current_date('{{ var("local_timezone") }}'),
+                e.round_number,
+                null
+            )
+        ) over (partition by s.academic_year, s.region, e.grade),
+        'Current',
+        concat(e.admin_season, ': R', cast(e.round_number as string))
+    ) as expected_round_selection,
+    string_agg(
+        case
+            when pm.measure_standard_goal_status is null
+            then '.'
+            when pm.met_measure_standard_goal = 1
+            then 'A'
+            when pm.met_measure_standard_goal = 0
+            then 'B'
+            else '?'
+        end,
+        '-'
+    ) over (
+        partition by
+            s.academic_year,
+            s.region,
+            s.student_number,
+            e.expected_measure_standard,
+            e.admin_season
+        order by e.round_number
+        rows between unbounded preceding and unbounded following
+    ) as measure_standard_round_verdicts,
+
+    right(c.standard_course_name, 1) as schedule_student_grade_level,
 
     if(a.measure_standard is null, 'Not Tested', 'Tested') as measure_test_status,
 
@@ -562,14 +714,24 @@ select
     case
         when a.measure_standard is null
         then 'Not Tested'
-        when pm.met_aimline_goal is null
+        when pm.met_measure_standard_goal is null
         then 'No Aimline Data'
-        when pm.met_aimline_goal = 0
+        when pm.met_measure_standard_goal = 0
         then 'Below Aimline'
         when pm.met_admin_benchmark_goal = 1
         then 'On Track to Benchmark'
         else 'On Aimline, Below Benchmark'
     end as aimline_trajectory_category,
+
+    -- pm is null on the measures a student skipped, so the roster's
+    -- round-grain status supplies those rows rather than a window broadcast.
+    case
+        when rs.round_test_status = 'Not Tested'
+        then 'Not Tested'
+        when rs.round_test_status = 'Round Incomplete'
+        then 'Round Incomplete'
+        else coalesce(pm.aimline_round_category, 'Not Tested')
+    end as aimline_round_category,
 
 from {{ ref("int_extracts__student_enrollments_subjects") }} as s
 inner join
@@ -592,26 +754,14 @@ inner join
     and e.assessment_include is null
     and e.pm_goal_include is null
 left join
-    {{ ref("base_powerschool__course_enrollments") }} as c
+    {{ ref("int_students__course_enrollments") }} as c
     on s.academic_year = c.cc_academic_year
     and s.schoolid = c.cc_schoolid
     and s.student_number = c.students_student_number
     and s._dbt_source_project = c._dbt_source_project
-    and c.rn_course_number_year = 1
-    and not c.is_dropped_section
+    and c.core_subject = 'ELA'
+    and c.rn_core_subject_year = 1
     and c.cc_section_number not like '%SC%'
-    and c.courses_course_name in (
-        'ELA GrK',
-        'ELA K',
-        'ELA Gr1',
-        'ELA Gr2',
-        'ELA Gr3',
-        'ELA Gr4',
-        'ELA Gr5',
-        'ELA Gr6',
-        'ELA Gr7',
-        'ELA Gr8'
-    )
 left join
     {{ ref("int_amplify__all_assessments") }} as a
     on e.academic_year = a.academic_year
@@ -638,6 +788,6 @@ left join
     and s.student_number = pm.student_number
 where
     s.iready_subject = 'Reading'
-    and not s.is_self_contained
+    and s.is_self_contained is not true
     and not s.is_out_of_district
     and s.enroll_status in (0, 2, 3)

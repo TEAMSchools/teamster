@@ -52,12 +52,10 @@ validation/profiling goes through BigQuery MCP, not `dbt show`.
 
 - **ANSI SQL or a dbt macro first; BigQuery syntax only where it adds
   capability.** When standard SQL or an installed macro produces the same
-  result, use it. Reach for a BigQuery-only form
-  (`full union all corresponding`, `qualify`, `select * except`, `group by all`)
-  only when it does something the standard form cannot. `qualify` and
-  `group by all` never pass that test and are banned outright below. Example:
-  two enumerated UNION branches take a positional `union all` with
-  `cast(null as <type>)` padding, not `full union all corresponding`.
+  result, use it. Reach for a BigQuery-only form (`select * except`) only when
+  it does something the standard form cannot. `qualify`, `group by all` and
+  `full union all corresponding` never pass that test and are banned outright
+  below.
 - **Before writing or editing any inline SQL comment, stop and ask: would this
   survive as a properties.yml `description:` instead?** A comment explaining
   rationale, background, or what/why a model computes belongs in the properties
@@ -65,9 +63,10 @@ validation/profiling goes through BigQuery MCP, not `dbt show`.
   even mid-edit on a `.sql` file where the note feels like natural momentum. The
   file being open is not evidence it's the right place. Keep inline SQL comments
   to what a reader of that exact line cannot see — a non-obvious fallback, why a
-  filter exists. Carve-out: TODOs, tracking-issue refs, and migration plumbing
-  stay inline at the derivation site — a defect belongs in the code, not the
-  metadata.
+  filter exists. The repo's existing multi-paragraph SQL comments are not a
+  precedent to extend. Carve-out: TODOs, tracking-issue refs, and migration
+  plumbing stay inline at the derivation site — a defect belongs in the code,
+  not the metadata.
 - **Max 1 level of function nesting.** `if(coalesce(x, y) > 0, 'a', 'b')` is at
   the limit; anything deeper gets split into a CTE. Aggregates as direct
   function arguments don't count toward depth —
@@ -195,8 +194,13 @@ validation/profiling goes through BigQuery MCP, not `dbt show`.
   column add an edit to the view's own SQL, so it recompiles on deploy.
   2026-09-09: `kipptaf_powerschool.int_powerschool__gpa_term` compiled with
   `cast(null as INT64) as students_student_number` for 3 regions and stayed that
-  way until a manual materialization. `full union all corresponding` removes the
-  positional-swap hazard but not this one.
+  way until a manual materialization.
+- **No `full union all corresponding`.** Join UNION branches with a positional
+  `union all` that enumerates the same columns in the same order in every
+  branch. Pad a column one branch lacks with `cast(null as <type>) as <col>`.
+  Branches that differ in shape or column set are not an exception; the padding
+  is the remedy. Existing models that use it don't need a sweep — convert them
+  when editing the model anyway.
 - **A standalone `select *` takes a trailing comma** (`select *,`) to satisfy
   sqlfluff CV03 (e.g. `stg_overgrad__schools.sql`; a `source` CTE) — distinct
   from the UNION-ALL case above, which must enumerate columns.
@@ -410,7 +414,8 @@ the same partition.
 - **BigQuery-reserved CTE names**: `groups` is reserved (window-frame syntax
   `OVER (... GROUPS BETWEEN ...)`). A CTE named `groups` fails parsing with
   "Expected keyword SELECT but got keyword GROUPS". Use `reporting_groups` or
-  similar.
+  similar. `grouping` is reserved too (`GROUPING SETS`): an alias named
+  `grouping` needs backticks.
 - **BigQuery `PIVOT` operator**: pivots ONE value column per aggregate. For a
   mixed-type key-value array, use a multi-aggregate pivot —
   `pivot(max(v_str) as s, max(v_bool) as b, any_value(v_arr) as a for field_name in ('x', ...))`

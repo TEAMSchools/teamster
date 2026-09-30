@@ -120,16 +120,28 @@ models:
           The student's quarter course percent grade, from
           base_powerschool__final_grades (current year) or
           stg_powerschool__storedgrades (prior year, summer-toggle only).
+        config:
+          meta:
+            contains_pii: true
       - name: quarter_comment_value
         data_type: string
         description: >
           The end-of-quarter comment entered in PowerSchool for this
           student/section/quarter. Null when no comment has been entered.
+        config:
+          meta:
+            contains_pii: true
       - name: qt_percent_grade_greater_100
         data_type: boolean
         description: True when quarter_course_percent_grade is above 100.
+        config:
+          meta:
+            contains_pii: true
       - name: qt_grade_70_comment_missing
         data_type: boolean
         description: >
           True when quarter_course_percent_grade is below 70 and
           quarter_comment_value is null.
+        config:
+          meta:
+            contains_pii: true

@@ -135,8 +135,12 @@ select
 
     concat(s.region, s.school_level_alt) as region_school_level_alt,
 
+    -- array_to_string skips nulls, so a null external_expression yields the bare
+    -- section_number rather than a null label
     if(
-        s.school_level_alt = 'HS', s.external_expression, s.section_number
+        s.school_level_alt = 'HS',
+        array_to_string([s.external_expression, s.section_number], ' '),
+        s.section_number
     ) as section_or_period,
 
 from section_quarters as s

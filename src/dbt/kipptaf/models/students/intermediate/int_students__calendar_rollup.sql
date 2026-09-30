@@ -25,10 +25,8 @@ with
             cast(null as string) as track,
         from {{ ref("int_focus__calendar_rollup") }} as cr
         inner join focus_schools as fs on cr.schoolid = fs.focus_school_id
-        -- One row. Floors on the cutover year, not on Focus row presence
-        -- (#5193).
-        cross join {{ ref("int_students__sis_cutover") }} as c
-        where cr.academic_year >= c.focus_start_academic_year
+        -- Floors on the cutover year, not on Focus row presence (#5193).
+        where cr.academic_year >= 2026
     )
 
 select

@@ -1,5 +1,15 @@
 models:
   - name: int_topline__formative_assessment_weekly
+    description: >-
+      Formative assessment mastery on the enrolled subject-week spine, one row
+      per student-week-discipline-strategy in the current and prior academic
+      year, kept only for weeks with an overall QA, MQQ, or CRQ response in the
+      discipline. QA and MQQ responses report under the All strategy, and CRQ
+      responses from Miami students under Florida.
+      int_assessments__response_rollup is one row per assessment, so when a
+      student took more than one in the same week, the latest administered
+      response wins, with title as the tie-break. Feeds
+      int_topline__student_metrics.
     config:
       materialized: table
       meta:
@@ -9,3 +19,40 @@ models:
           # midnight tick (deps-in-progress guard serializes). Refs #4153
           automation_condition:
             cron_schedule: 0 0 * * *
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - academic_year
+              - week_start_monday
+              - discipline
+              - formative_strategy
+          config:
+            severity: error
+    columns:
+      - name: student_number
+        description: KIPP student number of the enrolled student.
+        config:
+          meta:
+            contains_pii: true
+      - name: academic_year
+        description: Academic year the enrollment week belongs to.
+      - name: week_start_monday
+        description: Monday that opens the enrollment week.
+      - name: week_end_sunday
+        description: Sunday that closes the enrollment week.
+      - name: discipline
+        description: Subject discipline the student is enrolled in that week.
+      - name: formative_strategy
+        description:
+          Reporting strategy for the response — All for QA and MQQ, Florida for
+          a Miami student's CRQ.
+      - name: is_mastery_running_int
+        description:
+          1 when the week's selected response met mastery, 0 when it did not,
+          and null when mastery was not scored. Reports the week's own result
+          only; despite the name, nothing carries forward from earlier weeks.
+        config:
+          meta:
+            contains_pii: true

@@ -23,11 +23,11 @@ description:
   dbt Cloud is in terminal state; if it's still running, wait or ask the user.
   Bundle multiple CI-fix commits into one push.
 
-- **After dbt Cloud CI passes on a PR**: fetch warnings with
-  `mcp__dbt__get_job_run_error(run_id=<ci_run>, warning_only=true)` before
-  declaring done. Local relationships warnings absent from CI are stale-dev
-  `--defer` drift; ignore. CI warnings unchanged from main are pre-existing —
-  `gh search issues` for a tracker before filing.
+- **After dbt Cloud CI passes on a PR**: fetch its warnings before declaring
+  done (`warning_only` call in `.claude/context/dbt.md`). Local relationships
+  warnings absent from CI are stale-dev `--defer` drift; ignore. CI warnings
+  unchanged from main are pre-existing — `gh search issues` for a tracker before
+  filing.
 
 - **The `claude-review` bot asserts repo conventions that may not be enforced.**
   Verify each convention claim against existing models before applying — its
@@ -54,6 +54,16 @@ description:
   awaiting a required review approval (CODEOWNERS `src/dbt/` =
   analytics-engineers), not a CI failure.
 
+- **`claude-review` skips PRs that touch only `*.md`, `package.json`, or
+  `package-lock.json`**, and anything outside `src/`, `tests/`, `scripts/`, and
+  `.github/workflows/` (`paths:` filter in `claude-code-review.yaml`). A docs or
+  CLAUDE.md PR gets no review comment: do not wait for one, and drop the "Review
+  the Claude Code Review comment" checkbox from its body.
+- **Re-read the PR state before any follow-up push or body edit.** A small docs
+  PR can merge within minutes of opening. Merge auto-deletes the branch, and a
+  later `git push` silently recreates it as an orphan (`* [new branch]` in the
+  output is the tell), while a body PATCH lands on a closed PR. If
+  `merged: true`, start a new branch from `origin/main` and cherry-pick.
 - **`claude-review` fires only on PR `opened` / `ready_for_review`**, never on
   `synchronize` — it does NOT re-run when you push fixes, so don't wait or
   monitor for a re-review after a fix push. To get it onto code pushed after its
@@ -80,8 +90,6 @@ description:
   terminal conclusion before calling the deploy green. A shared-library change
   (e.g. `libraries/dlt/`) redeploys every consuming location, not just the ones
   whose config you edited.
-
-## dbt Cloud CI selection
 
 ## dbt Cloud CI builds only kipptaf
 
@@ -126,18 +134,16 @@ hardcoded schema, no target branch) so kipptaf reads prod regardless of target.
 
 ## GitHub Actions on a PR
 
-- `claude-code-review.yaml` — auto-reviews PRs touching `src/`, `tests/`,
-  `scripts/`, `.github/workflows/` (excludes markdown). A PR editing a workflow
-  runs that PR's own copy of it, so workflow changes review themselves. **Gated
-  to `base=main` (`branches: [main]`)** — a **stacked PR** (base = another
-  feature branch) gets no auto-review. dbt Cloud CI is ALSO base-gated, by dbt
-  Cloud itself: it triggers only for PRs whose base is the environment's branch
-  (`main`), so a stacked PR gets NO `dbt Cloud` commit status at all (#5194:
-  none after 70 minutes and two pushes, while its parent #5162 carried one). Do
-  not wait or monitor for it; local `--target dev` builds plus `zz_stg_*`
-  seeding are the pre-merge validation, and CI first fires on the re-target to
-  `main`. Only Trunk runs on a stacked PR. (An older note here cited #4381 as a
-  stacked PR that ran dbt Cloud CI; #5194 contradicts it.) Review a stacked PR
+- `claude-code-review.yaml` — auto-reviews PRs matching the path filter above. A
+  PR editing a workflow runs that PR's own copy of it, so workflow changes
+  review themselves. **Gated to `base=main` (`branches: [main]`)** — a **stacked
+  PR** (base = another feature branch) gets no auto-review. dbt Cloud CI is ALSO
+  base-gated, by dbt Cloud itself: it triggers only for PRs whose base is the
+  environment's branch (`main`), so a stacked PR gets NO `dbt Cloud` commit
+  status at all (#5194: none after 70 minutes and two pushes, while its parent
+  #5162 carried one). Do not wait or monitor for it; local `--target dev` builds
+  plus `zz_stg_*` seeding are the pre-merge validation, and CI first fires on
+  the re-target to `main`. Only Trunk runs on a stacked PR. Review a stacked PR
   via `superpowers:requesting-code-review` or an `@claude` PR comment
   (`claude.yaml` is comment-triggered, not base-gated). A base-retarget after
   the parent merges does NOT re-fire `opened`, so `claude-code-review` does not

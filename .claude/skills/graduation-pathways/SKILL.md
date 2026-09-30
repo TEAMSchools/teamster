@@ -8,8 +8,8 @@ description: >-
   PowerSchool for state reporting, or working on
   int_students__graduation_path_codes,
   stg_google_sheets__student_graduation_path_cutoffs,
-  int_pearson__all_assessments or rpt_tableau__graduation_requirements and their
-  upstream models.
+  int_assessments__state_nj_scores or rpt_tableau__graduation_requirements and
+  their upstream models.
 ---
 
 # Graduation Pathway Codes
@@ -84,8 +84,10 @@ arrive.
 vendor's staging model, never inferred — `'NJGPA'` in the Pearson models,
 `'NJGPA-A'` in the Cambium model, and the assessment's own name in
 `stg_pearson__parcc` / `_njsla` / `_njsla_science` so no relation null-fills the
-column. `int_pearson__all_assessments` names it in the `union_relations`
-`include` list and passes it through.
+column. The pearson and cambium packages each carry it up through their
+`int_*__all_assessments` model, and `int_assessments__state_nj_scores` names it
+in both of its `union_relations` `include` lists (one for the Pearson tables,
+one for the Cambium tables) and passes it through.
 
 **Students hold scores on both versions, and the number will grow.** Eight do
 today, and two of them failed the retired test by a handful of points and then
@@ -102,8 +104,8 @@ Do not "simplify" that ordering back to the raw score.
 
 Never key a cut score on cohort alone, and never infer the version from a score
 value or a date. Confirm both scales independently from the data with
-`testperformancelevel` — level 1 tops out one point below the cut, level 2
-starts at it.
+`performance_level` — level 1 tops out one point below the cut, level 2 starts
+at it.
 
 ---
 
@@ -123,10 +125,9 @@ Two coordination rules:
    failure is benign — downstream simply does not rebuild — but plan the
    sequencing.
 2. **Never judge sheet contents from the prod `stg_` table.** It is a table
-   frozen at the last build. The BigQuery MCP service account cannot read
-   Drive-backed externals at all (403, no Drive scope). Read the live sheet by
-   requesting the Drive scope explicitly from a pytest one-off, or rebuild the
-   staging model into your dev schema.
+   frozen at the last build. Query the `src_` external live through ADC, per
+   `.claude/context/claude_ai_Google_Cloud_BigQuery.md` (the BigQuery MCP cannot
+   read it).
 
 ---
 
@@ -144,6 +145,15 @@ The consequence: a retained or accelerated student sits the assessment with a
 different class than their cohort, so a cohort can legitimately need cut score
 rows for more than one assessment version. When a student's pathway looks wrong,
 check this before suspecting a bad score match.
+
+**The cut score join does not key on `cohort`.** It keys on the lesser of
+`cohort` and `cohort_primary`, the soonest class the student could graduate
+with, derived as `cut_score_cohort` in the `students` CTE of
+`int_students__graduation_pathway_scores`. Neither column works alone: a student
+who already skipped a grade needs `cohort_primary`, and a student repeating a
+grade who recovers credits over the summer needs `cohort`, because summer
+recovery leaves no enrollment row for the model to read. Do not "simplify" it
+back to either column.
 
 The actionable drift signal is a student **ahead** of their entry cohort
 (`(academic_year + 13) - grade_level < cohort`), which means a grade skip or a
@@ -171,6 +181,15 @@ names:
    FAFSA. Testing ahead of their peers usually means they are behind on credits.
    The grace period belongs only to 11th graders with no records yet, and it
    ends once results land in late June.
+
+**A student who graduates without ever being placed in grade 12 is never checked
+for FAFSA.** `fafsa_required` reads `grade_level = 12`, so an 11th grader who
+finishes over the summer is scored on pathways as a junior and then drops out of
+the model entirely when the graduation lands -- `rn_undergrad = 1` and
+`enroll_status = 0` both exclude them. Nothing in the warehouse can see those
+students, and no test can catch them. Operations owns the manual check. Do not
+try to close this by widening `fafsa_required` to grade 11: that would hold
+every junior to a deadline that does not apply to them, which is rule 2.
 
 ---
 
@@ -287,7 +306,7 @@ NJDOE posts these at `nj.gov/education/broadcasts/<year>/<mon>/<day>/...`. If
 ### Step 3 — Confirm the cut against our own data
 
 Never enter a published number without checking it. Group that administration's
-scores by `testperformancelevel`: level 1's max should sit one point below the
+scores by `performance_level`: level 1's max should sit one point below the
 published cut, and level 2's min should equal it. If they disagree, stop and
 raise it — either the file or the broadcast reading is wrong.
 
@@ -298,11 +317,8 @@ you are about to key a new-scale cut onto old-scale rows.
 
 The sheet is small, so replace it wholesale rather than hand-editing rows.
 
-Read the live tab — the BigQuery MCP service account **cannot** (403, no Drive
-scope) and the prod `stg_` table is frozen at the last build. Use a throwaway
-`tests/test_zz_*.py` with `google.auth.default(scopes=[".../drive.readonly"])`
-and the Sheets API, then delete it. The named range in `sources-external.yml`
-`sheet_range` tells you which tab.
+Read the live tab through the `src_` external, as in coordination rule 2 above.
+The named range in `sources-external.yml` `sheet_range` tells you which tab.
 
 Build the replacement as TSV into `.claude/scratch/` and hand the analyst the
 file to paste. Rules:
@@ -317,10 +333,12 @@ file to paste. Rules:
 
 ### Step 5 — Code changes, only if the version is new
 
-- Add the version literal to the vendor's staging model, and to
-  `int_pearson__all_assessments`'s `union_relations` `include` list.
-- Add the value to the `accepted_values` lists on `assessment_version` in both
-  `int_pearson__all_assessments` and the cut score properties YAML.
+- Add the version literal to the vendor's staging model. The column is already
+  in both `union_relations` `include` lists in
+  `int_assessments__state_nj_scores`, so no change is needed there.
+- Add the value to the `accepted_values` lists on `assessment_version` in
+  `int_assessments__state_nj_scores`, the cut score properties YAML and, for a
+  Cambium version, the cambium package's `int_cambium__all_assessments`.
 - Add the PowerSchool score field names to the transfer-scores model, and check
   whether the holder name changed.
 - Update the transfer-score user guide and this skill.
@@ -334,6 +352,14 @@ join is wrong — usually a new-scale cut applied to old-scale scores.
 A cohort with scores but no cut score row produces `final_grad_path_code = 'R'`,
 which reads as "no pathway met". That is indistinguishable from a genuine
 failure on the dashboard, so a missing row is a silent wrong answer, not a gap.
+
+Then re-run `int_students__graduation_path_codes__scores_have_cutoffs` and read
+the remainder. Three causes leave a student unscoreable and the rows you just
+entered fix only the first: a class NJDOE has not published, a twice-retained
+student whose cut score cohort key predates the assessment version they sat, and
+a student holding no NJGPA record at all. Report the remainder to the HS team
+split by cause — the second needs a records decision, the third needs nothing,
+and handing over one undifferentiated list wastes their time.
 
 ---
 

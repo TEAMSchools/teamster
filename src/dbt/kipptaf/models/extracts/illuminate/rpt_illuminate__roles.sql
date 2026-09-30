@@ -16,11 +16,18 @@ select
 -- trunk-ignore-end(sqlfluff/RF05)
 from {{ ref("int_people__staff_roster") }} as sr
 inner join
-    {{ ref("stg_powerschool__schools") }} as sch on sch.state_excludefromreporting = 0
+    {{ ref("int_students__schools") }} as sch
+    -- Miami left Illuminate ahead of AY2026-27 (#4777, #5537)
+    on sch._dbt_source_project in ('kippnewark', 'kippcamden', 'kipppaterson')
+    and sch.state_excludefromreporting = 0
 where
     sr.worker_status_code != 'Terminated'
     and sr.home_department_name in ('Teaching and Learning', 'Data', 'Executive')
     and sr.home_business_unit_name = 'KIPP TEAM and Family Schools Inc.'
+    -- same office filter as rpt_illuminate__users, so every role has a user
+    -- (#5539)
+    and sr.home_work_location_dagster_code_location
+    in ('kippnewark', 'kippcamden', 'kipppaterson')
 
 union all
 
@@ -49,8 +56,9 @@ where
     and sr.home_department_name not in ('Teaching and Learning', 'Data', 'Executive')
     and sr.home_work_location_is_campus
     and not sr.home_work_location_is_pathways
-    -- Miami left Illuminate ahead of AY2026-27
-    and sr.home_work_location_dagster_code_location != 'kippmiami'
+    -- Miami left Illuminate ahead of AY2026-27 (#4777, #5537)
+    and sr.home_work_location_dagster_code_location
+    in ('kippnewark', 'kippcamden', 'kipppaterson')
 
 union all
 
@@ -74,8 +82,9 @@ where
     worker_status_code != 'Terminated'
     and home_department_name not in ('Teaching and Learning', 'Data', 'Executive')
     and not home_work_location_is_campus
-    -- Miami left Illuminate ahead of AY2026-27
-    and home_work_location_dagster_code_location != 'kippmiami'
+    -- Miami left Illuminate ahead of AY2026-27 (#4777, #5537)
+    and home_work_location_dagster_code_location
+    in ('kippnewark', 'kippcamden', 'kipppaterson')
 
 union all
 
@@ -95,5 +104,5 @@ select
     1 as `05 Session Type ID`,
 -- trunk-ignore-end(sqlfluff/RF05)
 from {{ ref("int_people__temp_staff") }}
--- Miami left Illuminate ahead of AY2026-27
-where dagster_code_location != 'kippmiami'
+-- Miami left Illuminate ahead of AY2026-27 (#4777, #5537)
+where dagster_code_location in ('kippnewark', 'kippcamden', 'kipppaterson')

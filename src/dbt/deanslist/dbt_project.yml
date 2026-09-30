@@ -19,6 +19,8 @@ clean-targets:
 
 vars:
   bigquery_external_connection_name: null
+  # DeansList data starts in 2015-16; earlier dates are data-entry typos
+  deanslist_min_valid_date: "2015-07-01"
 
 models:
   +schema: deanslist

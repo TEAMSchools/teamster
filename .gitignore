@@ -1,6 +1,7 @@
 .k8s/get_helm.sh
 scripts/script_output/
 .worktrees/
+.claude/worktrees/
 secret-volume
 dagster-tmp
 .claude/settings.local.json
@@ -8,6 +9,7 @@ dagster-tmp
 .claude/scheduled_tasks.lock
 .superpowers/
 CLAUDE.local.md
+docs/help-center/*/images/
 
 # Created by https://www.toptal.com/developers/gitignore/api/linux,macos,windows,python,dbt
 # Edit at https://www.toptal.com/developers/gitignore?templates=linux,macos,windows,python,dbt

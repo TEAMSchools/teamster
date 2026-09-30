@@ -1,5 +1,17 @@
 models:
   - name: int_topline__attendance_interventions_weekly
+    description: >-
+      Attendance intervention call completion carried onto the enrollment week
+      spine, one row per enrolled student-week in the current and prior academic
+      year. The call counts come from
+      snapshot_students__attendance_interventions_rollup, matched on student and
+      academic year to the snapshot version in effect at the instant the week
+      closes, so each week reports the freshest counts known during it. That
+      boundary instant is built in the local timezone, and comparing it against
+      the version's validity span as a half-open interval resolves every week to
+      exactly one version. Weeks before a student's first snapshot version carry
+      null counts. Feeds int_topline__student_metrics, which scores successful
+      calls against anticipated calls.
     config:
       materialized: table
       meta:
@@ -9,3 +21,47 @@ models:
           # midnight tick (deps-in-progress guard serializes). Refs #4153
           automation_condition:
             cron_schedule: 0 0 * * *
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - academic_year
+              - week_start_monday
+          config:
+            severity: error
+    columns:
+      - name: student_number
+        description: KIPP student number of the enrolled student.
+        config:
+          meta:
+            contains_pii: true
+      - name: academic_year
+        description: Academic year the enrollment week belongs to.
+      - name: week_start_monday
+        description: Monday that opens the enrollment week.
+      - name: week_end_sunday
+        description:
+          Sunday that closes the enrollment week, and the date the snapshot
+          boundary instant is built from.
+      - name: successful_call_count
+        description:
+          Number of required attendance intervention calls completed for the
+          student in the academic year, as of the week's close.
+        config:
+          meta:
+            contains_pii: true
+      - name: total_anticipated_calls
+        description:
+          Number of attendance intervention calls the student's absences
+          required in the academic year, as of the week's close.
+        config:
+          meta:
+            contains_pii: true
+      - name: pct_interventions_complete
+        description:
+          Share of required attendance intervention calls completed, as of the
+          week's close.
+        config:
+          meta:
+            contains_pii: true

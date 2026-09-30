@@ -89,12 +89,11 @@ before merge:
    **Claude CAN start the dev server** — run `npm run dev` with cwd `src/cube`
    as a BACKGROUNDED Bash call, redirect output to a log under
    `.claude/scratch/`, then poll that log for `is listening on 4000`. Only a
-   FOREGROUND call fails (a server never exits, so it hangs to timeout); that is
-   what the old "ask the user" guidance was working around. The VS Code task
-   runs the identical command and injects no extra configuration, so prefer it
-   only when the user wants the server visible in a terminal panel. Stop it with
-   `pkill -f 'cubejs[-]server'` — the bracket is required, or the pattern
-   matches the killing shell's own command line and kills it instead. Or
+   FOREGROUND call fails (a server never exits, so it hangs to timeout). The VS
+   Code task runs the identical command and injects no extra configuration, so
+   prefer it only when the user wants the server visible in a terminal panel.
+   Stop it with `pkill -f 'cubejs[-]server'` — the bracket is required, or the
+   pattern matches the killing shell's own command line and kills it instead. Or
    commit+push for Cube Cloud Dev Mode.
 4. Revert all dev-schema redirects to `kipptaf_marts.<table>` before committing.
    Verify with `grep -r "zz_" src/cube/` before pushing.
@@ -132,22 +131,17 @@ exercise it; a plain dev server silently default-denies every gated view.
   one alias, overriding the connecting user — change + restart to switch.) It's
   the prod BI/Superset surface. Tesseract (`CUBEJS_TESSERACT_SQL_PLANNER`,
   default `true`) is the planner on both APIs and joining views is supported
-  (multi-fact views); the old `JoinDefinitionStatic` note was a Playground
-  observation, not a SQL-API limit — verified
-  `student_attendance_enrollment_daily_view` / `staff_directory` /
-  `student_assessment_scores_view` query cleanly. **`checkAuth` DOES run in dev
-  mode (verified on Cube 1.6.59 and 1.7.14)** — the prior "REST skips auth in
-  dev mode / needs `NODE_ENV=production`" claim was WRONG, and Cube's own
+  (multi-fact views): `student_attendance_enrollment_daily_view` /
+  `staff_directory` / `student_assessment_scores_view` query cleanly.
+  `checkAuth` runs in dev mode (`.claude/rules/cube-authoring.md`), so Cube's
   `🔓 Authentication checks are disabled in developer mode` boot banner is
-  misleading here: a signed `email` claim still resolves a full scope. To
-  emulate over the REST Playground, paste `{"email": "<viewer>"}` into its
-  Security Context editor and `resolveAccess` enriches it. Two gotchas: (1) a
-  stale cached Playground token trips `checkAuth`'s `maxAge: "12h"` cap
-  (`TokenExpiredError: maxAge exceeded`) — clear `localhost` local storage /
-  re-save the context to re-mint a fresh token; (2) `resolveAccess` fail-closes
-  to deny-all locally unless `CUBEJS_DB_BQ_CREDENTIALS` is set or the ADC
-  fallback is present (a bare `JSON.parse("")` throws on the unset var). See
-  #4526.
+  misleading. To emulate over the REST Playground, paste `{"email": "<viewer>"}`
+  into its Security Context editor and `resolveAccess` enriches it. Two gotchas:
+  (1) `TokenExpiredError: maxAge exceeded` is a stale cached Playground token —
+  clear `localhost` local storage / re-save the context to re-mint a fresh
+  token; (2) `resolveAccess` fail-closes to deny-all locally unless
+  `CUBEJS_DB_BQ_CREDENTIALS` is set or the ADC fallback is present (a bare
+  `JSON.parse("")` throws on the unset var). See #4526.
 - **Dev mode downgrades an out-of-tier DENIAL to a quiet 0 rows — run the
   sign-off with auth ON**
   (`NODE_ENV=production CUBEJS_DEV_MODE=false npm run dev`). With auth on, a
@@ -161,13 +155,10 @@ exercise it; a plain dev server silently default-denies every gated view.
   viewers return identical rows in both modes, so only the denial shape needs
   auth on.
 - **Cube Cloud works via `contextToGroups` enrichment, not `checkAuth`
-  (#4526).** Cube Cloud injects
-  `{ cubeCloud: { username, groups, roles, userAttributes, meta, userCredentials }, iss: "cubecloud", exp }`
-  with **no top-level `email`** until a Security Context is pasted — at which
-  point the paste is merged into the top level and mirrored at
-  `cubeCloud.userAttributes.email`. Observed on 1.7.14; do not trust the shape
-  across versions. Symptom of enrichment not running: views hidden, only source
-  tables, `WHERE (1 = 0)` — check the deployment log for
+  (#4526).** The injected context has no top-level `email` until a Security
+  Context is pasted (shape and merge semantics:
+  `.claude/rules/cube-authoring.md`). Symptom of enrichment not running: views
+  hidden, only source tables, `WHERE (1 = 0)` — check the deployment log for
   `resolveAccess failed for` and that the BigQuery variables are set on **that**
   environment (branch environments do not inherit them).
 - **Cube Cloud Explore's "Semantic SQL" tab IS a valid surface for testing the
@@ -188,9 +179,9 @@ exercise it; a plain dev server silently default-denies every gated view.
 - **Emulation works on REST/MCP and on Cube Cloud** — locally, paste
   `{"email": "you@…", "act_as": "viewer@…"}` into the Playground security
   context (or sign the same payload); in Cube Cloud, paste
-  `{"email": "viewer@…"}` and the caller is `cubeCloud.username`. Either way you
-  need to be in `CUBE_IMPERSONATORS` on that deployment; unset = inert, and a
-  caller not on the list keeps their own scope silently. Verified live on both
+  `{"email": "viewer@…"}`. Either way you need to be in `CUBE_IMPERSONATORS` on
+  that deployment (gate semantics: `.claude/rules/cube-authoring.md`); a caller
+  not on the list keeps their own scope silently. Verified live on both
   surfaces: emulating a region-scoped viewer returns that region only.
 - **The dev server always serves the MAIN checkout** — the `Cube: Dev Server`
   task runs `npm --prefix src/cube` from the workspace root, so branch changes

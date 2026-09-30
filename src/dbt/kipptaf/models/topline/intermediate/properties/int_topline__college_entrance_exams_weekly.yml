@@ -1,5 +1,16 @@
 models:
   - name: int_topline__college_entrance_exams_weekly
+    description: >-
+      SAT and PSAT combined scores carried onto the enrollment week spine, one
+      row per enrolled high-school student-week and test type in the current and
+      prior academic year. Scores come from
+      snapshot_kippadb__standardized_test_rollup, matched on student to the
+      snapshot version in effect at the instant the week closes, so each week
+      reports the freshest score known during it. That boundary instant is built
+      in the local timezone, and comparing it against the version's validity
+      span as a half-open interval resolves every week to exactly one version
+      per test type. Only student-weeks with a recorded score appear. Feeds
+      int_topline__student_metrics.
     config:
       materialized: table
       meta:
@@ -9,3 +20,40 @@ models:
           # midnight tick (deps-in-progress guard serializes). Refs #4153
           automation_condition:
             cron_schedule: 0 0 * * *
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - academic_year
+              - week_start_monday
+              - test_type
+          config:
+            severity: error
+    columns:
+      - name: student_number
+        description: KIPP student number of the enrolled student.
+        config:
+          meta:
+            contains_pii: true
+      - name: academic_year
+        description: Academic year the enrollment week belongs to.
+      - name: schoolid
+        description:
+          PowerSchool school id of the student's enrollment that week.
+      - name: week_start_monday
+        description: Monday that opens the enrollment week.
+      - name: week_end_sunday
+        description:
+          Sunday that closes the enrollment week, and the date the snapshot
+          boundary instant is built from.
+      - name: test_type
+        description:
+          Entrance exam the score belongs to — SAT, PSAT NMSQT, or PSAT 8/9.
+      - name: score
+        description:
+          Combined score for the test type in effect when the week closed, as
+          captured by the snapshot.
+        config:
+          meta:
+            contains_pii: true

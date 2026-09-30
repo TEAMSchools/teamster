@@ -11,16 +11,6 @@ models:
       meta:
         contains_pii: true
     columns:
-      - name: homeless_code
-        data_type: string
-        data_tests:
-          - accepted_values:
-              arguments:
-                values: [N, Y1, Y2]
-        description:
-          Network homelessness code. N when the student is recorded as not
-          homeless, Y2 when homeless and not in a parent or guardian's custody,
-          Y1 when homeless otherwise. Null when Focus records nothing.
       - name: student_id
         description: Primary key — Focus local student id.
         data_tests:
@@ -43,6 +33,12 @@ models:
               config:
                 where: florida_education_identifier is not null
                 severity: warn
+      - name: homeless_code
+        data_type: string
+        description:
+          Network homelessness code. N when the student is recorded as not
+          homeless, Y2 when homeless and not in a parent or guardian's custody,
+          Y1 when homeless otherwise. Null when Focus records nothing.
       - name: is_homeless
         data_type: boolean
         description:

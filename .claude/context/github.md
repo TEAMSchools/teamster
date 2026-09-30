@@ -1,5 +1,16 @@
 # GitHub MCP gotchas
 
+- **Asking the `@claude` reviewer for anything means posting a NEW comment whose
+  body STARTS with `@claude`.** The bot fires on the mention in a newly created
+  comment. Editing an existing comment to add the tag does not fire it, and
+  neither does a reply that answers the review without re-tagging — that reply
+  is read by nobody. So a per-finding verdict written back to the review (which
+  `pr-ci-review` and the root CLAUDE.md both require) does NOT reach the
+  reviewer on its own: post the verdict, then post a tagged comment carrying the
+  asks, or lead the verdict comment with the tag. Verified 2026-09-20 on #5408,
+  where an untagged reply sat unread until a tagged one was posted.
+- Pass `minimal_output: true` on every `mcp__github__*` read unless you need a
+  field it drops.
 - **Neither the read nor the write tools mangle body text. Escaped characters in
   a read result are transport encoding, not corruption.** `pull_request_read` /
   `issue_read` render `<`, `>` and `&` as the JSON escapes `\u003c`, `\u003e`
@@ -58,7 +69,8 @@ The root CLAUDE.md names the allowed `gh` subcommands; the mechanics live here.
   runs for CI poll loops (Monitor); no single `mcp__github__*` tool covers both
   surfaces.
 - `gh run *` — Actions run inspection/control; no MCP coverage.
-- `gh workflow *` — Actions workflow inspection/dispatch; no MCP coverage.
+- `gh workflow *` — Actions workflow inspection; no MCP coverage. Dispatch: see
+  the `gh-token-scopes` skill.
 - `gh repo edit` — repo settings; `gh repo create/view/list` have MCP
   equivalents and are not on this list.
 - Editing an existing comment — `mcp__github__add_issue_comment` only creates.

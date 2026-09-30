@@ -39,6 +39,7 @@ exclude_docs: |
   launch/RUNBOOK.md
   launch/README.md
   launch/PROJECT.md
+  help-center/
 
 nav:
   - Home: README.md
@@ -55,6 +56,8 @@ nav:
       - Claude Code & Superpowers: guides/superpowers.md
       - Cube: guides/cube.md
       - Claude + Cube Connector: guides/claude-cube-connector.md
+      - Cube Access - Individual Exceptions:
+          guides/cube-access-individual-exceptions.md
   - Troubleshooting:
       - Dagster: troubleshooting/dagster.md
       - dbt: troubleshooting/dbt.md
@@ -73,8 +76,16 @@ nav:
       - CARAT Dashboard Data Model: models/carat-dashboard-data-model.md
       - Gradebook Audit Data Model: models/gradebook-audit-data-model.md
       - CSGF Data Model: models/csgf-data-model.md
+      - CRDC Data Model: models/crdc-data-model.md
       - HS Early Warning Data Model: models/hs-early-warning-data-model.md
       - DIBELS Dashboard Data Model: models/dibels-dashboard-data-model.md
+      - STAT Dashboard Data Model: models/stat-dashboard-data-model.md
+      - NJDOE Universal Screener Data Model:
+          models/njdoe-universal-screener-data-model.md
+      - Athletic Eligibility Data Model:
+          models/athletic-eligibility-data-model.md
+      - Academic Health Data Model: models/academic-health-data-model.md
+      - Grad Plan Tracking Data Model: models/grad-plan-tracking-data-model.md
   - Automations: reference/automations.md
 
 markdown_extensions:

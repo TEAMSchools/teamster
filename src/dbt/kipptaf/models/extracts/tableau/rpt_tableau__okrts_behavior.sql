@@ -124,6 +124,44 @@ with
             week_end_sunday,
             days_in_session,
             entry_staff
+    ),
+
+    incentives as (
+        select
+            student_school_id,
+            dl_school_id,
+            academic_year,
+            behavior,
+
+            date_add(
+                date_trunc(behavior_date, week(sunday)), interval 1 day
+            ) as week_start_monday,
+        from {{ ref("stg_deanslist__behavior") }}
+        where
+            behavior
+            in ('Progress to Quarterly Incentive', 'Earned Quarterly Incentive')
+            and academic_year >= {{ var("current_academic_year") - 1 }}
+    ),
+
+    progress_weeks as (
+        -- grain projection, not dup-masking
+        select distinct
+            student_school_id, dl_school_id, academic_year, week_start_monday,
+        from incentives
+        where behavior = 'Progress to Quarterly Incentive'
+    ),
+
+    quarterly_awards as (
+        -- grain projection, not dup-masking
+        select distinct i.student_school_id, i.dl_school_id, i.academic_year, w.quarter,
+        from incentives as i
+        inner join
+            {{ ref("int_extracts__student_enrollments_weeks") }} as w
+            on i.student_school_id = w.student_number
+            and i.dl_school_id = w.deanslist_school_id
+            and i.academic_year = w.academic_year
+            and i.week_start_monday = w.week_start_monday
+        where i.behavior = 'Earned Quarterly Incentive'
     )
 
 select
@@ -162,9 +200,9 @@ select
     b.total_points,
     b.behavior_count,
 
-    if(bi.behavior is not null, 1, 0) as is_earned_progress_to_quarterly,
+    if(pw.student_school_id is not null, 1, 0) as is_earned_progress_to_quarterly,
 
-    if(bq.behavior is not null, 1, 0) as is_earned_quarterly_incentive,
+    if(qa.student_school_id is not null, 1, 0) as is_earned_quarterly_incentive,
 
     extract(month from co.week_start_monday) as behavior_month,
 
@@ -183,17 +221,15 @@ left join
     and co.week_start_monday = b.week_start_monday
     and co._dbt_source_project = b._dbt_source_project
 left join
-    {{ ref("int_deanslist__behavior_incentive_by_term") }} as bi
-    on co.student_number = bi.student_school_id
-    and co.deanslist_school_id = bi.school_id
-    and co.academic_year = bi.academic_year
-    and bi.end_date between co.week_start_monday and co.week_end_sunday
-    and bi.incentive_type = 'Weeks (Progress to Quarterly Incentive)'
+    progress_weeks as pw
+    on co.student_number = pw.student_school_id
+    and co.deanslist_school_id = pw.dl_school_id
+    and co.academic_year = pw.academic_year
+    and co.week_start_monday = pw.week_start_monday
 left join
-    {{ ref("int_deanslist__behavior_incentive_by_term") }} as bq
-    on co.student_number = bq.student_school_id
-    and co.deanslist_school_id = bq.school_id
-    and co.academic_year = bq.academic_year
-    and co.quarter = bq.term_name
-    and bq.incentive_type = 'Quarters'
+    quarterly_awards as qa
+    on co.student_number = qa.student_school_id
+    and co.deanslist_school_id = qa.dl_school_id
+    and co.academic_year = qa.academic_year
+    and co.quarter = qa.quarter
 where co.is_enrolled_week and co.academic_year >= {{ var("current_academic_year") - 1 }}

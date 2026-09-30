@@ -13,14 +13,12 @@ superset. Gotchas for that one: `.claude/context/dagster.md`.
   `create_or_update_alert_policy`, and `delete_alert_policy` execute on the
   first call. The homebrew server's `confirm=True` preview does not apply here,
   so state the target in plain text before calling one.
-- **Prefer this server for any job it covers.** It owns Insights metrics
-  (`get_asset_metrics`, `get_job_metrics`, `get_deployment_metrics`,
-  `get_asset_selection_metrics` — credit and runtime reporting), alert policies
-  (read, plus write via a config document), Dagster+ Issues, asset browsing and
-  definitions (`get_assets`, `get_asset`), deployment listing, code locations,
-  run listing, run detail, run logs, run launches, re-execution, and run
-  termination. The homebrew duplicates are denied in `settings.json` — one tool
-  per job.
+- **Jobs this server owns:** Insights metrics (`get_asset_metrics`,
+  `get_job_metrics`, `get_deployment_metrics`, `get_asset_selection_metrics` —
+  credit and runtime reporting), alert policies (read, plus write via a config
+  document), Dagster+ Issues, asset browsing and definitions (`get_assets`,
+  `get_asset`), deployment listing, code locations, run listing, run detail, run
+  logs, run launches, re-execution, and run termination.
 - **`get_run` here returns 9 fields**, and every field the homebrew one had is
   still reachable:
   - `parentRunId` / `rootRunId` / `repositoryOrigin` → already in this tool's
@@ -64,13 +62,10 @@ superset. Gotchas for that one: `.claude/context/dagster.md`.
   `job_name` does not discriminate much here anyway, because
   automation-condition runs are all `__ASSET_JOB`.
 
-- **This server owns run logs outright, and the tool overlap is now zero.** The
-  homebrew `get_run_logs` was dropped in `dagster-plus-mcp` once the only thing
-  it uniquely provided — the compute-log `logKey` — moved inside
-  `mcp__dagster__get_run_compute_logs` and
-  `mcp__dagster__get_captured_logs_metadata`, which now take `run_id` plus an
-  optional `step_key` and resolve the key themselves. Nothing here needs a deny
-  for log reading any more.
+- **`get_run_logs` (event logs) is this server's; compute logs are the homebrew
+  server's.** `mcp__dagster__get_run_compute_logs` and
+  `mcp__dagster__get_captured_logs_metadata` take `run_id` plus an optional
+  `step_key` and resolve the compute-log key themselves.
   - This tool caps `limit` at 100 (passing 1000 is a validation error), has no
     `filter_types`, and returns events oldest-first, so a step failure at the
     end of a long run is several pages in — 4 pages and 329 events on one
@@ -83,9 +78,6 @@ superset. Gotchas for that one: `.claude/context/dagster.md`.
     that key is an opaque 8-character string not derivable from `run_id` and
     `step_key`, and the files live in Dagster's own S3 bucket. Step-pod
     stdout/stderr comes only from `mcp__dagster__get_run_compute_logs`.
-
-  Identical arguments do NOT mean identical payloads — compare the payloads
-  before flipping anything else.
 
 - **The alert route is not a substitute for reading logs.** 13 alert policies
   exist, but none fires on run failure: the run-scoped ones are `JOB_SUCCESS`
@@ -122,10 +114,10 @@ superset. Gotchas for that one: `.claude/context/dagster.md`.
   deployments**, which the homebrew server's `list_deployments` does not. The
   names are opaque hashes, so mapping a specific PR to its hash still goes
   through that PR's `deploy` job log (see `.claude/context/dagster.md`).
-- `get_assets` / `get_asset` return more per asset than `search_assets` did: the
-  health rollup, partition definition, job names, downstream keys, and metadata
-  entries in one call. They do NOT return staleness causes or
-  automation-condition evaluations — those stay on the homebrew server.
+- `get_assets` / `get_asset` return the health rollup, partition definition, job
+  names, downstream keys, and metadata entries in one call. They do NOT return
+  staleness causes or automation-condition evaluations — those stay on the
+  homebrew server.
 - `get_assets` `cursor` is the asset key's JSON-string form (`"[\"a\",\"b\"]"`),
   and `prefix` is a list of key parts (`["kipptaf", "extracts"]`), not a
   slash-separated string.

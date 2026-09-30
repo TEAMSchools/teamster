@@ -7,7 +7,7 @@ Usage:
 
 Why this exists -- both obvious routes to a Sheets-backed source are dead ends:
 
-  * The BigQuery MCP cannot read a Sheets external at all. Its service account
+  * The BigQuery MCP cannot read a Sheets external at all. Its OAuth token
     carries no Drive scope, so any such query returns "Permission denied while
     getting Drive credentials". Sharing the file changes nothing: it is a
     missing OAuth scope, not a file permission.

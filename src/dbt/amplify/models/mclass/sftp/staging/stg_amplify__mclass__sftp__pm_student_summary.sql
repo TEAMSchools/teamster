@@ -1,4 +1,39 @@
 with
+    -- Amplify dropped the id-column suffixes from the SY2026-2027 headers;
+    -- fold the new names back into the contracted old ones.
+    renamed_ids as (
+        select
+            * except (
+                student_primary_id,
+                student_primary_id_studentnumber,
+                enrollment_teacher_staff_id,
+                enrollment_teacher_staff_id_teachernumber,
+                assessing_teacher_staff_id,
+                assessing_teacher_staff_id_teachernumber,
+                secondary_student_id,
+                secondary_student_id_stateid,
+                additional_student_id,
+                additional_student_id_sisid
+            ),
+
+            coalesce(
+                student_primary_id_studentnumber, student_primary_id
+            ) as student_primary_id_studentnumber,
+            coalesce(
+                enrollment_teacher_staff_id_teachernumber, enrollment_teacher_staff_id
+            ) as enrollment_teacher_staff_id_teachernumber,
+            coalesce(
+                assessing_teacher_staff_id_teachernumber, assessing_teacher_staff_id
+            ) as assessing_teacher_staff_id_teachernumber,
+            coalesce(
+                secondary_student_id_stateid, secondary_student_id
+            ) as secondary_student_id_stateid,
+            coalesce(
+                additional_student_id_sisid, additional_student_id
+            ) as additional_student_id_sisid,
+        from {{ source("amplify_mclass_sftp", "pm_student_summary") }}
+    ),
+
     normalized as (
         select
             * except (
@@ -9,8 +44,7 @@ with
                 additional_student_id_primarysisid,
                 sync_date,
                 total_number_of_probes,
-                measure,
-                school_primary_id
+                measure
             ),
 
             cast(probe_number as int) as probe_number,
@@ -27,8 +61,6 @@ with
             cast(
                 cast(student_primary_id_studentnumber as numeric) as int
             ) as student_primary_id_studentnumber,
-
-            cast(school_primary_id as int) as school_primary_id,
 
             cast(left(school_year, 4) as int) as academic_year,
 
@@ -61,7 +93,7 @@ with
                 else measure
             end as measure,
 
-        from {{ source("amplify_mclass_sftp", "pm_student_summary") }}
+        from renamed_ids
     ),
 
     pm_student_summary as (

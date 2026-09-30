@@ -3,16 +3,14 @@ models:
     description:
       K-8 DIBELS progress monitoring, enriched with Amplify aimline goals and
       status. Every probe in `stg_amplify__mclass__sftp__pm_student_summary`
-      (the base PM file, K-2's source), left-joined on probe identity to
+      (the base PM file) is left-joined on probe identity to
       `stg_amplify__mclass__sftp__pm_student_summary_aimline` for the aimline
       fields. The base file drives because every probe in the aimline file also
-      appears in it (0 aimline-only rows in SY25-26 and SY26-27). The aimline
-      columns are coalesced from both files, since Amplify has moved the
-      aimline_status / aimline_value_by_date fields between these two files
-      mid-year before, with no advance notice, and gave no commitment on whether
-      it happens again. One row per student, measure, and probe attempt within a
-      PM period, K-8. There is no grade filter, since both PM methods run K-8
-      and int_amplify__all_assessments tells them apart by model_type.
+      appears in it. aimline_status and aimline_value_by_date are coalesced from
+      both files, because Amplify has moved them between the two files mid-year
+      without notice. One row per student, measure, and probe attempt within a
+      PM period. There is no grade filter, since both PM methods run K-8 and
+      int_amplify__all_assessments tells them apart by model_type.
     config:
       materialized: table
     data_tests:
@@ -26,10 +24,16 @@ models:
               - probe_number
               - device_date
               - assessment_grade
+          config:
+            severity: error
     columns:
       - name: student_primary_id
         data_type: int64
-        description: Student primary identifier (student number).
+        description: >-
+          Network student number. Miami rows through SY2025 carry the bare
+          pre-Focus number in the source; they are brought onto the
+          8400-prefixed Focus student number after the join between the two
+          files, which match on the raw id.
         data_tests:
           - not_null
         config:
@@ -39,8 +43,7 @@ models:
         data_type: string
         description:
           Expanded measure name with abbreviation (e.g., 'Reading Fluency
-          (ORF)'). First non-null of the aimline file's and the base PM file's
-          value for this probe.
+          (ORF)'), from the base PM file.
         data_tests:
           - not_null
       - name: pm_period
@@ -53,13 +56,15 @@ models:
         description: Assessment grade as integer, K-8 with kindergarten as 0.
         data_tests:
           - not_null
-      - name: goal
+      - name: aimline_season_student_goal
         data_type: numeric
-        description:
-          End-of-period aimline goal score. Only ever populated by the aimline
-          file today — the base PM file has never carried this field — but not
-          coalesced, since a coalesce needs a second populated source to be
-          meaningful.
+        description: >-
+          End-of-period aimline goal score, set by Amplify per student -- where
+          this student should reach by the end of the period given where they
+          started, not the grade-level bar. Two students in the same class on
+          the same measure can correctly hold different goals. Never substitute
+          it for a grade-level benchmark goal, or label it as one. Read from the
+          aimline file only; the base PM file does not carry this field.
         config:
           meta:
             source_system: Amplify

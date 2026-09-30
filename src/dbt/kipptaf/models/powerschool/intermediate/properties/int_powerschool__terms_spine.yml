@@ -1,0 +1,8 @@
+models:
+  - name: int_powerschool__terms_spine
+    description: >-
+      Network-wide union of every district's int_powerschool__terms_spine,
+      including Miami's frozen PowerSchool archive. Column documentation lives
+      on the district source models; this wrapper adds only _dbt_source_project.
+    config:
+      materialized: table
