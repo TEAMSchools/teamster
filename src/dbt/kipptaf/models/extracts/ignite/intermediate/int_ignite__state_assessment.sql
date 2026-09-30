@@ -1,3 +1,46 @@
+{#-
+ Discretionary testing accommodations. text_to_speech is deliberately absent:
+ New Jersey grants it universally to any student testing on a computer without
+ a conflicting accommodation, so it records the test delivery mode rather than
+ a decision made about a student, and counting it would mark most of the cohort
+ accommodated. Confirmed by KTAF on 2026-09-30.
+-#}
+{%- set pearson_accommodation_columns = [
+    "extendedtime",
+    "frequentbreaks",
+    "smallgrouptesting",
+    "uniqueaccommodation",
+    "mlaccommodation",
+    "elaccommodation",
+    "administrationdirectionsreadaloudinstudentsnativelanguage",
+    "braillewithtactilegraphics",
+    "electronicbrailleresponse",
+    "refreshablebrailledisplay",
+    "multilinguallearneraccommodatedresponse",
+] -%}
+
+{#-
+ The same file types three accommodation fields as numbers rather than the
+ Y/N strings its other accommodation fields use, so they need their own test.
+-#}
+{%- set pearson_accommodation_columns_numeric = [
+    "emergencyaccommodation",
+    "englishlearneraccommodatedresponses",
+    "mathematicsscienceaccommodatedresponse",
+] -%}
+
+{#-
+ Mathematica defines exemption_* as exemption from TAKING a test or a test
+ found invalid, which is what the void-score and exempt-from-taking fields
+ record. iepexemptfrompassing is a different concept -- exemption from the
+ graduation passing requirement -- and is deliberately not read here.
+-#}
+{%- set pearson_exemption_columns = [
+    "voidscorecode",
+    "mlexemptfromtakingela",
+    "elexemptfromtakingela",
+] -%}
+
 with
     pearson_scored as (
         select
@@ -23,7 +66,30 @@ with
 
     pearson_accommodations as (
         select
-            studenttestuuid, uniqueaccommodation, mlaccommodation, iepexemptfrompassing,
+            studenttestuuid,
+
+            case
+                when
+                    {%- for col in pearson_accommodation_columns %}
+                        coalesce({{ col }}, 'N') != 'N' or
+                    {%- endfor %}
+                    {%- for col in pearson_accommodation_columns_numeric %}
+                        coalesce({{ col }}, 0) != 0
+                        {%- if not loop.last %} or {% endif %}
+                    {%- endfor %}
+                then 1
+                else 0
+            end as accom,
+
+            case
+                when
+                    {%- for col in pearson_exemption_columns %}
+                        coalesce({{ col }}, 'N') != 'N'
+                        {%- if not loop.last %} or {% endif %}
+                    {%- endfor %}
+                then 1
+                else 0
+            end as exemption,
         from {{ ref("stg_pearson__njsla") }}
         where academic_year in ({{ var("ignite_academic_years") | join(", ") }})
     ),
@@ -37,31 +103,29 @@ with
             ps.test_grade,
             ps.scale_score,
 
-            ac.uniqueaccommodation,
-            ac.mlaccommodation,
-            ac.iepexemptfrompassing,
+            ac.accom,
+            ac.exemption,
         from pearson_scored as ps
         left join
             pearson_accommodations as ac on ps.studenttestuuid = ac.studenttestuuid
     ),
 
-    /* Cambium replaced Pearson as New Jersey's vendor. Its file DOES carry
-     unique_accommodation, ml_accommodation and iep_exempt_from_passing, but
-     stg_cambium__njsla projects 28 of the file's 228 columns and does not
-     include them, so they cannot be read here yet. Padded null rather than
-     defaulted, because null is the honest value for "not available to this
-     model" — see the TODO below.
-     TODO(#4753): stage the accommodation columns through the cambium package
-     and int_cambium__all_assessments, then read them here. 486 of the 901
-     IGNITE students on the SY2025-2026 NJSLA carry at least one accommodation
-     and are reported null today. Three traps when wiring it: the columns have
-     per-column value semantics rather than a shared one, so a blanket
-     not-null test is wrong (speech_to_text_and_word_prediction is 'N' or 'S'
-     on every row while its neighbours are null-or-set); iep_exempt_from_passing
-     is about the graduation passing requirement, not exemption from sitting
-     the test, so not_tested_code and void_score_code are the fields
-     Mathematica's exemption_* actually describes; and math accommodations for
-     this cohort live in the EOC file, not this one. */
+    /* The Cambium file DOES carry accommodation columns -- roughly thirty of
+     them, individually named -- but stg_cambium__njsla projects 28 of the
+     file's 228 and does not include any, so they cannot be read here. Padded
+     null rather than zero, because null says "not available to this model"
+     where zero would assert the student had no accommodation.
+     TODO(#4753): stage them through the cambium package and
+     int_cambium__all_assessments, then read them here. Excluding text-to-speech
+     as universal, 144 of the 901 IGNITE students on the SY2025-2026 NJSLA carry
+     at least one accommodation and are reported null today. Three traps when
+     wiring it: the columns do not share value semantics, so a blanket not-null
+     test is wrong (speech_to_text_and_word_prediction is 'N' or 'S' on every
+     row while its neighbours are null-or-set); iep_exempt_from_passing is about
+     the graduation passing requirement, not exemption from sitting the test, so
+     not_tested_code and void_score_code are the fields Mathematica's exemption_*
+     describes; and math accommodations for this cohort live in the EOC file,
+     not this one. This affects phase 2 only -- phase 1 is the Pearson year. */
     cambium as (
         select
             student_number,
@@ -71,9 +135,8 @@ with
             test_grade,
             scale_score,
 
-            cast(null as string) as uniqueaccommodation,
-            cast(null as string) as mlaccommodation,
-            cast(null as string) as iepexemptfrompassing,
+            cast(null as int64) as accom,
+            cast(null as int64) as exemption,
         from {{ ref("int_cambium__all_assessments") }}
         where
             academic_year in ({{ var("ignite_academic_years") | join(", ") }})
@@ -96,9 +159,8 @@ with
             subject,
             test_grade,
             scale_score,
-            uniqueaccommodation,
-            mlaccommodation,
-            iepexemptfrompassing,
+            accom,
+            exemption,
 
             case
                 when subject in ('Mathematics', 'Algebra I', 'Algebra II', 'Geometry')
@@ -119,9 +181,8 @@ with
             subject,
             test_grade,
             scale_score,
-            uniqueaccommodation,
-            mlaccommodation,
-            iepexemptfrompassing,
+            accom,
+            exemption,
 
             case
                 when subject in ('Mathematics', 'Algebra I', 'Algebra II', 'Geometry')
@@ -156,28 +217,12 @@ with
             assessment_name,
             test_grade,
             scale_score,
+            accom,
+            exemption,
 
             if(
                 subject in ('Algebra I', 'Algebra II', 'Geometry'), subject, null
             ) as eoc_subject,
-
-            case
-                when uniqueaccommodation = 'Y'
-                then 1
-                when mlaccommodation = 'Y'
-                then 1
-                when uniqueaccommodation is null and mlaccommodation is null
-                then null
-                else 0
-            end as accom,
-
-            case
-                when iepexemptfrompassing = 'Y'
-                then 1
-                when iepexemptfrompassing is null
-                then null
-                else 0
-            end as exemption,
         from picked
     )
 

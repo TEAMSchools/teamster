@@ -71,20 +71,28 @@ models:
       - name: accom_m
         data_type: int64
         description:
-          1 where the student had a testing accommodation on the math test, 0
-          where the state said there was none, null where the state supplied no
-          answer. Derived from Pearson's `uniqueaccommodation` and
-          `mlaccommodation` fields, which are yes/no flags. Mathematica also
-          asks for an accommodation CODE, but New Jersey's file supplies only
-          these flags — no code exists to send, so no `accom_code_m` column is
-          produced.
+          1 where the student had a discretionary testing accommodation on the
+          math test, 0 where the file records none, null where no accommodation
+          source exists for that test. Derived from the fourteen named
+          accommodation columns `stg_pearson__njsla` carries — extended time,
+          frequent breaks, small-group testing and the rest. Text-to-speech is
+          deliberately excluded — New Jersey grants it universally to any
+          student testing on a computer without a conflicting accommodation, so
+          it records the delivery mode rather than a decision about a student,
+          and counting it would mark most of the cohort accommodated. Null
+          covers two populations — students whose only result is NJGPA, which
+          carries no accommodation fields at all, and SY2025-2026 rows, whose
+          Cambium source is not yet staged.
 
       - name: exemption_m
         data_type: int64
         description:
-          1 where the student was exempt from the math test. Derived from
-          `iepexemptfrompassing`, which reads `N` wherever it is populated at
-          all, so a populated row is always 0 and every other row is null.
+          1 where the student was exempt from taking the math test or the test
+          was found invalid, which is what Mathematica's codebook defines this
+          as. Derived from `voidscorecode` and the exempt-from-taking fields,
+          not from `iepexemptfrompassing` — that records exemption from the
+          graduation passing requirement, a different thing that would overstate
+          this column if used.
 
       - name: test_score_r
         data_type: numeric
@@ -108,11 +116,12 @@ models:
       - name: accom_r
         data_type: int64
         description:
-          1 where the student had a testing accommodation on the reading test.
-          Same flag-only limitation and same null handling as `accom_m`.
+          1 where the student had a discretionary testing accommodation on the
+          reading test. Same derivation, same text-to-speech exclusion and same
+          null handling as `accom_m`.
 
       - name: exemption_r
         data_type: int64
         description:
-          1 where the student was exempt from the reading test. Same derivation
-          and null handling as `exemption_m`.
+          1 where the student was exempt from taking the reading test or the
+          test was found invalid. Same derivation as `exemption_m`.
