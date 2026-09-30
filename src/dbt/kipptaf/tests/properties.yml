@@ -260,18 +260,18 @@ data_tests:
 
   - name: test_incorrect_student_number_pearson
     description: >-
-      Returns int_pearson__all_assessments rows from academic year 2017 onward
-      whose localstudentidentifier is null or does not match a student_number
+      Returns int_assessments__state_nj_scores rows from academic year 2017
+      onward whose student_number is null or does not match a student_number
       enrolled in the same district and year. Each failure is a crosswalk gap to
-      fix by adding the row's studenttestuuid and correct student_number to the
-      Pearson student crosswalk sheet. Failure rows carry student names and
+      fix by adding the row's student_test_uuid and correct student_number to
+      the Pearson student crosswalk sheet. Failure rows carry student names and
       state and local ids, so treat stored failures as PII and never paste them
       into GitHub.
     config:
       meta:
         dagster:
           ref:
-            name: int_pearson__all_assessments
+            name: int_assessments__state_nj_scores
 
   - name: test_people__locations_drift
     description: >-

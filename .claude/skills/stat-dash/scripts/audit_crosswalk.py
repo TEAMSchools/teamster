@@ -21,7 +21,7 @@ SHEET = (
 )
 GAPS_FILTER = re.compile(
     r"\s+where\s+a\.academic_year >= 2017\s+"
-    r"and \(e\.student_number is null or a\.localstudentidentifier is null\)\s*\n"
+    r"and \(e\.student_number is null or a\.student_number is null\)\s*\n"
 )
 
 
@@ -32,7 +32,7 @@ def build_audit(compiled: str) -> str:
     matcher = (
         compiled[: match.start()]
         + f"\n        inner join {SHEET} as xw"
-        + "\n            on a.studenttestuuid = xw.Student_Test_UUID\n"
+        + "\n            on a.student_test_uuid = xw.Student_Test_UUID\n"
         + compiled[match.end() :]
     )
     matcher = re.sub(r"\norder by bucket[^\n]*\s*$", "\n", matcher.rstrip() + "\n")

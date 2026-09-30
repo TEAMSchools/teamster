@@ -68,8 +68,8 @@ optional just because the user asked for rows.
 | Miami                    | Science            | `Science`                       |
 | Miami                    | Social Studies     | `EOC`                           |
 
-**`assessment_name` stays `NJGPA` for Cambium-era rows.** Kipptaf
-`int_pearson__all_assessments` sets `assessment_name = 'NJGPA'` on Cambium NJGPA
+**`assessment_name` stays `NJGPA` for Cambium-era rows.** The cambium package
+`int_cambium__all_assessments` sets `assessment_name = 'NJGPA'` on Cambium NJGPA
 rows and distinguishes the form on `assessment_version = 'NJGPA-A'`. The comps
 join keys on `assessment_name`, so writing `NJGPA-A` here silently matches
 nothing.

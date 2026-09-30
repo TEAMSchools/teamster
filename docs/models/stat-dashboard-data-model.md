@@ -28,10 +28,14 @@ in `config.meta.dagster.asset.metadata.id`. It depends on two models,
 ## How it fits together
 
 ```text
-Pearson NJ history          Cambium NJ (Spring 2026 on)     crosswalk sheet
-(district pearson package)  stg_cambium__njsla/_eoc/_njgpa        |
-          \                          /                            |
-           +--> kipptaf int_pearson__all_assessments <------------+
+Pearson NJ history (frozen)       Cambium NJ (Spring 2026 on)
+district pearson package          district cambium package
+int_pearson__all_assessments      int_cambium__all_assessments
+          |                                 |
+kipptaf int_pearson__all_         kipptaf int_cambium__all_
+assessments (passthrough)         assessments (passthrough)
+          \                                /
+           +--> kipptaf int_assessments__state_nj_scores <-- crosswalk sheet
                               |
 FL: int_fldoe__all_assessments|
           \                   v
@@ -55,12 +59,13 @@ comps sheet also feeds it test-code metadata. Enrollments, goals, schedules and
 i-Ready join onto the score view; enrollments onto the demographic comps.
 
 Every model in the reporting chain is a view: both `rpt_` models,
-`int_tableau__state_assessments_demographic_comps` and kipptaf
-`int_pearson__all_assessments`. Under them are tables:
-`int_assessments__state_scores`, the kipptaf `stg_cambium__*` unions, the
-district pearson and cambium models, `int_extracts__student_enrollments` and the
-two sheet staging models. A new score reaches the workbook only after those
-tables rebuild and the Tableau extract refreshes.
+`int_tableau__state_assessments_demographic_comps` and the kipptaf
+`int_pearson__all_assessments` and `int_cambium__all_assessments` passthroughs.
+Under them are tables: `int_assessments__state_nj_scores`,
+`int_assessments__state_scores`, the district pearson and cambium models,
+`int_extracts__student_enrollments` and the two sheet staging models. A new
+score reaches the workbook only after those tables rebuild and the Tableau
+extract refreshes.
 
 ## Terms
 
@@ -118,11 +123,12 @@ tables rebuild and the Tableau extract refreshes.
 
 - Pearson NJ score files, PARCC through December 2025. History only. District
   pearson-package `int_pearson__all_assessments` (Newark, Camden, Paterson),
-  read by kipptaf `int_pearson__all_assessments` through `source()`, then
-  `int_assessments__state_scores`.
-- Cambium TIDE NJ files, Spring 2026 on. District cambium staging, unioned by
-  kipptaf `stg_cambium__njsla`, `__eoc` and `__njgpa`, mapped in kipptaf
-  `int_pearson__all_assessments`, then `int_assessments__state_scores`.
+  read by the kipptaf passthrough of the same name through `source()`, then
+  `int_assessments__state_nj_scores` and `int_assessments__state_scores`.
+- Cambium TIDE NJ files, Spring 2026 on. District cambium staging, mapped and
+  filtered in each district's cambium-package `int_cambium__all_assessments`,
+  read by the kipptaf passthrough of the same name, then
+  `int_assessments__state_nj_scores` and `int_assessments__state_scores`.
 - Pearson student list report (preliminary). District
   `int_pearson__student_list_report`, unioned by the kipptaf model of the same
   name, read directly by both reporting models.
@@ -141,8 +147,9 @@ the Algebra I, Algebra II and Geometry end-of-course tests. The Pearson
 relations will not gain rows, so a gap in one cannot be fixed by a re-pull.
 Paterson has no NJGPA or end-of-course file (`stg_pearson__njgpa`,
 `stg_cambium__njgpa` and `stg_cambium__eoc` are disabled there), and its Pearson
-NJSLA rows come through its own ID-remapping `int_pearson__njsla` and
-`int_pearson__njsla_science`. The Cambium side is in
+NJSLA history came through its own ID-remapping `int_pearson__njsla` and
+`int_pearson__njsla_science`, now frozen with the rest of the Pearson models.
+The Cambium side is in
 [`src/dbt/cambium/CLAUDE.md`](https://github.com/TEAMSchools/teamster/blob/main/src/dbt/cambium/CLAUDE.md).
 
 ## Dashboard outline
@@ -268,10 +275,11 @@ left-join on.
 
 The preliminary branch reads Pearson's student list report from 2024 on. It is
 gated by `valid_prelim_assessments`, which keeps a year and test type only while
-`int_pearson__all_assessments` has no Spring row with that `assessment_name`.
-Once official scores land, the preliminary rows for that test drop out on the
-next build. The two reporting models attach preliminary rows differently: the
-score view joins enrollments on the state id (`state_studentnumber`), while
+`int_assessments__state_nj_scores` has no Spring row with that
+`assessment_name`. Once official scores land, the preliminary rows for that test
+drop out on the next build. The two reporting models attach preliminary rows
+differently: the score view joins enrollments on the state id
+(`state_studentnumber`), while
 `int_tableau__state_assessments_demographic_comps` joins on the local id. The
 same preliminary score can therefore reach one model and miss the other.
 
@@ -283,42 +291,59 @@ move when official scores replace preliminary ones.
 
 ### NJ scores: two vendors in one model
 
-Kipptaf `int_pearson__all_assessments` unions the frozen Pearson history with
-the live Cambium feed. Its name is a known misnomer: never assume a row in it is
-Pearson.
+Kipptaf `int_assessments__state_nj_scores` is the one place kipptaf reads NJ
+state scores from. It unions two kipptaf passthroughs, each a plain union of the
+Newark, Camden and Paterson tables that derives `_dbt_source_project`:
 
-- Pearson rows arrive already aligned from the district pearson package.
-- Cambium rows arrive in Cambium's snake_case names and are mapped to the
-  Pearson names in this model's Cambium CTEs.
-- The race, ML and IEP mappings are therefore written twice, once in the pearson
-  package and once here, because a kipptaf model cannot call into the package.
-  Change one, change the other.
-- Cambium reports an abandoned attempt as its own scored row. Both Cambium CTEs
-  keep only `test_status = 'completed'`. Pearson's `testscorecomplete` is null
-  on every Cambium row, so it cannot do this job.
-- After the union, the crosswalk sheet overrides `localstudentidentifier`, keyed
-  on the test UUID, for both vendors:
+- `int_pearson__all_assessments`: the frozen Pearson history from the district
+  pearson package, still under Pearson's column names. The district tables are
+  no longer rebuilt.
+- `int_cambium__all_assessments`: the live Cambium feed, already mapped to the
+  shared names by each district's cambium-package `int_cambium__all_assessments`
+  (which unions the `stg_cambium__njsla`, `__eoc` and `__njgpa` models that
+  district has).
+
+What `int_assessments__state_nj_scores` itself does:
+
+- It renames the Pearson columns to the neutral names Cambium already uses
+  (`student_number`, `state_student_id`, `student_test_uuid`, `first_name`,
+  `last_or_surname`, `administration_round`, `scale_score` and so on), so both
+  vendors land in one shape. Never assume a row in it is Pearson.
+- It casts `state_student_id` to string.
+- The race, ML and IEP mappings are not here. They are written twice, once in
+  the pearson package `int_pearson__all_assessments` and once in the cambium
+  package `int_cambium__all_assessments`, because neither package can call into
+  the other. The Pearson side is frozen, so in practice the Cambium model has to
+  keep matching it.
+- Cambium reports an abandoned attempt as its own scored row. The cambium
+  package model keeps only `test_status = 'completed'`, in both its NJSLA and
+  NJGPA branches, so a `pending` row never reaches kipptaf.
+  `test_score_complete` (Pearson's `testscorecomplete`) is null on every Cambium
+  row, so it cannot do this job.
+- After the union, the crosswalk sheet overrides `student_number`, keyed on the
+  test UUID, for both vendors:
 
 ```sql
-coalesce(x.student_number, u.localstudentidentifier) as localstudentidentifier,
+coalesce(x.student_number, u.student_number) as student_number,
 -- x = stg_google_sheets__pearson__student_crosswalk,
--- joined on u.studenttestuuid = x.student_test_uuid
+-- joined on u.student_test_uuid = x.student_test_uuid
 ```
 
-Two grain tests guard it: `studenttestuuid` unique, and
-`localstudentidentifier` + `academic_year` + `aligned_test_code` + `admin`
-unique where the local id is not null (`severity: error`). The second catches a
-duplicate attempt; unresolved rows are excluded because the detector already
-reports them.
+Two grain tests guard it: `student_test_uuid` unique, and `student_number` +
+`academic_year` + `aligned_test_code` + `administration_round` unique where
+`student_number` is not null (`severity: error`). The UUID is unique per row by
+construction, so only the second catches a duplicate attempt; unresolved rows
+are excluded because the detector already reports them.
 
 ### Repairing a student number
 
 `test_incorrect_student_number_pearson` is the detector. It returns rows from
-2017 on whose `localstudentidentifier` is null or does not match a
+2017 on whose `student_number` is null or does not match a
 `base_powerschool__student_enrollments` row for that year and district
-(`rn_year = 1`). It reads the unioned model, so it covers Cambium too. It sets
-no severity and inherits kipptaf's `warn`, so it never blocks a build. Its
-failure rows carry student names: quote UUIDs and counts only.
+(`rn_year = 1`). It reads `int_assessments__state_nj_scores`, so it covers
+Cambium too. It sets no severity and inherits kipptaf's `warn`, so it never
+blocks a build. Its failure rows carry `student_test_uuid`, both ids and the
+student's name (`first_name`, `last_or_surname`): quote UUIDs and counts only.
 
 The detector cannot see the worst case. A wrong id that happens to be another
 valid student number resolves to the wrong student, the join succeeds, and no
@@ -330,11 +355,11 @@ id; the join still needs an enrollment in that year and district. A sheet row
 for an unmatchable test does nothing and never expires. A name that resolves
 only in another year or district is the signature of this case.
 
-The state id is not a safe fallback. `statestudentidentifier` collides across
-students ([#3954](https://github.com/TEAMSchools/teamster/issues/3954)), so
-never add it as a bare `coalesce` fallback. The tiered matcher uses it only
-alongside names, date of birth, enrollment and grade, and proposes rows for a
-person to accept. The `stat-dash` skill has the runbook.
+The state id is not a safe fallback. `state_student_id` collides across students
+([#3954](https://github.com/TEAMSchools/teamster/issues/3954)), so never add it
+as a bare `coalesce` fallback. The tiered matcher uses it only alongside names,
+date of birth, enrollment and grade, and proposes rows for a person to accept.
+The `stat-dash` skill has the runbook.
 
 ### The two comps paths
 
@@ -396,11 +421,14 @@ Shared hubs, one line each:
 
 In-family models with outside children:
 
-- Kipptaf `int_pearson__all_assessments` is also read by `dim_assessments`,
+- Kipptaf `int_assessments__state_nj_scores` is also read by `dim_assessments`,
   `dim_assessment_administrations`, `int_students__graduation_pathway_scores`,
   `rpt_deanslist__state_test_scores` and `int_assessments__state_scores` (and
   through it, several other score consumers). A change here reaches graduation
   pathways and DeansList as well as STAT.
+- The kipptaf `int_pearson__all_assessments` and `int_cambium__all_assessments`
+  passthroughs are also read directly by `int_ignite__state_assessment`, which
+  skips the crosswalk repair.
 
 ## Inputs
 
@@ -414,10 +442,10 @@ contents from them.
 
 Two columns, `Student_Test_UUID` and `Student_Number`, one row per test (a
 student with four bad test rows needs four rows). Cambium corrections go in the
-same tab as Pearson ones. The sheet is used as-is until the Cambium split in
-[#5591](https://github.com/TEAMSchools/teamster/issues/5591); renaming it off
-the Pearson name touches the sheet, its named range, the source entry, the
-staging model and the Dagster asset key.
+same tab as Pearson ones. The sheet kept its Pearson name through the vendor
+split ([#5591](https://github.com/TEAMSchools/teamster/issues/5591)); renaming
+it touches the sheet, its named range, the source entry, the staging model, the
+Dagster asset key and the one `ref()` in `int_assessments__state_nj_scores`.
 
 The crosswalk audit (in the `stat-dash` skill) replays every sheet row through
 the tiers. The last audit found no row where the rules disagreed with a person,
@@ -639,18 +667,18 @@ the tiered match. Tracked in
 ```sql
 select
     a.academic_year,
-    a.localstudentidentifier is null as local_id_absent,
+    a.student_number is null as local_id_absent,
     count(*) as flagged_rows,
-from kipptaf_pearson.int_pearson__all_assessments as a
+from kipptaf_assessments.int_assessments__state_nj_scores as a
 left join
     kipptaf_powerschool.base_powerschool__student_enrollments as e
-    on a.localstudentidentifier = e.student_number
+    on a.student_number = e.student_number
     and a.academic_year = e.academic_year
     and a._dbt_source_project = e._dbt_source_project
     and e.rn_year = 1
 where
     a.academic_year >= 2017
-    and (e.student_number is null or a.localstudentidentifier is null)
+    and (e.student_number is null or a.student_number is null)
 group by a.academic_year, local_id_absent
 order by a.academic_year
 ```
@@ -666,11 +694,12 @@ known. Shown by the code: both `prelim_assessments` CTEs read
 
 ### Planned refactors
 
-- [#5591](https://github.com/TEAMSchools/teamster/issues/5591): freeze the
-  Pearson history as an archive table and move the Cambium mapping into its own
-  `int_cambium__all_assessments`, with one NJ union that every reader uses.
-- [#5496](https://github.com/TEAMSchools/teamster/issues/5496): make Cambium's
-  column names the standard NJ names and rename the Pearson history to match.
+- [#5591](https://github.com/TEAMSchools/teamster/issues/5591) is done: the
+  Pearson models are frozen, the Cambium mapping lives in the cambium package,
+  and every kipptaf reader uses `int_assessments__state_nj_scores`.
+- [#5496](https://github.com/TEAMSchools/teamster/issues/5496) is still open,
+  but its main ask, Cambium's column names as the NJ standard, now holds in
+  `int_assessments__state_nj_scores`. Check what is left before picking it up.
 
 ## Yearly upkeep
 
@@ -706,7 +735,7 @@ before relying on this for Spring 2026 and later.
 ### After every Cambium load
 
 Check the score view's grain test and the detector. A failure of the second
-grain test on `int_pearson__all_assessments`, or of the uniqueness test on
+grain test on `int_assessments__state_nj_scores`, or of the uniqueness test on
 `rpt_tableau__state_assessments_dashboard`, is a duplicate attempt arriving;
 read the failing rows rather than re-running the build. Clear new absent-id rows
 through the tiered match and the crosswalk sheet (runbook in the `stat-dash`

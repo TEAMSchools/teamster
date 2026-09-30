@@ -31,3 +31,12 @@ sources:
                 - kippnewark
                 - cambium
                 - stg_cambium__eoc
+      - name: int_cambium__all_assessments
+        config:
+          meta:
+            dagster:
+              group: cambium
+              asset_key:
+                - kippnewark
+                - cambium
+                - int_cambium__all_assessments

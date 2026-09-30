@@ -11,7 +11,8 @@ description: >-
   rpt_tableau__state_assessments_dashboard_comps,
   int_tableau__state_assessments_demographic_comps,
   stg_google_sheets__state_test_comparison_demographics,
-  stg_google_sheets__pearson__student_crosswalk, int_pearson__all_assessments or
+  stg_google_sheets__pearson__student_crosswalk,
+  int_assessments__state_nj_scores, int_cambium__all_assessments or
   stg_cambium__njgpa and their upstream models.
 ---
 
@@ -39,8 +40,8 @@ Four facts that cause most of the wrong answers here:
   `rpt_tableau__state_assessments_dashboard_comps` read different things. A
   number that differs between Overview and Advanced Comps is usually that, not a
   bug.
-- `int_pearson__all_assessments` carries both Pearson and Cambium. Never assume
-  a row in it is Pearson.
+- `int_assessments__state_nj_scores` carries both Pearson and Cambium, under
+  neutral column names. Never assume a row in it is Pearson.
 - The NJ vendor changed on a date, not per assessment: Pearson through December
   2025, Cambium from Spring 2026 for all NJ state testing. The Pearson relations
   are history; a gap in one cannot be fixed by a re-pull.
@@ -52,10 +53,10 @@ Four facts that cause most of the wrong answers here:
   `src/dbt/kipptaf/models/exposures/tableau.yml`; it depends on
   `rpt_tableau__state_assessments_dashboard` and
   `rpt_tableau__state_assessments_dashboard_comps`. NJ and Florida official
-  scores both reach the dashboard through `int_assessments__state_scores`; the
-  score view reads `int_pearson__all_assessments` directly only to gate the
-  preliminary branch. `rpt_tableau__state_testing_accomodations` is a different
-  workbook.
+  scores both reach the dashboard through `int_assessments__state_scores`, whose
+  NJ leg is `int_assessments__state_nj_scores`. Both reporting models also read
+  `int_assessments__state_nj_scores` directly, only to gate the preliminary
+  branch. `rpt_tableau__state_testing_accomodations` is a different workbook.
 - PII. Student-level rows live in `rpt_tableau__state_assessments_dashboard` and
   in the failure rows of `test_incorrect_student_number_pearson`, which carry
   student names. Quote UUIDs and counts only, outside the terminal.
@@ -96,8 +97,9 @@ Read the one file for your task.
   calculated-field text and errors on this workbook's embedded extracts. Use the
   `tableau-workbook-xml` skill to read the `.twb`.
 - The race, ML and IEP mappings are written twice: in the pearson package's
-  `int_pearson__all_assessments` and in the Cambium CTEs of the kipptaf model of
-  the same name. Change one, change the other.
+  `int_pearson__all_assessments` and in the cambium package's
+  `int_cambium__all_assessments`. The Pearson side is frozen, so a change there
+  means matching it in the Cambium model.
 - The exposure has no `cron_schedule`; Tableau Server refreshes the extracts, so
   a model change shows nothing until that refresh.
 

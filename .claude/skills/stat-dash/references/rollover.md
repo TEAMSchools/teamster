@@ -26,8 +26,8 @@ so; whether Cambium publishes an equivalent early file is unknown.
 
 When a preliminary file does exist, the branch gates itself: it is joined to
 `valid_prelim_assessments`, which keeps a year and test only while
-`int_pearson__all_assessments` has no Spring row with that `assessment_name`. Do
-not comment it in or out by hand.
+`int_assessments__state_nj_scores` has no Spring row with that
+`assessment_name`. Do not comment it in or out by hand.
 
 The workbook lives in the Tableau project `Production`. A version showing
 preliminary results is published to a restricted folder, never to `Production`.

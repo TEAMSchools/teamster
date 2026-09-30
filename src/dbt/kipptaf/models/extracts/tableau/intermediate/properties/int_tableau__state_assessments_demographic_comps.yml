@@ -13,7 +13,7 @@ models:
       int_assessments__state_scores. NJ preliminary scores come from
       int_pearson__student_list_report (2024 onward) and are included only for
       an assessment and year that has no Spring rows yet in
-      int_pearson__all_assessments, so the branch switches itself off once
+      int_assessments__state_nj_scores, so the branch switches itself off once
       official scores land. FL official scores come from
       int_assessments__state_scores for Miami. No row is student-level, but a
       region, test code and demographic cell can be very small, and nothing here

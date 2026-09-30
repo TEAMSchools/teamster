@@ -8,7 +8,7 @@ with
     /*
         Prelim score gating: automatically includes preliminary NJ scores only
         when official scores for that assessment/year have not yet landed in
-        int_pearson__all_assessments. This eliminates the need to manually
+        int_assessments__state_nj_scores. This eliminates the need to manually
         comment/uncomment the prelim branch each time a new student list file
         is loaded — the branch self-deactivates once official scores arrive.
     */
@@ -29,11 +29,11 @@ with
 
         from prelim_assessments as pa
         left join
-            {{ ref("int_pearson__all_assessments") }} as p
+            {{ ref("int_assessments__state_nj_scores") }} as p
             on pa.academic_year = p.academic_year
             -- test_type in prelim data matches assessment_name in official records
             and pa.test_type = p.assessment_name
-            and p.`admin` = 'Spring'
+            and p.administration_round = 'Spring'
         group by pa.academic_year, pa.test_type
         having count(p.assessment_name) = 0
     ),

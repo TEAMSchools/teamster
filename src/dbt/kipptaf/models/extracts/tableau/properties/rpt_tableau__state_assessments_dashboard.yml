@@ -10,7 +10,7 @@ models:
       student number despite its name. Preliminary NJ results come from
       int_pearson__student_list_report (Spring, 2024 onward), attach on the
       state student id, and appear only for an assessment and year with no
-      Spring rows yet in int_pearson__all_assessments. Each row carries
+      Spring rows yet in int_assessments__state_nj_scores. Each row carries
       enrollment demographics, the city, state and neighborhood-school
       comparison rates for the matching test, the school's proficiency goals, NJ
       tier and tutoring flags, same-year end-of-year i-Ready proficiency, and

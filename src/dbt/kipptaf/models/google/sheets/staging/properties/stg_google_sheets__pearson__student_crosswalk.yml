@@ -3,9 +3,9 @@ models:
     description: >
       Hand-maintained sheet that assigns the correct network student_number to
       an NJ state test record, for Pearson and Cambium tests alike, keyed by the
-      vendor test UUID. int_pearson__all_assessments left-joins it on the test
-      UUID and uses Student_Number in place of the vendor-reported local student
-      identifier wherever a row exists.
+      vendor test UUID. int_assessments__state_nj_scores left-joins it on the
+      test UUID and uses Student_Number in place of the vendor-reported local
+      student identifier wherever a row exists.
     columns:
       - name: Student_Test_UUID
         data_type: string

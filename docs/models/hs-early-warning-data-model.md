@@ -210,7 +210,8 @@ For the working rules, cut score maintenance, and the failure modes, use the
   publishes only the cut score, per graduating class. Both report the same
   `assessment_name` and the same `testcode`.
 - `assessment_version` is what tells them apart, set as a literal in each
-  vendor's staging model and carried up through `int_pearson__all_assessments`.
+  vendor's staging model and carried up through
+  `int_assessments__state_nj_scores`.
 - Cut scores live in a hand-maintained Google Sheet
   (`stg_google_sheets__student_graduation_path_cutoffs`), keyed on `cohort` +
   `discipline` + `score_type` + `assessment_version`.

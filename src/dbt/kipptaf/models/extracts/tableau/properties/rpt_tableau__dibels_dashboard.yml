@@ -791,7 +791,11 @@ models:
           its cohort's current round the value reads `Current` instead of the
           round label. Every other row carries its label, e.g. `BOY->MOY: R1`.
           Benchmark rows carry the administration season, or `Current` on the
-          latest opened administration.
+          latest opened administration while its window is still open. Once a
+          benchmark window closes no benchmark row is current until the next one
+          opens, so a `Current` selection between benchmark windows returns the
+          PM round alone rather than blending in a closed benchmark's
+          completion.
 
           It exists so one filter selection follows every region to wherever it
           actually is. Regions are not in step -- Miami can sit weeks behind the
@@ -806,10 +810,10 @@ models:
           from expected_round_number or expected_round_label instead. The three
           columns are companions, not alternatives.
 
-          Current means the latest round whose window has OPENED, per academic
-          year, region and grade -- not the round whose window contains today,
-          which would go blank between rounds. Before the first round of a year
-          opens, no row is current and every row shows its label.
+          For PM, Current means the latest round whose window has OPENED, per
+          academic year, region and grade -- not the round whose window contains
+          today, which would go blank between rounds. Before the first round of
+          a year opens, no row is current and every row shows its label.
 
           Non-current rows carry the label rather than the bare number because
           round numbers are not unique network-wide: Miami runs three rounds per

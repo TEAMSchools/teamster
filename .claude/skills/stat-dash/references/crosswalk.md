@@ -2,27 +2,27 @@
 
 ## Procedure: A student's score is missing from the dashboard
 
-Almost always an unresolved `localstudentidentifier`. Background: doc
+Almost always an unresolved `student_number`. Background: doc
 [_Repairing a student number_](../../../../docs/models/stat-dashboard-data-model.md#repairing-a-student-number).
 
-1. Confirm the score reached the warehouse. Query `int_pearson__all_assessments`
-   for the student by `statestudentidentifier`, not by local id; the local id is
-   the thing under suspicion. A Cambium attempt with `test_status` other than
-   `completed` is filtered out upstream of this model and of the detector, so it
-   never shows here and no crosswalk row can bring it back (see
-   [after-a-load.md](after-a-load.md)). No row at all, by state id, means the
-   file never loaded: check the Cambium or Pearson asset's latest
-   materialization in Dagster before anything in this procedure.
+1. Confirm the score reached the warehouse. Query
+   `int_assessments__state_nj_scores` for the student by `state_student_id`, not
+   by `student_number`; the local id is the thing under suspicion. A Cambium
+   attempt with `test_status` other than `completed` is filtered out upstream of
+   this model and of the detector, so it never shows here and no crosswalk row
+   can bring it back (see [after-a-load.md](after-a-load.md)). No row at all, by
+   state id, means the file never loaded: check the Cambium or Pearson asset's
+   latest materialization in Dagster before anything in this procedure.
 2. Check whether the detector flags it. Run
    `test_incorrect_student_number_pearson`. Its failure rows carry
-   `studenttestuuid`, both identifiers, the name, the year and the test code.
-   Whether `localstudentidentifier` is null tells you the mode.
+   `student_test_uuid`, both identifiers, the name, the year and the test code.
+   Whether `student_number` is null tells you the mode.
 3. Read which failure mode it is; they need different fixes:
 
    | Symptom                                  | Mode              | Fix                 |
    | ---------------------------------------- | ----------------- | ------------------- |
-   | `localstudentidentifier` null            | absent            | crosswalk sheet row |
-   | `localstudentidentifier` present, wrong  | present-but-wrong | crosswalk sheet row |
+   | `student_number` null                    | absent            | crosswalk sheet row |
+   | `student_number` present, wrong          | present-but-wrong | crosswalk sheet row |
    | no enrollment for that year and district | unmatchable       | not the sheet       |
 
    Classify by mode, not by vendor. Either vendor can produce any mode. As of
@@ -77,13 +77,11 @@ Almost always an unresolved `localstudentidentifier`. Background: doc
    | `Student_Number`    | the correct network student_number |
 
    The sheet is named for Pearson but serves every NJ vendor. Cambium
-   corrections go in this same tab: `int_pearson__all_assessments` aliases
-   Cambium's `student_test_uuid` to `studenttestuuid` before the join. One row
-   per test, not per student. `Student_Test_UUID` carries `unique` and
-   `not_null` tests at `severity: error`, so a duplicated UUID fails the build.
-   Renaming or splitting the sheet is
-   [#5591](https://github.com/TEAMSchools/teamster/issues/5591)'s scope; do not
-   start it here.
+   corrections go in this same tab: `int_assessments__state_nj_scores` joins the
+   sheet on `student_test_uuid` after the vendor union. One row per test, not
+   per student. `Student_Test_UUID` carries `unique` and `not_null` tests at
+   `severity: error`, so a duplicated UUID fails the build. Renaming the sheet
+   off the Pearson name is a separate change; do not start it here.
 
 5. Re-check by reading the sheet external live through ADC
    (`.claude/context/claude_ai_Google_Cloud_BigQuery.md`):

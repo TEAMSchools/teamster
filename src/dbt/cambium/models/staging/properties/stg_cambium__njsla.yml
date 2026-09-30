@@ -130,8 +130,8 @@ models:
         data_type: int64
         description: >-
           PowerSchool student_number. Null for a small number of students each
-          administration. kipptaf int_pearson__all_assessments overrides it from
-          the student crosswalk sheet where the sheet lists this row's
+          administration. kipptaf int_assessments__state_nj_scores overrides it
+          from the student crosswalk sheet where the sheet lists this row's
           student_test_uuid.
         config:
           meta:

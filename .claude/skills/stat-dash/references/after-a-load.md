@@ -7,15 +7,18 @@ Run these before anyone opens the dashboard:
 1. The detector, `test_incorrect_student_number_pearson`. New absent-id rows go
    through [crosswalk.md](crosswalk.md).
 2. The duplicate query below. Two tests guard the same defect at build time:
-   `unique_combination_of_columns` on `int_pearson__all_assessments`
-   (`localstudentidentifier`, `academic_year`, `aligned_test_code`, `admin`,
-   resolved ids only) and on `rpt_tableau__state_assessments_dashboard`
-   (`academic_year`, `student_number`, `test_code`, `admin`, `results_type`). A
-   failure of either is a duplicate attempt arriving: read the failing rows
-   rather than re-running the build. A failing test holds nothing back: kipptaf
-   `int_pearson__all_assessments` and both `rpt_` models are views, so the
-   duplicates are already in what Tableau reads. Only the extract, refreshed on
-   Tableau Server, stands between them and viewers; fix before its next refresh.
+   `unique_combination_of_columns` on `int_assessments__state_nj_scores`
+   (`student_number`, `academic_year`, `aligned_test_code`,
+   `administration_round`, resolved ids only) and on
+   `rpt_tableau__state_assessments_dashboard` (`academic_year`,
+   `student_number`, `test_code`, `admin`, `results_type`). A failure of either
+   is a duplicate attempt arriving: read the failing rows rather than re-running
+   the build. The first test runs after `int_assessments__state_nj_scores` is
+   built, so the duplicates are already in that table when it fails. Check
+   whether `int_assessments__state_scores` rebuilt after it: both `rpt_` models
+   are views over that table, so if it rebuilt, the duplicates are in what
+   Tableau reads. Only the extract, refreshed on Tableau Server, stands between
+   them and viewers; fix before its next refresh.
 
 ## Procedure: A roster column is only part-colored
 
@@ -54,8 +57,8 @@ where state_student_identifier = <the state id from the flagged row>
 ```
 
 A `pending` row beside a `completed` one is the known Cambium case: both Cambium
-CTEs in `int_pearson__all_assessments` keep only `test_status = 'completed'`.
-Because that filter sits upstream of the detector, a pending attempt never
-reaches the detector or the tiered matcher, so neither will propose it for the
-sheet. Anything else is new: write down what distinguishes the two rows before
-changing any model.
+CTEs in the cambium package `int_cambium__all_assessments` keep only
+`test_status = 'completed'`. Because that filter sits upstream of the detector,
+a pending attempt never reaches the detector or the tiered matcher, so neither
+will propose it for the sheet. Anything else is new: write down what
+distinguishes the two rows before changing any model.
