@@ -105,6 +105,26 @@ with
             region,
             season,
 
+            -- student grade span a comp row applies to; see yml (#5636)
+            if(school_level = 'HS', 9, 0) as min_student_grade_level,
+
+            if(
+                school_level = 'MS'
+                and aligned_test_code in (
+                    'ALG01',
+                    'ALG02',
+                    'GEO01',
+                    'MATGP',
+                    'ELA09',
+                    'ELA10',
+                    'ELA11',
+                    'ELAGP',
+                    'SCI11'
+                ),
+                8,
+                99
+            ) as max_student_grade_level,
+
             {% for entity in comparison_entities %}
                 avg(
                     case
@@ -311,7 +331,7 @@ left join
     on a.academic_year = c.academic_year
     and a.assessment_name = c.assessment_name
     and a.test_code = c.aligned_test_code
-    and e.school_level = c.school_level
+    and e.grade_level between c.min_student_grade_level and c.max_student_grade_level
     and a.season = c.season
     and e.region = c.region
 left join
@@ -447,7 +467,7 @@ left join
     on a.academic_year = c.academic_year
     and a.assessment_name = c.assessment_name
     and a.test_code = c.aligned_test_code
-    and e.school_level = c.school_level
+    and e.grade_level between c.min_student_grade_level and c.max_student_grade_level
     and a.season = c.season
     and e.region = c.region
 left join

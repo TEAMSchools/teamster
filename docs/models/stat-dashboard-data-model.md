@@ -366,6 +366,31 @@ comparison entities into three wide columns (`proficiency_city`,
 `proficiency_state`, `proficiency_neighborhood_schools`). No demographic
 breakdown, no KTAF-derived rows. This is what most views show.
 
+The CTE attaches to each student-test by the **test's** level, never the
+student's school. The sheet keys every row on the level of the test: grades 3
+and 4 are ES, grades 5 to 8 are MS, and high school tests are HS. So:
+
+- A grade-coded test (`ELA03`-`ELA08`, `MAT03`-`MAT08`, `SCI05`, `SCI08`,
+  `SOC08`) takes its comp from the test code alone. A grade 5 student at an
+  ES-coded school gets the MS figure; a grade 3 student at an MS-coded school
+  gets the ES figure.
+- A high school test (`ALG01`, `ALG02`, `GEO01`, `ELA09`-`ELA11`, `ELAGP`,
+  `MATGP`, `SCI11`) splits on the student's enrolled grade: grade 8 or below
+  takes the MS row, grade 9 and up the HS row. Only `ALG01` has MS rows today,
+  so a grade 8 student on any other high school test gets no comp.
+
+The CTE derives `min_student_grade_level` and `max_student_grade_level` per
+sheet row (HS rows 9 and up; MS rows of a high school test 8 and below; every
+other row any grade), and the join matches the enrolled `grade_level` between
+them. The output `school_level` stays the enrollment school's level, which the
+dashboard filters on.
+
+This relies on the sheet carrying each grade-coded test at one level only. If
+someone enters `ELA05` at both ES and MS for the same region and year, the join
+fans out and the model's uniqueness test on
+`(academic_year, student_number, test_code, admin, results_type)` fails the
+build.
+
 **Path two — the long comps model.**
 `rpt_tableau__state_assessments_dashboard_comps` unions the sheet rows with
 KTAF's own results computed from student-level scores in
@@ -380,6 +405,24 @@ The sheet is also a **metadata** source, separately from being a comps source:
 `test_code_metadata` CTE purely to look up `school_level`, `grade_range_band`
 and `discipline` per test code. A test code absent from the sheet loses that
 metadata for KTAF's own rows.
+
+That lookup groups by `aligned_test_code` and `school_level` and takes
+`any_value(grade_range_band)`, so the sheet's `grade_range_band` has to be
+consistent within each pair. `grade_range_band` is also a key of the Region
+self-join in `rpt_tableau__state_assessments_dashboard_comps`, and the staging
+model's weighted ALG01 rollup selects `remove_row` rows on
+`grade_range_band = 'HS'`. The score view's `state_comps` CTE does not read it.
+The AY2025 State `ALG01` rows at `school_level = MS` carry `HS` where every
+earlier MS `ALG01` row carries `3-8`, which makes the `(ALG01, MS)` lookup
+return either value from one build to the next. They should read `3-8`.
+
+This path matches its own lookup on the enrollment school's level
+(`school_level_alt`, with hardcoded Hatch and PPES overrides), the same shape
+the score view used to have. It rarely shows because `any_value` picks up
+metadata from any student in the group who did match: on 2026-09-30 only 4 rows
+lacked it, all a one-student Non-Binary cell that the comps model filters out
+anyway. The part that does bite is `ALG01`: KTAF's own figure pools MS and HS
+Algebra I takers into one row, while the sheet splits them.
 
 ### Interim comps from media, before the official files
 
@@ -549,6 +592,31 @@ branch into a single weighted `Total` / `All Students` row. `ALG02` totals are
 their demographic rows include every student who took the test.
 
 ## Known issues
+
+### Resolved — score-view comps matched on the school's level, not the test's
+
+Until September 2026 the `state_comps` join keyed on the enrollment school's
+`school_level`. Wherever a school's code did not match the test's band, the comp
+came back blank: MS-coded Camden schools with grade 3 and 4 tests, ES-coded
+schools with grade 5 tests (Paterson AY2023, Camden AY2025), OD- and HS-coded
+schools with grade 8 tests. Switching the key to the test's level (above),
+measured against production on 2026-09-30:
+
+| Region   | Rows   | State comp before | State comp after | City before | City after |
+| -------- | ------ | ----------------- | ---------------- | ----------- | ---------- |
+| Camden   | 16,059 | 14,415            | 14,957           | 11,821      | 12,272     |
+| Miami    | 22,946 | 6,070             | 6,072            | 6,070       | 6,072      |
+| Newark   | 44,350 | 41,446            | 41,554           | 33,933      | 34,039     |
+| Paterson | 990    | 800               | 940              | 300         | 440        |
+
+Row count and grain were unchanged (84,345 rows, 84,345 distinct keys). No row
+that had a comp lost it. One value moved: an AY2022 Newark grade 8 student at an
+HS-coded school on `ALG01`, which now compares to the MS figure instead of the
+HS one. Miami Neighborhood Schools rose from 6,420 to 6,422.
+
+What is still blank is a sheet gap, not a key problem: Newark has no MS `ALG01`
+State or City row for AY2021, AY2023 or AY2024, so 93 Newark grade 8 Algebra I
+rows show no comp until someone adds them.
 
 ### Resolved — the subgroup vocabulary was split, and comparisons read false
 
