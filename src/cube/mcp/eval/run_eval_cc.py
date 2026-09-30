@@ -38,6 +38,8 @@ monthly Agent-SDK credit pool.
 
 import argparse
 import asyncio
+import hashlib
+import itertools
 import json
 import sys
 from pathlib import Path
@@ -105,11 +107,10 @@ def parse_args() -> argparse.Namespace:
         choices=[
             "A_baseline",
             "B_descriptions",
-            *arms_mod.PLACEMENT_ARMS,
             *FAMILY4_ARMS,
         ],
         help=(
-            "A/B vary the load docstring; F0-F3 vary where member guidance lives; "
+            "A/B vary the load docstring; "
             "A4/B4/C4 are family 4 (use with --prompts prompts_assessment.yaml)"
         ),
     )
@@ -150,15 +151,12 @@ def _shaped_rows(query: dict[str, Any]) -> dict[str, Any]:
     """Deterministic rows shaped by the query: one row per value combination of
     its dimensions (filter values echoed where the query pins them), with
     plausible measure values seeded from the query text."""
-    import hashlib
-    import itertools
-
     seed = int(
         hashlib.sha256(json.dumps(query, sort_keys=True).encode()).hexdigest(), 16
     )
     pinned = {
         str(f.get("member", "")).split(".")[-1]: [str(v) for v in f.get("values") or []]
-        for f in scorer_mod._flatten_filters(query.get("filters"))
+        for f in traps._flatten_filters(query.get("filters"))
         if f.get("operator") in ("equals", "in", "inArray") and f.get("values")
     }
     dims = [d for d in query.get("dimensions") or [] if isinstance(d, str)]
@@ -200,8 +198,8 @@ def _make_tools(
 ) -> dict[str, Any]:
     """Build in-process SDK tools; descriptions reuse the real server's text.
 
-    The arm's own "meta" catalog is served when it has one (the placement and
-    family 4 arms); the A/B arms serve arms.META_STUB.
+    The arm's own "meta" catalog is served when it has one (the family 4
+    arms); the A/B arms serve arms.META_STUB.
     """
     # trunk-ignore(pyright/reportMissingImports): claude-agent-sdk is a runtime --with dep
     from claude_agent_sdk import tool
@@ -318,20 +316,7 @@ def do_dry_run(
         allowed = [f"mcp__cube__{n}" for n in _arm_tool_names(name)]
         load_desc = next(t["description"] for t in arm["tools"] if t["name"] == "load")
         has_crosswalk = "resolve it yourself" in load_desc
-        meta_desc = next(t["description"] for t in arm["tools"] if t["name"] == "meta")
-        dims = [
-            d
-            for c in arm.get("meta", arms_mod.META_STUB)["cubes"]
-            for d in c["dimensions"]
-            if "academic_year" in d["name"]
-        ]
         print(f"=== {name} ===")
-        print(
-            f"  year members: {len(dims)}; "
-            f"max description {max(len(d['description']) for d in dims)} chars; "
-            f"with ai_context {sum('meta' in d for d in dims)}; "
-            f"meta pointer: {arms_mod.AI_CONTEXT_POINTER in meta_desc}"
-        )
         print(f"  system-prompt (replace): {len(arm['instructions'])} chars")
         print(
             f"  load description: {len(load_desc)} chars "
@@ -429,10 +414,7 @@ async def sweep(
 def main() -> None:
     args = parse_args()
     server = arms_mod.load_server()
-    arm_defs = {
-        **arms_mod.build_arms(server),
-        **arms_mod.build_placement_arms(server),
-    }
+    arm_defs = arms_mod.build_arms(server)
     if args.prompts == "prompts_assessment.yaml":
         arm_defs.update(arms_mod.build_assessment_arms(server))
     elif set(args.arms) & set(FAMILY4_ARMS):

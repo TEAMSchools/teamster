@@ -11,9 +11,23 @@ import re
 from collections.abc import Callable
 from typing import Any
 
-from scorer import _flatten_filters
-
 _NAMED_ROUNDS = {"BOY", "MOY", "EOY"}
+
+
+def _flatten_filters(filters: Any) -> list[dict[str, Any]]:
+    """Flatten a Cube filters list, descending into and/or groups."""
+    out: list[dict[str, Any]] = []
+    if not isinstance(filters, list):
+        return out
+    for f in filters:
+        if not isinstance(f, dict):
+            continue
+        if "member" in f:
+            out.append(f)
+        for key in ("and", "or"):
+            if key in f:
+                out.extend(_flatten_filters(f[key]))
+    return out
 
 
 def _filters(queries: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -45,9 +59,12 @@ def grade_filter_on_vendor(queries: list[dict[str, Any]], text: str) -> bool:
 
 
 def null_via_equals(queries: list[dict[str, Any]], text: str) -> bool:
-    """A "no proficiency level" question did not filter with notSet."""
+    """A "no proficiency level" question did not filter with notSet, on
+    proficiency_level or on is_mastery (the documented "no verdict" filter)."""
     return not any(
-        f.get("operator") == "notSet" for f in _filters_on(queries, "proficiency_level")
+        f.get("operator") == "notSet"
+        for member in ("proficiency_level", "is_mastery")
+        for f in _filters_on(queries, member)
     )
 
 
@@ -71,25 +88,46 @@ def formative_alone(queries: list[dict[str, Any]], text: str) -> bool:
 
 
 def most_recent_not_named_round(queries: list[dict[str, Any]], text: str) -> bool:
-    """ "Most recent diagnostic" was not scoped to a named benchmark round."""
+    """ "Most recent diagnostic" was not scoped to exactly one named benchmark
+    round with equals."""
     for f in _filters_on(queries, "administration_period"):
         values = {str(v) for v in f.get("values") or []}
-        if values and values <= _NAMED_ROUNDS:
+        if (
+            f.get("operator") == "equals"
+            and len(values) == 1
+            and values <= _NAMED_ROUNDS
+        ):
             return False
     return True
 
 
-_COVERAGE = re.compile(
+_NO_IREADY = re.compile(
     r"(no|not any|doesn'?t have|does not have|isn'?t any|without)\b[^.]{0,60}i-?ready"
     r"|i-?ready[^.]{0,60}\b(not available|no data|isn'?t available|not (?:loaded|present))"
-    r"|coverage",
+    r"|paterson[^.]{0,60}\b(not (?:showing|present|available|loaded|in the)"
+    r"|isn'?t (?:showing|available|in the)|no data|missing|absent"
+    r"|does(?:n'?t| not) (?:appear|show))",
     re.IGNORECASE,
 )
+# "coverage" counts only as a gap ("no coverage", "a coverage gap"), and only in
+# a sentence that names Paterson or i-Ready.
+_COVERAGE_GAP = re.compile(
+    r"(no|not any|lacks?|missing|without)\b[^.]{0,30}\bcoverage"
+    r"|coverage\b[^.]{0,30}\b(gap|missing|is not|isn'?t|does not|doesn'?t)",
+    re.IGNORECASE,
+)
+_PATERSON_OR_IREADY = re.compile(r"paterson|i-?ready", re.IGNORECASE)
 
 
 def paterson_zero_as_failure(queries: list[dict[str, Any]], text: str) -> bool:
     """Answer-scored: the reply did not report that Paterson lacks i-Ready."""
-    return not _COVERAGE.search(text or "")
+    text = text or ""
+    if _NO_IREADY.search(text):
+        return False
+    return not any(
+        _COVERAGE_GAP.search(s) and _PATERSON_OR_IREADY.search(s)
+        for s in re.split(r"(?<=[.!?])\s+", text)
+    )
 
 
 def is_paterson_query(query: dict[str, Any]) -> bool:

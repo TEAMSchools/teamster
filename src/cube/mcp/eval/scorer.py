@@ -21,6 +21,9 @@ import re
 import statistics
 from typing import Any
 
+import traps
+from traps import _flatten_filters
+
 # A year-span ("2025-2026", "2025-26", "2025–26") or the phrase "school year"
 # near a year, or an explicit "interpret..." — taken as the model surfacing its
 # reading of the year to the user.
@@ -29,22 +32,6 @@ _ECHO_RE = re.compile(
 )
 _LABEL_RE = re.compile(r"^\s*(\d{4})\s*[-–]\s*(?:\d{2}|\d{4})\s*$")
 _INT_RE = re.compile(r"^\s*(\d{4})\s*$")
-
-
-def _flatten_filters(filters: Any) -> list[dict[str, Any]]:
-    """Flatten a Cube filters list, descending into and/or groups."""
-    out: list[dict[str, Any]] = []
-    if not isinstance(filters, list):
-        return out
-    for f in filters:
-        if not isinstance(f, dict):
-            continue
-        if "member" in f:
-            out.append(f)
-        for key in ("and", "or"):
-            if key in f:
-                out.extend(_flatten_filters(f[key]))
-    return out
 
 
 def _label_start(value: Any) -> int | None:
@@ -91,8 +78,6 @@ def score_record(prompt: dict[str, Any], result: dict[str, Any]) -> dict[str, An
     """Score one rep. ``prompt`` is a prompts.yaml entry; ``result`` a harness
     transcript summary."""
     if "trap" in prompt:  # family 4: assessment traps
-        import traps  # local import: traps imports _flatten_filters from here
-
         view_queries = [
             q
             for q in result.get("load_queries", [])
@@ -158,8 +143,6 @@ def _trap_scorable(rec: dict[str, Any]) -> bool:
     error = rec.get("error")
     if error and "maximum number of turns" not in str(error):
         return False
-    import traps  # local import: traps imports _flatten_filters from here
-
     if rec.get("trap") in traps.ANSWER_SCORED:
         return True
     return rec.get("n_view_queries", 1) > 0

@@ -50,6 +50,9 @@ def test_null_via_equals():
     fired = traps.TRAPS["null_via_equals"]
     assert fired([q(filters=[f("proficiency_level", values=["null"])])], "")
     assert not fired([q(filters=[f("proficiency_level", "notSet")])], "")
+    # The final-review advice: filter is_mastery with notSet for "no verdict".
+    assert not fired([q(filters=[f("is_mastery", "notSet")])], "")
+    assert fired([q(filters=[f("is_mastery", values=["null"])])], "")
 
 
 def test_module_code_without_subject():
@@ -88,6 +91,12 @@ def test_most_recent_not_named_round():
     fired = traps.TRAPS["most_recent_not_named_round"]
     assert fired([q(dimensions=[f"{V}.date_taken"])], "")
     assert not fired([q(filters=[f("administration_period", values=["MOY"])])], "")
+    # All 3 rounds at once is no scoping, and notEquals keeps the other rounds.
+    rounds = ["BOY", "MOY", "EOY"]
+    assert fired([q(filters=[f("administration_period", values=rounds)])], "")
+    assert fired(
+        [q(filters=[f("administration_period", "notEquals", values=["BOY"])])], ""
+    )
 
 
 def test_paterson_zero_as_failure_reads_the_answer():
@@ -95,7 +104,15 @@ def test_paterson_zero_as_failure_reads_the_answer():
     assert not fired(
         [], "Paterson has no i-Ready data on this view, so there is nothing to report."
     )
+    assert not fired([], "There is a coverage gap for Paterson on this view.")
+    # A saved Haiku answer (B4_post, rep 1) reported the gap this way.
+    assert not fired(
+        [], "Paterson is not showing up in the dataset for this academic year."
+    )
     assert fired([], "Paterson's i-Ready math proficiency is 0%.")
+    # "coverage" alone is not a coverage report.
+    assert fired([], "Coverage looks fine, and Paterson scored 0%.")
+    assert fired([], "Coverage is missing for Newark math. Paterson scored 0%.")
 
 
 def test_is_paterson_query_matches_only_paterson():
@@ -226,6 +243,20 @@ def test_assessment_arms_differ_only_where_intended():
 def test_strip_sentences_raises_when_a_sentence_is_missing():
     with pytest.raises(RuntimeError):
         arms._strip_sentences("some docstring", ["a sentence that is not there"])
+
+
+def test_dry_run_handles_an_arm_with_no_year_members(capsys):
+    """Family 4 catalogs carry no academic-year members; a dry run must not
+    crash on them."""
+    arm = {
+        "instructions": "system prompt",
+        "tools": [
+            {"name": n, "description": f"{n} tool"} for n in ("meta", "load", "sql")
+        ],
+        "meta": {"cubes": []},
+    }
+    run_eval_cc.do_dry_run({"B4_post": arm}, ["B4_post"], [{"id": "p"}])
+    assert "=== B4_post ===" in capsys.readouterr().out
 
 
 def test_stub_load_empties_paterson_and_notes_it_only_on_drained_arms():

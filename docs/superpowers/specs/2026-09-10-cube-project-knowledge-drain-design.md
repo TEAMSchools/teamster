@@ -812,7 +812,7 @@ Trap rate over all 7 traps, with Wilson 95% intervals:
 | ---------- | -------------------- | ------------------ |
 | `A4_pre`   | 28.6% [14–50]        | 23.8% [11–45]      |
 | `B4_post`  | 4.8% [1–23]          | 0.0% [0–15]        |
-| `C4_skill` | 15.0% [5–36], n = 20 | 0.0% [0–39], n = 6 |
+| `C4_skill` | 10.0% [3–30], n = 20 | 0.0% [0–39], n = 6 |
 
 - **What B fixed.** On Haiku, `null_via_equals` went from 3 of 3 to 0 and
   `most_recent_not_named_round` from 3 of 3 to 1. On Sonnet,
@@ -821,9 +821,9 @@ Trap rate over all 7 traps, with Wilson 95% intervals:
 - **What B still misses.** Haiku's 1 remaining fire is `most_recent`. On its
   first query, B still trips a trap 17% of the time on both models, then
   corrects itself after reading `meta`.
-- **Arm C adds nothing measurable.** On Haiku it fires the Paterson trap 2 of 3
-  times, where B fires it 0 times. The orchestrator text appears to pull the
-  answer away from the server's empty-result note. On Sonnet, 15 of C's 21
+- **Arm C adds nothing measurable.** On Haiku it fires the Paterson trap 1 of 3
+  times, where B fires it 0 times; that one conversation asked which benchmark
+  window was meant and never reached the empty result. On Sonnet, 15 of C's 21
   conversations hit the account's session limit and are not scored, so its 6
   scored conversations settle nothing.
 - **Cost.** B reads more `meta` text, and costs about the same per conversation.
@@ -859,6 +859,16 @@ for DIBELS: DIBELS rows with no verdict carry `Tested Out`, not null, so
 sends "no verdict" to `is_mastery`. The run above measured the text before that
 fix; the `null_via_equals` prompt asks about STAR, so its trap reads the same
 guidance either way.
+
+Revised 2026-09-30, after the `claude-review` pass tightened 3 predicates:
+`null_via_equals` also accepts `is_mastery` `notSet`;
+`most_recent_not_named_round` needs `equals` on exactly 1 named round; and
+`paterson_zero_as_failure` no longer passes on a bare "coverage", but does pass
+an answer saying Paterson is absent from the data. Re-scoring the saved records
+moves 1 cell: Haiku arm C drops from 15.0% [5–36] to 10.0% [3–30]. The old
+predicate fired on a conversation that reported Paterson "not present in the
+current assessment scores view", a phrasing none of its patterns matched. Arms A
+and B are unchanged on both models.
 
 Raw records: `src/cube/mcp/eval/out/family4_{haiku,sonnet}_r1.jsonl`
 (gitignored, local only).
