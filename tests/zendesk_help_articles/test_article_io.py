@@ -12,6 +12,7 @@ from publish_article import (
     PublishError,
     check_workdir,
     load_article,
+    save_html,
     save_state,
 )
 
@@ -29,7 +30,6 @@ def test_load_applies_visibility_defaults(tmp_path):
     assert a.permission_group == DEFAULT_PERMISSION_GROUP
     assert a.labels == []
     assert a.article_id is None
-    assert a.attachments == {}
     assert a.html == "<p>hi</p>"
 
 
@@ -61,16 +61,22 @@ def test_save_state_round_trips_and_keeps_user_fields(tmp_path):
     a = load_article(d)
     a.article_id = 99
     a.last_known_updated_at = "2026-09-29T00:00:00Z"
-    a.attachments["images/a.png"] = {"id": 5, "url": "u", "sha256": "h"}
     save_state(a)
     raw = yaml.safe_load((d / "article.yml").read_text())
     assert raw["labels"] == ["x"]
     assert raw["article_id"] == 99
     assert raw["last_known_updated_at"] == "2026-09-29T00:00:00Z"
-    assert raw["attachments"]["images/a.png"]["id"] == 5
+    assert "attachments" not in raw
     again = load_article(d)
     assert again.article_id == 99
-    assert again.attachments == a.attachments
+
+
+def test_save_html_writes_the_body(tmp_path):
+    d = write_article(tmp_path, {"title": "T", "section_id": 1, "author_id": 2})
+    a = load_article(d)
+    a.html = "<p>changed</p>"
+    save_html(a)
+    assert (d / "article.html").read_text() == "<p>changed</p>"
 
 
 def test_repo_root_is_the_checkout():

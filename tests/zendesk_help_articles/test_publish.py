@@ -11,6 +11,7 @@ from publish_article import PublishError, ZendeskHelpCenter, publish
 
 SEGMENTS = (200, {"user_segments": [{"id": 11, "name": "Signed-in users"}]})
 GROUPS = (200, {"permission_groups": [{"id": 21, "name": "Agents and admins"}]})
+FIRST_URL = "https://z/hc/article_attachments/101/a.png"
 
 
 def write_article(
@@ -26,15 +27,18 @@ def write_article(
 
 
 class Server:
-    """Enough Zendesk state to drive publish() end to end."""
+    """Enough Zendesk state to drive publish() and pull() end to end."""
 
-    def __init__(self, existing: dict | None = None):
+    def __init__(
+        self, existing: dict | None = None, attachment_ids: list[int] | None = None
+    ):
         self.article: dict | None = existing
         self.translation: dict = {
             "title": "Old",
             "body": "<p>old</p>",
             "updated_at": "2026-01-01T00:00:00Z",
         }
+        self.attachment_ids: list[int] = list(attachment_ids or [])
         self.uploads = 0
         self.writes = 0
         self.article_updates: list[dict] = []
@@ -73,11 +77,18 @@ class Server:
         def upload(_):
             self.uploads += 1
             n = 100 + self.uploads
+            self.attachment_ids.append(n)
             return 201, {
                 "article_attachment": {
                     "id": n,
                     "content_url": f"https://z/hc/article_attachments/{n}/a.png",
                 }
+            }
+
+        def list_attachments(_):
+            return 200, {
+                "article_attachments": [{"id": i} for i in self.attachment_ids],
+                "next_page": None,
             }
 
         def get_translation(_):
@@ -86,10 +97,7 @@ class Server:
         def update_translation(kw):
             t = kw["json"]["translation"]
             self.translation_updates.append(t)
-            body = t["body"].replace(
-                "https://z/hc/article_attachments/101/a.png",
-                "/hc/article_attachments/101",
-            )
+            body = t["body"].replace(FIRST_URL, "/hc/article_attachments/101")
             self.translation = {**t, "body": body, "updated_at": bump()}
             return 200, {"translation": self.translation}
 
@@ -100,6 +108,7 @@ class Server:
             ("GET", "/help_center/articles/42.json"): get_article,
             ("PUT", "/help_center/articles/42.json"): update_article,
             ("POST", "/help_center/articles/42/attachments.json"): upload,
+            ("GET", "/help_center/articles/42/attachments.json"): list_attachments,
             (
                 "GET",
                 "/help_center/articles/42/translations/en-us.json",
@@ -116,7 +125,15 @@ def client_for(server: Server) -> tuple[ZendeskHelpCenter, FakeSession]:
     return ZendeskHelpCenter("z", "e", "t", session=session), session
 
 
-def test_first_publish_creates_draft_uploads_and_saves_state(tmp_path):
+def existing(updated_at: str = "2026-09-29T10:00:00Z") -> dict:
+    return {
+        "id": 42,
+        "updated_at": updated_at,
+        "html_url": "https://z/hc/en-us/articles/42",
+    }
+
+
+def test_first_publish_creates_draft_uploads_and_rewrites_html(tmp_path):
     d = write_article(tmp_path)
     server = Server()
     client, session = client_for(server)
@@ -130,6 +147,7 @@ def test_first_publish_creates_draft_uploads_and_saves_state(tmp_path):
     assert result.article_id == 42 and result.draft is True
     assert result.html_url == "https://z/hc/en-us/articles/42"
     assert result.uploaded == ["images/a.png"]
+    assert result.orphaned_ids == []
     methods = [m for m, p, _ in session.calls]
     created = session.calls[methods.index("POST")][2]["json"]["article"]
     assert created["draft"] is True and created["user_segment_id"] == 11
@@ -137,13 +155,14 @@ def test_first_publish_creates_draft_uploads_and_saves_state(tmp_path):
     assert server.article_updates[-1]["label_names"] == ["tableau"]
     sent = server.translation_updates[-1]
     assert sent["draft"] is True and sent["title"] == "T"
-    assert "https://z/hc/article_attachments/101/a.png" in sent["body"]
+    assert FIRST_URL in sent["body"]
     raw = yaml.safe_load((d / "article.yml").read_text())
     assert raw["article_id"] == 42
     assert raw["last_known_updated_at"] == server.updated_at
+    assert "attachments" not in raw
     assert server.writes == 2  # article PUT, then translation PUT
-    assert raw["attachments"]["images/a.png"]["id"] == 101
-    assert 'src="images/a.png"' in (d / "article.html").read_text()
+    on_disk = (d / "article.html").read_text()
+    assert f'src="{FIRST_URL}"' in on_disk and "images/a.png" not in on_disk
 
 
 def test_live_publish_sets_draft_false(tmp_path):
@@ -159,27 +178,33 @@ def test_live_publish_sets_draft_false(tmp_path):
     assert result.draft is False
 
 
-def test_existing_article_is_updated_not_recreated_and_backed_up(tmp_path):
-    d = write_article(
-        tmp_path, {"article_id": 42, "last_known_updated_at": "2026-09-29T10:00:00Z"}
-    )
-    server = Server(
-        existing={
-            "id": 42,
-            "updated_at": "2026-09-29T10:00:00Z",
-            "html_url": "https://z/hc/en-us/articles/42",
-        }
-    )
-    client, session = client_for(server)
-    result = publish(
+def test_draft_then_live_rerun_uploads_nothing(tmp_path):
+    d = write_article(tmp_path)
+    server = Server()
+    client, _ = client_for(server)
+    publish(
         d,
         live=False,
         approved_images=frozenset({"images/a.png"}),
         backup_dir=tmp_path / "bak",
         client=client,
     )
+    client2, _ = client_for(server)
+    result = publish(d, live=True, backup_dir=tmp_path / "bak", client=client2)
+    assert result.uploaded == [] and server.uploads == 1
+    assert result.draft is False and result.orphaned_ids == []
+
+
+def test_existing_article_is_updated_not_recreated_and_backed_up(tmp_path):
+    d = write_article(
+        tmp_path, {"article_id": 42, "last_known_updated_at": "2026-09-29T10:00:00Z"}
+    )
+    client, session = client_for(Server(existing=existing()))
+    result = publish(
+        d, live=False, approved_images=frozenset({"images/a.png"}), client=client
+    )
     assert "POST" not in [m for m, p, _ in session.calls if "sections" in p]
-    assert result.backup is not None and result.backup.exists()
+    assert result.backup is not None and result.backup.parent == d / "backups"
     assert "<p>old</p>" in result.backup.read_text()
 
 
@@ -187,10 +212,7 @@ def test_overwrite_guard_stops_before_any_write(tmp_path):
     d = write_article(
         tmp_path, {"article_id": 42, "last_known_updated_at": "2026-09-29T09:00:00Z"}
     )
-    server = Server(
-        existing={"id": 42, "updated_at": "2026-09-29T10:00:00Z", "html_url": "u"}
-    )
-    client, session = client_for(server)
+    client, session = client_for(Server(existing=existing()))
     with pytest.raises(PublishError, match="Overwrite guard"):
         publish(
             d,
@@ -232,6 +254,19 @@ def test_missing_author_refuses_before_network(tmp_path):
     with pytest.raises(PublishError, match="author_id"):
         publish(d, live=False, backup_dir=tmp_path / "bak", client=client)
     assert session.calls == []
+
+
+def test_orphans_come_from_the_attachment_list(tmp_path):
+    d = write_article(
+        tmp_path,
+        {"article_id": 42, "last_known_updated_at": "2026-09-29T10:00:00Z"},
+        html='<p>x</p><img src="/hc/article_attachments/7">',
+    )
+    server = Server(existing=existing(), attachment_ids=[7, 8])
+    client, _ = client_for(server)
+    result = publish(d, live=False, backup_dir=tmp_path / "bak", client=client)
+    assert result.uploaded == [] and server.uploads == 0
+    assert result.orphaned_ids == [8]
 
 
 def test_workdir_inside_checkout_refuses_before_network(tmp_path, monkeypatch):
