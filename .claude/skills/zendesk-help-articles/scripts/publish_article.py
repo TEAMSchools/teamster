@@ -192,6 +192,13 @@ class ZendeskHelpCenter:
     def permission_groups(self) -> list[dict]:
         return self._list("/guide/permission_groups.json", "permission_groups")
 
+    def search_articles(self, query: str, limit: int = 10) -> list[dict]:
+        return self._call(
+            "GET",
+            "/help_center/articles/search.json",
+            params={"query": query, "per_page": max(1, min(int(limit), 100))},
+        )["results"]
+
     def create_article(self, section_id: int, article: dict) -> dict:
         return self._call(
             "POST",
@@ -269,6 +276,22 @@ def client_from_environment() -> ZendeskHelpCenter:
     return ZendeskHelpCenter(
         values["ZENDESK_SUBDOMAIN"], values["ZENDESK_EMAIL"], values["ZENDESK_TOKEN"]
     )
+
+
+def search_articles(
+    query: str, limit: int = 10, client: ZendeskHelpCenter | None = None
+) -> list[dict]:
+    """Search the Help Center and print id, title, url, and updated date."""
+    client = client or client_from_environment()
+    results = client.search_articles(query, limit)
+    for article in results:
+        print(
+            f"{article['id']}  {article['title']}\n"
+            f"    {article['html_url']}  updated {article['updated_at']}"
+        )
+    if not results:
+        print(f"No articles match {query!r}.")
+    return results
 
 
 def _id_by_name(items: list[dict], name: str, kind: str) -> int:

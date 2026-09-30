@@ -8,6 +8,7 @@ is production.
 
 | Step      | Call                                                                | Notes                                                                                         |
 | --------- | ------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Search    | `GET /help_center/articles/search.json`                             | `query`, `per_page`; `results[].{id,title,html_url,section_id,updated_at}`                    |
 | Pull      | `GET /help_center/articles/{id}.json`, then the `en-us` translation | fields, `user_segment_ids`, `updated_at`; stored `title` and `body`                           |
 | Resolve   | `GET /help_center/user_segments.json`                               | `user_segments[].{id,name}`; everyone is `user_segment_id: null`                              |
 | Resolve   | `GET /guide/permission_groups.json`                                 | `permission_groups[].{id,name}`; note the `/guide/` prefix                                    |

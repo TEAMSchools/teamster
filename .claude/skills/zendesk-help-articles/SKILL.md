@@ -3,10 +3,11 @@ name: zendesk-help-articles
 description:
   Use when writing, editing, or publishing a KTAF Zendesk Help Center article
   ("write a help article for X", "draft the Zendesk article", "update the help
-  article on Y", a re-publish after an edit), when a published article shows the
-  wrong author, its body did not change after an update, or its images do not
-  render, or when asked whether the Dagster ZendeskResource or a Zendesk MCP can
-  publish articles.
+  article on Y", a re-publish after an edit), when searching the Help Center for
+  an existing article ("is there a help article on X"), when a published article
+  shows the wrong author, its body did not change after an update, or its images
+  do not render, or when asked whether the Dagster ZendeskResource or a Zendesk
+  MCP can publish articles.
 ---
 
 # Zendesk help articles
@@ -88,6 +89,14 @@ def test_run():
 
 Swap the call in `test_run` for the step at hand, then
 `cd <checkout> && uv run pytest tests/test_zz_zendesk_<id or slug>.py -s`.
+
+## Search
+
+To find an existing article, swap the call for
+`search_articles("<words from the question>")`, imported from the same module.
+It prints id, title, url, and updated date; a read, so it stays in auto mode.
+The `zendesk-tickets` skill calls this after `research` when a ticket's answer
+is an article.
 
 ## New article
 
