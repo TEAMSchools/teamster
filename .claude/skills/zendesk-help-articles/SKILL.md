@@ -3,10 +3,11 @@ name: zendesk-help-articles
 description:
   Use when writing or publishing a KTAF Zendesk Help Center article ("write a
   help article for X", "draft the Zendesk article", "publish
-  docs/help-center/<slug>", a re-publish after an edit), when a published
-  article shows the wrong author, its body did not change after an update, or
-  its images do not render, or when asked whether the Dagster ZendeskResource or
-  a Zendesk MCP can publish articles.
+  docs/help-center/<slug>", a re-publish after an edit), when searching the Help
+  Center for an existing article ("is there a help article on X"), when a
+  published article shows the wrong author, its body did not change after an
+  update, or its images do not render, or when asked whether the Dagster
+  ZendeskResource or a Zendesk MCP can publish articles.
 ---
 
 # Zendesk help articles
@@ -48,6 +49,25 @@ docs/help-center/<slug>/
 and the "Agents and admins" permission group; override by name in the file.
 `user_segment: everyone` is the only way to publish to everyone. The publisher
 rewrites `article.yml` on every run, so comments in it do not survive.
+
+## Search
+
+To find an existing article, write `tests/test_zz_search_articles.py`:
+
+```python
+import sys
+
+sys.path.insert(0, ".claude/skills/zendesk-help-articles/scripts")
+from publish_article import search_articles  # noqa: E402
+
+
+def test_search():
+    search_articles("<words from the question>")
+```
+
+Run `uv run pytest tests/test_zz_search_articles.py -s`, read the titles and
+urls, delete the file. The `zendesk-tickets` skill calls this after `research`
+when a ticket's answer is an article.
 
 ## Author
 

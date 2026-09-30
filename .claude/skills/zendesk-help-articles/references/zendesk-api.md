@@ -6,17 +6,18 @@ is production.
 
 ## Calls in publish order
 
-| Step      | Call                                                     | Notes                                                                 |
-| --------- | -------------------------------------------------------- | --------------------------------------------------------------------- |
-| Resolve   | `GET /help_center/user_segments.json`                    | `user_segments[].{id,name}`; everyone is `user_segment_id: null`      |
-| Resolve   | `GET /guide/permission_groups.json`                      | `permission_groups[].{id,name}`; note the `/guide/` prefix            |
-| Create    | `POST /help_center/sections/{section_id}/articles.json`  | body `{"article": {...}, "notify_subscribers": false}`, `draft: true` |
-| Fetch     | `GET /help_center/articles/{id}.json`                    | `updated_at` drives the overwrite guard                               |
-| Back up   | `GET /help_center/articles/{id}/translations/en-us.json` | the stored `title` and `body`                                         |
-| Images    | `POST /help_center/articles/{id}/attachments.json`       | see _Attachments_                                                     |
-| Fields    | `PUT /help_center/articles/{id}.json`                    | `author_id`, `user_segment_id`, `permission_group_id`, `label_names`  |
-| Publish   | `PUT /help_center/articles/{id}/translations/en-us.json` | `title`, `body`, `draft`                                              |
-| Read back | `GET /help_center/articles/{id}/translations/en-us.json` | compare attachment ids, not urls                                      |
+| Step      | Call                                                     | Notes                                                                      |
+| --------- | -------------------------------------------------------- | -------------------------------------------------------------------------- |
+| Resolve   | `GET /help_center/user_segments.json`                    | `user_segments[].{id,name}`; everyone is `user_segment_id: null`           |
+| Resolve   | `GET /guide/permission_groups.json`                      | `permission_groups[].{id,name}`; note the `/guide/` prefix                 |
+| Search    | `GET /help_center/articles/search.json`                  | `query`, `per_page`; `results[].{id,title,html_url,section_id,updated_at}` |
+| Create    | `POST /help_center/sections/{section_id}/articles.json`  | body `{"article": {...}, "notify_subscribers": false}`, `draft: true`      |
+| Fetch     | `GET /help_center/articles/{id}.json`                    | `updated_at` drives the overwrite guard                                    |
+| Back up   | `GET /help_center/articles/{id}/translations/en-us.json` | the stored `title` and `body`                                              |
+| Images    | `POST /help_center/articles/{id}/attachments.json`       | see _Attachments_                                                          |
+| Fields    | `PUT /help_center/articles/{id}.json`                    | `author_id`, `user_segment_id`, `permission_group_id`, `label_names`       |
+| Publish   | `PUT /help_center/articles/{id}/translations/en-us.json` | `title`, `body`, `draft`                                                   |
+| Read back | `GET /help_center/articles/{id}/translations/en-us.json` | compare attachment ids, not urls                                           |
 
 ## Traps
 
