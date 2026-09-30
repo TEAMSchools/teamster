@@ -1,22 +1,13 @@
 with
-    scored as (
+    pearson_scored as (
         select
             localstudentidentifier as student_number,
             academic_year,
             assessment_name,
             subject,
             test_grade,
-            testscalescore,
+            testscalescore as scale_score,
             studenttestuuid,
-
-            case
-                when subject in ('Mathematics', 'Algebra I', 'Algebra II', 'Geometry')
-                then 'm'
-                when subject = 'English Language Arts'
-                then 'r'
-            end as subject_family,
-
-            case assessment_name when 'NJSLA' then 1 else 2 end as source_rank,
         from {{ ref("int_pearson__all_assessments") }}
         where
             academic_year in ({{ var("ignite_academic_years") | join(", ") }})
@@ -30,31 +21,103 @@ with
             and localstudentidentifier is not null
     ),
 
-    accommodations as (
+    pearson_accommodations as (
         select
             studenttestuuid, uniqueaccommodation, mlaccommodation, iepexemptfrompassing,
         from {{ ref("stg_pearson__njsla") }}
         where academic_year in ({{ var("ignite_academic_years") | join(", ") }})
     ),
 
-    -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
-    with_accommodations as (
+    pearson as (
         select
-            s.student_number,
-            s.academic_year,
-            s.assessment_name,
-            s.subject,
-            s.test_grade,
-            s.testscalescore,
-            s.subject_family,
-            s.source_rank,
+            ps.student_number,
+            ps.academic_year,
+            ps.assessment_name,
+            ps.subject,
+            ps.test_grade,
+            ps.scale_score,
 
             ac.uniqueaccommodation,
             ac.mlaccommodation,
             ac.iepexemptfrompassing,
-        from scored as s
-        left join accommodations as ac on s.studenttestuuid = ac.studenttestuuid
-        where s.subject_family is not null
+        from pearson_scored as ps
+        left join
+            pearson_accommodations as ac on ps.studenttestuuid = ac.studenttestuuid
+    ),
+
+    /* Cambium replaced Pearson as New Jersey's vendor, and its file carries no
+     accommodation or exemption fields, so the three columns are padded null
+     rather than defaulted to a flag value. */
+    cambium as (
+        select
+            student_number,
+            academic_year,
+            assessment_name,
+            aligned_subject as subject,
+            test_grade,
+            scale_score,
+
+            cast(null as string) as uniqueaccommodation,
+            cast(null as string) as mlaccommodation,
+            cast(null as string) as iepexemptfrompassing,
+        from {{ ref("int_cambium__all_assessments") }}
+        where
+            academic_year in ({{ var("ignite_academic_years") | join(", ") }})
+            and aligned_subject in (
+                'Mathematics',
+                'Algebra I',
+                'Algebra II',
+                'Geometry',
+                'English Language Arts'
+            )
+            and student_number is not null
+    ),
+
+    -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
+    classified as (
+        select
+            student_number,
+            academic_year,
+            assessment_name,
+            subject,
+            test_grade,
+            scale_score,
+            uniqueaccommodation,
+            mlaccommodation,
+            iepexemptfrompassing,
+
+            case
+                when subject in ('Mathematics', 'Algebra I', 'Algebra II', 'Geometry')
+                then 'm'
+                when subject = 'English Language Arts'
+                then 'r'
+            end as subject_family,
+
+            case assessment_name when 'NJSLA' then 1 else 2 end as source_rank,
+        from pearson
+
+        union all
+
+        select
+            student_number,
+            academic_year,
+            assessment_name,
+            subject,
+            test_grade,
+            scale_score,
+            uniqueaccommodation,
+            mlaccommodation,
+            iepexemptfrompassing,
+
+            case
+                when subject in ('Mathematics', 'Algebra I', 'Algebra II', 'Geometry')
+                then 'm'
+                when subject = 'English Language Arts'
+                then 'r'
+            end as subject_family,
+
+            case assessment_name when 'NJSLA' then 1 else 2 end as source_rank,
+        from cambium
     ),
 
     /* A student can sit both an NJSLA end-of-course maths test and NJGPA in one
@@ -64,7 +127,7 @@ with
     picked as (
         {{
             dbt_utils.deduplicate(
-                relation="with_accommodations",
+                relation="classified",
                 partition_by="student_number, academic_year, subject_family",
                 order_by="source_rank asc, subject asc",
             )
@@ -78,7 +141,7 @@ with
             subject_family,
             assessment_name,
             test_grade,
-            testscalescore,
+            scale_score,
 
             if(
                 subject in ('Algebra I', 'Algebra II', 'Geometry'), subject, null
@@ -89,10 +152,18 @@ with
                 then 1
                 when mlaccommodation = 'Y'
                 then 1
+                when uniqueaccommodation is null and mlaccommodation is null
+                then null
                 else 0
             end as accom,
 
-            case when iepexemptfrompassing = 'Y' then 1 else 0 end as exemption,
+            case
+                when iepexemptfrompassing = 'Y'
+                then 1
+                when iepexemptfrompassing is null
+                then null
+                else 0
+            end as exemption,
         from picked
     )
 
@@ -100,14 +171,14 @@ select
     student_number,
     academic_year,
 
-    max(if(subject_family = 'm', testscalescore, null)) as test_score_m,
+    max(if(subject_family = 'm', scale_score, null)) as test_score_m,
     max(if(subject_family = 'm', test_grade, null)) as test_grd_m,
     max(if(subject_family = 'm', eoc_subject, null)) as test_subj_m_eoc,
     max(if(subject_family = 'm', assessment_name, null)) as test_name_m,
     max(if(subject_family = 'm', accom, null)) as accom_m,
     max(if(subject_family = 'm', exemption, null)) as exemption_m,
 
-    max(if(subject_family = 'r', testscalescore, null)) as test_score_r,
+    max(if(subject_family = 'r', scale_score, null)) as test_score_r,
     max(if(subject_family = 'r', test_grade, null)) as test_grd_r,
     max(if(subject_family = 'r', eoc_subject, null)) as test_subj_r_eoc,
     max(if(subject_family = 'r', assessment_name, null)) as test_name_r,

@@ -69,8 +69,9 @@ The phase-2 file is a column subset of Table 1, delivered on its own sheet
 rather than as a new structure.
 
 Phase 1 carries 2024-2025 state assessment results in the main student sheet.
-Phase 2 delivers 2025-2026 results on a separate sheet once New Jersey releases
-them, and must land before 2026-10-15.
+Phase 2 delivers 2025-2026 results on a separate sheet and must land before
+2026-10-15. Those results landed on 2026-09-30, so phase 2 is no longer waiting
+on the state.
 
 Course-level data is restricted to English, Math, Science, and History classes.
 
@@ -105,7 +106,7 @@ inherits `contract: enforced: true` and the `extracts` schema from
 
 | Node                               | Purpose                                                            |
 | ---------------------------------- | ------------------------------------------------------------------ |
-| `seed_ignite__treatment_sections`  | 17 resolved/pending treated sections; identifiers only, no names   |
+| `seed_ignite__treatment_sections`  | 18 treated sections, one still pending; identifiers only, no names |
 | `seed_ignite__school_nces_ids`     | `schoolid` to NCES school id, supplied by hand                     |
 | `int_ignite__student_id_crosswalk` | `student_number` to masked numeric `stu_id`; retained, never sent  |
 | `int_ignite__attendance`           | `days_present` and `days_enrolled` per student per school per year |
@@ -140,7 +141,8 @@ All already exist:
 - `stg_powerschool__storedgrades` — course grades
 - `int_powerschool__ps_adaadm_daily_ctod` — daily `attendancevalue` and
   `membershipvalue`
-- `int_pearson__all_assessments` — NJSLA, NJGPA
+- `int_pearson__all_assessments` — NJSLA, NJGPA through SY2024-2025
+- `int_cambium__all_assessments` — NJSLA, NJGPA from SY2025-2026
 - `int_iready__diagnostic_results` — iReady diagnostics
 - `stg_google_sheets__crdc__sced_code_crosswalk` — course to subject mapping
 
@@ -151,7 +153,8 @@ int_extracts__student_enrollments ─┬─ int_ignite__enrollment_scaffold ─�
                                    │                                   │
 int_powerschool__ps_adaadm_daily_ctod ─ int_ignite__attendance ────────┤
                                                                        ├─ rpt_ignite__student_level
-int_pearson__all_assessments ── int_ignite__state_assessment ──────────┤
+int_pearson__all_assessments ─┬─ int_ignite__state_assessment ────────┤
+int_cambium__all_assessments ─┘                                        │
                                                                        │
 int_iready__diagnostic_results ─ int_ignite__interim_assessment ───────┤
                                                                        │
@@ -212,14 +215,23 @@ carries in `section_number`** — `3ICR`, `56DBICR`, `2ICS`, `4consult` — with
 teacher-of-record used as corroboration where the named teacher does hold the
 section. On that basis 12 of 17 live classes resolved to an exact course and
 section number; four further rows were withdrawn by the researchers themselves,
-and five remain ambiguous pending confirmation from school staff.
+and five were sent back to school staff as numbered questions.
 
-The resolved identifiers live in `seed_ignite__treatment_sections`, a seed of 17
+Four of those five answers resolved on 2026-09-30. One question resolved to a
+section another row already covers, so it adds no students and is kept only as
+an audit trail. One answer named two sections rather than one, and both are
+treated. One answer named a course that does not exist at that school, but both
+readings of it point at sections already in the treatment set, so the ambiguity
+cannot change the population. The last remains open.
+
+The resolved identifiers live in `seed_ignite__treatment_sections`, a seed of 18
 rows carrying course and section numbers only. **Teacher names are deliberately
 absent** — they are staff PII and must not enter a commit; the working
-resolution sheet that holds them stays in `.claude/scratch/`. Rows marked
-`pending` carry null identifiers and contribute no treated students, so filling
-those five cells and rebuilding is the entire update path.
+resolution sheet that holds them stays in `.claude/scratch/`. A row marked
+`pending` carries null identifiers and contributes no treated students, so
+filling that one row and rebuilding is the entire update path. A row marked
+`duplicate` names a section another row already resolves and is excluded so the
+section join cannot fan out.
 
 `int_ignite__treatment_assignment` expands that seed to the students enrolled in
 each resolved section. Student-level flags roll up from the course grain: a
@@ -391,3 +403,10 @@ Confirm access before a file is ready rather than after.
    picks a row.
 4. **Are accommodation and exemption codes available** for NJSLA and NJGPA at
    the grain Mathematica wants, including students with multiple accommodations?
+   Partly resolved. Pearson supplied yes/no flags and no codes, and populated
+   them sparsely. Cambium, which replaced Pearson for SY2025-2026, supplies
+   neither flags nor codes, so every SY2025-2026 row is null on all four
+   accommodation and exemption columns. The models emit null rather than zero
+   there, because the fact being recorded is that the state gave no answer, not
+   that the answer was no. Confirm Mathematica would rather have a blank than a
+   zero; if they want a zero, the change is one `case` branch per column.

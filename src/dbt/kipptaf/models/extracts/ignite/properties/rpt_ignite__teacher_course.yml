@@ -31,12 +31,13 @@ models:
       - name: status
         data_type: string
         description:
-          Either `resolved` or `pending`. A pending row contributes no treated
-          students to Tables 1 and 2.
+          One of `resolved`, `pending` or `duplicate`. Only a resolved row
+          contributes treated students to Tables 1 and 2; a duplicate row names
+          a section another row already resolves.
         data_tests:
           - accepted_values:
               arguments:
-                values: [resolved, pending]
+                values: [resolved, pending, duplicate]
               config:
                 severity: error
 
