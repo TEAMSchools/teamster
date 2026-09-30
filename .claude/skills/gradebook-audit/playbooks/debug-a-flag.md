@@ -15,8 +15,7 @@ roster, which is why the teacher cannot find them. Nothing in dbt is wrong.
 Send the teacher
 [PowerTeacher Pro :: Fixing Blank Scores for a Student Who Left Your Class](https://teamschools.zendesk.com/hc/en-us/articles/43864087130391):
 **Students**, then **Show Dropped**, select the student, and score or exempt
-each blank due before the exit date. The article lives in
-`docs/help-center/withdrawn-student-gradebook/`.
+each blank due before the exit date.
 
 ## A flag that isn't firing
 
