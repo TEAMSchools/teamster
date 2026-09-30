@@ -678,6 +678,13 @@ Work in this order.
    came from the `state_comps` CTE — Total / All Students only, pivoted wide —
    not from the comps model. Debug the CTE, not the view.
 
+   The CTE matches on the **test's** level, not the student's school: a
+   grade-coded test finds its sheet row by test code alone, and a high school
+   test finds the MS row for a student in grade 8 or below and the HS row
+   otherwise. So a blank comp for a grade 8 Algebra I student means the sheet
+   has no MS `ALG01` row for that year and region. Add the row; do not look at
+   the school's `school_level`.
+
 ---
 
 ## Procedure: Academic year rollover

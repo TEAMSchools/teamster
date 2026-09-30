@@ -13,6 +13,19 @@ models:
       `int_fldoe__all_assessments.student_number`, resolved upstream from
       `fleid`. Scope ratified on #4996; the FLDOE leg emitted a hardcoded null
       until #5042, so the model held no Miami rows before that fix.
+
+      The City, State and Neighborhood Schools comparison columns attach by the
+      test's level, not the enrollment school's. The comps sheet keys each row
+      on the level of the test -- grades 3 and 4 are ES, grades 5 to 8 are MS,
+      high school tests are HS -- so a grade-coded test takes its comp from its
+      test code alone, whatever school the student attends. A high school test
+      that the sheet carries at both MS and HS (today only ALG01) splits on the
+      student's enrolled grade -- grade 8 or below takes the MS figure, grade 9
+      and up the HS figure. A student in grade 8 or below on a high school test
+      the sheet carries only at HS gets no comp. The `state_comps` CTE derives
+      the student grade span each sheet row applies to, and the join matches the
+      enrolled grade against it. `school_level` stays the enrollment school's
+      level; it is not the comps key.
     columns:
       - name: academic_year
         data_type: int64
@@ -37,7 +50,10 @@ models:
         description: Full name of the school.
       - name: school_level
         data_type: string
-        description: School level of the student's enrollment (ES, MS, or HS).
+        description: >
+          School level of the student's enrollment (ES, MS, HS, or OD). Not the
+          level the comparison columns are matched on; see the model
+          description.
       - name: student_number
         data_type: int64
         description: Student Number assigned by the school. Indexed.
