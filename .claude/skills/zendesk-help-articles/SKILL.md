@@ -1,19 +1,19 @@
 ---
 name: zendesk-help-articles
 description:
-  Use when writing or publishing a KTAF Zendesk Help Center article ("write a
-  help article for X", "draft the Zendesk article", "publish
-  docs/help-center/<slug>", a re-publish after an edit), when a published
-  article shows the wrong author, its body did not change after an update, or
-  its images do not render, or when asked whether the Dagster ZendeskResource or
-  a Zendesk MCP can publish articles.
+  Use when writing, editing, or publishing a KTAF Zendesk Help Center article
+  ("write a help article for X", "draft the Zendesk article", "update the help
+  article on Y", a re-publish after an edit), when a published article shows the
+  wrong author, its body did not change after an update, or its images do not
+  render, or when asked whether the Dagster ZendeskResource or a Zendesk MCP can
+  publish articles.
 ---
 
 # Zendesk help articles
 
-Two phases. Author composes `article.html` from the vendored design-system
-snippets. Publish pushes an article folder through the Help Center REST API.
-Enter either one.
+Zendesk holds the only copy of an article. Work happens in a folder in the
+session scratchpad: `pull` fills it for an edit, you compose it for a new
+article, and `publish` writes it back.
 
 ## Non-negotiables
 
@@ -22,10 +22,20 @@ Enter either one.
   `<td>`; empty elements are deleted; the sanitizer runs at render, so the
   stored body proves storage, not appearance.
 - Read `references/zendesk-api.md` before any publish.
-- The publisher runs only under pytest, through a throwaway
-  `tests/test_zz_publish_<slug>.py`, deleted afterward. A bare `uv run python`
-  has no credentials. Neither the Dagster `ZendeskResource` (scope
-  `read users:write`) nor any connected MCP can write to the Help Center.
+- The working folder is `<session scratchpad>/zendesk/<article_id or slug>/`.
+  `publish`, `pull` and `preview` refuse a folder inside the checkout: articles
+  are restricted to signed-in users and this repo is public.
+- Every publisher call runs under pytest, through a throwaway
+  `tests/test_zz_zendesk_<id or slug>.py` that holds only the folder path and
+  flags, deleted afterward. A bare `uv run python` has no credentials. Neither
+  the Dagster `ZendeskResource` (scope `read users:write`) nor any connected MCP
+  can write to the Help Center.
+- Before the first Zendesk write in a session (publish, unpublish, archive,
+  permission change), if auto mode is on: stop, show the exact command, and ask
+  the user to switch to manual mode with Shift+Tab. Run it only after they
+  confirm, then tell them they can switch back. Auto mode's classifier can
+  refuse a write it allowed minutes earlier; reads (`pull`, `preview`, searches,
+  dry runs) stay in auto.
 - Draft first for a new article. Going live is a second call with `live=True`,
   after the user has seen the draft. An article that is already live is updated
   in place with `live=True`; the publisher refuses `live=False` on it unless
@@ -33,69 +43,103 @@ Enter either one.
   would vanish for readers.
 - No image uploads without the PII gate below.
 
-## Article folder
+## Working folder
 
 ```text
-docs/help-center/<slug>/
+<session scratchpad>/zendesk/<article_id or slug>/
   article.html   body only, no <html> shell
   article.yml    title, section_id, author_id, labels; optional user_segment,
                  permission_group; publisher-owned article_id,
-                 last_known_updated_at, attachments
-  images/        screenshots, gitignored, referenced by relative path
+                 last_known_updated_at; draft (written by pull)
+  images/        new screenshots, referenced by relative path
+  preview.html   written by preview()
+  backups/       the stored body before each overwrite
 ```
 
 `author_id` is required. Visibility defaults to the "Signed-in users" segment
 and the "Agents and admins" permission group; override by name in the file.
-`user_segment: everyone` is the only way to publish to everyone. The publisher
-rewrites `article.yml` on every run, so comments in it do not survive.
+`user_segment: everyone` is the only way to publish to everyone.
 
-## Author
+`last_known_updated_at` is Zendesk's `updated_at` when the folder was pulled,
+refreshed after each publish. If Zendesk's value differs at publish time,
+someone edited in Guide and the publisher refuses. After each upload the
+publisher rewrites that image's `src` in `article.html` to its Zendesk url, so
+an image is never uploaded twice. The publisher rewrites `article.yml` on every
+run, so comments in it do not survive.
 
-1. Read `references/design-system/README.md`.
-2. Compose `article.html` from `references/design-system/snippets/` in the
-   README's article order: summary panel, in-this-article, `<h2>` sections with
-   numbered steps and callouts, screenshots, related articles. No `<h1>`.
-3. Reference every screenshot as `<img src="images/<name>.png">` inside the
+The scratchpad ends with the session. To edit an article again later, pull it
+again.
+
+## Runner
+
+```python
+import sys
+from pathlib import Path
+
+sys.path.insert(0, ".claude/skills/zendesk-help-articles/scripts")
+from publish_article import preview, publish, pull  # noqa: E402
+
+WORKDIR = Path("<session scratchpad>/zendesk/<article_id or slug>")
+
+
+def test_run():
+    print(publish(WORKDIR, live=False, approved_images=frozenset({"images/01-home.png"})))
+```
+
+Swap the call in `test_run` for the step at hand, then
+`cd <checkout> && uv run pytest tests/test_zz_zendesk_<id or slug>.py -s`.
+
+## New article
+
+1. Read the design-system README. Compose `article.html` from
+   `references/design-system/snippets/` in the README's article order: summary
+   panel, in-this-article, `<h2>` sections with numbered steps and callouts,
+   screenshots, related articles. No `<h1>`.
+2. Reference each screenshot as `<img src="images/<name>.png">` inside the
    screenshot snippet.
-4. Write `article.yml` with `title` and `labels`; leave `section_id` and
-   `author_id` for the user to fill.
-5. Ask the user to preview `article.html` in a browser, wrapped in the export's
-   `sample-article.html` shell. Stop until they have.
+3. Write `article.yml` with `title` (a plain sentence) and `labels`; ask the
+   user for `section_id` and `author_id`.
+4. PII gate for each image.
+5. Auto-mode check, then `publish(WORKDIR, live=False, approved_images=...)`.
+6. Show the draft url and the report. Ask the user to open the draft signed in.
+   This is the preview: the draft shows what the sanitizer does. Stop until they
+   approve.
+7. `publish(WORKDIR, live=True)`. Nothing is uploaded this time; the images are
+   Zendesk urls now.
+8. Ask the user to confirm the live page renders. Delete the test file.
 
-## Publish
+## Edit an existing article
 
-1. Run the PII gate for every image under `images/` that is new or changed: open
-   it with the Read tool, state in plain words what is visible (school, grade
-   band, any names, any count small enough to identify a student), and wait for
-   the user's yes. Collect the approved relative paths.
-2. Write `tests/test_zz_publish_<slug>.py`:
+1. `pull(<article_id>, WORKDIR)`.
+2. Edit `article.html`. For a new or replaced screenshot, save it under
+   `images/` and point the `src` at it.
+3. `preview(WORKDIR)`, then serve the folder with
+   `uv run python -m http.server 8765 --bind 127.0.0.1 --directory <WORKDIR>` as
+   a background Bash job. The folder holds `backups/` of the gated body, so keep
+   the loopback bind. VS Code forwards the port; ask the user to open
+   `/preview.html` on it in a browser or VS Code's Simple Browser. Images
+   already on Zendesk render only if the browser's Zendesk session reaches them;
+   text and layout always render. Stop until they approve, then stop the server.
+4. PII gate for any new image.
+5. Auto-mode check, then `publish(WORKDIR, live=True, approved_images=...)`. If
+   `article.yml` says `draft: true`, the article was a draft when pulled: use
+   `live=False` to keep it one. The publisher refuses `live=True` on it until
+   the user asks to take it live and you delete that line.
+6. Show the report. Ask the user to open the page signed in and confirm it
+   renders. Delete the test file.
 
-   ```python
-   import sys
-   from pathlib import Path
+## PII gate
 
-   sys.path.insert(0, ".claude/skills/zendesk-help-articles/scripts")
-   from publish_article import publish  # noqa: E402
+For every local image the body references: open it with the Read tool, state in
+plain words what is visible (school, grade band, any names, any count small
+enough to identify a student), and wait for the user's yes. Collect the approved
+relative paths for `approved_images`; the publisher refuses any local image not
+in it.
 
+## Report
 
-   def test_publish():
-       result = publish(
-           Path("docs/help-center/<slug>"),
-           live=False,
-           approved_images=frozenset({"images/01-home.png"}),
-           backup_dir=Path("<session scratchpad>/zendesk-backups"),
-       )
-       print(result)
-   ```
-
-3. `cd <checkout> && uv run pytest tests/test_zz_publish_<slug>.py -s`.
-4. Show the user the draft url and the report: uploaded, reused, orphaned
-   attachment ids. Orphans are reported, not deleted.
-5. On the user's yes, change `live=False` to `live=True`, run again, then delete
-   the test file. For an edit to an article that is already live, skip the draft
-   step and run with `live=True` once.
-6. Ask the user to open the published page signed in and check it renders. The
-   article is done when they confirm, not before.
-
-A `PublishError` message is written for the user. Show it verbatim. The
+`publish` returns `uploaded` (local images uploaded this run), `orphaned_ids`
+(inline images on the article the body no longer references; download
+attachments are left out; reported, never deleted), `backup`, `html_url` and
+`draft`. A `PublishError` message is written for the user. Show it verbatim. The
 overwrite guard names both timestamps and how to proceed.

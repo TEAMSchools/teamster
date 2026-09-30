@@ -1,5 +1,5 @@
-"""Tests added from the whole-branch review: local checks before network, state
-saved as soon as Zendesk changes, stale attachments pruned, and input hardening."""
+"""Tests from the whole-branch review: local checks before network, state saved
+as soon as Zendesk changes, and input hardening."""
 
 from pathlib import Path
 
@@ -17,7 +17,7 @@ from publish_article import (
     publish,
     rewrite_srcs,
 )
-from test_publish import Server, client_for, write_article
+from test_publish import FIRST_URL, Server, client_for, existing, write_article
 
 # trunk-ignore-end(pyright/reportMissingImports)
 
@@ -46,25 +46,6 @@ def test_unapproved_image_refuses_before_any_network(tmp_path):
     assert session.calls == []
 
 
-def test_removed_image_is_pruned_and_reported(tmp_path):
-    d = write_article(
-        tmp_path,
-        {
-            "article_id": 42,
-            "last_known_updated_at": "2026-09-29T10:00:00Z",
-            "attachments": {"images/gone.png": {"id": 5, "url": "u", "sha256": "h"}},
-        },
-        html="<p>no images</p>",
-    )
-    server = Server(
-        existing={"id": 42, "updated_at": "2026-09-29T10:00:00Z", "html_url": "u"}
-    )
-    client, _ = client_for(server)
-    result = run(d, client)
-    assert result.orphaned_ids == [5]
-    assert yaml.safe_load((d / "article.yml").read_text())["attachments"] == {}
-
-
 def test_state_saved_even_when_readback_fails(tmp_path):
     d = write_article(tmp_path)
     server = Server()
@@ -82,7 +63,7 @@ def test_state_saved_even_when_readback_fails(tmp_path):
         run(d, client)
     raw = yaml.safe_load((d / "article.yml").read_text())
     assert raw["last_known_updated_at"] == server.updated_at
-    assert raw["attachments"]["images/a.png"]["id"] == 101
+    assert FIRST_URL in (d / "article.html").read_text()
 
 
 def test_create_saves_timestamp_so_rerun_passes_guard(tmp_path):
@@ -108,20 +89,14 @@ def test_unquoted_timestamp_in_yaml_still_matches_guard(tmp_path):
     d = write_article(tmp_path, {"article_id": 42})
     yml = d / "article.yml"
     yml.write_text(yml.read_text() + "last_known_updated_at: 2026-09-29T10:00:00Z\n")
-    server = Server(
-        existing={"id": 42, "updated_at": "2026-09-29T10:00:00Z", "html_url": "u"}
-    )
-    client, _ = client_for(server)
+    client, _ = client_for(Server(existing=existing()))
     run(d, client)
 
 
 def test_hand_entered_article_id_without_timestamp_refuses(tmp_path):
     d = write_article(tmp_path, {"article_id": 42})
-    server = Server(
-        existing={"id": 42, "updated_at": "2026-09-29T10:00:00Z", "html_url": "u"}
-    )
-    client, session = client_for(server)
-    with pytest.raises(PublishError, match="2026-09-29T10:00:00Z"):
+    client, session = client_for(Server(existing=existing()))
+    with pytest.raises(PublishError, match="2026-09-29T10:00:00Z.*pull"):
         run(d, client)
     assert [m for m, _, _ in session.calls if m in ("PUT", "POST")] == []
 
@@ -130,9 +105,7 @@ def test_live_article_is_not_demoted_without_unpublish(tmp_path):
     d = write_article(
         tmp_path, {"article_id": 42, "last_known_updated_at": "2026-09-29T10:00:00Z"}
     )
-    server = Server(
-        existing={"id": 42, "updated_at": "2026-09-29T10:00:00Z", "html_url": "u"}
-    )
+    server = Server(existing=existing())
     server.translation["draft"] = False
     client, session = client_for(server)
     with pytest.raises(PublishError, match="live"):
@@ -156,7 +129,7 @@ def test_every_request_carries_a_timeout(tmp_path):
 def test_single_quoted_src_is_found_and_data_src_is_not():
     html = "<img src='images/a.png' data-src=\"images/b.png\"><img data-src='images/c.png'>"
     assert local_images(html) == ["images/a.png"]
-    out = rewrite_srcs(html, {"images/a.png": {"url": "https://z/1"}})
+    out = rewrite_srcs(html, {"images/a.png": "https://z/1"})
     assert "src='https://z/1'" in out and 'data-src="images/b.png"' in out
 
 
@@ -175,7 +148,7 @@ def test_src_outside_article_folder_refuses(tmp_path):
     assert session.calls == []
 
 
-def test_partial_upload_failure_keeps_uploaded_attachments(tmp_path):
+def test_partial_upload_failure_keeps_uploaded_images_on_disk(tmp_path):
     d = write_article(tmp_path, html='<img src="images/a.png"><img src="images/b.png">')
     (d / "images" / "b.png").write_bytes(b"png2")
     server = Server()
@@ -183,13 +156,18 @@ def test_partial_upload_failure_keeps_uploaded_attachments(tmp_path):
     real_upload = routes[("POST", "/help_center/articles/42/attachments.json")]
 
     def second_fails(kw):
-        status, payload = real_upload(kw)
-        return (500, {"error": "boom"}) if server.uploads == 2 else (status, payload)
+        if server.uploads == 1:
+            server.uploads += 1  # count the attempt so later ids stay unique
+            return 500, {"error": "boom"}
+        return real_upload(kw)
 
     routes[("POST", "/help_center/articles/42/attachments.json")] = second_fails
     client = ZendeskHelpCenter("z", "e", "t", session=FakeSession(routes))
+    both = frozenset({"images/a.png", "images/b.png"})
     with pytest.raises(PublishError, match="500"):
-        run(d, client, approved_images=frozenset({"images/a.png", "images/b.png"}))
-    raw = yaml.safe_load((d / "article.yml").read_text())
-    assert raw["attachments"]["images/a.png"]["id"] == 101
-    assert "images/b.png" not in raw["attachments"]
+        run(d, client, approved_images=both)
+    on_disk = (d / "article.html").read_text()
+    assert FIRST_URL in on_disk and 'src="images/b.png"' in on_disk
+    client2, _ = client_for(server)
+    result = run(d, client2, approved_images=frozenset({"images/b.png"}))
+    assert result.uploaded == ["images/b.png"]

@@ -1,20 +1,22 @@
-"""Publish a help article folder to the Zendesk Help Center.
+"""Publish a help article working folder to the Zendesk Help Center.
 
 Runs only under pytest: the session fixture in tests/conftest.py loads
-ZENDESK_SUBDOMAIN, ZENDESK_EMAIL and ZENDESK_TOKEN from 1Password. See
-.claude/skills/zendesk-help-articles/SKILL.md for the flow and
+ZENDESK_SUBDOMAIN, ZENDESK_EMAIL and ZENDESK_TOKEN from 1Password. The working
+folder lives in the session scratchpad; every entry point refuses one inside
+the checkout, because Help Center articles are gated and this repo is public.
+See .claude/skills/zendesk-help-articles/SKILL.md for the flow and
 references/zendesk-api.md for the endpoints.
 """
 
 from __future__ import annotations
 
-import hashlib
 import mimetypes
 import os
 import re
 import time
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
+from html import escape
 from pathlib import Path
 
 import requests
@@ -27,13 +29,28 @@ LOCALE = "en-us"
 UPLOAD_ATTEMPTS = 5
 RETRY_DELAY_SECONDS = 2
 TIMEOUT_SECONDS = 60
+# scripts/ -> zendesk-help-articles/ -> skills/ -> .claude/ -> checkout root
+REPO_ROOT = Path(__file__).resolve().parents[4]
+SHELL_PATH = (
+    Path(__file__).resolve().parents[1]
+    / "references"
+    / "design-system"
+    / "sample-article.html"
+)
+BODY_OPEN = '<div class="article-body">'
+SIDE_OPEN = '<div class="hc-side">'
+HC_TITLE_RE = re.compile(r'<h1 class="hc-title">.*?</h1>', re.DOTALL)
 
 # Group 1: everything up to and including `src=`; group 2: the quote; group 3: the value.
 # The lookbehind keeps `data-src=` from matching.
 IMG_SRC_RE = re.compile(
     r"(<img\b[^>]*?(?<![-\w])src=)([\"'])([^\"']+)\2", re.IGNORECASE
 )
-ATTACHMENT_ID_RE = re.compile(r"/hc/article_attachments/(\d+)")
+# Full content_url, the shortened relative form, and the locale-prefixed form
+# (/hc/en-us/article_attachments/<id>) that older articles may carry.
+ATTACHMENT_ID_RE = re.compile(
+    r"/hc/(?:[a-z]{2}(?:-[a-z]{2})?/)?article_attachments/(\d+)", re.IGNORECASE
+)
 
 
 class PublishError(Exception):
@@ -51,7 +68,6 @@ class Article:
     labels: list[str]
     article_id: int | None
     last_known_updated_at: str | None
-    attachments: dict[str, dict]
     html: str
     _raw: dict = field(default_factory=dict, repr=False)
 
@@ -79,6 +95,23 @@ def _iso_z(value) -> str | None:
     return parsed.astimezone(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+def check_workdir(path: Path) -> None:
+    """Refuse a folder inside the checkout. Articles are gated; the repo is public.
+
+    Run from a worktree under .claude/worktrees/, REPO_ROOT is the worktree, so
+    every ancestor holding a `.git` (the main checkout) is refused too.
+    """
+    resolved = path.resolve()
+    roots = [REPO_ROOT, *(p for p in REPO_ROOT.parents if (p / ".git").exists())]
+    for root in roots:
+        if resolved.is_relative_to(root):
+            raise PublishError(
+                f"{path} is inside the checkout ({root}). Help Center articles are "
+                "restricted to signed-in users and this repo is public, so the "
+                "working folder must live in the session scratchpad."
+            )
+
+
 def load_article(article_dir: Path) -> Article:
     yml = article_dir / "article.yml"
     html_path = article_dir / "article.html"
@@ -103,14 +136,13 @@ def load_article(article_dir: Path) -> Article:
         labels=[str(label) for label in labels],
         article_id=int(raw["article_id"]) if raw.get("article_id") else None,
         last_known_updated_at=_iso_z(raw.get("last_known_updated_at")),
-        attachments=dict(raw.get("attachments") or {}),
         html=html_path.read_text(),
         _raw=raw,
     )
 
 
 def save_state(article: Article) -> None:
-    """Write publish state back to article.yml, keeping every user-authored field.
+    """Write article_id and last_known_updated_at back, keeping every other field.
 
     Rewrites the whole file with yaml.safe_dump, so comments in article.yml do
     not survive a publish.
@@ -118,8 +150,11 @@ def save_state(article: Article) -> None:
     out = dict(article._raw)
     out["article_id"] = article.article_id
     out["last_known_updated_at"] = article.last_known_updated_at
-    out["attachments"] = article.attachments
     (article.dir / "article.yml").write_text(yaml.safe_dump(out, sort_keys=False))
+
+
+def save_html(article: Article) -> None:
+    (article.dir / "article.html").write_text(article.html)
 
 
 class ZendeskHelpCenter:
@@ -140,11 +175,22 @@ class ZendeskHelpCenter:
             )
         return response.json()
 
+    def _list(self, path: str, key: str) -> list[dict]:
+        """Every item from a list endpoint, following next_page."""
+        next_path: str | None = path
+        items: list[dict] = []
+        while next_path:
+            page = self._call("GET", next_path)
+            items.extend(page[key])
+            next_page = page.get("next_page")
+            next_path = next_page.removeprefix(self.base) if next_page else None
+        return items
+
     def user_segments(self) -> list[dict]:
-        return self._call("GET", "/help_center/user_segments.json")["user_segments"]
+        return self._list("/help_center/user_segments.json", "user_segments")
 
     def permission_groups(self) -> list[dict]:
-        return self._call("GET", "/guide/permission_groups.json")["permission_groups"]
+        return self._list("/guide/permission_groups.json", "permission_groups")
 
     def create_article(self, section_id: int, article: dict) -> dict:
         return self._call(
@@ -172,6 +218,12 @@ class ZendeskHelpCenter:
             f"/help_center/articles/{article_id}/translations/{LOCALE}.json",
             json={"translation": translation},
         )["translation"]
+
+    def list_attachments(self, article_id: int) -> list[dict]:
+        return self._list(
+            f"/help_center/articles/{article_id}/attachments.json",
+            "article_attachments",
+        )
 
     def upload_attachment(self, article_id: int, path: Path) -> dict:
         """Upload one inline attachment.
@@ -227,6 +279,13 @@ def _id_by_name(items: list[dict], name: str, kind: str) -> int:
     raise PublishError(f"No {kind} named {name!r} in Zendesk. Available: {choices}")
 
 
+def _name_by_id(items: list[dict], item_id: int, kind: str) -> str:
+    for item in items:
+        if int(item["id"]) == int(item_id):
+            return str(item["name"])
+    raise PublishError(f"No {kind} with id {item_id} in Zendesk")
+
+
 def resolve_visibility(
     client: ZendeskHelpCenter, article: Article
 ) -> tuple[int | None, int]:
@@ -245,7 +304,8 @@ def resolve_visibility(
 
 def _is_local(src: str) -> bool:
     lowered = src.lower()
-    return not lowered.startswith(("http://", "https://", "//", "data:", "/hc/"))
+    # Any root-relative src (/hc/, /guide-media/, //host) is already on Zendesk.
+    return not lowered.startswith(("http://", "https://", "/", "data:"))
 
 
 def local_images(html: str) -> list[str]:
@@ -257,112 +317,99 @@ def local_images(html: str) -> list[str]:
     return seen
 
 
-def sha256_of(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+def check_local_images(article: Article, approved: frozenset[str]) -> list[str]:
+    """Validate every local image before any network call; return their srcs.
 
-
-def check_local_images(article: Article, approved: frozenset[str]) -> dict[str, str]:
-    """Validate every local image before any network call.
-
-    Returns {src: sha256} for the images the HTML references. Raises when a
-    file is missing, sits outside the article folder, or is new or changed and
-    not in `approved` (the PII gate).
+    Raises when a file is missing, sits outside the working folder, or is not
+    in `approved` (the PII gate). An uploaded image's src is rewritten to its
+    Zendesk url, so every local image is new and needs approval.
     """
     root = article.dir.resolve()
-    digests: dict[str, str] = {}
-    for src in local_images(article.html):
+    srcs = local_images(article.html)
+    for src in srcs:
         path = (article.dir / src).resolve()
         if not path.is_relative_to(root):
             raise PublishError(
-                f"{src} resolves outside the article folder {article.dir}; "
+                f"{src} resolves outside the working folder {article.dir}; "
                 "images must live under images/"
             )
         if not path.is_file():
             raise PublishError(
                 f"{src} is referenced in article.html but not found under {article.dir}"
             )
-        digest = sha256_of(path)
-        entry = article.attachments.get(src)
-        if not (entry and entry.get("sha256") == digest) and src not in approved:
+        if src not in approved:
             raise PublishError(
-                f"PII gate: {src} is new or changed and has not been approved for upload"
+                f"PII gate: {src} is a new image and has not been approved for upload"
             )
-        digests[src] = digest
-    return digests
+    return srcs
 
 
-@dataclass
-class AttachmentReport:
-    uploaded: list[str] = field(default_factory=list)
-    reused: list[str] = field(default_factory=list)
-    orphaned_ids: list[int] = field(default_factory=list)
-
-
-def sync_attachments(
-    client: ZendeskHelpCenter, article: Article, approved: frozenset[str]
-) -> AttachmentReport:
-    """Upload new or changed local images as inline attachments; reuse unchanged ones.
-
-    Entries for images the HTML no longer references are dropped and reported
-    as orphans. State is saved after every upload so a failure midway loses
-    nothing already in Zendesk.
-    """
-    if article.article_id is None:
-        raise PublishError(
-            "sync_attachments needs an article_id; create the draft first"
-        )
-    digests = check_local_images(article, approved)
-    report = AttachmentReport()
-    for src in list(article.attachments):
-        if src not in digests:
-            report.orphaned_ids.append(int(article.attachments.pop(src)["id"]))
-    for src, digest in digests.items():
-        entry = article.attachments.get(src)
-        if entry and entry.get("sha256") == digest:
-            report.reused.append(src)
-            continue
-        uploaded = client.upload_attachment(article.article_id, article.dir / src)
-        if entry:
-            report.orphaned_ids.append(int(entry["id"]))
-        article.attachments[src] = {
-            "id": int(uploaded["id"]),
-            "url": uploaded["content_url"],
-            "sha256": digest,
-        }
-        report.uploaded.append(src)
-        save_state(article)
-    if report.orphaned_ids and not report.uploaded:
-        save_state(article)
-    return report
-
-
-def rewrite_srcs(html: str, attachments: dict[str, dict]) -> str:
+def rewrite_srcs(html: str, urls: dict[str, str]) -> str:
     def swap(match: re.Match) -> str:
-        entry = attachments.get(match.group(3))
-        if entry is None:
+        url = urls.get(match.group(3))
+        if url is None:
             return match.group(0)
         quote = match.group(2)
-        return f"{match.group(1)}{quote}{entry['url']}{quote}"
+        return f"{match.group(1)}{quote}{url}{quote}"
 
     return IMG_SRC_RE.sub(swap, html)
 
 
+def upload_local_images(
+    client: ZendeskHelpCenter, article: Article, approved: frozenset[str]
+) -> list[str]:
+    """Upload each local image and point its src at the new attachment.
+
+    article.html is rewritten on disk after every upload, so a failure midway
+    leaves the uploaded images as Zendesk urls and a re-run skips them.
+    """
+    if article.article_id is None:
+        raise PublishError(
+            "upload_local_images needs an article_id; create the draft first"
+        )
+    uploaded: list[str] = []
+    for src in check_local_images(article, approved):
+        attachment = client.upload_attachment(article.article_id, article.dir / src)
+        article.html = rewrite_srcs(article.html, {src: attachment["content_url"]})
+        save_html(article)
+        uploaded.append(src)
+    return uploaded
+
+
+def attachment_ids(html: str) -> set[int]:
+    return {int(i) for i in ATTACHMENT_ID_RE.findall(html)}
+
+
+def find_orphans(client: ZendeskHelpCenter, article_id: int, body: str) -> list[int]:
+    """Inline attachment ids on the article that `body` does not reference.
+
+    Non-inline attachments are downloads listed under the article, never
+    referenced from the body, so they are not orphans. Never deleted.
+    """
+    on_article = {
+        int(a["id"])
+        for a in client.list_attachments(article_id)
+        if a.get("inline", True)
+    }
+    return sorted(on_article - attachment_ids(body))
+
+
 def check_overwrite_guard(remote_article: dict, article: Article) -> None:
-    """Abort when Zendesk changed since the last publish this folder knows about."""
+    """Abort when Zendesk changed since this folder was pulled or last published."""
     known = _iso_z(article.last_known_updated_at)
     remote = _iso_z(remote_article.get("updated_at"))
     if known is None:
         raise PublishError(
             "article.yml has an article_id but no last_known_updated_at, so the overwrite "
-            f"guard cannot run. Zendesk reports updated_at {remote}. Confirm the article "
-            "body matches article.html, then set last_known_updated_at to that value."
+            f"guard cannot run. Zendesk reports updated_at {remote}. Run "
+            f"pull({article.article_id}, <new folder>) and redo the edit there."
         )
     if remote != known:
         raise PublishError(
-            "Overwrite guard: the article changed in Zendesk since the last publish. "
-            f"article.yml knows {known}; Zendesk reports {remote}. Someone edited it in the "
-            "editor. Pull their change into article.html and update last_known_updated_at, "
-            "or confirm the overwrite by setting last_known_updated_at to the Zendesk value."
+            "Overwrite guard: the article changed in Zendesk since this folder was "
+            f"pulled. article.yml knows {known}; Zendesk reports {remote}. Someone "
+            "edited it in Guide. Pull into a new folder and redo the edit there, or "
+            "confirm the overwrite by setting last_known_updated_at to the Zendesk value."
         )
 
 
@@ -377,21 +424,14 @@ def backup_translation(translation: dict, backup_dir: Path, article: Article) ->
     return path
 
 
-def verify_readback(translation: dict, article: Article) -> None:
-    if translation.get("title") != article.title:
+def verify_readback(translation: dict, title: str, sent_body: str) -> None:
+    if translation.get("title") != title:
         raise PublishError(
-            f"Read-back title mismatch: sent {article.title!r}, "
+            f"Read-back title mismatch: sent {title!r}, "
             f"stored {translation.get('title')!r}"
         )
-    stored_ids = {
-        int(i) for i in ATTACHMENT_ID_RE.findall(translation.get("body") or "")
-    }
-    expected_ids = {
-        int(article.attachments[src]["id"])
-        for src in local_images(article.html)
-        if src in article.attachments
-    }
-    missing = sorted(expected_ids - stored_ids)
+    stored = attachment_ids(translation.get("body") or "")
+    missing = sorted(attachment_ids(sent_body) - stored)
     if missing:
         raise PublishError(
             f"Read-back: attachment ids {missing} are not in the stored body"
@@ -404,7 +444,6 @@ class PublishResult:
     html_url: str
     draft: bool
     uploaded: list[str]
-    reused: list[str]
     orphaned_ids: list[int]
     backup: Path | None
 
@@ -414,21 +453,31 @@ def publish(
     *,
     live: bool,
     approved_images: frozenset[str] = frozenset(),
-    backup_dir: Path,
+    backup_dir: Path | None = None,
     unpublish: bool = False,
     client: ZendeskHelpCenter | None = None,
 ) -> PublishResult:
     """Create or update the article as a draft; go live only when `live` is True.
 
-    Order: load and check every local image (no network yet); resolve
-    visibility; create draft or fetch and guard; back up; sync images; rewrite
-    srcs in memory; PUT article fields; PUT translation; save state; read back.
+    Order: refuse a folder in the checkout; load and check every local image
+    (no network yet); resolve visibility; create draft or fetch and guard; back
+    up; upload images, rewriting article.html after each; PUT article fields;
+    PUT translation; save state; read back; report orphans.
 
     A live article is never set back to draft unless `unpublish=True`: Zendesk
     has no separate draft of a published article, so `live=False` would take it
     offline for readers.
     """
+    backup_dir = backup_dir or article_dir / "backups"
+    check_workdir(article_dir)
+    check_workdir(backup_dir)
     article = load_article(article_dir)
+    if live and article._raw.get("draft") is True:
+        raise PublishError(
+            f"Article {article.article_id} was a draft when pulled. Publish with "
+            "live=False to keep it a draft. To take it live, delete `draft: true` "
+            "from article.yml and publish with live=True."
+        )
     check_local_images(article, approved_images)
     client = client or client_from_environment()
     segment_id, group_id = resolve_visibility(client, article)
@@ -451,7 +500,6 @@ def publish(
         article.article_id = int(created["id"])
         article.last_known_updated_at = _iso_z(created.get("updated_at"))
         save_state(article)  # a later failure must not create a duplicate on re-run
-        remote = created
     else:
         remote = client.get_article(article.article_id)
         check_overwrite_guard(remote, article)
@@ -464,8 +512,7 @@ def publish(
             )
         backup = backup_translation(current, backup_dir, article)
 
-    report = sync_attachments(client, article, approved_images)
-    body = rewrite_srcs(article.html, article.attachments)
+    uploaded = upload_local_images(client, article, approved_images)
 
     remote = client.update_article(
         article.article_id,
@@ -479,7 +526,8 @@ def publish(
     article.last_known_updated_at = _iso_z(remote.get("updated_at"))
     save_state(article)
     client.update_translation(
-        article.article_id, {"title": article.title, "body": body, "draft": not live}
+        article.article_id,
+        {"title": article.title, "body": article.html, "draft": not live},
     )
     # The translation PUT changes updated_at again. Save before read-back so a
     # read-back failure never leaves the guard blaming someone else's edit.
@@ -487,13 +535,84 @@ def publish(
         client.get_article(article.article_id)["updated_at"]
     )
     save_state(article)
-    verify_readback(client.get_translation(article.article_id), article)
+    verify_readback(
+        client.get_translation(article.article_id), article.title, article.html
+    )
     return PublishResult(
         article_id=article.article_id,
         html_url=str(remote.get("html_url", "")),
         draft=not live,
-        uploaded=report.uploaded,
-        reused=report.reused,
-        orphaned_ids=report.orphaned_ids,
+        uploaded=uploaded,
+        orphaned_ids=find_orphans(client, article.article_id, article.html),
         backup=backup,
     )
+
+
+def pull(
+    article_id: int, workdir: Path, *, client: ZendeskHelpCenter | None = None
+) -> Article:
+    """Seed a working folder from what Zendesk has now, for an edit.
+
+    Writes article.html (the stored body) and article.yml (fields, visibility
+    by name, and the article's updated_at for the overwrite guard). Refuses an
+    existing article.html so in-progress edits survive. Every network call runs
+    before anything is written.
+    """
+    check_workdir(workdir)
+    if (workdir / "article.html").exists():
+        raise PublishError(
+            f"{workdir / 'article.html'} already exists. Pull into a new folder so "
+            "in-progress edits are not lost."
+        )
+    client = client or client_from_environment()
+    remote = client.get_article(article_id)
+    segment_ids = remote.get("user_segment_ids") or []
+    if len(segment_ids) > 1:
+        raise PublishError(
+            f"Article {article_id} is visible to {len(segment_ids)} user segments "
+            f"{segment_ids}. The publisher sets one segment and would drop the rest; "
+            "change this article's visibility in Guide instead."
+        )
+    translation = client.get_translation(article_id)
+    segment_id = remote.get("user_segment_id")
+    if segment_id is None:
+        segment = EVERYONE
+    else:
+        segment = _name_by_id(client.user_segments(), segment_id, "user segment")
+    group = _name_by_id(
+        client.permission_groups(), remote["permission_group_id"], "permission group"
+    )
+    meta = {
+        "title": translation["title"],
+        "section_id": remote["section_id"],
+        "author_id": remote["author_id"],
+        "labels": list(remote.get("label_names") or []),
+        "user_segment": segment,
+        "permission_group": group,
+        "article_id": article_id,
+        "last_known_updated_at": _iso_z(remote["updated_at"]),
+        "draft": bool(translation.get("draft")),
+    }
+    workdir.mkdir(parents=True, exist_ok=True)
+    (workdir / "article.yml").write_text(yaml.safe_dump(meta, sort_keys=False))
+    (workdir / "article.html").write_text(translation.get("body") or "")
+    return load_article(workdir)
+
+
+def preview(workdir: Path) -> Path:
+    """Wrap article.html in the design system's sample shell. No network.
+
+    Zendesk-hosted images render only if the browser's signed-in Zendesk
+    session reaches them from the preview's origin; text and layout always do.
+    """
+    check_workdir(workdir)
+    article = load_article(workdir)
+    shell = SHELL_PATH.read_text()
+    start = shell.index(BODY_OPEN) + len(BODY_OPEN)
+    end = shell.index(SIDE_OPEN)
+    page = f"{shell[:start]}\n{article.html}\n    </div>\n    {shell[end:]}"
+    heading = f'<h1 class="hc-title">{escape(article.title)}</h1>'
+    page = HC_TITLE_RE.sub(lambda _match: heading, page, count=1)
+    out = workdir / "preview.html"
+    out.write_text(page)
+    return out
