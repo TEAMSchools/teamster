@@ -51,11 +51,17 @@ with
      include them, so they cannot be read here yet. Padded null rather than
      defaulted, because null is the honest value for "not available to this
      model" — see the TODO below.
-     TODO(#4753): stage the three columns through the cambium package and
-     int_cambium__all_assessments, then read them here. 33 IGNITE students in
-     SY2025-2026 carry ml_accommodation = 'Y' and are reported null today.
-     Note iep_exempt_from_passing is NOT the Pearson Y/N flag: Cambium uses
-     N plus the codes B, E and M, so a '= Y' test would never fire. */
+     TODO(#4753): stage the accommodation columns through the cambium package
+     and int_cambium__all_assessments, then read them here. 486 of the 901
+     IGNITE students on the SY2025-2026 NJSLA carry at least one accommodation
+     and are reported null today. Three traps when wiring it: the columns have
+     per-column value semantics rather than a shared one, so a blanket
+     not-null test is wrong (speech_to_text_and_word_prediction is 'N' or 'S'
+     on every row while its neighbours are null-or-set); iep_exempt_from_passing
+     is about the graduation passing requirement, not exemption from sitting
+     the test, so not_tested_code and void_score_code are the fields
+     Mathematica's exemption_* actually describes; and math accommodations for
+     this cohort live in the EOC file, not this one. */
     cambium as (
         select
             student_number,

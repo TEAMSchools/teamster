@@ -432,12 +432,17 @@ Confirm access before a file is ready rather than after.
    File — but `stg_cambium__njsla` projects 28 of that file's 228 columns and
    does not include them, so they are unreachable downstream today. Every
    SY2025-2026 row is therefore null on all four accommodation and exemption
-   columns, which understates the truth for 33 IGNITE students carrying
-   `ml_accommodation = 'Y'`. Wiring them through is a cross-project change: the
-   columns must be added to the cambium package and
-   `int_cambium__all_assessments`, and reach kipptaf only after a district prod
-   rebuild. It also needs a mapping rather than a passthrough, because Cambium
-   redefined the exemption field from Pearson's `Y`/`N` flag to `N` plus the
-   codes `B`, `E` and `M`, so a `= 'Y'` test would never fire. Separately,
-   confirm whether Mathematica would rather have a blank than a zero where no
-   answer exists at all.
+   columns. That understates the truth for **486 of the 901** IGNITE students
+   who sat the SY2025-2026 NJSLA, each carrying at least one accommodation and
+   some as many as seven — `text_to_speech` on 286, `frequent_breaks` and
+   `small_group_testing` on 101 each, `extended_time` on 99. The file also
+   carries roughly thirty individually named accommodation columns, which is
+   exactly the "multiple variables" Mathematica anticipates for `accom_code_*`,
+   so that family is fillable too rather than absent for want of a code. Wiring
+   them through is a cross-project change: the columns must be added to the
+   cambium package and `int_cambium__all_assessments`, and reach kipptaf only
+   after a district prod rebuild. It also needs a mapping rather than a
+   passthrough, because Cambium redefined the exemption field from Pearson's
+   `Y`/`N` flag to `N` plus the codes `B`, `E` and `M`, so a `= 'Y'` test would
+   never fire. Separately, confirm whether Mathematica would rather have a blank
+   than a zero where no answer exists at all.
