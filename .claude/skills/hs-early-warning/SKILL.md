@@ -30,8 +30,9 @@ from three independent extracts. The reference doc is the manual:
   for the workbook.
 - Miami is out of scope for graduation pathways
   (`rpt_tableau__graduation_requirements` filters `region != 'Miami'`). The
-  early warning and community service extracts have no region filter; Miami
-  appears once it has high school rows.
+  early warning and community service extracts have no region filter. Miami Tech
+  is on Community Service but not on Early Warning, because it has no reporting
+  term rows (see `early-warning.md`).
 - The extracts are student-level PII. Rows stay in the terminal and the session
   scratchpad; commits, PRs and docs get aggregates without small cells.
 - Walters owns the family (from 2026-09-30).

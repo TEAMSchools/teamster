@@ -6,6 +6,10 @@ near the end of the school year. The data team turns them into PowerSchool Quick
 Import files. There is no pipeline: the model only ever reads the resulting
 `ps_grad_path_code`, and never overrides an `N`.
 
+Only Newark and Camden have high schools today, so the script accepts only those
+two regions. When Paterson's first class reaches grade 12, add `Paterson` to
+`REGIONS` in the script and a third `--pdf` here.
+
 The Portfolio Data folder on the data team's shared drive holds one
 `SY<yy>-<yy> Portfolio` subfolder per year with that year's PDFs. Ask the data
 team for the link. The folder also holds the Portfolio Converter Excel workbook
@@ -34,10 +38,13 @@ script below replaces both; do not use them.
    through `kipptaf_extracts.int_extracts__student_enrollments`, and writes
    `<Region> - ELA.tsv` and `<Region> - Math.tsv`. It prints counts only.
 
-3. Read its output. A non-zero exit means stop: an outcome other than
-   `Approved`/`NA` (NJDOE changed the wording), a state ID with no PowerSchool
-   student, or a student who resolves to the other region. Settle each with the
-   C3 team before importing; never hand-edit the TSVs to make it pass.
+3. Read its output. It writes no files when anything is wrong, and deletes any
+   earlier output in `--out`. A non-zero exit means stop: a PDF whose table
+   header is not name, state ID, ELA, Mathematics (NJDOE changed the layout), an
+   outcome other than `Approved`/`NA` (NJDOE changed the wording), a state ID
+   with no PowerSchool student, or a student who resolves to the other region.
+   Settle each with the C3 team before importing; never hand-edit the TSVs to
+   make it pass.
 4. Put the four TSVs in that year's Drive subfolder, so the user can reach them
    from the PowerSchool browser session. Delete them from the scratchpad once
    imported.

@@ -120,8 +120,8 @@ models:
       - name: enroll_status
         data_type: int64
         description: >-
-          PowerSchool enrollment status. Not filtered here, so consumers that
-          want only actively enrolled students filter on 0 themselves.
+          PowerSchool enrollment status. Always 0 here, because the model keeps
+          only currently enrolled students.
       - name: assessment_version
         data_type: string
         description: >-

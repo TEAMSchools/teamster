@@ -28,6 +28,10 @@ import pdfplumber
 from google.cloud import bigquery
 
 SUBJECTS = {"ELA": 2, "Math": 3}  # PDF column index per subject
+# Expected start of each header cell; a layout change stops the run rather than
+# silently swapping ELA and Math.
+HEADER = ("Student Name", "State Student", "ELA", "Mathematics")
+REGIONS = {"Newark", "Camden"}
 KNOWN_OUTCOMES = {"Approved", "NA"}
 SID = re.compile(r"^\d{10}$")
 
@@ -38,23 +42,29 @@ where state_studentnumber in unnest(@sids) and rn_year = 1
 """
 
 
-def read_pdf(path: pathlib.Path) -> list[tuple[str, dict[str, str]]]:
-    """Return (state id, {subject: outcome}) for every data row in the PDF."""
+def read_pdf(path: pathlib.Path) -> tuple[list[tuple[str, dict[str, str]]], int]:
+    """Return (state id, {subject: outcome}) per data row, and the count of
+    tables whose header does not match HEADER."""
     rows = []
+    bad_headers = 0
     with pdfplumber.open(path) as pdf:
         for page in pdf.pages:
             for table in page.extract_tables():
-                for cells in table:
-                    if len(cells) < 4:
-                        continue
+                header = [(c or "").strip() for c in table[0]] if table else []
+                if len(header) != len(HEADER) or not all(
+                    h.startswith(e) for h, e in zip(header, HEADER, strict=True)
+                ):
+                    bad_headers += 1
+                    continue
+                for cells in table[1:]:
                     sid = (cells[1] or "").strip()
                     if not SID.match(sid):
-                        continue  # repeated header row on each page
+                        continue
                     outcomes = {
                         s: (cells[i] or "").strip() for s, i in SUBJECTS.items()
                     }
                     rows.append((sid, outcomes))
-    return rows
+    return rows, bad_headers
 
 
 def lookup(sids: list[str]) -> dict[str, tuple[int, str]]:
@@ -96,13 +106,18 @@ def main() -> int:
     )
     parser.add_argument("--out", required=True, type=pathlib.Path)
     args = parser.parse_args()
-    args.out.mkdir(parents=True, exist_ok=True)
 
     problems = 0
+    outputs: dict[pathlib.Path, tuple[str, list[int]]] = {}
     for spec in args.pdf:
         region, _, path = spec.partition("=")
-        rows = read_pdf(pathlib.Path(path))
+        if region not in REGIONS or not path:
+            parser.error(f"--pdf must be REGION=PATH with REGION in {sorted(REGIONS)}")
+        rows, bad_headers = read_pdf(pathlib.Path(path))
         print(f"== {region}: {len(rows)} students in the PDF")
+        if bad_headers:
+            print(f"  STOP: {bad_headers} table(s) with an unexpected header")
+            problems += 1
 
         outcomes = collections.Counter(o for _, per in rows for o in per.values())
         unknown = set(outcomes) - KNOWN_OUTCOMES
@@ -131,13 +146,22 @@ def main() -> int:
                 for s, per in rows
                 if per[subject] == "Approved" and s in ids and ids[s][1] == region
             ]
-            out = args.out / f"{region} - {subject}.tsv"
-            write_tsv(out, subject, approved)
-            print(f"  {subject}: {len(approved)} approved -> {out.name}")
+            outputs[args.out / f"{region} - {subject}.tsv"] = (subject, approved)
+            print(f"  {subject}: {len(approved)} approved")
 
     if problems:
-        print(f"{problems} problem(s): fix before importing into PowerSchool")
-    return 1 if problems else 0
+        # Remove every earlier output so a short or stale file cannot be imported.
+        for region in REGIONS:
+            for subject in SUBJECTS:
+                (args.out / f"{region} - {subject}.tsv").unlink(missing_ok=True)
+        print(f"{problems} problem(s): no files written; fix before importing")
+        return 1
+
+    args.out.mkdir(parents=True, exist_ok=True)
+    for out, (subject, approved) in outputs.items():
+        write_tsv(out, subject, approved)
+        print(f"wrote {out.name}")
+    return 0
 
 
 if __name__ == "__main__":
