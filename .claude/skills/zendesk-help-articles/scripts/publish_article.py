@@ -37,7 +37,11 @@ REPO_ROOT = Path(__file__).resolve().parents[4]
 IMG_SRC_RE = re.compile(
     r"(<img\b[^>]*?(?<![-\w])src=)([\"'])([^\"']+)\2", re.IGNORECASE
 )
-ATTACHMENT_ID_RE = re.compile(r"/hc/article_attachments/(\d+)")
+# Full content_url, the shortened relative form, and the locale-prefixed form
+# (/hc/en-us/article_attachments/<id>) that older articles may carry.
+ATTACHMENT_ID_RE = re.compile(
+    r"/hc/(?:[a-z]{2}(?:-[a-z]{2})?/)?article_attachments/(\d+)", re.IGNORECASE
+)
 
 
 class PublishError(Exception):
@@ -186,6 +190,17 @@ class ZendeskHelpCenter:
             f"/help_center/articles/{article_id}/translations/{LOCALE}.json",
             json={"translation": translation},
         )["translation"]
+
+    def list_attachments(self, article_id: int) -> list[dict]:
+        """Every attachment on the article, following next_page."""
+        path: str | None = f"/help_center/articles/{article_id}/attachments.json"
+        items: list[dict] = []
+        while path:
+            page = self._call("GET", path)
+            items.extend(page["article_attachments"])
+            next_page = page.get("next_page")
+            path = next_page.removeprefix(self.base) if next_page else None
+        return items
 
     def upload_attachment(self, article_id: int, path: Path) -> dict:
         """Upload one inline attachment.
@@ -359,6 +374,16 @@ def rewrite_srcs(html: str, attachments: dict[str, dict]) -> str:
         return f"{match.group(1)}{quote}{entry['url']}{quote}"
 
     return IMG_SRC_RE.sub(swap, html)
+
+
+def attachment_ids(html: str) -> set[int]:
+    return {int(i) for i in ATTACHMENT_ID_RE.findall(html)}
+
+
+def find_orphans(client: ZendeskHelpCenter, article_id: int, body: str) -> list[int]:
+    """Attachment ids on the article that `body` does not reference. Never deleted."""
+    on_article = {int(a["id"]) for a in client.list_attachments(article_id)}
+    return sorted(on_article - attachment_ids(body))
 
 
 def check_overwrite_guard(remote_article: dict, article: Article) -> None:
