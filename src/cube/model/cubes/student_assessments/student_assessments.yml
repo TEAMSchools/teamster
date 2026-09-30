@@ -41,16 +41,16 @@ cubes:
 
       - name: assessment_type
         description: >-
-          Source-system category. Values that currently carry scores on the
-          assessment-scores view: illuminate (internal interims), iready,
+          Source-system category. Values that currently carry scores in the
+          enrollment-scoped scores fact: illuminate (internal interims), iready,
           dibels, star, and the state assessments state_nj_njsla,
           state_nj_njsla_science, state_nj_njgpa, state_fl_fast,
-          state_fl_science, state_fl_eoc. Other categories exist upstream
-          (college, ap, state_nj_parcc, state_fl_fsa, plus _unknown fallbacks)
-          but carry no scores on this view today; treat this list as current,
-          not closed. From spring 2026, NJSLA and NJGPA are computer-adaptive,
-          and no field separates adaptive from fixed-form scores. NJSLA Science
-          did not change.
+          state_fl_science, state_fl_eoc. Values with no scores there today:
+          college (SAT, ACT and PSAT, Official and Practice), ap,
+          state_nj_parcc, state_fl_fsa, and the _unknown fallbacks. Treat both
+          lists as current, not closed. From spring 2026, NJSLA and NJGPA are
+          computer-adaptive, and no field separates adaptive from fixed-form
+          scores. NJSLA Science did not change.
         sql: "{CUBE}.`type`"
         type: string
         public: true

@@ -106,6 +106,7 @@ def score_record(prompt: dict[str, Any], result: dict[str, Any]) -> dict[str, An
             "trap_fired": traps.TRAPS[prompt["trap"]](
                 view_queries, result.get("final_text") or ""
             ),
+            "n_view_queries": len(view_queries),
             "error": result.get("error"),
         }
     gt = prompt.get("ground_truth_start")
@@ -155,7 +156,13 @@ def _wilson(k: int, n: int) -> tuple[float, float, float]:
 
 def _trap_scorable(rec: dict[str, Any]) -> bool:
     error = rec.get("error")
-    return not error or "maximum number of turns" in str(error)
+    if error and "maximum number of turns" not in str(error):
+        return False
+    import traps  # local import: traps imports _flatten_filters from here
+
+    if rec.get("trap") in traps.ANSWER_SCORED:
+        return True
+    return rec.get("n_view_queries", 1) > 0
 
 
 def aggregate(records: list[dict[str, Any]]) -> dict[tuple[str, str], dict[str, Any]]:
@@ -166,9 +173,11 @@ def aggregate(records: list[dict[str, Any]]) -> dict[tuple[str, str], dict[str, 
 
     summary: dict[tuple[str, str], dict[str, Any]] = {}
     for key, recs in cells.items():
-        # A harness cutoff (session limit, crash) leaves no queries, so every
-        # trap predicate reads it as fired. Hitting the turn limit is the
-        # model's own doing and its queries were captured, so it still scores.
+        # A query-scored trap needs a query on the view: with none, 4 of the 6
+        # predicates read a pass and 2 a fire, so the outcome means nothing. A
+        # harness cutoff (session limit, crash) is dropped for the same reason.
+        # Hitting the turn limit is the model's own doing and its queries were
+        # captured, so it still scores.
         trap_recs = [r for r in recs if "trap" in r]
         trapped = [r for r in trap_recs if _trap_scorable(r)]
         year = [r for r in recs if "trap" not in r]

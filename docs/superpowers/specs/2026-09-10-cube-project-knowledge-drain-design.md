@@ -808,11 +808,11 @@ agrees. Run 2026-09-29, 7 prompts, 3 reps, 21 conversations per arm.
 
 Trap rate over all 7 traps, with Wilson 95% intervals:
 
-| Arm        | Haiku         | Sonnet             |
-| ---------- | ------------- | ------------------ |
-| `A4_pre`   | 28.6% [14–50] | 23.8% [11–45]      |
-| `B4_post`  | 4.8% [1–23]   | 0.0% [0–15]        |
-| `C4_skill` | 14.3% [5–35]  | 0.0% [0–39], n = 6 |
+| Arm        | Haiku                | Sonnet             |
+| ---------- | -------------------- | ------------------ |
+| `A4_pre`   | 28.6% [14–50]        | 23.8% [11–45]      |
+| `B4_post`  | 4.8% [1–23]          | 0.0% [0–15]        |
+| `C4_skill` | 15.0% [5–36], n = 20 | 0.0% [0–39], n = 6 |
 
 - **What B fixed.** On Haiku, `null_via_equals` went from 3 of 3 to 0 and
   `most_recent_not_named_round` from 3 of 3 to 1. On Sonnet,
@@ -841,12 +841,24 @@ Round 1 changed 2 things at once, so its effect is not attributed to either:
 - **The text.** `proficiency_level`, `administration_period` and `date_taken`
   gained the `notSet` and "latest named round" wording.
 
-The scorer was amended after the Sonnet run and before these numbers were
-written: a conversation the harness cut off with an error, other than the
-12-turn limit, is left out of the trap rate. A cutoff made no queries, and every
-trap predicate reads no queries as a fire. It changes only arm C's Sonnet row.
-Conversations that hit the turn limit still score, because their queries were
-captured (2 in A and 3 in B on Sonnet).
+The scorer was amended twice after the Sonnet run, before these numbers were
+written. Neither change moves arm A or B:
+
+- A conversation the harness cut off with an error, other than the 12-turn
+  limit, is left out of the trap rate. This drops 15 of arm C's Sonnet
+  conversations. Conversations that hit the turn limit still score, because
+  their queries were captured (2 in A and 3 in B on Sonnet).
+- A query-scored trap on a conversation that never queried the view is left out.
+  With no query, 4 of the 6 query predicates read a pass and 2 a fire, so the
+  outcome means nothing. This drops 1 of arm C's Haiku conversations. Every A
+  and B conversation queried the view on both models.
+
+The final code review then found the round-1 `proficiency_level` sentence wrong
+for DIBELS: DIBELS rows with no verdict carry `Tested Out`, not null, so
+`notSet` finds almost none of them. The sentence now scopes `notSet` to STAR and
+sends "no verdict" to `is_mastery`. The run above measured the text before that
+fix; the `null_via_equals` prompt asks about STAR, so its trap reads the same
+guidance either way.
 
 Raw records: `src/cube/mcp/eval/out/family4_{haiku,sonnet}_r1.jsonl`
 (gitignored, local only).

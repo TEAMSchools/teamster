@@ -35,9 +35,9 @@ cubes:
           outside the 3 windows. STAR: Fall, Winter, Spring. NJGPA: Fall (the
           routine retake window) and Spring. NJSLA and NJSLA Science: Spring. FL
           FAST: PM1 to PM3; FL end-of-course and science: PM3. College: the
-          College Board round. Every source except Illuminate. i-Ready and
-          DIBELS EOY falls after spring state testing; MOY is the last named
-          round before it.
+          College Board round. Null for Illuminate and AP. i-Ready and DIBELS
+          EOY falls after spring state testing; MOY is the last named round
+          before it.
         sql: administration_period
         type: string
         public: true

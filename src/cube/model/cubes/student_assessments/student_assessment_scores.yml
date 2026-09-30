@@ -97,9 +97,10 @@ cubes:
           ai_context: >-
             On Illuminate standard and group rows, a band can carry more than
             one label spelling; group by performance_band_label_number there.
-            For rows with no proficiency level (a share of STAR rows, and DIBELS
-            rows with no verdict), filter it with notSet; equals "null" matches
-            the literal string and returns zero rows.
+            For STAR rows with no proficiency level, filter it with notSet;
+            equals "null" matches the literal string and returns zero rows.
+            DIBELS rows with no verdict carry Tested Out here, not null. To find
+            every row with no verdict, filter is_mastery with notSet.
 
       - name: performance_band_label_number
         description: >-
@@ -284,7 +285,8 @@ cubes:
         meta:
           ai_context: >-
             Heavier than the plain counts, and has timed out at standard grain;
-            use count_taken there.
+            use count_taken there, and report it as assessments taken, not
+            students.
 
       - name: _sum_proficient
         description: >-

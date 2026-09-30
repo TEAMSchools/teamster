@@ -617,3 +617,18 @@ PHRASES["student_assessment_scores.date_taken"] = PHRASES.get(
 PHRASES["student_assessment_administrations.administration_period"].remove(
     "not the max date_taken"
 )
+
+
+# --- Final review fixes -------------------------------------------------------
+PHRASES["student_assessment_scores.proficiency_level"].append(
+    "DIBELS rows with no verdict carry Tested Out"
+)
+PHRASES["student_assessment_scores.count_students"].append(
+    "report it as assessments taken, not students"
+)
+PHRASES["student_assessment_administrations.administration_period"].append(
+    "Null for Illuminate and AP"
+)
+PHRASES["student_assessments.assessment_type"].append(
+    "college (SAT, ACT and PSAT, Official and Practice)"
+)

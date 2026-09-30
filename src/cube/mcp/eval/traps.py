@@ -100,6 +100,8 @@ def is_paterson_query(query: dict[str, Any]) -> bool:
     )
 
 
+ANSWER_SCORED = {"paterson_zero_as_failure"}
+
 TRAPS: dict[str, Callable[[list[dict[str, Any]], str], bool]] = {
     "grade_filter_on_vendor": grade_filter_on_vendor,
     "null_via_equals": null_via_equals,

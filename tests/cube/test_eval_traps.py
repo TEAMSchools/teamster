@@ -176,6 +176,23 @@ def test_aggregate_drops_harness_errors_but_keeps_turn_limits():
     assert cell["n_unscored"] == 1
 
 
+def test_a_query_trap_with_no_view_query_is_not_scored():
+    # With no query, 4 of the 6 query predicates read a pass and 2 a fire,
+    # so neither outcome means anything. The answer-scored trap still scores.
+    query_trap = {"id": "q", "family": 4, "trap": "formative_alone"}
+    answer_trap = {"id": "a", "family": 4, "trap": "paterson_zero_as_failure"}
+    empty = {"load_queries": [], "final_text": "Paterson has no i-Ready data."}
+    recs = [
+        scorer.score_record(p, empty) | {"model": "haiku", "arm": "C4_skill"}
+        for p in (query_trap, answer_trap)
+    ]
+    assert recs[0]["n_view_queries"] == 0
+    cell = scorer.aggregate(recs)[("haiku", "C4_skill")]
+    assert cell["n_trap"] == 1
+    assert cell["n_unscored"] == 1
+    assert cell["trap_rate"][0] == 0.0
+
+
 _COMPILER = (
     Path(__file__).resolve().parents[2]
     / "src"

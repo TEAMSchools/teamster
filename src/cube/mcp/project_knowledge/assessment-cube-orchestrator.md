@@ -179,10 +179,9 @@ leadership:
   assessments AppSheet app, not a policy one; until it is answered, do not
   expand the codes
 
-Some individual fields also carry their own narrower open question (for example,
-which count measure is the default for a count/share question) — those are
-called out in that member's `ai_context` in `meta`; flag them the same way when
-you hit one.
+Some members also name a narrower open question in their `meta` text: for
+example, `academic_subject` on K-2 Text Study, and the view on which repeat
+i-Ready sitting counts. Flag them the same way when you hit one.
 
 ## Modeling, projections, and deliverables
 

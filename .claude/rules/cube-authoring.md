@@ -120,8 +120,9 @@ and diagnostics are in the `cube-ops` skill.
   `<column>` or `` {CUBE}.`<column>` ``, its `description:` equals that dbt
   column's `description:`, and the pair is registered in `TWINS` in
   `tests/cube/test_cube_schema.py`, which fails on any difference. Edit both
-  sides together; dbt-only engineering notes (lineage, hash roles) go in YAML
-  comments beside the dbt column.
+  sides together, then run `uv run pytest tests/cube/`: CI does not run these
+  tests, so a drifted twin merges unless you do. dbt-only engineering notes
+  (lineage, hash roles) go in YAML comments beside the dbt column.
 - **Where a new fact goes.** Work down the list and stop at the first match: (1)
   a point-in-time number: delete it or say it qualitatively; (2) process or
   unratified policy: the project-knowledge markdown, and Cube may say only that
