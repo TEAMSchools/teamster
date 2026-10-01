@@ -62,6 +62,9 @@ views:
           - pct_tardy
           - pct_ontime
           - count_absent_days
+          - count_present_days
+          - count_tardy_days
+          - count_membership_days
           - attendance_date
           - attendance_code
           - attendance_category

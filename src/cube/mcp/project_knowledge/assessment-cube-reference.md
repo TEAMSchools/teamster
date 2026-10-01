@@ -50,7 +50,8 @@ Apply to every assessment source unless a source section overrides them.
   `count_scored` beside the rate: it is the n the rate rests on. Do NOT multiply
   the rate by `count_assigned` to recover a proficient headcount — that
   overstates it wherever rows carry no verdict, worst on STAR, because
-  `count_assigned` counts those rows too. `scale_score`, `percent_correct`,
+  `count_assigned` counts those rows too. For "how many were proficient", query
+  `count_proficient`, the rate's numerator. `scale_score`, `percent_correct`,
   `avg_scale_score`, and `avg_percent_correct` are scope-bound — meaningful only
   within one source/subject/grade; pooling them across sources returns a
   valid-looking but meaningless number. Use `pct_proficient` / `is_mastery` for

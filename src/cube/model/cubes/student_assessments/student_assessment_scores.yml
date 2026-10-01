@@ -232,6 +232,16 @@ cubes:
           - sql: "{student_assessments.assessment_key} IS NOT NULL"
           - sql: "{regions.region_key} IS NOT NULL"
 
+      - name: count_proficient
+        description: >-
+          Assessments where the student met the proficiency threshold — the
+          numerator of pct_proficient, whose denominator is count_scored. Use
+          this for "how many were proficient" rather than multiplying
+          pct_proficient by a count.
+        sql: "{_sum_proficient}"
+        type: number
+        public: true
+
       - name: pct_taken
         description: >-
           Grain: recomputes at any query grain, but meaningful only within

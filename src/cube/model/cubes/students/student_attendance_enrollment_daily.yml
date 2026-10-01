@@ -288,6 +288,16 @@ cubes:
           - sql: "{CUBE}.membership_value = 1"
           - sql: "{CUBE}.attendance_value IS NOT NULL"
 
+      - name: count_membership_days
+        description: >-
+          Full-membership days (membership_value = 1) with a recorded attendance
+          value — the "possible days" denominator of avg_daily_attendance. Days
+          with no recorded attendance are excluded, matching ADA. Pair with
+          count_present_days.
+        sql: "{_sum_membership_value}"
+        type: number
+        public: true
+
       - name: avg_daily_attendance
         description: >-
           Average Daily Attendance (ADA) — attendance value summed over full
@@ -319,6 +329,25 @@ cubes:
         filters:
           - sql: "{CUBE}.membership_value = 1"
           - sql: "{CUBE}.is_absent = 0"
+
+      - name: count_present_days
+        description: >-
+          Full-membership days (membership_value = 1) on which the student was
+          not absent — the denominator of pct_tardy and pct_ontime. Each such
+          day carries attendance_value 1, so this is also the numerator of
+          avg_daily_attendance: count_present_days / count_membership_days is
+          ADA.
+        sql: "{_count_present_days}"
+        type: number
+        public: true
+
+      - name: count_tardy_days
+        description: >-
+          Tardy days among full-membership days with a recorded attendance value
+          — the numerator of pct_tardy, whose denominator is count_present_days.
+        sql: "{_sum_tardy}"
+        type: number
+        public: true
 
       - name: pct_tardy
         description: >-
