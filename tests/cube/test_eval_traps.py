@@ -210,6 +210,111 @@ def test_a_query_trap_with_no_view_query_is_not_scored():
     assert cell["trap_rate"][0] == 0.0
 
 
+def _pooled_wilson(k, n):
+    """The pre-clustering interval: one Wilson over every record as independent."""
+    z = 1.96
+    p = k / n
+    denom = 1 + z * z / n
+    center = (p + z * z / (2 * n)) / denom
+    half = z * (p * (1 - p) / n + z * z / (4 * n * n)) ** 0.5 / denom
+    return (p, max(0.0, center - half), min(1.0, center + half))
+
+
+def _trap_cell(fired_by_prompt, reps):
+    """Trap records for one cell: each prompt id fires (or not) on every rep."""
+    return [
+        {
+            "model": "haiku",
+            "arm": "B4_post",
+            "id": pid,
+            "rep": rep,
+            "family": 4,
+            "trap": "t",
+            "trap_fired": fired,
+            "ground_truth_start": None,
+            "error": None,
+        }
+        for pid, fired in fired_by_prompt.items()
+        for rep in range(reps)
+    ]
+
+
+# 7 prompts, as in prompts_assessment.yaml: 3 always fire, 4 never do.
+_SPLIT = {f"p{i}": i < 3 for i in range(7)}
+
+
+def test_more_reps_of_the_same_prompts_do_not_narrow_the_trap_interval():
+    def width(reps):
+        _, lo, hi = scorer.aggregate(_trap_cell(_SPLIT, reps))[("haiku", "B4_post")][
+            "trap_rate"
+        ]
+        return hi - lo
+
+    # Identical reps add no information about a new prompt, so the width holds.
+    assert width(10) == pytest.approx(width(3))
+    # The pooled interval treated those 70 records as independent and shrank.
+    _, lo_old, hi_old = _pooled_wilson(30, 70)
+    assert width(10) > 2 * (hi_old - lo_old)
+
+
+def test_reps_that_agree_within_a_prompt_widen_the_interval():
+    cell = scorer.aggregate(_trap_cell(_SPLIT, 3))[("haiku", "B4_post")]
+    p, lo, hi = cell["trap_rate"]
+    p_old, lo_old, hi_old = _pooled_wilson(9, 21)
+    assert p == p_old
+    assert hi - lo > hi_old - lo_old
+
+
+def test_aggregate_reports_cluster_counts():
+    cell = scorer.aggregate(_trap_cell(_SPLIT, 3))[("haiku", "B4_post")]
+    assert cell["n_trap"] == 21
+    assert cell["k_trap"] == 7
+
+
+def test_point_rates_match_the_pooled_rate():
+    # Uneven reps per prompt: the point rate is still k / n over records.
+    recs = _trap_cell({"a": True, "b": False}, 2) + _trap_cell({"c": True}, 5)
+    p, _, _ = scorer.aggregate(recs)[("haiku", "B4_post")]["trap_rate"]
+    assert p == _pooled_wilson(7, 9)[0]
+
+
+def test_year_family_rates_cluster_on_prompt_id():
+    def rec(pid, wrong, rep):
+        return {
+            "model": "sonnet",
+            "arm": "A",
+            "id": pid,
+            "rep": rep,
+            "family": 1,
+            "ground_truth_start": 2025,
+            "wrong": wrong,
+            "correct": not wrong,
+            "no_query": False,
+            "silent_wrong": wrong,
+            "error": None,
+        }
+
+    recs = [rec(f"y{i}", i < 2, rep) for i in range(6) for rep in range(4)]
+    cell = scorer.aggregate(recs)[("sonnet", "A")]
+    assert cell["k_determinate"] == 6
+    p, lo, hi = cell["wrong_rate"]
+    _, lo_old, hi_old = _pooled_wilson(8, 24)
+    assert p == pytest.approx(1 / 3)
+    assert hi - lo > hi_old - lo_old
+
+
+def test_a_single_prompt_gives_no_interval():
+    # One cluster: the between-prompt variance is unestimable.
+    cell = scorer.aggregate(_trap_cell({"a": True}, 5))[("haiku", "B4_post")]
+    assert cell["trap_rate"] == (1.0, 0.0, 1.0)
+
+
+def test_t_quantile_matches_published_values():
+    # Student-t 0.975 quantiles from standard tables.
+    for df, t in [(1, 12.706), (6, 2.447), (20, 2.086), (120, 1.980)]:
+        assert scorer._t_inv_cdf(0.975, df) == pytest.approx(t, abs=1e-3)
+
+
 _COMPILER = (
     Path(__file__).resolve().parents[2]
     / "src"

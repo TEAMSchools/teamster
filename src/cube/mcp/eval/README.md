@@ -79,7 +79,21 @@ but do not gate.
 
 Determinate prompts: `wrong_rate`, `silent_wrong_rate` (wrong **and** no
 interpretation echoed), `correct_rate`, `no_query_rate`. Ambiguous prompts:
-`disambig_rate`. Rates are reported with Wilson 95% intervals.
+`disambig_rate`. Family 4: `trap_rate`.
+
+Every rate is reported with a 95% Wilson interval clustered on prompt id. Reps
+of one prompt are correlated, so the independent unit is the prompt, not the
+rep, and adding reps does not narrow the interval the way adding prompts does.
+The interval uses the Korn-Graubard effective sample size and a Student-t
+critical value with `prompts - 1` degrees of freedom, ported from Inspect AI's
+`ci_wilson(cluster=...)`. The summary table prints `n/k` (records / prompts)
+beside each family.
+
+With 7 trap prompts the intervals are rough, and they are wide: expect 40 to 70
+points across at mid-range rates. At a rate of exactly 0% or 100% the method
+cannot estimate the correlation between reps, so the interval reflects only the
+small prompt count and is likely too narrow. The pass rule compares point rates,
+so the intervals inform the reading of a result but do not gate it.
 
 ## Two runners
 

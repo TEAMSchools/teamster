@@ -776,10 +776,10 @@ before merge confirms the pointer's key names match what `/meta` returns.
 
 | Arm          | Wrong year (95% interval) | Correct | No query |
 | ------------ | ------------------------- | ------- | -------- |
-| `F0_none`    | 28.3% [19–41]             | 71.7%   | 0%       |
-| `F1_desc`    | 0.0% [0–6]                | 100%    | 0%       |
-| `F2_ctx`     | 1.7% [0–9]                | 96.7%   | 1.7%     |
-| `F3_ctx_ptr` | 0.0% [0–6]                | 96.7%   | 3.3%     |
+| `F0_none`    | 28.3% [16–45]             | 71.7%   | 0%       |
+| `F1_desc`    | 0.0% [0–7]                | 100%    | 0%       |
+| `F2_ctx`     | 1.7% [0–10]               | 96.7%   | 1.7%     |
+| `F3_ctx_ptr` | 0.0% [0–7]                | 96.7%   | 3.3%     |
 
 - There is headroom: with no guidance, Haiku gets the year wrong 28% of the
   time. Guidance in any of the 3 placements takes that to about zero, and the 3
@@ -806,13 +806,14 @@ assessment view's entry from 47,216 to 55,652 (+17.9%).
 Arm B passes rule 1 on Haiku after 1 revision round. The Sonnet report run
 agrees. Run 2026-09-29, 7 prompts, 3 reps, 21 conversations per arm.
 
-Trap rate over all 7 traps, with Wilson 95% intervals:
+Trap rate over all 7 traps, with Wilson 95% intervals clustered on prompt (see
+the 2026-10-01 revision below):
 
 | Arm        | Haiku                | Sonnet             |
 | ---------- | -------------------- | ------------------ |
-| `A4_pre`   | 28.6% [14–50]        | 23.8% [11–45]      |
-| `B4_post`  | 4.8% [1–23]          | 0.0% [0–15]        |
-| `C4_skill` | 10.0% [3–30], n = 20 | 0.0% [0–39], n = 6 |
+| `A4_pre`   | 28.6% [6–73]         | 23.8% [5–67]       |
+| `B4_post`  | 4.8% [1–30]          | 0.0% [0–22]        |
+| `C4_skill` | 10.0% [2–36], n = 20 | 0.0% [0–76], n = 6 |
 
 - **What B fixed.** On Haiku, `null_via_equals` went from 3 of 3 to 0 and
   `most_recent_not_named_round` from 3 of 3 to 1. On Sonnet,
@@ -872,6 +873,17 @@ and B are unchanged on both models.
 
 Raw records: `src/cube/mcp/eval/out/family4_{haiku,sonnet}_r1.jsonl`
 (gitignored, local only).
+
+Revised 2026-10-01: the intervals in both tables above are now clustered on
+prompt. The old Wilson interval pooled every rep of every prompt as an
+independent trial, but reps of one prompt are correlated, so it was too narrow.
+`scorer.py` now uses the Korn-Graubard effective sample size and a Student-t
+critical value with `prompts - 1` degrees of freedom, ported from Inspect AI's
+`ci_wilson(cluster=...)`. Recomputed from the saved records, not rerun. Point
+rates are unchanged, and so are both decisions: placement rule 2 still fires,
+and the family 4 pass rule compares point rates. With 7 trap prompts the family
+4 intervals are wide, and arm A's and arm B's overlap on both models. Earlier
+intervals quoted in the revision notes above are the pooled ones.
 
 ### Why family 4 is small
 
