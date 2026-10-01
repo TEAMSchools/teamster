@@ -269,7 +269,8 @@ models:
           earlier in the period and recovered by its end reads false. For
           "truant at any point in the period", aggregate the daily fact's
           is_truant over the period's membership days instead. Null when the
-          period-end row has no measured attendance.
+          student has no measured membership day year-to-date as of
+          period_end_date_key, the same rule as ada_tier.
 
       - name: ada_tier
         data_type: string
@@ -731,15 +732,14 @@ unit_tests:
 
   - name: test_periods_truancy_reads_period_end
     description:
-      Two students who are truant earlier in the period but not on its last
-      membership day. Student 1 is truant on the second and third of five
-      membership days and has recovered by the fifth, so is_truant must read
-      false, matching the fifth day's ada_tier and is_chronically_absent --
-      truancy is read as of period end like every other column, not across the
-      period. Student 2 opens the period with a break day carrying true from the
-      prior month and is not truant on either membership day that follows, so
-      is_truant must read false -- a leading holiday must not import the
-      previous period's status.
+      Two students who are not truant on their period's last membership day.
+      Student 1 is truant on the second and third of five membership days and
+      has recovered by the fifth, so is_truant must read false, matching the
+      fifth day's ada_tier and is_chronically_absent -- truancy is read as of
+      period end like every other column, not across the period. Student 2 opens
+      the period with a break day carrying true from the prior month and is not
+      truant on either membership day that follows, so is_truant must read false
+      -- a leading holiday must not import the previous period's status.
     model: fct_student_attendance_enrollment_periods
     given:
       - input: ref('int_students__enrollment_daily')
