@@ -169,10 +169,11 @@ archive, is complete (19,396 DIBELS rows in Cube). Tracked on
 
 - Until #5660 closes, a Cube query for Miami AY2026 DIBELS returns nothing, not
   a low number. Answer from `rpt_tableau__dibels_dashboard` instead, and say
-  which source you used.
+  which source you used. The extract is student-level, and Cube's row-level
+  access and PII defaults do not apply to it, so report aggregates only.
 - Do not trace this through the Amplify export or the location crosswalk. The
-  rows are intact through `int_assessments__benchmark_scores`; the drop is at
-  the resolver.
+  rows are intact through `int_assessments__score_anchors`; the drop is at the
+  resolver.
 - The fix belongs in the shared course-enrollment models, not in the DIBELS
   family, and it restores all 4 sources at once.
 - `int_students__course_enrollments` fills only `core_subject` for Miami, not
@@ -182,13 +183,19 @@ archive, is complete (19,396 DIBELS rows in Cube). Tracked on
 Re-check before repeating any of this, since #5660 may have shipped:
 
 ```sql
-select 'benchmark_scores' as step, academic_year, count(*) as n,
+select 'a_benchmark_scores' as step, academic_year, count(*) as n,
 from `teamster-332318`.kipptaf_assessments.int_assessments__benchmark_scores
 where score_source = 'dibels' and _dbt_source_project = 'kippmiami'
     and academic_year >= 2025
 group by all
 union all
-select 'resolved', academic_year, count(*),
+select 'b_score_anchors', academic_year, count(*),
+from `teamster-332318`.kipptaf_assessments.int_assessments__score_anchors
+where source_type = 'dibels' and _dbt_source_project = 'kippmiami'
+    and academic_year >= 2025
+group by all
+union all
+select 'c_resolved', academic_year, count(*),
 from `teamster-332318`.kipptaf_assessments.int_assessments__resolved_section_enrollments
 where source_type = 'dibels' and _dbt_source_project = 'kippmiami'
     and academic_year >= 2025
@@ -196,9 +203,11 @@ group by all
 order by 2, 1
 ```
 
-`resolved` counts score grains, not score rows, so it reads lower than
-`benchmark_scores` even when nothing is lost. A year with no `resolved` row is
-the defect.
+Compare `c_resolved` with `b_score_anchors`, not with `a_benchmark_scores`.
+Score anchors keep only `response_type = 'overall'` DIBELS rows, one per score
+grain, so they read far below the benchmark scores even when nothing is lost.
+Measured 2026-10-01: AY2025 went 19,612 / 3,767 / 3,754, and AY2026 went 7,231 /
+1,380 / none. A year with anchors and no `c_resolved` row is the defect.
 
 ## The dashboard's BANs against the extract: a QA baseline
 
