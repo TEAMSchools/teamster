@@ -21,6 +21,7 @@ views:
           - count_assigned
           - count_taken
           - count_scored
+          - count_proficient
           - count_students
           - count_assessments
           - pct_taken

@@ -346,6 +346,18 @@ cubes:
             Report it alongside pct_proficient whenever the rate carries weight;
             it is the n the rate rests on.
 
+      - name: count_proficient
+        description: >-
+          Assessments where the student met the proficiency threshold. The
+          numerator of pct_proficient, whose denominator is count_scored.
+        sql: "{_sum_proficient}"
+        type: number
+        public: true
+        meta:
+          ai_context: >-
+            Use this for "how many were proficient" rather than multiplying
+            pct_proficient by a count.
+
       # Built from additive primitives (count_taken / count_assigned) so pre-
       # aggregations roll it up to any grain.
       - name: pct_taken

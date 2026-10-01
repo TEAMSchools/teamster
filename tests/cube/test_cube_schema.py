@@ -565,6 +565,10 @@ PHRASES.update(
             "denominator of pct_proficient",
             "the n the rate rests on",
         ],
+        "student_assessment_scores.count_proficient": [
+            "numerator of pct_proficient",
+            "how many were proficient",
+        ],
         "student_assessment_scores.pct_taken": [
             "meaningful only within Illuminate",
             "Filter assessment_type to illuminate",
