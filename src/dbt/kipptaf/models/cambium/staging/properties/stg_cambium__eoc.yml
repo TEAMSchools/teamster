@@ -9,6 +9,8 @@ models:
       shared NJ-assessment shape. Paterson has no EOC file yet.
     config:
       materialized: table
+      meta:
+        contains_pii: true
     columns:
       - name: _dbt_source_project
         data_type: string

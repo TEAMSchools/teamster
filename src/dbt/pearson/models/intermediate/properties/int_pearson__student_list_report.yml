@@ -17,41 +17,65 @@ models:
     columns:
       - name: academic_year
         data_type: int64
-        description: Academic year the assessment was administered.
+        description: >-
+          Academic year the assessment was administered (fiscal year from the
+          partition key minus 1).
 
       - name: state_student_identifier
         data_type: int64
         description: State student identifier from the source file.
+        config:
+          meta:
+            contains_pii: true
 
       - name: local_student_identifier
         data_type: int64
         description: Local student identifier from the source file.
+        config:
+          meta:
+            contains_pii: true
 
       - name: last_or_surname
         data_type: string
         description: Student last name or surname as reported by Pearson.
+        config:
+          meta:
+            contains_pii: true
 
       - name: first_name
         data_type: string
         description: Student first name as reported by Pearson.
+        config:
+          meta:
+            contains_pii: true
 
       - name: date_of_birth
         data_type: string
         description: Student date of birth as reported by Pearson.
+        config:
+          meta:
+            contains_pii: true
 
       - name: test_type
         data_type: string
-        description: Assessment test type from the Dagster partition key.
+        description:
+          Assessment test type from the Dagster partition key, uppercased.
 
       - name: scale_score
         data_type: int64
-        description: Student's raw scale score on the assessment.
+        description: Student's scale score on the assessment, as an integer.
+        config:
+          meta:
+            contains_pii: true
 
       - name: performance_level
         data_type: string
         description: >
           Performance level label as reported by Pearson (e.g. 'Met
           Expectations', 'Graduation Ready').
+        config:
+          meta:
+            contains_pii: true
 
       - name: administration
         data_type: string
@@ -72,20 +96,24 @@ models:
       - name: state_id
         data_type: string
         description: State student identifier cast to string.
+        config:
+          meta:
+            contains_pii: true
 
       - name: discipline
         data_type: string
         description: >
-          Subject discipline derived from test_name —
-          Mathematics/Algebra/Geometry map to 'Math', all others map to 'ELA'.
+          Subject discipline derived from test_name — names containing
+          'Mathematics', plus 'Algebra I' and 'Geometry', map to 'Math'; all
+          others map to 'ELA'.
 
       - name: subject
         data_type: string
         quote: true
         description: >
           Subject normalized for stacked reporting across assessment programs —
-          Mathematics/Algebra/Geometry map to 'Mathematics', all others map to
-          'English Language Arts', matching the label convention used in
+          the same test names as discipline map to 'Mathematics', all others map
+          to 'English Language Arts', matching the label convention used in
           comparison sources.
 
       - name: aligned_test_code
@@ -95,6 +123,7 @@ models:
           — derived from test_name: graduation proficiency tests map to
           ELAGP/MATGP, Geometry to GEO01, Algebra I to ALG01; grade-level math
           and ELA tests extract the grade from the name and prefix with MAT/ELA.
+          Null for any other test name.
 
       - name: performance_band_level
         data_type: int64
@@ -104,6 +133,9 @@ models:
           Met Expectations' = 2, 'Approached Expectations' = 3, 'Met
           Expectations' = 4, 'Exceeded Expectations' = 5, 'Graduation Ready' =
           2.
+        config:
+          meta:
+            contains_pii: true
 
       - name: is_proficient
         data_type: boolean
@@ -111,8 +143,14 @@ models:
           Whether the student scored proficient or above — true when
           performance_level is 'Met Expectations', 'Exceeded Expectations', or
           'Graduation Ready'.
+        config:
+          meta:
+            contains_pii: true
 
       - name: is_proficient_int
         data_type: int64
         description:
           Integer representation of is_proficient (1 = true, 0 = false).
+        config:
+          meta:
+            contains_pii: true

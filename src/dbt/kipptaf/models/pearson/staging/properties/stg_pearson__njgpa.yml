@@ -1,9 +1,17 @@
 models:
   - name: stg_pearson__njgpa
+    description: >
+      NJGPA (New Jersey Graduation Proficiency Assessment) student test records
+      from Pearson, unioned across the Newark and Camden district projects.
+      Passes through every column of the district stg_pearson__njgpa models,
+      which document them.
     config:
       materialized: table
+      meta:
+        contains_pii: true
     columns:
       - name: _dbt_source_project
         data_type: string
-        description: Source project (extract_source_project()) — e.g.,
-          'kippnewark' / 'kippcamden'. Per #3142, materialized at the union model so consumers don't re-derive per-call.
+        description: >
+          District project the row came from, extracted from
+          _dbt_source_relation (kippnewark or kippcamden).
