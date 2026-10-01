@@ -67,12 +67,13 @@ Apply to every assessment source unless a source section overrides them.
   was documented for internal-vs-state only; it applies generally.)
 - **Three nested counts — pick the one that answers the question.**
   `count_assigned` (every row, including Illuminate `not_taken`) ⊇ `count_taken`
-  (actually sat) ⊇ `count_scored` (carries a proficiency verdict). "How many
-  assessments were taken" is `count_taken`. The denominator of `pct_proficient`
-  is `count_scored`. `pct_taken` is `count_taken / count_assigned` and is
-  Illuminate-only meaningful — every other source reads 100% because nothing
-  upstream can record a no-show.
-- **Grain.** All three counts are additive and resilient — they succeeded across
+  (actually sat) ⊇ `count_scored` (carries a proficiency verdict) ⊇
+  `count_proficient` (met the threshold). "How many assessments were taken" is
+  `count_taken`. The denominator of `pct_proficient` is `count_scored`.
+  `pct_taken` is `count_taken / count_assigned` and is Illuminate-only
+  meaningful — every other source reads 100% because nothing upstream can record
+  a no-show.
+- **Grain.** All four counts are additive and resilient — they succeeded across
   every logged session. `count_students` is a distinct student count and is
   heavier and historically fragile at fine (standard) grain (timeouts, and an
   intermittent location-`US` 400 on the `dim_student_enrollments` dependency); a
