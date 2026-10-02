@@ -43,6 +43,7 @@ join student_enrollment se
     on s.student_id = se.student_id
    and se.syear = {syear}
    and se.school_id = {school_id}
+   -- current_date returns nothing for a past {syear}; see the reference file
    and se.start_date <= current_date
    and (se.end_date is null or se.end_date >= current_date)
    and (se.custom_9 is null or se.custom_9 = 'N')

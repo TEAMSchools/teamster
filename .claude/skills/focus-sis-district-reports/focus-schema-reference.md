@@ -23,19 +23,28 @@ grade level changes year to year.
 | Table                              | Holds                                                                          |
 | ---------------------------------- | ------------------------------------------------------------------------------ |
 | `students` (or other entity table) | checkbox / text / date custom fields, inline as `custom_NNN`                   |
-| `custom_field_select_options`      | pulldown (select-one) option code/label, joined by the option `id`             |
+| `custom_field_select_options`      | pulldown (select-one) option `code` / `label`; decode rule below               |
 | `custom_field_log_entries`         | logging-field entries (checkbox/text/date), joined by `field_id` + `source_id` |
 | `student_enrollment_codes`         | enrollment/withdrawal code lookup                                              |
 | `schools`                          | school name                                                                    |
 | `school_gradelevels`               | grade level short name, joined via `student_enrollment.grade_id`               |
 
+Decoding a pulldown value: some fields store the option's `id`, others its
+`code` (`prior_state` stores `FL`). Join `source_id` to the field's
+`custom_fields.id` with `source_class = 'CustomField'`, match the stored value
+against both `id` and `code`, then read `label` — or use `fieldoptionlabel()`
+(see _Useful extras_). Matching on `id` alone returns all-null labels for a
+code-stored field, with no error. Full rule: `src/dbt/focus/CLAUDE.md`, _Focus
+field value codes_.
+
 ## Finding a real column name (in order of speed)
 
 1. **Check this repo first**:
    `src/dbt/focus/models/staging/stg_focus__<table>.sql` selects the raw source
-   columns verbatim — free ground truth for anything already ingested. Read the
-   `.sql`, not just its `properties.yml` (the properties file may omit columns
-   the model doesn't project).
+   columns — free ground truth for anything already ingested. The Focus name is
+   the left side of each `as` (`custom_9 as second_school`). Read the `.sql`,
+   not just its `properties.yml` (the properties file may omit columns the model
+   doesn't project).
 2. **Student Field Setup** — Students → Setup → Student Fields. Categories live
    in `custom_field_categories`, fields in `custom_fields`, joined via
    `custom_fields_join_categories`. Note: `alias` may not be `custom_NNN` for
@@ -86,6 +95,11 @@ AND se.start_date <= current_date
 AND (se.end_date IS NULL OR se.end_date >= current_date)
 AND (se.custom_9 IS NULL OR se.custom_9 = 'N')
 ```
+
+The `current_date` checks assume `{syear}` is the current year. Run for a past
+year, no enrollment row covers today and the report returns empty with no error.
+When a report must work for past years, swap `current_date` for an optional Date
+variable: `coalesce(nullif('{AS_OF}', '')::date, current_date)`.
 
 Same shape for `schedule` (active roster membership), using `>` for `end_date`
 since a schedule row's end date is exclusive of that day:
@@ -180,7 +194,9 @@ report wants that shape:
 - **Form Builder deep link**:
   `/Modules.php?modname=form-builder/requests/instance-viewer/[instance_id]/[editable]`
   links directly to a specific form instance.
-- **Clickable student link**:
+- **Clickable student link** (Verify: copied from Focus training. Here
+  `custom_53` is `local_student_id` and `student_id` is Focus's internal key;
+  confirm which one the URL's `student_id=` takes against a working link):
   ```sql
   CONCAT(
     '<a href="https://<domain>/',
@@ -209,5 +225,4 @@ one of these instead of a District Report.
 
 District Reports are read-only `SELECT`. If a request drifts into `UPDATE`/
 `DELETE`, always write and run the `SELECT` version first to confirm the exact
-row set, and create a `CREATE TABLE ... AS SELECT` backup before any mutation —
-see Focus's own Day 3 training material for the full pattern.
+row set, and create a `CREATE TABLE ... AS SELECT` backup before any mutation.

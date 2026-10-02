@@ -35,10 +35,10 @@ ready-to-adapt starting skeleton.
    of speed:
    - This repo already stages many Focus tables at
      `src/dbt/focus/models/staging/stg_focus__*.sql` — each `select`s the raw
-     source column names verbatim (before any dbt renaming), so it's a free,
-     accurate cross-check for anything already ingested (`students`, `schools`,
-     `users`, `course_periods`, etc.). Read the model, not just its
-     `properties.yml`.
+     source columns, with the Focus name on the left of each `as`
+     (`custom_9 as second_school`), so it's a free, accurate cross-check for
+     anything already ingested (`students`, `schools`, `users`,
+     `course_periods`, etc.). Read the model, not just its `properties.yml`.
    - `docs/superpowers/specs/references/focus-db-erd.md` is a full Focus DB ERD
      (table groups, PK/FK join keys, custom-field storage) covering tables that
      aren't staged in dbt yet — check it for anything the staging models don't
@@ -87,7 +87,9 @@ ready-to-adapt starting skeleton.
 
 9. **Once the SQL is solid**, offer to save it as a reference artifact (SQL +
    variables + a Confirmed/Verify status chip per fact) so the user can hand it
-   off or revisit it later. If they also need an end-user help article, invoke
+   off or revisit it later. It holds SQL and variables only, never result rows,
+   which are student-level PII; keep it in the session scratchpad unless the
+   user asks to commit it. If they also need an end-user help article, invoke
    `zendesk-help-articles` and carry over the facts it asks for: the Focus
    folder path, the report title, each variable's on-screen label, and the step
    8 caveats.

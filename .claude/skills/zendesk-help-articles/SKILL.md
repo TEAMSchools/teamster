@@ -124,6 +124,8 @@ in-this-article:
    short example table.
 4. Get help: the contact the user gave.
 
+Related articles still close the article, per the README order.
+
 ## New article
 
 1. Collect the facts under _Content_ from the user.
@@ -170,7 +172,8 @@ Example data in the body text is invented: names like "Alex R." and "Taylor B.",
 with a muted caption under each example table reading _Names above are examples,
 not real students._ Values from a query, a ticket, or a screenshot stay out of
 the body. Before publishing, read the body for names, school-facing ids, and
-counts small enough to identify a student, and tell the user what you found.
+counts small enough to identify a student, tell the user what you found, and
+wait for their yes.
 
 For every local image the body references: open it with the Read tool, state in
 plain words what is visible (school, grade band, any names, any count small
