@@ -81,8 +81,8 @@ with
             a.state_student_id as statestudentidentifier,
             a.aligned_test_code as test_code,
 
-            upper(trim(a.first_name)) as gap_first,
-            upper(trim(a.last_or_surname)) as gap_last,
+            normalize_and_casefold(a.first_name, nfkd) as gap_first_folded,
+            normalize_and_casefold(a.last_or_surname, nfkd) as gap_last_folded,
         from {{ ref("int_assessments__state_nj_scores") }} as a
         left join
             {{ ref("base_powerschool__student_enrollments") }} as e
@@ -120,12 +120,17 @@ with
             g.statestudentidentifier,
             g._dbt_source_project,
             g.test_code,
-            g.gap_first,
-            g.gap_last,
 
             d.birthdate as gap_dob_raw,
 
             regexp_extract(g.test_code, r'(0[3-8])$') as encoded_grade_str,
+
+            -- Letters only, accents folded, on both sides: a hyphen, apostrophe
+            -- or inner space in one system's spelling otherwise defeats every
+            -- tier. A name with no Latin letters reduces to '', which must not
+            -- equal another empty name, so it becomes null.
+            nullif(regexp_replace(g.gap_first_folded, r'[^a-z]', ''), '') as gap_first,
+            nullif(regexp_replace(g.gap_last_folded, r'[^a-z]', ''), '') as gap_last,
         from gaps as g
         left join dob_source as d on g.studenttestuuid = d.studenttestuuid
     ),
@@ -154,6 +159,21 @@ with
         from gaps_graded
     ),
 
+    ps_folded as (
+        select
+            student_number,
+            academic_year,
+            _dbt_source_project,
+            grade_level,
+            dob,
+            state_studentnumber,
+
+            normalize_and_casefold(first_name, nfkd) as ps_first_folded,
+            normalize_and_casefold(last_name, nfkd) as ps_last_folded,
+        from {{ ref("base_powerschool__student_enrollments") }}
+        where rn_year = 1
+    ),
+
     ps as (
         select
             student_number,
@@ -163,10 +183,9 @@ with
             dob,
             state_studentnumber,
 
-            upper(trim(first_name)) as ps_first,
-            upper(trim(last_name)) as ps_last,
-        from {{ ref("base_powerschool__student_enrollments") }}
-        where rn_year = 1
+            nullif(regexp_replace(ps_first_folded, r'[^a-z]', ''), '') as ps_first,
+            nullif(regexp_replace(ps_last_folded, r'[^a-z]', ''), '') as ps_last,
+        from ps_folded
     ),
 
     -- The enrollment gate: every candidate below is already year- and

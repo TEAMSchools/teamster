@@ -6,13 +6,14 @@ description: >-
   shipping a change to the gradebook-expectations-upload end-user skill, or the
   published Google Sheet pairs it feeds. Triggers: explaining the model, listing
   refs/lineage/sources for the gradebook audit dashboard, adding/removing a
-  flag, adding a region, debugging a flag that isn't firing, rolling the
-  assignment expectations over to a new year (turning T&L's expectations sheet
-  into U_EXPECTATIONS count rows to upload to PowerSchool), changing or
-  deploying the PowerSchool plugin in the private TEAMSchools/ps-plugins repo,
-  bumping or distributing a new version of the gradebook-expectations-upload
-  skill, a change to a gradebook audit IMPORTRANGE/Reports sheet pair, grades,
-  GPA, or GPA goals on the Academic & Gradebook Health Suite, or working on
+  flag, adding a region, debugging a flag that isn't firing, a flag caused by
+  blank scores for a withdrawn or transferred student, rolling the assignment
+  expectations over to a new year (turning T&L's expectations sheet into
+  U_EXPECTATIONS count rows to upload to PowerSchool), changing or deploying the
+  PowerSchool plugin in the private TEAMSchools/ps-plugins repo, bumping or
+  distributing a new version of the gradebook-expectations-upload skill, a
+  change to a gradebook audit IMPORTRANGE/Reports sheet pair, grades, GPA, or
+  GPA goals on the Academic & Gradebook Health Suite, or working on
   rpt_tableau__gradebook_audit or rpt_gsheets__gradebook_audit_student_flags and
   their upstream models.
 ---
@@ -61,6 +62,7 @@ below is the _how_; `plan-a-change.md` is the _what and whether_.
 | Roll T&L's assignment expectations over to a new year (the PS plugin / `U_EXPECTATIONS` upload)                      | [`playbooks/academic-year-rollover.md`](playbooks/academic-year-rollover.md) |
 | Work on the dashboard during summer, before the new year's PowerSchool data exists (the dbt toggle)                  | [`references/summer-toggle.md`](references/summer-toggle.md)                 |
 | A flag is firing when it shouldn't, not firing when it should, or a section is missing one of its four category rows | [`playbooks/debug-a-flag.md`](playbooks/debug-a-flag.md)                     |
+| A teacher's category is flagged but they see no blank scores (often a student who left the section)                  | [`playbooks/debug-a-flag.md`](playbooks/debug-a-flag.md)                     |
 | Explain why an undocumented filter, column, or threshold exists                                                      | [`playbooks/explain-a-decision.md`](playbooks/explain-a-decision.md)         |
 | Lineage/refs, a configurable threshold, the Sumner override, or changing `section_or_period`                         | [`references/data-model.md`](references/data-model.md)                       |
 | Change, build, or deploy the plugin, or ship a skill change to Teaching & Learning                                   | [Plugin and end-user skill](#plugin-and-end-user-skill) below                |

@@ -45,7 +45,6 @@ def article(user_segment="Signed-in users", permission_group="Agents and admins"
         labels=[],
         article_id=None,
         last_known_updated_at=None,
-        attachments={},
         html="",
     )
 
