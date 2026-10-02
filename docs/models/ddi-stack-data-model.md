@@ -436,26 +436,41 @@ here moves those consumers too):
 
 ## Support themes
 
-What people actually open tickets about, from a keyword pass over the Zendesk
-warehouse copy (assessment dashboard, module dashboard, DDI, DKI; 17 relevant
-tickets, 2026-04-02 through 2026-10-02, measured 2026-10-02). The themes, most
+What people actually ask about, from a keyword pass (assessment dashboard,
+module dashboard, DDI, DKI) over the Zendesk warehouse copy (17 relevant
+tickets) and the two Slack channels where this work is discussed (22 relevant
+threads), 2026-04-02 through 2026-10-02, measured 2026-10-02. The themes, most
 frequent first, and where each one points:
 
-1. **"My assessment is not on the dashboard."** The triage ladder follows the
-   freshness chain above: is the AppSheet tag right (dates, regions, scope and
-   module — a wrong date tag hides the assessment from the DKI View); did the
-   Illuminate sync land it (see the sync crons); has the assessment star ticked
-   since; has the Tableau extract refreshed. After a tag fix, users expect a
-   manual refresh push rather than waiting for the next tick.
-2. **Two worksheets disagree.** Module Dashboard vs DKI View discrepancies are
-   usually denominator questions: completion rows vs mastery rows (null
-   `response_type` is assigned-but-not-taken), and course-enrollment vs
-   grade-level population (an Algebra 1 student is in grade 8 on one cut and in
-   the Algebra course on the other).
-3. **Wrong or missing teacher/section.** The course join keeps one section per
-   student, year and subject (`rn_student_year_illuminate_subject_desc = 1`), so
-   a student's honors or second section is dropped from classroom rollups, and a
-   co-teacher or interventionist can appear as the section of record.
+1. **"My assessment is not on the dashboard."** The assessment director's own
+   triage rule, quoted from a 2026-05-04 thread, is the first question to ask:
+   "Anything that's not rolling up is because it's not tagged in the app sheet
+   or not tagged correctly" — wrong term date, wrong grade's tag, or no tag at
+   all. When the tag is right, follow the freshness chain above: did the
+   Illuminate sync land it; has the assessment star ticked since; has the
+   Tableau extract refreshed. Occasionally the cause is genuinely on the data
+   side (an overnight pipeline bug reproduced this on 2026-09-30 with tagging
+   fully correct), so confirm the rows in the extract before and after a refresh
+   rather than re-arguing the tag. After a tag fix, users expect a manual
+   refresh push rather than waiting for the next tick, and they know the refresh
+   times ("does that mean there will be no 6pm refresh today?").
+2. **Two worksheets disagree, or the dashboard disagrees with Illuminate.**
+   Module Dashboard vs DKI View discrepancies are usually denominator questions:
+   completion rows vs mastery rows (null `response_type` is
+   assigned-but-not-taken), and course-enrollment vs grade-level population (an
+   Algebra 1 student is in grade 8 on one cut and in the Algebra course on the
+   other). A multi-assessment DKI View cut also confuses when quizzes are tagged
+   to different dates per grade level — viewing by grade level is the documented
+   workaround. Dashboard-vs-Illuminate discrepancies get reconciled against the
+   extract rows and the sync times.
+3. **Wrong or missing teacher/section.** Two distinct causes. In the model: the
+   course join keeps one section per student, year and subject
+   (`rn_student_year_illuminate_subject_desc = 1`), so a student's honors or
+   second section is dropped from classroom rollups, and a co-teacher or
+   interventionist can appear as the section of record. In the source: a wrong
+   course assignment in PowerSchool rolls students up under the wrong course on
+   the Module Dashboard — the fix is in PowerSchool, and it populates on the
+   next morning's refresh (2026-09-30 case).
 4. **Access.** A blank DDI Suite page from the Launch page, or a login failure,
    is Tableau licensing or permissions — not a data defect. Route to the Tableau
    admin path before reading any SQL.
@@ -535,5 +550,10 @@ Found during this documentation run (2026-09-30), not yet tracked separately:
 4. Standard domains: update the named range when standards or domains change.
 5. Reporting terms: confirm the year's RT rows exist (shared hub, but this
    family breaks visibly when they lag).
-6. Check the DDI Suite after the first assessment window: the first real rows
+6. August: turn the DDI Suite Tableau refresh schedule back on and review its
+   cron list with the assessment director (done together in August 2026 —
+   anything to add or remove for the year).
+7. Fall: bump the DDI Suite workbook tabs' default year to the new school year
+   (a workbook edit, requested each year — "make SY27 default for the tabs").
+8. Check the DDI Suite after the first assessment window: the first real rows
    exercise the whole chain.
