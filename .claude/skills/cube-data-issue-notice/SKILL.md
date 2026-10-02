@@ -61,23 +61,30 @@ Trigger: right after `issue_write` creates an issue, or "announce #N."
    names=$(gh api repos/TEAMSchools/teamster/issues/<n> --jq .body \
      | rg -o '\b(stg|int|base|bridge|dim|fct|rpt)_[a-z0-9_]+' | sort -u \
      | sed 's/$/+/' | tr '\n' ' ')
+   [ -n "${names}" ] || echo "NO MODEL NAMES"
    (cd src/dbt/kipptaf && uv run dbt ls --select ${names} \
-     --resource-type model --output name --quiet) > <scratchpad>/downstream.txt
+     --resource-type model --output name --quiet) > <scratchpad>/downstream.txt \
+     || echo "DBT LS FAILED"
    rg -o --no-heading 'sql_table: kipptaf_marts\.(\w+)' -r '$1' \
      src/cube/model/cubes | rg -wFf <scratchpad>/downstream.txt
    ```
 
-   `<scratchpad>` is the session scratchpad path from the system prompt. Each
-   hit is `<cube file>:<table>`. The cube name is the first `- name:` in that
-   file. Find its views with
+   `<scratchpad>` is the session scratchpad path from the system prompt.
+   `NO MODEL NAMES` skips to the last bullet below. `DBT LS FAILED` means
+   `downstream.txt` holds an error, not models: fix it and re-run before reading
+   any result. A fresh worktree needs `uv run dbt deps` in `src/dbt/kipptaf`
+   first.
+
+   Each hit is `<cube file>:<table>`. The cube name is the first `- name:` in
+   that file. Find its views with
    `rg -l "join_path: ([a-z_]+\.)*<cube>\b" src/cube/model/views`; a view counts
    when the cube appears anywhere in a `join_path`.
 
    - Views found: continue, and keep the view list for drafting.
    - `downstream.txt` holds models but no cube matches: tell the user in 1 line
      that the issue does not reach Cube. The procedure ends.
-   - `downstream.txt` is empty (the issue names no model, or every name was a
-     CTE or column): ask the filer whether the issue affects Cube data.
+   - `NO MODEL NAMES`, or `downstream.txt` is empty (every name was a CTE or
+     column): ask the filer whether the issue affects Cube data.
 
 2. Draft from `## Top post`. Use `cube meta` on the affected views to learn what
    readers call the data.
