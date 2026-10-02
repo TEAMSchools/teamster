@@ -14,9 +14,8 @@ description: >-
 
 Focus SIS District Reports are raw SQL (Focus runs PostgreSQL) published through
 Reports → District Reports so staff can run them without database access. This
-skill is the technical/dev-side counterpart to `focus-sis-zendesk-articles`
-(which turns a finished report into end-user help content) — use this one to
-actually build the report.
+skill builds the report; `zendesk-help-articles` writes and publishes the
+end-user help article for it.
 
 See [`focus-schema-reference.md`](focus-schema-reference.md) for the full schema
 cheat sheet (tables, join patterns, predicates, variable mechanics,
@@ -88,8 +87,10 @@ ready-to-adapt starting skeleton.
 
 9. **Once the SQL is solid**, offer to save it as a reference artifact (SQL +
    variables + a Confirmed/Verify status chip per fact) so the user can hand it
-   off or revisit it later — and hand off to `focus-sis-zendesk-articles` if
-   they also need an end-user help article.
+   off or revisit it later. If they also need an end-user help article, invoke
+   `zendesk-help-articles` and carry over the facts it asks for: the Focus
+   folder path, the report title, each variable's on-screen label, and the step
+   8 caveats.
 
 ## Common mistakes
 
