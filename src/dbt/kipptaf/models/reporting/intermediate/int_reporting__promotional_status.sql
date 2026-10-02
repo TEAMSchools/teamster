@@ -31,7 +31,7 @@ with
                 then 27
             end as hs_at_risk_absences,
 
-            /* at-risk threshold / 4 per quarter, reaching it exactly at Q4 */
+            /* TODO(#5672): threshold/4 quarterly ramp pending C3 confirmation */
             case
                 when mem._dbt_source_project = 'kippnewark'
                 then 4.5 * safe_cast(right(rt.name, 1) as int)
@@ -275,12 +275,13 @@ with
             if(fr.entry_date is not null, 'Manual Retention', null) as manual_retention,
 
             case
-                /* NJ Gr K-8 */
+                /* NJ Gr K-8, no attendance data */
                 when
                     co.region in ('Camden', 'Newark', 'Paterson')
                     and co.grade_level <= 8
                     and att.ada_term_running is null
                 then 'Off-Track'
+                /* Newark & Paterson Gr K-8 */
                 when
                     co.region in ('Newark', 'Paterson')
                     and co.grade_level <= 8
@@ -344,12 +345,13 @@ with
             end as attendance_status,
 
             case
-                /* NJ Gr K-8 */
+                /* NJ Gr K-8, no attendance data */
                 when
                     co.region in ('Camden', 'Newark', 'Paterson')
                     and co.grade_level <= 8
                     and att.ada_term_running is null
                 then 'Off-Track'
+                /* Newark & Paterson Gr K-8 */
                 when
                     co.region in ('Newark', 'Paterson')
                     and co.grade_level <= 8
