@@ -38,7 +38,8 @@ specifics live there.
   Read `.github/ISSUE_TEMPLATE/bug_report.md` or `feature_request.md` and match
   its structure, plain-language sections first and a "For Claude" fold-out last.
   Label with the conventional-commit type, source systems, and `dagster`/`dbt`
-  when applicable.
+  when applicable. Then invoke `cube-data-issue-notice` to check whether the
+  issue reaches Cube.
 - At the investigation-to-build pivot, ask whether to run
   `superpowers:brainstorming`. A design settled in conversation does not waive
   it.
