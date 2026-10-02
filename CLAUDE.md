@@ -298,6 +298,8 @@ exploration that led nowhere (keep only the conclusion).
   - `gh run *`, `gh workflow *`, `gh repo edit`
   - `gh api` only to PATCH an existing comment or PR body (`-F body=@<file>`),
     POST a PR review-thread reply, read a file at a pinned SHA with the raw
-    Accept header, create/add labels, `-X GET search/issues`
+    Accept header, create/add labels, `-X GET search/issues`, GET an issue or
+    its comments when the result feeds a shell pipeline
+    (`cube-data-issue-notice`)
 
   Mechanics and failure modes: `.claude/context/github.md`.

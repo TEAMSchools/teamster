@@ -22,12 +22,13 @@ post.
 - Preview every post in full in the terminal. Send it with `slack_send_message`
   after the user's explicit yes in their own message. The thread depends on the
   message `ts` that a direct send returns.
-- The issue is the record. After every top post and every resolution, comment
-  its marker on the issue. Every later procedure starts from the marker.
+- The issue is the record. After every top post and every full resolution,
+  comment its marker on the issue. Every later procedure starts from the marker.
 - PII gate before every preview: numbers appear only as aggregates at school
-  level or broader, every count is 10 or more, and the post names no student and
-  carries no student-level row or id. When a number fails the gate, describe it
-  in words ("close to complete") and keep the gate.
+  level or broader, every count is 10 or more, every rate or percentage rests on
+  a group of 10 or more, and the post names no student and carries no
+  student-level row or id. When a number fails the gate, describe it in words
+  ("close to complete") and keep the gate.
 - Name data the way a reader names it ("high school state test scores"). Model,
   column, cube, and view names stay in the GitHub issue that the post links.
 
@@ -65,6 +66,9 @@ Trigger: right after `issue_write` creates an issue, or "announce #N."
    (cd src/dbt/kipptaf && uv run dbt ls --select ${names} \
      --resource-type model --output name --quiet) > <scratchpad>/downstream.txt \
      || echo "DBT LS FAILED"
+   for m in ${names//+/}; do
+     grep -qx "${m}" <scratchpad>/downstream.txt || echo "UNRESOLVED: ${m}"
+   done
    rg -o --no-heading 'sql_table: kipptaf_marts\.(\w+)' -r '$1' \
      src/cube/model/cubes | rg -wFf <scratchpad>/downstream.txt
    ```
@@ -76,15 +80,30 @@ Trigger: right after `issue_write` creates an issue, or "announce #N."
    first.
 
    Each hit is `<cube file>:<table>`. The cube name is the first `- name:` in
-   that file. Find its views with
-   `rg -l "join_path: ([a-z_]+\.)*<cube>\b" src/cube/model/views`; a view counts
-   when the cube appears anywhere in a `join_path`.
+   that file. Find the views for each hit's cube, including cubes that
+   `extends:` it (they have no `sql_table` of their own):
+
+   ```bash
+   c=<cube>; cubes="${c}"
+   for f in $(rg -l "extends: ${c}\b" src/cube/model/cubes); do
+     cubes="${cubes} $(rg -m1 -o '^\s+- name: (\w+)' -r '$1' "${f}")"
+   done
+   for x in ${cubes}; do
+     rg -U -l "join_path:\s*(>-?\s+)?([a-z_]+\.)*${x}\b" src/cube/model/views
+   done | sort -u
+   ```
+
+   `-U` matters: long join paths are folded onto the next line with `>-`.
 
    - Views found: continue, and keep the view list for drafting.
-   - `downstream.txt` holds models but no cube matches: tell the user in 1 line
-     that the issue does not reach Cube. The procedure ends.
-   - `NO MODEL NAMES`, or `downstream.txt` is empty (every name was a CTE or
-     column): ask the filer whether the issue affects Cube data.
+   - `UNRESOLVED` names: each is a CTE, a column, or a model from a district
+     project that kipptaf reads through `source()`. Ask the filer whether those
+     names affect Cube data before you conclude anything from them.
+   - `downstream.txt` holds models, no cube matches, and nothing is
+     `UNRESOLVED`: tell the user in 1 line that the issue does not reach Cube.
+     The procedure ends.
+   - `NO MODEL NAMES`, or `downstream.txt` is empty: ask the filer whether the
+     issue affects Cube data.
 
 2. Draft from `## Top post`. Use `cube meta` on the affected views to learn what
    readers call the data.
@@ -137,10 +156,14 @@ user says so), or "resolve #N."
    with `slack_add_reaction` (channel `C0BPH5STTTQ`, timestamp from the marker).
    The connector cannot edit messages, so the reaction is the top post's only
    change.
-6. Comment the resolved marker on the issue.
+6. When every announced item is fixed, comment the resolved marker on the issue.
+   After a partial resolution, leave the marker off: a later `resolve` or
+   `sweep` finds the issue again and posts the final resolution. Read the thread
+   first (`slack_read_thread`) so the final post covers only what the partial
+   one left open.
 
-Done when the resolution is live and the issue carries its resolved marker, or
-the user has the Cube result that blocked it.
+Done when the resolution is live and, for a full fix, the issue carries its
+resolved marker, or the user has the Cube result that blocked it.
 
 ## sweep
 
