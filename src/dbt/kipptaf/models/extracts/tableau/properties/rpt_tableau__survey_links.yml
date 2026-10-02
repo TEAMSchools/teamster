@@ -111,6 +111,9 @@ models:
           Label shown to the person for the assignment. Usually a call to
           action; for the Manager Survey it identifies the manager being
           evaluated.
+        config:
+          meta:
+            contains_pii: true
       - name: link
         data_type: string
         description: >-
