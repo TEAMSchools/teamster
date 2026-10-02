@@ -3,24 +3,27 @@
 -- Self-scoping by academic_year = enrollment_school_year (each gap's own
 -- year) -- no manual parameter needed, works unchanged every year.
 --
+-- Names compare through the normalize_name() macro (macros/utils.sql):
+-- accents folded, lowercase, letters only, empty -> null.
+--
 -- Tiers:
--- A/B - exact DOB + last_name (raw, or diacritic-stripped on both sides)
--- C   - exact DOB + shared last_name TOKEN (split on hyphen/space) --
+-- A/B - exact DOB + normalized last_name
+-- C   - exact DOB + shared normalized last_name TOKEN (split on
+-- hyphen/whitespace before normalizing) --
 -- handles compound/hyphenated surnames recorded inconsistently
 -- between CB and PowerSchool (e.g. CB single-word surname vs. PS
 -- surname with a name-suffix appended, or a two-word surname where
 -- one side kept only one half, or a hyphen on one side vs. a space
 -- on the other)
 -- D   - DOB exactly 365/366 days apart (same month/day, year off by one,
--- leap-year safe) AND both first_name and last_name match exactly --
+-- leap-year safe) AND both normalized first_name and last_name match --
 -- handles a DOB-year transcription mismatch. Requires both names
 -- (not just last name) since loosening DOB raises collision risk
 -- more than Tier C does.
 -- Tiebreak - when Tiers A-D together yield >1 distinct student_number for
--- a gap, narrow using first_name (case-fold/diacritic-strip, plus
--- stripping non-alphanumeric characters so an apostrophe in a name
--- doesn't block the match). A gap the tiebreak can't narrow to one student
--- is bucketed 'ambiguous', apart from 'no_match' (no candidate at all).
+-- a gap, narrow using normalized first_name. A gap the tiebreak can't
+-- narrow to one student is bucketed 'ambiguous', apart from 'no_match' (no
+-- candidate at all).
 --
 -- Tier C/D corroboration (Tier A/B skip both -- already tight enough):
 -- gender_ok  - HARD GATE. Compare CB gender vs PS gender for the matched
@@ -77,22 +80,10 @@ with
             academic_year,
             _dbt_source_project,
 
-            regexp_replace(
-                normalize(upper(last_name), nfd), r'\pM', ''
-            ) as last_name_stripped,
-            regexp_replace(
-                regexp_replace(normalize(upper(first_name), nfd), r'\pM', ''),
-                r'[^A-Z0-9]',
-                ''
-            ) as first_name_norm,
-            split(
-                regexp_replace(
-                    regexp_replace(normalize(upper(last_name), nfd), r'\pM', ''),
-                    '-',
-                    ' '
-                ),
-                ' '
-            ) as last_name_tok,
+            {{ normalize_name("last_name") }} as last_name_norm,
+            {{ normalize_name("first_name") }} as first_name_norm,
+
+            split(regexp_replace(last_name, r'[-\s]', ' '), ' ') as last_name_tok,
         from {{ ref("base_powerschool__student_enrollments") }}
     ),
 
@@ -100,20 +91,30 @@ with
         select
             *,
 
-            regexp_replace(
-                regexp_replace(normalize(upper(cb_first_name), nfd), r'\pM', ''),
-                r'[^A-Z0-9]',
-                ''
-            ) as cb_first_name_norm,
-            split(
-                regexp_replace(
-                    regexp_replace(normalize(upper(cb_last_name), nfd), r'\pM', ''),
-                    '-',
-                    ' '
-                ),
-                ' '
-            ) as cb_last_name_tok,
+            {{ normalize_name("cb_last_name") }} as cb_last_name_norm,
+            {{ normalize_name("cb_first_name") }} as cb_first_name_norm,
+
+            split(regexp_replace(cb_last_name, r'[-\s]', ' '), ' ') as cb_last_name_tok,
         from gaps
+    ),
+
+    ps_tokens as (
+        -- grain projection, not dup-masking
+        select distinct
+            p.student_number, p.academic_year, p.dob, {{ normalize_name("t") }} as tok,
+        from ps as p
+        cross join unnest(p.last_name_tok) as t
+    ),
+
+    gap_tokens as (
+        -- grain projection, not dup-masking
+        select distinct
+            g.ap_number_ap_id,
+            g.enrollment_school_year,
+            g.cb_dob,
+            {{ normalize_name("t") }} as tok,
+        from gaps_norm as g
+        cross join unnest(g.cb_last_name_tok) as t
     ),
 
     tier_ab as (
@@ -123,26 +124,17 @@ with
             ps as p
             on g.enrollment_school_year = p.academic_year
             and g.cb_dob = p.dob
-            and (
-                upper(g.cb_last_name) = upper(p.last_name)
-                or regexp_replace(normalize(upper(g.cb_last_name), nfd), r'\pM', '')
-                = p.last_name_stripped
-            )
-    ),
-
-    tier_c_raw as (
-        select g.ap_number_ap_id, p.student_number, t1, t2,
-        from gaps_norm as g
-        inner join
-            ps as p on g.enrollment_school_year = p.academic_year and g.cb_dob = p.dob
-        cross join unnest(p.last_name_tok) as t1
-        cross join unnest(g.cb_last_name_tok) as t2
+            and g.cb_last_name_norm = p.last_name_norm
     ),
 
     tier_c as (
-        select distinct ap_number_ap_id, student_number, 'C' as tier,
-        from tier_c_raw
-        where t1 = t2
+        select distinct g.ap_number_ap_id, p.student_number, 'C' as tier,
+        from gap_tokens as g
+        inner join
+            ps_tokens as p
+            on g.enrollment_school_year = p.academic_year
+            and g.cb_dob = p.dob
+            and g.tok = p.tok
     ),
 
     tier_d as (
@@ -152,11 +144,7 @@ with
             ps as p
             on g.enrollment_school_year = p.academic_year
             and abs(date_diff(p.dob, g.cb_dob, day)) in (365, 366)
-            and (
-                upper(g.cb_last_name) = upper(p.last_name)
-                or regexp_replace(normalize(upper(g.cb_last_name), nfd), r'\pM', '')
-                = p.last_name_stripped
-            )
+            and g.cb_last_name_norm = p.last_name_norm
             and g.cb_first_name_norm = p.first_name_norm
     ),
 
