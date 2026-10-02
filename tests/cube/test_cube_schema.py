@@ -1,10 +1,12 @@
 """Cube schema invariants — cube/view names carry no warehouse prefix."""
 
 import pathlib
+import re
 
 import yaml
 
 CUBE_MODEL_DIR = pathlib.Path(__file__).parents[2] / "src" / "cube" / "model"
+ACCESS_JS = CUBE_MODEL_DIR.parent / "access.js"
 
 
 def _names() -> list[tuple[str, str]]:
@@ -187,4 +189,51 @@ def test_row_level_filter_members_are_exposed_by_their_view() -> None:
     assert not offenders, (
         "row_level filter references a member the view doesn't expose:\n"
         + "\n".join(offenders)
+    )
+
+
+def _staff_pii_scoped_members() -> set[str]:
+    # access.js STAFF_SENSITIVE_SCOPE_BY_MEMBER is the one list of members gated
+    # by staff_pii_scope; read it so a newly registered member is checked too.
+    return set(
+        re.findall(r'^\s+(\w+): "staff_pii_scope",$', ACCESS_JS.read_text(), re.M)
+    )
+
+
+def test_staff_pii_members_are_only_exposed_behind_staff_pii_groups() -> None:
+    # A staff_pii_scope member on a view with any policy group outside the
+    # staff-pii-<scope> tiers (e.g. the open staff-directory group) is readable
+    # by every resolved viewer, network-wide.
+    members = _staff_pii_scoped_members()
+    # Guard against a registry-format change making the check vacuous.
+    assert "status_reason" in members and "personal_email" in members, members
+
+    offenders = []
+    exposed_somewhere: set[str] = set()
+    for path in CUBE_MODEL_DIR.rglob("views/**/*.yml"):
+        doc = yaml.safe_load(path.read_text()) or {}
+        for view in doc.get("views", []) or []:
+            # Student cubes reuse names like birth_date; only staff-cube
+            # sources count (staff-domain cubes are named staff*).
+            sensitive = {
+                exposed
+                for exposed, qualified in _view_member_to_qualified_name(view).items()
+                if exposed in members and qualified.startswith("staff")
+            }
+            if not sensitive:
+                continue
+            exposed_somewhere |= sensitive
+            groups = [p.get("group") for p in view.get("access_policy", []) or []]
+            open_groups = [g for g in groups if not str(g).startswith("staff-pii-")]
+            if not groups or open_groups:
+                offenders.append(
+                    f"{path}: view {view['name']!r} exposes {sorted(sensitive)} "
+                    f"under non-staff-pii groups {open_groups or '[no policy]'}"
+                )
+    assert not offenders, (
+        "staff_pii_scope member exposed outside staff-pii-* groups:\n"
+        + "\n".join(offenders)
+    )
+    assert exposed_somewhere == members, (
+        f"registered but exposed by no view: {sorted(members - exposed_somewhere)}"
     )

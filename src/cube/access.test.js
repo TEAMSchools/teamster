@@ -499,6 +499,7 @@ test("STAFF_SENSITIVE_MEMBERS lists all gated sensitive columns", () => {
     "personal_email",
     "race",
     "salary",
+    "status_reason",
   ]);
 });
 
