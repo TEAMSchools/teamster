@@ -151,6 +151,11 @@ reaches a consumer only after:
 - **Sight words**: K-2 sight-word quizzes stored as an Illuminate _repository_
   (custom student-data table), not as assessment responses — they flow through
   `int_illuminate__repository_data`, not the response rollup.
+- **DKI, Module Dashboard, Mastery by Classroom**: names users bring to support
+  tickets. DKI View, Module Dashboard and Mastery by Classroom are worksheets
+  inside the DDI Suite workbook; DKI is also the name of the recurring data
+  meeting the dashboard preps, so "the DKI dashboard" in a ticket means the DDI
+  Suite. (What DKI expands to is not yet written down — owner to confirm.)
 
 ## Where the data comes from
 
@@ -193,8 +198,10 @@ reaches a consumer only after:
 ## The DDI Suite workbook
 
 Tableau exposure `ddi_suite`, two extracts, both views. The per-worksheet
-breakdown of the workbook itself is not documented here yet; the owner's
-walkthrough or a workbook download would be needed for that.
+breakdown of the workbook itself is not documented here yet; support tickets
+name at least the DKI View, Module Dashboard and Mastery by Classroom
+worksheets, but mapping each worksheet to its extract and filters needs the
+owner's walkthrough or a workbook download.
 
 ### rpt_tableau__assessment_dashboard
 
@@ -426,6 +433,44 @@ here moves those consumers too):
 - **Miami exit.** Miami's Illuminate feed ended with SY25-26. Its historical
   rows stay; nothing new lands until Focus assessment data is ingested, at which
   point the internal branch grows a Focus source (decided 2026-09-30).
+
+## Support themes
+
+What people actually open tickets about, from a keyword pass over the Zendesk
+warehouse copy (assessment dashboard, module dashboard, DDI, DKI; 17 relevant
+tickets, 2026-04-02 through 2026-10-02, measured 2026-10-02). The themes, most
+frequent first, and where each one points:
+
+1. **"My assessment is not on the dashboard."** The triage ladder follows the
+   freshness chain above: is the AppSheet tag right (dates, regions, scope and
+   module — a wrong date tag hides the assessment from the DKI View); did the
+   Illuminate sync land it (see the sync crons); has the assessment star ticked
+   since; has the Tableau extract refreshed. After a tag fix, users expect a
+   manual refresh push rather than waiting for the next tick.
+2. **Two worksheets disagree.** Module Dashboard vs DKI View discrepancies are
+   usually denominator questions: completion rows vs mastery rows (null
+   `response_type` is assigned-but-not-taken), and course-enrollment vs
+   grade-level population (an Algebra 1 student is in grade 8 on one cut and in
+   the Algebra course on the other).
+3. **Wrong or missing teacher/section.** The course join keeps one section per
+   student, year and subject (`rn_student_year_illuminate_subject_desc = 1`), so
+   a student's honors or second section is dropped from classroom rollups, and a
+   co-teacher or interventionist can appear as the section of record.
+4. **Access.** A blank DDI Suite page from the Launch page, or a login failure,
+   is Tableau licensing or permissions — not a data defect. Route to the Tableau
+   admin path before reading any SQL.
+5. **Scores entered but banded wrong.** Entered answers showing a too-low
+   mastery band is the shape of
+   [#5399](https://github.com/TEAMSchools/teamster/issues/5399) (band tables
+   sync at midnight only) — check the band-set join before suspecting the
+   scores.
+6. **Paterson looks different.** Paterson joins courses on `discipline` instead
+   of `illuminate_subject_area` (a temporary branch pending course fixes), so
+   Paterson can appear on one worksheet and not another, with its own formatting
+   quirks.
+
+One recurring feature ask: averaging across module sequence numbers (for honor
+roll). That is a workbook/extract change, not a data defect.
 
 ## Known issues, need to fix
 
