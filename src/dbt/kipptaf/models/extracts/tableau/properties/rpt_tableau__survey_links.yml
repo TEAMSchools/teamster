@@ -22,6 +22,9 @@ models:
       - name: employee_number
         data_type: int64
         description: Staff identifier from the ADP-derived roster.
+        config:
+          meta:
+            contains_pii: true
       - name: assignment_status
         data_type: string
         description: >-
@@ -30,6 +33,9 @@ models:
       - name: preferred_name_lastfirst
         data_type: string
         description: Staff preferred name, last name first.
+        config:
+          meta:
+            contains_pii: true
       - name: business_unit
         data_type: string
         description: Legal entity the person is employed by.
@@ -48,23 +54,41 @@ models:
       - name: mail
         data_type: string
         description: Work email address, used to send survey reminders.
+        config:
+          meta:
+            contains_pii: true
       - name: google_email
         data_type: string
         description: Google Workspace address, where that differs from mail.
+        config:
+          meta:
+            contains_pii: true
       - name: report_to_employee_number
         data_type: int64
         description: Employee number of the person's manager.
+        config:
+          meta:
+            contains_pii: true
       - name: report_to_preferred_name_lastfirst
         data_type: string
         description: Manager's preferred name, last name first.
+        config:
+          meta:
+            contains_pii: true
       - name: samaccountname
         data_type: string
         description: Active Directory account name.
+        config:
+          meta:
+            contains_pii: true
       - name: username
         data_type: string
         description: >-
           Login name taken from the part of the user principal name before the
           domain, lowercased with hyphens removed.
+        config:
+          meta:
+            contains_pii: true
       - name: academic_year
         data_type: int64
         description: Academic year of the survey round.
@@ -87,6 +111,9 @@ models:
           Label shown to the person for the assignment. Usually a call to
           action; for the Manager Survey it identifies the manager being
           evaluated.
+        config:
+          meta:
+            contains_pii: true
       - name: link
         data_type: string
         description: >-
@@ -97,6 +124,9 @@ models:
           to correct what changed. TNTP Insight and Gallup Q12 link to a help
           article instead, because those surveys are reached from an emailed
           link.
+        config:
+          meta:
+            contains_pii: true
       - name: completion
         data_type: int64
         description: >-
