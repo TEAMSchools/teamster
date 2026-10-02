@@ -18,7 +18,6 @@ left join
     {{ ref("int_powerschool__gpa_term") }} as gt
     on sr.studentid = gt.studentid
     and sr.yearid = gt.yearid
-    and sr.schoolid = gt.schoolid
     and sr._dbt_source_project = gt._dbt_source_project
     and gt.is_current
 where

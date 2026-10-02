@@ -249,7 +249,6 @@ with
             {{ ref("int_powerschool__gpa_term") }} as gtq
             on enr.studentid = gtq.studentid
             and enr.yearid = gtq.yearid
-            and enr.schoolid = gtq.schoolid
             and enr._dbt_source_project = gtq._dbt_source_project
             and term.quarter = gtq.term_name
             and term._dbt_source_project = gtq._dbt_source_project
@@ -257,7 +256,6 @@ with
             {{ ref("int_powerschool__gpa_term") }} as gty
             on enr.studentid = gty.studentid
             and enr.yearid = gty.yearid
-            and enr.schoolid = gty.schoolid
             and enr._dbt_source_project = gty._dbt_source_project
             and gty.is_current
         /* gc join gated to the current year in ON: prior-year rows keep NULL
@@ -282,7 +280,6 @@ with
             {{ ref("int_powerschool__gpa_term") }} as gpq
             on enr.studentid = gpq.studentid
             and enr.yearid = gpq.yearid
-            and enr.schoolid = gpq.schoolid
             and enr._dbt_source_project = gpq._dbt_source_project
             and term.prior_quarter = gpq.term_name
             and enr.academic_year = {{ var("current_academic_year") }}
