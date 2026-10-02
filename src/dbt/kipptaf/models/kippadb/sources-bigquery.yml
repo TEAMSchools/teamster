@@ -72,6 +72,16 @@ sources:
                 - kipptaf
                 - kippadb
                 - College_Persistence__c
+      - name: consent_form
+        identifier: Consent_Form__c
+        config:
+          meta:
+            dagster:
+              group: kippadb
+              asset_key:
+                - kipptaf
+                - kippadb
+                - Consent_Form__c
       - name: contact
         identifier: Contact
         config:
