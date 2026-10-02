@@ -1,4 +1,17 @@
 exposures:
+  - name: nsc_clearinghouse_submission
+    label: NSC Clearinghouse Submission
+    type: application
+    owner:
+      name: Data Team
+    url: https://docs.google.com/spreadsheets/d/13wyZDB8vvqdGxQHeSt92hL-Wm_U9P9KLJgGzjX3rWWo/edit?usp=sharing
+    depends_on:
+      - ref("rpt_gsheets__nsc_clearinghouse_submission")
+    config:
+      meta:
+        dagster:
+          kinds:
+            - googlesheets
   - name: powerschool_retention_exemption_log_upload_template
     label: PowerSchool retention exemption log upload template
     type: application
