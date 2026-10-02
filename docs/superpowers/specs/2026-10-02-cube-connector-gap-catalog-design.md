@@ -30,6 +30,9 @@ The launch page (`docs/launch/links.yml`) defines the core set: every entry with
 `system: tableau` and `status: verified` — 30 dashboards. Entries at
 `needs-review` and non-Tableau systems are out of scope.
 
+Revision 2026-10-02: the recount during extraction found 31 verified Tableau
+entries, not 30. The catalog covers all 31.
+
 ## Extraction
 
 For each dashboard: download the production workbook from tableau.kipp.org via
