@@ -26,16 +26,17 @@ with
             case
                 mem._dbt_source_project
                 when 'kippnewark'
-                then 27
+                then 18
                 when 'kippcamden'
-                then 36
+                then 27
             end as hs_at_risk_absences,
 
+            /* TODO(#5672): threshold/4 quarterly ramp pending C3 confirmation */
             case
                 when mem._dbt_source_project = 'kippnewark'
-                then 6 * safe_cast(right(rt.name, 1) as int)
+                then 4.5 * safe_cast(right(rt.name, 1) as int)
                 when mem._dbt_source_project = 'kippcamden'
-                then 9 * safe_cast(right(rt.name, 1) as int)
+                then 6.75 * safe_cast(right(rt.name, 1) as int)
             end as hs_off_track_absences,
         from {{ ref("int_students__attendance_daily") }} as mem
         inner join
@@ -274,44 +275,29 @@ with
             if(fr.entry_date is not null, 'Manual Retention', null) as manual_retention,
 
             case
-                /* NJ Gr K-8 */
+                /* NJ Gr K-8, no attendance data */
                 when
-                    co.region in ('Camden', 'Newark')
+                    co.region in ('Camden', 'Newark', 'Paterson')
                     and co.grade_level <= 8
                     and att.ada_term_running is null
                 then 'Off-Track'
-                /* NJ Gr K */
+                /* Newark & Paterson Gr K-8 */
                 when
-                    co.region = 'Newark'
+                    co.region in ('Newark', 'Paterson')
+                    and co.grade_level <= 8
+                    and att.ada_term_running < 0.90
+                then 'Off-Track'
+                /* Camden Gr K */
+                when
+                    co.region = 'Camden'
                     and co.grade_level = 0
                     and att.ada_term_running < 0.85
                 then 'Off-Track'
+                /* Camden Gr1-8 */
                 when
                     co.region = 'Camden'
-                    and co.grade_level = 0
-                    and att.ada_term_running < 0.82
-                then 'Off-Track'
-                /* NJ Gr 1-2 */
-                when
-                    co.region = 'Newark'
-                    and co.grade_level between 1 and 2
-                    and att.ada_term_running < 0.87
-                then 'Off-Track'
-                when
-                    co.region = 'Camden'
-                    and co.grade_level between 1 and 2
-                    and att.ada_term_running < 0.86
-                then 'Off-Track'
-                /* NJ Gr3-8 */
-                when
-                    co.grade_level between 3 and 8
-                    and co.region = 'Camden'
-                    and att.ada_term_running < 0.87
-                then 'Off-Track'
-                when
-                    co.grade_level between 3 and 8
-                    and co.region = 'Newark'
-                    and att.ada_term_running < 0.9
+                    and co.grade_level between 1 and 8
+                    and att.ada_term_running < 0.88
                 then 'Off-Track'
                 /* Miami K */
                 when
@@ -359,44 +345,29 @@ with
             end as attendance_status,
 
             case
-                /* NJ Gr K-8 */
+                /* NJ Gr K-8, no attendance data */
                 when
-                    co.region in ('Camden', 'Newark')
+                    co.region in ('Camden', 'Newark', 'Paterson')
                     and co.grade_level <= 8
                     and att.ada_term_running is null
                 then 'Off-Track'
-                /* NJ Gr K */
+                /* Newark & Paterson Gr K-8 */
                 when
-                    co.region = 'Newark'
+                    co.region in ('Newark', 'Paterson')
+                    and co.grade_level <= 8
+                    and att.ada_term_running < 0.90
+                then 'Off-Track'
+                /* Camden Gr K */
+                when
+                    co.region = 'Camden'
                     and co.grade_level = 0
                     and att.ada_term_running < 0.85
                 then 'Off-Track'
+                /* Camden Gr1-8 */
                 when
                     co.region = 'Camden'
-                    and co.grade_level = 0
-                    and att.ada_term_running < 0.82
-                then 'Off-Track'
-                /* NJ Gr 1-2 */
-                when
-                    co.region = 'Newark'
-                    and co.grade_level between 1 and 2
-                    and att.ada_term_running < 0.87
-                then 'Off-Track'
-                when
-                    co.region = 'Camden'
-                    and co.grade_level between 1 and 2
-                    and att.ada_term_running < 0.86
-                then 'Off-Track'
-                /* NJ Gr3-8 */
-                when
-                    co.grade_level between 3 and 8
-                    and co.region = 'Camden'
-                    and att.ada_term_running < 0.87
-                then 'Off-Track'
-                when
-                    co.grade_level between 3 and 8
-                    and co.region = 'Newark'
-                    and att.ada_term_running < 0.9
+                    and co.grade_level between 1 and 8
+                    and att.ada_term_running < 0.88
                 then 'Off-Track'
                 /* Miami K */
                 when
@@ -444,32 +415,27 @@ with
             end as attendance_status_hs_detail,
 
             case
-                /* GrK-1 NJ */
+                /* GrK-2 NJ */
                 when
-                    co.region in ('Camden', 'Newark')
-                    and co.grade_level <= 1
+                    co.region in ('Camden', 'Newark', 'Paterson')
+                    and co.grade_level <= 2
                     and coalesce(m.measure_standard_level_int, 0) <= 1
-                then 'Off-Track'
-                /* Gr2 NJ */
-                when
-                    co.region in ('Camden', 'Newark')
-                    and co.grade_level = 2
-                    and coalesce(ir.iready_reading_recent, '')
-                    in ('2 Grade Levels Below', '3 or More Grade Levels Below', '')
                 then 'Off-Track'
                 /* Gr3-8 NJ */
                 when
-                    co.region in ('Camden', 'Newark')
+                    co.region in ('Camden', 'Newark', 'Paterson')
                     and co.grade_level between 3 and 8
-                    and (
-                        coalesce(ir.iready_reading_recent, '')
-                        in ('2 Grade Levels Below', '3 or More Grade Levels Below', '')
-                        and coalesce(ir.iready_math_recent, '')
-                        in ('2 Grade Levels Below', '3 or More Grade Levels Below', '')
-                    )
-                    or c.n_failing_core >= 2
+                    and coalesce(ir.iready_reading_recent, '')
+                    in ('2 Grade Levels Below', '3 or More Grade Levels Below', '')
+                    and coalesce(ir.iready_math_recent, '')
+                    in ('2 Grade Levels Below', '3 or More Grade Levels Below', '')
                 then 'Off-Track'
-
+                /* Gr5-8 NJ */
+                when
+                    co.region in ('Camden', 'Newark', 'Paterson')
+                    and co.grade_level between 5 and 8
+                    and c.n_failing_core >= 2
+                then 'Off-Track'
                 /* Miami K-3 */
                 when
                     co.region = 'Miami'
@@ -582,13 +548,13 @@ select
     case
         /* NJ */
         when
-            region in ('Camden', 'Newark')
+            region in ('Camden', 'Newark', 'Paterson')
             and grade_level <= 8
             and academic_status = 'Off-Track'
             and attendance_status = 'Off-Track'
         then 'Off-Track'
         when
-            region in ('Camden', 'Newark')
+            region in ('Camden', 'Newark', 'Paterson')
             and grade_level between 5 and 8
             and n_failing_core >= 2
         then 'Off-Track'
