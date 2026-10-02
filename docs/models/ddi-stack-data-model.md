@@ -88,12 +88,18 @@ reaches a consumer only after:
 
 ## Terms
 
-- **Internal assessment** (`is_internal_assessment`): an Illuminate assessment
-  with a row in the AppSheet Illuminate Assessments Extension. The flag is
+- **Internal assessment** (`is_internal_assessment`; "normed" in the workbook,
+  surfaced as `is_normed_scope`): an Illuminate assessment with a row in the
+  AppSheet Illuminate Assessments Extension. The flag is
   `if(iae.assessment_id is not null, ...)` in
-  `int_assessments__assessments_members` — tagging an assessment in the AppSheet
-  is what pulls it into the DDI stack. An untagged assessment is invisible to
-  every consumer below except the raw Illuminate intermediates.
+  `int_assessments__assessments_members`. Untagged assessments still flow
+  through the scaffold's non-internal branch into
+  `rpt_tableau__assessment_dashboard`, so the Assessment Dashboard worksheet can
+  analyze every Illuminate assessment — but the Module Dashboard and DKI
+  worksheets display only normed (tagged) assessments, and the canonical
+  grouping, the report-card feeds and the star's internal branch use only tagged
+  ones. An untagged assessment is otherwise invisible to every consumer below
+  except the raw Illuminate intermediates.
 - **Canonical assessment** (`canonical_assessment_id`): internal assessments are
   created once per region/variant in Illuminate, so members that share
   `(academic_year, scope, subject_area, module_code, grade_level_id)` are
@@ -136,12 +142,14 @@ reaches a consumer only after:
 - **Performance bands**: Illuminate band sets attached per response type in
   `int_assessments__performance_bands`. `int_illuminate__performance_band_sets`
   computes each band's range as `[minimum_value, next band's minimum - 0.1)`,
-  top band capped at 9998.9. Mastery (`is_mastery`) is Illuminate's own flag on
-  the band, not derived here.
-- **DDI tiers** (`nj_student_tier`): the student intervention tier the tier
-  roster publishes. The ladder is **not** in this family — it lives in the
-  shared hub `int_extracts__student_enrollments_subjects`, and the roster passes
-  it through.
+  top band capped at 9998.9. Each band also carries Illuminate's own
+  `is_mastery` flag, so the band set is what defines which labels count as
+  mastery — the warehouse never derives a mastery cut itself.
+- **DDI tiers** (`nj_student_tier`), called **"buckets"** by every stakeholder
+  ("Bucket 1 and 2" in tickets): the student intervention tier the tier roster
+  publishes. The ladder is **not** in this family — it lives in the shared hub
+  `int_extracts__student_enrollments_subjects`, and the roster passes it
+  through.
 - **QBLs and Power Standards**: retired programs. The lookup named range still
   exists and `rpt_tableau__ddi_dashboard` still computes `is_qbl` from it;
   finishing the retirement is
@@ -197,17 +205,20 @@ reaches a consumer only after:
 
 ## The DDI Suite workbook
 
-Tableau exposure `ddi_suite`, two extracts, both views. The per-worksheet
-breakdown of the workbook itself is not documented here yet; support tickets
-name at least the DKI View, Module Dashboard and Mastery by Classroom
-worksheets, but mapping each worksheet to its extract and filters needs the
-owner's walkthrough or a workbook download.
+Tableau exposure `ddi_suite`, two extracts, both views.
+`rpt_tableau__assessment_dashboard` drives the Assessment Dashboard and Module
+Dashboard worksheets; `rpt_tableau__ddi_dashboard` drives the weekly worksheets
+(the DKI View; tickets also name a Mastery by Classroom worksheet whose extract
+the owner should confirm). The full worksheet-to-filter breakdown still needs
+the owner's walkthrough or a workbook download.
 
 ### rpt_tableau__assessment_dashboard
 
-- **What it shows**: internal-assessment response rows (overall, standard and
+- **What it shows**: Illuminate assessment response rows (overall, standard and
   group level) joined to enrollment, course/teacher and student-subject context.
-  The workbook's score pages read this.
+  Carries every Illuminate assessment, tagged or not, with `is_normed_scope`
+  marking the tagged ones; drives the Assessment Dashboard worksheet (all
+  assessments) and the Module Dashboard worksheet (normed only).
 - **Grain**: student x response record, fanned by the course-enrollment join. No
   uniqueness test (known issue).
 - **Reads**: `int_assessments__response_rollup`,
@@ -296,18 +307,21 @@ owner's walkthrough or a workbook download.
   enrollments, the standard-domains sheet, reporting terms.
 - **The four feeds**:
   - `rpt_deanslist__mod_assessment`: K-4 enrichment (non-ELA/Math) subject
-    averages per term. Includes Unit Assessments always, other scopes only when
-    AppSheet-tagged report-card-eligible for the student's region. Output
-    `subject_area` is the literal `ENRICHMENT` (a CDO schema placeholder).
+    averages per term; feeds only the Enrichment table on NJ ES report cards.
+    Includes Unit Assessments always, other scopes only when AppSheet-tagged
+    report-card-eligible for the student's region. Output `subject_area` is the
+    literal `ENRICHMENT` (a CDO schema placeholder).
   - `rpt_deanslist__mod_standards`: ELA/Math/Writing reporting-group averages,
     all grades, with Writing folded into Text Study and a five-label mastery
-    ladder (Advanced Mastery down to Far Below Mastery) from the band sets.
+    ladder (Advanced Mastery down to Far Below Mastery) from the band sets;
+    feeds the "overall" course grades on ES report cards.
   - `rpt_deanslist__mod_standards_domains`: K-4 progress-report (overall) and
     report-card (standard-domain) performance, with grade-band cut points — K-2:
-    90/75/60; grades 3-4: 85/70/50/30/0 — sharing label names across bands.
+    90/75/60; grades 3-4: 85/70/50/30/0 — sharing label names across bands;
+    feeds the mastery pages on NJ ES report cards.
   - `rpt_deanslist__sight_words`: raw sight-word mastery per student per word;
     `retested` displays as its own status but counts as mastered
-    (`is_mastery = 1`).
+    (`is_mastery = 1`); feeds the sight-words table on K-1 ES report cards.
 - **Outputs**: DeansList report cards and progress reports, gated by the
   AppSheet region tags — an untagged assessment never reaches a report card.
 - **Who runs it**: nobody by hand; the schedule runs and the AppSheet tags steer
@@ -401,14 +415,20 @@ here moves those consumers too):
 
 ## Inputs (hand-maintained)
 
-| Input                              | Maintainer            | Feeds                                                |
-| ---------------------------------- | --------------------- | ---------------------------------------------------- |
-| AppSheet assessment tagging        | ADs; QC: Marya Shukla | everything (`is_internal_assessment`)                |
-| Standard domains named range       | Marya Shukla          | report-card domains, DDI dashboard                   |
-| Academic goals named range         | data team             | goals on the DDI dashboard, `dim_assessment_goals`   |
-| Course subject crosswalk           | data team             | `int_assessments__course_enrollments`, `dim_courses` |
-| Vendor subject crosswalk           | data team             | state/vendor branches of the star                    |
-| QBLs / Power Standards named range | nobody (retired)      | `rpt_tableau__ddi_dashboard.is_qbl` ([#5656])        |
+| Input                              | Maintainer            | Feeds                                                | Update rhythm                            |
+| ---------------------------------- | --------------------- | ---------------------------------------------------- | ---------------------------------------- |
+| AppSheet assessment tagging        | ADs; QC: Marya Shukla | everything (`is_internal_assessment`)                | frequent; turned over every year         |
+| Standard domains named range       | Marya Shukla          | report-card domains, DDI dashboard                   | largely static                           |
+| Academic goals named range         | data team             | goals on the DDI dashboard, `dim_assessment_goals`   | once a year in theory, several each fall |
+| Course subject crosswalk           | data team             | `int_assessments__course_enrollments`, `dim_courses` | annual audit (below)                     |
+| Vendor subject crosswalk           | data team             | state/vendor branches of the star                    | rare                                     |
+| QBLs / Power Standards named range | nobody (retired)      | `rpt_tableau__ddi_dashboard.is_qbl` ([#5656])        | none                                     |
+
+The course subject crosswalk's annual audit is worth systematizing (the family
+skill should carry it as a procedure): list new courses with current-year
+enrollments that are missing from the sheet, then hand the list to c3/academic
+ops to confirm which are tested subjects — connected to Illuminate results,
+state testing results, both, or eventually Focus Apex assessments.
 
 [#5656]: https://github.com/TEAMSchools/teamster/issues/5656
 
@@ -480,9 +500,9 @@ frequent first, and where each one points:
    sync at midnight only) — check the band-set join before suspecting the
    scores.
 6. **Paterson looks different.** Paterson joins courses on `discipline` instead
-   of `illuminate_subject_area` (a temporary branch pending course fixes), so
-   Paterson can appear on one worksheet and not another, with its own formatting
-   quirks.
+   of `illuminate_subject_area` (a temporary branch whose retirement is
+   [#5698](https://github.com/TEAMSchools/teamster/issues/5698)), so Paterson
+   can appear on one worksheet and not another, with its own formatting quirks.
 
 One recurring feature ask: averaging across module sequence numbers (for honor
 roll). That is a workbook/extract change, not a data defect.
@@ -510,6 +530,8 @@ Tracked elsewhere:
   QBLs/Power Standards (the sheet staging model and `is_qbl`).
 - [#4446](https://github.com/TEAMSchools/teamster/issues/4446) — Illuminate dlt
   sync refactor.
+- [#5698](https://github.com/TEAMSchools/teamster/issues/5698) — retire the
+  temporary Paterson `discipline` join in `rpt_tableau__assessment_dashboard`.
 
 Found during this documentation run (2026-09-30), not yet tracked separately:
 
@@ -555,5 +577,8 @@ Found during this documentation run (2026-09-30), not yet tracked separately:
    anything to add or remove for the year).
 7. Fall: bump the DDI Suite workbook tabs' default year to the new school year
    (a workbook edit, requested each year — "make SY27 default for the tabs").
-8. Check the DDI Suite after the first assessment window: the first real rows
+8. Fall: run the course subject crosswalk audit (see Inputs) — new courses with
+   current-year enrollments that the sheet is missing, confirmed with
+   c3/academic ops.
+9. Check the DDI Suite after the first assessment window: the first real rows
    exercise the whole chain.
