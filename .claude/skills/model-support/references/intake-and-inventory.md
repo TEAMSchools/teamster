@@ -93,8 +93,7 @@ Then check the two ways that layout loses data without an error:
   change since the sheet was created, nobody refreshes them, and that refresh
   becomes a procedure in the family skill.
 
-The convention is written up in `docs/guides/google-sheets.md` once PR #5525
-merges.
+The convention is written up in `docs/guides/google-sheets.md`.
 
 ## Propose the boundary
 
