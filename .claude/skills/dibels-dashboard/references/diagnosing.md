@@ -8,6 +8,7 @@ anyone trusts it.
 - Explain a gap before reporting it
 - A whole region missing: read Amplify's file before tracing any join
 - In the extract but not on the dashboard: three causes outside the SQL
+- On the dashboard but not in Cube: Miami AY2026 has no sections to match
 - The dashboard's BANs against the extract: a QA baseline
 - SY2026-2027 header rename: null ids are a column move, not missing data
 - Verifying a year that is not in prod yet -- go to the source
@@ -145,6 +146,68 @@ does not show them, check these before touching dbt. All three came up on
 After any publish, render the dashboard with no `viewFilters` and read the
 filter bar. Desktop saves the filter state at publish time; a Region filter left
 on one region shipped as the default once on 2026-09-28.
+
+## On the dashboard but not in Cube: Miami AY2026 has no sections to match
+
+The dashboard and Cube get Miami's class sections from different models, so a
+region can be complete in one and absent from the other. The dashboard reads
+`int_students__course_enrollments`, which builds Focus sections in its own
+branch. Cube's `fct_assessment_scores_enrollment_scoped` keeps a vendor score
+only when `int_assessments__resolved_section_enrollments` matches it to a
+section, by subject (tier 1) or by `courses_credittype = 'HR'` (tier 2). That
+resolver reads `base_powerschool__course_enrollments` through
+`int_assessments__course_enrollments`.
+
+Measured 2026-10-01: all 21,459 Miami AY2026 rows in
+`base_powerschool__course_enrollments` (Focus) have null
+`courses_course_number`, `courses_credittype` and `illuminate_subject_area`.
+Neither tier can match, so the resolver returns 0 Miami AY2026 rows for every
+source: DIBELS, i-Ready, STAR and FAST. `int_assessments__benchmark_scores` held
+7,231 Miami AY2026 DIBELS rows; the fact held 0. AY2025, from the PowerSchool
+archive, is complete (19,396 DIBELS rows in Cube). Tracked on
+[#5660](https://github.com/TEAMSchools/teamster/issues/5660).
+
+- Until #5660 closes, a Cube query for Miami AY2026 DIBELS returns nothing, not
+  a low number. Answer from `rpt_tableau__dibels_dashboard` instead, and say
+  which source you used. The extract is student-level, and Cube's row-level
+  access and PII defaults do not apply to it, so report aggregates only.
+- Do not trace this through the Amplify export or the location crosswalk. The
+  rows are intact through `int_assessments__score_anchors`; the drop is at the
+  resolver.
+- The fix belongs in the shared course-enrollment models, not in the DIBELS
+  family, and it restores all 4 sources at once.
+- `int_students__course_enrollments` fills only `core_subject` for Miami, not
+  `illuminate_subject_area` or `courses_credittype`. Pointing the resolver at it
+  is not a fix on its own.
+
+Re-check before repeating any of this, since #5660 may have shipped:
+
+```sql
+select 'a_benchmark_scores' as step, academic_year, count(*) as n,
+from `teamster-332318`.kipptaf_assessments.int_assessments__benchmark_scores
+where score_source = 'dibels' and _dbt_source_project = 'kippmiami'
+    and academic_year >= 2025
+group by all
+union all
+select 'b_score_anchors', academic_year, count(*),
+from `teamster-332318`.kipptaf_assessments.int_assessments__score_anchors
+where source_type = 'dibels' and _dbt_source_project = 'kippmiami'
+    and academic_year >= 2025
+group by all
+union all
+select 'c_resolved', academic_year, count(*),
+from `teamster-332318`.kipptaf_assessments.int_assessments__resolved_section_enrollments
+where source_type = 'dibels' and _dbt_source_project = 'kippmiami'
+    and academic_year >= 2025
+group by all
+order by 2, 1
+```
+
+Compare `c_resolved` with `b_score_anchors`, not with `a_benchmark_scores`.
+Score anchors keep only `response_type = 'overall'` DIBELS rows, one per score
+grain, so they read far below the benchmark scores even when nothing is lost.
+Measured 2026-10-01: AY2025 went 19,612 / 3,767 / 3,754, and AY2026 went 7,231 /
+1,380 / none. A year with anchors and no `c_resolved` row is the defect.
 
 ## The dashboard's BANs against the extract: a QA baseline
 
