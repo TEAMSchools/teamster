@@ -245,3 +245,33 @@ source with no Tableau publish needed.
   list diff at the start of Step 2.
 - **Desktop rejecting a file that Server accepted:** the owner's Desktop open
   before the production publish.
+
+## Revision 2026-10-03 (planning)
+
+Found while writing the implementation plan; supersedes the Step 2 and Step 3
+text above where they differ.
+
+- **Production publish moves to the owner, from Tableau Desktop.** A REST
+  publish drops the workbook's embedded connection credentials (the
+  `tableau-workbook-xml` skill's _What a publish drops_), which would break the
+  DDI Suite's scheduled refreshes. Claude publishes only the review copy; the
+  owner opens the edited `.twbx`, checks it, and publishes to production from
+  Desktop with credentials embedded as today.
+- **The extract-refresh check moves to the owner's Desktop session.** A refresh
+  of the review copy would fail on the dropped credentials and prove nothing
+  about the field list. Instead the owner runs a full extract refresh of both
+  data sources in Desktop before publishing.
+- **Text zones depend on the deleted parameter.** O3 View zone 76 and DKI View
+  zone 59, and the titles of four DKI and O3 worksheets, print
+  `<[Parameters].[Parameter 9]> Mastery`. They become the literal
+  `Standards Mastery`, and the freed width of the deleted dropdown goes to that
+  header. The instruction line appears under both O3 headers (zones 76 and 82,
+  main and phone layouts); it is removed from both, and zone 82 keeps its
+  `Assessment Mastery by <View By - Classroom>` header.
+- **Hidden QBL containers hold more than the QBL sheets.** Mastery Over Time
+  [Region] and [School] container 306 also holds an inner flow and an empty
+  spacer (Region 373 and 375, School 309 and 311); all go with it.
+- **The staging model has no tests**, so Step 3 adds only the model-level
+  `enabled: false`.
+- **O3 View fails `check_geometry.py` before any edit** (zone 156 overlaps zone
+  3). The edited file must show exactly that failure and no other.
