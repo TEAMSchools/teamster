@@ -1,19 +1,64 @@
 models:
   - name: rpt_deanslist__mod_standards
+    description: >-
+      DeansList SFTP CDO extract of ELA and Math reporting-group averages for
+      the current academic year. Each row is one student, subject, term,
+      reporting group, and performance band set, averaging the group-level
+      percent correct across the student's internal assessments in Text Study,
+      Mathematics, and Writing. Writing is reported as Text Study. A row whose
+      average falls in no band of its performance band set is dropped.
+    config:
+      meta:
+        contains_pii: true
+    data_tests:
+      # Deliberately narrower than the model grain: the grain includes
+      # performance_band_set_id (and Writing folds into Text Study), so a
+      # reporting group spanning two band sets, or a Writing/Text Study label
+      # collision, sends DeansList two rows for one standard — exactly what
+      # this warn should flag. Clean in prod as of 2026-10-02.
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - academic_year
+              - subject_area
+              - term
+              - standard_description
     columns:
       - name: student_number
         data_type: int64
+        description: PowerSchool student number.
       - name: academic_year
         data_type: int64
+        description:
+          Academic year as the starting calendar year. Always the current
+          academic year.
       - name: subject_area
         data_type: string
+        description:
+          Illuminate subject area, Text Study or Mathematics, with Writing
+          folded into Text Study.
       - name: term
         data_type: string
+        description:
+          RT reporting term for the student's school whose date range contains
+          the assessment's administered date.
       - name: response_type
         data_type: string
+        description:
+          First letter of the response type, uppercased. Always G (reporting
+          group).
       - name: standard_description
         data_type: string
+        description: Illuminate reporting group description.
       - name: percent_correct
         data_type: numeric
+        description:
+          Rounded average group-level percent correct for the student, subject,
+          term, and reporting group.
       - name: standard_proficiency
         data_type: string
+        description:
+          Mastery label from the matched band's label number — 5 Advanced
+          Mastery, 4 Mastery, 3 Approaching Mastery, 2 Below Mastery, 1 Far
+          Below Mastery. Null for any other label number.

@@ -1,37 +1,65 @@
 models:
   - name: int_illuminate__performance_band_sets
+    description: >-
+      Illuminate performance bands with their parent band set and a derived
+      upper bound. One row per performance band. Staging excludes deleted band
+      sets.
     # config:
     #   materialized: table
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - performance_band_set_id
+              - performance_band_id
     columns:
       - name: performance_band_set_id
         data_type: int64
+        description: Illuminate performance band set id.
       - name: description
         data_type: string
+        description: Band set description.
       - name: district_default
         data_type: boolean
+        description: Whether the band set is the district default.
       - name: hidden
         data_type: boolean
+        description: Whether the band set is hidden in Illuminate.
       - name: user_id
         data_type: int64
+        description: Illuminate user who created the band set.
       - name: created_at
         data_type: timestamp
+        description: When the band set was created.
       - name: updated_at
         data_type: timestamp
+        description: When the band set was last updated.
       - name: deleted_at
         data_type: timestamp
+        description: >-
+          Band set deletion time. Always null, because staging excludes deleted
+          band sets.
       - name: performance_band_id
         data_type: int64
+        description: Illuminate performance band id.
       - name: color
         data_type: string
+        description: Display color of the band.
       - name: is_mastery
         data_type: boolean
+        description: Whether the band counts as mastery.
       - name: label
         data_type: string
+        description: Band label.
       - name: label_number
         data_type: numeric
+        description: Band rank within its set; orders bands for maximum_value.
       - name: minimum_value
         data_type: float64
+        description: Lowest score in the band.
       - name: maximum_value
         data_type: float64
-        description:
-          Derived from label_number, minimum_value, performance_band_set_id.
+        description: >-
+          Next band's minimum_value (by label_number within the band set) minus
+          0.1. The top band uses 9999 as the next minimum, so its maximum is
+          9998.9.
