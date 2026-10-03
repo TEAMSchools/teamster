@@ -21,25 +21,45 @@ cubes:
 
       - name: academic_subject
         description: >-
-          Subject tested (e.g., Mathematics, English Language Arts, Reading,
-          Science).
+          Subject tested; the vocabulary is per source. State tests: English
+          Language Arts, Mathematics, Science, and course names for
+          end-of-course tests (Algebra I, Geometry, Civics). i-Ready and STAR:
+          Math and Reading, plus Early Literacy for STAR. DIBELS: Reading.
+          Illuminate: course-level names, with no English Language Arts value;
+          its ELA equivalent is Text Study, alongside Writing, English 100–400,
+          CCR and AP courses, and math appears as Mathematics and course names
+          such as Algebra I and Geometry. Distinct from the course's discipline.
         sql: academic_subject
         type: string
         public: true
+        meta:
+          ai_context: >-
+            Check this member's values for the source before filtering; a wrong
+            label returns zero rows with no error. Which labels count as 'math'
+            or 'ELA' across sources is an open decision; say which labels you
+            included.
 
       - name: assessment_type
         description: >-
-          Source-system category. Values that currently carry scores on the
-          assessment-scores view: illuminate (internal interims), iready,
-          dibels, star, and the state assessments state_nj_njsla,
-          state_nj_njsla_science, state_nj_njgpa, state_fl_fast,
-          state_fl_science, state_fl_eoc. Other categories exist upstream
-          (college, ap, state_nj_parcc, state_fl_fsa, plus _unknown fallbacks)
-          but carry no scores on this view today; treat this list as current,
-          not closed.
+          Source-system category — illuminate (KIPP-authored internal interims);
+          iready, dibels and star (vendor diagnostics); college (SAT, ACT and
+          PSAT, Official and Practice); ap; the NJ state tests state_nj_njsla,
+          state_nj_njsla_science, state_nj_njgpa and state_nj_parcc; the FL
+          state tests state_fl_fast, state_fl_science, state_fl_eoc and
+          state_fl_fsa; and the _unknown fallbacks. An open list. From spring
+          2026, NJSLA and NJGPA are computer-adaptive, and no field separates
+          adaptive from fixed-form scores. NJSLA Science did not change.
         sql: "{CUBE}.`type`"
         type: string
         public: true
+        meta:
+          ai_context: >-
+            Use this member to select a source. college, ap, state_nj_parcc,
+            state_fl_fsa and the _unknown fallbacks carry no scores on this view
+            today, so zero rows for them is coverage, not a failure; treat that
+            list as current, not closed. Flag any NJSLA or NJGPA comparison that
+            crosses spring 2026 as possibly comparing 2 scales; never present
+            that trend as settled.
 
       - name: category
         description: >-
@@ -51,27 +71,54 @@ cubes:
 
       - name: module_code
         description: >-
-          Module/test code identifying the assessment variant (e.g., QA1, ELA05,
-          sat_total_score).
+          Code identifying the assessment within its source. Illuminate: the
+          checkpoint code within a module type (for example QA1, MQQ2); one code
+          spans every subject assessed in that round, and a small share of
+          Illuminate assessments have none. State tests: subject and grade (for
+          example ELA05, MAT08, ALG01; ELAGP and MATGP for NJGPA). i-Ready and
+          STAR: the subject. DIBELS: Composite.
         sql: module_code
         type: string
         public: true
+        meta:
+          ai_context: >-
+            Not a subject filter on its own for Illuminate, where one code spans
+            every subject in its round. Always pair it with academic_subject.
+            Which Illuminate codes exist varies by subject, grade and region, so
+            check the exact slice before pooling across checkpoints. Illuminate
+            code names are not chronological; order by median date_taken.
 
       - name: module_type
         description: >-
-          Module type for internal Illuminate assessments (e.g., QA, CR). Null
-          for state and college.
+          Illuminate module type. An open list: QA (Quick Assessments), MQQ
+          (Multiple-Choice Quick Questions), CRQ (Constructed Response
+          Questions), UA (Unit Assessment), TP, ET, WPP, and older types. What
+          TP, ET and WPP stand for is not documented. Illuminate only; null for
+          every other source.
         sql: module_type
         type: string
         public: true
+        meta:
+          ai_context: >-
+            Do not expand TP, ET or WPP. pct_proficient_formative covers only
+            QA, MQQ and CRQ.
 
       - name: grade_level_tested
         description: >-
-          Grade level the assessment targets. Null for college-entrance
-          assessments.
+          Grade the assessment targets; 0 is kindergarten. Illuminate and state
+          tests only; null for every other source, for the NJSLA end-of-course
+          tests (Algebra I, Geometry, Algebra II), and for a small share of
+          Illuminate assessments.
         sql: grade_level_tested
         type: number
         public: true
+        meta:
+          ai_context: >-
+            For a vendor diagnostic (i-Ready, DIBELS, STAR) or an NJSLA
+            end-of-course test, filter grade_level instead; this member returns
+            zero rows with no error. Where both are populated they answer
+            different questions, and which one grade-band reporting should use
+            is an open decision; say which you used.
 
       - name: scope
         description: >-
@@ -83,8 +130,13 @@ cubes:
 
       - name: is_internal_assessment
         description: >-
-          TRUE for KIPP-created internal assessments via Illuminate; FALSE for
-          state and college.
+          TRUE for Illuminate (KIPP-authored interims) only; FALSE for every
+          other source, including the i-Ready, DIBELS and STAR diagnostics KIPP
+          administers itself.
         sql: is_internal_assessment
         type: boolean
         public: true
+        meta:
+          ai_context: >-
+            Do not select a source with this flag; it groups vendor diagnostics
+            with state tests. Filter assessment_type instead.

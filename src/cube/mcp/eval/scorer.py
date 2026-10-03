@@ -13,11 +13,19 @@ Determinate prompts (families 1 & 2 — a correct year exists):
     silent_wrong     wrong AND no interpretation echoed in the reply
 Ambiguous prompts (family 3 — no correct year):
     disambig_rate    model echoed an interpretation / noted the ambiguity
+
+Every rate carries a 95% Wilson interval clustered on prompt id (see
+_clustered_wilson): reps of one prompt are not independent trials.
 """
 
+import json
 import math
 import re
+import statistics
 from typing import Any
+
+import traps
+from traps import _flatten_filters
 
 # A year-span ("2025-2026", "2025-26", "2025–26") or the phrase "school year"
 # near a year, or an explicit "interpret..." — taken as the model surfacing its
@@ -27,22 +35,6 @@ _ECHO_RE = re.compile(
 )
 _LABEL_RE = re.compile(r"^\s*(\d{4})\s*[-–]\s*(?:\d{2}|\d{4})\s*$")
 _INT_RE = re.compile(r"^\s*(\d{4})\s*$")
-
-
-def _flatten_filters(filters: Any) -> list[dict[str, Any]]:
-    """Flatten a Cube filters list, descending into and/or groups."""
-    out: list[dict[str, Any]] = []
-    if not isinstance(filters, list):
-        return out
-    for f in filters:
-        if not isinstance(f, dict):
-            continue
-        if "member" in f:
-            out.append(f)
-        for key in ("and", "or"):
-            if key in f:
-                out.extend(_flatten_filters(f[key]))
-    return out
 
 
 def _label_start(value: Any) -> int | None:
@@ -88,6 +80,23 @@ def _start_from_ay(filt: dict[str, Any] | None) -> int | None:
 def score_record(prompt: dict[str, Any], result: dict[str, Any]) -> dict[str, Any]:
     """Score one rep. ``prompt`` is a prompts.yaml entry; ``result`` a harness
     transcript summary."""
+    if "trap" in prompt:  # family 4: assessment traps
+        view_queries = [
+            q
+            for q in result.get("load_queries", [])
+            if isinstance(q, dict) and "student_assessment_scores_view" in json.dumps(q)
+        ]
+        return {
+            "id": prompt["id"],
+            "family": prompt["family"],
+            "ground_truth_start": None,
+            "trap": prompt["trap"],
+            "trap_fired": traps.TRAPS[prompt["trap"]](
+                view_queries, result.get("final_text") or ""
+            ),
+            "n_view_queries": len(view_queries),
+            "error": result.get("error"),
+        }
     gt = prompt.get("ground_truth_start")
     family = prompt["family"]
     # First load query that filters an AY member wins (even if its value is
@@ -121,16 +130,124 @@ def score_record(prompt: dict[str, Any], result: dict[str, Any]) -> dict[str, An
     return rec
 
 
-def _wilson(k: int, n: int) -> tuple[float, float, float]:
-    """Return (rate, lo, hi) — Wilson 95% interval. (0,0,0) when n == 0."""
-    if n == 0:
+# The clustered interval and the t quantile below are ported from Inspect AI's
+# ci_wilson(cluster=...) in src/inspect_ai/scorer/_metrics/std.py (MIT,
+# Copyright (c) 2024 UK AI Security Institute). The clustered variance is
+# Appendix A of Miller, "Adding Error Bars to Evals"
+# (https://arxiv.org/abs/2411.00640), with a C / (C - 1) finite-cluster
+# correction.
+
+
+def _clustered_wilson(
+    recs: list[dict[str, Any]], flag: str
+) -> tuple[float, float, float]:
+    """Return (rate, lo, hi) — a 95% Wilson interval clustered on prompt ``id``.
+
+    Reps of one prompt are correlated, so the records are not independent
+    trials. The interval uses the Korn-Graubard effective sample size
+    p(1 - p) / clustered variance, capped at the record count, and a Student-t
+    critical value with clusters - 1 degrees of freedom. At a rate of exactly 0
+    or 1 the clustered variance is 0 and says nothing about correlation, so the
+    record count is used and only the t value widens the interval.
+    (0, 0, 0) when there are no records; (rate, 0, 1) with one prompt, where
+    the between-prompt variance cannot be estimated.
+    """
+    if not recs:
         return (0.0, 0.0, 0.0)
-    z = 1.96
-    p = k / n
-    denom = 1 + z * z / n
-    center = (p + z * z / (2 * n)) / denom
-    half = (z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n))) / denom
+    groups: dict[str, list[float]] = {}
+    for r in recs:
+        groups.setdefault(r["id"], []).append(float(bool(r[flag])))
+    n = len(recs)
+    p = sum(sum(g) for g in groups.values()) / n
+    k = len(groups)
+    if k < 2:
+        return (p, 0.0, 1.0)
+
+    # Each cluster's deviation sum, squared: sum_i sum_j (s_i - p)(s_j - p).
+    variance = sum((sum(g) - p * len(g)) ** 2 for g in groups.values())
+    variance *= k / (k - 1) / (n * n)
+    n_eff = float(n)
+    if 0.0 < p < 1.0 and variance > 0.0:
+        n_eff = min(p * (1 - p) / variance, n_eff)
+
+    t = _t_inv_cdf(0.975, k - 1)
+    denom = 1 + t * t / n_eff
+    center = (p + t * t / (2 * n_eff)) / denom
+    half = t * math.sqrt(p * (1 - p) / n_eff + t * t / (4 * n_eff * n_eff)) / denom
     return (p, max(0.0, center - half), min(1.0, center + half))
+
+
+def _t_inv_cdf(p: float, df: int) -> float:
+    """Student-t inverse CDF for 0.5 < p < 1, by bisection on the exact CDF."""
+
+    def cdf(t: float) -> float:
+        return 1.0 - 0.5 * _reg_inc_beta(df / 2.0, 0.5, df / (df + t * t))
+
+    hi = 1.0
+    while cdf(hi) < p:
+        hi *= 2.0
+    lo = 0.0
+    for _ in range(100):
+        mid = (lo + hi) / 2.0
+        if cdf(mid) < p:
+            lo = mid
+        else:
+            hi = mid
+    return (lo + hi) / 2.0
+
+
+def _reg_inc_beta(a: float, b: float, x: float) -> float:
+    """Regularized incomplete beta function I_x(a, b) (Numerical Recipes 6.4)."""
+    if x <= 0.0:
+        return 0.0
+    if x >= 1.0:
+        return 1.0
+    front = math.exp(
+        math.lgamma(a + b)
+        - math.lgamma(a)
+        - math.lgamma(b)
+        + a * math.log(x)
+        + b * math.log1p(-x)
+    )
+    # The continued fraction converges fast below (a + 1) / (a + b + 2); above
+    # it, use the symmetry I_x(a, b) = 1 - I_(1-x)(b, a).
+    if x < (a + 1.0) / (a + b + 2.0):
+        return front * _beta_continued_fraction(a, b, x) / a
+    return 1.0 - front * _beta_continued_fraction(b, a, 1.0 - x) / b
+
+
+def _beta_continued_fraction(a: float, b: float, x: float) -> float:
+    """Lentz's continued fraction for the incomplete beta function."""
+    tiny = 1e-300
+
+    def clamp(v: float) -> float:
+        return tiny if abs(v) < tiny else v
+
+    qab, qap, qam = a + b, a + 1.0, a - 1.0
+    c = 1.0
+    d = 1.0 / clamp(1.0 - qab * x / qap)
+    h = d
+    for m in range(1, 201):
+        m2 = 2 * m
+        for aa in (
+            m * (b - m) * x / ((qam + m2) * (a + m2)),
+            -(a + m) * (qab + m) * x / ((a + m2) * (qap + m2)),
+        ):
+            d = 1.0 / clamp(1.0 + aa * d)
+            c = clamp(1.0 + aa / c)
+            h *= d * c
+        if abs(d * c - 1.0) < 3e-16:
+            break
+    return h
+
+
+def _trap_scorable(rec: dict[str, Any]) -> bool:
+    error = rec.get("error")
+    if error and "maximum number of turns" not in str(error):
+        return False
+    if rec.get("trap") in traps.ANSWER_SCORED:
+        return True
+    return rec.get("n_view_queries", 1) > 0
 
 
 def aggregate(records: list[dict[str, Any]]) -> dict[tuple[str, str], dict[str, Any]]:
@@ -141,48 +258,94 @@ def aggregate(records: list[dict[str, Any]]) -> dict[tuple[str, str], dict[str, 
 
     summary: dict[tuple[str, str], dict[str, Any]] = {}
     for key, recs in cells.items():
-        determinate = [r for r in recs if r["ground_truth_start"] is not None]
-        ambiguous = [r for r in recs if r["ground_truth_start"] is None]
-        n_det = len(determinate)
-        wrong = sum(1 for r in determinate if r["wrong"])
-        correct = sum(1 for r in determinate if r["correct"])
-        no_query = sum(1 for r in determinate if r["no_query"])
-        silent = sum(1 for r in determinate if r["silent_wrong"])
-        errors = sum(1 for r in recs if r.get("error"))
-        disambig = sum(1 for r in ambiguous if r["disambiguated"])
-
+        # A query-scored trap needs a query on the view: with none, 4 of the 6
+        # predicates read a pass and 2 a fire, so the outcome means nothing. A
+        # harness cutoff (session limit, crash) is dropped for the same reason.
+        # Hitting the turn limit is the model's own doing and its queries were
+        # captured, so it still scores.
+        trap_recs = [r for r in recs if "trap" in r]
+        trapped = [r for r in trap_recs if _trap_scorable(r)]
+        year = [r for r in recs if "trap" not in r]
+        determinate = [r for r in year if r["ground_truth_start"] is not None]
+        ambiguous = [r for r in year if r["ground_truth_start"] is None]
+        # A rate's independent unit is the prompt, not the rep: k_* counts
+        # the prompts (clusters) behind each interval.
         summary[key] = {
             "n_total": len(recs),
-            "n_determinate": n_det,
-            "errors": errors,
-            "wrong_rate": _wilson(wrong, n_det),
-            "correct_rate": _wilson(correct, n_det),
-            "no_query_rate": _wilson(no_query, n_det),
-            "silent_wrong_rate": _wilson(silent, n_det),
-            "disambig_rate": _wilson(disambig, len(ambiguous)),
+            "n_determinate": len(determinate),
+            "k_determinate": len({r["id"] for r in determinate}),
+            "k_ambiguous": len({r["id"] for r in ambiguous}),
+            "errors": sum(1 for r in recs if r.get("error")),
+            "wrong_rate": _clustered_wilson(determinate, "wrong"),
+            "correct_rate": _clustered_wilson(determinate, "correct"),
+            "no_query_rate": _clustered_wilson(determinate, "no_query"),
+            "silent_wrong_rate": _clustered_wilson(determinate, "silent_wrong"),
+            "disambig_rate": _clustered_wilson(ambiguous, "disambiguated"),
+            "n_trap": len(trapped),
+            "k_trap": len({r["id"] for r in trapped}),
+            "n_unscored": len(trap_recs) - len(trapped),
+            "trap_rate": _clustered_wilson(trapped, "trap_fired"),
         }
     return summary
 
 
 def format_summary(summary: dict[tuple[str, str], dict[str, Any]]) -> str:
-    """Render the per-cell summary as a fixed-width table."""
+    """Render the per-cell summary as a fixed-width table.
+
+    ``n/k`` is records / prompts. The intervals are clustered on prompt, so k
+    is the sample size that matters; at k under about 10 they are rough.
+    """
 
     def pct(triple: tuple[float, float, float]) -> str:
         p, lo, hi = triple
         return f"{p * 100:5.1f}% [{lo * 100:4.0f}-{hi * 100:4.0f}]"
 
     header = (
-        f"{'model':<22} {'arm':<16} {'n':>4} "
+        f"{'model':<22} {'arm':<16} {'n/k':>7} "
         f"{'wrong':>16} {'silent_wrong':>16} {'correct':>16} "
-        f"{'no_query':>16} {'disambig':>16}"
+        f"{'no_query':>16} {'disambig':>16} {'trap n/k':>8} {'trap_rate':>16}"
     )
     lines = [header, "-" * len(header)]
     for model, arm in sorted(summary):
         s = summary[(model, arm)]
+        det = f"{s['n_determinate']}/{s['k_determinate']}"
+        trap = f"{s['n_trap']}/{s['k_trap']}"
         lines.append(
-            f"{model:<22} {arm:<16} {s['n_determinate']:>4} "
+            f"{model:<22} {arm:<16} {det:>7} "
             f"{pct(s['wrong_rate']):>16} {pct(s['silent_wrong_rate']):>16} "
             f"{pct(s['correct_rate']):>16} {pct(s['no_query_rate']):>16} "
-            f"{pct(s['disambig_rate']):>16}"
+            f"{pct(s['disambig_rate']):>16} {trap:>8} {pct(s['trap_rate']):>16}"
         )
+    return "\n".join(lines)
+
+
+_COST_FIELDS = [
+    "input_tokens",
+    "cache_read_tokens",
+    "cache_write_tokens",
+    "output_tokens",
+    "cost_usd",
+    "num_turns",
+    "duration_ms",
+]
+
+
+def format_cost_summary(records: list[dict[str, Any]]) -> str:
+    """Median tokens, cost, turns, tool calls and duration per (model, arm)."""
+    cells: dict[tuple[str, str], list[dict[str, Any]]] = {}
+    for r in records:
+        cells.setdefault((r["model"], r["arm"]), []).append(r)
+    header = f"{'model':<22} {'arm':<16} " + " ".join(
+        f"{c:>14}" for c in [*_COST_FIELDS, "tool_calls"]
+    )
+    lines = ["median per conversation", header, "-" * len(header)]
+    for key in sorted(cells):
+        recs = cells[key]
+        vals = []
+        for field in _COST_FIELDS:
+            xs = [r[field] for r in recs if isinstance(r.get(field), int | float)]
+            vals.append(f"{statistics.median(xs):>14.4g}" if xs else f"{'-':>14}")
+        calls = [len(r.get("tool_calls") or []) for r in recs]
+        vals.append(f"{statistics.median(calls):>14.4g}" if calls else f"{'-':>14}")
+        lines.append(f"{key[0]:<22} {key[1]:<16} " + " ".join(vals))
     return "\n".join(lines)

@@ -159,11 +159,12 @@ models:
       - name: response_type
         data_type: string
         description: >-
-          The response type associated with the assessment score: overall
-          (subject/course-level or composite score), group (a strand/domain
-          rollup within a subject), standard (a single standard-level Illuminate
-          response), or not_taken (an internal assessment the student was
-          expected to take but has no recorded response).
+          Response-type breakdown. Never null; 4 values: overall (a subject,
+          course-level or composite score; every source), group (a strand or
+          domain rollup within a subject; Illuminate, i-Ready and DIBELS),
+          standard (one Illuminate standard; Illuminate only) and not_taken (an
+          Illuminate assessment a student was assigned and never sat, with no
+          recorded response). Not additive across values.
         data_tests:
           - accepted_values:
               arguments:
@@ -176,18 +177,21 @@ models:
           How the section enrollment was resolved: subject_section (the section
           for the assessment's subject, active on the test date) or homeroom
           (the student's HR section, used when no subject section resolved).
-          Filter to subject_section for course/section-level rollups.
 
       - name: scale_score
         data_type: numeric
         description: >-
-          Scale score achieved. Null for internal assessments that use percent
-          correct instead.
+          Scale score achieved. Every source except Illuminate, which reports
+          percent_correct instead. Scales differ by source and are not
+          comparable across sources or subjects; within i-Ready the scale also
+          compresses at higher grades, so a change in score is not comparable
+          between elementary and middle grades.
 
       - name: percent_correct
         data_type: numeric
         description: >-
-          Percent of questions answered correctly. Null for state assessments.
+          Percent of questions answered correctly. Illuminate only; null for
+          every other source.
 
       - name: national_percentile
         data_type: numeric
@@ -200,60 +204,77 @@ models:
       - name: proficiency_level
         data_type: string
         description: >-
-          Proficiency band label (e.g., performance band for internal,
-          achievement level for state).
+          Proficiency label; the vocabulary is per source. i-Ready: 3 or More
+          Grade Levels Below, 2 Grade Levels Below, 1 Grade Level Below, Early
+          On Grade Level, Mid or Above Grade Level. DIBELS: Well Below
+          Benchmark, Below Benchmark, At Benchmark, Above Benchmark, and Tested
+          Out on some subtest (group) rows. STAR and FL state: Level 1 to Level
+          5; STAR is null on a share of rows. NJSLA and NJSLA Science: Did Not
+          Yet Meet Expectations, Partially Met Expectations, Approached
+          Expectations, Met Expectations, Exceeded Expectations. NJGPA:
+          Graduation Ready, Not Yet Graduation Ready. Illuminate: the
+          performance band label. Tier-movement rates are not comparable across
+          instruments: fewer, wider tiers mechanically raise the stayed-the-same
+          rate.
 
       - name: is_mastery
         data_type: boolean
         description: >-
-          TRUE if the student met the mastery or proficiency threshold for this
-          assessment. The threshold is per source: an at-or-above-grade-level
-          placement for i-Ready, the measure's own benchmark level for DIBELS,
-          the performance band for Illuminate, and the state achievement level
-          for NJSLA, NJGPA and FAST. Null on the DIBELS subtests whose benchmark
-          level is not set upstream, concentrated in the K-2 phonics measures —
-          those rows sit in a proficiency denominator without ever entering the
-          numerator.
+          Per-row proficient flag that pct_proficient is built from. The bar is
+          per source: i-Ready, Early On Grade Level and Mid or Above Grade Level
+          — Early On is a looser bar than at or above grade level; DIBELS, At
+          and Above Benchmark; STAR and FL, Level 3 and up; NJSLA, Met and
+          Exceeded Expectations; NJGPA, Graduation Ready; Illuminate, set by
+          each assessment's band set, so an Illuminate rate mixes different
+          bars. Null where the source gives no verdict: Illuminate not_taken
+          rows, DIBELS Tested Out subtests, and STAR rows with no level.
 
+      # Lineage: custom_code (Illuminate standard rows), domain_name (i-Ready),
+      # measure_standard (DIBELS). Also a surrogate-key discriminator for
+      # breakdown rows that would otherwise collide on assessment,
+      # administration and student.
       - name: response_type_code
         data_type: string
         description: >-
-          Breakdown identifier, populated as custom_code for an Illuminate
-          standard row, domain_name for an i-Ready domain, or measure_standard
-          for a DIBELS subtest. Null on Illuminate group rows — the
-          reporting-group branch carries no equivalent code — and on all overall
-          and not_taken rows. Serves as a surrogate-key discriminator
-          distinguishing breakdown rows that would otherwise collide on
-          assessment, administration, and student.
+          Breakdown identifier — the standard code on Illuminate standard rows,
+          the domain on i-Ready group rows, the subtest on DIBELS group rows.
+          Null on Illuminate group rows and on every overall and not_taken row.
+          Some CCSS Math standards carry 2 spellings (8.EE.C.8.b and 8.EE.C.8b),
+          and a small share of older rows have an empty code (an empty string,
+          not null).
 
+      # Lineage: an Illuminate standard's own description or its reporting-group
+      # label, the rendered i-Ready domain name, or the DIBELS measure_name.
       - name: response_type_description
         data_type: string
         description: >-
-          Human-readable label for the response_type_code breakdown: an
-          Illuminate standard's own description or its reporting-group label, a
-          rendered domain name for i-Ready, or the measure_name for DIBELS.
-          Populated for every group and standard row; null only for overall and
-          not_taken rows.
+          Human-readable breakdown label. Populated on standard rows and every
+          group row; null on overall and not_taken. A few standards carry
+          whitespace variants of the same label.
 
       - name: response_type_root_description
         data_type: string
         description: >-
-          Description of the root (top-level) standard in the Illuminate
-          standards hierarchy. Populated only where an Illuminate standard row
-          resolves a parent standard. Null everywhere else: Illuminate group
-          rows, and every vendor and state row, which have no root-standard
-          concept.
+          CCSS domain the standard rolls up to. Populated only on Illuminate
+          standard rows that resolve a parent standard. Unreliable for
+          Illuminate content aligned to Florida's own standards, whose codes do
+          not fit the CCSS hierarchy.
 
       - name: is_replacement
         data_type: boolean
         description: >-
           Illuminate-only flag. TRUE when a K-8 student sat a
           replacement-curriculum assessment off their enrolled grade level. Null
-          for all non-Illuminate sources (state and vendor), which have no
-          replacement-curriculum concept.
+          for every other source (the state tests and the i-Ready, DIBELS and
+          STAR diagnostics), which have no replacement-curriculum concept.
 
       - name: performance_band_label_number
         data_type: numeric
         description: >-
-          Numeric ordering of the performance band label within the assessment's
-          band scale. Null for state assessments.
+          Position of the score's band within the performance band set it was
+          scored against. Illuminate only; null for every other source. Band
+          sets differ in cut points, in band count, and in which band starts
+          mastery, so band 5 is not always the top. Not comparable across
+          assessments, or across response types within one assessment: standard
+          and group rows can carry different band labels than the assessment's
+          overall rows.

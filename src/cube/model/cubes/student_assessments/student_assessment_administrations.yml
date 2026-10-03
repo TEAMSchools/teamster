@@ -30,12 +30,26 @@ cubes:
 
       - name: administration_period
         description: >-
-          Scheduling period distinguishing administrations within an academic
-          year. NJ state: testing season (Fall, Winter, Spring). FL state: FLDOE
-          window. College: College Board round. Null for Illuminate and AP.
+          Window within the academic year; the vocabulary is per source. i-Ready
+          and DIBELS: BOY, MOY, EOY, plus Outside Round for i-Ready sittings
+          outside the 3 windows. STAR: Fall, Winter, Spring. NJGPA: Fall (the
+          routine retake window) and Spring. NJSLA and NJSLA Science: Spring. FL
+          FAST: PM1 to PM3; FL end-of-course and science: PM3. College: the
+          College Board round. Null for Illuminate and AP. i-Ready and DIBELS
+          EOY falls after spring state testing; MOY is the last named round
+          before it.
         sql: administration_period
         type: string
         public: true
+        meta:
+          ai_context: >-
+            Only meaningful with assessment_type scoped. A BOY/MOY/EOY filter
+            drops Outside Round, so say which windows you used. For "the most
+            recent diagnostic", find the latest named round (BOY, MOY or EOY)
+            that has data in the latest academic_year_label, then filter
+            administration_period to that round; never sort by date_taken to
+            find it. An EOY-versus-state comparison in one year is concurrent,
+            not predictive; use MOY.
 
       - name: test_type
         description: >-
@@ -47,8 +61,12 @@ cubes:
 
       - name: source_assessment_id
         description: >-
-          Illuminate assessment id carried to the administration grain (the
-          canonical id). Null for non-Illuminate branches.
+          Illuminate assessment id at the administration grain (the canonical
+          id). Illuminate only; null for every other source.
         sql: source_assessment_id
         type: number
         public: true
+        meta:
+          ai_context: >-
+            "How many times was this assessed" is a distinct count of this, not
+            a row count; count_assessments is that count.

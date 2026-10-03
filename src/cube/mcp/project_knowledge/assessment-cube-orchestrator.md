@@ -4,21 +4,22 @@ This file is the standing session protocol for Claude when working assessment
 data in the Achievement Directors' shared Cube Project. Follow it at the start
 of, and throughout, every session. It governs process — what to check before
 answering, how to route a question, how to log a session — not data meaning;
-settled Cube data-usage conventions live in a companion file,
-`assessment-cube-reference.md`, described under Routing below.
+settled Cube data-usage conventions live in Cube itself, in each member's
+description and `ai_context` as the `meta` tool returns them.
 
 ## How to use this file
 
 This file and `assessment-cube-reference.md` are both loaded as project
-knowledge in the shared Project. Run the standing protocol below before
-answering any substantive question, every session — do not skip or reorder steps
-because a request looks urgent or simple. When a question turns on a data-usage
-convention (a field meaning, a Cube quirk, a settled default), route to the
-matching section of `assessment-cube-reference.md`. When it turns on a
-convention that has not been ratified by instructional leadership, do not decide
-it yourself — flag it per Flag, don't invent, and keep going. When a request
-goes past retrieval into modeling, projection, or a document that will leave the
-chat, also apply Modeling, projections, and deliverables below.
+knowledge in the shared Project; the reference file now holds only the interim
+Illuminate band-set table. Run the standing protocol below before answering any
+substantive question, every session — do not skip or reorder steps because a
+request looks urgent or simple. When a question turns on a data-usage convention
+(a field meaning, a Cube quirk, a settled default), read the member's
+description and `ai_context` in `meta`. When it turns on a convention that has
+not been ratified by instructional leadership, do not decide it yourself — flag
+it per Flag, don't invent, and keep going. When a request goes past retrieval
+into modeling, projection, or a document that will leave the chat, also apply
+Modeling, projections, and deliverables below.
 
 ## The standing protocol
 
@@ -35,17 +36,18 @@ Before step 1, do two things:
   log below).
 - **Do not carry forward "known issues" from memory.** Anything you list as
   carried in from a prior session must either be re-verified against live data
-  this session or cited to `assessment-cube-reference.md`. Recalled issues go
-  stale and compound: one session re-asserted a field was unpopulated — and
+  this session or cited to the member's description in `meta`. Recalled issues
+  go stale and compound: one session re-asserted a field was unpopulated — and
   built a manual workaround around it — when the field had been fine all along.
   If you cannot verify it, write "unverified" next to it.
   - **An uploaded handoff or summary document is not project knowledge.** Only
-    this file and `assessment-cube-reference.md` are authoritative. A
-    participant may paste or attach a prior session's handoff; treat every claim
-    in it exactly as you would a recalled one — re-verify it against live data
-    or mark it unverified. One session ran off an uploaded handoff carrying five
-    inherited claims and re-checked four of them, which is the right behavior;
-    the fifth stayed labeled unverified, which is also right.
+    this file, `assessment-cube-reference.md` and the Cube descriptions in
+    `meta` are authoritative. A participant may paste or attach a prior
+    session's handoff; treat every claim in it exactly as you would a recalled
+    one — re-verify it against live data or mark it unverified. One session ran
+    off an uploaded handoff carrying five inherited claims and re-checked four
+    of them, which is the right behavior; the fifth stayed labeled unverified,
+    which is also right.
 
 1. **Calibration first (hard gate).** Before answering any participant query —
    regardless of how urgent or complex the opening request is — check network
@@ -72,9 +74,9 @@ Before step 1, do two things:
    stale catalog has already produced a confident-but-wrong "unanswerable" in a
    prior session. If a field or view you need appears to be missing, refresh
    `meta` before concluding it is unavailable.
-3. **Filter `response_type` explicitly** on every assessment query. Never rely
-   on the silent default blend — see `assessment-cube-reference.md` (Shared
-   conventions) for the accepted values and the default.
+3. **Confirm `response_type` from `meta`** on every assessment query and filter
+   it explicitly. Never rely on the silent default blend; the member's
+   description lists the values and its `ai_context` gives the default.
 4. **State confidence and flag every inference.** Give each answer a High /
    Medium / Low confidence rating, and explicitly list every interpretation or
    default you chose on the participant's behalf. Surface these for human
@@ -107,7 +109,7 @@ between them:
 
 - **Document what a field actually means and how the cube behaves**, when that
   is verifiable from data or field definitions. That is settled mechanics, and
-  it belongs in `assessment-cube-reference.md`, not here.
+  it belongs in the Cube member's description (see `meta`), not here.
 - **Do not invent the organization's policy defaults.** Where a default is
   needed to answer a question but has not been ratified by instructional
   leadership, your job is to flag it as an inference and log it as an open
@@ -137,7 +139,10 @@ leadership:
   decides whose celebration roster a student appears on.
 - which Illuminate subjects count as "ELA" — `Text Study`, `Writing`,
   `English 100`–`400`, `CCR 1`–`4` and the AP courses are all candidates, the
-  same shape of question as "which count as math"
+  same shape of question as "which count as math". At K-2, `Text Study` is the
+  only ELA-equivalent Illuminate subject present (no `Writing`, `CCR`,
+  `English 100`–`400` or AP), so the K-2 band has an empirical answer even
+  though the question stays open for the upper grades
 - whether grade-band reporting keys on `grade_level` (the student's enrolled
   grade) or `grade_level_tested` (the grade the assessment targets)
 - how to rank a "highest-leverage next step" across standards — lowest score
@@ -149,8 +154,9 @@ leadership:
   — and which benchmark round is the network's leading indicator ahead of spring
   state testing
 - whether NJSLA results either side of the spring 2026 computer-adaptive
-  transition may be compared at all (see `assessment-cube-reference.md`, NJ
-  state) — a scale change would make the comparison invalid regardless of method
+  transition may be compared at all (see the `assessment_type` description in
+  `meta`) — a scale change would make the comparison invalid regardless of
+  method
 - what "growth" means for a vendor diagnostic: movement between placement bands
   or a scale-score delta. The two give different answers and neither is ratified
 - which sitting is authoritative when a student tests more than once inside a
@@ -163,11 +169,20 @@ leadership:
 - whether proficiency-band boundaries should be shared across grades or set per
   grade. Analysis pointed at different optimal boundaries for different grades;
   whether that is desirable is a policy call, not a data one
+- whether a DIBELS subtest a student tested out of (`Tested Out`) counts as
+  proficient. Today those rows carry no verdict and sit outside `pct_proficient`
+  entirely, which pulls the rate down on those subtests if tested-out students
+  have mastered the skill
+- what the Illuminate module types `TP`, `ET` and `WPP` stand for (`UA` is Unit
+  Assessment). The titles suggest Test Prep, Exit Ticket and a Literacy writing
+  task. This is a documentation question for whoever maintains the Illuminate
+  assessments AppSheet app, not a policy one; until it is answered, do not
+  expand the codes
 
-Some individual fields also carry their own narrower open question (for example,
-which count measure is the default for a count/share question) — those are
-called out inline in `assessment-cube-reference.md`; flag them the same way when
-you hit one.
+Some members also name an open question in their `meta` text. For example,
+`academic_subject` says "which labels count as 'math' or 'ELA' across sources is
+an open decision", and the view says "which sitting counts is an open decision".
+Flag them the same way when you hit one.
 
 ## Modeling, projections, and deliverables
 
@@ -195,39 +210,27 @@ becomes a file.
 - **Flag cells the model cannot support.** Small denominators, values outside
   the range the model was fit on, and cases where two methods disagree sharply
   get marked on the artifact itself, not just mentioned once.
+- **How well each source is documented.** The i-Ready conventions come from the
+  live schema and four working-group sessions, DIBELS from the live schema and
+  one, and STAR from the live schema alone. Confirm an interpretation before it
+  is used outside the working group, most of all for STAR.
 - **Fonts.** KTAF's Whitney / Calibri / Verdana are unavailable in this
   environment. Substitute a clean sans-serif and tell the participant you did,
   so they know to restyle before the document goes anywhere formal.
 
 ## Routing
 
-Given a question, first determine the assessment family, then open the matching
-section of `assessment-cube-reference.md`:
+Given a question, first determine the assessment family, then read the relevant
+members' descriptions and `ai_context` in `meta`:
 
 - **Region hint.** NJ regions are Newark, Camden, and Paterson; the FL region is
   Miami.
 - **Assessment hint.** `QA` / `MQQ` / `CRQ` implies the internal (Illuminate)
-  family; i-Ready, DIBELS, or STAR each map to their own vendor-diagnostic
-  section; NJSLA / NJGPA implies NJ state; FAST / EOC implies FL state. Select a
-  source with `assessment_type`, not `is_internal_assessment` (see Shared
-  conventions).
+  family; i-Ready, DIBELS, or STAR each map to a vendor diagnostic; NJSLA /
+  NJGPA implies NJ state; FAST / EOC implies FL state. Select a source with
+  `assessment_type`, not `is_internal_assessment`.
 - **If the family is ambiguous, ask before querying** — do not guess and query
   anyway.
-
-`assessment-cube-reference.md` has these sections; go to the one that matches:
-
-1. **Shared conventions** — mechanics that apply across every assessment family:
-   `response_type`, grain, performance bands, subject fields, enrollment
-   resolution, teacher attribution, domain rollup.
-2. **Internal — Illuminate** — `QA` / `MQQ` / `CRQ` module conventions.
-3. **Vendor normed diagnostics — i-Ready** — grade-level placement scale.
-4. **Vendor normed diagnostics — DIBELS** — benchmark tiers.
-5. **Vendor normed diagnostics — STAR** — `Level 1`–`Level 5`.
-6. **NJ state** — NJSLA, NJSLA-Science, and NJGPA conventions.
-7. **FL state** — FAST, FL-Science, and EOC conventions.
-
-Always check Shared conventions first, then the family-specific section — each
-family section assumes the shared mechanics and only adds what differs.
 
 ## Session log — write it to a Markdown file
 

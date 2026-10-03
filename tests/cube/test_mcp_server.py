@@ -13,6 +13,11 @@ import pytest
 
 SCRIPT_PATH = Path(__file__).resolve().parents[2] / "src" / "cube" / "mcp" / "server.py"
 
+sys.path.insert(0, str(SCRIPT_PATH.parent / "eval"))
+
+# trunk-ignore(pyright/reportMissingImports): eval modules load from src/cube/mcp/eval via sys.path
+import arms  # noqa: E402
+
 
 def _load_server(monkeypatch: pytest.MonkeyPatch) -> ModuleType:
     """Load src/cube/mcp/server.py under sys.modules['cube_mcp_server'].
@@ -516,3 +521,58 @@ def test_load_and_sql_send_utc_timezone_by_default(
         server.load(ctx, {"measures": ["x.count"], "timezone": "America/New_York"})
     )
     assert sent[2]["json"]["query"]["timezone"] == "America/New_York"
+
+
+def _tool_descriptions(server: ModuleType) -> dict[str, str]:
+    tools = asyncio.run(server.mcp.list_tools())
+    return {t.name: " ".join((t.description or "").split()) for t in tools}
+
+
+def test_load_and_meta_docstrings_carry_the_drained_mechanics(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    server = _load_server(monkeypatch)
+    desc = _tool_descriptions(server)
+    for sentence in arms.NEW_LOAD_SENTENCES:
+        assert sentence in desc["load"], sentence
+    for sentence in arms.NEW_META_SENTENCES:
+        assert sentence in desc["meta"], sentence
+
+
+def test_empty_load_result_gets_a_note(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("AUTHKIT_DOMAIN", raising=False)
+    server = _load_server(monkeypatch)
+    monkeypatch.setenv("CUBE_USER_EMAIL", "engineer@apps.teamschools.org")
+
+    async def fake_request(*args: object, **kwargs: object) -> dict[str, Any]:
+        del args, kwargs
+        return {"data": [], "annotation": {}}
+
+    monkeypatch.setattr(server, "_request", fake_request)
+    out = asyncio.run(server.load(MagicMock(), {"measures": ["x.count"]}))
+    assert out["note"] == server.EMPTY_RESULT_NOTE
+    assert out["data"] == []
+    # The check it asks for must be runnable when nothing came back.
+    assert "re-run without the narrowing filter" in server.EMPTY_RESULT_NOTE
+
+
+def test_multi_query_results_get_the_note_per_empty_result(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    server = _load_server(monkeypatch)
+    payload = {"results": [{"data": []}, {"data": [{"x.count": "3"}]}]}
+    out = server._with_empty_result_note(payload)
+    assert out["results"][0]["note"] == server.EMPTY_RESULT_NOTE
+    assert "note" not in out["results"][1]
+    assert "note" not in out
+
+
+def test_non_empty_and_non_result_payloads_are_untouched(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    server = _load_server(monkeypatch)
+    rows = {"data": [{"x.count": "3"}]}
+    assert "note" not in server._with_empty_result_note(dict(rows))
+    error = {"error": "Continue wait"}
+    assert server._with_empty_result_note(dict(error)) == error
+    assert server._with_empty_result_note({"data": None}) == {"data": None}

@@ -108,9 +108,38 @@ and diagnostics are in the `cube-ops` skill.
   path.
 - **Hidden helper measures** prefix with `_` and set `public: false` (see
   `_sum_attendance_value` building blocks).
-- **`meta.folders` is the only Cube-rendered `meta.*` key.** Put guidance in
-  `description:`, not `meta.usage` / `meta.synonyms` / etc. — those land in
-  `/v1/meta` but Cube Cloud and the chat agent don't read them.
+- **`description:` says what a member is; `meta.ai_context:` says how to use
+  it.** `meta.folders` is the only key Cube Cloud renders, but every `meta.*`
+  key reaches the model, because our MCP server returns each cube's `/meta`
+  entry unchanged. Use `ai_context` for usage guidance, including synonyms and
+  acronyms; do not invent other keys. It is capped at 2,000 characters and
+  truncated silently past that (`tests/cube/test_cube_schema.py` enforces the
+  cap). Only our MCP server and REST clients see `ai_context`; the SQL API
+  serves `description` alone, as Postgres column comments.
+- **A member that reads one column has a dbt twin.** When its `sql:` is
+  `<column>` or `` {CUBE}.`<column>` ``, its `description:` equals that dbt
+  column's `description:`, and the pair is registered in `TWINS` in
+  `tests/cube/test_cube_schema.py`, which fails on any difference. Edit both
+  sides together, then run `uv run pytest tests/cube/`: CI does not run these
+  tests, so a drifted twin merges unless you do. dbt-only engineering notes
+  (lineage, hash roles) go in YAML comments beside the dbt column.
+- **Where a new fact goes.** Work down the list and stop at the first match: (1)
+  a point-in-time number: delete it or say it qualitatively; (2) process or
+  unratified policy: the project-knowledge markdown, and Cube may say only that
+  the decision is open; (3) derivable live (coverage): delete the specifics; (4)
+  holds for every view (query mechanics): the `load` or `meta` docstring; (5)
+  about reading the answer and not tied to one member: the view's `ai_context`;
+  (6) a definition: the member's `description:`; (7) an instruction: the
+  member's `ai_context`. When 6 and 7 both fit, ask whether the sentence is true
+  and useful against the raw dbt column: if so, `description:`; if it depends on
+  Cube or tells the agent what to do, `ai_context`. Register each moved fact's
+  key phrase in `PHRASES` in `tests/cube/test_cube_schema.py`.
+- **View-specific guidance on a shared member goes in a view override.** Give
+  the include an object form (`- name: <member>` with a `meta:` block). The
+  override replaces the member's whole `meta` in that view only, and REST
+  `/meta` returns it as `aiContext`, not `ai_context`. If the cube member also
+  carries an `ai_context`, the override must restate it; a schema test fails
+  otherwise.
 - **A `description:` states what the member means and where to go instead —
   never what a member used to be.** These strings reach the chat agent and
   analysts through `/v1/meta`, so a reference to a deleted member sends a caller
