@@ -599,6 +599,14 @@ documentation PR fixes what it can):
   so their repository data is frozen (see Where the data comes from).
 - The mod audit's Writing remap gap and its year-scope mismatch with
   `mod_standards_domains` (see its section).
+- The sight-words dashboard's warn-level uniqueness test fails in prod: about
+  5,500 duplicate keys (measured 2026-10-03), all null-value on-grade rows,
+  traced to 6 Sight Words repositories whose `repository_fields` carry a
+  duplicated sight-word label. Fixing the labels in Illuminate clears it.
+- `rpt_gsheets__ddi_tier_roster` applies no region filter, so current-year Miami
+  students reach the "NJ" roster when they appear in the subjects hub, and
+  `njsla_previous_year` carries FAST PM3 values for Florida rows — decide
+  whether the NJ scope should be enforced in the SQL.
 - The `NJ DDI Roster - Source` sheet sits in the Reports drive folder despite
   its name, and no Reports-layer IMPORTRANGE consumer of either extract sheet
   was found — confirm how people actually read them.
