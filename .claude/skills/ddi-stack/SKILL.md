@@ -18,12 +18,15 @@ description:
 
 # DDI stack
 
-Model semantics, grains, consumers, cadences, decisions, and known issues live
-in the reference doc:
+Model semantics, grains, consumers, decisions, and known issues live in the
+reference doc:
 [docs/models/ddi-stack-data-model.md](../../../docs/models/ddi-stack-data-model.md).
-Read its Terms section before answering anything about the numbers; the
-tag-driven scope rule and the two `is_replacement` meanings are not recoverable
-from one model's SQL.
+For a question about what a number or term MEANS, read the doc's Terms section
+and stop at the "Where the data comes from" heading; the tag-driven scope rule
+and the two `is_replacement` meanings are not recoverable from one model's SQL.
+For a routed task below, go straight to its reference file — each carries the
+facts and cadences its procedure needs, so the doc is a deep dive, not a
+prerequisite.
 
 ## Rules for every task
 

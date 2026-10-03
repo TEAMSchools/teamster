@@ -34,10 +34,28 @@ correctly).
 
 1. The uniqueness tests run with the star tick; a new warn is the first signal.
    Compare against the exceptions above before treating one as new.
-2. Spot-check the newest administration end to end: tag query → rollup rows →
-   extract rows ([triage.md](triage.md) ladder), and for a report-card window,
-   the feed row via the mod audit ([report-cards.md](report-cards.md)).
-3. Zero Miami rows anywhere current-year is correct; Miami rows APPEARING in a
+2. Pick the sample: the window's assessments are the newest `administered_at`
+   rows in
+   `kipptaf_google_appsheet.stg_google_appsheet__illuminate_assessments_extension`
+   — take one per subject and grade band.
+3. Spot-check each end to end (BigQuery MCP, read-only): the tag row above, then
+   rollup rows —
+
+   ```sql
+   select response_type, count(*) as n
+   from `teamster-332318`.kipptaf_assessments.int_assessments__response_rollup
+   where assessment_id = <id> group by response_type
+   ```
+
+   — and table freshness via `last_modified_time` in
+   `kipptaf_assessments.__TABLES__`. Rows present with the expected
+   `overall`/`standard`/`group` mix passes. The full diagnosis ladder, only if a
+   hop fails: [triage.md](triage.md).
+
+4. Only when the window feeds report cards: check one published feed row against
+   the mod audit sheet's `computed_avg_pct_correct`
+   ([report-cards.md](report-cards.md) has the scope caveats).
+5. Zero Miami rows anywhere current-year is correct; Miami rows APPEARING in a
    current year means the Focus assessment source landed — the doc's Miami
    condition then needs rewriting.
 

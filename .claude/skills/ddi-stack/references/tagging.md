@@ -41,5 +41,12 @@ the lowest member `assessment_id`. Consequences:
 
 ## After a tag fix
 
-Nothing moves until the star ticks. For a same-day need, run the manual refresh
-push ([triage.md](triage.md)); otherwise the next tick picks it up.
+The edit lands in the staging table immediately, but nothing downstream moves
+until the assessment star ticks (00:00, 10:00, 13:00, 15:00, 17:00 Eastern). The
+DDI Suite Tableau extracts then refresh at 01:00 and 18:00 daily plus Friday
+16:00, and the DeansList feeds deliver nightly at 01:25 — so a morning date fix
+reaches the dashboard at the 18:00 refresh and the report card overnight, unless
+someone runs the manual refresh push ([triage.md](triage.md)). A moved
+`administered_at` re-buckets the same way everywhere: the DDI dashboard re-weeks
+the row and the report-card feeds re-term it, and a date no RT reporting term
+contains drops the row from the feeds.

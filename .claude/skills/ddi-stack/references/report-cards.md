@@ -6,9 +6,20 @@ gating, ladders and cut points are in the reference doc's "DeansList report-card
 extracts" section — read that first; this file carries the verification
 procedures.
 
+## Which feed carries a subject
+
+- ELA ("Text Study", Writing folded in) and Math reporting-group averages →
+  `mod_standards` (the "overall" course grades, all grades).
+- Every other K-4 subject → `mod_assessment` (the Enrichment table).
+- K-4 standard-domain and progress-report performance → `mod_standards_domains`
+  (the mastery pages).
+- Sight words → `rpt_deanslist__sight_words` (the K-1 sight-words table).
+
 ## A score is missing from a report card
 
-Check in order:
+A score already visible on the DDI Suite is tagged, synced, star-ticked and
+refreshed — the triage ladder is satisfied, so skip it and check the report-card
+path only, in order:
 
 1. **The gate.** `mod_standards_domains` and non-Unit-Assessment scopes of
    `mod_assessment` require the student's region in `regions_report_card` (or
