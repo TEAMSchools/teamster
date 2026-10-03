@@ -16,6 +16,12 @@ the term windows typed `RT` in the reporting-terms sheet, per school.
   (the mastery pages).
 - Sight words → `rpt_deanslist__sight_words` (the K-1 sight-words table).
 
+A subject can be on two tables at once: its average in the Enrichment table
+(`mod_assessment`) and its standard-domain mastery in the mastery pages
+(`mod_standards_domains`) — route by which table the report card actually shows.
+The date and region tags live in
+`kipptaf_google_appsheet.stg_google_appsheet__illuminate_assessments_extension`.
+
 ## A score is missing from a report card
 
 A score already visible on the DDI Suite is tagged, synced, star-ticked and
@@ -51,6 +57,23 @@ feed's GROUP BY. Compare it to the published `avg_pct_correct` /
 - Writing: the audit keeps `Writing`; `mod_standards` publishes it as
   `Text Study`.
 - Bands: the audit has no band join, so it keeps rows the published feeds drop.
+
+## Recurring asks
+
+The shapes schools actually write in about, beyond a single missing score:
+
+- **A whole subject or section missing from (or appearing on) the Enrichment
+  table.** Driven by two things jointly: which of that subject's assessments are
+  tagged report-card-eligible for the school's region, and what DeansList's
+  report-card template for that school shows. The warehouse side is the tag; the
+  template side is a DeansList configuration change, not a dbt one.
+- **"Remove X from Enrichment — we no longer offer it."** Untag the region on
+  that subject's assessments (or stop assessing it), and ask for the matching
+  DeansList template edit; the feed only carries subjects with eligible scored
+  assessments, so stale sections usually mean a stale template.
+- **A student missing just their enrichment or i-Ready score.** Run the
+  missing-score ladder above; the usual ends are no banded `overall` response in
+  the term, or the score landing in a different RT term than the report card's.
 
 ## Sight words
 

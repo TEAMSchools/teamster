@@ -21,6 +21,10 @@ assessment, prior tags included); edits land in a BigQuery table read as
 
 `regions_*` are comma-separated strings; whitespace is stripped and the split
 array keeps empty elements, so a trailing comma produces an empty-string region.
+The row and the region fields fail independently: a tagged assessment
+(`is_internal_assessment` true) can still miss a report card on a region field
+alone. This table is the complete gate map — report-card triage beyond the tags
+is [report-cards.md](report-cards.md)'s job.
 
 ## Canonical grouping
 
@@ -48,9 +52,9 @@ DDI Suite Tableau extracts then refresh at 01:00 and 18:00 daily plus Friday
 reaches the dashboard at the 18:00 refresh and the report card overnight, unless
 someone runs the manual refresh push: materialize
 `int_assessments__response_rollup` (plus `__scaffold` when expectations
-changed), then the `ddi_suite` Tableau asset (full mechanics:
-[triage.md](triage.md)). A moved `administered_at` re-buckets the same way
-everywhere: the DDI dashboard re-weeks the row and the report-card feeds re-term
-it against the RT reporting terms (the term windows typed `RT` in the
-reporting-terms sheet, per school) — a date no RT term contains drops the row
-from the feeds.
+changed), then the `ddi_suite` Tableau asset — preview Dagster mutations with
+`confirm=False` and let the data team run them. A moved `administered_at`
+re-buckets the same way everywhere: the DDI dashboard re-weeks the row and the
+report-card feeds re-term it against the RT reporting terms (the term windows
+typed `RT` in the reporting-terms sheet, per school) — a date no RT term
+contains drops the row from the feeds.
