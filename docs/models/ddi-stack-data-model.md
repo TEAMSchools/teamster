@@ -28,9 +28,6 @@ Owner: Anthony Walters, Director, Data. Marya Shukla owns assessment-tagging
 quality control in the AppSheet and the standard-domains lookup; achievement
 directors enter their own assessments.
 
-There is almost no prior written documentation for this family; before this page
-the knowledge was oral tradition.
-
 ## How it fits together
 
 ```text
@@ -62,16 +59,23 @@ extracts)    (4 CDO      + tier      fct_assessment_scores_*) --> Cube view
 
 `int_illuminate__repository_data` (custom student-data tables) feeds the sight
 words dashboard and the DeansList sight-words extract on a separate track from
-the response rollup.
+the response rollup. On the star side, `int_assessments__score_anchors` and
+`int_assessments__resolved_section_enrollments` sit between the scaffold and
+`fct_assessment_scores_enrollment_scoped`, tying each score to one course
+section.
 
 ### Materialization and freshness
 
-Every `rpt_*` extract in the family is a **view**. The tables under them are
+Every `rpt_*` extract in the family is a **view**. Under them, the staging layer
+is all **tables** (the 27 `stg_illuminate__*` models, the repository stubs, the
+sheet staging models, and the AppSheet staging table), as are
 `int_assessments__response_rollup`, `__scaffold`, `__course_enrollments`,
-`__resolved_section_enrollments`, `__score_anchors`, the AppSheet staging table,
-and the assessment-star marts; everything else (`int_illuminate__*`, the other
-`int_assessments__*`, the sheet staging models) is a view. A new score therefore
-reaches a consumer only after:
+`__resolved_section_enrollments`, `__score_anchors`,
+`int_illuminate__root_standards`, and the table marts of the assessment star.
+The remaining intermediates (`int_illuminate__*` apart from `root_standards`;
+`int_assessments__assessments_members`, `__assessments_canonical`,
+`__performance_bands`, `__academic_goals`) and `dim_assessment_goals` are views.
+A new score therefore reaches a consumer only after:
 
 1. The Illuminate dlt sync lands it. The assessment tables
    (`agg_student_responses*`, `students_assessments`) sync at midnight and 5pm
@@ -79,8 +83,12 @@ reaches a consumer only after:
    bands, reporting groups, repositories) sync at **midnight only** — the root
    of [#5399](https://github.com/TEAMSchools/teamster/issues/5399): same-day
    scores on a brand-new assessment can sit unscored until the next midnight.
-2. The assessment star rebuilds. `int_assessments__response_rollup` and the
-   whole star share one cron tick, `0 0,10,13,15,17 * * *` (5x/day, Eastern).
+2. The assessment star rebuilds. `int_assessments__response_rollup`, the other
+   table intermediates and the table marts share one cron tick,
+   `0 0,10,13,15,17 * * *` (5x/day, Eastern). The sync and the star both fire at
+   midnight and 5pm, so data from the same-hour sync can miss that star tick and
+   wait for the next one — check run timestamps before promising users a refresh
+   time.
 3. The consumer refreshes: the DDI Suite Tableau extracts at 1am and 6pm daily
    plus Friday 4pm (exposure `ddi_suite` cron, Dagster-owned); the DeansList
    SFTP extracts at 1:25am daily; Cube's `proficiency_rollup` pre-aggregation
@@ -109,9 +117,11 @@ reaches a consumer only after:
   inconsistent SY25-26 tagging destabilizes it
   ([#5654](https://github.com/TEAMSchools/teamster/issues/5654)).
 - **Scope**: Illuminate's assessment category (decoded from `dna_scopes`) — Unit
-  Assessment, Cumulative Review Quizzes, Cold Read Quizzes, Sight Words Quiz,
-  and so on. K-1 cumulative-review and cold-read quizzes are relabeled
-  `Checkpoint` in `int_illuminate__assessments`.
+  Assessment ("UA"), Cumulative Review Quizzes ("CRQ"), Cold Read Quizzes, Sight
+  Words Quiz, and so on. K-1 cumulative-review and cold-read quizzes are
+  relabeled `Checkpoint` in `int_illuminate__assessments`. `WPP` is a
+  `module_type` value excluded from the DDI dashboard; its expansion is
+  unwritten — owner to confirm.
 - **Module** (`module_type`, `module_sequence`, `module_code`): the AppSheet
   tagging that sequences assessments within a scope; `module_code` is the
   concatenation (for example `UA3`). These have no Illuminate-native
@@ -132,19 +142,25 @@ reaches a consumer only after:
   assigned-but-not-taken; `fct_assessment_scores_enrollment_scoped` makes that
   explicit as `not_taken`.
 - **`is_replacement`**: an internal-assessment sitting where the assessment's
-  grade level differs from the student's current Illuminate session grade — a
-  retained or accelerated student sitting an off-grade assessment. Set in
-  `int_assessments__scaffold`; these rows bypass the course-enrollment join
-  (null `cc_dcid`), are excluded from score anchoring and the enrollment-scoped
-  bridge, and are carried by the student-scoped bridge instead. The sight words
-  dashboard reuses the column name for the analogous off-grade-quiz case; the
-  two are computed independently.
+  AppSheet-tagged grade level differs from the student's current Illuminate
+  session grade — a retained or accelerated student sitting an off-grade
+  assessment. Set in `int_assessments__scaffold`, with three limits that follow
+  from its SQL: only Text Study, Mathematics, Social Studies and Science; only
+  K-8 assessments; and only sittings that actually exist in Illuminate (the
+  branch inner-joins `students_assessments`), so a not-taken off-grade
+  assignment never appears. An assessment with no grade tag can never be a
+  replacement. These rows bypass the course-enrollment join (null `cc_dcid`),
+  are excluded from score anchoring and the enrollment-scoped bridge, and are
+  carried by the student-scoped bridge instead. The sight words dashboard reuses
+  the column name for the analogous off-grade-quiz case; the two are computed
+  independently.
 - **Performance bands**: Illuminate band sets attached per response type in
   `int_assessments__performance_bands`. `int_illuminate__performance_band_sets`
   computes each band's range as `[minimum_value, next band's minimum - 0.1)`,
   top band capped at 9998.9. Each band also carries Illuminate's own
-  `is_mastery` flag, so the band set is what defines which labels count as
-  mastery — the warehouse never derives a mastery cut itself.
+  `is_mastery` flag, so on band-driven surfaces the band set defines which
+  labels count as mastery. The DeansList feeds are the exception: they hardcode
+  their own ladders and cut points (see their section).
 - **DDI tiers** (`nj_student_tier`), called **"buckets"** by every stakeholder
   ("Bucket 1 and 2" in tickets): the student intervention tier the tier roster
   publishes. The ladder is **not** in this family — it lives in the shared hub
@@ -169,8 +185,10 @@ reaches a consumer only after:
 
 - **Illuminate DnA and Repositories**, via the dlt sync (27 staging tables plus
   46 enabled `repository_<id>` stubs; layout and the repository-model mechanics
-  are in `src/dbt/kipptaf/models/illuminate/CLAUDE.md`). Owned by the data team;
-  assessment content is owned by the achievement directors who build it.
+  are in `src/dbt/kipptaf/models/illuminate/CLAUDE.md`). Only repositories
+  443-472 are on the dlt schedules; the 16 enabled stubs below 443 never sync,
+  so their data is frozen (known issue). Owned by the data team; assessment
+  content is owned by the achievement directors who build it.
 - **The AppSheet Illuminate Assessments Extension**: the tagging app writes a
   BigQuery table read as
   `stg_google_appsheet__illuminate_assessments_extension`. The app's item list
@@ -219,8 +237,10 @@ the owner's walkthrough or a workbook download.
   Carries every Illuminate assessment, tagged or not, with `is_normed_scope`
   marking the tagged ones; drives the Assessment Dashboard worksheet (all
   assessments) and the Module Dashboard worksheet (normed only).
-- **Grain**: student x response record, fanned by the course-enrollment join. No
-  uniqueness test (known issue).
+- **Grain**: student x response record; the course join is pinned to one section
+  per subject (`rn_student_year_illuminate_subject_desc = 1`), yet prod shows
+  about 0.7% of keys duplicated exactly twice (cause untraced, measured
+  2026-10-02). No uniqueness test (known issue).
 - **Reads**: `int_assessments__response_rollup`,
   `int_extracts__student_enrollments` (+`_subjects`),
   `base_powerschool__course_enrollments`.
@@ -230,17 +250,26 @@ the owner's walkthrough or a workbook download.
     course fixes").
   - Population: `rn_year = 1`, `grade_level != 99`, current and prior academic
     year only.
-  - Miami rows exist for AY2025 and will not land for AY2026 (Miami left the
-    stack; its Illuminate feed ended with SY25-26).
+  - Miami holds **zero rows in prod** in every year (measured 2026-10-02): the
+    rollup still carries Miami AY2025 responses, but none survive this model's
+    enrollment join after the Focus cutover. The model description's Miami
+    row-count note predates that and is stale (known issue).
   - `power_standard_goal`, `is_power_standard`, `standard_domain` are hardcoded
     null — retired fields kept so the workbook's field list does not break.
 
 ### rpt_tableau__ddi_dashboard
 
-- **What it shows**: the weekly DDI cycle — every enrolled student x school week
-  x that week's assessment responses, plus iReady lesson completion (ES/MS) and
-  a staff walkthrough branch, so instruction, assessment and coaching sit on one
-  axis.
+- **What it shows**: the weekly DDI cycle — students x school week x that week's
+  tagged-assessment rows (expected or taken), plus iReady lesson completion
+  (ES/MS) and a staff walkthrough branch, so instruction, assessment and
+  coaching sit on one axis. It is **not** one row per enrolled student per week:
+  the `module_type != 'WPP'` predicate sits in the WHERE clause on the
+  LEFT-joined rollup, which turns the join inner — weeks with no tagged
+  assessment produce no row, and untagged assessments (null `module_type`) never
+  appear. Assigned-but-not-taken rows for tagged assessments do survive (tens of
+  thousands per year).
+  [#4808](https://github.com/TEAMSchools/teamster/issues/4808) describes the
+  same shape.
 - **Grain**: three unioned branches — ES/MS (grades 0-8) and HS (9-12) at
   student x week x response row; walkthrough rows at observation-row grain with
   student columns nulled and staff overloaded into them (`student_name` is the
@@ -255,11 +284,12 @@ the owner's walkthrough or a workbook download.
     `enroll_status in (0, 2, 3)`), not current status — pinning to
     `enroll_status = 0` retroactively erased withdrawn students' history
     ([#4807](https://github.com/TEAMSchools/teamster/issues/4807)).
-  - `module_type != 'WPP'` is filtered out with a `TODO: Remove SY26` marker.
+  - The `module_type != 'WPP'` filter carries a `TODO: Remove SY26` marker, and
+    it is also what makes the join inner (see the grain note above).
   - A row with a null `response_type` and null `date_taken` is
-    assigned-but-not-taken; `is_complete` encodes it, and PR
-    [#3576](https://github.com/TEAMSchools/teamster/pull/3576) adds
-    `is_completion_row` to make completion-rate denominators explicit.
+    assigned-but-not-taken; `is_complete` encodes it, and the still-open PR
+    [#3576](https://github.com/TEAMSchools/teamster/pull/3576) proposes an
+    `is_completion_row` flag to make completion-rate denominators explicit.
   - The ES/MS and HS branches join the QBLs sheet and the goals sheet with
     different keys (ES/MS includes `grade_level` and requires `qbl is not null`;
     HS includes neither) — deliberate, but easy to misread.
@@ -294,7 +324,8 @@ the owner's walkthrough or a workbook download.
 - **Worth knowing**: Paterson is excluded in both branches. The off-grade branch
   (`is_replacement = true`) keeps only _scored_ rows, while the on-grade branch
   keeps every expected student — so completion rates only mean something
-  on-grade.
+  on-grade, and even there the on-grade branch applies no `enroll_status`
+  filter, so withdrawn students stay in the denominator.
 
 ## DeansList report-card extracts
 
@@ -307,23 +338,33 @@ the owner's walkthrough or a workbook download.
   enrollments, the standard-domains sheet, reporting terms.
 - **The four feeds**:
   - `rpt_deanslist__mod_assessment`: K-4 enrichment (non-ELA/Math) subject
-    averages per term; feeds only the Enrichment table on NJ ES report cards.
-    Includes Unit Assessments always, other scopes only when AppSheet-tagged
-    report-card-eligible for the student's region. Output `subject_area` is the
-    literal `ENRICHMENT` (a CDO schema placeholder).
+    averages per term, current year only; feeds only the Enrichment table on NJ
+    ES report cards. Includes Unit Assessments always — **tagged or not** — and
+    other scopes only when AppSheet-tagged report-card-eligible for the
+    student's region. Output `subject_area` is the literal `ENRICHMENT` (a CDO
+    schema placeholder).
   - `rpt_deanslist__mod_standards`: ELA/Math/Writing reporting-group averages,
-    all grades, with Writing folded into Text Study and a five-label mastery
-    ladder (Advanced Mastery down to Far Below Mastery) from the band sets;
-    feeds the "overall" course grades on ES report cards.
+    all grades, current year only, with Writing folded into Text Study and a
+    five-label mastery ladder (Advanced Mastery down to Far Below Mastery) from
+    the band sets; feeds the "overall" course grades on ES report cards. Gated
+    by tagging (`is_internal_assessment`) only — it has no region-tag gate.
   - `rpt_deanslist__mod_standards_domains`: K-4 progress-report (overall) and
-    report-card (standard-domain) performance, with grade-band cut points — K-2:
-    90/75/60; grades 3-4: 85/70/50/30/0 — sharing label names across bands;
-    feeds the mastery pages on NJ ES report cards.
-  - `rpt_deanslist__sight_words`: raw sight-word mastery per student per word;
-    `retested` displays as its own status but counts as mastered
-    (`is_mastery = 1`); feeds the sight-words table on K-1 ES report cards.
-- **Outputs**: DeansList report cards and progress reports, gated by the
-  AppSheet region tags — an untagged assessment never reaches a report card.
+    report-card (standard-domain) performance, with **no year filter** (it
+    carries every year the rollup holds). The cut-point case lists K-2 branches
+    at 90/75/60 and then unconditional branches at 85/70/50/30/0, so the
+    effective K-2 ladder is Exceeds 90+, Met 75-89, Approaching 50-74 (the 60
+    branch only keeps 70-74 out of the generic Met), and K-2 students fall into
+    Below/Far Below under 50 like everyone else. Feeds the mastery pages on NJ
+    ES report cards.
+  - `rpt_deanslist__sight_words`: raw sight-word mastery per student per word,
+    current year forward, with no grade or region filter (Paterson included,
+    unlike the dashboard); `retested` displays as its own status but counts as
+    mastered (`is_mastery = 1`). The report cards use it for the K-1 sight-words
+    table.
+- **Outputs**: DeansList report cards and progress reports. The AppSheet region
+  tags gate `mod_standards_domains` and the non-UA scopes of `mod_assessment`;
+  untagged Unit Assessments still reach the enrichment feed, and `mod_standards`
+  is gated by tagging alone, not region.
 - **Who runs it**: nobody by hand; the schedule runs and the AppSheet tags steer
   it. When a score is missing from a report card, check the tag first, then the
   mod audit sheet.
@@ -343,8 +384,9 @@ the `NJ DDI Roster - Source` sheet (exposure `nj_ddi_roster_source`).
 The QA view behind the three mod feeds: the individual pre-aggregation response
 rows, with a windowed `computed_avg_pct_correct` reproducing each published
 feed's GROUP BY so a published average can be checked against its inputs. Scoped
-to the current and prior year (wider than the feeds, which are current-year
-only). There are no flag columns; the comparison is done by eye in the sheet.
+to the current and prior year — wider than `mod_assessment` and `mod_standards`
+(current-year) but narrower than `mod_standards_domains`, which has no year
+filter. There are no flag columns; the comparison is done by eye in the sheet.
 Known gap: its `mod_standards` slice does not apply the Writing-to-Text-Study
 remap the published feed applies, so Writing rows need manual reconciliation.
 
@@ -398,7 +440,8 @@ here moves those consumers too):
   responses x bands, one row per expected student-assessment-response. Also read
   by `int_topline__formative_assessment_weekly`,
   `rpt_gsheets__assessment_roster`, `rpt_gsheets__school_metrics_extract`,
-  `rpt_tableau__miami_fast`.
+  `rpt_tableau__miami_fast`, and `int_assessments__college_assessment_practice`
+  (CARAT family), so a rollup change also moves the practice-SAT chain.
 - `int_assessments__assessments_members` — also read by
   `bridge_assessment_administration_members` (disabled).
 - `int_assessments__scaffold` — also read by the entry audit (in family).
@@ -463,17 +506,15 @@ threads), 2026-04-02 through 2026-10-02, measured 2026-10-02. The themes, most
 frequent first, and where each one points:
 
 1. **"My assessment is not on the dashboard."** The assessment director's own
-   triage rule, quoted from a 2026-05-04 thread, is the first question to ask:
-   "Anything that's not rolling up is because it's not tagged in the app sheet
-   or not tagged correctly" — wrong term date, wrong grade's tag, or no tag at
-   all. When the tag is right, follow the freshness chain above: did the
-   Illuminate sync land it; has the assessment star ticked since; has the
-   Tableau extract refreshed. Occasionally the cause is genuinely on the data
-   side (an overnight pipeline bug reproduced this on 2026-09-30 with tagging
-   fully correct), so confirm the rows in the extract before and after a refresh
-   rather than re-arguing the tag. After a tag fix, users expect a manual
-   refresh push rather than waiting for the next tick, and they know the refresh
-   times ("does that mean there will be no 6pm refresh today?").
+   triage rule: anything not rolling up is untagged or mistagged — wrong term
+   date, wrong grade's tag, or no tag at all. When the tag is right, follow the
+   freshness chain above: did the Illuminate sync land it; has the assessment
+   star ticked since; has the Tableau extract refreshed. Occasionally the cause
+   is genuinely on the data side (an overnight pipeline bug has reproduced this
+   with tagging fully correct), so confirm the rows in the extract before and
+   after a refresh rather than re-arguing the tag. After a tag fix, users expect
+   a manual refresh push rather than waiting for the next tick, and they know
+   the refresh times.
 2. **Two worksheets disagree, or the dashboard disagrees with Illuminate.**
    Module Dashboard vs DKI View discrepancies are usually denominator questions:
    completion rows vs mastery rows (null `response_type` is
@@ -490,7 +531,7 @@ frequent first, and where each one points:
    interventionist can appear as the section of record. In the source: a wrong
    course assignment in PowerSchool rolls students up under the wrong course on
    the Module Dashboard — the fix is in PowerSchool, and it populates on the
-   next morning's refresh (2026-09-30 case).
+   next morning's refresh.
 4. **Access.** A blank DDI Suite page from the Launch page, or a login failure,
    is Tableau licensing or permissions — not a data defect. Route to the Tableau
    admin path before reading any SQL.
@@ -533,33 +574,36 @@ Tracked elsewhere:
 - [#5698](https://github.com/TEAMSchools/teamster/issues/5698) — retire the
   temporary Paterson `discipline` join in `rpt_tableau__assessment_dashboard`.
 
-Found during this documentation run (2026-09-30), not yet tracked separately:
+Found during the documentation run, not yet tracked separately (the
+documentation PR fixes what it can):
 
-- Missing uniqueness tests, against the repo's own per-layer rules: extracts
-  `rpt_tableau__assessment_dashboard`, `rpt_tableau__assessment_entry_audit`,
-  `rpt_deanslist__mod_standards`, `rpt_deanslist__mod_standards_domains`,
-  `rpt_deanslist__sight_words`, `rpt_gsheets__ddi_tier_roster`,
-  `rpt_appsheet__assessments`; intermediates `int_assessments__academic_goals`,
-  `int_assessments__resolved_section_enrollments`, and all `int_illuminate__*`
-  except `student_item_responses`; staging
-  `stg_google_appsheet__illuminate_assessments_extension`,
-  `stg_google_sheets__assessments__standard_domains`, `__academic_goals`,
-  `__qbls_power_standards`.
-- `int_assessments__assessments_canonical`'s `regions_array` description claims
-  an INNER JOIN drops empty groups; the SQL is a LEFT JOIN coalesced to `[]`.
-- `rpt_tableau__assessment_dashboard`'s description says Miami AY2026 rows have
-  "not landed upstream yet"; they will not land — Miami left the stack.
+- Missing uniqueness tests, against the repo's own per-layer rules:
+  `rpt_tableau__assessment_dashboard` (no clean key exists — the ~0.7%
+  duplicated keys above), `rpt_tableau__ddi_dashboard`, and the family's other
+  extracts, intermediates and staging models — the documentation PR adds tests
+  everywhere a clean grain was verified against prod.
+- The academic-goals sheet holds 2 duplicated key rows (one AY2024, one AY2025
+  subject-level HS goal, each entered twice); they flow through
+  `int_assessments__academic_goals` and are masked downstream by
+  `dim_assessment_goals`' highest-school-goal-wins dedupe. Check: `group by` the
+  5 goal keys `having count(*) > 1`.
+- `rpt_tableau__assessment_dashboard`'s description carries a stale Miami row
+  count and says Miami AY2026 rows have "not landed upstream yet"; prod holds
+  zero Miami rows in any year and none will land — Miami left the stack.
 - `dim_assessments` documentation points at
   `bridge_assessment_administration_members` as the member drill-down, but that
   bridge is disabled with zero consumers.
 - `int_illuminate__performance_band_sets` carries a commented-out
   `materialized: table` override — decide and either enable or delete it.
-- The mod audit's Writing remap gap and two-year scope (see its section).
+- The 16 enabled repository stubs below 443 are absent from the dlt schedules,
+  so their repository data is frozen (see Where the data comes from).
+- The mod audit's Writing remap gap and its year-scope mismatch with
+  `mod_standards_domains` (see its section).
 - The `NJ DDI Roster - Source` sheet sits in the Reports drive folder despite
-  its name, and no Reports-layer IMPORTRANGE consumer of either extract sheet is
-  visible to the doc author's account — confirm how people actually read them.
+  its name, and no Reports-layer IMPORTRANGE consumer of either extract sheet
+  was found — confirm how people actually read them.
 - `rpt_tableau__ddi_dashboard`'s `TODO: Remove SY26` filter on
-  `module_type != 'WPP'`.
+  `module_type != 'WPP'`, which is also what makes its rollup join inner.
 
 ## Yearly upkeep
 
@@ -573,10 +617,10 @@ Found during this documentation run (2026-09-30), not yet tracked separately:
 5. Reporting terms: confirm the year's RT rows exist (shared hub, but this
    family breaks visibly when they lag).
 6. August: turn the DDI Suite Tableau refresh schedule back on and review its
-   cron list with the assessment director (done together in August 2026 —
-   anything to add or remove for the year).
+   cron list with the assessment director — anything to add or remove for the
+   year.
 7. Fall: bump the DDI Suite workbook tabs' default year to the new school year
-   (a workbook edit, requested each year — "make SY27 default for the tabs").
+   (a workbook edit, requested every year).
 8. Fall: run the course subject crosswalk audit (see Inputs) — new courses with
    current-year enrollments that the sheet is missing, confirmed with
    c3/academic ops.
