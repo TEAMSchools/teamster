@@ -1,5 +1,7 @@
 models:
   - name: stg_google_sheets__assessments__qbls_power_standards
+    config:
+      enabled: false
     columns:
       - name: Region
         data_type: string
