@@ -27,6 +27,13 @@ in the same suite had complementary gaps:
 
 Adding an element means adding its manifest entry.
 
+The manifest is per workbook, so a refusal is too. "Desktop refuses dynamic zone
+visibility" was true of one lineage whose manifest lacked `DatagraphCoreV1`; the
+merged successor declared all four features and carried a Tableau-authored
+datagraph (observed in the file). Before ruling a feature out, grep the target's
+manifest for it, and grep again whenever the base lineage changes: a merge or a
+promoted review copy is a lineage change.
+
 ### Insert into the manifest. Never regenerate it
 
 **Verified.** A regex that rebuilt the manifest silently dropped
@@ -68,6 +75,18 @@ cardinality is not established (see
 `check_twb.py` verifies order only: a second `<customized-tooltip>` in one pane
 passes it. Check for an existing one before inserting.
 
+### Encodings
+
+Observed in the file: `<encodings>` children have no fixed order. One untouched
+base holds 31 distinct child sequences, among them
+`color, lod, tooltip ×7, text`, `text, color`, and
+`color, text, tooltip, tooltip, tooltip, lod, tooltip`; `text` alone is the
+commonest. An assertion that required sorted children failed the unedited file.
+Insert a new `<lod>` after the last existing `<lod>`, else after `<color>`, else
+as the first child, and assert that position rather than any global order. The
+parameter-action constant that goes on Detail this way is in
+[layout-and-zones.md](layout-and-zones.md).
+
 ### Worksheet
 
 ```text
@@ -95,6 +114,17 @@ omits it is rejected with
 `missing elements in content model '(datasources?,...,slices?,aggregation)'`.
 The cheapest fix is to clone the filter/slices/aggregation skeleton from a
 working sheet rather than compose one.
+
+Read literally the model requires `filter`, `sort`, `perspectives` and
+`shelf-sorts`, yet a Tableau-authored title sheet in this corpus carries only
+`datasources`, `datasource-dependencies` and `aggregation`, and Desktop saved
+that file. A hand-built close-button sheet copied that minimal `<view>`; Server
+rendered it (Verified), and a Desktop open is pending (Inferred).
+
+Inside a `<view>`, `<filter>` elements and `<column-instance>` dependencies are
+sorted by column string in every sheet of this corpus (uppercase `Calculation_`
+before lowercase field names); `<slices>` columns are not. Insert before the
+neighbour that will follow, and assert that position.
 
 ### Zone (dashboard layout)
 
