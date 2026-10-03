@@ -3,11 +3,12 @@ name: zendesk-help-articles
 description:
   Use when writing, editing, or publishing a KTAF Zendesk Help Center article
   ("write a help article for X", "draft the Zendesk article", "update the help
-  article on Y", a re-publish after an edit), when searching the Help Center for
-  an existing article ("is there a help article on X"), when a published article
-  shows the wrong author, its body did not change after an update, or its images
-  do not render, or when asked whether the Dagster ZendeskResource or a Zendesk
-  MCP can publish articles.
+  article on Y", a re-publish after an edit), including end-user help for a
+  Focus SIS District Report or a Tableau dashboard, when searching the Help
+  Center for an existing article ("is there a help article on X"), when a
+  published article shows the wrong author, its body did not change after an
+  update, or its images do not render, or when asked whether the Dagster
+  ZendeskResource or a Zendesk MCP can publish articles.
 ---
 
 # Zendesk help articles
@@ -42,7 +43,7 @@ article, and `publish` writes it back.
   in place with `live=True`; the publisher refuses `live=False` on it unless
   `unpublish=True`, because Zendesk has no draft of a live article and the page
   would vanish for readers.
-- No image uploads without the PII gate below.
+- No publish without the PII gate below, for body text and images.
 
 ## Working folder
 
@@ -98,24 +99,52 @@ It prints id, title, url, and updated date; a read, so it stays in auto mode.
 The `zendesk-tickets` skill calls this after `research` when a ticket's answer
 is an article.
 
+## Content
+
+- Every fact the reader acts on comes from the user: the navigation path, exact
+  screen, report, filter and button names, school and category names as the
+  system spells them, the help contact, and quirks readers will hit. Ask for any
+  you do not have; a plausible guess reads as fact on the published page. A body
+  still holding a `[placeholder]` is not ready to publish.
+- Write in the reader's terms. When the source is SQL, a dbt model, or a
+  dashboard spec, name what the reader sees on screen; table and column names
+  stay in the source.
+- Give navigation as a path, "Go to **Reports** → **District Reports**", rather
+  than a menu's position on screen, which differs between users.
+- Example data in the body follows the PII gate.
+
+An article on running a report or dashboard (a Focus District Report, a Tableau
+dashboard) has these `<h2>` sections after the summary panel and
+in-this-article:
+
+1. Where to find it: numbered steps to the exact folder and title.
+2. Choosing your filters: a data table with one row per filter and what it does,
+   plus a warning callout for each quirk (one filter's list ignoring another).
+3. What the report shows: one `<h3>` per output table, what one row is, and a
+   short example table.
+4. Get help: the contact the user gave.
+
+Related articles still close the article, per the README order.
+
 ## New article
 
-1. Read the design-system README. Compose `article.html` from
+1. Collect the facts under _Content_ from the user.
+2. Read the design-system README. Compose `article.html` from
    `references/design-system/snippets/` in the README's article order: summary
    panel, in-this-article, `<h2>` sections with numbered steps and callouts,
    screenshots, related articles. No `<h1>`.
-2. Reference each screenshot as `<img src="images/<name>.png">` inside the
+3. Reference each screenshot as `<img src="images/<name>.png">` inside the
    screenshot snippet.
-3. Write `article.yml` with `title` (a plain sentence) and `labels`; ask the
+4. Write `article.yml` with `title` (a plain sentence) and `labels`; ask the
    user for `section_id` and `author_id`.
-4. PII gate for each image.
-5. Auto-mode check, then `publish(WORKDIR, live=False, approved_images=...)`.
-6. Show the draft url and the report. Ask the user to open the draft signed in.
+5. PII gate for the body text and each image.
+6. Auto-mode check, then `publish(WORKDIR, live=False, approved_images=...)`.
+7. Show the draft url and the report. Ask the user to open the draft signed in.
    This is the preview: the draft shows what the sanitizer does. Stop until they
    approve.
-7. `publish(WORKDIR, live=True)`. Nothing is uploaded this time; the images are
+8. `publish(WORKDIR, live=True)`. Nothing is uploaded this time; the images are
    Zendesk urls now.
-8. Ask the user to confirm the live page renders. Delete the test file.
+9. Ask the user to confirm the live page renders. Delete the test file.
 
 ## Edit an existing article
 
@@ -129,7 +158,7 @@ is an article.
    `/preview.html` on it in a browser or VS Code's Simple Browser. Images
    already on Zendesk render only if the browser's Zendesk session reaches them;
    text and layout always render. Stop until they approve, then stop the server.
-4. PII gate for any new image.
+4. PII gate for changed body text and any new image.
 5. Auto-mode check, then `publish(WORKDIR, live=True, approved_images=...)`. If
    `article.yml` says `draft: true`, the article was a draft when pulled: use
    `live=False` to keep it one. The publisher refuses `live=True` on it until
@@ -138,6 +167,13 @@ is an article.
    renders. Delete the test file.
 
 ## PII gate
+
+Example data in the body text is invented: names like "Alex R." and "Taylor B.",
+with a muted caption under each example table reading _Names above are examples,
+not real students._ Values from a query, a ticket, or a screenshot stay out of
+the body. Before publishing, read the body for names, school-facing ids, and
+counts small enough to identify a student, tell the user what you found, and
+wait for their yes.
 
 For every local image the body references: open it with the Read tool, state in
 plain words what is visible (school, grade band, any names, any count small
