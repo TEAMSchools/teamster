@@ -47,6 +47,12 @@ ladder in order; most cases end at step 1.
 If the tag is right and the rollup rows exist, the cause is on the data side —
 confirm extract rows before and after a refresh rather than re-arguing the tag.
 
+One build-stopping case: the AppSheet extension table and the standard-domains
+sheet carry error-severity uniqueness tests, so a duplicate AppSheet row or a
+duplicate pasted domains row fails the staging build and the whole star tick
+skips — everything goes stale at once. Check dbt test failures when every
+consumer is stale together.
+
 ## Manual refresh push
 
 After a tag fix, users expect a push rather than the next tick. In order, via

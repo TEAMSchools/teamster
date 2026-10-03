@@ -18,6 +18,8 @@ left join
     on enr.courses_course_number = cw.powerschool_course_number
 where
     enr.cc_academic_year = 2026
+    -- Miami is off the DDI stack; drop this when Focus assessments onboard
+    and enr._dbt_source_project != 'kippmiami'
     and not enr.is_dropped_section
     and cw.powerschool_course_number is null
 group by enr.courses_course_number

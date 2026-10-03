@@ -30,7 +30,7 @@ models:
           kindergarten).
         config:
           meta:
-            source_system: PowerSchool
+            source_system: Google Sheets
             source_model: stg_google_sheets__assessments__academic_goals
             source_column: grade_level
       - name: state_assessment_code

@@ -249,8 +249,7 @@ the owner's walkthrough or a workbook download.
     year only.
   - Miami holds **zero rows in prod** in every year (measured 2026-10-02): the
     rollup still carries Miami AY2025 responses, but none survive this model's
-    enrollment join after the Focus cutover. The model description's Miami
-    row-count note predates that and is stale (known issue).
+    enrollment join after the Focus cutover.
   - `power_standard_goal`, `is_power_standard`, `standard_domain` are hardcoded
     null — retired fields kept so the workbook's field list does not break.
 
@@ -301,7 +300,8 @@ the owner's walkthrough or a workbook download.
 - **What it shows**: expected-to-take internal assessments for the current year
   against what has actually been entered in Illuminate — the "who has not
   entered scores" view.
-- **Grain**: student x expected assessment. No uniqueness test (known issue).
+- **Grain**: student x expected assessment, tested as
+  `(student_number, assessment_id)`.
 - **Reads**: `int_assessments__scaffold`, `int_extracts__student_enrollments`
   (`enroll_status = 0` only), reporting terms,
   `int_illuminate__agg_student_responses` (`response_type = 'overall'`).
@@ -572,14 +572,13 @@ Tracked elsewhere:
   keys, measured 2026-10-03): 6 SY21-22 Sight Words quizzes carry placeholder
   `TBD` word fields in Illuminate. Fixed in Illuminate, not dbt.
 
-Found during the documentation run, not yet tracked separately (the
-documentation PR fixes what it can):
+Found during the documentation run, not yet tracked separately:
 
-- Missing uniqueness tests, against the repo's own per-layer rules:
-  `rpt_tableau__assessment_dashboard` (no clean key exists — the ~0.7%
-  duplicated keys above), `rpt_tableau__ddi_dashboard`, and the family's other
-  extracts, intermediates and staging models — the documentation PR adds tests
-  everywhere a clean grain was verified against prod.
+- Uniqueness tests cover every family model with a prod-verified clean grain;
+  two still lack one: `rpt_tableau__assessment_dashboard` (no clean key exists —
+  the ~0.7% duplicated keys above) and `rpt_tableau__ddi_dashboard` (its
+  properties YAML is in flight on PR
+  [#3576](https://github.com/TEAMSchools/teamster/pull/3576)).
 - The academic-goals sheet holds 2 duplicated key rows (one AY2024, one AY2025
   subject-level HS goal, each entered twice); they flow through
   `int_assessments__academic_goals` and are masked downstream by

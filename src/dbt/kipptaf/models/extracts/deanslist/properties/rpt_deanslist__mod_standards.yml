@@ -11,6 +11,11 @@ models:
       meta:
         contains_pii: true
     data_tests:
+      # Deliberately narrower than the model grain: the grain includes
+      # performance_band_set_id (and Writing folds into Text Study), so a
+      # reporting group spanning two band sets, or a Writing/Text Study label
+      # collision, sends DeansList two rows for one standard — exactly what
+      # this warn should flag. Clean in prod as of 2026-10-02.
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:

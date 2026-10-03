@@ -19,12 +19,18 @@ assessment, prior tags included); edits land in a BigQuery table read as
 | `regions_report_card`            | Report-card eligibility for `mod_assessment` non-UA scopes and `mod_standards_domains`' report-card branch — and nothing else: untagged Unit Assessments pass the enrichment feed anyway, and `mod_standards` checks no region tag |
 | `regions_progress_report`        | `mod_standards_domains`' progress-report branch                                                                                                                                                                                    |
 
-`regions_*` are comma-separated strings; whitespace is stripped and the split
-array keeps empty elements, so a trailing comma produces an empty-string region.
-The row and the region fields fail independently: a tagged assessment
-(`is_internal_assessment` true) can still miss a report card on a region field
-alone. This table is the complete gate map — report-card triage beyond the tags
-is [report-cards.md](report-cards.md)'s job.
+The `regions_*` fields are comma-separated strings parsed two different ways:
+`regions_assessed` is whitespace-stripped and split on `,` (empty elements
+survive, so a trailing comma produces an empty-string region), but the
+report-card feeds split `regions_report_card` and `regions_progress_report` on
+the literal `' , '` with no stripping — a tag typed `Newark,Camden` would
+silently drop off report cards. AppSheet writes the `' , '` form consistently (0
+deviations across every populated tag, measured 2026-10-03), so this is a
+hand-edit hazard, not a live defect. The row and the region fields fail
+independently: a tagged assessment (`is_internal_assessment` true) can still
+miss a report card on a region field alone. This table is the complete gate map
+— report-card triage beyond the tags is [report-cards.md](report-cards.md)'s
+job.
 
 ## Canonical grouping
 

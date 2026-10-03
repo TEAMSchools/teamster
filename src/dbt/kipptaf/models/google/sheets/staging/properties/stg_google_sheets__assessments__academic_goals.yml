@@ -4,8 +4,9 @@ models:
       Assessment goal targets from the academic goals Google Sheet, at grade,
       school, region, network, grade-band, and assessment-band levels. One row
       per sheet row. The intended key (year, school, grade, state assessment
-      code, subject) is tested at warn severity; the sheet currently carries
-      duplicate rows for it.
+      code, subject) is tested at warn severity, because the sheet is
+      hand-entered and can carry duplicate rows; downstream,
+      `dim_assessment_goals` keeps the higher school goal when it does.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

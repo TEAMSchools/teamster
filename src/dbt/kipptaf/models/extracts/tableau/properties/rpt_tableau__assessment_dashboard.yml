@@ -7,17 +7,15 @@ models:
       the student's year enrollment (`rn_year` 1, grade 99 excluded), so
       scaffold rows with no responses are kept. Course and teacher columns come
       from a LEFT JOIN to the student's top-ranked, non-dropped course
-      enrollment for the assessment's subject; Paterson matches that course on
-      `discipline` instead of the Illuminate subject area. Subject-level tier,
-      intervention, DIBELS, and prior-year state test columns come from
+      enrollment for the assessment's subject. Subject-level tier, intervention,
+      DIBELS, and prior-year state test columns come from
       `int_extracts__student_enrollments_subjects`, matched on the subject area
       (K-8) or course credit type (grades 9-12), and are null for subjects other
       than ELA and Math.
 
-      The model applies no region filter, but it holds no Miami rows. Miami's
-      Illuminate responses no longer match an enrollment after the Focus
-      cutover, and Miami left this stack after SY25-26, so no new Miami data
-      will land.
+      The model applies no region filter; Miami's Illuminate responses no longer
+      match an enrollment after the Focus cutover, and Miami left this stack
+      after SY25-26, so no new Miami data lands.
     config:
       meta:
         contains_pii: true
