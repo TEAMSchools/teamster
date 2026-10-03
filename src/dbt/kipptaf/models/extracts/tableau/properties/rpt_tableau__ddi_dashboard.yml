@@ -146,8 +146,9 @@ models:
       - name: is_qbl
         data_type: boolean
         description:
-          Always false. QBLs are a retired assessment program; the column stays
-          only so the DDI Suite workbook's field list does not change.
+          False on assessment rows and null on walkthrough rows. QBLs are a
+          retired assessment program; the column stays only so the DDI Suite
+          workbook's field list does not change.
       - name: is_passed_iready_2plus_reading_int
         data_type: int64
       - name: is_passed_iready_4plus_reading_int
