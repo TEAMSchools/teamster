@@ -1,10 +1,11 @@
 # Report-card feeds
 
 The four `rpt_deanslist__*` feeds deliver nightly at 01:25 (Dagster
-`deanslist-annual.yaml`, json.gz to DeansList's SFTP). What each feeds, its
-gating, ladders and cut points are in the reference doc's "DeansList report-card
-extracts" section — read that first; this file carries the verification
-procedures.
+`deanslist-annual.yaml`, json.gz to DeansList's SFTP). This file carries the
+routing and verification procedures; the exact ladders and cut points live in
+the reference doc's "DeansList report-card extracts" section — a deep dive for
+when a label or threshold itself is in question. "RT reporting term" below means
+the term windows typed `RT` in the reporting-terms sheet, per school.
 
 ## Which feed carries a subject
 

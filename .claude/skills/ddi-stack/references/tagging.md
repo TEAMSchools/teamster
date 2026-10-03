@@ -8,16 +8,16 @@ assessment, prior tags included); edits land in a BigQuery table read as
 
 ## What each tag field controls
 
-| Field                            | Controls                                                                                                   |
-| -------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| row exists                       | `is_internal_assessment` / "normed": DKI + Module Dashboard display, the feeds, the star's internal branch |
-| `module_type`, `module_sequence` | `module_code` (for example `UA3`); canonical grouping; the DDI dashboard drops `module_type = 'WPP'`       |
-| `administered_at`                | Overrides Illuminate's date: which week/term the assessment lands in everywhere                            |
-| `subject`                        | Overrides Illuminate's subject area                                                                        |
-| `grade_level`                    | `illuminate_grade_level_id`; canonical grouping; `is_replacement` (no grade tag means never a replacement) |
-| `regions_assessed`               | Which regions' students are expected to take it (the scaffold fans on this); canonical `regions_array`     |
-| `regions_report_card`            | Report-card eligibility for `mod_assessment` non-UA scopes and `mod_standards_domains`' report-card branch |
-| `regions_progress_report`        | `mod_standards_domains`' progress-report branch                                                            |
+| Field                            | Controls                                                                                                                                                                                                                           |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| row exists                       | `is_internal_assessment` / "normed": DKI + Module Dashboard display, the feeds, the star's internal branch                                                                                                                         |
+| `module_type`, `module_sequence` | `module_code` (for example `UA3`); canonical grouping; the DDI dashboard drops `module_type = 'WPP'`                                                                                                                               |
+| `administered_at`                | Overrides Illuminate's date: which week/term the assessment lands in everywhere                                                                                                                                                    |
+| `subject`                        | Overrides Illuminate's subject area                                                                                                                                                                                                |
+| `grade_level`                    | `illuminate_grade_level_id`; canonical grouping; `is_replacement` (no grade tag means never a replacement)                                                                                                                         |
+| `regions_assessed`               | Which regions' students are expected to take it (the scaffold fans on this); canonical `regions_array`                                                                                                                             |
+| `regions_report_card`            | Report-card eligibility for `mod_assessment` non-UA scopes and `mod_standards_domains`' report-card branch — and nothing else: untagged Unit Assessments pass the enrichment feed anyway, and `mod_standards` checks no region tag |
+| `regions_progress_report`        | `mod_standards_domains`' progress-report branch                                                                                                                                                                                    |
 
 `regions_*` are comma-separated strings; whitespace is stripped and the split
 array keeps empty elements, so a trailing comma produces an empty-string region.
@@ -46,7 +46,11 @@ until the assessment star ticks (00:00, 10:00, 13:00, 15:00, 17:00 Eastern). The
 DDI Suite Tableau extracts then refresh at 01:00 and 18:00 daily plus Friday
 16:00, and the DeansList feeds deliver nightly at 01:25 — so a morning date fix
 reaches the dashboard at the 18:00 refresh and the report card overnight, unless
-someone runs the manual refresh push ([triage.md](triage.md)). A moved
-`administered_at` re-buckets the same way everywhere: the DDI dashboard re-weeks
-the row and the report-card feeds re-term it, and a date no RT reporting term
-contains drops the row from the feeds.
+someone runs the manual refresh push: materialize
+`int_assessments__response_rollup` (plus `__scaffold` when expectations
+changed), then the `ddi_suite` Tableau asset (full mechanics:
+[triage.md](triage.md)). A moved `administered_at` re-buckets the same way
+everywhere: the DDI dashboard re-weeks the row and the report-card feeds re-term
+it against the RT reporting terms (the term windows typed `RT` in the
+reporting-terms sheet, per school) — a date no RT term contains drops the row
+from the feeds.

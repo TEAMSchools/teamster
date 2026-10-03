@@ -1,4 +1,4 @@
--- Course subject crosswalk audit (ddi-stack rollover step 6).
+-- Course subject crosswalk audit (ddi-stack rollover step 7).
 -- Current-year-enrollment courses missing from the crosswalk sheet.
 -- Set the year filter to the fall-dated year (2026 means SY26-27).
 -- Expect homeroom, lunch, and co-curricular rows; those stay off the sheet.

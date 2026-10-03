@@ -82,4 +82,4 @@ list every out-of-scope cell for the owner.
 
 - [crosswalk_audit.sql](scripts/crosswalk_audit.sql): current-year-enrollment
   courses missing from the course subject crosswalk
-  ([rollover.md](references/rollover.md) step 6).
+  ([rollover.md](references/rollover.md) step 7).
