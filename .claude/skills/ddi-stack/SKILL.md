@@ -52,7 +52,7 @@ prerequisite.
 | Task                                                                                                   | Read                                          |
 | ------------------------------------------------------------------------------------------------------ | --------------------------------------------- |
 | Data missing from a dashboard; worksheets disagree; wrong teacher/section; access; manual refresh push | [triage.md](references/triage.md)             |
-| Tagging questions; what an AppSheet field controls; canonical grouping                                 | [tagging.md](references/tagging.md)           |
+| Tagging questions; what an AppSheet field controls; what happens after a tag fix; canonical grouping   | [tagging.md](references/tagging.md)           |
 | Report-card scores wrong or missing; verifying a published feed average                                | [report-cards.md](references/report-cards.md) |
 | New-year rollover; refresh schedule; course-crosswalk audit                                            | [rollover.md](references/rollover.md)         |
 | QA after new data or a refactor; dated prod baselines                                                  | [qa.md](references/qa.md)                     |

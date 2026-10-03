@@ -66,7 +66,8 @@ The shapes schools actually write in about, beyond a single missing score:
   table.** Driven by two things jointly: which of that subject's assessments are
   tagged report-card-eligible for the school's region, and what DeansList's
   report-card template for that school shows. The warehouse side is the tag; the
-  template side is a DeansList configuration change, not a dbt one.
+  template side is a DeansList configuration change, not a dbt one (who submits
+  template edits is not yet written down — owner to confirm).
 - **"Remove X from Enrichment — we no longer offer it."** Untag the region on
   that subject's assessments (or stop assessing it), and ask for the matching
   DeansList template edit; the feed only carries subjects with eligible scored
