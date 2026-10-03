@@ -1364,6 +1364,7 @@ sources:
             sheet_range: src_assessments__qbls_power_standards
             skip_leading_rows: 1
         config:
+          enabled: false
           meta:
             dagster:
               asset_key:
