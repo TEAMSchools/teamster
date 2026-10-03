@@ -207,7 +207,7 @@ A new score therefore reaches a consumer only after:
     demographics, week scaffold, and the subject-level supplement (tiers, iReady
     proficiency, state proficiency) the dashboards and tier roster read.
   - `base_powerschool__course_enrollments`: course/section/teacher context,
-    joined on `illuminate_subject_area` (`discipline` for Paterson).
+    joined on `illuminate_subject_area`.
   - `stg_google_sheets__reporting__terms`: RT-type reporting terms, date-range
     joined for term labels and term keys.
   - `stg_google_sheets__people__locations`: school-to-region mapping in the
@@ -245,9 +245,6 @@ the owner's walkthrough or a workbook download.
   `int_extracts__student_enrollments` (+`_subjects`),
   `base_powerschool__course_enrollments`.
 - **Worth knowing**:
-  - Two near-identical branches: non-Paterson joins courses on
-    `illuminate_subject_area`; Paterson joins on `discipline` ("temp pending
-    course fixes").
   - Population: `rn_year = 1`, `grade_level != 99`, current and prior academic
     year only.
   - Miami holds **zero rows in prod** in every year (measured 2026-10-02): the
@@ -540,10 +537,6 @@ frequent first, and where each one points:
    [#5399](https://github.com/TEAMSchools/teamster/issues/5399) (band tables
    sync at midnight only) — check the band-set join before suspecting the
    scores.
-6. **Paterson looks different.** Paterson joins courses on `discipline` instead
-   of `illuminate_subject_area` (a temporary branch whose retirement is
-   [#5698](https://github.com/TEAMSchools/teamster/issues/5698)), so Paterson
-   can appear on one worksheet and not another, with its own formatting quirks.
 
 One recurring feature ask: averaging across module sequence numbers (for honor
 roll). That is a workbook/extract change, not a data defect.
@@ -571,8 +564,6 @@ Tracked elsewhere:
   QBLs/Power Standards (the sheet staging model and `is_qbl`).
 - [#4446](https://github.com/TEAMSchools/teamster/issues/4446) — Illuminate dlt
   sync refactor.
-- [#5698](https://github.com/TEAMSchools/teamster/issues/5698) — retire the
-  temporary Paterson `discipline` join in `rpt_tableau__assessment_dashboard`.
 
 Found during the documentation run, not yet tracked separately (the
 documentation PR fixes what it can):

@@ -90,11 +90,3 @@ Denominator questions, not defects, in this order:
 
 A blank DDI Suite page from the Launch page, or a login failure, is Tableau
 licensing or permissions. Route to the Tableau admin path; read no SQL.
-
-## Paterson
-
-Paterson joins courses on `discipline` instead of `illuminate_subject_area`, so
-it can appear on one worksheet and not another ([#5698] tracks retiring the
-branch).
-
-[#5698]: https://github.com/TEAMSchools/teamster/issues/5698

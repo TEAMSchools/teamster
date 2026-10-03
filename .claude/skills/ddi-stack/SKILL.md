@@ -64,7 +64,6 @@ from one model's SQL.
 | Module Dashboard vs DKI View disagree        | Denominators: not-taken rows, grade-level vs course population — [triage.md](references/triage.md) |
 | Newark rows linked to a Miami assessment     | Canonical merge ignores region (#5653)                                                             |
 | Honors/second section missing; wrong teacher | One section per subject pick, or a PowerSchool course assignment                                   |
-| Paterson on one worksheet, not another       | Paterson's `discipline` course join (#5698)                                                        |
 | Blank workbook / login failure               | Tableau licensing or permissions — not data                                                        |
 
 ## Sheet handoff
