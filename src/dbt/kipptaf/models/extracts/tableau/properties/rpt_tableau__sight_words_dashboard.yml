@@ -12,6 +12,9 @@ models:
       with a null value. The second (is_replacement true) adds students who have
       a response on a quiz written for a different grade level, limited to
       students recently enrolled; it carries scored rows only.
+    config:
+      meta:
+        contains_pii: true
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

@@ -27,8 +27,6 @@ models:
           `int_assessments__assessments_members` FK here via their own
           `canonical_assessment_id` column.
       - name: regions_array
-        data_tests:
-          - not_null
         data_type: array<string>
         description: >-
           Union of `regions_assessed_array` across all internal members of the

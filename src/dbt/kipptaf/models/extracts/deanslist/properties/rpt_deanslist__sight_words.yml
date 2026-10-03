@@ -6,6 +6,16 @@ models:
       student, quiz date, and sight word. Every region is included. Each
       response is tagged with the network reporting term (RT, school_id 0) its
       administration date falls in; a date outside every term drops the row.
+    config:
+      meta:
+        contains_pii: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - date_administered
+              - word
     columns:
       - name: student_number
         data_type: int64

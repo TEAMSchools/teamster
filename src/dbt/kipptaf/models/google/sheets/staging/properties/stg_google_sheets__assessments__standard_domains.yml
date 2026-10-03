@@ -8,6 +8,10 @@ models:
       - name: standard_code
         data_type: string
         description: Illuminate standard custom code.
+        data_tests:
+          - unique:
+              config:
+                severity: error
       - name: standard_domain
         data_type: string
         description: Domain the standard belongs to.

@@ -10,6 +10,9 @@ models:
       percent correct across those assessments for that student, subject, and
       term. A row whose average falls in no band of its performance band set is
       dropped.
+    config:
+      meta:
+        contains_pii: true
     data_tests:
       # These 4 columns are the group by of assessment_response_avg, so the row
       # grain is already guaranteed. What this test actually catches is the

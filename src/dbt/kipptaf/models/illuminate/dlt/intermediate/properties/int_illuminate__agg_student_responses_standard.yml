@@ -6,6 +6,15 @@ models:
       assessment sitting per standard. Inner joins drop scores for standards not
       linked to the assessment or missing from standards. Staging keeps only
       rows with points_possible above zero.
+    config:
+      meta:
+        contains_pii: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_assessment_id
+              - standard_id
     columns:
       - name: student_assessment_id
         data_type: int64

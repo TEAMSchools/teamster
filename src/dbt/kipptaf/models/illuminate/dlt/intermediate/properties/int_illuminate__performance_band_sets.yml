@@ -6,6 +6,12 @@ models:
       sets.
     # config:
     #   materialized: table
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - performance_band_set_id
+              - performance_band_id
     columns:
       - name: performance_band_set_id
         data_type: int64

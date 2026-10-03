@@ -13,6 +13,9 @@ models:
       rows the published models drop for falling in no band. Use
       computed_avg_pct_correct to check the published averages against the
       underlying data.
+    config:
+      meta:
+        contains_pii: true
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

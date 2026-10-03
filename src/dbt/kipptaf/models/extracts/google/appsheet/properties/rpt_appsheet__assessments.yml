@@ -8,6 +8,8 @@ models:
       - name: assessment_id
         data_type: int64
         description: Illuminate assessment id.
+        data_tests:
+          - unique
       - name: title
         data_type: string
         description: Assessment title.

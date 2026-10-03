@@ -5,6 +5,15 @@ models:
       one row per student and subject (Reading and Math) for the current
       academic year. Carries the student's intervention tier and prior-year
       state test and i-Ready results. No region filter is applied.
+    config:
+      meta:
+        contains_pii: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - subject
     columns:
       - name: region
         data_type: string

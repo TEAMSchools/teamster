@@ -7,6 +7,9 @@ models:
       per student and assessment. Inner joins drop responses without a matching
       response, field response, or field row, including responses to
       soft-deleted fields.
+    config:
+      meta:
+        contains_pii: true
     columns:
       - name: student_assessment_response_id
         data_type: int64

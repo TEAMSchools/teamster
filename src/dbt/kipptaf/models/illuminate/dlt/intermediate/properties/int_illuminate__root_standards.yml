@@ -8,12 +8,14 @@ models:
     config:
       materialized: table
     columns:
+      - name: standard_id
+        data_type: int64
+        description: Illuminate standard id.
+        data_tests:
+          - unique
       - name: root_standard_id
         data_type: int64
         description: The top-level ancestor's standard_id.
       - name: parent_standard_id
         data_type: int64
         description: The standard's immediate parent. 0 on root rows.
-      - name: standard_id
-        data_type: int64
-        description: Illuminate standard id.

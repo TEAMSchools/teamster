@@ -27,6 +27,7 @@ models:
     config:
       materialized: table
       meta:
+        contains_pii: true
         dagster:
           # Cron instead of the default eager table condition, which
           # re-fires on ANY upstream data change, recursing through view

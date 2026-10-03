@@ -18,6 +18,9 @@ models:
       Illuminate responses no longer match an enrollment after the Focus
       cutover, and Miami left this stack after SY25-26, so no new Miami data
       will land.
+    config:
+      meta:
+        contains_pii: true
     columns:
       - name: student_number
         data_type: int64

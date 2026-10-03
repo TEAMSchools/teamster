@@ -7,6 +7,18 @@ models:
       percent correct across the student's internal assessments in Text Study,
       Mathematics, and Writing. Writing is reported as Text Study. A row whose
       average falls in no band of its performance band set is dropped.
+    config:
+      meta:
+        contains_pii: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - academic_year
+              - subject_area
+              - term
+              - standard_description
     columns:
       - name: student_number
         data_type: int64

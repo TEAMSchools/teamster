@@ -7,6 +7,16 @@ models:
       to students_assessments keeps only the sitting that staging retains for
       each student and assessment. All three staging sources keep only rows with
       points_possible above zero.
+    config:
+      meta:
+        contains_pii: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_assessment_id
+              - response_type
+              - response_type_id
     columns:
       - name: student_assessment_id
         data_type: int64

@@ -4,10 +4,15 @@ models:
       Illuminate student enrollment stints (student-session affiliations) with
       the session's academic year and site. One row per stint. The inner join to
       sessions drops stints whose session is missing.
+    config:
+      meta:
+        contains_pii: true
     columns:
       - name: stu_sess_id
         data_type: int64
         description: Illuminate student-session affiliation id.
+        data_tests:
+          - unique
       - name: student_id
         data_type: int64
         description: Illuminate student id.

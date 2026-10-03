@@ -8,6 +8,8 @@ models:
       - name: repository_id
         data_type: int64
         description: Illuminate repository id. One row per value.
+        data_tests:
+          - unique
       - name: title
         data_type: string
         description: Repository title.

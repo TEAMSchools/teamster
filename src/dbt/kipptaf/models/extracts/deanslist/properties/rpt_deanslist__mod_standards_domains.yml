@@ -10,6 +10,19 @@ models:
       domain across assessments whose AppSheet report-card regions include the
       student's region, mapping each standard code to a domain through the
       standard domains sheet; standards with no domain mapping are dropped.
+    config:
+      meta:
+        contains_pii: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - report_type
+              - academic_year
+              - student_number
+              - subject_area
+              - term_administered
+              - standard_domain
     columns:
       - name: report_type
         data_type: string

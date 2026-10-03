@@ -20,6 +20,7 @@ models:
     config:
       materialized: table
       meta:
+        contains_pii: true
         dagster:
           # cron instead of eager (was 125+/day). Ticks lead the DDI Suite
           # workbook's Dagster refresh crons (01:00 + 18:00 daily, 11:00 +
