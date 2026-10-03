@@ -1,26 +1,18 @@
 models:
   - name: int_assessments__course_enrollments
     description: >-
-      K-12 course enrollments unioned with synthesized Newark/Camden ES Writing
-      enrollments (grade <= 4). Provides the enrollment scaffold that internal
-      Illuminate assessments are joined against. One row per (student, academic
-      year, subject area, date enrolled), deduplicated to the latest exit per
-      enrollment span.
-
-
-      The student join keys on `student_number` rather than PowerSchool's
-      internal `cc_studentid`, which Focus leaves null -- before that change
-      this model held no Miami rows in any year. Miami AY2026 forward was then
-      still excluded, because the `not is_dropped_course` filter drops rows
-      whose flag is null and Focus set no flag. #4968 made both Focus drop flags
-      non-null, so Miami AY2026 now reaches this scaffold. Whether this model
-      should be network-wide or NJ-scoped remains #4996's decision; the
-      inclusion is a consequence of fixing the flags, not a scope judgment made
-      here.
-
-      Network-wide, Miami included. This model already recorded that #4996 owned
-      the decision; the decision is now made and it is INCLUDE. Miami held
-      61,910 rows in prod as of 2026-08-27.
+      Enrollment scaffold that internal Illuminate assessments are joined
+      against, network-wide (Miami included). Unions two branches. The K-12
+      branch takes non-dropped course enrollments from
+      `base_powerschool__course_enrollments` and INNER JOINs the student's
+      year-primary enrollment (`rn_year = 1`) on `student_number`, academic
+      year, and `_dbt_source_project` for region and grade level; the join is
+      not keyed on school, so a course at a school other than the enrollment
+      school is kept. The ES Writing branch synthesizes a `RHET` / `Writing`
+      enrollment for every Newark and Camden student enrollment stint at grade 4
+      and below. The union is deduplicated to one row per
+      (`_dbt_source_project`, student, Illuminate academic year, subject area,
+      date enrolled), keeping the latest `cc_dateleft`.
     config:
       materialized: table
       meta:
@@ -50,25 +42,48 @@ models:
     columns:
       - name: powerschool_student_number
         data_type: int64
+        description: >-
+          Student number (`students_student_number` on the K-12 branch,
+          `student_number` on the ES Writing branch). Carries Focus students for
+          Miami despite the name.
       - name: courses_credittype
         data_type: string
+        description: >-
+          Course credit type. Constant `RHET` on the ES Writing branch.
       - name: powerschool_school_id
         data_type: int64
+        description: >-
+          Course section school (`cc_schoolid`) on the K-12 branch; the
+          enrollment stint's `schoolid` on the ES Writing branch.
       - name: cc_dateenrolled
         data_type: date
+        description: >-
+          Course enrollment start date. The enrollment stint's `entrydate` on
+          the ES Writing branch.
       - name: cc_dateleft
         data_type: date
+        description: >-
+          Course enrollment end date. The enrollment stint's `exitdate` on the
+          ES Writing branch. The latest value wins the dedup.
       - name: illuminate_subject_area
         data_type: string
+        description: >-
+          Illuminate subject area mapped to the course. Constant `Writing` on
+          the ES Writing branch.
       - name: discipline
         data_type: string
+        description: >-
+          Course discipline. Constant `ELA` on the ES Writing branch.
       - name: is_foundations
         data_type: boolean
+        description: >-
+          Foundations-course flag from the course enrollment. Always false on
+          the ES Writing branch.
       - name: cc_dcid
         data_type: int64
         description: >-
-          PowerSchool course enrollment row identifier. Used as an upstream
-          component of
+          PowerSchool course enrollment row identifier. Null on the ES Writing
+          branch. Used as an upstream component of
           dim_student_section_enrollments.student_section_enrollment_key.
         config:
           meta:
@@ -80,15 +95,27 @@ models:
           plumbed through from the upstream PowerSchool union models. Carried on
           both K-12 and ES Writing branches and used as the region discriminator
           in the trailing dedup partition and downstream surrogate keys
-          (student_section_enrollment_key). See #3142.
+          (student_section_enrollment_key).
         config:
           meta:
             source_column: base_powerschool__course_enrollments._dbt_source_project
       - name: region
         data_type: string
+        description: >-
+          Region name from the student's enrollment in
+          `base_powerschool__student_enrollments`.
       - name: illuminate_academic_year
         data_type: int64
+        description: >-
+          Academic year plus one, matching Illuminate's spring-year convention.
       - name: illuminate_grade_level_id
         data_type: int64
+        description: >-
+          Enrollment grade level plus one, matching Illuminate's 1-indexed grade
+          level ids.
       - name: is_advanced_math_student
         data_type: boolean
+        description: >-
+          True when the student has any non-dropped advanced math course
+          enrollment in the same region, academic year, and credit type. Always
+          false on the ES Writing branch.

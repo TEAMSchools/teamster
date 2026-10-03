@@ -4,21 +4,24 @@ models:
       Every assessment score the section resolver tries to place, with the one
       date it anchors on. One row per score grain (student, region, source type,
       canonical assessment, academic year, administration period, subject area)
-      and anchor date. Six source branches feed it — internal Illuminate scores
+      and anchor date. Six source types feed it — internal Illuminate scores
       anchored on the canonical administered date, NJ state (Pearson) and FL
       state (FLDOE) scores on their test date, and iReady, STAR, and DIBELS
       benchmark composites on their completion, screening, or client date. State
       scores come from int_assessments__state_scores and benchmark scores from
       int_assessments__benchmark_scores, both with the subject area already
-      resolved through the vendor subject crosswalk. Internal scores collapse to
-      one row per student, canonical assessment, and region on the earliest
-      administered date. Rows with no anchor date or no student are out of scope
-      and dropped. Byte-identical duplicate rows from a source (re-pulled iReady
-      and STAR sittings) collapse; a score with two different anchor dates keeps
-      both rows, since each date is a separate chance at an enrollment window.
-      Read by int_assessments__resolved_section_enrollments, which references it
-      three times; materializing it once here is what keeps that model's
-      BigQuery plan shallow.
+      resolved through the vendor subject crosswalk. Internal scores are
+      non-replacement scaffold rows for internal assessments, collapsed to one
+      row per student, canonical assessment, and region. State rows with no test
+      date or no student are dropped. Benchmark rows with no test date are
+      dropped, iReady and STAR rows also need a scale score, STAR rows also need
+      a `_dbt_source_project` (iReady keeps null-project rows), and DIBELS keeps
+      only `overall` benchmark composites. Byte-identical duplicate rows from a
+      source (re-pulled iReady and STAR sittings) collapse; a score with two
+      different anchor dates keeps both rows, since each date is a separate
+      chance at an enrollment window. Read more than once by
+      int_assessments__resolved_section_enrollments; materializing it once here
+      is what keeps that model's BigQuery plan shallow.
     config:
       materialized: table
       meta:
@@ -52,8 +55,9 @@ models:
       - name: powerschool_student_number
         data_type: int64
         description: >-
-          Student identifier. Sourced from int_assessments__scaffold for
-          internal scores and from each vendor or state intermediate otherwise.
+          Student number. Sourced from int_assessments__scaffold for internal
+          scores and from the `student_number` of int_assessments__state_scores
+          or int_assessments__benchmark_scores otherwise.
         config:
           meta:
             source_column: int_assessments__scaffold.powerschool_student_number
@@ -112,7 +116,8 @@ models:
           The date the resolver matches against enrollment windows. The
           canonical administered date for internal scores, the test date for
           state scores, and the completion, screening, or client date for vendor
-          scores. Not the corrupt Illuminate date_taken.
+          scores. Internal scores do not use Illuminate's `date_taken`, which
+          can carry corrupt sentinel dates.
         config:
           meta:
             source_column: int_assessments__assessments_canonical.administered_date
