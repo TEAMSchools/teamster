@@ -1,0 +1,49 @@
+# Report-card feeds
+
+The four `rpt_deanslist__*` feeds deliver nightly at 01:25 (Dagster
+`deanslist-annual.yaml`, json.gz to DeansList's SFTP). What each feeds, its
+gating, ladders and cut points are in the reference doc's "DeansList report-card
+extracts" section — read that first; this file carries the verification
+procedures.
+
+## A score is missing from a report card
+
+Check in order:
+
+1. **The gate.** `mod_standards_domains` and non-Unit-Assessment scopes of
+   `mod_assessment` require the student's region in `regions_report_card` (or
+   `regions_progress_report` for the PR branch). Untagged Unit Assessments pass
+   the enrichment feed anyway; `mod_standards` needs only
+   `is_internal_assessment`, no region tag.
+2. **The population.** `mod_assessment` and `mod_standards_domains` are K-4 only
+   (enrollment `grade_level < 5`, `rn_year = 1`); `mod_assessment` and
+   `mod_standards` are current-year only.
+3. **The term.** `term_administered` is the RT reporting term containing the
+   (possibly tag-overridden) `administered_at` for the student's school — a
+   wrong date tag moves the score to another term or drops it.
+4. **The band.** `mod_assessment` and `mod_standards` inner-join the band sets;
+   a response with no matching band row drops. Same-day scores can sit unbanded
+   until the midnight band sync (#5399).
+5. **DeansList itself.** The CDO lands nightly; a fixed row appears on the next
+   delivery, not immediately.
+
+## Verifying a published average
+
+`rpt_gsheets__deanslist_mod_audit` (the DeansList Mod Audit sheet) holds the
+pre-aggregation response rows with `computed_avg_pct_correct` reproducing each
+feed's GROUP BY. Compare it to the published `avg_pct_correct` /
+`avg_percent_correct`, minding three scope gaps:
+
+- Years: the audit holds current + prior year; `mod_assessment`/`mod_standards`
+  publish current only; `mod_standards_domains` publishes every year.
+- Writing: the audit keeps `Writing`; `mod_standards` publishes it as
+  `Text Study`.
+- Bands: the audit has no band join, so it keeps rows the published feeds drop.
+
+## Sight words
+
+`rpt_deanslist__sight_words` is raw per-word mastery, current year forward, no
+grade or region filter (`retested` counts as mastered). Report cards use the K-1
+slice. Duplicate words on a quiz come from duplicated field labels in the
+Illuminate repository — the sight-words dashboard's warn test counts them
+([qa.md](qa.md)).
