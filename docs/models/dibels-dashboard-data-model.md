@@ -370,6 +370,15 @@ The Tableau workbook is the `literacy_dashboard` exposure in
     the BAN on the same page.
   - The Category Status Over Time line shows every round of one season, chosen
     by its own Trend Window control, not by the Admin Window filter.
+  - On the Region Overview - PM (Internal) tab, the bar label is distinct
+    students per colour as a percent of distinct students per bar. The colour
+    field must be at the same grain as the columns: a standard-grain status
+    (`admin_benchmark_goal_status`, `measure_standard_goal_status`) under a
+    measure-grain column (`expected_measure_name_code`) puts a student who met
+    one ORF standard and missed the other in two segments, and the labels sum
+    past 100%. Reported 2026-10-02 (Zendesk ticket 484741); the measure-grain
+    twins `measure_name_code_benchmark_status` and
+    `measure_name_code_goal_status` are the fix.
   - The workbook filters `enroll_status = 0`, the student's status today, so a
     completed year shows only students who are still enrolled; see _Known
     issues_.
