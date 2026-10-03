@@ -374,7 +374,10 @@ One row per currently-enrolled student x iReady subject with `nj_student_tier`,
 prior-year NJSLA and iReady EOY proficiency — the tier-planning roster. Pure
 passthrough of `int_extracts__student_enrollments_subjects` (current year,
 `rn_year = 1`, `enroll_status = 0`); the tier logic lives in that hub. Lands in
-the `NJ DDI Roster - Source` sheet (exposure `nj_ddi_roster_source`).
+the `NJ DDI Roster - Source` sheet (exposure `nj_ddi_roster_source`). The
+extract applies no region filter, so Miami rows are present and
+`njsla_previous_year` carries their FAST values — accepted (2026-10-03): the
+reporting sheets downstream alias the column correctly, so no SQL change.
 
 ### rpt_gsheets__deanslist_mod_audit
 
@@ -564,6 +567,10 @@ Tracked elsewhere:
   QBLs/Power Standards (the sheet staging model and `is_qbl`).
 - [#4446](https://github.com/TEAMSchools/teamster/issues/4446) — Illuminate dlt
   sync refactor.
+- [#5700](https://github.com/TEAMSchools/teamster/issues/5700) — the sight-words
+  dashboard's warn-level uniqueness test fails in prod (about 5,500 duplicate
+  keys, measured 2026-10-03): 6 SY21-22 Sight Words quizzes carry placeholder
+  `TBD` word fields in Illuminate. Fixed in Illuminate, not dbt.
 
 Found during the documentation run, not yet tracked separately (the
 documentation PR fixes what it can):
@@ -590,14 +597,6 @@ documentation PR fixes what it can):
   so their repository data is frozen (see Where the data comes from).
 - The mod audit's Writing remap gap and its year-scope mismatch with
   `mod_standards_domains` (see its section).
-- The sight-words dashboard's warn-level uniqueness test fails in prod: about
-  5,500 duplicate keys (measured 2026-10-03), all null-value on-grade rows,
-  traced to 6 Sight Words repositories whose `repository_fields` carry a
-  duplicated sight-word label. Fixing the labels in Illuminate clears it.
-- `rpt_gsheets__ddi_tier_roster` applies no region filter, so current-year Miami
-  students reach the "NJ" roster when they appear in the subjects hub, and
-  `njsla_previous_year` carries FAST PM3 values for Florida rows — decide
-  whether the NJ scope should be enforced in the SQL.
 - The `NJ DDI Roster - Source` sheet sits in the Reports drive folder despite
   its name, and no Reports-layer IMPORTRANGE consumer of either extract sheet
   was found — confirm how people actually read them.

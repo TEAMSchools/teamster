@@ -15,9 +15,9 @@ Every family model's uniqueness test grain was measured clean
   tests track it; deleting the duplicate sheet rows clears it.
 - `rpt_tableau__sight_words_dashboard`: ~5,500 duplicate
   `(repository_id, student_number, sight_word)` keys, all null-value on-grade
-  rows, from 6 Sight Words repositories carrying a duplicated field label in
-  `stg_illuminate__dna_repositories__repository_fields`. Fix the labels in
-  Illuminate.
+  rows, from placeholder `TBD` word fields on 6 SY21-22 quizzes (#5700; fixed in
+  Illuminate, and those repositories are off the dlt sync schedule, so the
+  staged copies need a manual sync after the fix).
 - `rpt_tableau__assessment_dashboard`: no clean key; about 0.7% of
   `(student_number, assessment_id, response_type, response_type_code)` keys
   duplicated exactly twice (4,915 Camden / 15,590 Newark / 1,362 Paterson),
@@ -26,7 +26,9 @@ Every family model's uniqueness test grain was measured clean
 Reference sizes at measurement: `int_assessments__response_rollup` feeds ~27.5M
 response rows; `fct` internal not-taken rows 76,472 (AY2025) / 64,916 (AY2026,
 in progress); DDI tier roster 22,070 rows (13,086 Newark / 4,340 Camden / 3,002
-Miami / 1,642 Paterson — the Miami rows are the region-leak known issue).
+Miami / 1,642 Paterson — Miami rows are expected; the extract has no region
+filter and the downstream reporting sheets alias the state-proficiency column
+correctly).
 
 ## After new data lands
 
