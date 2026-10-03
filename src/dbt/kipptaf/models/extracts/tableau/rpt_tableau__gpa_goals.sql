@@ -5,6 +5,8 @@ select
     org_level,
     region,
     schoolid,
+    school_name,
+    aggregation_label,
     grade_band,
     goal_proportion,
     n_students_in_grain,

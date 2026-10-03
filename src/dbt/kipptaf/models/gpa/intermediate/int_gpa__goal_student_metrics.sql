@@ -2,6 +2,8 @@ select
     sr.academic_year,
     sr.region,
     sr.schoolid,
+    sr.school,
+    sr.school_name,
     sr.grade_level,
     sr.student_number,
     sr.cumulative_y1_gpa_projected_unweighted as cumulative_gpa_unweighted,
