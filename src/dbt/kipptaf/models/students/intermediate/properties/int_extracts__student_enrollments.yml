@@ -958,6 +958,11 @@ models:
           academic year — a registration that was cancelled before the school
           year began (summer melt or pre-year transfer). These stints have no
           course enrollments and should be excluded from course-level reporting.
+      - name: is_current_academic_year
+        data_type: boolean
+        description: >
+          True when academic_year equals the project's current_academic_year
+          variable, which rolls over each July. False otherwise.
       - name: aligned_gender
         data_type: string
         description: >
