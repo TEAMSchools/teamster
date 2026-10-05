@@ -1,5 +1,5 @@
 from email.message import EmailMessage
-from smtplib import SMTP
+from smtplib import SMTP, SMTPServerDisconnected
 
 from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
 from dagster_shared import check
@@ -17,11 +17,18 @@ class EmailResource(ConfigurableResource):
     _server: SMTP = PrivateAttr()
     _log: DagsterLogManager = PrivateAttr()
 
-    def setup_for_execution(self, context: InitResourceContext):
+    def setup_for_execution(self, context: InitResourceContext) -> None:
         self._log = check.not_none(value=context.log)
+        self._connect()
 
+    def teardown_after_execution(self, context: InitResourceContext) -> None:
+        try:
+            self._server.quit()
+        except SMTPServerDisconnected:
+            pass
+
+    def _connect(self) -> None:
         self._server = SMTP(host=self.host, port=self.port, timeout=self.timeout)
-        self._server.set_debuglevel(1)  # Enable for troubleshooting
 
         # SMTP handshake
         self._server.ehlo()
@@ -37,7 +44,12 @@ class EmailResource(ConfigurableResource):
         bcc_emails: str | None = None,
         to_emails: str | None = None,
         alternative_args: tuple | None = None,
-    ):
+    ) -> None:
+        """Send one email, reconnecting once if the server dropped the session.
+
+        Raises any other SMTP error to the caller, so a failed send is never
+        reported as a success.
+        """
         if to_emails is None:
             to_emails = from_email
 
@@ -56,6 +68,7 @@ class EmailResource(ConfigurableResource):
 
         try:
             self._server.send_message(msg=msg)
-            self._log.info(f"Email sent to {to_emails} {bcc_emails}")
-        except Exception as e:
-            self._log.error(msg=e)
+        except SMTPServerDisconnected:
+            self._log.warning("SMTP session dropped; reconnecting")
+            self._connect()
+            self._server.send_message(msg=msg)

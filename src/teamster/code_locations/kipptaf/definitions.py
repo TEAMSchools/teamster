@@ -28,6 +28,7 @@ from teamster.code_locations.kipptaf import (
     performance_management,
     resources,
     smartrecruiters,
+    surveys,
     tableau,
     zendesk,
 )
@@ -88,6 +89,7 @@ defs = Definitions(
         *ldap.schedules,
         *level_data.schedules,
         *smartrecruiters.schedules,
+        *surveys.schedules,
         *tableau.schedules,
         *zendesk.schedules,
     ],
@@ -108,6 +110,7 @@ defs = Definitions(
         "db_bigquery": BIGQUERY_RESOURCE,
         "dbt_cli": get_dbt_cli_resource(DBT_PROJECT),
         "dlt": DLT_RESOURCE,
+        "email": resources.OUTLOOK_RESOURCE,
         "gcs": GCS_RESOURCE,
         "google_directory": resources.GOOGLE_DIRECTORY_RESOURCE,
         "google_drive": GOOGLE_DRIVE_RESOURCE,

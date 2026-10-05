@@ -3,6 +3,7 @@ from dagster_airbyte import AirbyteCloudWorkspace
 
 from teamster.libraries.adp.workforce_now.api.resources import AdpWorkforceNowResource
 from teamster.libraries.coupa.resources import CoupaResource
+from teamster.libraries.email.resources import EmailResource
 from teamster.libraries.google.directory.resources import GoogleDirectoryResource
 from teamster.libraries.knowbe4.resources import KnowBe4Resource
 from teamster.libraries.ldap.resources import LdapResource
@@ -46,6 +47,13 @@ LDAP_RESOURCE = LdapResource(
     port=EnvVar("LDAP_PORT"),
     user=EnvVar("LDAP_USER"),
     password=EnvVar("LDAP_PASSWORD"),
+)
+
+OUTLOOK_RESOURCE = EmailResource(
+    host=EnvVar("OUTLOOK_HOST"),
+    port=EnvVar.int("OUTLOOK_PORT"),
+    user=EnvVar("OUTLOOK_USER"),
+    password=EnvVar("OUTLOOK_PASSWORD"),
 )
 
 GROW_RESOURCE = GrowResource(

@@ -27,6 +27,7 @@ LOCAL_TIMEZONE = ZoneInfo("America/New_York")
 | `overgrad`               | API assets                                                | —                | —                       |
 | `performance_management` | SFTP assets                                               | —                | —                       |
 | `smartrecruiters`        | report assets                                             | schedule         | —                       |
+| `surveys`                | op-based email job                                        | Mon/Wed/Fri 9am  | —                       |
 | `tableau`                | workbook refresh assets                                   | schedule         | —                       |
 | `zendesk`                | assets                                                    | schedule         | —                       |
 | `couchdrop`              | sensor only                                               | —                | sensor                  |
@@ -57,6 +58,20 @@ only) built from the manifest.
 
 `appsheet` and `sheets` produce `AssetSpec`s (external, sensor-driven) — not
 standard asset definitions.
+
+## `surveys` Module
+
+Op-based job, no assets: `bigquery_query_op` reads
+`kipptaf_extracts.rpt_extracts__survey_reminder`, then
+`send_personalized_email_op` sends each person one email with their own survey
+links. The model returns rows only while a survey window is open, so the
+schedule runs year-round and sends nothing between windows. Sends from the
+`op-outlook-pm` mailbox and throttles to stay under Exchange Online's 30
+messages per minute, so a full window run takes about an hour.
+
+The email text lives in `surveys/template.html` (HTML) and `TEXT_TEMPLATE` in
+`surveys/jobs.py` (plain text). Update both, with the window dates, for each
+survey round.
 
 ## Tableau Workbook Scheduling
 
