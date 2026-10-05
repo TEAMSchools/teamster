@@ -39,6 +39,8 @@ _Linting_.
 - `.claude/skills/zendesk-help-articles/references/design-system/**` — all
   linters ignored (verbatim design-system export; prettier would mangle the
   paste-ready snippets)
+- `.claude/skills/ktaf-design-system/references/design-system/**` — all linters
+  ignored (verbatim design-system export, same reason)
 
 ## Hooks
 

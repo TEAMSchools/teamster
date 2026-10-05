@@ -1,0 +1,40 @@
+/* ============================================================
+   SHAPE & ELEVATION — KIPP NJ | Miami
+   ------------------------------------------------------------
+   The brand is bold and flat. Photos NEVER get rounded corners
+   or filters (brand rule), so imagery uses --radius-none. UI
+   controls take a small, confident radius. Shadows stay subtle;
+   --shadow-pop is a hard-edged offset block, a brand-flavored
+   emphasis device for stat cards and callouts.
+   ============================================================ */
+
+:root {
+  /* Corner radii — kept tight; bold & blocky, not soft */
+  --radius-none: 0;
+  --radius-sm:   3px;
+  --radius-md:   5px;   /* default controls */
+  --radius-lg:   8px;   /* cards */
+  --radius-xl:   14px;
+  --radius-pill: 999px; /* tags, badges, avatars */
+
+  /* Photography: square corners, no effects (brand rule) */
+  --radius-photo: 0;
+
+  /* Borders */
+  --border-width: 1px;
+  --border-width-strong: 2px;
+
+  /* Soft elevation */
+  --shadow-xs: 0 1px 2px rgba(0, 30, 98, 0.06);
+  --shadow-sm: 0 1px 3px rgba(0, 30, 98, 0.08), 0 1px 2px rgba(0, 30, 98, 0.06);
+  --shadow-md: 0 4px 12px rgba(0, 30, 98, 0.10), 0 2px 4px rgba(0, 30, 98, 0.06);
+  --shadow-lg: 0 12px 28px rgba(0, 30, 98, 0.14), 0 4px 8px rgba(0, 30, 98, 0.08);
+  --shadow-xl: 0 24px 56px rgba(0, 30, 98, 0.18);
+
+  /* Brand emphasis — hard offset block in indigo */
+  --shadow-pop:        6px 6px 0 var(--kipp-indigo);
+  --shadow-pop-accent: 6px 6px 0 var(--brand-accent);
+
+  /* Focus ring */
+  --ring: 0 0 0 3px rgba(87, 192, 233, 0.55);
+}
