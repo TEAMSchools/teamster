@@ -3,7 +3,7 @@ from dagster_airbyte import AirbyteCloudWorkspace
 
 from teamster.libraries.adp.workforce_now.api.resources import AdpWorkforceNowResource
 from teamster.libraries.coupa.resources import CoupaResource
-from teamster.libraries.email.resources import EmailResource
+from teamster.libraries.email.resources import GraphEmailResource
 from teamster.libraries.google.directory.resources import GoogleDirectoryResource
 from teamster.libraries.knowbe4.resources import KnowBe4Resource
 from teamster.libraries.ldap.resources import LdapResource
@@ -49,11 +49,11 @@ LDAP_RESOURCE = LdapResource(
     password=EnvVar("LDAP_PASSWORD"),
 )
 
-OUTLOOK_RESOURCE = EmailResource(
-    host=EnvVar("OUTLOOK_HOST"),
-    port=EnvVar.int("OUTLOOK_PORT"),
-    user=EnvVar("OUTLOOK_USER"),
-    password=EnvVar("OUTLOOK_PASSWORD"),
+MICROSOFT_GRAPH_EMAIL_RESOURCE = GraphEmailResource(
+    tenant_id=EnvVar("MICROSOFT_GRAPH_TENANT_ID"),
+    client_id=EnvVar("MICROSOFT_GRAPH_CLIENT_ID"),
+    client_secret=EnvVar("MICROSOFT_GRAPH_CLIENT_SECRET"),
+    sender="performancemanagement@kippnj.org",
 )
 
 GROW_RESOURCE = GrowResource(

@@ -65,13 +65,16 @@ Op-based job, no assets: `bigquery_query_op` reads
 `kipptaf_extracts.rpt_extracts__survey_reminder`, then
 `send_personalized_email_op` sends each person one email with their own survey
 links. The model returns rows only while a survey window is open, so the
-schedule runs year-round and sends nothing between windows. Sends from the
-`op-outlook-pm` mailbox and throttles to stay under Exchange Online's 30
-messages per minute, so a full window run takes about an hour.
+schedule runs year-round and sends nothing between windows. Sends as
+performancemanagement@kippnj.org through Microsoft Graph (the
+`op-microsoft-graph-survey-reminders` secret, marked `optional` so a missing
+secret can't block the code server) and throttles to stay under Exchange
+Online's 30 messages per minute, so a full window run takes about an hour. The
+job sets `dagster/max_retries: 0`: a whole-run retry would re-email everyone
+already sent to.
 
-The email text lives in `surveys/template.html` (HTML) and `TEXT_TEMPLATE` in
-`surveys/jobs.py` (plain text). Update both, with the window dates, for each
-survey round.
+The email text, including the window name and dates, lives only in
+`surveys/template.html`. Update it for each survey round.
 
 ## Tableau Workbook Scheduling
 

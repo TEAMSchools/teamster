@@ -1,24 +1,30 @@
 # CLAUDE.md — `teamster/libraries/email/`
 
-SMTP email delivery for Dagster ops — used to send outbound emails to recipient
-lists from BigQuery extract results.
+Outbound email for Dagster ops — sends to recipient lists from BigQuery extract
+results.
 
 ## Files
 
-**`resources.py`** (`EmailResource`): SMTP client with STARTTLS. Provides
-`send_message()` for sending a single email with optional HTML alternative body.
-It reconnects once on `SMTPServerDisconnected` and raises every other SMTP
-error, so callers decide whether a failed send fails the run. Do not re-enable
-`SMTP.set_debuglevel`: it writes the AUTH exchange, password included, to the
-run logs. `chunk_size` controls BCC batch size for `send_email_op`.
+**`resources.py`**:
+
+- `GraphEmailResource` sends as one mailbox through Microsoft Graph `sendMail`
+  with app-only (client credentials) auth. It caches the token and refreshes it
+  5 minutes before expiry, retries 429 and 5xx with backoff, and raises
+  `requests.HTTPError` on any other rejection. The Entra app needs Application
+  `Mail.Send` scoped in Exchange to the sender mailbox. Use this for new email
+  work: Exchange Online is retiring password (basic) SMTP sign-in.
+- `EmailResource` is the older SMTP client (STARTTLS, password login). It logs
+  and swallows send errors. Do not re-enable `SMTP.set_debuglevel`: it writes
+  the AUTH exchange, password included, to the run logs.
 
 **`ops.py`**:
 
-- `send_email_op` splits recipients into BCC batches of `chunk_size` and sends
-  every batch the same body.
-- `send_personalized_email_op` groups rows by their `email` key and sends each
-  person one email, rendering Jinja templates with that person's rows as
-  `items`. The HTML template autoescapes. It sleeps between sends to honor
-  `messages_per_minute`. It skips a failed recipient, raises `Failure` at the
-  end if any send failed, and stops early after `max_consecutive_failures` in a
-  row.
+- `send_personalized_email_op` (Graph) groups rows by their `email` key and
+  sends each person one HTML email, rendering an autoescaped Jinja template with
+  that person's rows as `items`. It sleeps between sends to honor
+  `messages_per_minute`, since Exchange's 30-per-minute mailbox limit applies to
+  Graph too. It skips a failed recipient, logs failures without the address,
+  raises `Failure` at the end if any send failed, and stops early after
+  `max_consecutive_failures` in a row.
+- `send_email_op` (SMTP) splits recipients into BCC batches of `chunk_size` and
+  sends every batch the same body.
