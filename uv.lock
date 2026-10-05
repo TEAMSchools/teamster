@@ -548,14 +548,14 @@ wheels = [
 
 [[package]]
 name = "cron-descriptor"
-version = "2.1.0"
+version = "2.1.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/91/75/b44b05ae7d1e49b59a27a917c44e04ce9aa4cebdd05dac42ba7df06a91b4/cron_descriptor-2.1.0.tar.gz", hash = "sha256:ecddb8b2f6c5286398949aaefe185364666af74f33b01877c61378e1fd4e38e6", size = 50221, upload-time = "2026-06-02T16:26:28.223Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/2f/51/7c6b4dc9a0f1db6a22cbdfb7a674c8ded4e6aab40531afa7d912a060f08f/cron_descriptor-2.1.1.tar.gz", hash = "sha256:0f55b469bb81f8c60602baebc08a78fc3b1eb234805793a08a4862f336760390", size = 51579, upload-time = "2026-09-29T23:58:19.831Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/0d/41/c476c41cb88dbbba83e0685dd331b9d32599f1e4a94ca223b02437a3d83b/cron_descriptor-2.1.0-py3-none-any.whl", hash = "sha256:e280efae0e375e2cbc62846f833888f12c7921d2d11ab0dca598f94c51af8639", size = 74734, upload-time = "2026-06-02T16:26:26.919Z" },
+    { url = "https://files.pythonhosted.org/packages/4f/89/1c50594082fcc28e31ab22fdb40abe0aaf5fb1830c1e42ef31a11f4f2195/cron_descriptor-2.1.1-py3-none-any.whl", hash = "sha256:7b5c96495ce75a0dc368db4c613aa4346099363b40d4baa7945b0ff2bedb8dac", size = 75981, upload-time = "2026-09-29T23:58:18.611Z" },
 ]
 
 [[package]]
