@@ -17,6 +17,9 @@ only after that plan is approved too.
   gets tasks. Most of it has none today.
 - Key-dashboard tasks get the same six done-gate subtasks.
 - Per-dashboard tasks are backfilled and corrected from the gap catalog.
+- Small pieces we postpone, or that could be retired from a dashboard, go in a
+  deferral log in the parking-lot section, one task per item, reviewed at fixed
+  points so none is lost.
 - Nothing is deleted. Completed tasks keep their history, and the `Open Issues`
   rollups (one subtask per GitHub issue) stay as they are.
 
@@ -242,6 +245,37 @@ to the milestone as a dependency instead of creating a duplicate.
 The analysis-limits skill goes in `Parking lot and outside the core set`, with
 no date.
 
+## Deferral log
+
+The gap catalog holds many small pieces: a single measure, a filter, a sort
+helper. Some can wait, and some could be retired from their dashboard instead of
+rebuilt. None is worth a workstream. Each one gets a task in
+`Parking lot and outside the core set`, tagged `deferred` or `retire-candidate`,
+so it stays visible without a separate tracker.
+
+Each task records:
+
+- **What:** the metric or field, its dashboard, and a link to its gap-catalog
+  row.
+- **Why:** the reason it waits or could be retired.
+- **Decided:** who made the call, and when.
+- **Revisit:** a date or an event, such as "after the ops launch".
+- **Coverage effect:** how many gap-catalog rows it takes out of the coverage
+  target, if any.
+
+Three review points keep the log from going stale. Each is a task in the section
+shown:
+
+| Review                                      | Section               | Owner role     | When                          |
+| ------------------------------------------- | --------------------- | -------------- | ----------------------------- |
+| Check the log for the domain being verified | That domain's section | Cube/mart lead | At each domain's verification |
+| Review the whole log at the midpoint        | `0 · Governance`      | Project lead   | Feb 26, 2027                  |
+| Schedule or drop every remaining entry      | `0 · Governance`      | Project lead   | Jun 25, 2027 (project close)  |
+
+At close-out, each entry ends one of three ways: scheduled for after June,
+retired from its dashboard (with the dashboard owner's agreement), or dropped
+with a reason. The log starts empty; entries go in as they are found.
+
 ## Key-dashboard tasks
 
 Each domain has one key dashboard. Its task gets six done-gate subtasks: Built
@@ -309,6 +343,8 @@ The domain files hold the exact values to backfill.
       to turn them into subtasks of their dashboard task.
 - [ ] Rename `Untitled section` to `Archive: before SY26-27`.
 - [ ] Apply the corrections from the gap catalog.
+- [ ] Keep a deferral log in `Parking lot and outside the core set`, with the
+      `deferred` and `retire-candidate` tags and the three review tasks.
 
 ## How it gets applied
 
