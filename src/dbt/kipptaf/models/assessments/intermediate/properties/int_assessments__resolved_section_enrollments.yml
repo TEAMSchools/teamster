@@ -502,6 +502,60 @@ unit_tests:
             student_section_enrollment_key: e79e1c231c32598d915358218e146d27,
           }
 
+  - name: test_state_score_with_unmapped_subject_falls_back_to_homeroom
+    description: >-
+      A state score whose subject_area has no discipline mapping gets a null
+      discipline, so it skips the discipline tier and resolves to the homeroom
+      even when a section in some discipline is active on its anchor date.
+    model: int_assessments__resolved_section_enrollments
+    given:
+      - input: ref('int_assessments__score_anchors')
+        format: sql
+        rows: |
+          select
+              8 as powerschool_student_number,
+              cast(null as int64) as canonical_assessment_id,
+              2025 as academic_year,
+              'Spring' as administration_period,
+              'Health' as subject_area,
+              'kippnewark' as _dbt_source_project,
+              date('2026-04-15') as anchor_date,
+              'state_nj' as source_type,
+              'k8-unmapped' as score_grain_key
+      - input: ref('int_assessments__course_enrollments')
+        rows:
+          - {
+              powerschool_student_number: 8,
+              _dbt_source_project: kippnewark,
+              illuminate_subject_area: Algebra I,
+              discipline: Math,
+              courses_credittype: MATH,
+              cc_dateenrolled: 2025-09-02,
+              cc_dateleft: 2026-06-19,
+              cc_dcid: 701,
+              powerschool_school_id: 73253,
+              region: Newark,
+            }
+          - {
+              powerschool_student_number: 8,
+              _dbt_source_project: kippnewark,
+              illuminate_subject_area: null,
+              discipline: null,
+              courses_credittype: HR,
+              cc_dateenrolled: 2025-09-02,
+              cc_dateleft: 2026-06-19,
+              cc_dcid: 702,
+              powerschool_school_id: 73253,
+              region: Newark,
+            }
+    expect:
+      rows:
+        - {
+            powerschool_student_number: 8,
+            resolution_type: homeroom,
+            student_section_enrollment_key: 4273d009759f72c159d95d262f431287,
+          }
+
   - name: test_vendor_score_skips_discipline_match
     description: >-
       The discipline match applies to state scores only. A vendor score with a
