@@ -84,8 +84,8 @@
   name: DDI Suite
   url: https://tableau.kipp.org/t/KIPPNJ/views/DDISuite/LandingPage?:embed=y
   description:
-    Data-Driven Instruction metrics. Week-over-week assessment, standard, and
-    QBL mastery.
+    Data-Driven Instruction metrics. Week-over-week assessment and standard
+    mastery.
   audiences: [leaders, region, teachers]
   system: tableau
   group: academics

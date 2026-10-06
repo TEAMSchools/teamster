@@ -93,10 +93,6 @@ models:
         data_type: boolean
       - name: head_of_school
         data_type: string
-      - name: power_standard_goal
-        data_type: int64
-      - name: is_power_standard
-        data_type: int64
       - name: standard_domain
         data_type: int64
       - name: nj_student_tier

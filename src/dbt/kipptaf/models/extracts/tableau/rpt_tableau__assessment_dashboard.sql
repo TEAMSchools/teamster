@@ -123,8 +123,6 @@ select
     sf.state_test_proficiency,
 
     /* retired fields kept for tableau compatibility */
-    null as power_standard_goal,
-    null as is_power_standard,
     null as standard_domain,
 from dashboard as d
 left join

@@ -260,8 +260,6 @@ select
     co.is_sipps,
     co.is_low_25_fl,
 
-    cast(null as string) as qbl,
-
     g.grade_goal,
     g.school_goal,
     g.region_goal,
@@ -273,8 +271,6 @@ select
     coalesce(
         ip.total_iready_lessons_passed_math, 0
     ) as total_iready_lessons_passed_math,
-
-    false as is_qbl,
 
     coalesce(ip.is_pass_2_lessons_int_reading, 0) as is_passed_iready_2plus_reading_int,
     coalesce(ip.is_pass_4_lessons_int_reading, 0) as is_passed_iready_4plus_reading_int,
@@ -359,8 +355,6 @@ select
     co.is_sipps,
     co.is_low_25_fl,
 
-    cast(null as string) as qbl,
-
     g.grade_goal,
     g.school_goal,
     g.region_goal,
@@ -368,8 +362,6 @@ select
 
     null as total_iready_lessons_passed_reading,
     null as total_iready_lessons_passed_math,
-
-    false as is_qbl,
 
     null as is_passed_iready_2plus_reading_int,
     null as is_passed_iready_4plus_reading_int,
@@ -483,14 +475,12 @@ select
     null as nj_student_tier,
     null as is_sipps,
     null as is_low_25_fl,
-    null as qbl,
     null as grade_goal,
     null as school_goal,
     null as region_goal,
     null as organization_goal,
     null as total_iready_lessons_passed_reading,
     null as total_iready_lessons_passed_math,
-    null as is_qbl,
     null as is_passed_iready_2plus_reading_int,
     null as is_passed_iready_4plus_reading_int,
     null as is_passed_iready_2plus_math_int,
