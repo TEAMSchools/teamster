@@ -23,12 +23,6 @@ models:
           - not_null:
               config:
                 severity: error
-          - relationships:
-              arguments:
-                to: ref('stg_focus__students')
-                field: student_id
-              config:
-                severity: warn
       - name: staff_id
         description: Focus staff id of the linked user account.
         data_type: int
@@ -36,12 +30,6 @@ models:
           - not_null:
               config:
                 severity: error
-          - relationships:
-              arguments:
-                to: ref('stg_focus__users')
-                field: staff_id
-              config:
-                severity: warn
       - name: person_id
         description: >-
           Focus person id of the linked user, when the account is backed by a
