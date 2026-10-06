@@ -422,8 +422,8 @@ What the Illuminate branch contributes:
 - `fct_assessment_scores_enrollment_scoped`'s internal branch keeps
   assigned-but-not-taken rows (`response_type = 'not_taken'`) and drops any
   score `int_assessments__resolved_section_enrollments` cannot tie to a section
-  (the resolver — subject section first, homeroom fallback — is the scope of
-  record).
+  (the resolver — subject section first, then a discipline match for state
+  scores, then homeroom — is the scope of record).
 - **Neither fact exposes a source column.** The only reliable way to isolate
   Illuminate rows is the join path
   `assessment_administration_key -> dim_assessment_administrations.assessment_key -> dim_assessments.type = 'illuminate'`.

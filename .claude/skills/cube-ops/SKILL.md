@@ -154,6 +154,15 @@ exercise it; a plain dev server silently default-denies every gated view.
   1.7.14} × {dev, auth-on}, denial shape tracking the mode only (#4605). Scoped
   viewers return identical rows in both modes, so only the denial shape needs
   auth on.
+- **Testing the `__user` switch (`canSwitchSqlUser`): the super-user's OWN
+  context must see the view.** Cube plans the query under the connecting user's
+  context and only swaps in the `__user` target for execution. Connect as a
+  non-staff login like `cube_dev` with auth on and every query fails
+  `Table or CTE ... not found` before the switch check runs, including for a
+  target the allowlist should refuse. So start the server with
+  `CUBEJS_SQL_SUPER_USER=<a network-scoped staff email>`, connect as that email,
+  and filter `WHERE __user = '<target>'`. A refused target returns
+  `You cannot change security context via __user`.
 - **Cube Cloud works via `contextToGroups` enrichment, not `checkAuth`
   (#4526).** The injected context has no top-level `email` until a Security
   Context is pasted (shape and merge semantics:

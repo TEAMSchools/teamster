@@ -38,10 +38,57 @@ with
     resolved_subject_keys as (select distinct score_grain_key, from candidates_subject),
 
     scores_unresolved as (
-        select s.*,
+        select
+            s.*,
+
+            -- TODO(#5715): source this from a public course-code crosswalk
+            case
+                s.subject_area
+                when 'Text Study'
+                then 'ELA'
+                when 'Mathematics'
+                then 'Math'
+                when 'Science'
+                then 'Science'
+                when 'Civics'
+                then 'Social Studies'
+            end as discipline,
         from {{ ref("int_assessments__score_anchors") }} as s
         left join resolved_subject_keys as cs on s.score_grain_key = cs.score_grain_key
         where cs.score_grain_key is null
+    ),
+
+    candidates_discipline as (
+        select
+            s.powerschool_student_number,
+            s.canonical_assessment_id,
+            s.academic_year,
+            s.administration_period,
+            s.subject_area,
+            s._dbt_source_project,
+            s.source_type,
+            s.score_grain_key,
+            s.anchor_date,
+
+            ce.cc_dcid,
+            ce._dbt_source_project as cc_source_project,
+            ce.cc_dateleft,
+            ce.powerschool_school_id,
+            ce.region,
+
+            2 as tier,
+
+            'subject_section' as resolution_type,
+        from scores_unresolved as s
+        inner join
+            {{ ref("int_assessments__course_enrollments") }} as ce
+            on s.powerschool_student_number = ce.powerschool_student_number
+            and s._dbt_source_project = ce._dbt_source_project
+            and s.discipline = ce.discipline
+            and s.anchor_date >= ce.cc_dateenrolled
+            and s.anchor_date < ce.cc_dateleft
+            and ce.cc_dcid is not null
+        where s.source_type in ('state_nj', 'state_fl')
     ),
 
     candidates_homeroom as (
@@ -62,7 +109,7 @@ with
             ce.powerschool_school_id,
             ce.region,
 
-            2 as tier,
+            3 as tier,
 
             'homeroom' as resolution_type,
         from scores_unresolved as s
@@ -83,11 +130,17 @@ with
         union all
 
         select *,
+        from candidates_discipline
+
+        union all
+
+        select *,
         from candidates_homeroom
     ),
 
-    -- one section per score: prefer the subject section (tier 1) over homeroom,
-    -- then the section that ends latest among ties within a tier
+    -- one section per score: prefer the subject section (tier 1), then the
+    -- same-discipline section (tier 2), then homeroom (tier 3), then the
+    -- section that ends latest among ties within a tier
     all_candidates_ranked as (
         select
             *,
