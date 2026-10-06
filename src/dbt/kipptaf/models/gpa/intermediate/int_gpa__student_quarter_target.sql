@@ -1,6 +1,8 @@
 with
     unweighted_scale as (
-        select letter_grade, grade_points, min_cutoffpercentage,
+        /* grain projection, not dup-masking: the kipptaf lookup repeats each
+           letter once per district with identical points and cutoffs */
+        select distinct letter_grade, grade_points, min_cutoffpercentage,
         from {{ ref("int_powerschool__gradescaleitem_lookup") }}
         /* every scale in use shares these cutoffs; 2019 Unweighted is the
            reference, and the 83 floor is the B cutoff */

@@ -90,7 +90,9 @@ unit_tests:
       goal_not_attainable. Student 3 needs -0.5 with a projected 3.6: target
       floors at B (83, 3.0) and status is on_pace. Student 4 has no graded
       course and needs exactly 3.0: target B, status not_on_pace. Student 5 has
-      a NULL attainability flag: status unknown, target still B+.
+      a NULL attainability flag: status unknown, target still B+. The B+ scale
+      row appears twice, as the three-district union of the lookup repeats every
+      row, and no student may fan out because of it.
     model: int_gpa__student_quarter_target
     overrides:
       vars:
@@ -218,6 +220,12 @@ unit_tests:
               letter_grade: A-,
               grade_points: 3.67,
               min_cutoffpercentage: 90,
+            }
+          - {
+              gradescale_name: KIPP NJ 2019 (5-12) Unweighted,
+              letter_grade: B+,
+              grade_points: 3.33,
+              min_cutoffpercentage: 87,
             }
           - {
               gradescale_name: KIPP NJ 2019 (5-12) Unweighted,
