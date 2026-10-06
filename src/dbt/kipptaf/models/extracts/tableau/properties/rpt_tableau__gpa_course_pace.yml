@@ -1,0 +1,69 @@
+models:
+  - name: rpt_tableau__gpa_course_pace
+    description: >-
+      Course-grain companion to the Cumulative GPA Monitor: one row per
+      current-year GPA course per high school student with the pace percent to
+      the student's target letter, whether the course is below target, and its
+      quickest-win rank. Column semantics live on `int_gpa__course_quarter_pace`
+      and `int_gpa__course_quickest_win`.
+    config:
+      meta:
+        contains_pii: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - studentid
+              - course_number
+              - _dbt_source_project
+    columns:
+      - name: academic_year
+        data_type: int64
+      - name: region
+        data_type: string
+      - name: school
+        data_type: string
+      - name: grade_level
+        data_type: int64
+      - name: student_number
+        data_type: int64
+      - name: student_name
+        data_type: string
+      - name: advisory
+        data_type: string
+      - name: school_leader_tableau_username
+        data_type: string
+      - name: studentid
+        data_type: int64
+      - name: schoolid
+        data_type: int64
+      - name: course_number
+        data_type: string
+      - name: course_name
+        data_type: string
+      - name: _dbt_source_project
+        data_type: string
+      - name: potential_credit_hours
+        data_type: float64
+      - name: target_cutoff_percent
+        data_type: float64
+      - name: y1_percent_current
+        data_type: float64
+      - name: term_percent_current
+        data_type: float64
+      - name: pace_percent
+        data_type: float64
+      - name: is_below_target
+        data_type: boolean
+      - name: is_secured
+        data_type: boolean
+      - name: is_locked
+        data_type: boolean
+      - name: next_letter_grade
+        data_type: string
+      - name: next_cutoff_percent
+        data_type: float64
+      - name: pace_percent_to_next
+        data_type: float64
+      - name: quickest_win_rank
+        data_type: int64
