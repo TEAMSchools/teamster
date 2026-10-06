@@ -23,13 +23,16 @@ family needs no code change at rollover beyond the items below.
 6. **Workbook default year.** Bump the DDI Suite tabs' default year filter (a
    Tableau workbook edit, requested every fall).
 7. **Course-crosswalk audit** (fall, once master schedules settle — a July run
-   sees thin enrollments). Run
-   [crosswalk_audit.sql](../scripts/crosswalk_audit.sql) with the new year; hand
-   the result to c3/academic ops to confirm which courses are tested subjects
-   (connected to Illuminate results, state testing, both, or eventually Focus
-   Apex assessments), then add the confirmed rows to the course subject
-   crosswalk named range. Expect homeroom, lunch, and co-curricular rows in the
-   output — those stay off the sheet.
+   sees thin enrollments). Compile the dbt analysis
+   `src/dbt/kipptaf/analyses/ddi_course_subject_crosswalk_audit.sql`
+   (`uv run dbt compile --select ddi_course_subject_crosswalk_audit --target prod --project-dir <checkout>/src/dbt/kipptaf`
+   — compile is read-only, and `--target prod` resolves the refs to prod
+   relations and picks up the current-year var) and run the compiled SQL
+   read-only; hand the result to c3/academic ops to confirm which courses are
+   tested subjects (connected to Illuminate results, state testing, both, or
+   eventually Focus Apex assessments), then add the confirmed rows to the course
+   subject crosswalk named range. Expect homeroom, lunch, and co-curricular rows
+   in the output — those stay off the sheet.
 8. **The WPP TODO.** `rpt_tableau__ddi_dashboard` carries `module_type != 'WPP'`
    with a `TODO: Remove SY26` marker; check with the owner whether this is the
    year it goes.

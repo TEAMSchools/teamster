@@ -80,6 +80,7 @@ list every out-of-scope cell for the owner.
 
 ## Scripts
 
-- [crosswalk_audit.sql](scripts/crosswalk_audit.sql): current-year-enrollment
-  courses missing from the course subject crosswalk
-  ([rollover.md](references/rollover.md) step 7).
+- The course-crosswalk audit is the dbt analysis
+  `src/dbt/kipptaf/analyses/ddi_course_subject_crosswalk_audit.sql`
+  ([rollover.md](references/rollover.md) step 7): compile it and run the
+  compiled SQL read-only.
