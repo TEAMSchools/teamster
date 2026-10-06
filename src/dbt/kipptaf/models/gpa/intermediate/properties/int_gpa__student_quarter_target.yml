@@ -1,0 +1,344 @@
+models:
+  - name: int_gpa__student_quarter_target
+    description: >-
+      One row per current-year high school student and school with the
+      unweighted letter target they must average across every GPA course to
+      finish at a 3.0 unweighted cumulative, the weighted Y1 GPA that target
+      corresponds to on their own schedule, and a pace status. The target is the
+      lowest unweighted letter whose grade points reach the needed GPA, floored
+      at B. Reads the needed GPA and attainability from
+      `int_powerschool__gpa_cumulative`; neither is recomputed here.
+    config:
+      meta:
+        contains_pii: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - studentid
+              - schoolid
+              - _dbt_source_project
+    columns:
+      - name: pace_status
+        data_type: string
+        description: >-
+          `unknown` when the needed GPA or attainability is NULL;
+          `goal_not_attainable` when attainability is false or no unweighted
+          letter reaches the needed GPA; `on_pace` when the projected unweighted
+          cumulative is at or above 3.0; `not_on_pace` otherwise.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - on_pace
+                  - not_on_pace
+                  - goal_not_attainable
+                  - unknown
+      - name: studentid
+        data_type: int64
+      - name: schoolid
+        data_type: int64
+      - name: _dbt_source_project
+        data_type: string
+      - name: student_number
+        data_type: int64
+        config:
+          meta:
+            contains_pii: true
+      - name: gpa_needed_unweighted
+        data_type: float64
+        description: >-
+          `gpa_needed_for_cumulative_3_0` rounded to 4 decimals, so a float
+          artifact such as 2.6700000000000004 does not pick the wrong letter.
+      - name: target_cutoff_percent
+        data_type: float64
+        description: >-
+          Lowest unweighted cutoff whose grade points reach
+          `gpa_needed_unweighted`, floored at 83. NULL when no letter reaches
+          it.
+      - name: target_letter_grade
+        data_type: string
+      - name: target_grade_points
+        data_type: float64
+      - name: schedule_bump
+        data_type: float64
+        description: >-
+          Credit-weighted grade-point bonus of the student's current-year GPA
+          courses — 1.0 per credit on the KIPP NJ 2019 weighted scale, 0.5 on
+          the 2024 honors scale, 0 otherwise — divided by total GPA credits.
+          Zero for a student with no weighted courses.
+      - name: gpa_needed_weighted
+        data_type: float64
+        description: >-
+          `gpa_needed_unweighted` plus `schedule_bump`. Comparable to the
+          weighted Y1 GPA PowerSchool shows. Hitting it guarantees the
+          unweighted goal, because failing a weighted course only shrinks the
+          real bonus.
+      - name: is_cumulative_3_0_attainable
+        data_type: boolean
+      - name: cumulative_y1_gpa_projected_unweighted
+        data_type: float64
+
+unit_tests:
+  - name: unit_gpa_student_quarter_target
+    description: >-
+      Student 1 needs 3.11, has one AP course of 5 credits among 20, so the
+      target is B+ (3.33, 87), the bump is 0.25, weighted needed is 3.36, and
+      with a projected 2.9 the status is not_on_pace. Student 2 needs 4.5 and is
+      flagged unattainable: no letter reaches it, target NULL, status
+      goal_not_attainable. Student 3 needs -0.5 with a projected 3.6: target
+      floors at B (83, 3.0) and status is on_pace. Student 4 has no graded
+      course and needs exactly 3.0: target B, status not_on_pace. Student 5 has
+      a NULL attainability flag: status unknown, target still B+.
+    model: int_gpa__student_quarter_target
+    overrides:
+      vars:
+        current_academic_year: 2025
+    given:
+      - input: ref('int_powerschool__gpa_cumulative')
+        rows:
+          - {
+              studentid: 1,
+              schoolid: 101,
+              _dbt_source_project: kippnewark,
+              gpa_needed_for_cumulative_3_0: 3.11,
+              is_cumulative_3_0_attainable: true,
+              cumulative_y1_gpa_projected_unweighted: 2.9,
+              potential_gpa_credits_current_year: 20.0,
+            }
+          - {
+              studentid: 2,
+              schoolid: 101,
+              _dbt_source_project: kippnewark,
+              gpa_needed_for_cumulative_3_0: 4.5,
+              is_cumulative_3_0_attainable: false,
+              cumulative_y1_gpa_projected_unweighted: 2.1,
+              potential_gpa_credits_current_year: 20.0,
+            }
+          - {
+              studentid: 3,
+              schoolid: 101,
+              _dbt_source_project: kippnewark,
+              gpa_needed_for_cumulative_3_0: -0.5,
+              is_cumulative_3_0_attainable: true,
+              cumulative_y1_gpa_projected_unweighted: 3.6,
+              potential_gpa_credits_current_year: 20.0,
+            }
+          - {
+              studentid: 4,
+              schoolid: 101,
+              _dbt_source_project: kippnewark,
+              gpa_needed_for_cumulative_3_0: 3.0,
+              is_cumulative_3_0_attainable: true,
+              cumulative_y1_gpa_projected_unweighted: null,
+              potential_gpa_credits_current_year: 20.0,
+            }
+          - {
+              studentid: 5,
+              schoolid: 101,
+              _dbt_source_project: kippnewark,
+              gpa_needed_for_cumulative_3_0: 3.11,
+              is_cumulative_3_0_attainable: null,
+              cumulative_y1_gpa_projected_unweighted: 2.9,
+              potential_gpa_credits_current_year: 20.0,
+            }
+      - input: ref('base_powerschool__final_grades')
+        rows:
+          - {
+              studentid: 1,
+              course_number: C1,
+              academic_year: 2025,
+              _dbt_source_project: kippnewark,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 5.0,
+              courses_gradescaleid: 991,
+            }
+          - {
+              studentid: 1,
+              course_number: C2,
+              academic_year: 2025,
+              _dbt_source_project: kippnewark,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 15.0,
+              courses_gradescaleid: 976,
+            }
+          - {
+              studentid: 2,
+              course_number: C2,
+              academic_year: 2025,
+              _dbt_source_project: kippnewark,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 20.0,
+              courses_gradescaleid: 976,
+            }
+          - {
+              studentid: 3,
+              course_number: C2,
+              academic_year: 2025,
+              _dbt_source_project: kippnewark,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 20.0,
+              courses_gradescaleid: 976,
+            }
+          - {
+              studentid: 4,
+              course_number: C2,
+              academic_year: 2025,
+              _dbt_source_project: kippnewark,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 20.0,
+              courses_gradescaleid: 976,
+            }
+          - {
+              studentid: 5,
+              course_number: C2,
+              academic_year: 2025,
+              _dbt_source_project: kippnewark,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 20.0,
+              courses_gradescaleid: 976,
+            }
+      - input: ref('int_powerschool__gradescaleitem_lookup')
+        rows:
+          - {
+              gradescale_name: KIPP NJ 2019 (5-12) Unweighted,
+              letter_grade: A,
+              grade_points: 4.0,
+              min_cutoffpercentage: 93,
+            }
+          - {
+              gradescale_name: KIPP NJ 2019 (5-12) Unweighted,
+              letter_grade: A-,
+              grade_points: 3.67,
+              min_cutoffpercentage: 90,
+            }
+          - {
+              gradescale_name: KIPP NJ 2019 (5-12) Unweighted,
+              letter_grade: B+,
+              grade_points: 3.33,
+              min_cutoffpercentage: 87,
+            }
+          - {
+              gradescale_name: KIPP NJ 2019 (5-12) Unweighted,
+              letter_grade: B,
+              grade_points: 3.0,
+              min_cutoffpercentage: 83,
+            }
+          - {
+              gradescale_name: KIPP NJ 2019 (5-12) Unweighted,
+              letter_grade: B-,
+              grade_points: 2.67,
+              min_cutoffpercentage: 80,
+            }
+          - {
+              gradescale_name: KIPP NJ 2019 (5-12) Unweighted,
+              letter_grade: F,
+              grade_points: 0.0,
+              min_cutoffpercentage: 0,
+            }
+      - input: ref('int_extracts__student_enrollments')
+        rows:
+          - {
+              studentid: 1,
+              schoolid: 101,
+              yearid: 35,
+              academic_year: 2025,
+              rn_year: 1,
+              school_level: HS,
+              student_number: 1001,
+              _dbt_source_project: kippnewark,
+            }
+          - {
+              studentid: 2,
+              schoolid: 101,
+              yearid: 35,
+              academic_year: 2025,
+              rn_year: 1,
+              school_level: HS,
+              student_number: 1002,
+              _dbt_source_project: kippnewark,
+            }
+          - {
+              studentid: 3,
+              schoolid: 101,
+              yearid: 35,
+              academic_year: 2025,
+              rn_year: 1,
+              school_level: HS,
+              student_number: 1003,
+              _dbt_source_project: kippnewark,
+            }
+          - {
+              studentid: 4,
+              schoolid: 101,
+              yearid: 35,
+              academic_year: 2025,
+              rn_year: 1,
+              school_level: HS,
+              student_number: 1004,
+              _dbt_source_project: kippnewark,
+            }
+          - {
+              studentid: 5,
+              schoolid: 101,
+              yearid: 35,
+              academic_year: 2025,
+              rn_year: 1,
+              school_level: HS,
+              student_number: 1005,
+              _dbt_source_project: kippnewark,
+            }
+    expect:
+      rows:
+        - {
+            studentid: 1,
+            gpa_needed_unweighted: 3.11,
+            target_cutoff_percent: 87.0,
+            target_letter_grade: B+,
+            schedule_bump: 0.25,
+            gpa_needed_weighted: 3.36,
+            pace_status: not_on_pace,
+          }
+        - {
+            studentid: 2,
+            gpa_needed_unweighted: 4.5,
+            target_cutoff_percent: null,
+            target_letter_grade: null,
+            schedule_bump: 0.0,
+            gpa_needed_weighted: 4.5,
+            pace_status: goal_not_attainable,
+          }
+        - {
+            studentid: 3,
+            gpa_needed_unweighted: -0.5,
+            target_cutoff_percent: 83.0,
+            target_letter_grade: B,
+            schedule_bump: 0.0,
+            gpa_needed_weighted: -0.5,
+            pace_status: on_pace,
+          }
+        - {
+            studentid: 4,
+            gpa_needed_unweighted: 3.0,
+            target_cutoff_percent: 83.0,
+            target_letter_grade: B,
+            schedule_bump: 0.0,
+            gpa_needed_weighted: 3.0,
+            pace_status: not_on_pace,
+          }
+        - {
+            studentid: 5,
+            gpa_needed_unweighted: 3.11,
+            target_cutoff_percent: 87.0,
+            target_letter_grade: B+,
+            schedule_bump: 0.0,
+            gpa_needed_weighted: 3.11,
+            pace_status: unknown,
+          }
