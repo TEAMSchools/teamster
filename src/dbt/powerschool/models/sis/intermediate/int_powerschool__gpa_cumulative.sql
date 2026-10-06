@@ -5,6 +5,42 @@ with
         group by gradescaleid
     ),
 
+    /* one row per current-year GPA course, graded or not: the needed-GPA
+       denominator. final_grades is one row per course and termbin, so the
+       group by picks one row per course */
+    current_year_courses as (
+        select
+            fg.studentid,
+            fg.course_number,
+
+            co.schoolid,
+
+            max(fg.potential_credit_hours) as potential_credit_hours,
+            max(gsm_u.max_grade_points) as max_grade_points_unweighted,
+        from {{ ref("base_powerschool__final_grades") }} as fg
+        inner join
+            {{ ref("base_powerschool__student_enrollments") }} as co
+            on fg.studentid = co.studentid
+            and fg.yearid = co.yearid
+            and co.rn_year = 1
+        left join
+            {{ ref("stg_powerschool__storedgrades") }} as sg
+            on fg.studentid = sg.studentid
+            and fg.course_number = sg.course_number
+            and sg.academic_year = {{ var("current_academic_year") }}
+            and sg.storecode = 'Y1'
+        left join
+            gradescale_max as gsm_u
+            on fg.courses_gradescaleid_unweighted = gsm_u.gradescaleid
+        where
+            fg.yearid = {{ var("current_academic_year") - 1990 }}
+            and fg.exclude_from_gpa = 0
+            and fg.potential_credit_hours > 0
+            /* a course already stored this year is counted from storedgrades */
+            and sg.studentid is null
+        group by fg.studentid, fg.course_number, co.schoolid
+    ),
+
     grades_union as (
         select
             sg.studentid,
@@ -51,6 +87,9 @@ with
             if(
                 sg.excludefromgpa = 0, su.grade_points, null
             ) as gpa_points_projected_max_unweighted,
+            if(
+                sg.excludefromgpa = 0, sg.potentialcrhrs, null
+            ) as potentialcrhrs_enrolled,
         from {{ ref("stg_powerschool__storedgrades") }} as sg
         left join
             {{ ref("int_powerschool__gradescaleitem_lookup") }} as su
@@ -90,9 +129,8 @@ with
             null as unweighted_grade_points,
 
             fg.y1_grade_points_unweighted as unweighted_grade_points_projected,
-            if(
-                fg.y1_letter_grade is null, null, gsm_u.max_grade_points
-            ) as gpa_points_projected_max_unweighted,
+            null as gpa_points_projected_max_unweighted,
+            null as potentialcrhrs_enrolled,
         from {{ ref("base_powerschool__final_grades") }} as fg
         inner join
             {{ ref("base_powerschool__student_enrollments") }} as co
@@ -105,9 +143,6 @@ with
             and fg.course_number = sg.course_number
             and sg.academic_year = {{ var("current_academic_year") }}
             and sg.storecode = 'Y1'
-        left join
-            gradescale_max as gsm_u
-            on fg.courses_gradescaleid_unweighted = gsm_u.gradescaleid
         where
             fg.exclude_from_gpa = 0
             /* ensures already stored grades are excluded */
@@ -148,6 +183,7 @@ with
             null as unweighted_grade_points,
             null as unweighted_grade_points_projected,
             null as gpa_points_projected_max_unweighted,
+            null as potentialcrhrs_enrolled,
         from {{ ref("base_powerschool__final_grades") }} as fg
         inner join
             {{ ref("base_powerschool__student_enrollments") }} as co
@@ -166,6 +202,37 @@ with
             and fg.exclude_from_gpa = 0
             /* include only unstored current-year grades */
             and sg.studentid is null
+
+        union all
+
+        /* every current-year GPA course, for the needed-GPA denominator and
+           the max attainable; carries no points, so the projection is
+           unaffected */
+        select
+            studentid,
+            schoolid,
+            course_number,
+
+            {{ var("current_academic_year") }} as academic_year,
+
+            null as potentialcrhrs,
+            null as earnedcrhrs,
+            null as gpa_points,
+            null as potentialcrhrs_projected,
+            null as earnedcrhrs_projected,
+            null as gpa_points_projected,
+            null as potentialcrhrs_projected_s1,
+            null as earnedcrhrs_projected_s1,
+            null as gpa_points_projected_s1,
+            null as gpa_points_projected_s1_unweighted,
+            null as potentialcrhrs_core,
+            null as gpa_points_core,
+            null as unweighted_grade_points,
+            null as unweighted_grade_points_projected,
+
+            max_grade_points_unweighted as gpa_points_projected_max_unweighted,
+            potential_credit_hours as potentialcrhrs_enrolled,
+        from current_year_courses
     ),
 
     with_weighted_points as (
@@ -180,6 +247,7 @@ with
             potentialcrhrs_core,
             earnedcrhrs_projected,
             earnedcrhrs_projected_s1,
+            potentialcrhrs_enrolled,
 
             (potentialcrhrs * gpa_points) as weighted_points,
             (potentialcrhrs * unweighted_grade_points) as unweighted_points,
@@ -197,7 +265,7 @@ with
                 potentialcrhrs_projected * unweighted_grade_points_projected
             ) as weighted_points_projected_unweighted,
             (
-                potentialcrhrs_projected * gpa_points_projected_max_unweighted
+                potentialcrhrs_enrolled * gpa_points_projected_max_unweighted
             ) as unweighted_points_projected_max,
         from grades_union
     ),
@@ -250,7 +318,7 @@ with
             sum(
                 if(
                     academic_year = {{ var("current_academic_year") }},
-                    potentialcrhrs_projected,
+                    potentialcrhrs_enrolled,
                     null
                 )
             ) as potentialcrhrs_current,
@@ -261,14 +329,11 @@ with
                     null
                 )
             ) as unweighted_points_projected_max_current,
-            sum(
-                if(
-                    academic_year = {{ var("current_academic_year") }}
-                    and unweighted_points_projected_max is not null,
-                    potentialcrhrs_projected,
-                    null
-                )
-            ) as potentialcrhrs_current_max_known_unweighted,
+            countif(
+                academic_year = {{ var("current_academic_year") }}
+                and potentialcrhrs_enrolled > 0
+                and unweighted_points_projected_max is null
+            ) as n_current_max_unknown,
         from with_weighted_points
         group by studentid, schoolid
     ),
@@ -288,8 +353,7 @@ with
                understate it by keeping the course's credits in the
                denominator only */
             if(
-                coalesce(potentialcrhrs_current_max_known_unweighted, 0)
-                = coalesce(potentialcrhrs_current, 0),
+                n_current_max_unknown = 0,
                 safe_divide(
                     unweighted_points_projected_max_current, potentialcrhrs_current
                 ),
