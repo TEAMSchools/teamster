@@ -1,6 +1,6 @@
 # https://docs.astral.sh/uv/guides/integration/docker/
 # named stage so Dependabot's docker ecosystem can bump the pin
-FROM ghcr.io/astral-sh/uv:0.12.19 AS uv
+FROM ghcr.io/astral-sh/uv:0.12.23 AS uv
 
 # https://hub.docker.com/_/python
 FROM python:3.13-slim
