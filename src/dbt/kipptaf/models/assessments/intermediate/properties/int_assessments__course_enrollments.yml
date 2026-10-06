@@ -37,7 +37,7 @@ models:
           #
           # Refs #4821
           automation_condition:
-            cron_schedule: 0 0,10,13,15,17 * * *
+            cron_schedule: 30 0,10,13,15,17 * * *
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

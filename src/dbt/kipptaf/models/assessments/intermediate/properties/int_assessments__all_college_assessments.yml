@@ -48,7 +48,7 @@ models:
           # each lands after a tick. Same call as #4821 on
           # fct_assessment_scores_enrollment_scoped. Refs #5035
           automation_condition:
-            cron_schedule: 0 0,13 * * *
+            cron_schedule: 30 0,13 * * *
     data_tests:
       # scale_score, not rn_highest. rn_highest is a row_number over
       # (student, scope, score_type) in all 3 upstream hubs, so a key holding it

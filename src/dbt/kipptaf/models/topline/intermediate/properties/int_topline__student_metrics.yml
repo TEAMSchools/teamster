@@ -9,4 +9,4 @@ models:
           # consumer chain is the topline cascade dashboard, delivered by
           # nightly extract schedules (01:15-03:00 ET). Refs #4559
           automation_condition:
-            cron_schedule: 0 0 * * *
+            cron_schedule: 30 0 * * *
