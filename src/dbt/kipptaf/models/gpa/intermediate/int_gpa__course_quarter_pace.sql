@@ -51,7 +51,15 @@ with
             max(course_name) as course_name,
             max(potential_credit_hours) as potential_credit_hours,
             max(courses_gradescaleid_unweighted) as courses_gradescaleid_unweighted,
-            sum(term_weighted_points_possible) as total_weight,
+            /* an ended term with no grade is outside the Y1 average PowerSchool
+               computes, so it is outside the total too */
+            sum(
+                if(
+                    is_ended and term_percent_grade_adjusted is null,
+                    0.0,
+                    term_weighted_points_possible
+                )
+            ) as total_weight,
             sum(
                 if(
                     is_ended,

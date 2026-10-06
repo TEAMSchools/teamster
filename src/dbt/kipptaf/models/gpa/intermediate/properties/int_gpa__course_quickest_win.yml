@@ -4,11 +4,12 @@ models:
       Ranks each student's unlocked GPA courses by how cheaply a letter-grade
       step can be bought this year: unweighted grade points gained at the next
       letter times credit hours, divided by the percent-point gap between the
-      pace to that letter and the student's current term percent, floored at one
-      point. Courses below the student's target rank first. A course has no rank
-      when it is locked, when its next letter needs more than 100 percent, or
-      when the gap is zero or negative. Derived from full-year term weights, not
-      the current-term `need_next`, which over-ranks second-semester courses.
+      pace to that letter and the course's live Y1 percent, floored at one
+      point. Courses below the student's target rank first; ties break on course
+      number. A course has no rank when it is locked, when its next letter needs
+      more than 100 percent, or when the student is already at or ahead of the
+      pace to the next letter. Derived from full-year term weights, not the
+      current-term `need_next`, which over-ranks second-semester courses.
     config:
       meta:
         contains_pii: true
@@ -48,34 +49,45 @@ models:
           course's current unweighted Y1 points.
       - name: next_cutoff_percent
         data_type: float64
+        description: Cutoff percent of `next_letter_grade`.
       - name: next_grade_points
         data_type: float64
+        description: Unweighted grade points of `next_letter_grade`.
       - name: points_gained
         data_type: float64
+        description: >-
+          `next_grade_points` minus the course's current unweighted Y1 points.
       - name: pace_percent_to_next
         data_type: float64
         description: The pace formula with the next cutoff as target.
       - name: need_gap
         data_type: float64
         description: >-
-          `pace_percent_to_next` minus the current term percent (or the Y1
-          percent before any term grade posts), floored at 1.
+          `pace_percent_to_next` minus the live Y1 percent, floored at 1. NULL
+          when the course does not qualify.
       - name: score
         data_type: float64
+        description: >-
+          Credit hours times `points_gained` over `need_gap`. NULL when the
+          course does not qualify.
 
 unit_tests:
   - name: unit_gpa_course_quickest_win
     description: >-
-      Student 1 has four courses, all 100 total weight, 2000 banked, 75
-      remaining. C1 is at Y1 82 / B- (2.67), term 85, below target: next is B at
-      83, pace (8300 − 2000) / 75 = 84, gap max(84 − 85, 1) = 1, score 5 × 0.33
-      / 1 = 1.65, rank 1. C4 is at F (0.0) with term 40: next is B- at 80 (the
-      scale fixture has no D or C rows), pace (8000 − 2000) / 75 = 80, gap 40,
-      score 5 × 2.67 / 40 = 0.33, below target so rank 2. C2 is at Y1 88 / B+
-      (3.33), term 88, not below target 87: next A- at 90, pace (9000 − 2000) /
-      75 = 93.33, gap 5.33, score 5 × 0.34 / 5.33 = 0.32, rank 3. C3 is locked:
-      no rank. The B scale row appears twice, as the three-district union of the
-      lookup repeats every row, and no course may fan out.
+      Student 1 has five courses. C1 is at Y1 82 / B- (2.67), below target, 100
+      total weight, 2000 banked, 75 remaining: next is B at 83, pace (8300 −
+      2000) / 75 = 84, gap 84 − 82 = 2, score 5 × 0.33 / 2 = 0.83, rank 1. C4 is
+      at Y1 45 / F (0.0): next is B- at 80 (the scale fixture has no D or C
+      rows), pace (8000 − 2000) / 75 = 80, gap 35, score 5 × 2.67 / 35 = 0.38,
+      below target so rank 2. C2 is at Y1 88 / B+ (3.33), not below target 87:
+      next A- at 90, pace (9000 − 2000) / 75 = 93.33, gap 5.33, score 5 × 0.34 /
+      5.33 = 0.32, rank 3. C3 is locked: no rank. C6 is at Y1 82 / B- with 7500
+      banked over three ended terms and 25 remaining: the pace to B is (8300 −
+      7500) / 25 = 32, below the Y1 of 82, so the student is already ahead of
+      pace and the course has no rank. The gap is measured against the Y1
+      percent, not the term percent, so a single posted assignment does not move
+      the rank. The B scale row appears twice, as the three-district union of
+      the lookup repeats every row, and no course may fan out.
     model: int_gpa__course_quickest_win
     overrides:
       vars:
@@ -163,6 +175,26 @@ unit_tests:
               is_secured: false,
               is_locked: false,
             }
+          - {
+              studentid: 1,
+              schoolid: 101,
+              course_number: C6,
+              course_name: Spanish,
+              _dbt_source_project: kippnewark,
+              potential_credit_hours: 5.0,
+              courses_gradescaleid_unweighted: 976,
+              target_cutoff_percent: 87.0,
+              y1_percent_current: 82.0,
+              y1_grade_points_unweighted_current: 2.67,
+              term_percent_current: 90.0,
+              total_weight: 100.0,
+              points_banked: 7500.0,
+              remaining_weight: 25.0,
+              pace_percent: 48.0,
+              is_below_target: true,
+              is_secured: true,
+              is_locked: false,
+            }
       - input: ref('int_powerschool__gradescaleitem_lookup')
         rows:
           - {
@@ -216,8 +248,8 @@ unit_tests:
             next_cutoff_percent: 83.0,
             points_gained: 0.33,
             pace_percent_to_next: 84.0,
-            need_gap: 1.0,
-            score: 1.65,
+            need_gap: 2.0,
+            score: 0.83,
             quickest_win_rank: 1,
           }
         - {
@@ -249,7 +281,18 @@ unit_tests:
             next_cutoff_percent: 80.0,
             points_gained: 2.67,
             pace_percent_to_next: 80.0,
-            need_gap: 40.0,
-            score: 0.33,
+            need_gap: 35.0,
+            score: 0.38,
             quickest_win_rank: 2,
+          }
+        - {
+            studentid: 1,
+            course_number: C6,
+            next_letter_grade: B,
+            next_cutoff_percent: 83.0,
+            points_gained: 0.33,
+            pace_percent_to_next: 32.0,
+            need_gap: null,
+            score: null,
+            quickest_win_rank: null,
           }

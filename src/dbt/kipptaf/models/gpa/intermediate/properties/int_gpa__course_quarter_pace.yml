@@ -6,8 +6,9 @@ models:
       their target cutoff from `int_gpa__student_quarter_target`. A term counts
       as remaining until its termbin ends, so the in-progress term is in the
       remaining weight and the pace does not swing with each posted assignment.
-      Exam terms are remaining terms too. A course whose every term has ended is
-      locked; it has no pace and stays in the GPA.
+      Exam terms are remaining terms too. An ended term with no grade counts
+      nowhere, matching the Y1 average PowerSchool computes. A course whose
+      every term has ended is locked; it has no pace and stays in the GPA.
     config:
       meta:
         contains_pii: true
@@ -44,10 +45,14 @@ models:
         data_type: string
       - name: potential_credit_hours
         data_type: float64
+        description: GPA credit hours for the course.
       - name: courses_gradescaleid_unweighted
         data_type: int64
+        description: Unweighted grade scale the course's points are read on.
       - name: target_cutoff_percent
         data_type: float64
+        description:
+          The student's target cutoff from `int_gpa__student_quarter_target`.
       - name: y1_percent_current
         data_type: float64
         description: >-
@@ -55,6 +60,7 @@ models:
           term's.
       - name: y1_grade_points_unweighted_current
         data_type: float64
+        description: Unweighted grade points of the live Y1 letter.
       - name: term_percent_current
         data_type: float64
         description:
@@ -62,13 +68,14 @@ models:
       - name: total_weight
         data_type: float64
         description: >-
-          Sum of term weights for the course, 100 for four 25-point quarters, 98
-          with two 5-point exams.
+          Sum of term weights for the course over terms that are open or were
+          graded, 100 for four 25-point quarters, 98 with two 5-point exams.
       - name: points_banked
         data_type: float64
         description: Sum of percent × weight over terms whose termbin has ended.
       - name: remaining_weight
         data_type: float64
+        description: Sum of term weights over terms whose termbin has not ended.
       - name: is_below_target
         data_type: boolean
         description:
@@ -95,7 +102,10 @@ unit_tests:
       Student 4 course C4 has no grade yet and nothing ended: banked 0,
       remaining 100, pace 87, not below target because Y1 is NULL. Student 5
       course C5 has Y1 95 with Q1 at 95 ended: pace (8700 − 2375) / 75 = 84.33
-      and not below target.
+      and not below target. Student 6 course C6 joined the course in Q2: its Q1
+      row ended with no grade, so that term counts in neither the total nor the
+      banked points, total weight is 75, remaining 75, and the pace is 87, not
+      the 116 a 100-point total would give.
     model: int_gpa__course_quarter_pace
     overrides:
       vars:
@@ -129,6 +139,12 @@ unit_tests:
             }
           - {
               studentid: 5,
+              schoolid: 101,
+              _dbt_source_project: kippnewark,
+              target_cutoff_percent: 87.0,
+            }
+          - {
+              studentid: 6,
               schoolid: 101,
               _dbt_source_project: kippnewark,
               target_cutoff_percent: 87.0,
@@ -515,6 +531,82 @@ unit_tests:
               y1_percent_grade_adjusted: null,
               y1_grade_points_unweighted: null,
             }
+          - {
+              studentid: 6,
+              course_number: C6,
+              course_name: Spanish,
+              academic_year: 2025,
+              _dbt_source_project: kippnewark,
+              storecode: Q1,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 5.0,
+              courses_gradescaleid_unweighted: 976,
+              termbin_start_date: 2000-01-01,
+              termbin_end_date: 2000-03-31,
+              termbin_is_current: false,
+              term_weighted_points_possible: 25.0,
+              term_percent_grade_adjusted: null,
+              y1_percent_grade_adjusted: null,
+              y1_grade_points_unweighted: null,
+            }
+          - {
+              studentid: 6,
+              course_number: C6,
+              course_name: Spanish,
+              academic_year: 2025,
+              _dbt_source_project: kippnewark,
+              storecode: Q2,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 5.0,
+              courses_gradescaleid_unweighted: 976,
+              termbin_start_date: 2000-04-01,
+              termbin_end_date: 9999-06-30,
+              termbin_is_current: true,
+              term_weighted_points_possible: 25.0,
+              term_percent_grade_adjusted: 84.0,
+              y1_percent_grade_adjusted: 84.0,
+              y1_grade_points_unweighted: 3.0,
+            }
+          - {
+              studentid: 6,
+              course_number: C6,
+              course_name: Spanish,
+              academic_year: 2025,
+              _dbt_source_project: kippnewark,
+              storecode: Q3,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 5.0,
+              courses_gradescaleid_unweighted: 976,
+              termbin_start_date: 9999-07-01,
+              termbin_end_date: 9999-09-30,
+              termbin_is_current: false,
+              term_weighted_points_possible: 25.0,
+              term_percent_grade_adjusted: null,
+              y1_percent_grade_adjusted: null,
+              y1_grade_points_unweighted: null,
+            }
+          - {
+              studentid: 6,
+              course_number: C6,
+              course_name: Spanish,
+              academic_year: 2025,
+              _dbt_source_project: kippnewark,
+              storecode: Q4,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 5.0,
+              courses_gradescaleid_unweighted: 976,
+              termbin_start_date: 9999-10-01,
+              termbin_end_date: 9999-12-31,
+              termbin_is_current: false,
+              term_weighted_points_possible: 25.0,
+              term_percent_grade_adjusted: null,
+              y1_percent_grade_adjusted: null,
+              y1_grade_points_unweighted: null,
+            }
     expect:
       rows:
         - {
@@ -569,6 +661,17 @@ unit_tests:
             remaining_weight: 75.0,
             pace_percent: 84.33,
             is_below_target: false,
+            is_secured: false,
+            is_locked: false,
+          }
+        - {
+            studentid: 6,
+            course_number: C6,
+            total_weight: 75.0,
+            points_banked: 0.0,
+            remaining_weight: 75.0,
+            pace_percent: 87.0,
+            is_below_target: true,
             is_secured: false,
             is_locked: false,
           }

@@ -38,7 +38,7 @@ with
             us.letter_grade as next_letter_grade,
             us.grade_points as next_grade_points,
 
-            coalesce(p.term_percent_current, p.y1_percent_current) as percent_now,
+            p.y1_percent_current as percent_now,
             round(
                 us.grade_points - p.y1_grade_points_unweighted_current, 2
             ) as points_gained,
@@ -63,14 +63,15 @@ with
         select
             *,
 
-            /* a student already ahead of the pace to the next letter has the
-               cheapest possible win: holding the grade. The floor keeps the
-               score finite rather than disqualifying the course */
+            /* the floor keeps a sub-point gap from inflating the score; a gap
+               at or below zero means the student is already ahead of the pace
+               to the next letter, which is not a win to work on */
             greatest(round(pace_percent_to_next - percent_now, 2), 1.0) as need_gap_raw,
 
             is_locked
             or next_cutoff_percent is null
             or pace_percent_to_next > 100
+            or pace_percent_to_next - percent_now <= 0
             or points_gained <= 0 as is_disqualified,
         from scored
     ),
@@ -104,7 +105,7 @@ with
 
             row_number() over (
                 partition by studentid, _dbt_source_project
-                order by score is null, is_below_target desc, score desc
+                order by score is null, is_below_target desc, score desc, course_number
             ) as rn,
         from with_score
     )

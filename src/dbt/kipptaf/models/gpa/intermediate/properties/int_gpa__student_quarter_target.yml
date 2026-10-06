@@ -2,12 +2,14 @@ models:
   - name: int_gpa__student_quarter_target
     description: >-
       One row per current-year high school student and school with the
-      unweighted letter target they must average across every GPA course to
-      finish at a 3.0 unweighted cumulative, the weighted Y1 GPA that target
-      corresponds to on their own schedule, and a pace status. The target is the
-      lowest unweighted letter whose grade points reach the needed GPA, floored
-      at B. Reads the needed GPA and attainability from
-      `int_powerschool__gpa_cumulative`; neither is recomputed here.
+      unweighted letter target they must average across every unlocked GPA
+      course to finish at a 3.0 unweighted cumulative, the weighted Y1 GPA that
+      target corresponds to on their own schedule, and a pace status. A course
+      whose terms have all ended is locked at its live unweighted Y1 points and
+      the need is re-solved over the courses still open, so the target is the
+      lowest unweighted letter that, held in every open course, reaches the
+      cumulative, floored at B. Reads the needed GPA and attainability from
+      `int_powerschool__gpa_cumulative`.
     config:
       meta:
         contains_pii: true
@@ -25,7 +27,8 @@ models:
           `unknown` when the needed GPA or attainability is NULL;
           `goal_not_attainable` when attainability is false or no unweighted
           letter reaches the needed GPA; `on_pace` when the projected unweighted
-          cumulative is at or above 3.0; `not_on_pace` otherwise.
+          cumulative is at or above 3.0, or when every open course is graded and
+          none sits below the target cutoff; `not_on_pace` otherwise.
         data_tests:
           - not_null
           - accepted_values:
@@ -49,25 +52,45 @@ models:
       - name: gpa_needed_unweighted
         data_type: float64
         description: >-
-          `gpa_needed_for_cumulative_3_0` rounded to 4 decimals, so a float
-          artifact such as 2.6700000000000004 does not pick the wrong letter.
+          Unweighted Y1 GPA the student must average across the open (not yet
+          locked) GPA courses this year to finish at a 3.0 cumulative, with
+          locked courses held at their live unweighted Y1 points. Equals the
+          Monitor's needed GPA while no course is locked. Rounded to 4 decimals
+          before the letter lookup.
+        config:
+          meta:
+            contains_pii: true
       - name: target_cutoff_percent
         data_type: float64
         description: >-
           Lowest unweighted cutoff whose grade points reach
           `gpa_needed_unweighted`, floored at 83. NULL when no letter reaches
           it.
+        config:
+          meta:
+            contains_pii: true
       - name: target_letter_grade
         data_type: string
+        description: Letter at `target_cutoff_percent` on the unweighted scale.
+        config:
+          meta:
+            contains_pii: true
       - name: target_grade_points
         data_type: float64
+        description: Unweighted grade points at `target_cutoff_percent`.
+        config:
+          meta:
+            contains_pii: true
       - name: schedule_bump
         data_type: float64
         description: >-
           Credit-weighted grade-point bonus of the student's current-year GPA
-          courses — 1.0 per credit on the KIPP NJ 2019 weighted scale, 0.5 on
-          the 2024 honors scale, 0 otherwise — divided by total GPA credits.
-          Zero for a student with no weighted courses.
+          courses, one row per course — 1.0 per credit on the KIPP NJ 2019
+          weighted scale, 0.5 on the 2024 honors scale, 0 otherwise — divided by
+          total GPA credits. Zero for a student with no weighted courses.
+        config:
+          meta:
+            contains_pii: true
       - name: gpa_needed_weighted
         data_type: float64
         description: >-
@@ -75,24 +98,54 @@ models:
           weighted Y1 GPA PowerSchool shows. Hitting it guarantees the
           unweighted goal, because failing a weighted course only shrinks the
           real bonus.
+        config:
+          meta:
+            contains_pii: true
+      - name: n_courses_unlocked
+        data_type: int64
+        description: Current-year GPA courses with at least one term still open.
+        config:
+          meta:
+            contains_pii: true
+      - name: n_courses_below_target
+        data_type: int64
+        description: >-
+          Open courses whose live Y1 percent is below `target_cutoff_percent`.
+        config:
+          meta:
+            contains_pii: true
       - name: is_cumulative_3_0_attainable
         data_type: boolean
+        description: Passed through from `int_powerschool__gpa_cumulative`.
+        config:
+          meta:
+            contains_pii: true
       - name: cumulative_y1_gpa_projected_unweighted
         data_type: float64
+        description: Passed through from `int_powerschool__gpa_cumulative`.
+        config:
+          meta:
+            contains_pii: true
 
 unit_tests:
   - name: unit_gpa_student_quarter_target
     description: >-
-      Student 1 needs 3.11, has one AP course of 5 credits among 20, so the
-      target is B+ (3.33, 87), the bump is 0.25, weighted needed is 3.36, and
-      with a projected 2.9 the status is not_on_pace. Student 2 needs 4.5 and is
-      flagged unattainable: no letter reaches it, target NULL, status
-      goal_not_attainable. Student 3 needs -0.5 with a projected 3.6: target
-      floors at B (83, 3.0) and status is on_pace. Student 4 has no graded
-      course and needs exactly 3.0: target B, status not_on_pace. Student 5 has
-      a NULL attainability flag: status unknown, target still B+. The B+ scale
-      row appears twice, as the three-district union of the lookup repeats every
-      row, and no student may fan out because of it.
+      Student 1 needs 3.11 and has one AP course of 5 credits among 20, with the
+      AP course carrying two term rows, so the bump is 0.25 (not 0.4 from
+      counting rows), the target is B+ (3.33, 87), weighted needed is 3.36, and
+      with a projected 2.9 and both courses graded below 87 the status is
+      not_on_pace. Student 2 needs 4.5 and is flagged unattainable: no letter
+      reaches it, target NULL, status goal_not_attainable. Student 3 needs -0.5
+      with a projected 3.6: target floors at B (83, 3.0) and status is on_pace.
+      Student 4 has no graded course and needs exactly 3.0: target B, status
+      not_on_pace. Student 5 has a NULL attainability flag: status unknown,
+      target still B+. Student 6 needs 3.0 over 20 credits but has a locked
+      5-credit course at F, and the Monitor counted only the 15 open credits:
+      the need re-solves to (3.0 x 15 + 3.0 x 5 - 0) / 15 = 4.0, target A (93),
+      not_on_pace. Student 7 needs 3.11 with a projected 2.9, and both open
+      courses sit at 90: nothing is below the B+ target, so on_pace. The B+
+      scale row appears twice, as the three-district union of the lookup repeats
+      every row, and no student may fan out because of it.
     model: int_gpa__student_quarter_target
     overrides:
       vars:
@@ -145,6 +198,24 @@ unit_tests:
               cumulative_y1_gpa_projected_unweighted: 2.9,
               potential_gpa_credits_current_year: 20.0,
             }
+          - {
+              studentid: 6,
+              schoolid: 101,
+              _dbt_source_project: kippnewark,
+              gpa_needed_for_cumulative_3_0: 3.0,
+              is_cumulative_3_0_attainable: true,
+              cumulative_y1_gpa_projected_unweighted: null,
+              potential_gpa_credits_current_year: 15.0,
+            }
+          - {
+              studentid: 7,
+              schoolid: 101,
+              _dbt_source_project: kippnewark,
+              gpa_needed_for_cumulative_3_0: 3.11,
+              is_cumulative_3_0_attainable: true,
+              cumulative_y1_gpa_projected_unweighted: 2.9,
+              potential_gpa_credits_current_year: 20.0,
+            }
       - input: ref('base_powerschool__final_grades')
         rows:
           - {
@@ -156,6 +227,22 @@ unit_tests:
               is_dropped_section: false,
               potential_credit_hours: 5.0,
               courses_gradescaleid: 991,
+              termbin_end_date: 2000-03-31,
+              y1_percent_grade_adjusted: 80.0,
+              y1_grade_points_unweighted: 2.67,
+            }
+          - {
+              studentid: 1,
+              course_number: C1,
+              academic_year: 2025,
+              _dbt_source_project: kippnewark,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 5.0,
+              courses_gradescaleid: 991,
+              termbin_end_date: 9999-12-31,
+              y1_percent_grade_adjusted: 80.0,
+              y1_grade_points_unweighted: 2.67,
             }
           - {
               studentid: 1,
@@ -166,6 +253,9 @@ unit_tests:
               is_dropped_section: false,
               potential_credit_hours: 15.0,
               courses_gradescaleid: 976,
+              termbin_end_date: 9999-12-31,
+              y1_percent_grade_adjusted: 84.0,
+              y1_grade_points_unweighted: 3.0,
             }
           - {
               studentid: 2,
@@ -176,6 +266,9 @@ unit_tests:
               is_dropped_section: false,
               potential_credit_hours: 20.0,
               courses_gradescaleid: 976,
+              termbin_end_date: 9999-12-31,
+              y1_percent_grade_adjusted: 70.0,
+              y1_grade_points_unweighted: 1.67,
             }
           - {
               studentid: 3,
@@ -186,6 +279,9 @@ unit_tests:
               is_dropped_section: false,
               potential_credit_hours: 20.0,
               courses_gradescaleid: 976,
+              termbin_end_date: 9999-12-31,
+              y1_percent_grade_adjusted: 95.0,
+              y1_grade_points_unweighted: 4.0,
             }
           - {
               studentid: 4,
@@ -196,6 +292,9 @@ unit_tests:
               is_dropped_section: false,
               potential_credit_hours: 20.0,
               courses_gradescaleid: 976,
+              termbin_end_date: 9999-12-31,
+              y1_percent_grade_adjusted: null,
+              y1_grade_points_unweighted: null,
             }
           - {
               studentid: 5,
@@ -206,6 +305,74 @@ unit_tests:
               is_dropped_section: false,
               potential_credit_hours: 20.0,
               courses_gradescaleid: 976,
+              termbin_end_date: 9999-12-31,
+              y1_percent_grade_adjusted: 84.0,
+              y1_grade_points_unweighted: 3.0,
+            }
+          - {
+              studentid: 6,
+              course_number: C3,
+              academic_year: 2025,
+              _dbt_source_project: kippnewark,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 5.0,
+              courses_gradescaleid: 976,
+              termbin_end_date: 2000-03-31,
+              y1_percent_grade_adjusted: 45.0,
+              y1_grade_points_unweighted: 0.0,
+            }
+          - {
+              studentid: 6,
+              course_number: C3,
+              academic_year: 2025,
+              _dbt_source_project: kippnewark,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 5.0,
+              courses_gradescaleid: 976,
+              termbin_end_date: 2000-06-30,
+              y1_percent_grade_adjusted: 45.0,
+              y1_grade_points_unweighted: 0.0,
+            }
+          - {
+              studentid: 6,
+              course_number: C4,
+              academic_year: 2025,
+              _dbt_source_project: kippnewark,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 15.0,
+              courses_gradescaleid: 976,
+              termbin_end_date: 9999-12-31,
+              y1_percent_grade_adjusted: null,
+              y1_grade_points_unweighted: null,
+            }
+          - {
+              studentid: 7,
+              course_number: C5,
+              academic_year: 2025,
+              _dbt_source_project: kippnewark,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 10.0,
+              courses_gradescaleid: 976,
+              termbin_end_date: 9999-12-31,
+              y1_percent_grade_adjusted: 90.0,
+              y1_grade_points_unweighted: 3.67,
+            }
+          - {
+              studentid: 7,
+              course_number: C6,
+              academic_year: 2025,
+              _dbt_source_project: kippnewark,
+              exclude_from_gpa: 0,
+              is_dropped_section: false,
+              potential_credit_hours: 10.0,
+              courses_gradescaleid: 976,
+              termbin_end_date: 9999-12-31,
+              y1_percent_grade_adjusted: 90.0,
+              y1_grade_points_unweighted: 3.67,
             }
       - input: ref('int_powerschool__gradescaleitem_lookup')
         rows:
@@ -303,6 +470,26 @@ unit_tests:
               student_number: 1005,
               _dbt_source_project: kippnewark,
             }
+          - {
+              studentid: 6,
+              schoolid: 101,
+              yearid: 35,
+              academic_year: 2025,
+              rn_year: 1,
+              school_level: HS,
+              student_number: 1006,
+              _dbt_source_project: kippnewark,
+            }
+          - {
+              studentid: 7,
+              schoolid: 101,
+              yearid: 35,
+              academic_year: 2025,
+              rn_year: 1,
+              school_level: HS,
+              student_number: 1007,
+              _dbt_source_project: kippnewark,
+            }
     expect:
       rows:
         - {
@@ -312,6 +499,8 @@ unit_tests:
             target_letter_grade: B+,
             schedule_bump: 0.25,
             gpa_needed_weighted: 3.36,
+            n_courses_unlocked: 2,
+            n_courses_below_target: 2,
             pace_status: not_on_pace,
           }
         - {
@@ -321,6 +510,8 @@ unit_tests:
             target_letter_grade: null,
             schedule_bump: 0.0,
             gpa_needed_weighted: 4.5,
+            n_courses_unlocked: 1,
+            n_courses_below_target: 0,
             pace_status: goal_not_attainable,
           }
         - {
@@ -330,6 +521,8 @@ unit_tests:
             target_letter_grade: B,
             schedule_bump: 0.0,
             gpa_needed_weighted: -0.5,
+            n_courses_unlocked: 1,
+            n_courses_below_target: 0,
             pace_status: on_pace,
           }
         - {
@@ -339,6 +532,8 @@ unit_tests:
             target_letter_grade: B,
             schedule_bump: 0.0,
             gpa_needed_weighted: 3.0,
+            n_courses_unlocked: 1,
+            n_courses_below_target: 0,
             pace_status: not_on_pace,
           }
         - {
@@ -348,5 +543,29 @@ unit_tests:
             target_letter_grade: B+,
             schedule_bump: 0.0,
             gpa_needed_weighted: 3.11,
+            n_courses_unlocked: 1,
+            n_courses_below_target: 1,
             pace_status: unknown,
+          }
+        - {
+            studentid: 6,
+            gpa_needed_unweighted: 4.0,
+            target_cutoff_percent: 93.0,
+            target_letter_grade: A,
+            schedule_bump: 0.0,
+            gpa_needed_weighted: 4.0,
+            n_courses_unlocked: 1,
+            n_courses_below_target: 0,
+            pace_status: not_on_pace,
+          }
+        - {
+            studentid: 7,
+            gpa_needed_unweighted: 3.11,
+            target_cutoff_percent: 87.0,
+            target_letter_grade: B+,
+            schedule_bump: 0.0,
+            gpa_needed_weighted: 3.11,
+            n_courses_unlocked: 2,
+            n_courses_below_target: 0,
+            pace_status: on_pace,
           }
