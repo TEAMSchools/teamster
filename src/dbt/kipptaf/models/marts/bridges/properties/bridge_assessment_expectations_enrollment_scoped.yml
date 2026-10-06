@@ -11,7 +11,7 @@ models:
       materialized: table
       meta:
         dagster:
-          # 5x/day table instead of an eager view — rationale and tick choice
+          # Cron table instead of an eager view — rationale and tick choice
           # in fct_assessment_scores_enrollment_scoped. Refs #4821
           automation_condition:
             cron_schedule: 30 0,10,13,15,17 * * *
