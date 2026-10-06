@@ -131,9 +131,10 @@ opening its own engine, so two related tables are read seconds apart from a live
 Postgres. A row written between the parent read and the child read lands as an
 orphan until the next load, so a `relationships` test here fires on teacher
 activity, not on defects. The one kept, `stg_focus__test_history_scores`
-`administration_id`, guards a persistent orphan confirmed across a reload. Any
-`relationships` test stays `severity: warn`; single-table tests (`unique`,
-`not_null`) stay `severity: error`, since one table IS read atomically.
+`administration_id`, guards a persistent orphan. Any `relationships` test stays
+`severity: warn`, because at `error` a teacher saving mid-load fails the whole
+district build. Single-table tests (`unique`, `not_null`) stay
+`severity: error`, since one table IS read atomically.
 
 ## Model Structure
 
