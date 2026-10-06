@@ -35,12 +35,15 @@ Owners are named by role here. The internal project plan maps roles to people.
 | Engineering reviewer | Code approval; clearing marts V1 for production use; co-leads data team training                                               |
 | Analysts             | Zendesk, recruitment and surveys; the internal plan names each builder                                                         |
 | New analyst          | Enrollment domain, starting with the FRESH metric set; the project lead stands in until the hire                               |
+| Data director        | Most project calls; reviews the student persistence charter's data needs before ops starts                                     |
 | Sustainment owner    | Workstream 5; not yet decided                                                                                                  |
 
 ## Current state (2026-10-03)
 
 The project has 18 sections and 152 tasks: 64 complete, 88 open.
 
+- `Team Meeting Agendas & Notes`: added Oct 5; one agenda task per weekly
+  meeting, with an update subtask per team member.
 - `Untitled section`: 11 tasks, all complete (spring and summer setup work).
 - `Training & Pilots`: 1 open task (intro-to-the-marts session).
 - `Platform & Tooling`: 1 rollup with 6 GitHub issues.
@@ -57,6 +60,7 @@ Renames keep the section's GID, so no task moves unless the table says so.
 | Proposed section                        | From (current GID)                                           | Owner role      |
 | --------------------------------------- | ------------------------------------------------------------ | --------------- |
 | `0 · Governance`                        | New                                                          | Project lead    |
+| `0 · Team meetings`                     | Rename `Team Meeting Agendas & Notes` (1219135049882042)     | Project lead    |
 | `1 · Shared dimensions and groupings`   | Rename `Conformed Dimensions` (1214075447592585)             | Cube/mart lead  |
 | `1 · Permissioning`                     | Rename `Access & Security` (1216570201249194)                | Cube/mart lead  |
 | `1 · Assessments`                       | Rename `Assessments` (1214075610424617)                      | Cube/mart lead  |
@@ -129,42 +133,42 @@ rows; that dashboard moved to Lattice and is out of scope.
 One Asana milestone per plan milestone, in the section shown. Target dates are
 the plan's proposed dates.
 
-| Section                                 | Milestone                                                            | Owner role                              | Target               |
-| --------------------------------------- | -------------------------------------------------------------------- | --------------------------------------- | -------------------- |
-| `0 · Governance`                        | M0 Plan approved                                                     | Project lead                            | Oct 16, 2026         |
-| `1 · Assessments`                       | M1.1 Assessment cube confirmed, DDI Suite rebuilt                    | Cube/mart lead                          | Nov 24, 2026         |
-| `1 · Ops: enrollment and Ops Dashboard` | M1.2 Ops verified                                                    | Cube/mart lead                          | Jan 29, 2027         |
-| `1 · Grades/GPA`                        | M1.3 Grades/GPA verified                                             | Project lead                            | Mar 19, 2027         |
-| `1 · Student dashboards`                | M1.4 Student dashboards covered                                      | Project lead                            | May 7, 2027          |
-| `1 · Observations`                      | M1.5 Analyst-built domains verified                                  | Cube/mart lead                          | May 14, 2027         |
-| `0 · Governance`                        | M1.6 Stretch-domain decision                                         | Cube/mart lead                          | Feb 26, 2027         |
-| `1 · Permissioning`                     | M1.7 Permissioning ready for each launch                             | Cube/mart lead                          | Jan 15, 2027         |
-| `1 · Assessments`                       | M1.8 Assessments follow-on: items moved out at the Nov 13 checkpoint | Cube/mart lead                          | Dec 18, 2026         |
-| `2 · Enablement, comms and support`     | M2.1 Domain owners named                                             | Enablement lead                         | Feb 26, 2027         |
-| `2 · Enablement, comms and support`     | M2.2 Support boundary published                                      | Enablement lead                         | Nov 13, 2026         |
-| `2 · Enablement, comms and support`     | M2.3 Standard pilot kit                                              | Enablement lead                         | Nov 6, 2026          |
-| `2 · Enablement, comms and support`     | M2.4 Cohort 2 onboarded                                              | Project lead                            | Nov 20, 2026         |
-| `2 · Enablement, comms and support`     | M2.5 Launch package per domain                                       | Enablement lead                         | May 28, 2027         |
-| `2 · Enablement, comms and support`     | M2.6 Org-wide engagement plan                                        | Enablement lead                         | Nov 20, 2026         |
-| `2 · Enablement, comms and support`     | M2.7 Ongoing onboarding cycle                                        | Enablement lead                         | Apr 30, 2027         |
-| `3 · Delivery platform`                 | M3.1 Org plugin replaces project-knowledge delivery                  | Project lead                            | Jan 15, 2027         |
-| `3 · Delivery platform`                 | M3.2 Usage logging and eval loop live                                | Project lead                            | Nov 20, 2026         |
-| `3 · Delivery platform`                 | M3.3 Test-question sets                                              | Project lead                            | May 14, 2027         |
-| `4 · Team capacity`                     | M4.1 Build standards written                                         | Cube/mart lead                          | Dec 11, 2026         |
-| `4 · Team capacity`                     | M4.2 Data team trained                                               | Cube/mart lead                          | Nov 13, 2026         |
-| `4 · Team capacity`                     | M4.3 Cube/mart creation skill shipped                                | Cube/mart lead                          | Dec 18, 2026         |
-| `4 · Team capacity`                     | M4.4 Review path that scales                                         | Engineering reviewer                    | Dec 18, 2026         |
-| `4 · Team capacity`                     | M4.5 Every analyst ships one reviewed mart or cube                   | Project lead                            | May 28, 2027         |
-| `4 · Team capacity`                     | M4.6 New analyst onboarded into mart and cube work                   | Project lead (stands in until the hire) | Depends on hire date |
-| `5 · Sustainment`                       | M5.1 Drift rule adopted                                              | Not yet decided                         | Dec 11, 2026         |
-| `5 · Sustainment`                       | M5.2 Legacy-vs-Cube checks running                                   | Not yet decided                         | May 28, 2027         |
-| `5 · Sustainment`                       | M5.3 Guidance release cadence                                        | Not yet decided                         | Jan 15, 2027         |
-| `5 · Sustainment`                       | M5.4 Data-change cadence agreed                                      | Not yet decided                         | Feb 26, 2027         |
-| `5 · Sustainment`                       | M5.5 Ownership after June agreed                                     | Not yet decided                         | May 28, 2027         |
+| Section                                 | Milestone                                                  | Owner role                              | Target               |
+| --------------------------------------- | ---------------------------------------------------------- | --------------------------------------- | -------------------- |
+| `0 · Governance`                        | M0 Plan approved                                           | Project lead                            | Oct 23, 2026         |
+| `1 · Assessments`                       | M1.1 Assessments verified, DDI Suite rebuilt               | Cube/mart lead                          | Dec 18, 2026         |
+| `1 · Ops: enrollment and Ops Dashboard` | M1.2 Ops verified                                          | Cube/mart lead                          | Feb 26, 2027         |
+| `1 · Grades/GPA`                        | M1.3 Grades/GPA verified                                   | Project lead                            | Apr 16, 2027         |
+| `1 · Student dashboards`                | M1.4 Student dashboards covered                            | Project lead                            | May 21, 2027         |
+| `1 · Observations`                      | M1.5 Analyst-built domains verified                        | Cube/mart lead                          | May 14, 2027         |
+| `0 · Governance`                        | M1.6 Stretch-domain decision                               | Cube/mart lead                          | Feb 26, 2027         |
+| `1 · Permissioning`                     | M1.7 Permissioning ready for each launch                   | Cube/mart lead                          | Jan 15, 2027         |
+| `2 · Enablement, comms and support`     | M2.1 Domain owners named                                   | Enablement lead                         | Feb 26, 2027         |
+| `2 · Enablement, comms and support`     | M2.2 Support boundary published                            | Enablement lead                         | Nov 13, 2026         |
+| `2 · Enablement, comms and support`     | M2.3 Standard pilot kit                                    | Enablement lead                         | Nov 6, 2026          |
+| `2 · Enablement, comms and support`     | M2.4 Cohort 2 onboarded                                    | Project lead                            | Nov 20, 2026         |
+| `2 · Enablement, comms and support`     | M2.5 Launch package per domain                             | Enablement lead                         | Jun 4, 2027          |
+| `2 · Enablement, comms and support`     | M2.6 Org-wide engagement plan                              | Enablement lead                         | Nov 20, 2026         |
+| `2 · Enablement, comms and support`     | M2.7 Ongoing onboarding cycle                              | Enablement lead                         | Apr 30, 2027         |
+| `3 · Delivery platform`                 | M3.1 Org plugin (beta) replaces project-knowledge delivery | Project lead                            | Jan 15, 2027         |
+| `3 · Delivery platform`                 | M3.2 Usage logging and eval loop live                      | Project lead                            | Nov 20, 2026         |
+| `3 · Delivery platform`                 | M3.3 Test-question sets                                    | Project lead                            | May 14, 2027         |
+| `4 · Team capacity`                     | M4.1 Build standards written                               | Cube/mart lead                          | Jan 8, 2027          |
+| `4 · Team capacity`                     | M4.2 Data team trained                                     | Cube/mart lead                          | Nov 13, 2026         |
+| `4 · Team capacity`                     | M4.3 Cube/mart creation skill shipped                      | Cube/mart lead                          | Jan 15, 2027         |
+| `4 · Team capacity`                     | M4.4 Review path that scales                               | Engineering reviewer                    | Dec 18, 2026         |
+| `4 · Team capacity`                     | M4.5 Every analyst ships one reviewed view                 | Project lead                            | May 28, 2027         |
+| `4 · Team capacity`                     | M4.6 New analyst onboarded into mart and cube work         | Project lead (stands in until the hire) | Depends on hire date |
+| `5 · Sustainment`                       | M5.1 Drift rule adopted                                    | Not yet decided                         | Jan 15, 2027         |
+| `5 · Sustainment`                       | M5.2 Legacy-vs-Cube checks running                         | Not yet decided                         | May 28, 2027         |
+| `5 · Sustainment`                       | M5.3 Guidance release cadence                              | Not yet decided                         | Jan 15, 2027         |
+| `5 · Sustainment`                       | M5.4 Data-change cadence agreed                            | Not yet decided                         | Feb 26, 2027         |
+| `5 · Sustainment`                       | M5.5 Ownership after June agreed                           | Not yet decided                         | May 28, 2027         |
 
-The assessment dates reflect a hard deadline: the assessment cube is confirmed,
-and the DDI Suite rebuilt on Cube, by Tuesday, Nov 24, 2026, the last working
-day before Thanksgiving break. Ops then starts Nov 30.
+The assessment dates reflect a hard deadline: assessments are verified, and the
+DDI Suite rebuilt on Cube, by Friday, Dec 18, 2026, the last working day before
+winter break. The enablement lead then owns the assessments launch (Jan 15, with
+the plugin beta), and ops starts Jan 4.
 
 If workstream 5 folds into the others (the plan recommends it), M5.1 and M5.2
 move to `4 · Team capacity`, M5.4 and M5.5 to workstream 1, and M5.3 to
@@ -177,71 +181,78 @@ to the milestone as a dependency instead of creating a duplicate.
 
 ### Workstream 1
 
-| Task                                                                                                                                       | Milestone  | Owner role                                                    | Existing item                            |
-| ------------------------------------------------------------------------------------------------------------------------------------------ | ---------- | ------------------------------------------------------------- | ---------------------------------------- |
-| Fix high school state test scores that Cube drops                                                                                          | M1.1       | Cube/mart lead                                                | #5692 (Assessments `Open Issues`)        |
-| Lock what "confirmed" includes (Oct 16); checkpoint on Nov 13 (growth, DIBELS progress monitoring, goals and DDI matching cannot move out) | M1.1       | Project lead                                                  | None                                     |
-| Test that a Tableau dashboard reading from Cube keeps each viewer's access                                                                 | M1.1       | Engineering reviewer (pending decision; assumed for planning) | None                                     |
-| Band numbers and band set columns for state and vendor tests                                                                               | M1.1       | Cube/mart lead                                                | #5573, #5574                             |
-| Internal assessment goals in Cube (`dim_assessment_goals`)                                                                                 | M1.1       | Cube/mart lead                                                | None                                     |
-| State test goals and SAT/ACT/PSAT goals in Cube                                                                                            | M1.1       | Cube/mart lead                                                | None                                     |
-| Connect CARAT's student-scoped scores fact to Cube                                                                                         | M1.1       | Cube/mart lead                                                | `assessment_scores_student_scoped`       |
-| NJ student tier / tutoring buckets and 504 status                                                                                          | M1.1       | Cube/mart lead                                                | None                                     |
-| Administered dates for state tests; governed administrations count                                                                         | M1.1       | Cube/mart lead                                                | #4184                                    |
-| Match the DDI dashboard in Cube                                                                                                            | M1.1       | Cube/mart lead                                                | #5668; DDI Suite task                    |
-| Fix the assessment pre-aggregation, shipped with the knowledge drain PR (#5495)                                                            | M1.1       | Cube/mart lead                                                | #5557                                    |
-| Review assessment pull requests within one business day through Nov 24                                                                     | M1.1       | Engineering reviewer (pending decision; assumed for planning) | None                                     |
-| Clear marts V1 for production use                                                                                                          | M1.1       | Engineering reviewer                                          | Intro-to-the-marts task notes            |
-| Matching sign-off and privacy review: assessments (DDI Suite, STAT, Literacy Dashboard)                                                    | M1.1       | Cube/mart lead                                                | None                                     |
-| Rebuild the DDI Suite (8 dashboards) in Tableau on Cube; the rebuild doubles as the matching check                                         | M1.1       | Project lead                                                  | DDI Suite task                           |
-| Confirm the chronic-absence definition with the ops domain owner                                                                           | M1.2       | Cube/mart lead                                                | None                                     |
-| Attendance interventions, contact rate, intervention completion, streaks                                                                   | M1.2       | Cube/mart lead                                                | 4 open tasks in `Attendance`             |
-| Enrollment and enrollment-target marts for the Ops Dashboard                                                                               | M1.2       | Cube/mart lead (the new analyst pairs)                        | Ops Dashboard task                       |
-| Full enrollment metric set behind FRESH (no dashboard rebuild)                                                                             | M1.2       | New analyst (project lead until the hire)                     | FRESH Dashboard task                     |
-| Fix the open Miami access gaps                                                                                                             | M1.2       | Cube/mart lead                                                | #5517, #5524                             |
-| Lunch status and retention/attrition measures                                                                                              | M1.2       | Cube/mart lead                                                | Ops Dashboard task                       |
-| Rebuild the Ops Dashboard in Tableau on Cube                                                                                               | M1.2       | Project lead                                                  | Ops Dashboard task                       |
-| Course-grade and GPA cubes on the existing grade marts                                                                                     | M1.3       | Project lead                                                  | 4 cube tasks in `Grades`                 |
-| GPA goals mart; GPA bands and cusp bands                                                                                                   | M1.3       | Project lead                                                  | 2 GPA on-track measure tasks             |
-| Rebuild the Academic & Gradebook Health Suite in Tableau on Cube                                                                           | M1.3       | Project lead                                                  | Gradebook and GPA Dashboard task         |
-| Privacy reviews: ops and grades/GPA                                                                                                        | M1.2, M1.3 | Cube/mart lead                                                | None                                     |
-| Remaining student groupings: MTSS tiers, grade-level bands, on-track flags                                                                 | M1.4       | Cube/mart lead                                                | None                                     |
-| The three student dashboards' remaining measures; matching and privacy review                                                              | M1.4       | Project lead                                                  | HSEW, Promo Status, Data Quality tasks   |
-| Zendesk, recruitment and surveys: cubes, views, matching, privacy review                                                                   | M1.5       | Analysts                                                      | Cube and measure tasks per section       |
-| Observations: cubes, views, matching, privacy review                                                                                       | M1.5       | Cube/mart lead                                                | Cube and measure tasks in `Observations` |
-| Size the stretch domains from the gap catalog                                                                                              | M1.6       | Cube/mart lead                                                | None                                     |
-| Triage the 12 open access and security issues against launch dates                                                                         | M1.7       | Cube/mart lead                                                | Access & Security `Open Issues`          |
-| Check whether shared Claude artifacts respect each viewer's access; set a sharing rule                                                     | M1.7       | Cube/mart lead                                                | None                                     |
-| Small-cell suppression decision                                                                                                            | M1.7       | Cube/mart lead                                                | #4237                                    |
-| i-Ready growth, lessons passed, time on task; DIBELS PM mastery and completion                                                             | M1.1       | Cube/mart lead                                                | 5 open measure tasks in `Assessments`    |
-| Finish anything moved out at the Nov 13 checkpoint                                                                                         | M1.8       | Cube/mart lead                                                | None                                     |
+| Task                                                                                                                                                                             | Milestone  | Owner role                                | Existing item                            |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- | ----------------------------------------- | ---------------------------------------- |
+| Fix high school state test scores that Cube drops                                                                                                                                | M1.1       | Cube/mart lead                            | #5692 (Assessments `Open Issues`)        |
+| Lock what "verified" includes (Oct 16); checkpoint on Dec 4 (growth, DIBELS progress monitoring, goals and DDI matching cannot move out; anything else goes to the deferral log) | M1.1       | Project lead                              | None                                     |
+| Test that a Tableau dashboard reading from Cube keeps each viewer's access                                                                                                       | M1.1       | Project lead                              | None                                     |
+| Band numbers and band set columns for state and vendor tests                                                                                                                     | M1.1       | Cube/mart lead                            | #5573, #5574                             |
+| Internal assessment goals in Cube (`dim_assessment_goals`)                                                                                                                       | M1.1       | Cube/mart lead                            | None                                     |
+| State test goals and SAT/ACT/PSAT goals in Cube                                                                                                                                  | M1.1       | Cube/mart lead                            | None                                     |
+| Connect CARAT's student-scoped scores fact to Cube                                                                                                                               | M1.1       | Cube/mart lead                            | `assessment_scores_student_scoped`       |
+| NJ student tier / tutoring buckets and 504 status                                                                                                                                | M1.1       | Cube/mart lead                            | None                                     |
+| Administered dates for state tests; governed administrations count                                                                                                               | M1.1       | Cube/mart lead                            | #4184                                    |
+| Match the DDI dashboard in Cube                                                                                                                                                  | M1.1       | Cube/mart lead                            | #5668; DDI Suite task                    |
+| Fix the assessment pre-aggregation, shipped with the knowledge drain PR (#5495)                                                                                                  | M1.1       | Cube/mart lead                            | #5557                                    |
+| Review assessment pull requests within 48 hours through Dec 18; 24 hours for emergencies                                                                                         | M1.1       | Engineering reviewer                      | None                                     |
+| Clear marts V1 for production use                                                                                                                                                | M1.1       | Engineering reviewer                      | Intro-to-the-marts task notes            |
+| Matching sign-off and privacy review: assessments (DDI Suite, STAT, Literacy Dashboard)                                                                                          | M1.1       | Cube/mart lead                            | None                                     |
+| Rebuild the DDI Suite (8 dashboards) in Tableau on Cube; the rebuild doubles as the matching check                                                                               | M1.1       | Project lead                              | DDI Suite task                           |
+| Review the student persistence charter's data needs before ops starts                                                                                                            | M1.2       | Data director                             | None                                     |
+| Confirm the chronic-absence definition with the ops domain owner                                                                                                                 | M1.2       | Cube/mart lead                            | None                                     |
+| Attendance interventions, contact rate, intervention completion, streaks                                                                                                         | M1.2       | Cube/mart lead                            | 4 open tasks in `Attendance`             |
+| Enrollment and enrollment-target marts for the Ops Dashboard                                                                                                                     | M1.2       | Cube/mart lead (the new analyst pairs)    | Ops Dashboard task                       |
+| Full enrollment metric set behind FRESH (no dashboard rebuild)                                                                                                                   | M1.2       | New analyst (project lead until the hire) | FRESH Dashboard task                     |
+| Fix the open Miami access gaps                                                                                                                                                   | M1.2       | Cube/mart lead                            | #5517, #5524                             |
+| Lunch status and retention/attrition measures                                                                                                                                    | M1.2       | Cube/mart lead                            | Ops Dashboard task                       |
+| Rebuild the Ops Dashboard in Tableau on Cube                                                                                                                                     | M1.2       | Project lead                              | Ops Dashboard task                       |
+| Course-grade and GPA cubes on the existing grade marts                                                                                                                           | M1.3       | Project lead                              | 4 cube tasks in `Grades`                 |
+| GPA goals mart; GPA bands and cusp bands                                                                                                                                         | M1.3       | Project lead                              | 2 GPA on-track measure tasks             |
+| Rebuild the Academic & Gradebook Health Suite in Tableau on Cube                                                                                                                 | M1.3       | Project lead                              | Gradebook and GPA Dashboard task         |
+| Privacy reviews: ops and grades/GPA                                                                                                                                              | M1.2, M1.3 | Cube/mart lead                            | None                                     |
+| Remaining student groupings: MTSS tiers, grade-level bands, on-track flags                                                                                                       | M1.4       | Cube/mart lead                            | None                                     |
+| The three student dashboards' remaining measures; matching and privacy review                                                                                                    | M1.4       | Project lead                              | HSEW, Promo Status, Data Quality tasks   |
+| Zendesk, recruitment and surveys: cubes, views, matching, privacy review                                                                                                         | M1.5       | Analysts                                  | Cube and measure tasks per section       |
+| Observations: cubes, views, matching, privacy review                                                                                                                             | M1.5       | Cube/mart lead                            | Cube and measure tasks in `Observations` |
+| Size the stretch domains from the gap catalog                                                                                                                                    | M1.6       | Cube/mart lead                            | None                                     |
+| Triage the 12 open access and security issues against launch dates                                                                                                               | M1.7       | Cube/mart lead                            | Access & Security `Open Issues`          |
+| Check whether shared Claude artifacts respect each viewer's access; set a sharing rule                                                                                           | M1.7       | Cube/mart lead                            | None                                     |
+| Small-cell suppression decision                                                                                                                                                  | M1.7       | Cube/mart lead                            | #4237                                    |
+| i-Ready growth, lessons passed, time on task; DIBELS PM mastery and completion                                                                                                   | M1.1       | Cube/mart lead                            | 5 open measure tasks in `Assessments`    |
 
 ### Workstreams 2 to 5 and governance
 
-| Task                                                                                                                    | Milestone  | Owner role           |
-| ----------------------------------------------------------------------------------------------------------------------- | ---------- | -------------------- |
-| Send the revised charter; hold the sign-off conversation                                                                | M0         | Project lead         |
-| Approve this proposal; apply it                                                                                         | M0         | Project lead         |
-| Name domain owners: assessments and ops; then the rest                                                                  | M2.1       | Enablement lead      |
-| Draft and publish the support boundary; Zendesk intake and response-time targets                                        | M2.2       | Enablement lead      |
-| Write the pilot kit: session agenda, homework, feedback log, exit rule                                                  | M2.3       | Enablement lead      |
-| Run two sessions for cohort 2                                                                                           | M2.4       | Project lead         |
-| One launch task per domain (pilot, help article, training, announcement)                                                | M2.5       | Enablement lead      |
-| Communications calendar, office hours, Slack channel norms                                                              | M2.6       | Enablement lead      |
-| Onboarding plan for mid-year hires and summer PD                                                                        | M2.7       | Enablement lead      |
-| Confirm with the enablement lead, as Claude administrator, what an org plugin can carry; build it; test it; roll it out | M3.1       | Project lead         |
-| Move assessment project knowledge into Cube descriptions and skills (#5236)                                             | M3.1       | Project lead         |
-| Log every Cube MCP call, no question text, and count queries per user (#5613 phase 1)                                   | M3.2       | Project lead         |
-| Add question text once People Operations rules on retention; start the fortnightly fix list (#5613 phase 2)             | M3.2       | Project lead         |
-| Assessments test-question set; automated reruns; a set per later domain                                                 | M3.3       | Project lead         |
-| Write mart and cube build standards                                                                                     | M4.1       | Cube/mart lead       |
-| Intro-to-the-marts session, then the Cube session (existing task)                                                       | M4.2       | Cube/mart lead       |
-| Finish the cube/mart skill with the validation checks (#4314)                                                           | M4.3       | Cube/mart lead       |
-| Train a second reviewer for mart and cube pull requests                                                                 | M4.4       | Engineering reviewer |
-| Assign analyst-built domains; track each analyst's first merged mart or cube                                            | M4.5       | Project lead         |
-| Onboard the new analyst into mart and cube work; the project lead stands in until the hire                              | M4.6       | Project lead         |
-| Drift rule; legacy-vs-Cube checks; review flag on legacy models with a mart counterpart                                 | M5.1, M5.2 | Not yet decided      |
-| Guidance release cadence; data-change cadence; ownership after June                                                     | M5.3–M5.5  | Not yet decided      |
+| Task                                                                                                                                                                    | Milestone  | Owner role           |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- | -------------------- |
+| Send the revised charter; hold the sign-off conversation                                                                                                                | M0         | Project lead         |
+| Approve this proposal; apply it                                                                                                                                         | M0         | Project lead         |
+| Capacity conversation on freeing time for the Dec 18 deadline                                                                                                           | M0         | Project lead         |
+| Design the keep/retire list process: Claude drafts each domain's list; the domain owner confirms retirements                                                            | M0         | Project lead         |
+| Decide whether recruitment stays an analyst-built domain                                                                                                                | M0         | Project lead         |
+| Design how metrics that no dashboard shows today get added                                                                                                              | M0         | Project lead         |
+| Name domain owners after a team discussion (the enablement lead decides): assessments and ops; then the rest                                                            | M2.1       | Enablement lead      |
+| Draft and publish the support boundary; Zendesk intake and response-time targets                                                                                        | M2.2       | Enablement lead      |
+| Write the pilot kit: session agenda, homework, feedback log, exit rule                                                                                                  | M2.3       | Enablement lead      |
+| Run two sessions for cohort 2                                                                                                                                           | M2.4       | Project lead         |
+| Take over assessments at verification (Dec 18): launch package, domain-owner liaison, user support, feedback into the fix list; data fixes stay with the cube/mart lead | M2.5       | Enablement lead      |
+| One launch task per domain (pilot, help article, training, announcement)                                                                                                | M2.5       | Enablement lead      |
+| Propose a usefulness success measure, built with the eval loop (#5613)                                                                                                  | M2.5       | Enablement lead      |
+| Communications calendar, office hours, Slack channel norms                                                                                                              | M2.6       | Enablement lead      |
+| Onboarding plan for mid-year hires and summer PD                                                                                                                        | M2.7       | Enablement lead      |
+| Confirm with the enablement lead, as Claude administrator, what an org plugin can carry; build it; test it; roll it out as a beta on Jan 15                             | M3.1       | Project lead         |
+| Move assessment project knowledge into Cube descriptions and skills (#5236)                                                                                             | M3.1       | Project lead         |
+| Log every Cube MCP call, no question text, and count queries per user (#5613 phase 1)                                                                                   | M3.2       | Project lead         |
+| Add question text once People Operations rules on retention; start the fortnightly fix list (#5613 phase 2)                                                             | M3.2       | Project lead         |
+| Assessments test-question set; automated reruns; a set per later domain                                                                                                 | M3.3       | Project lead         |
+| Write mart and cube build standards                                                                                                                                     | M4.1       | Cube/mart lead       |
+| Intro-to-the-marts session, then the Cube session (existing task)                                                                                                       | M4.2       | Cube/mart lead       |
+| Finish the cube/mart skill with the validation checks (#4314)                                                                                                           | M4.3       | Cube/mart lead       |
+| Train a second reviewer for mart and cube pull requests                                                                                                                 | M4.4       | Engineering reviewer |
+| CI completeness check on Cube YAML (the approval rubric)                                                                                                                | M4.4       | Engineering reviewer |
+| Assign analyst-built domains; track each analyst's first reviewed view                                                                                                  | M4.5       | Project lead         |
+| Onboard the new analyst into mart and cube work; the project lead stands in until the hire                                                                              | M4.6       | Project lead         |
+| Drift rule; legacy-vs-Cube checks; review flag on legacy models with a mart counterpart                                                                                 | M5.1, M5.2 | Not yet decided      |
+| Guidance release cadence; data-change cadence; ownership after June                                                                                                     | M5.3–M5.5  | Not yet decided      |
 
 The analysis-limits skill goes in `Parking lot and outside the core set`, with
 no date.
@@ -275,7 +286,8 @@ shown:
 
 At close-out, each entry ends one of three ways: scheduled for after June,
 retired from its dashboard (with the dashboard owner's agreement), or dropped
-with a reason. The log starts empty; entries go in as they are found.
+with a reason. The log starts empty; entries go in as they are found, starting
+with any assessment item cut at the Dec 4 checkpoint.
 
 ## Key-dashboard tasks
 
