@@ -126,7 +126,8 @@ validation/profiling goes through BigQuery MCP, not `dbt show`.
   already numbers rows at the grain you want (`rn_year` on the enrollment
   models; check the model's `rn_*` columns first), filter on that column instead
   of `DISTINCT`, even if you select only key columns. The `DISTINCT` hides which
-  row was meant, and the first non-key column added later picks one at random.
+  row was meant. Once a non-key column is added it returns one row per stint
+  again, and a later dedup on the old key then picks among them unpredictably.
 - **No one-sided calculations in join predicates.** Any expression computable
   from a single table's columns is precomputed as a named column upstream — `ON`
   matches plain columns. Expressions that inherently combine columns from both
