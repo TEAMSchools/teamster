@@ -1,11 +1,10 @@
 with
-    /* grain projection: the upstream carries one row per enrollment stint and
-     every column here is functionally determined by (student_number,
-     academic_year, schoolid). Not a mask for upstream duplicates. */
+    -- one row per enrollment stint; scaffold picks one per student-year
     enrollments as (
-        select distinct
+        select
             e.student_number,
             e.academic_year,
+            e.rn_year,
             e.schoolid,
             e.school_name,
             e.grade_level,
@@ -32,7 +31,9 @@ with
     /* Mathematica asks for the school the student was enrolled in longest when
      the site-lead list does not name one, so days enrolled is the ranking key.
      One student in academic year 2024 attended both Newark high schools and is
-     attributed to the longer of the two enrollments. */
+     attributed to the longer of the two enrollments. Two stints at one school
+     tie on days enrolled; the latest stint (rn_year) wins, so a mid-year grade
+     or lunch status change reports the current value. */
     -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
     ranked as (
         select
@@ -46,6 +47,7 @@ with
             e.lunch_status,
             e.ml_status,
             e.iep_status,
+            e.rn_year,
 
             a.days_present,
             a.days_enrolled,
@@ -64,7 +66,7 @@ with
             dbt_utils.deduplicate(
                 relation="ranked",
                 partition_by="student_number, academic_year",
-                order_by="days_enrolled_rank desc, schoolid asc",
+                order_by="days_enrolled_rank desc, schoolid asc, rn_year asc",
             )
         }}
     ),
