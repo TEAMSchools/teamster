@@ -148,7 +148,7 @@ the plan's proposed dates.
 | `2 · Enablement, comms and support`     | M2.6 Org-wide engagement plan                                        | Enablement lead                         | Nov 20, 2026         |
 | `2 · Enablement, comms and support`     | M2.7 Ongoing onboarding cycle                                        | Enablement lead                         | Apr 30, 2027         |
 | `3 · Delivery platform`                 | M3.1 Org plugin replaces project-knowledge delivery                  | Project lead                            | Jan 15, 2027         |
-| `3 · Delivery platform`                 | M3.2 Usage logging live                                              | Project lead                            | Dec 11, 2026         |
+| `3 · Delivery platform`                 | M3.2 Usage logging and eval loop live                                | Project lead                            | Nov 20, 2026         |
 | `3 · Delivery platform`                 | M3.3 Test-question sets                                              | Project lead                            | May 14, 2027         |
 | `4 · Team capacity`                     | M4.1 Build standards written                                         | Cube/mart lead                          | Dec 11, 2026         |
 | `4 · Team capacity`                     | M4.2 Data team trained                                               | Cube/mart lead                          | Nov 13, 2026         |
@@ -189,7 +189,7 @@ to the milestone as a dependency instead of creating a duplicate.
 | NJ student tier / tutoring buckets and 504 status                                                                                          | M1.1       | Cube/mart lead                                                | None                                     |
 | Administered dates for state tests; governed administrations count                                                                         | M1.1       | Cube/mart lead                                                | #4184                                    |
 | Match the DDI dashboard in Cube                                                                                                            | M1.1       | Cube/mart lead                                                | #5668; DDI Suite task                    |
-| Fix the assessment pre-aggregation                                                                                                         | M1.1       | Engineering reviewer (pending decision; assumed for planning) | #5557                                    |
+| Fix the assessment pre-aggregation, shipped with the knowledge drain PR (#5495)                                                            | M1.1       | Cube/mart lead                                                | #5557                                    |
 | Review assessment pull requests within one business day through Nov 24                                                                     | M1.1       | Engineering reviewer (pending decision; assumed for planning) | None                                     |
 | Clear marts V1 for production use                                                                                                          | M1.1       | Engineering reviewer                                          | Intro-to-the-marts task notes            |
 | Matching sign-off and privacy review: assessments (DDI Suite, STAT, Literacy Dashboard)                                                    | M1.1       | Cube/mart lead                                                | None                                     |
@@ -231,7 +231,8 @@ to the milestone as a dependency instead of creating a duplicate.
 | Onboarding plan for mid-year hires and summer PD                                                                        | M2.7       | Enablement lead      |
 | Confirm with the enablement lead, as Claude administrator, what an org plugin can carry; build it; test it; roll it out | M3.1       | Project lead         |
 | Move assessment project knowledge into Cube descriptions and skills (#5236)                                             | M3.1       | Project lead         |
-| Per-user query counts for the adoption measure                                                                          | M3.2       | Project lead         |
+| Log every Cube MCP call, no question text, and count queries per user (#5613 phase 1)                                   | M3.2       | Project lead         |
+| Add question text once People Operations rules on retention; start the fortnightly fix list (#5613 phase 2)             | M3.2       | Project lead         |
 | Assessments test-question set; automated reruns; a set per later domain                                                 | M3.3       | Project lead         |
 | Write mart and cube build standards                                                                                     | M4.1       | Cube/mart lead       |
 | Intro-to-the-marts session, then the Cube session (existing task)                                                       | M4.2       | Cube/mart lead       |
