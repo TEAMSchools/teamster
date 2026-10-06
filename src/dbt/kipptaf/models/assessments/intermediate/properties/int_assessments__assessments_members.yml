@@ -6,10 +6,18 @@ models:
       `agl_dedup` CTE for `grade_level_id`. Exposes `canonical_assessment_id` as
       the FK to `int_assessments__assessments_canonical` — computed via
       `first_value(assessment_id) over (partition by is_internal_assessment,
-      academic_year, scope, subject_area, module_code, grade_level_id order by
-      assessment_id)`. Consumers needing canonical attrs (title, administered
-      date, grade level, etc.) join `int_assessments__assessments_canonical` on
-      that FK.
+      is_florida_assessment, academic_year, scope, subject_area, module_code,
+      grade_level_id order by assessment_id)`. Consumers needing canonical attrs
+      (title, administered date, grade level, etc.) join
+      `int_assessments__assessments_canonical` on that FK. Network policy is one
+      shared internal assessment per module across regions, so copies merge
+      across regions by design. The exception is Miami, which built its own
+      Florida versions of internal assessments in SY24-25 and SY25-26 (before it
+      left Illuminate). `is_florida_assessment` (AppSheet `regions_assessed` is
+      exactly `Miami`) keeps those copies out of New Jersey canonical groups, so
+      New Jersey students never inherit a Florida title or administered date.
+      Assessments tagged with Miami alongside other regions stay on the New
+      Jersey side.
     columns:
       - name: assessment_id
         data_tests:
@@ -78,8 +86,8 @@ models:
         data_type: int64
         description: >-
           FK to `int_assessments__assessments_canonical`. The lowest
-          `assessment_id` within the partition `(academic_year, scope,
-          subject_area, module_code, grade_level_id)`. Multipart administrations
-          (e.g., the CRA + CRA-Essay halves of one logical Unit Quarterly
-          Assessment) share a `canonical_assessment_id`. Solo assessments equal
-          their own `assessment_id`.
+          `assessment_id` within the partition `(is_florida_assessment,
+          academic_year, scope, subject_area, module_code, grade_level_id)`.
+          Multipart administrations (e.g., the CRA + CRA-Essay halves of one
+          logical Unit Quarterly Assessment) share a `canonical_assessment_id`.
+          Solo assessments equal their own `assessment_id`.
