@@ -929,10 +929,16 @@ models:
           Last day of the vendor's last-week usage window for this export.
       - name: first_lesson_completion_date
         data_type: date
+        config:
+          meta:
+            contains_pii: true
         description: >-
           Date the student completed their first i-Ready lesson, per the vendor.
       - name: most_recent_lesson_completion_date
         data_type: date
+        config:
+          meta:
+            contains_pii: true
         description: >-
           Date the student completed their most recent i-Ready lesson, per the
           vendor.

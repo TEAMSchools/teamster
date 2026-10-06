@@ -74,9 +74,9 @@ models:
           meta:
             contains_pii: true
         description: >-
-          Total number of skills in the lesson, cast to an integer. Vendor
-          reports this separately for Math skills and Reading foundational
-          skills.
+          Total number of skills in the completed lesson, cast to an integer.
+          One column covers both the vendor's Math skills and Reading
+          foundational skills fields.
       - name: skills_successful
         data_type: int64
         config:
