@@ -8,7 +8,6 @@ with
             cc_course_number,
             cc_academic_year,
             is_foundations,
-            is_advanced_math,
             _dbt_source_project,
 
             -- Focus leaves cc_dateleft null on open sections; exit_date is the
@@ -17,12 +16,18 @@ with
 
             coalesce(discipline, core_subject) as discipline,
 
+            -- Focus carries no advanced-math flag; null would drop its rows from
+            -- the scaffold's `not is_advanced_math_student` gate
+            coalesce(is_advanced_math, false) as is_advanced_math,
+
             -- Focus has no credit type; its homerooms are flagged by title only
             coalesce(
                 courses_credittype, if(is_homeroom, 'HR', null)
             ) as courses_credittype,
 
-            -- TODO(#5750): the crosswalk gives Focus courses only core_subject
+            -- TODO(#5750): the crosswalk gives Focus courses only core_subject.
+            -- int_assessments__resolved_section_enrollments keeps the reverse
+            -- map (state subject to discipline) under TODO(#5715)
             coalesce(
                 illuminate_subject_area,
                 case

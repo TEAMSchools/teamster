@@ -127,7 +127,9 @@ models:
         data_type: boolean
         description: >-
           True when the student takes any advanced math course in the same
-          credit type that year.
+          credit type that year. False, not null, when the SIS carries no
+          advanced-math flag (Focus), so those rows pass the scaffold's
+          advanced-math gate.
 
 unit_tests:
   - name: test_focus_rows_get_window_end_subject_and_homeroom
@@ -136,7 +138,8 @@ unit_tests:
       illuminate_subject_area, discipline or credit type. An open ELA section
       takes its window end from exit_date and maps core_subject ELA to Text
       Study and ELA. A homeroom section, flagged only by is_homeroom, comes out
-      with credit type HR.
+      with credit type HR. With no advanced-math flag on Focus,
+      is_advanced_math_student is false rather than null.
     model: int_assessments__course_enrollments
     given:
       - input: ref('int_students__course_enrollments')
@@ -201,6 +204,7 @@ unit_tests:
             illuminate_subject_area: Text Study,
             discipline: ELA,
             subject_or_course_key: Text Study,
+            is_advanced_math_student: false,
           }
         - {
             powerschool_student_number: 11,
@@ -209,6 +213,7 @@ unit_tests:
             illuminate_subject_area: null,
             discipline: null,
             subject_or_course_key: HR6,
+            is_advanced_math_student: false,
           }
 
   - name: test_dedupe_keeps_no_subject_courses_apart
@@ -217,7 +222,8 @@ unit_tests:
       enrollment date stay as separate rows, keyed by course number. Two rows
       for the same subject on the same date still collapse to the one with the
       latest exit, and an exact tie on exit keeps the higher cc_dcid so the pick
-      is the same on every build.
+      is the same on every build. A PowerSchool course keeps its own Illuminate
+      subject (English 100) even though its core subject is ELA.
     model: int_assessments__course_enrollments
     given:
       - input: ref('int_students__course_enrollments')
@@ -322,6 +328,25 @@ unit_tests:
               _dbt_source_project: kippnewark,
               cc_academic_year: 2025,
               cc_schoolid: 73253,
+              cc_dcid: 9107,
+              cc_course_number: ENG100,
+              cc_dateenrolled: 2025-09-02,
+              cc_dateleft: 2026-06-19,
+              exit_date: 2026-06-19,
+              courses_credittype: ENG,
+              illuminate_subject_area: English 100,
+              discipline: ELA,
+              core_subject: ELA,
+              is_homeroom: false,
+              is_foundations: false,
+              is_advanced_math: false,
+              is_dropped_course: false,
+            }
+          - {
+              students_student_number: 12,
+              _dbt_source_project: kippnewark,
+              cc_academic_year: 2025,
+              cc_schoolid: 73253,
               cc_dcid: 9104,
               cc_course_number: ENG8,
               cc_dateenrolled: 2025-09-02,
@@ -366,4 +391,9 @@ unit_tests:
             cc_dcid: 9106,
             courses_credittype: MATH,
             subject_or_course_key: Mathematics,
+          }
+        - {
+            cc_dcid: 9107,
+            courses_credittype: ENG,
+            subject_or_course_key: English 100,
           }
