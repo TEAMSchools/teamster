@@ -675,7 +675,9 @@ data_tests:
       applied to one feed but not the other ships enrollments for students
       Clever was never sent. Both feeds read int_extracts__student_enrollments,
       so a PR touching the enrollment chain rebuilds both sides together under
-      state:modified+.
+      state:modified+. A PR touching only stg_powerschool__cc rebuilds
+      enrollments alone, but that cannot change which students either feed
+      carries.
     config:
       severity: error
       meta:
