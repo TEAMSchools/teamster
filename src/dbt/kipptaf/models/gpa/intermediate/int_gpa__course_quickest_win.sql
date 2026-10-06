@@ -105,7 +105,8 @@ with
 
             row_number() over (
                 partition by studentid, _dbt_source_project
-                order by score is null, is_below_target desc, score desc, course_number
+                order by
+                    score is null, is_below_target desc, score desc, course_number asc
             ) as rn,
         from with_score
     )
