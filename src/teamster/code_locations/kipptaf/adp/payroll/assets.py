@@ -33,6 +33,8 @@ general_ledger_file = build_sftp_file_asset(
     avro_schema=GENERAL_LEDGER_FILE_SCHEMA,
     partitions_def=GENERAL_LEDGER_FILE_PARTITIONS_DEF,
     group_name="adp_payroll",
+    # a re-upload in a different case (_47s, then _47S) matches twice; newest wins
+    ignore_multiple_matches=True,
 )
 
 assets = [
