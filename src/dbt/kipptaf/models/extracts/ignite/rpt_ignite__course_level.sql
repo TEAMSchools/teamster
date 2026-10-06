@@ -1,26 +1,28 @@
 with
     enrollment_terms as (
         select
-            student_number,
-            studentid,
-            academic_year,
-            schoolid,
-            course_number,
-            section_number,
-            sectionid,
-            section_or_period,
-            course_name,
-            credit_type,
-            grade_level,
-            is_self_contained,
-            semester,
-        from {{ ref("int_extracts__course_enrollments_by_term") }}
+            ce.student_number,
+            ce.studentid,
+            ce.academic_year,
+            ce.schoolid,
+            ce.course_number,
+            ce.section_number,
+            ce.sectionid,
+            ce.section_or_period,
+            ce.course_name,
+            ce.credit_type,
+            ce.grade_level,
+            ce.is_self_contained,
+            ce.semester,
+        from {{ ref("int_extracts__course_enrollments_by_term") }} as ce
+        inner join
+            {{ ref("int_ignite__student_years") }} as sy
+            on ce.student_number = sy.student_number
+            and ce.academic_year = sy.academic_year
         where
-            academic_year in ({{ var("ignite_academic_years") | join(", ") }})
-            and grade_level in ({{ var("ignite_grade_levels") | join(", ") }})
-            and region in ({{ "'" ~ (var("ignite_regions") | join("', '")) ~ "'" }})
-            and credit_type in ('ENG', 'MATH', 'SCI', 'SOC')
-            and student_number is not null
+            ce.state = 'NJ'
+            and ce.grade_level between 9 and 12
+            and ce.credit_type in ('ENG', 'MATH', 'SCI', 'SOC')
     ),
 
     /* A section spanning both semesters is a year-long course, for which
@@ -57,14 +59,24 @@ with
         from enrollment_terms
     ),
 
+    /* grain projection, not dup-masking: one row per study year */
+    study_years as (
+        select distinct academic_year, from {{ ref("int_ignite__student_years") }}
+    ),
+
     -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
     year_grades as (
-        select studentid, sectionid, academic_year, grade, percent,
-        from {{ ref("stg_powerschool__storedgrades") }}
-        where
-            storecode = 'Y1'
-            and not is_transfer_grade
-            and academic_year in ({{ var("ignite_academic_years") | join(", ") }})
+        select sg.studentid, sg.sectionid, sg.academic_year, sg.grade, sg.percent,
+        from {{ ref("stg_powerschool__storedgrades") }} as sg
+        inner join study_years as y on sg.academic_year = y.academic_year
+        where sg.storecode = 'Y1' and not sg.is_transfer_grade
+    ),
+
+    -- unique among NCES rows, tested on stg_google_sheets__people__locations
+    nces_schools as (
+        select powerschool_school_id, nces_school_id,
+        from {{ ref("stg_google_sheets__people__locations") }}
+        where nces_school_id is not null
     ),
 
     /* TODO: one student-section-year carries seven non-transfer Y1 grade rows
@@ -112,8 +124,7 @@ with
         inner join
             {{ ref("int_ignite__student_id_crosswalk") }} as x
             on e.student_number = x.student_number
-        left join
-            {{ ref("seed_ignite__school_nces_ids") }} as n on e.schoolid = n.schoolid
+        left join nces_schools as n on e.schoolid = n.powerschool_school_id
         left join
             section_span as s
             on e.student_number = s.student_number
