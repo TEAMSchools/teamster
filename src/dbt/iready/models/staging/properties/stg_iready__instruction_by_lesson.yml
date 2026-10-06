@@ -1,43 +1,112 @@
 models:
   - name: stg_iready__instruction_by_lesson
+    description: >-
+      One row per student per completed i-Ready lesson from the vendor's
+      Instruction by Lesson SFTP export, typed and with a numeric pass flag.
+      Covers classic i-Ready lessons only; i-Ready Pro lessons are in
+      stg_iready__instruction_by_lesson_pro.
     columns:
       - name: student_id
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          The vendor's Student ID for the student in the i-Ready roster, cast to
+          an integer.
         data_tests:
           - not_null
       - name: academic_year_int
         data_type: int64
+        description: >-
+          The academic year the export was pulled for, as the integer start year
+          of the school year. Taken from the Dagster partition, not from the
+          vendor's academic year label.
       - name: academic_year
         data_type: string
+        description: >-
+          The academic year label i-Ready assigns to the row, as reported in the
+          vendor's export.
       - name: school
         data_type: string
+        description: The name of the school i-Ready has the student enrolled at.
       - name: subject
         data_type: string
+        description: The subject of the completed lesson, Math or Reading.
       - name: domain
         data_type: string
+        description: The domain of the completed lesson.
       - name: lesson_grade
         data_type: string
+        description: The grade level of the completed lesson.
       - name: lesson_level
         data_type: string
+        description: >-
+          The level of the completed lesson, such as Emerging (Grade K), Early,
+          Mid, or Late on grade level. Extra levels are only available as
+          teacher-assigned lessons.
       - name: lesson_id
         data_type: string
+        description: The vendor's unique ID for the lesson.
       - name: lesson_name
         data_type: string
+        description: The name of the completed lesson.
       - name: lesson_objective
         data_type: string
+        description: The objective or objectives of the completed lesson.
       - name: lesson_language
         data_type: string
+        description: The language of the completed lesson.
       - name: passed_or_not_passed
         data_type: string
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Whether the student passed or did not pass the completed lesson, as
+          reported by the vendor.
       - name: teacher_assigned_lesson
         data_type: string
+        description: >-
+          Y if a teacher assigned the lesson, N if i-Ready assigned it through
+          the student's personalized path.
       - name: student_grade
         data_type: string
+        config:
+          meta:
+            contains_pii: true
+        description:
+          The student's grade level, as loaded from the vendor roster.
       - name: score
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          The score the student received on the completed lesson, cast to an
+          integer.
       - name: total_time_on_lesson_min
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          The number of minutes the student spent on the completed lesson, cast
+          to an integer.
       - name: completion_date
         data_type: date
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          The date the student completed the lesson, parsed from the vendor's
+          month/day/year text.
       - name: passed_or_not_passed_numeric
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Numeric pass flag derived from passed_or_not_passed, 1.0 when the
+          value is Passed and 0.0 otherwise, so it can be averaged into a pass
+          rate.
