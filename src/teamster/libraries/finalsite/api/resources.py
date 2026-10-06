@@ -4,7 +4,7 @@ from datetime import UTC, datetime, timedelta
 import jwt
 from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
 from dagster_shared import check
-from pydantic import PrivateAttr
+from pydantic import Field, PrivateAttr
 from requests import HTTPError, Response, Session
 from requests.exceptions import ConnectionError as RequestsConnectionError
 from requests.exceptions import Timeout
@@ -57,8 +57,8 @@ def _is_retryable(exception: BaseException) -> bool:
 
 class FinalsiteResource(ConfigurableResource):
     server: str
-    credential_id: str
-    secret: str
+    credential_id: str = Field(repr=False)
+    secret: str = Field(repr=False)
     api_version: str = "1"
     request_timeout: float = 60.0
 

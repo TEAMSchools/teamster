@@ -2,13 +2,13 @@ import pathlib
 
 from dagster import ConfigurableResource, InitResourceContext
 from dagster_shared import check
-from pydantic import PrivateAttr
+from pydantic import Field, PrivateAttr
 from requests import HTTPError, Response, Session
 
 
 class CouchdropResource(ConfigurableResource):
     username: str
-    password: str
+    password: str = Field(repr=False)
 
     _service_root: str = PrivateAttr()
     _session: Session = PrivateAttr(default_factory=Session)
