@@ -31,12 +31,14 @@ with
             p._dbt_source_project,
             p.is_below_target,
             p.is_locked,
+            p.potential_credit_hours as credit_hours,
 
             nr.next_cutoff_percent,
 
             us.letter_grade as next_letter_grade,
             us.grade_points as next_grade_points,
 
+            coalesce(p.term_percent_current, p.y1_percent_current) as percent_now,
             round(
                 us.grade_points - p.y1_grade_points_unweighted_current, 2
             ) as points_gained,
@@ -47,9 +49,6 @@ with
                 ),
                 2
             ) as pace_percent_to_next,
-
-            coalesce(p.term_percent_current, p.y1_percent_current) as percent_now,
-            p.potential_credit_hours as credit_hours,
         from {{ ref("int_gpa__course_quarter_pace") }} as p
         left join
             next_rung as nr
