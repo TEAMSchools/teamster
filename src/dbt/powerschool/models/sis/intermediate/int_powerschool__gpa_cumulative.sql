@@ -16,7 +16,11 @@ with
             co.schoolid,
 
             max(fg.potential_credit_hours) as potential_credit_hours,
+            max(fg.y1_grade_points_unweighted) as y1_grade_points_unweighted,
             max(gsm_u.max_grade_points) as max_grade_points_unweighted,
+
+            max(fg.termbin_end_date)
+            < current_date('{{ var("local_timezone") }}') as is_ended,
         from {{ ref("base_powerschool__final_grades") }} as fg
         inner join
             {{ ref("base_powerschool__student_enrollments") }} as co
@@ -206,8 +210,7 @@ with
         union all
 
         /* every current-year GPA course, for the needed-GPA denominator and
-           the max attainable; carries no points, so the projection is
-           unaffected */
+           the max attainable */
         select
             studentid,
             schoolid,
@@ -230,7 +233,11 @@ with
             null as unweighted_grade_points,
             null as unweighted_grade_points_projected,
 
-            max_grade_points_unweighted as gpa_points_projected_max_unweighted,
+            /* a course whose last term has ended is locked at its live Y1 */
+            coalesce(
+                if(is_ended, y1_grade_points_unweighted, null),
+                max_grade_points_unweighted
+            ) as gpa_points_projected_max_unweighted,
             potential_credit_hours as potentialcrhrs_enrolled,
         from current_year_courses
     ),
