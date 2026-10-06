@@ -1,17 +1,21 @@
 models:
   - name: int_ignite__student_id_crosswalk
     description:
-      Maps each in-scope student to the masked, de-identified `stu_id` supplied
-      to Mathematica for the IGNITE R2I evaluation. The masked id is derived
-      from `student_number` by a salted `farm_fingerprint` reduced to nine
-      digits, because Mathematica's template requires a number with no decimals.
-      The derivation is deterministic and holds no stored state, so the same
-      student resolves to the same `stu_id` on every run — which is what lets
-      the phase-2 state-assessment upload in October join to the phase-1
-      submission. The salt lives in the `ignite_id_salt` project variable and
-      must never change. This model retains the mapping the data sharing
-      agreement requires KIPP NJ to keep, and is never itself sent outbound.
+      Maps each student in `int_ignite__student_years` to the masked,
+      de-identified `stu_id` supplied to Mathematica for the IGNITE R2I
+      evaluation. The masked id is derived from `student_number` by a salted
+      `farm_fingerprint` reduced to nine digits, because Mathematica's template
+      requires a number with no decimals. The derivation is deterministic and
+      holds no stored state, so the same student resolves to the same `stu_id`
+      on every run — which is what lets the phase-2 state-assessment upload in
+      October join to the phase-1 submission. The salt is read from
+      `kipptaf_restricted.ignite_id_salt`, a dataset only the pipeline can read,
+      and must never change. The model is a table so the outbound views read
+      stored ids and never need the salt. It retains the mapping the data
+      sharing agreement requires KIPP NJ to keep, and is never itself sent
+      outbound.
     config:
+      materialized: table
       meta:
         contains_pii: true
     columns:
@@ -29,6 +33,9 @@ models:
               config:
                 severity: error
           - not_null:
+              config:
+                severity: error
+          - dbt_utils.at_least_one:
               config:
                 severity: error
 

@@ -1,17 +1,21 @@
 with
     diagnostics as (
         select
-            student_id as student_number,
-            academic_year_int as academic_year,
-            subject,
-            test_round,
-            overall_scale_score,
-        from {{ ref("int_iready__diagnostic_results") }}
+            dr.subject,
+            dr.test_round,
+            dr.overall_scale_score,
+
+            sy.student_number,
+            sy.academic_year,
+        from {{ ref("int_iready__diagnostic_results") }} as dr
+        inner join
+            {{ ref("int_ignite__student_years") }} as sy
+            on dr.student_id = sy.student_number
+            and dr.academic_year_int = sy.academic_year
         where
-            academic_year_int in ({{ var("ignite_academic_years") | join(", ") }})
-            and student_grade_int in ({{ var("ignite_grade_levels") | join(", ") }})
-            and test_round in ('BOY', 'EOY')
-            and rn_subj_round = 1
+            dr.student_grade_int between 9 and 12
+            and dr.test_round in ('BOY', 'EOY')
+            and dr.rn_subj_round = 1
     )
 
 select

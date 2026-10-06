@@ -4,22 +4,30 @@ with
      academic_year, schoolid). Not a mask for upstream duplicates. */
     enrollments as (
         select distinct
-            student_number,
-            academic_year,
-            schoolid,
-            school_name,
-            grade_level,
-            gender,
-            race_ethnicity,
-            lunch_status,
-            ml_status,
-            iep_status,
-        from {{ ref("int_extracts__student_enrollments") }}
-        where
-            academic_year in ({{ var("ignite_academic_years") | join(", ") }})
-            and grade_level in ({{ var("ignite_grade_levels") | join(", ") }})
-            and region in ({{ "'" ~ (var("ignite_regions") | join("', '")) ~ "'" }})
-            and student_number is not null
+            e.student_number,
+            e.academic_year,
+            e.schoolid,
+            e.school_name,
+            e.grade_level,
+            e.gender,
+            e.race_ethnicity,
+            e.lunch_status,
+            e.ml_status,
+            e.iep_status,
+        from {{ ref("int_extracts__student_enrollments") }} as e
+        inner join
+            {{ ref("int_ignite__student_years") }} as sy
+            on e.student_number = sy.student_number
+            and e.academic_year = sy.academic_year
+        where e.state = 'NJ' and e.grade_level between 9 and 12
+    ),
+
+    /* nces_school_id is filled only for schools that have one, and those
+     PowerSchool ids are unique, so the join cannot fan out */
+    nces_schools as (
+        select powerschool_school_id, nces_school_id,
+        from {{ ref("stg_google_sheets__people__locations") }}
+        where nces_school_id is not null
     ),
 
     /* Mathematica asks for the school the student was enrolled in longest when
@@ -105,8 +113,7 @@ with
         inner join
             {{ ref("int_ignite__student_id_crosswalk") }} as x
             on s.student_number = x.student_number
-        left join
-            {{ ref("seed_ignite__school_nces_ids") }} as n on s.schoolid = n.schoolid
+        left join nces_schools as n on s.schoolid = n.powerschool_school_id
         left join
             {{ ref("int_ignite__student_treatment") }} as t
             on s.student_number = t.student_number
