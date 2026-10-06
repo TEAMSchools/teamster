@@ -10,4 +10,4 @@ models:
           # once at 05:00 ET. Same treatment as int_topline__student_metrics
           # (the chain's other table input). Refs #4559
           automation_condition:
-            cron_schedule: 0 0 * * *
+            cron_schedule: 30 0 * * *

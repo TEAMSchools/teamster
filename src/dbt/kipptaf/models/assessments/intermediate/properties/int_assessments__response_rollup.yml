@@ -13,15 +13,18 @@ models:
       materialized: table
       meta:
         dagster:
-          # cron instead of eager (was 125+/day). Ticks sit at :30 so they
-          # land after the Illuminate dlt sync (00:00 + 17:00 daily, 10:00 +
-          # 14:00 Wed, 15:00 Fri ET) AND the stg_illuminate__* tables it
-          # triggers, which rebuild in their own runs ~15 min later; a :00
+          # cron instead of eager (was 125+/day). Ticks sit at :30 so a tick
+          # following an Illuminate dlt sync (00:00 + 17:00 daily, 10:00 +
+          # 14:00 Wed, 15:00 Fri ET) lands after the stg_illuminate__* tables
+          # it triggers, which rebuild in their own runs ~15 min later; a :00
           # tick read the previous sync (#5734). The chain builds in ~15 min,
           # ahead of the DDI Suite refreshes (01:00 + 18:00 daily, 16:00 Fri
           # — exposures/tableau.yml). Every assessment-chain cron model and
           # its cron consumers share the :30 minute so one run builds them
           # in dbt order. Refs #4559
+          # ponytail: ~15 min margin on each side, and ~any_deps_in_progress
+          # can't see the stg tables (int_illuminate__agg_student_responses is
+          # a view). If syncs slow down, gate on the stg parents' newly_updated.
           automation_condition:
             cron_schedule: 30 0,10,13,15,17 * * *
     data_tests:

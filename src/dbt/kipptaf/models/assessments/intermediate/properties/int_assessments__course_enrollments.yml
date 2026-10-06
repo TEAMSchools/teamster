@@ -31,9 +31,9 @@ models:
           # ~98 executions/day on the eager table condition. Every downstream
           # consumer is either the assessment star (dim_assessments,
           # fct_assessment_scores_*, the expectation bridges) already on
-          # `0 0,10,13,15,17 * * *`, or a topline weekly on `0 0 * * *` — which
-          # the 00:00 tick covers. The deanslist mod extracts run `25 1 * * *`,
-          # after the 00:00 tick.
+          # `30 0,10,13,15,17 * * *`, or a topline weekly on `30 0 * * *` —
+          # which the 00:30 tick covers. The deanslist mod extracts run
+          # `25 1 * * *`, after the 00:30 tick.
           #
           # Refs #4821
           automation_condition:

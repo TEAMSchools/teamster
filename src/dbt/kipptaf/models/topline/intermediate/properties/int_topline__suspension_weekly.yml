@@ -5,7 +5,7 @@ models:
       meta:
         dagster:
           # nightly instead of eager: sole consumer is
-          # int_topline__student_metrics, itself on the same midnight cron.
+          # int_topline__student_metrics, itself on the same 00:30 cron.
           # Refs #4153
           automation_condition:
-            cron_schedule: 0 0 * * *
+            cron_schedule: 30 0 * * *

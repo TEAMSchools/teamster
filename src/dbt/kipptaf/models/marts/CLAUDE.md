@@ -241,7 +241,7 @@ Marts default to `materialized: view`. Exception: `dim_assessments`,
 `dim_courses`, `dim_dates`, `dim_regions`, `dim_staff`, `dim_students`, the six
 assessment-star marts, and the four assessment intermediates are
 `materialized: table`. All seven assessment marts share
-`int_assessments__response_rollup`'s `0 0,10,13,15,17 * * *` tick — Cube is
+`int_assessments__response_rollup`'s `30 0,10,13,15,17 * * *` tick — Cube is
 their only consumer and its `proficiency_rollup` pre-aggregation refreshes
 daily, so intraday rebuilds are invisible
 ([#4559](https://github.com/TEAMSchools/teamster/issues/4559),
