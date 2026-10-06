@@ -151,7 +151,7 @@ the plan's proposed dates.
 | `3 · Delivery platform`                 | M3.2 Usage logging live                                              | Project lead                            | Dec 11, 2026         |
 | `3 · Delivery platform`                 | M3.3 Test-question sets                                              | Project lead                            | May 14, 2027         |
 | `4 · Team capacity`                     | M4.1 Build standards written                                         | Cube/mart lead                          | Dec 11, 2026         |
-| `4 · Team capacity`                     | M4.2 Data team trained                                               | Engineering reviewer                    | Nov 13, 2026         |
+| `4 · Team capacity`                     | M4.2 Data team trained                                               | Cube/mart lead                          | Nov 13, 2026         |
 | `4 · Team capacity`                     | M4.3 Cube/mart creation skill shipped                                | Cube/mart lead                          | Dec 18, 2026         |
 | `4 · Team capacity`                     | M4.4 Review path that scales                                         | Engineering reviewer                    | Dec 18, 2026         |
 | `4 · Team capacity`                     | M4.5 Every analyst ships one reviewed mart or cube                   | Project lead                            | May 28, 2027         |
@@ -218,29 +218,29 @@ to the milestone as a dependency instead of creating a duplicate.
 
 ### Workstreams 2 to 5 and governance
 
-| Task                                                                                                                    | Milestone  | Owner role                              |
-| ----------------------------------------------------------------------------------------------------------------------- | ---------- | --------------------------------------- |
-| Send the revised charter; hold the sign-off conversation                                                                | M0         | Project lead                            |
-| Approve this proposal; apply it                                                                                         | M0         | Project lead                            |
-| Name domain owners: assessments and ops; then the rest                                                                  | M2.1       | Enablement lead                         |
-| Draft and publish the support boundary; Zendesk intake and response-time targets                                        | M2.2       | Enablement lead                         |
-| Write the pilot kit: session agenda, homework, feedback log, exit rule                                                  | M2.3       | Enablement lead                         |
-| Run two sessions for cohort 2                                                                                           | M2.4       | Project lead                            |
-| One launch task per domain (pilot, help article, training, announcement)                                                | M2.5       | Enablement lead                         |
-| Communications calendar, office hours, Slack channel norms                                                              | M2.6       | Enablement lead                         |
-| Onboarding plan for mid-year hires and summer PD                                                                        | M2.7       | Enablement lead                         |
-| Confirm with the enablement lead, as Claude administrator, what an org plugin can carry; build it; test it; roll it out | M3.1       | Project lead                            |
-| Move assessment project knowledge into Cube descriptions and skills (#5236)                                             | M3.1       | Project lead                            |
-| Per-user query counts for the adoption measure                                                                          | M3.2       | Project lead                            |
-| Assessments test-question set; automated reruns; a set per later domain                                                 | M3.3       | Project lead                            |
-| Write mart and cube build standards                                                                                     | M4.1       | Cube/mart lead                          |
-| Intro-to-the-marts session, then the Cube session (existing task)                                                       | M4.2       | Engineering reviewer and cube/mart lead |
-| Finish the cube/mart skill with the validation checks (#4314)                                                           | M4.3       | Cube/mart lead                          |
-| Train a second reviewer for mart and cube pull requests                                                                 | M4.4       | Engineering reviewer                    |
-| Assign analyst-built domains; track each analyst's first merged mart or cube                                            | M4.5       | Project lead                            |
-| Onboard the new analyst into mart and cube work; the project lead stands in until the hire                              | M4.6       | Project lead                            |
-| Drift rule; legacy-vs-Cube checks; review flag on legacy models with a mart counterpart                                 | M5.1, M5.2 | Not yet decided                         |
-| Guidance release cadence; data-change cadence; ownership after June                                                     | M5.3–M5.5  | Not yet decided                         |
+| Task                                                                                                                    | Milestone  | Owner role           |
+| ----------------------------------------------------------------------------------------------------------------------- | ---------- | -------------------- |
+| Send the revised charter; hold the sign-off conversation                                                                | M0         | Project lead         |
+| Approve this proposal; apply it                                                                                         | M0         | Project lead         |
+| Name domain owners: assessments and ops; then the rest                                                                  | M2.1       | Enablement lead      |
+| Draft and publish the support boundary; Zendesk intake and response-time targets                                        | M2.2       | Enablement lead      |
+| Write the pilot kit: session agenda, homework, feedback log, exit rule                                                  | M2.3       | Enablement lead      |
+| Run two sessions for cohort 2                                                                                           | M2.4       | Project lead         |
+| One launch task per domain (pilot, help article, training, announcement)                                                | M2.5       | Enablement lead      |
+| Communications calendar, office hours, Slack channel norms                                                              | M2.6       | Enablement lead      |
+| Onboarding plan for mid-year hires and summer PD                                                                        | M2.7       | Enablement lead      |
+| Confirm with the enablement lead, as Claude administrator, what an org plugin can carry; build it; test it; roll it out | M3.1       | Project lead         |
+| Move assessment project knowledge into Cube descriptions and skills (#5236)                                             | M3.1       | Project lead         |
+| Per-user query counts for the adoption measure                                                                          | M3.2       | Project lead         |
+| Assessments test-question set; automated reruns; a set per later domain                                                 | M3.3       | Project lead         |
+| Write mart and cube build standards                                                                                     | M4.1       | Cube/mart lead       |
+| Intro-to-the-marts session, then the Cube session (existing task)                                                       | M4.2       | Cube/mart lead       |
+| Finish the cube/mart skill with the validation checks (#4314)                                                           | M4.3       | Cube/mart lead       |
+| Train a second reviewer for mart and cube pull requests                                                                 | M4.4       | Engineering reviewer |
+| Assign analyst-built domains; track each analyst's first merged mart or cube                                            | M4.5       | Project lead         |
+| Onboard the new analyst into mart and cube work; the project lead stands in until the hire                              | M4.6       | Project lead         |
+| Drift rule; legacy-vs-Cube checks; review flag on legacy models with a mart counterpart                                 | M5.1, M5.2 | Not yet decided      |
+| Guidance release cadence; data-change cadence; ownership after June                                                     | M5.3–M5.5  | Not yet decided      |
 
 The analysis-limits skill goes in `Parking lot and outside the core set`, with
 no date.
