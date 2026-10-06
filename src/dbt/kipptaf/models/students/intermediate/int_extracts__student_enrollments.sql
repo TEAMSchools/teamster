@@ -114,7 +114,8 @@ with
             _dbt_source_project,
             enter_date,
 
-            -- PowerSchool stores a blank exit date as 1900-01-01
+            -- exit before entry is a blank exit date (stored as 1900-01-01) or a
+            -- typo; treat it as still open
             if(exit_date < enter_date, null, exit_date) as exit_date_or_open,
 
             least(
