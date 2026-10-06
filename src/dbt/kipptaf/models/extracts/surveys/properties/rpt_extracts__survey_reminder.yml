@@ -1,6 +1,43 @@
 models:
   - name: rpt_extracts__survey_reminder
-    config:
-      enabled: false
-      contract:
-        enforced: false
+    description:
+      Pending staff survey assignments for the current academic year, one row
+      per staff email and survey round, with the survey link for that person.
+      Read by the Dagster survey email reminder job, which sends each person one
+      email listing their links. Rows appear only while a survey window is open,
+      meaning at least one round other than the always-current Staff Info &
+      Certification Update (INFO) is current in the reporting terms sheet.
+      During an open window, a pending INFO assignment is included alongside the
+      windowed rounds.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - email
+              - survey
+              - survey_round
+          config:
+            severity: error
+    columns:
+      - name: email
+        data_type: string
+        description:
+          Work email address of the staff member the reminder goes to.
+        config:
+          meta:
+            contains_pii: true
+      - name: survey
+        data_type: string
+        description: Display name of the pending survey.
+      - name: survey_round
+        data_type: string
+        description:
+          Reporting terms code for the survey round, such as SUP1 or MGR1.
+      - name: link
+        data_type: string
+        description:
+          Survey link for this staff member. Prefilled with the person's details
+          for surveys that support it, and a shared link otherwise.
+        config:
+          meta:
+            contains_pii: true

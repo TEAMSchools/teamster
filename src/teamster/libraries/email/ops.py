@@ -1,9 +1,13 @@
+import time
+from collections import defaultdict
 from pathlib import Path
 
-from dagster import Config, OpExecutionContext, op
+from dagster import Config, Failure, OpExecutionContext, op
+from jinja2 import Environment, select_autoescape
+from requests import RequestException
 
 from teamster.core.utils.functions import chunk
-from teamster.libraries.email.resources import EmailResource
+from teamster.libraries.email.resources import EmailResource, GraphEmailResource
 
 
 class SendEmailOpConfig(Config):
@@ -34,3 +38,97 @@ def send_email_op(
             content_args=(config.text_body,),
             alternative_args=alternative_args,
         )
+
+
+class SendPersonalizedEmailOpConfig(Config):
+    """Config for `send_personalized_email_op`.
+
+    Attributes:
+        subject: Subject line for every email.
+        html_template_path: Path to a Jinja template for the HTML body.
+        messages_per_minute: Send rate cap. Exchange Online allows 30 messages
+            per minute per mailbox, Graph included, so the default leaves
+            headroom.
+        max_consecutive_failures: Stop the run after this many failed sends in
+            a row, which means the service or login is down rather than one bad
+            address.
+    """
+
+    subject: str
+    html_template_path: str
+    messages_per_minute: int = 25
+    max_consecutive_failures: int = 5
+
+
+def group_rows_by_email(rows: list[dict]) -> dict[str, list[dict]]:
+    """Group row dicts that each carry an `email` key into one list per email."""
+    grouped = defaultdict[str, list[dict]](list)
+
+    for row in rows:
+        grouped[row["email"]].append(row)
+
+    return dict(grouped)
+
+
+@op
+def send_personalized_email_op(
+    context: OpExecutionContext,
+    config: SendPersonalizedEmailOpConfig,
+    email: GraphEmailResource,
+    recipients: list[dict],
+) -> None:
+    """Send each recipient one email built from all of their rows.
+
+    `recipients` holds one dict per row with an `email` key. Rows sharing an
+    email are passed to the template as `items`, so a person with three pending
+    surveys gets one email listing all three.
+
+    A failed send is logged without the address and skipped. The op raises
+    `Failure` at the end if any send failed, or right away after
+    `max_consecutive_failures` failures in a row.
+    """
+    html_template = Environment(autoescape=select_autoescape()).from_string(
+        Path(config.html_template_path).read_text()
+    )
+
+    grouped = group_rows_by_email(recipients)
+    delay = 60 / config.messages_per_minute
+
+    context.log.info(f"Sending {len(grouped)} emails from {len(recipients)} rows")
+
+    sent = 0
+    failed = 0
+    consecutive_failures = 0
+
+    for i, (to_email, items) in enumerate(grouped.items(), start=1):
+        try:
+            email.send_mail(
+                to_email=to_email,
+                subject=config.subject,
+                html_body=html_template.render(items=items),
+            )
+        except RequestException as e:
+            failed += 1
+            consecutive_failures += 1
+            status = e.response.status_code if e.response is not None else None
+            context.log.warning(
+                f"Send {i} of {len(grouped)} failed: {type(e).__name__} {status}"
+            )
+
+            if consecutive_failures >= config.max_consecutive_failures:
+                raise Failure(
+                    description=(
+                        f"Stopped after {consecutive_failures} failed sends in a "
+                        f"row ({sent} sent, {len(grouped) - sent} not sent)"
+                    )
+                ) from e
+        else:
+            sent += 1
+            consecutive_failures = 0
+
+        time.sleep(delay)
+
+    context.log.info(f"Sent {sent} emails, {failed} failed")
+
+    if failed:
+        raise Failure(description=f"{failed} of {len(grouped)} sends failed")

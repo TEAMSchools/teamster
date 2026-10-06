@@ -1,0 +1,13 @@
+exposures:
+  - name: survey_reminder_emails
+    label: Survey Reminder Emails
+    type: application
+    owner:
+      name: Data Team
+    depends_on:
+      - ref("rpt_extracts__survey_reminder")
+    config:
+      meta:
+        dagster:
+          kinds:
+            - email

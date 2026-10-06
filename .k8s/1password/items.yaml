@@ -362,6 +362,14 @@ spec:
 apiVersion: onepassword.com/v1
 kind: OnePasswordItem
 metadata:
+  name: op-microsoft-graph-survey-reminders
+  namespace: dagster-cloud
+spec:
+  itemPath: vaults/Data Team/items/Microsoft Graph - Survey Reminders
+---
+apiVersion: onepassword.com/v1
+kind: OnePasswordItem
+metadata:
   name: op-knowbe4
   namespace: dagster-cloud
 spec:

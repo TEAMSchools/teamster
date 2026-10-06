@@ -435,26 +435,24 @@ locations:
                   secretKeyRef:
                     name: op-overgrad-api-kippnewark
                     key: credential
-              - name: OUTLOOK_HOST
+              - name: MICROSOFT_GRAPH_TENANT_ID
                 valueFrom:
                   secretKeyRef:
-                    name: op-outlook-pm
-                    key: host
-              - name: OUTLOOK_PORT
+                    name: op-microsoft-graph-survey-reminders
+                    key: tenant_id
+                    optional: true
+              - name: MICROSOFT_GRAPH_CLIENT_ID
                 valueFrom:
                   secretKeyRef:
-                    name: op-outlook-pm
-                    key: port
-              - name: OUTLOOK_USER
+                    name: op-microsoft-graph-survey-reminders
+                    key: client_id
+                    optional: true
+              - name: MICROSOFT_GRAPH_CLIENT_SECRET
                 valueFrom:
                   secretKeyRef:
-                    name: op-outlook-pm
-                    key: username
-              - name: OUTLOOK_PASSWORD
-                valueFrom:
-                  secretKeyRef:
-                    name: op-outlook-pm
-                    key: password
+                    name: op-microsoft-graph-survey-reminders
+                    key: client_secret
+                    optional: true
               - name: KNOWBE4_API_KEY
                 valueFrom:
                   secretKeyRef:
@@ -838,26 +836,24 @@ locations:
                   secretKeyRef:
                     name: op-overgrad-api-kippnewark
                     key: credential
-              - name: OUTLOOK_HOST
+              - name: MICROSOFT_GRAPH_TENANT_ID
                 valueFrom:
                   secretKeyRef:
-                    name: op-outlook-pm
-                    key: host
-              - name: OUTLOOK_PORT
+                    name: op-microsoft-graph-survey-reminders
+                    key: tenant_id
+                    optional: true
+              - name: MICROSOFT_GRAPH_CLIENT_ID
                 valueFrom:
                   secretKeyRef:
-                    name: op-outlook-pm
-                    key: port
-              - name: OUTLOOK_USER
+                    name: op-microsoft-graph-survey-reminders
+                    key: client_id
+                    optional: true
+              - name: MICROSOFT_GRAPH_CLIENT_SECRET
                 valueFrom:
                   secretKeyRef:
-                    name: op-outlook-pm
-                    key: username
-              - name: OUTLOOK_PASSWORD
-                valueFrom:
-                  secretKeyRef:
-                    name: op-outlook-pm
-                    key: password
+                    name: op-microsoft-graph-survey-reminders
+                    key: client_secret
+                    optional: true
               - name: KNOWBE4_API_KEY
                 valueFrom:
                   secretKeyRef:

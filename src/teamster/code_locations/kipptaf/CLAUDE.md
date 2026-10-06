@@ -27,6 +27,7 @@ LOCAL_TIMEZONE = ZoneInfo("America/New_York")
 | `overgrad`               | API assets                                                | —                | —                       |
 | `performance_management` | SFTP assets                                               | —                | —                       |
 | `smartrecruiters`        | report assets                                             | schedule         | —                       |
+| `surveys`                | op-based email job                                        | Mon/Wed/Fri 9am  | —                       |
 | `tableau`                | workbook refresh assets                                   | schedule         | —                       |
 | `zendesk`                | assets                                                    | schedule         | —                       |
 | `couchdrop`              | sensor only                                               | —                | sensor                  |
@@ -57,6 +58,23 @@ only) built from the manifest.
 
 `appsheet` and `sheets` produce `AssetSpec`s (external, sensor-driven) — not
 standard asset definitions.
+
+## `surveys` Module
+
+Op-based job, no assets: `bigquery_query_op` reads
+`kipptaf_extracts.rpt_extracts__survey_reminder`, then
+`send_personalized_email_op` sends each person one email with their own survey
+links. The model returns rows only while a survey window is open, so the
+schedule runs year-round and sends nothing between windows. Sends as
+performancemanagement@kippnj.org through Microsoft Graph (the
+`op-microsoft-graph-survey-reminders` secret, marked `optional` so a missing
+secret can't block the code server) and throttles to stay under Exchange
+Online's 30 messages per minute, so a full window run takes about an hour. The
+job sets `dagster/max_retries: 0`: a whole-run retry would re-email everyone
+already sent to.
+
+The email text, including the window name and dates, lives only in
+`surveys/template.html`. Update it for each survey round.
 
 ## Tableau Workbook Scheduling
 
