@@ -3,10 +3,11 @@ models:
     description: >-
       One row per student per date range per subject, lesson type, and domain,
       unpivoting the staging model's per-domain columns into completed, passed,
-      and percent_passed. Standard rows carry classic i-Ready lesson counts; Pro
-      rows carry i-Ready Pro skill counts. A domain row is dropped when all
-      three source values are null, so students appear only for domains with
-      data.
+      and percent_passed. Standard rows mostly carry classic i-Ready lesson
+      counts and Pro rows i-Ready Pro skill counts, but Standard
+      language_structures comes from the Pro export and Standard comprehension
+      and vocabulary can hold Pro values. A domain row is dropped when all three
+      source values are null, so students appear only for domains with data.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

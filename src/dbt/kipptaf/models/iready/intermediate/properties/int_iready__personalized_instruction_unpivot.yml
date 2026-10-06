@@ -3,9 +3,11 @@ models:
     description: >-
       One row per student per date range per subject, lesson type, and domain,
       unioning the NJ and Miami i-Ready Personalized Instruction unpivot models.
-      Standard rows carry classic i-Ready lesson counts; Pro rows carry i-Ready
-      Pro skill counts. Unlike the kipptaf staging model, student_id here is not
-      adjusted for Miami.
+      Standard rows mostly carry classic i-Ready lesson counts and Pro rows
+      i-Ready Pro skill counts, but Standard language_structures comes from the
+      Pro export and Standard comprehension and vocabulary can hold Pro values.
+      Unlike the kipptaf staging model, student_id here is not adjusted for
+      Miami.
     columns:
       - name: _dbt_source_relation
         data_type: string
@@ -42,17 +44,6 @@ models:
         description: >-
           Label for the date range this row covers, either a week or the year to
           date.
-      - name: school
-        data_type: string
-        description: >-
-          The school the student is rostered to in i-Ready, as reported in the
-          vendor export.
-      - name: student_grade
-        data_type: string
-        config:
-          meta:
-            contains_pii: true
-        description: The student's grade level, as reported by the vendor.
       - name: lesson_type
         data_type: string
         description: >-

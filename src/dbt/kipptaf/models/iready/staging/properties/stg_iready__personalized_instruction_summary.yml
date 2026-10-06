@@ -6,7 +6,6 @@ models:
       Summary staging models. Same columns as the district models, with
       student_id adjusted so Miami values from academic years through 2025 that
       lack the Focus prefix are shifted onto the network student number.
-      Materialized as a table.
     config:
       materialized: table
     columns:

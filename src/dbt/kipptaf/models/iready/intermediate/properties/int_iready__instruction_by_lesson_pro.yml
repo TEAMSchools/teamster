@@ -31,9 +31,9 @@ models:
           meta:
             contains_pii: true
         description: >-
-          Network student number. Miami rows through SY2025 carry the bare
-          pre-Focus number in the source; they are brought onto the
-          8400-prefixed Focus student number here.
+          Network student number. Miami rows with academic_year_int 2025 and
+          earlier carry the bare pre-Focus number in the source; they are
+          brought onto the 8400-prefixed Focus student number here.
       - name: subject
         data_type: string
         description: >-
@@ -83,8 +83,8 @@ models:
           meta:
             contains_pii: true
         description: >-
-          Total number of skills in the lesson. Vendor reports this separately
-          for Math skills and Reading foundational skills.
+          Total number of skills in the completed lesson. One column covers both
+          the vendor's Math skills and Reading foundational skills fields.
       - name: skills_successful
         data_type: int64
         config:
@@ -92,8 +92,8 @@ models:
             contains_pii: true
         description: >-
           Number of skills the student was successful on in the completed
-          lesson. Vendor reports this separately for Math skills and Reading
-          foundational skills.
+          lesson. One column covers both the vendor's Math skills and Reading
+          foundational skills fields.
       - name: completion_date
         data_type: date
         config:
@@ -114,9 +114,9 @@ models:
           meta:
             contains_pii: true
         description: >-
-          Percent of skills the student was successful on in the lesson. Vendor
-          reports this separately for Math skills and Reading foundational
-          skills.
+          Percent of skills the student was successful on in the lesson. One
+          column covers both the vendor's Math skills and Reading foundational
+          skills fields.
       - name: passed_or_not_passed_numeric
         data_type: float64
         config:
