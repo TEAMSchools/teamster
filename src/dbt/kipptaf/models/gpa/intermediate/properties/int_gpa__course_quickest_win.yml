@@ -1,0 +1,255 @@
+models:
+  - name: int_gpa__course_quickest_win
+    description: >-
+      Ranks each student's unlocked GPA courses by how cheaply a letter-grade
+      step can be bought this year: unweighted grade points gained at the next
+      letter times credit hours, divided by the percent-point gap between the
+      pace to that letter and the student's current term percent, floored at one
+      point. Courses below the student's target rank first. A course has no rank
+      when it is locked, when its next letter needs more than 100 percent, or
+      when the gap is zero or negative. Derived from full-year term weights, not
+      the current-term `need_next`, which over-ranks second-semester courses.
+    config:
+      meta:
+        contains_pii: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - studentid
+              - course_number
+              - _dbt_source_project
+    columns:
+      - name: quickest_win_rank
+        data_type: int64
+        description:
+          1 is the quickest win. NULL when the course does not qualify.
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 1
+                inclusive: true
+              config:
+                where: quickest_win_rank is not null
+      - name: studentid
+        data_type: int64
+      - name: schoolid
+        data_type: int64
+      - name: course_number
+        data_type: string
+      - name: course_name
+        data_type: string
+      - name: _dbt_source_project
+        data_type: string
+      - name: next_letter_grade
+        data_type: string
+        description: >-
+          Lowest unweighted letter with strictly more grade points than the
+          course's current unweighted Y1 points.
+      - name: next_cutoff_percent
+        data_type: float64
+      - name: next_grade_points
+        data_type: float64
+      - name: points_gained
+        data_type: float64
+      - name: pace_percent_to_next
+        data_type: float64
+        description: The pace formula with the next cutoff as target.
+      - name: need_gap
+        data_type: float64
+        description: >-
+          `pace_percent_to_next` minus the current term percent (or the Y1
+          percent before any term grade posts), floored at 1.
+      - name: score
+        data_type: float64
+
+unit_tests:
+  - name: unit_gpa_course_quickest_win
+    description: >-
+      Student 1 has four courses, all 100 total weight, 2000 banked, 75
+      remaining. C1 is at Y1 82 / B- (2.67), term 85, below target: next is B at
+      83, pace (8300 − 2000) / 75 = 84, gap max(84 − 85, 1) = 1, score 5 × 0.33
+      / 1 = 1.65, rank 1. C4 is at F (0.0) with term 40: next is B- at 80 (the
+      scale fixture has no D or C rows), pace (8000 − 2000) / 75 = 80, gap 40,
+      score 5 × 2.67 / 40 = 0.33, below target so rank 2. C2 is at Y1 88 / B+
+      (3.33), term 88, not below target 87: next A- at 90, pace (9000 − 2000) /
+      75 = 93.33, gap 5.33, score 5 × 0.34 / 5.33 = 0.32, rank 3. C3 is locked:
+      no rank. The B scale row appears twice, as the three-district union of the
+      lookup repeats every row, and no course may fan out.
+    model: int_gpa__course_quickest_win
+    overrides:
+      vars:
+        current_academic_year: 2025
+    given:
+      - input: ref('int_gpa__course_quarter_pace')
+        rows:
+          - {
+              studentid: 1,
+              schoolid: 101,
+              course_number: C1,
+              course_name: English,
+              _dbt_source_project: kippnewark,
+              potential_credit_hours: 5.0,
+              courses_gradescaleid_unweighted: 976,
+              target_cutoff_percent: 87.0,
+              y1_percent_current: 82.0,
+              y1_grade_points_unweighted_current: 2.67,
+              term_percent_current: 85.0,
+              total_weight: 100.0,
+              points_banked: 2000.0,
+              remaining_weight: 75.0,
+              pace_percent: 89.33,
+              is_below_target: true,
+              is_secured: false,
+              is_locked: false,
+            }
+          - {
+              studentid: 1,
+              schoolid: 101,
+              course_number: C2,
+              course_name: Biology,
+              _dbt_source_project: kippnewark,
+              potential_credit_hours: 5.0,
+              courses_gradescaleid_unweighted: 976,
+              target_cutoff_percent: 87.0,
+              y1_percent_current: 88.0,
+              y1_grade_points_unweighted_current: 3.33,
+              term_percent_current: 88.0,
+              total_weight: 100.0,
+              points_banked: 2000.0,
+              remaining_weight: 75.0,
+              pace_percent: 89.33,
+              is_below_target: false,
+              is_secured: false,
+              is_locked: false,
+            }
+          - {
+              studentid: 1,
+              schoolid: 101,
+              course_number: C3,
+              course_name: Health,
+              _dbt_source_project: kippnewark,
+              potential_credit_hours: 2.5,
+              courses_gradescaleid_unweighted: 976,
+              target_cutoff_percent: 87.0,
+              y1_percent_current: 72.0,
+              y1_grade_points_unweighted_current: 1.67,
+              term_percent_current: null,
+              total_weight: 100.0,
+              points_banked: 7200.0,
+              remaining_weight: 0.0,
+              pace_percent: null,
+              is_below_target: true,
+              is_secured: false,
+              is_locked: true,
+            }
+          - {
+              studentid: 1,
+              schoolid: 101,
+              course_number: C4,
+              course_name: Algebra,
+              _dbt_source_project: kippnewark,
+              potential_credit_hours: 5.0,
+              courses_gradescaleid_unweighted: 976,
+              target_cutoff_percent: 87.0,
+              y1_percent_current: 45.0,
+              y1_grade_points_unweighted_current: 0.0,
+              term_percent_current: 40.0,
+              total_weight: 100.0,
+              points_banked: 2000.0,
+              remaining_weight: 75.0,
+              pace_percent: 89.33,
+              is_below_target: true,
+              is_secured: false,
+              is_locked: false,
+            }
+      - input: ref('int_powerschool__gradescaleitem_lookup')
+        rows:
+          - {
+              gradescale_name: KIPP NJ 2019 (5-12) Unweighted,
+              letter_grade: A,
+              grade_points: 4.0,
+              min_cutoffpercentage: 93,
+            }
+          - {
+              gradescale_name: KIPP NJ 2019 (5-12) Unweighted,
+              letter_grade: A-,
+              grade_points: 3.67,
+              min_cutoffpercentage: 90,
+            }
+          - {
+              gradescale_name: KIPP NJ 2019 (5-12) Unweighted,
+              letter_grade: B+,
+              grade_points: 3.33,
+              min_cutoffpercentage: 87,
+            }
+          - {
+              gradescale_name: KIPP NJ 2019 (5-12) Unweighted,
+              letter_grade: B,
+              grade_points: 3.0,
+              min_cutoffpercentage: 83,
+            }
+          - {
+              gradescale_name: KIPP NJ 2019 (5-12) Unweighted,
+              letter_grade: B,
+              grade_points: 3.0,
+              min_cutoffpercentage: 83,
+            }
+          - {
+              gradescale_name: KIPP NJ 2019 (5-12) Unweighted,
+              letter_grade: B-,
+              grade_points: 2.67,
+              min_cutoffpercentage: 80,
+            }
+          - {
+              gradescale_name: KIPP NJ 2019 (5-12) Unweighted,
+              letter_grade: F,
+              grade_points: 0.0,
+              min_cutoffpercentage: 0,
+            }
+    expect:
+      rows:
+        - {
+            studentid: 1,
+            course_number: C1,
+            next_letter_grade: B,
+            next_cutoff_percent: 83.0,
+            points_gained: 0.33,
+            pace_percent_to_next: 84.0,
+            need_gap: 1.0,
+            score: 1.65,
+            quickest_win_rank: 1,
+          }
+        - {
+            studentid: 1,
+            course_number: C2,
+            next_letter_grade: A-,
+            next_cutoff_percent: 90.0,
+            points_gained: 0.34,
+            pace_percent_to_next: 93.33,
+            need_gap: 5.33,
+            score: 0.32,
+            quickest_win_rank: 3,
+          }
+        - {
+            studentid: 1,
+            course_number: C3,
+            next_letter_grade: null,
+            next_cutoff_percent: null,
+            points_gained: null,
+            pace_percent_to_next: null,
+            need_gap: null,
+            score: null,
+            quickest_win_rank: null,
+          }
+        - {
+            studentid: 1,
+            course_number: C4,
+            next_letter_grade: B-,
+            next_cutoff_percent: 80.0,
+            points_gained: 2.67,
+            pace_percent_to_next: 80.0,
+            need_gap: 40.0,
+            score: 0.33,
+            quickest_win_rank: 2,
+          }
