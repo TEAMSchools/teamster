@@ -122,7 +122,11 @@ validation/profiling goes through BigQuery MCP, not `dbt show`.
   `qualify row_number() over (...) = 1` to mask upstream duplicates, and never
   `DISTINCT` when a projected column varies within the partition (`min()`,
   `first_value()`) — use `dbt_utils.deduplicate()` (see _Row picking, dedup &
-  surrogate keys_) with a `-- TODO:` naming the upstream fix.
+  surrogate keys_) with a `-- TODO:` naming the upstream fix. When the upstream
+  already numbers rows at the grain you want (`rn_year` on the enrollment
+  models; check the model's `rn_*` columns first), filter on that column instead
+  of `DISTINCT`, even if you select only key columns. The `DISTINCT` hides which
+  row was meant, and the first non-key column added later picks one at random.
 - **No one-sided calculations in join predicates.** Any expression computable
   from a single table's columns is precomputed as a named column upstream — `ON`
   matches plain columns. Expressions that inherently combine columns from both

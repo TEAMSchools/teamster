@@ -289,10 +289,22 @@ models:
         data_type: int64
       - name: rn_all
         data_type: int64
+        description:
+          Stint order across all years, latest first. 1 is the student's most
+          recent enrollment. PowerSchool numbers within each district's
+          studentid, so a student enrolled in two districts has two 1s.
       - name: rn_year
         data_type: int64
+        description:
+          Stint order within the academic year, latest exit date first. Filter
+          on 1 to reduce this model to one row per student per year, instead of
+          select distinct. PowerSchool numbers within each district's studentid,
+          so a student enrolled in two districts in one year has two 1s.
       - name: rn_school
         data_type: int64
+        description:
+          Stint order within each school across years, latest first. Null for
+          Focus (Miami) enrollments.
       - name: grade_level_prev
         data_type: int64
       - name: yearid_prev
