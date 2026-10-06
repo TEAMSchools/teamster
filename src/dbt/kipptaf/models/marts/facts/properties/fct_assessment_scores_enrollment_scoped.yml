@@ -180,10 +180,11 @@ models:
         data_type: numeric
         description: >-
           Scale score achieved. Every source except Illuminate, which reports
-          percent_correct instead. Scales differ by source and are not
-          comparable across sources or subjects; within i-Ready the scale also
-          compresses at higher grades, so a change in score is not comparable
-          between elementary and middle grades.
+          percent_correct instead; also null on some i-Ready and DIBELS group
+          rows. Scales differ by source and are not comparable across sources or
+          subjects; within i-Ready the scale also compresses at higher grades,
+          so a change in score is not comparable between elementary and middle
+          grades.
 
       - name: percent_correct
         data_type: numeric
@@ -207,13 +208,13 @@ models:
           On Grade Level, Mid or Above Grade Level. DIBELS: Well Below
           Benchmark, Below Benchmark, At Benchmark, Above Benchmark, and Tested
           Out on some subtest (group) rows. STAR and FL state: Level 1 to Level
-          5; STAR is null on a share of rows. NJSLA and NJSLA Science: Did Not
-          Yet Meet Expectations, Partially Met Expectations, Approached
-          Expectations, Met Expectations, Exceeded Expectations. NJGPA:
-          Graduation Ready, Not Yet Graduation Ready. Illuminate: the
-          performance band label. Tier-movement rates are not comparable across
-          instruments: fewer, wider tiers mechanically raise the stayed-the-same
-          rate.
+          5; STAR is null on a share of rows. NJSLA: Did Not Yet Meet
+          Expectations, Partially Met Expectations, Approached Expectations, Met
+          Expectations, Exceeded Expectations. NJSLA Science: the same without
+          Partially Met Expectations. NJGPA: Graduation Ready, Not Yet
+          Graduation Ready. Illuminate: the performance band label.
+          Tier-movement rates are not comparable across instruments: fewer,
+          wider tiers mechanically raise the stayed-the-same rate.
 
       - name: is_mastery
         data_type: boolean
@@ -225,7 +226,8 @@ models:
           Exceeded Expectations; NJGPA, Graduation Ready; Illuminate, set by
           each assessment's band set, so an Illuminate rate mixes different
           bars. Null where the source gives no verdict: Illuminate not_taken
-          rows, DIBELS Tested Out subtests, and STAR rows with no level.
+          rows, DIBELS Tested Out subtests, STAR rows with no level, and a few
+          Illuminate and DIBELS rows with no band or level.
 
       # Lineage: custom_code (Illuminate standard rows), domain_name (i-Ready),
       # measure_standard (DIBELS). Also a surrogate-key discriminator for
@@ -237,9 +239,10 @@ models:
           Breakdown identifier — the standard code on Illuminate standard rows,
           the domain on i-Ready group rows, the subtest on DIBELS group rows.
           Null on Illuminate group rows and on every overall and not_taken row.
-          Some CCSS Math standards carry 2 spellings (8.EE.C.8.b and 8.EE.C.8b),
-          and a small share of older rows have an empty code (an empty string,
-          not null).
+          Some CCSS Math standards carry 2 spellings
+          (CCSS.Math.Content.8.EE.C.8.b and CCSS.Math.Content.8.EE.C.8b), and a
+          small share of older rows have an empty code (an empty string, not
+          null).
 
       # Lineage: an Illuminate standard's own description or its reporting-group
       # label, the rendered i-Ready domain name, or the DIBELS measure_name.
@@ -247,16 +250,17 @@ models:
         data_type: string
         description: >-
           Human-readable breakdown label. Populated on standard rows and every
-          group row; null on overall and not_taken. A few standards carry
-          whitespace variants of the same label.
+          group row; null on overall and not_taken. A few labels, on standard
+          and group rows, carry punctuation, capitalization or spacing variants
+          of the same text.
 
       - name: response_type_root_description
         data_type: string
         description: >-
-          CCSS domain the standard rolls up to. Populated only on Illuminate
-          standard rows that resolve a parent standard. Unreliable for
-          Illuminate content aligned to Florida's own standards, whose codes do
-          not fit the CCSS hierarchy.
+          CCSS domain the standard rolls up to. Populated on every Illuminate
+          standard row and null on every other row. Unreliable for Illuminate
+          content aligned to Florida's own standards, whose codes do not fit the
+          CCSS hierarchy.
 
       - name: is_replacement
         data_type: boolean
@@ -264,7 +268,9 @@ models:
           Illuminate-only flag. TRUE when a K-8 student sat a
           replacement-curriculum assessment off their enrolled grade level. Null
           for every other source (the state tests and the i-Ready, DIBELS and
-          STAR diagnostics), which have no replacement-curriculum concept.
+          STAR diagnostics), which have no replacement-curriculum concept. Never
+          TRUE here: no replacement-curriculum sitting resolves to a section
+          enrollment, so none survive enrollment scoping.
 
       - name: performance_band_label_number
         data_type: numeric

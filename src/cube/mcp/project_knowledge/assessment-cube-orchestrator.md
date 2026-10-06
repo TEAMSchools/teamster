@@ -173,11 +173,10 @@ leadership:
   proficient. Today those rows carry no verdict and sit outside `pct_proficient`
   entirely, which pulls the rate down on those subtests if tested-out students
   have mastered the skill
-- what the Illuminate module types `TP`, `ET` and `WPP` stand for (`UA` is Unit
-  Assessment). The titles suggest Test Prep, Exit Ticket and a Literacy writing
-  task. This is a documentation question for whoever maintains the Illuminate
-  assessments AppSheet app, not a policy one; until it is answered, do not
-  expand the codes
+
+- the default grain for a count or share question: assessment records or
+  distinct students
+- whether "top performing" means the highest level or the most movement
 
 Some members also name an open question in their `meta` text. For example,
 `academic_subject` says "which labels count as 'math' or 'ELA' across sources is
@@ -227,8 +226,7 @@ members' descriptions and `ai_context` in `meta`:
   Miami.
 - **Assessment hint.** `QA` / `MQQ` / `CRQ` implies the internal (Illuminate)
   family; i-Ready, DIBELS, or STAR each map to a vendor diagnostic; NJSLA /
-  NJGPA implies NJ state; FAST / EOC implies FL state. Select a source with
-  `assessment_type`, not `is_internal_assessment`.
+  NJGPA implies NJ state; FAST / EOC implies FL state.
 - **If the family is ambiguous, ask before querying** — do not guess and query
   anyway.
 

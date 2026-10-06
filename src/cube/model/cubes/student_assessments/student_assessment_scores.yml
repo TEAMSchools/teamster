@@ -45,19 +45,19 @@ cubes:
 
       - name: date_taken
         description: >-
-          Date the assessment was taken (completion date). Every source; null or
-          wrong on a small share of Illuminate rows.
+          Date the assessment was taken (completion date). Every source. Null on
+          every Illuminate not_taken row, and null or wrong on a small share of
+          other Illuminate rows.
         sql: CAST(test_date_key AS TIMESTAMP)
         type: time
         public: true
         meta:
           ai_context: >-
-            A standalone date, not joined to the calendar, and not to find the
-            most recent diagnostic: that is the latest named round in
-            administration_period. For year and calendar rollups use date_day
-            and academic_year, which read the administration date for Illuminate
-            and college and the test date for state tests and vendor diagnostics
-            (i-Ready, DIBELS, STAR).
+            A standalone date, not joined to the calendar. Do not use it to find
+            the most recent diagnostic; administration_period covers that. For
+            year and calendar rollups use date_day and academic_year, which read
+            the administration date for Illuminate and college and the test date
+            for state tests and vendor diagnostics (i-Ready, DIBELS, STAR).
 
       - name: term_key
         description: FK to terms — the reporting quarter containing the score.
@@ -83,13 +83,13 @@ cubes:
           On Grade Level, Mid or Above Grade Level. DIBELS: Well Below
           Benchmark, Below Benchmark, At Benchmark, Above Benchmark, and Tested
           Out on some subtest (group) rows. STAR and FL state: Level 1 to Level
-          5; STAR is null on a share of rows. NJSLA and NJSLA Science: Did Not
-          Yet Meet Expectations, Partially Met Expectations, Approached
-          Expectations, Met Expectations, Exceeded Expectations. NJGPA:
-          Graduation Ready, Not Yet Graduation Ready. Illuminate: the
-          performance band label. Tier-movement rates are not comparable across
-          instruments: fewer, wider tiers mechanically raise the stayed-the-same
-          rate.
+          5; STAR is null on a share of rows. NJSLA: Did Not Yet Meet
+          Expectations, Partially Met Expectations, Approached Expectations, Met
+          Expectations, Exceeded Expectations. NJSLA Science: the same without
+          Partially Met Expectations. NJGPA: Graduation Ready, Not Yet
+          Graduation Ready. Illuminate: the performance band label.
+          Tier-movement rates are not comparable across instruments: fewer,
+          wider tiers mechanically raise the stayed-the-same rate.
         sql: proficiency_level
         type: string
         public: true
@@ -131,7 +131,8 @@ cubes:
           Exceeded Expectations; NJGPA, Graduation Ready; Illuminate, set by
           each assessment's band set, so an Illuminate rate mixes different
           bars. Null where the source gives no verdict: Illuminate not_taken
-          rows, DIBELS Tested Out subtests, and STAR rows with no level.
+          rows, DIBELS Tested Out subtests, STAR rows with no level, and a few
+          Illuminate and DIBELS rows with no band or level.
         sql: is_mastery
         type: boolean
         public: true
@@ -144,10 +145,11 @@ cubes:
       - name: scale_score
         description: >-
           Scale score achieved. Every source except Illuminate, which reports
-          percent_correct instead. Scales differ by source and are not
-          comparable across sources or subjects; within i-Ready the scale also
-          compresses at higher grades, so a change in score is not comparable
-          between elementary and middle grades.
+          percent_correct instead; also null on some i-Ready and DIBELS group
+          rows. Scales differ by source and are not comparable across sources or
+          subjects; within i-Ready the scale also compresses at higher grades,
+          so a change in score is not comparable between elementary and middle
+          grades.
         sql: scale_score
         type: number
         public: true
@@ -187,9 +189,10 @@ cubes:
           Breakdown identifier — the standard code on Illuminate standard rows,
           the domain on i-Ready group rows, the subtest on DIBELS group rows.
           Null on Illuminate group rows and on every overall and not_taken row.
-          Some CCSS Math standards carry 2 spellings (8.EE.C.8.b and 8.EE.C.8b),
-          and a small share of older rows have an empty code (an empty string,
-          not null).
+          Some CCSS Math standards carry 2 spellings
+          (CCSS.Math.Content.8.EE.C.8.b and CCSS.Math.Content.8.EE.C.8b), and a
+          small share of older rows have an empty code (an empty string, not
+          null).
         sql: response_type_code
         type: string
         public: true
@@ -197,27 +200,28 @@ cubes:
           ai_context: >-
             For a standards rollup, merge the 2 spellings first: remove a dot
             only when it sits right before a trailing lowercase letter. Then
-            recompute the rate from the merged counts (pct_proficient ×
-            count_scored, summed, over summed count_scored); never average the 2
-            reported rates. For an Illuminate group-level cut, group on
-            response_type_description — this code is null there, so keying on it
-            drops every Illuminate group row and keeps i-Ready and DIBELS.
+            recompute the rate from the merged counts (summed count_proficient
+            over summed count_scored); never average the 2 reported rates. For
+            an Illuminate group-level cut, group on response_type_description —
+            this code is null there, so keying on it drops every Illuminate
+            group row and keeps i-Ready and DIBELS.
 
       - name: response_type_description
         description: >-
           Human-readable breakdown label. Populated on standard rows and every
-          group row; null on overall and not_taken. A few standards carry
-          whitespace variants of the same label.
+          group row; null on overall and not_taken. A few labels, on standard
+          and group rows, carry punctuation, capitalization or spacing variants
+          of the same text.
         sql: response_type_description
         type: string
         public: true
 
       - name: response_type_root_description
         description: >-
-          CCSS domain the standard rolls up to. Populated only on Illuminate
-          standard rows that resolve a parent standard. Unreliable for
-          Illuminate content aligned to Florida's own standards, whose codes do
-          not fit the CCSS hierarchy.
+          CCSS domain the standard rolls up to. Populated on every Illuminate
+          standard row and null on every other row. Unreliable for Illuminate
+          content aligned to Florida's own standards, whose codes do not fit the
+          CCSS hierarchy.
         sql: response_type_root_description
         type: string
         public: true
@@ -227,7 +231,9 @@ cubes:
           Illuminate-only flag. TRUE when a K-8 student sat a
           replacement-curriculum assessment off their enrolled grade level. Null
           for every other source (the state tests and the i-Ready, DIBELS and
-          STAR diagnostics), which have no replacement-curriculum concept.
+          STAR diagnostics), which have no replacement-curriculum concept. Never
+          TRUE here: no replacement-curriculum sitting resolves to a section
+          enrollment, so none survive enrollment scoping.
         sql: is_replacement
         type: boolean
         public: true
@@ -263,7 +269,9 @@ cubes:
           not_taken placeholders. Only Illuminate records non-participation, so
           for every other source this equals count_assigned. Wider than
           count_scored, because a sat assessment can carry no proficiency
-          verdict: STAR rows with no level, and DIBELS Tested Out subtests.
+          verdict: STAR rows with no level (Early Literacy and nearly all
+          kindergarten, where STAR publishes no benchmark), and DIBELS Tested
+          Out subtests.
         type: count
         public: true
         filters:
@@ -378,8 +386,9 @@ cubes:
       - name: pct_proficient
         description: >-
           Proficiency rate: proficient scores / scores carrying a verdict
-          (count_scored). The headline metric, and the only score measure
-          comparable across sources' incompatible scales.
+          (count_scored). The headline metric, and the only score measure on a
+          common 0-to-1 scale across sources; the mastery bar behind it differs
+          by source.
         sql: "1.0 * {_sum_proficient} / NULLIF({count_scored}, 0)"
         type: number
         format: percent
@@ -476,10 +485,9 @@ cubes:
       - name: pct_proficient_formative
         description: >-
           Proficiency rate across the QA, MQQ and CRQ module types only;
-          excludes TP, UA, ET and WPP, about a third of module-coded Illuminate
-          scores. Its denominator counts only rows with a proficiency verdict,
-          as in pct_proficient. CRQ is also available alone as
-          pct_proficient_crq.
+          excludes every other module type (TP, UA, ET, WPP and older types).
+          Its denominator counts only rows with a proficiency verdict, as in
+          pct_proficient. CRQ is also available alone as pct_proficient_crq.
         sql:
           "1.0 * {_sum_proficient_formative} / NULLIF({_count_scored_formative},
           0)"

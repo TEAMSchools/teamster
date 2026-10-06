@@ -118,6 +118,9 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--reps", type=int, default=DEFAULT_REPS)
     p.add_argument("--concurrency", type=int, default=DEFAULT_CONCURRENCY)
     p.add_argument("--limit", type=int, default=0, help="cap prompts (0 = all)")
+    p.add_argument(
+        "--prompt-ids", nargs="+", default=None, help="run only these prompt ids"
+    )
     p.add_argument("--out", type=Path, default=DEFAULT_OUT)
     p.add_argument("--dry-run", action="store_true", help="no model calls")
     p.add_argument(
@@ -179,17 +182,33 @@ def _shaped_rows(query: dict[str, Any]) -> dict[str, Any]:
     return {"data": rows[:24]}
 
 
+def _empty_rows(query: dict[str, Any]) -> dict[str, Any]:
+    """An empty slice in Cube's shape: no rows when the query groups by a
+    dimension or a time grain, else 1 row with a null per measure."""
+    grains = [
+        t.get("granularity")
+        for t in query.get("timeDimensions") or []
+        if isinstance(t, dict)
+    ]
+    if query.get("dimensions") or any(grains):
+        return {"data": []}
+    return {"data": [{m: None for m in query.get("measures") or []}]}
+
+
 def _stub_load(query: Any, arm: dict[str, Any], server: Any) -> dict[str, Any]:
     """Canned load result: attendance rows for the crosswalk families; for the
-    assessment view, 0 rows on a Paterson query (with the server's empty-result
-    note on drained arms only) and a fixed rate otherwise."""
+    assessment view, an empty slice on a Paterson query (with the server's
+    empty-result note on drained arms only) and rows shaped by the query
+    otherwise (`_shaped_rows`)."""
     if not isinstance(
         query, dict
     ) or "student_assessment_scores_view" not in json.dumps(query):
         return _LOAD_RESULT
     if traps.is_paterson_query(query):
-        empty: dict[str, Any] = {"data": []}
-        return server._with_empty_result_note(empty) if arm.get("empty_note") else empty
+        empty = _empty_rows(query)
+        if arm.get("empty_note"):
+            return server._with_empty_result_note(empty, query)
+        return empty
     return _shaped_rows(query)
 
 
@@ -267,6 +286,9 @@ async def run_one(
     tool_calls: list[str] = []  # every tool name, in order — to diagnose loops
     text_parts: list[str] = []
     error: str | None = None
+    # "success", or "error_max_turns" / "error_during_execution" etc. The CLI
+    # reports the turn limit here before the SDK raises on the exit.
+    subtype: str | None = None
     usage: dict[str, Any] = {}
     cost_usd: float | None = None
     num_turns: int | None = None
@@ -286,6 +308,7 @@ async def run_one(
                 if message.result:
                     text_parts.append(message.result)
                 usage = message.usage or {}
+                subtype = message.subtype
                 cost_usd = message.total_cost_usd
                 num_turns = message.num_turns
                 duration_ms = message.duration_ms
@@ -297,6 +320,7 @@ async def run_one(
         "tool_calls": tool_calls,
         "final_text": "\n".join(text_parts),
         "error": error,
+        "subtype": subtype,
         "input_tokens": usage.get("input_tokens"),
         "output_tokens": usage.get("output_tokens"),
         "cache_read_tokens": usage.get("cache_read_input_tokens"),
@@ -354,12 +378,14 @@ async def sweep(
         )
     semaphore = asyncio.Semaphore(concurrency)
 
+    # Arm innermost: a session limit mid-sweep then cuts every arm at about the
+    # same prompt, instead of dropping whole prompts from the last arm only.
     jobs = [
         (model, arm_name, prompt, rep)
         for model in models
-        for arm_name in arm_names
         for prompt in prompts
         for rep in range(reps)
+        for arm_name in arm_names
     ]
     print(
         f"running {len(jobs)} conversations via Claude Agent SDK "
@@ -427,11 +453,19 @@ def main() -> None:
 
     if args.smoke:
         prompts = prompts[:1]
-        args.arms = ["B_descriptions"]
+        # The assessment prompts need a family 4 arm's catalog, not the
+        # attendance stub.
+        assessment = args.prompts == "prompts_assessment.yaml"
+        args.arms = ["B4_post" if assessment else "B_descriptions"]
         args.models = args.models[:1]
         args.reps = 1
     if args.limit:
         prompts = prompts[: args.limit]
+    if args.prompt_ids:
+        unknown = set(args.prompt_ids) - {p["id"] for p in prompts}
+        if unknown:
+            raise SystemExit(f"unknown prompt ids: {sorted(unknown)}")
+        prompts = [p for p in prompts if p["id"] in args.prompt_ids]
 
     if args.dry_run:
         do_dry_run(arm_defs, args.arms, prompts)

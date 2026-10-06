@@ -555,24 +555,72 @@ def test_empty_load_result_gets_a_note(monkeypatch: pytest.MonkeyPatch) -> None:
     # The check it asks for must be runnable when nothing came back.
     assert "re-run without the narrowing filter" in server.EMPTY_RESULT_NOTE
 
+    async def null_row(*args: object, **kwargs: object) -> dict[str, Any]:
+        del args, kwargs
+        return {"data": [{"x.count": None}]}
+
+    # load hands the query through, so the measure-only null row is caught.
+    monkeypatch.setattr(server, "_request", null_row)
+    out = asyncio.run(server.load(MagicMock(), {"measures": ["x.count"]}))
+    assert out["note"] == server.EMPTY_RESULT_NOTE
+
 
 def test_multi_query_results_get_the_note_per_empty_result(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     server = _load_server(monkeypatch)
     payload = {"results": [{"data": []}, {"data": [{"x.count": "3"}]}]}
-    out = server._with_empty_result_note(payload)
+    out = server._with_empty_result_note(payload, {"measures": ["x.count"]})
     assert out["results"][0]["note"] == server.EMPTY_RESULT_NOTE
     assert "note" not in out["results"][1]
     assert "note" not in out
+
+
+def test_measure_only_query_over_an_empty_slice_gets_the_note(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Cube answers a measure-only query over an empty slice with 1 row of
+    # nulls (verified live), or 0 for a plain count, not with `data: []`.
+    server = _load_server(monkeypatch)
+    query = {"measures": ["x.count_scored", "x.pct_proficient"]}
+    nulls = {"data": [{"x.count_scored": None, "x.pct_proficient": None}]}
+    assert server._with_empty_result_note(nulls, query)["note"] == (
+        server.EMPTY_RESULT_NOTE
+    )
+    for zero in ("0", 0):
+        zeros = {"data": [{"x.count_scored": zero, "x.pct_proficient": None}]}
+        assert "note" in server._with_empty_result_note(zeros, query)
+    # The same row under a time dimension with no grain is still ungrouped.
+    dated = query | {"timeDimensions": [{"dimension": "x.date", "dateRange": "today"}]}
+    assert "note" in server._with_empty_result_note(nulls, dated)
 
 
 def test_non_empty_and_non_result_payloads_are_untouched(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     server = _load_server(monkeypatch)
+    query = {"measures": ["x.count"]}
     rows = {"data": [{"x.count": "3"}]}
-    assert "note" not in server._with_empty_result_note(dict(rows))
+    assert "note" not in server._with_empty_result_note(dict(rows), query)
     error = {"error": "Continue wait"}
-    assert server._with_empty_result_note(dict(error)) == error
-    assert server._with_empty_result_note({"data": None}) == {"data": None}
+    assert server._with_empty_result_note(dict(error), query) == error
+    assert server._with_empty_result_note({"data": None}, query) == {"data": None}
+
+
+def test_a_grouped_single_row_is_not_empty(monkeypatch: pytest.MonkeyPatch) -> None:
+    server = _load_server(monkeypatch)
+    grouped = {"measures": ["x.count"], "dimensions": ["x.region"]}
+    newark = {"data": [{"x.region": "Newark", "x.count": "0"}]}
+    assert "note" not in server._with_empty_result_note(newark, grouped)
+    # A real group whose dimension value is null: only the query tells it
+    # apart from Cube's empty-slice row.
+    unset = {"data": [{"x.region": None, "x.count": "0"}]}
+    assert "note" not in server._with_empty_result_note(unset, grouped)
+    by_month = {
+        "measures": ["x.count"],
+        "timeDimensions": [{"dimension": "x.date", "granularity": "month"}],
+    }
+    assert "note" not in server._with_empty_result_note(unset, by_month)
+    # Two rows are never the empty-slice shape.
+    two = {"data": [{"x.count": None}, {"x.count": None}]}
+    assert "note" not in server._with_empty_result_note(two, {"measures": ["x.count"]})

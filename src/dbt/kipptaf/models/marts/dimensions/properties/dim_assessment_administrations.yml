@@ -97,8 +97,9 @@ models:
           outside the 3 windows. STAR: Fall, Winter, Spring. NJGPA: Fall (the
           routine retake window) and Spring. NJSLA and NJSLA Science: Spring. FL
           FAST: PM1 to PM3; FL end-of-course and science: PM3. College: the
-          College Board round. Null for Illuminate and AP. i-Ready and DIBELS
-          EOY falls after spring state testing; MOY is the last named round
+          sitting's month and 2-digit year (for example Apr 24), for SAT, ACT
+          and PSAT. Null for Illuminate and AP. i-Ready EOY falls after spring
+          state testing and DIBELS EOY overlaps it; MOY is the last named round
           before it.
 
       # A discriminator within the administration hash, so region-specific

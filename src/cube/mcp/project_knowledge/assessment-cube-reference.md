@@ -11,10 +11,9 @@ band sets. #5573 adds band-set members to Cube and deletes this file.
 ## Illuminate performance band sets (interim)
 
 `performance_band_label_number` means something only inside the band set its
-assessment points at. Band sets differ in cut points, in band count, and in
-which band starts mastery, so never compare or pool band numbers across
-assessments. This table describes the band scale for `overall` rows; `standard`
-and `group` rows may use a different one.
+assessment points at; its Cube description covers how to compare band numbers.
+This table describes the band scale for `overall` rows; `standard` and `group`
+rows may use a different one.
 
 The most-used configurations:
 
@@ -33,9 +32,7 @@ The most-used configurations:
 | AP4A/CCRS General                                        | 0 / 21 / 41 / 61 / 81      | every band     |
 
 - Cut points are percent correct for most sets, but not all: a CKLA fluency set
-  cuts at 4.7 to 44.9, and practice SAT and ACT sets carry 27 to 53 bands.
+  cuts at 4.7 to 44.9, and practice SAT and ACT sets carry 27 to 55 bands.
 - The same cut points do not imply the same mastery band: CIAs for non-AP
   courses share KIPP Performance Levels' cut points and start mastery at band 5,
   not 4.
-- An Illuminate `pct_proficient` therefore mixes different bars. Say which
-  assessments a rate covers.

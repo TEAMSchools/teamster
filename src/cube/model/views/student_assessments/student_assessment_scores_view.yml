@@ -5,7 +5,8 @@ views:
       vendor diagnostics (i-Ready, DIBELS, STAR), one row per student x
       assessment x administration x response type. Enrollment-scoped: a score
       appears only if it resolves to a section enrollment. pct_proficient is the
-      source-agnostic headline; scale_score is null for Illuminate rows and
+      headline, on a common scale across sources, though the mastery bar behind
+      it differs by source; scale_score is null for Illuminate rows and
       percent_correct is null for every other source. response_type splits
       scores into overall, standard and group rows: standard is Illuminate only,
       and group covers Illuminate, i-Ready and DIBELS. There is no growth
@@ -182,12 +183,13 @@ views:
         calibration difference until shown otherwise: report both rates side by
         side and flag it rather than presenting an achievement gap. Any growth
         figure is analyst-built; say so. Students can sit a diagnostic more than
-        once in a window, mostly i-Ready. Repeat sittings inflate pct_proficient
-        and count_scored (count_students is already distinct); de-duplicate them
-        before a student-level rate, and since which sitting counts is an open
-        decision, say which you kept. A missing current-year state result is a
-        release lag, not a defect. Query this view, not upstream i-Ready tables,
-        which carry re-pull duplicates. A CCSS code's own grade can differ from
+        once in a window, mostly i-Ready. Repeat sittings inflate count_scored
+        and pull pct_proficient down, because retakes score lower
+        (count_students is already distinct); de-duplicate them before a
+        student-level rate, and since which sitting counts is an open decision,
+        say which you kept. A missing current-year state result is a release
+        lag, not a defect. Query this view, not upstream i-Ready tables, which
+        carry re-pull duplicates. A CCSS code's own grade can differ from
         grade_level_tested; that is spiral review, not an error.
       folders:
         - name: Assessment

@@ -1,7 +1,9 @@
 """Unit tests for eval family 4 (src/cube/mcp/eval): traps, scoring, arms and stub."""
 
+import asyncio
 import shutil
 import sys
+import types
 from pathlib import Path
 
 import pytest
@@ -69,6 +71,17 @@ def test_module_code_without_subject():
         ],
         "",
     )
+    # A subject in another query does not scope this one.
+    assert fired(
+        [
+            q(filters=[f("module_code", values=["QA3"])]),
+            q(
+                measures=[f"{V}.pct_proficient"],
+                dimensions=[f"{V}.academic_subject"],
+            ),
+        ],
+        "",
+    )
 
 
 def test_internal_flag_for_source():
@@ -84,6 +97,23 @@ def test_formative_alone():
     assert fired([q(measures=[f"{V}.pct_proficient_formative"])], "")
     assert not fired(
         [q(measures=[f"{V}.pct_proficient"], dimensions=[f"{V}.module_type"])], ""
+    )
+    # module_type in another query does not split this one.
+    assert fired(
+        [
+            q(measures=[f"{V}.pct_proficient_formative"]),
+            q(measures=[f"{V}.count_scored"], dimensions=[f"{V}.module_type"]),
+        ],
+        "",
+    )
+    assert not fired(
+        [
+            q(
+                measures=[f"{V}.pct_proficient_formative"],
+                dimensions=[f"{V}.module_type"],
+            )
+        ],
+        "",
     )
 
 
@@ -113,6 +143,30 @@ def test_paterson_zero_as_failure_reads_the_answer():
     # "coverage" alone is not a coverage report.
     assert fired([], "Coverage looks fine, and Paterson scored 0%.")
     assert fired([], "Coverage is missing for Newark math. Paterson scored 0%.")
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Paterson's i-Ready math proficiency was 0% - no students reached grade "
+        "level on i-Ready.",
+        "Paterson is missing the mark on i-Ready: 0% proficient.",
+    ],
+)
+def test_paterson_zero_read_as_a_result_fires(text):
+    assert traps.TRAPS["paterson_zero_as_failure"]([], text)
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Paterson schools do not administer i-Ready.",
+        "Paterson doesn't use i-Ready.",
+        "i-Ready isn't used in Paterson.",
+    ],
+)
+def test_paterson_not_using_iready_does_not_fire(text):
+    assert not traps.TRAPS["paterson_zero_as_failure"]([], text)
 
 
 def test_is_paterson_query_matches_only_paterson():
@@ -191,6 +245,54 @@ def test_aggregate_drops_harness_errors_but_keeps_turn_limits():
     assert cell["n_trap"] == 2
     assert cell["trap_rate"][0] == 0.5
     assert cell["n_unscored"] == 1
+
+
+def test_turn_limit_reads_the_sdk_subtype_before_the_error_text():
+    base = {"model": "sonnet", "arm": "C4_skill", "family": 4, "trap": "t"}
+    base |= {"ground_truth_start": None, "trap_fired": True, "error": "boom"}
+    recs = [
+        base | {"id": "a", "subtype": "error_max_turns"},
+        # A session limit can end on a "success" result with an error raised.
+        base | {"id": "b", "subtype": "success"},
+        base | {"id": "c", "subtype": "error_during_execution"},
+    ]
+    cell = scorer.aggregate(recs)[("sonnet", "C4_skill")]
+    assert cell["n_trap"] == 1
+    assert cell["n_unscored"] == 2
+
+
+def test_trap_rate_covers_only_prompts_every_arm_scored():
+    def rec(arm, pid, fired, error=None):
+        return {
+            "model": "haiku",
+            "arm": arm,
+            "id": pid,
+            "family": 4,
+            "trap": "t",
+            "trap_fired": fired,
+            "ground_truth_start": None,
+            "error": error,
+        }
+
+    cutoff = "You've hit your session limit"
+    recs = [
+        rec("A4_pre", "p1", True),
+        rec("A4_pre", "p2", False),
+        rec("B4_post", "p1", True),
+        # B4_post lost p2 to the session limit: A4_pre's p2 must not count.
+        rec("B4_post", "p2", True, error=cutoff),
+        # Another model's arms are compared among themselves only.
+        rec("A4_pre", "p2", False) | {"model": "sonnet"},
+    ]
+    summary = scorer.aggregate(recs)
+    pre, post = summary[("haiku", "A4_pre")], summary[("haiku", "B4_post")]
+    assert pre["trap_rate"][0] == post["trap_rate"][0] == 1.0
+    assert pre["k_trap"] == post["k_trap"] == 1
+    assert pre["k_dropped"] == 1 and post["k_dropped"] == 0
+    assert post["n_unscored"] == 1
+    assert summary[("sonnet", "A4_pre")]["k_trap"] == 1
+    table = scorer.format_summary(summary)
+    assert "drop" in table.splitlines()[0]
 
 
 def test_a_query_trap_with_no_view_query_is_not_scored():
@@ -345,6 +447,59 @@ def test_assessment_arms_differ_only_where_intended():
     assert "Session log" not in built["C4_skill"]["instructions"]
 
 
+def test_compile_failure_surfaces_stderr(monkeypatch):
+    def failing_run(*args, **kwargs):
+        raise arms.subprocess.CalledProcessError(
+            1, args[0], output="", stderr="Error: unknown member foo"
+        )
+
+    monkeypatch.setattr(arms.subprocess, "run", failing_run)
+    with pytest.raises(RuntimeError, match="unknown member foo"):
+        arms.load_assessment_meta("post")
+
+
+def test_jobs_interleave_arms_within_each_prompt(monkeypatch, tmp_path):
+    """A sweep cut short by a session limit must cut every arm at about the
+    same prompt, so the arm varies fastest."""
+    order = []
+
+    async def fake_run_one(**kwargs):
+        order.append((kwargs["prompt"], kwargs["instructions"]))
+        return {"load_queries": [], "final_text": ""}
+
+    # claude-agent-sdk is a runtime --with dep; stand in for its one import.
+    sdk = types.ModuleType("claude_agent_sdk")
+    sdk.__dict__["create_sdk_mcp_server"] = lambda **kw: None
+    monkeypatch.setitem(sys.modules, "claude_agent_sdk", sdk)
+    monkeypatch.setattr(run_eval_cc, "run_one", fake_run_one)
+    monkeypatch.setattr(run_eval_cc, "_make_tools", lambda *a: {})
+    monkeypatch.setattr(run_eval_cc, "_arm_tool_names", lambda name: [])
+    arm_defs = {a: {"instructions": a} for a in ("A4_pre", "B4_post")}
+    prompts = [
+        {"id": p, "family": 4, "trap": "formative_alone", "prompt": p}
+        for p in ("p1", "p2")
+    ]
+    asyncio.run(
+        run_eval_cc.sweep(
+            arm_defs=arm_defs,
+            arm_names=["A4_pre", "B4_post"],
+            models=["haiku"],
+            prompts=prompts,
+            reps=1,
+            concurrency=1,
+            tool_desc_by_arm={a: {} for a in arm_defs},
+            out_path=tmp_path / "out.jsonl",
+            server=None,
+        )
+    )
+    assert order == [
+        ("p1", "A4_pre"),
+        ("p1", "B4_post"),
+        ("p2", "A4_pre"),
+        ("p2", "B4_post"),
+    ]
+
+
 def test_strip_sentences_raises_when_a_sentence_is_missing():
     with pytest.raises(RuntimeError):
         arms._strip_sentences("some docstring", ["a sentence that is not there"])
@@ -373,11 +528,20 @@ def test_stub_load_empties_paterson_and_notes_it_only_on_drained_arms():
     newark = q(
         measures=[f"{V}.pct_proficient"], filters=[f("region_name", values=["Newark"])]
     )
+    # Measure-only: Cube's empty slice is 1 row of nulls, one key per measure.
+    null_row = {"data": [{f"{V}.pct_proficient": None}]}
     drained = run_eval_cc._stub_load(paterson, {"empty_note": True}, server)
-    assert drained["data"] == [] and drained["note"] == server.EMPTY_RESULT_NOTE
+    assert drained == null_row | {"note": server.EMPTY_RESULT_NOTE}
     pre = run_eval_cc._stub_load(paterson, {"empty_note": False}, server)
+    assert pre == null_row
+    # Grouped by a dimension: no rows.
+    by_subject = paterson | {"dimensions": [f"{V}.academic_subject"]}
+    drained = run_eval_cc._stub_load(by_subject, {"empty_note": True}, server)
+    assert drained["data"] == [] and drained["note"] == server.EMPTY_RESULT_NOTE
+    pre = run_eval_cc._stub_load(by_subject, {"empty_note": False}, server)
     assert pre == {"data": []}
     assert run_eval_cc._stub_load(newark, {"empty_note": True}, server)["data"]
+    assert "note" not in run_eval_cc._stub_load(newark, {"empty_note": True}, server)
     attendance = {
         "measures": ["student_attendance_enrollment_daily_view.count_students"]
     }

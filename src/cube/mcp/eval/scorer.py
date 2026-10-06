@@ -96,6 +96,7 @@ def score_record(prompt: dict[str, Any], result: dict[str, Any]) -> dict[str, An
             ),
             "n_view_queries": len(view_queries),
             "error": result.get("error"),
+            "subtype": result.get("subtype"),
         }
     gt = prompt.get("ground_truth_start")
     family = prompt["family"]
@@ -241,13 +242,37 @@ def _beta_continued_fraction(a: float, b: float, x: float) -> float:
     return h
 
 
+def _hit_turn_limit(rec: dict[str, Any]) -> bool:
+    """The SDK result subtype; records saved before it was captured fall back
+    to the CLI's error text."""
+    if rec.get("subtype") is not None:
+        return rec["subtype"] == "error_max_turns"
+    return "maximum number of turns" in str(rec.get("error") or "")
+
+
 def _trap_scorable(rec: dict[str, Any]) -> bool:
-    error = rec.get("error")
-    if error and "maximum number of turns" not in str(error):
+    if rec.get("error") and not _hit_turn_limit(rec):
         return False
     if rec.get("trap") in traps.ANSWER_SCORED:
         return True
     return rec.get("n_view_queries", 1) > 0
+
+
+def _common_trap_prompts(records: list[dict[str, Any]]) -> dict[str, set[str]]:
+    """Per model, the trap prompt ids that every arm scored at least once.
+
+    A session limit cuts a sweep partway, so arms can finish different prompt
+    sets; comparing their rates over different prompts compares the prompts,
+    not the arms.
+    """
+    scored: dict[str, dict[str, set[str]]] = {}
+    for r in records:
+        if "trap" not in r:
+            continue
+        ids = scored.setdefault(r["model"], {}).setdefault(r["arm"], set())
+        if _trap_scorable(r):
+            ids.add(r["id"])
+    return {m: set.intersection(*by_arm.values()) for m, by_arm in scored.items()}
 
 
 def aggregate(records: list[dict[str, Any]]) -> dict[tuple[str, str], dict[str, Any]]:
@@ -255,6 +280,7 @@ def aggregate(records: list[dict[str, Any]]) -> dict[tuple[str, str], dict[str, 
     cells: dict[tuple[str, str], list[dict[str, Any]]] = {}
     for r in records:
         cells.setdefault((r["model"], r["arm"]), []).append(r)
+    common = _common_trap_prompts(records)
 
     summary: dict[tuple[str, str], dict[str, Any]] = {}
     for key, recs in cells.items():
@@ -262,9 +288,11 @@ def aggregate(records: list[dict[str, Any]]) -> dict[tuple[str, str], dict[str, 
         # predicates read a pass and 2 a fire, so the outcome means nothing. A
         # harness cutoff (session limit, crash) is dropped for the same reason.
         # Hitting the turn limit is the model's own doing and its queries were
-        # captured, so it still scores.
+        # captured, so it still scores. The rate then covers only the prompts
+        # every arm of the model scored; k_dropped counts the rest.
         trap_recs = [r for r in recs if "trap" in r]
-        trapped = [r for r in trap_recs if _trap_scorable(r)]
+        scorable = [r for r in trap_recs if _trap_scorable(r)]
+        trapped = [r for r in scorable if r["id"] in common.get(key[0], set())]
         year = [r for r in recs if "trap" not in r]
         determinate = [r for r in year if r["ground_truth_start"] is not None]
         ambiguous = [r for r in year if r["ground_truth_start"] is None]
@@ -283,7 +311,9 @@ def aggregate(records: list[dict[str, Any]]) -> dict[tuple[str, str], dict[str, 
             "disambig_rate": _clustered_wilson(ambiguous, "disambiguated"),
             "n_trap": len(trapped),
             "k_trap": len({r["id"] for r in trapped}),
-            "n_unscored": len(trap_recs) - len(trapped),
+            "n_unscored": len(trap_recs) - len(scorable),
+            "k_dropped": len({r["id"] for r in scorable})
+            - len({r["id"] for r in trapped}),
             "trap_rate": _clustered_wilson(trapped, "trap_fired"),
         }
     return summary
@@ -294,6 +324,8 @@ def format_summary(summary: dict[tuple[str, str], dict[str, Any]]) -> str:
 
     ``n/k`` is records / prompts. The intervals are clustered on prompt, so k
     is the sample size that matters; at k under about 10 they are rough.
+    ``drop`` counts the trap prompts this arm scored but another arm of the
+    same model did not, left out of the trap rate.
     """
 
     def pct(triple: tuple[float, float, float]) -> str:
@@ -303,7 +335,8 @@ def format_summary(summary: dict[tuple[str, str], dict[str, Any]]) -> str:
     header = (
         f"{'model':<22} {'arm':<16} {'n/k':>7} "
         f"{'wrong':>16} {'silent_wrong':>16} {'correct':>16} "
-        f"{'no_query':>16} {'disambig':>16} {'trap n/k':>8} {'trap_rate':>16}"
+        f"{'no_query':>16} {'disambig':>16} {'trap n/k':>8} {'drop':>4} "
+        f"{'trap_rate':>16}"
     )
     lines = [header, "-" * len(header)]
     for model, arm in sorted(summary):
@@ -314,7 +347,8 @@ def format_summary(summary: dict[tuple[str, str], dict[str, Any]]) -> str:
             f"{model:<22} {arm:<16} {det:>7} "
             f"{pct(s['wrong_rate']):>16} {pct(s['silent_wrong_rate']):>16} "
             f"{pct(s['correct_rate']):>16} {pct(s['no_query_rate']):>16} "
-            f"{pct(s['disambig_rate']):>16} {trap:>8} {pct(s['trap_rate']):>16}"
+            f"{pct(s['disambig_rate']):>16} {trap:>8} {s['k_dropped']:>4} "
+            f"{pct(s['trap_rate']):>16}"
         )
     return "\n".join(lines)
 

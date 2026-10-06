@@ -170,18 +170,24 @@ def load_assessment_meta(which: str) -> dict[str, Any]:
         return json.loads((_FIXTURES / "meta_pre_drain.json").read_text())
     if which != "post":
         raise ValueError(f"which must be 'pre' or 'post', got {which!r}")
-    # trunk-ignore(bandit/B603,bandit/B607): fixed arguments; node on PATH is the dev toolchain
-    out = subprocess.run(
-        [
-            "node",
-            str(_REPO_ROOT / "src" / "cube" / "compile-meta.js"),
-            str(_REPO_ROOT / "src" / "cube" / "model"),
-        ],
-        capture_output=True,
-        text=True,
-        timeout=180,
-        check=True,
-    )
+    try:
+        # trunk-ignore(bandit/B603,bandit/B607): fixed arguments; node on PATH is the dev toolchain
+        out = subprocess.run(
+            [
+                "node",
+                str(_REPO_ROOT / "src" / "cube" / "compile-meta.js"),
+                str(_REPO_ROOT / "src" / "cube" / "model"),
+            ],
+            capture_output=True,
+            text=True,
+            timeout=180,
+            check=True,
+        )
+    except subprocess.CalledProcessError as exc:
+        # CalledProcessError's message omits stderr, where the compile error is.
+        raise RuntimeError(
+            f"compile-meta.js exited {exc.returncode}:\n{exc.stderr}"
+        ) from exc
     full = json.loads(out.stdout)
     return {"cubes": [c for c in full["cubes"] if c["name"] == _ASSESSMENT_VIEW]}
 
@@ -200,7 +206,8 @@ NEW_LOAD_SENTENCES = [
     '`equals "null"` matches the literal string and returns zero rows; filter a'
     " null with `notSet`.",
     "A query with no measure groups by its dimensions, so identical rows collapse"
-    " into one; add a count or the primary key to see every row.",
+    ' into one; add a count, the primary key, or `"ungrouped": true` to see'
+    " every row.",
     "Student views return only the schools the user can access; before describing"
     " a result as network-wide, check which regions or schools it covers.",
 ]

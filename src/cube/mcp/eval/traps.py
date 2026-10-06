@@ -69,9 +69,11 @@ def null_via_equals(queries: list[dict[str, Any]], text: str) -> bool:
 
 
 def module_code_without_subject(queries: list[dict[str, Any]], text: str) -> bool:
-    """A module_code filter with no academic_subject pairing."""
-    return bool(_filters_on(queries, "module_code")) and not _uses(
-        queries, "academic_subject"
+    """A query filtered module_code with no academic_subject pairing. Each
+    query stands alone: a subject in another query does not scope this one."""
+    return any(
+        _filters_on([q], "module_code") and not _uses([q], "academic_subject")
+        for q in queries
     )
 
 
@@ -81,9 +83,11 @@ def internal_flag_for_source(queries: list[dict[str, Any]], text: str) -> bool:
 
 
 def formative_alone(queries: list[dict[str, Any]], text: str) -> bool:
-    """pct_proficient_formative stood in for "all internal checkpoints"."""
-    return _uses(queries, "pct_proficient_formative") and not _uses(
-        queries, "module_type"
+    """pct_proficient_formative stood in for "all internal checkpoints": a query
+    used it without module_type. Each query stands alone, as above."""
+    return any(
+        _uses([q], "pct_proficient_formative") and not _uses([q], "module_type")
+        for q in queries
     )
 
 
@@ -101,11 +105,20 @@ def most_recent_not_named_round(queries: list[dict[str, Any]], text: str) -> boo
     return True
 
 
+# The negation must govern i-Ready itself: "no i-Ready data" reports the gap,
+# "no students reached grade level on i-Ready" reads the zero as a result.
 _NO_IREADY = re.compile(
-    r"(no|not any|doesn'?t have|does not have|isn'?t any|without)\b[^.]{0,60}i-?ready"
+    r"\b(?:no|not any|isn'?t any|without|zero)\s+(?:paterson(?:'s)?\s+)?i-?ready"
+    r"|\bdo(?:es)?(?:n'?t| not) have (?:any )?i-?ready"
+    # Not using it: "doesn't use i-Ready", "do not administer i-Ready".
+    r"|\b(?:do(?:es)?n'?t|not|never)\s+(?:use|administer|offer|give|run)\b"
+    r"[^.]{0,20}?i-?ready"
+    r"|i-?ready\s+(?:is|are|was)(?:n'?t| not)\s+(?:used|administered|offered|given)"
     r"|i-?ready[^.]{0,60}\b(not available|no data|isn'?t available|not (?:loaded|present))"
     r"|paterson[^.]{0,60}\b(not (?:showing|present|available|loaded|in the)"
-    r"|isn'?t (?:showing|available|in the)|no data|missing|absent"
+    r"|isn'?t (?:showing|available|in the)|no data|absent"
+    # "missing the mark" is a verdict on the scores, not a gap.
+    r"|missing(?! (?:the|its|their) (?:mark|target|goal|bar))"
     r"|does(?:n'?t| not) (?:appear|show))",
     re.IGNORECASE,
 )

@@ -513,12 +513,15 @@ PHRASES.update(
             "8.EE.C.8b",
             "an empty string, not null",
             "never average",
+            "summed count_proficient",
             "group on response_type_description",
         ],
-        "student_assessment_scores.response_type_description": ["whitespace variants"],
+        "student_assessment_scores.response_type_description": [
+            "capitalization or spacing variants"
+        ],
         "student_assessment_scores.response_type_root_description": [
             "Florida's own standards",
-            "resolve a parent standard",
+            "every Illuminate standard row",
         ],
         "student_assessment_scores.performance_band_label_number": [
             "Illuminate only; null for every other source",
@@ -531,6 +534,7 @@ PHRASES.update(
             "Tier-movement rates are not comparable",
             "filter it with notSet",
             "no verdict nearly all carry Tested Out",
+            "the same without Partially Met Expectations",
         ],
         "student_assessment_scores.is_mastery": [
             "Early On is a looser bar",
@@ -544,14 +548,17 @@ PHRASES.update(
         "student_assessment_scores.percent_correct": [
             "Illuminate only; null for every other source",
         ],
-        "student_assessment_scores.is_replacement": ["i-Ready, DIBELS and STAR"],
+        "student_assessment_scores.is_replacement": [
+            "i-Ready, DIBELS and STAR",
+            "Never TRUE here",
+        ],
         "student_assessment_scores.enrollment_resolution": [
             "active on the test date",
             "Filter to subject_section",
         ],
         "student_assessment_scores.date_taken": [
             "date_day and academic_year",
-            "not to find the most recent diagnostic",
+            "find the most recent diagnostic; administration_period",
         ],
         # Scores cube measures
         "student_assessment_scores.count_assigned": [
@@ -560,6 +567,7 @@ PHRASES.update(
         ],
         "student_assessment_scores.count_taken": [
             "DIBELS Tested Out subtests",
+            "Early Literacy and nearly all kindergarten",
             "how many assessments were taken",
         ],
         "student_assessment_scores.count_scored": [
@@ -575,7 +583,7 @@ PHRASES.update(
             "Filter assessment_type to illuminate",
         ],
         "student_assessment_scores.pct_proficient": [
-            "comparable across sources",
+            "the mastery bar behind it differs by source",
             "never multiply it by count_assigned",
         ],
         "student_assessment_scores.count_students": [
@@ -595,7 +603,7 @@ PHRASES.update(
             "every source except Illuminate",
         ],
         "student_assessment_scores.pct_proficient_formative": [
-            "about a third of module-coded Illuminate scores",
+            "excludes every other module type",
             'Not "all internal checkpoints"',
         ],
         # Assessments cube
@@ -611,13 +619,13 @@ PHRASES.update(
         ],
         "student_assessments.module_type": [
             "UA (Unit Assessment)",
-            "not documented",
-            "Do not expand TP, ET or WPP",
+            "WPP (Writing Process Piece)",
+            "pct_proficient_formative covers only",
         ],
         "student_assessments.module_code": [
             "DIBELS: Composite",
             "Always pair it with academic_subject",
-            "median date_taken",
+            "not reliably chronological",
         ],
         "student_assessments.academic_subject": [
             "Math and Reading",
@@ -634,6 +642,7 @@ PHRASES.update(
             "Outside Round",
             "FL end-of-course and science: PM3",
             "use MOY",
+            "Fall, Winter or Spring for STAR",
             "never sort by date_taken",
             "Null for Illuminate and AP",
         ],
@@ -655,7 +664,11 @@ PHRASES.update(
             "There is no growth measure",
             "calibration difference",
             "which sitting counts is an open decision",
-            "Repeat sittings inflate pct_proficient and count_scored",
+            "Repeat sittings inflate count_scored and pull pct_proficient down",
+            "will not reconcile",
+            "Coverage is uneven",
+            "Query this view",
+            "Stored Last, First",
             "release lag",
             "spiral review",
             "Resolve a name against staff_directory",
@@ -663,6 +676,7 @@ PHRASES.update(
         ],
     }
 )
+
 
 def _staff_pii_scoped_members() -> set[str]:
     # access.js STAFF_SENSITIVE_SCOPE_BY_MEMBER is the one list of members gated

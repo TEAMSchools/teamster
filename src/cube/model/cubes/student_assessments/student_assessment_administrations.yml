@@ -35,8 +35,9 @@ cubes:
           outside the 3 windows. STAR: Fall, Winter, Spring. NJGPA: Fall (the
           routine retake window) and Spring. NJSLA and NJSLA Science: Spring. FL
           FAST: PM1 to PM3; FL end-of-course and science: PM3. College: the
-          College Board round. Null for Illuminate and AP. i-Ready and DIBELS
-          EOY falls after spring state testing; MOY is the last named round
+          sitting's month and 2-digit year (for example Apr 24), for SAT, ACT
+          and PSAT. Null for Illuminate and AP. i-Ready EOY falls after spring
+          state testing and DIBELS EOY overlaps it; MOY is the last named round
           before it.
         sql: administration_period
         type: string
@@ -45,11 +46,12 @@ cubes:
           ai_context: >-
             Only meaningful with assessment_type scoped. A BOY/MOY/EOY filter
             drops Outside Round, so say which windows you used. For "the most
-            recent diagnostic", find the latest named round (BOY, MOY or EOY)
-            that has data in the latest academic_year_label, then filter
-            administration_period to that round; never sort by date_taken to
-            find it. An EOY-versus-state comparison in one year is concurrent,
-            not predictive; use MOY.
+            recent diagnostic", find the latest named round (BOY, MOY or EOY;
+            Fall, Winter or Spring for STAR) that has data in the latest
+            academic_year_label, then filter administration_period to that
+            round; never sort by date_taken to find it. An EOY-versus-state
+            comparison in one year is not predictive, because EOY falls with or
+            after state testing; use MOY.
 
       - name: test_type
         description: >-

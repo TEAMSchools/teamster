@@ -112,17 +112,21 @@ and diagnostics are in the `cube-ops` skill.
   it.** `meta.folders` is the only key Cube Cloud renders, but every `meta.*`
   key reaches the model, because our MCP server returns each cube's `/meta`
   entry unchanged. Use `ai_context` for usage guidance, including synonyms and
-  acronyms; do not invent other keys. It is capped at 2,000 characters and
-  truncated silently past that (`tests/cube/test_cube_schema.py` enforces the
-  cap). Only our MCP server and REST clients see `ai_context`; the SQL API
-  serves `description` alone, as Postgres column comments.
-- **A member that reads one column has a dbt twin.** When its `sql:` is
-  `<column>` or `` {CUBE}.`<column>` ``, its `description:` equals that dbt
-  column's `description:`, and the pair is registered in `TWINS` in
-  `tests/cube/test_cube_schema.py`, which fails on any difference. Edit both
-  sides together, then run `uv run pytest tests/cube/`: CI does not run these
-  tests, so a drifted twin merges unless you do. dbt-only engineering notes
-  (lineage, hash roles) go in YAML comments beside the dbt column.
+  acronyms; do not invent other keys. Cube truncates it past 2,000 characters
+  for its own hosted agent. Whether `/meta` truncates it is untested, so
+  `tests/cube/test_cube_schema.py` enforces the cap. Our MCP server, REST
+  clients and Cube Cloud's hosted agent read `ai_context`; the SQL API serves
+  `description` alone, as Postgres column comments.
+- **When you write or change a one-column member's description, twin it.** A
+  one-column member's `sql:` is `<column>` or `` {CUBE}.`<column>` ``. Make its
+  `description:` identical to that dbt column's `description:` and register the
+  pair in `TWINS` in `tests/cube/test_cube_schema.py`, which fails on any
+  difference. Many older members are not twinned yet; leave them until you edit
+  them. Edit both sides together, run `npm ci` in `src/cube` once, then run
+  `uv run pytest tests/cube/` and check that nothing skipped: without
+  `node_modules` the compile test skips silently. CI does not run these tests,
+  so a drifted twin merges unless you do. dbt-only engineering notes (lineage,
+  hash roles) go in YAML comments beside the dbt column.
 - **Where a new fact goes.** Work down the list and stop at the first match: (1)
   a point-in-time number: delete it or say it qualitatively; (2) process or
   unratified policy: the project-knowledge markdown, and Cube may say only that
@@ -140,14 +144,15 @@ and diagnostics are in the `cube-ops` skill.
   `/meta` returns it as `aiContext`, not `ai_context`. If the cube member also
   carries an `ai_context`, the override must restate it; a schema test fails
   otherwise.
-- **A `description:` states what the member means and where to go instead —
-  never what a member used to be.** These strings reach the chat agent and
-  analysts through `/v1/meta`, so a reference to a deleted member sends a caller
-  at nothing; deleting a member means deleting every description that names it,
-  not annotating them as retired. Twice now a deletion has shipped with
-  `meta`-visible descriptions still pointing at removed members
-  (`count_students_year_end`, the anchor dimensions) — after a member removal,
-  `grep -rn '<member>' model/` and clear every hit, including the ones in prose.
+- **A `description:` states what the member means, never what a member used to
+  be.** Where to go instead is usage guidance, so it goes in `ai_context`. These
+  strings reach the chat agent and analysts through `/v1/meta`, so a reference
+  to a deleted member sends a caller at nothing; deleting a member means
+  deleting every description that names it, not annotating them as retired.
+  Twice now a deletion has shipped with `meta`-visible descriptions still
+  pointing at removed members (`count_students_year_end`, the anchor dimensions)
+  — after a member removal, `grep -rn '<member>' model/` and clear every hit,
+  including the ones in prose.
 - **Measure grain: query-time vs pre-agg.** At query time Cube recomputes every
   measure fresh at the requested grain — including `count_distinct` (a valid
   distinct count at any grain). A description's "non-additive" note is a

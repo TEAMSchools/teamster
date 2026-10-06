@@ -72,12 +72,15 @@ models:
         description: >-
           Subject tested; the vocabulary is per source. State tests: English
           Language Arts, Mathematics, Science, and course names for
-          end-of-course tests (Algebra I, Geometry, Civics). i-Ready and STAR:
-          Math and Reading, plus Early Literacy for STAR. DIBELS: Reading.
-          Illuminate: course-level names, with no English Language Arts value;
-          its ELA equivalent is Text Study, alongside Writing, English 100–400,
-          CCR and AP courses, and math appears as Mathematics and course names
-          such as Algebra I and Geometry. Distinct from the course's discipline.
+          end-of-course tests (Algebra I, Algebra II, Geometry, Civics). i-Ready
+          and STAR: Math and Reading, plus Early Literacy for STAR. DIBELS:
+          Reading. Illuminate: course-level names, with no English Language Arts
+          value; its ELA equivalent is Text Study, alongside Writing, English
+          100–400, CCR and AP courses, and math appears as Mathematics and
+          course names such as Algebra I and Geometry. College: Math, EBRW,
+          Reading, English, Science, and score names such as Combined and
+          Composite. AP: the course name (for example Biology, Calculus BC).
+          Distinct from the course's discipline.
 
       - name: category
         data_type: string
@@ -94,16 +97,18 @@ models:
           spans every subject assessed in that round, and a small share of
           Illuminate assessments have none. State tests: subject and grade (for
           example ELA05, MAT08, ALG01; ELAGP and MATGP for NJGPA). i-Ready and
-          STAR: the subject. DIBELS: Composite.
+          STAR: the subject. DIBELS: Composite. College: the test and score (for
+          example sat_math, act_composite, psat10_ebrw). AP: the College Board
+          exam number.
 
       - name: module_type
         data_type: string
         description: >-
           Illuminate module type. An open list: QA (Quick Assessments), MQQ
           (Multiple-Choice Quick Questions), CRQ (Constructed Response
-          Questions), UA (Unit Assessment), TP, ET, WPP, and older types. What
-          TP, ET and WPP stand for is not documented. Illuminate only; null for
-          every other source.
+          Questions), UA (Unit Assessment), TP (Test Prep Quiz), ET (Exit
+          Ticket), WPP (Writing Process Piece), and older types. Illuminate
+          only; null for every other source.
 
       - name: grade_level_tested
         data_type: int64

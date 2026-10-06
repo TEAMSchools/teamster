@@ -23,12 +23,15 @@ cubes:
         description: >-
           Subject tested; the vocabulary is per source. State tests: English
           Language Arts, Mathematics, Science, and course names for
-          end-of-course tests (Algebra I, Geometry, Civics). i-Ready and STAR:
-          Math and Reading, plus Early Literacy for STAR. DIBELS: Reading.
-          Illuminate: course-level names, with no English Language Arts value;
-          its ELA equivalent is Text Study, alongside Writing, English 100–400,
-          CCR and AP courses, and math appears as Mathematics and course names
-          such as Algebra I and Geometry. Distinct from the course's discipline.
+          end-of-course tests (Algebra I, Algebra II, Geometry, Civics). i-Ready
+          and STAR: Math and Reading, plus Early Literacy for STAR. DIBELS:
+          Reading. Illuminate: course-level names, with no English Language Arts
+          value; its ELA equivalent is Text Study, alongside Writing, English
+          100–400, CCR and AP courses, and math appears as Mathematics and
+          course names such as Algebra I and Geometry. College: Math, EBRW,
+          Reading, English, Science, and score names such as Combined and
+          Composite. AP: the course name (for example Biology, Calculus BC).
+          Distinct from the course's discipline.
         sql: academic_subject
         type: string
         public: true
@@ -76,7 +79,9 @@ cubes:
           spans every subject assessed in that round, and a small share of
           Illuminate assessments have none. State tests: subject and grade (for
           example ELA05, MAT08, ALG01; ELAGP and MATGP for NJGPA). i-Ready and
-          STAR: the subject. DIBELS: Composite.
+          STAR: the subject. DIBELS: Composite. College: the test and score (for
+          example sat_math, act_composite, psat10_ebrw). AP: the College Board
+          exam number.
         sql: module_code
         type: string
         public: true
@@ -86,22 +91,22 @@ cubes:
             every subject in its round. Always pair it with academic_subject.
             Which Illuminate codes exist varies by subject, grade and region, so
             check the exact slice before pooling across checkpoints. Illuminate
-            code names are not chronological; order by median date_taken.
+            code names are not reliably chronological; to order checkpoints,
+            group by module_code and date_taken and read the dates.
 
       - name: module_type
         description: >-
           Illuminate module type. An open list: QA (Quick Assessments), MQQ
           (Multiple-Choice Quick Questions), CRQ (Constructed Response
-          Questions), UA (Unit Assessment), TP, ET, WPP, and older types. What
-          TP, ET and WPP stand for is not documented. Illuminate only; null for
-          every other source.
+          Questions), UA (Unit Assessment), TP (Test Prep Quiz), ET (Exit
+          Ticket), WPP (Writing Process Piece), and older types. Illuminate
+          only; null for every other source.
         sql: module_type
         type: string
         public: true
         meta:
           ai_context: >-
-            Do not expand TP, ET or WPP. pct_proficient_formative covers only
-            QA, MQQ and CRQ.
+            pct_proficient_formative covers only QA, MQQ and CRQ.
 
       - name: grade_level_tested
         description: >-

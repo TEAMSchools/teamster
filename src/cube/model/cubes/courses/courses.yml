@@ -41,7 +41,7 @@ cubes:
 
       - name: is_foundations
         description: >-
-          TRUE when the section is a Foundations (intervention) course, per the
+          TRUE when the course is a Foundations (intervention) course, per the
           course-subject crosswalk.
         sql: is_foundations
         type: boolean

@@ -291,27 +291,60 @@ def _with_default_timezone(query: dict[str, Any]) -> dict[str, Any]:
 
 
 EMPTY_RESULT_NOTE = (
-    "0 rows. The data may not exist for this slice, or your access may not "
-    "include it. Before concluding it does not exist, re-run without the "
-    "narrowing filter, grouped by region or school, and check the filter values "
-    "against the values the member's `meta` description lists."
+    "Empty result: no rows, or one row of null or zero measures. The data may "
+    "not exist for this slice, or your access may not include it. Before "
+    "concluding it does not exist, re-run without the narrowing filter, grouped "
+    "by region or school, and check the filter values against the values the "
+    "member's `meta` description lists."
 )
 
 
-def _with_empty_result_note(payload: dict[str, Any]) -> dict[str, Any]:
-    """Add a note to a load result with an empty data array, so a zero is not
-    read as "no data exists". A multi-query response (`results`, e.g.
-    compareDateRange) gets the note on each empty result. Any other payload
-    (rows, errors, no data key) is returned unchanged."""
+def _groups_rows(query: dict[str, Any]) -> bool:
+    """True when the query groups by a dimension or a time-dimension grain.
+    Without one, Cube answers an empty slice with 1 row of null measures (a
+    plain count may come back as 0), not with `data: []`."""
+    if query.get("dimensions"):
+        return True
+    return any(
+        isinstance(t, dict) and t.get("granularity")
+        for t in query.get("timeDimensions") or []
+    )
+
+
+def _is_null_or_zero(value: Any) -> bool:
+    if value is None:
+        return True
+    try:
+        return float(value) == 0
+    except (TypeError, ValueError):
+        return False
+
+
+def _with_empty_result_note(
+    payload: dict[str, Any], query: dict[str, Any]
+) -> dict[str, Any]:
+    """Add a note to an empty load result, so a zero is not read as "no data
+    exists". Empty is `data: []`, or, for a `query` with no grouping, the
+    single all-null-or-zero row Cube returns instead. A multi-query response
+    (`results`, e.g. compareDateRange) gets the note on each empty result. Any
+    other payload (rows, errors, no data key) is returned unchanged."""
     data = payload.get("data")
-    if isinstance(data, list) and not data:
+    if isinstance(data, list) and (
+        not data
+        or (
+            len(data) == 1
+            and isinstance(data[0], dict)
+            and not _groups_rows(query)
+            and all(_is_null_or_zero(v) for v in data[0].values())
+        )
+    ):
         return {**payload, "note": EMPTY_RESULT_NOTE}
     results = payload.get("results")
     if isinstance(results, list):
         return {
             **payload,
             "results": [
-                _with_empty_result_note(r) if isinstance(r, dict) else r
+                _with_empty_result_note(r, query) if isinstance(r, dict) else r
                 for r in results
             ],
         }
@@ -493,8 +526,8 @@ async def load(ctx: Context, query: dict[str, Any]) -> dict[str, Any]:
     count_students: at a coarser grain Cube computes a correct distinct count
     for that grain — the "non-additive" note on some measures refers to
     pre-aggregation rollup, not query-time grain.) A query with no measure
-    groups by its dimensions, so identical rows collapse into one; add a count
-    or the primary key to see every row.
+    groups by its dimensions, so identical rows collapse into one; add a count,
+    the primary key, or `"ungrouped": true` to see every row.
 
     Example — same filters and measure (pct_proficient), two grains: dimensions
     [is_iep, module_code, academic_year] returns one proficiency rate per (IEP
@@ -566,7 +599,7 @@ async def load(ctx: Context, query: dict[str, Any]) -> dict[str, Any]:
         email=email,
         poll=True,
     )
-    return _with_empty_result_note(result)
+    return _with_empty_result_note(result, query)
 
 
 @mcp.tool()
