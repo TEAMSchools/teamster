@@ -1,10 +1,19 @@
 models:
   - name: stg_iready__personalized_instruction_summary
+    description: >-
+      One row per student per date range per subject, unioning the
+      Newark/Camden/Paterson (NJ) and Miami i-Ready Personalized Instruction
+      Summary staging models. Same columns as the district models, with
+      student_id adjusted so Miami values from academic years through 2025 that
+      lack the Focus prefix are shifted onto the network student number.
     config:
       materialized: table
     columns:
       - name: school
         data_type: string
+        description: >-
+          The school the student is rostered to in i-Ready, as reported in the
+          vendor export.
         data_tests:
           - relationships:
               arguments:

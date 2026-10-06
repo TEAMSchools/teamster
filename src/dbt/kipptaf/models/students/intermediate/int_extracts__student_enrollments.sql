@@ -353,6 +353,8 @@ select
 
     if(e.exitdate < cal.first_day_school_year, true, false) as is_pre_year_withdrawal,
 
+    e.academic_year = {{ var("current_academic_year") }} as is_current_academic_year,
+
     case
         when e.grade_level = 99
         then null

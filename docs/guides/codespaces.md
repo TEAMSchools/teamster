@@ -4,6 +4,21 @@ The devcontainer is pre-configured for
 [GitHub Codespaces](https://github.com/features/codespaces) — no local setup
 required.
 
+## Accounts you need
+
+Request these before creating your first Codespace. A data team admin grants the
+GitHub and Google group memberships.
+
+| Account                                    | What it's for                                                                | Access                                                                                                                                                  |
+| ------------------------------------------ | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GitHub, `TEAMSchools` org                  | Repo, Codespaces, pull requests                                              | Org member on your role's team (see [CONTRIBUTING](../CONTRIBUTING.md#code-review)). The 1Password service account token arrives as a Codespace secret. |
+| Google Workspace (`@apps.teamschools.org`) | BigQuery, local dbt, GCP tooling                                             | Member of `teamster-analysts@apps.teamschools.org`; without it the GCloud setup step fails (see [GCloud Authentication](#gcloud-authentication)).       |
+| Claude                                     | Claude Code in the Codespace, the [Cube connector](claude-cube-connector.md) | Claude login; Cube queries also need a `cube-*` Google group.                                                                                           |
+| 1Password                                  | Shared team credentials                                                      | Team account.                                                                                                                                           |
+| dbt Cloud                                  | CI run logs on pull requests                                                 | Read-only.                                                                                                                                              |
+| Dagster+                                   | Runs, assets, branch deployments                                             | Read-only.                                                                                                                                              |
+| Asana                                      | The Teamster project task Zapier creates for each pull request               | Workspace member.                                                                                                                                       |
+
 ## Prerequisites
 
 Set **VS Code Desktop** as your default Codespaces editor:

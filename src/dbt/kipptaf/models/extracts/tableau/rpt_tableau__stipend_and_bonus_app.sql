@@ -50,12 +50,6 @@ from {{ ref("stg_google_appsheet__stipend_and_bonus__output") }} as o
 left join
     {{ ref("rpt_appsheet__stipend_app_roster") }} as r
     on o.employee_number = r.employee_number
-left join
-    {{ ref("int_people__staff_roster") }} as r1
-    on o.first_approver_employee_number = r1.employee_number
-left join
-    {{ ref("int_people__staff_roster") }} as r2
-    on o.second_approver_employee_number = r2.employee_number
 /* INNER, not LEFT: a stipend event whose employee_number resolves to no roster
    record is test data, and cannot be gated to anyone. */
 inner join

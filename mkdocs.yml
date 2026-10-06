@@ -57,6 +57,7 @@ nav:
       - Claude + Cube Connector: guides/claude-cube-connector.md
       - Cube Access - Individual Exceptions:
           guides/cube-access-individual-exceptions.md
+      - Tableau Permissions (People Data): guides/tableau-permissions.md
   - Troubleshooting:
       - Dagster: troubleshooting/dagster.md
       - dbt: troubleshooting/dbt.md
@@ -85,6 +86,7 @@ nav:
           models/athletic-eligibility-data-model.md
       - Academic Health Data Model: models/academic-health-data-model.md
       - Grad Plan Tracking Data Model: models/grad-plan-tracking-data-model.md
+      - IGNITE R2I Extract: models/ignite-r2i-extract.md
   - Automations: reference/automations.md
 
 markdown_extensions:
