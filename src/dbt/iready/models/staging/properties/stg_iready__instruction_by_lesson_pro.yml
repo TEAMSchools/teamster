@@ -84,8 +84,8 @@ models:
             contains_pii: true
         description: >-
           Number of skills the student was successful on in the completed
-          lesson, cast to an integer. Vendor reports this separately for Math
-          skills and Reading foundational skills.
+          lesson, cast to an integer. One column covers both the vendor's Math
+          skills and Reading foundational skills fields.
       - name: items_completed
         data_type: int64
         config:
@@ -132,8 +132,8 @@ models:
             contains_pii: true
         description: >-
           Percent of skills the student was successful on in the lesson, cast to
-          numeric. Vendor reports this separately for Math skills and Reading
-          foundational skills.
+          numeric. One column covers both the vendor's Math skills and Reading
+          foundational skills fields.
       - name: passed_or_not_passed_numeric
         data_type: float64
         config:
