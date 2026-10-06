@@ -7,7 +7,7 @@ from tenacity import retry, stop_after_attempt, wait_exponential_jitter
 
 class AdpWorkforceManagerResource(ConfigurableResource):
     subdomain: str
-    app_key: str
+    app_key: str = Field(repr=False)
     client_id: str = Field(repr=False)
     client_secret: str = Field(repr=False)
     username: str

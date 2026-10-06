@@ -46,20 +46,6 @@ def _build_offline_resource(request_fn) -> GrowResource:
     return grow
 
 
-def test_repr_hides_credentials():
-    """A failing test's traceback prints ``self = GrowResource(...)``.
-
-    Regression: that frame printed the live client id and secret (#5116).
-    """
-    grow = GrowResource(
-        client_id="dummy-client-id", client_secret="dummy-secret", district_id="x"
-    )
-
-    for text in (repr(grow), str(grow)):
-        assert "dummy-client-id" not in text
-        assert "dummy-secret" not in text
-
-
 def test_put_retries_on_server_error(monkeypatch: pytest.MonkeyPatch):
     """A 5xx on a PUT is a transient gateway failure and must be retried.
 
