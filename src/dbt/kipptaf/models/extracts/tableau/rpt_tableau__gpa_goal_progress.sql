@@ -32,6 +32,7 @@ select
     cy.year_in_network,
     cy.rn_undergrad,
     cy.is_pathways,
+    cy.is_hs_honors_program,
     cy.is_retained_year,
     cy.is_retained_ever,
     cy.student_slideback,
