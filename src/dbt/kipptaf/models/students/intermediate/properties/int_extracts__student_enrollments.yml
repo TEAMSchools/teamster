@@ -953,6 +953,20 @@ models:
       - name: is_sipps
         data_type: boolean
         description: Conditional on students_student_number.
+      - name: is_hs_honors_program
+        data_type: boolean
+        description: >-
+          True when the student has a PowerSchool High School Honors Program
+          record that covers the as-of date, which is the earlier of today and
+          June 30 at the end of the academic year. A student who leaves the
+          program mid-year reads false from the day after the exit date. A blank
+          exit date, which PowerSchool stores as 1900-01-01, counts as still in
+          the program. The value is per student per academic year, so it repeats
+          on every enrollment row in that year. Null for Miami, whose SIS has no
+          equivalent program record.
+        config:
+          meta:
+            contains_pii: true
       - name: student_slideback
         data_type: boolean
         description: >
