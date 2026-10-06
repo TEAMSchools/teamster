@@ -69,15 +69,15 @@ with
 
     pearson_accommodations as (
         select
-            studenttestuuid,
+            nj.studenttestuuid,
 
             case
                 when
                     {%- for col in pearson_accommodation_columns %}
-                        coalesce({{ col }}, 'N') != 'N' or
+                        coalesce(nj.{{ col }}, 'N') != 'N' or
                     {%- endfor %}
                     {%- for col in pearson_accommodation_columns_numeric %}
-                        coalesce({{ col }}, 0) != 0
+                        coalesce(nj.{{ col }}, 0) != 0
                         {%- if not loop.last %} or {% endif %}
                     {%- endfor %}
                 then 1
@@ -87,13 +87,14 @@ with
             case
                 when
                     {%- for col in pearson_exemption_columns %}
-                        coalesce({{ col }}, 'N') != 'N'
+                        coalesce(nj.{{ col }}, 'N') != 'N'
                         {%- if not loop.last %} or {% endif %}
                     {%- endfor %}
                 then 1
                 else 0
             end as exemption,
-        from {{ ref("stg_pearson__njsla") }}
+        from {{ ref("stg_pearson__njsla") }} as nj
+        inner join pearson_scored as ps on nj.studenttestuuid = ps.studenttestuuid
     ),
 
     pearson as (

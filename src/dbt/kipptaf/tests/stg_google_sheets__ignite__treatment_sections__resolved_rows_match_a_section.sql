@@ -10,10 +10,15 @@ with
         where status = 'resolved'
     ),
 
+    /* grain projection, not dup-masking: one row per resolved year */
+    resolved_years as (select distinct academic_year, from resolved),
+
     /* grain projection, not dup-masking: one row per section */
     sections as (
-        select distinct school_name, academic_year, course_number, section_number,
-        from {{ ref("int_extracts__course_enrollments_by_term") }}
+        select distinct
+            ce.school_name, ce.academic_year, ce.course_number, ce.section_number,
+        from {{ ref("int_extracts__course_enrollments_by_term") }} as ce
+        inner join resolved_years as y on ce.academic_year = y.academic_year
     )
 
 select r.ref_id,

@@ -20,7 +20,12 @@ these hold:
 - That year appears on a `resolved` row of the treatment sections sheet.
 
 To add a study year, resolve that year's treated sections in the sheet. No code
-change is needed.
+change is needed. The sheet drives this both ways:
+
+- A year whose rows are all still `pending` drops out of every IGNITE file,
+  treated and control students alike, until one row is `resolved`.
+- A `resolved` row with the wrong `academic_year` adds that whole year of NJ
+  high school students.
 
 ## Where the inputs live
 
@@ -37,8 +42,10 @@ CFR §99.31(b)(2)) say we must not disclose how a de-identified record code is
 generated. The salt is what keeps the code from being recomputed.
 
 - **Where it lives.** It is the single row of
-  `kipptaf_restricted.ignite_id_salt`. Only the Dagster and dbt service accounts
-  can read that dataset.
+  `kipptaf_restricted.ignite_id_salt`. The dataset grants read access to the
+  Dagster agent, `dbt-user` and `codespaces` service accounts. A local dev build
+  of `int_ignite__student_id_crosswalk` fails with Access Denied for anyone
+  without read access.
 - **Never change it** while the study runs. A new salt gives every student a new
   `stu_id`, and Mathematica can no longer join phase 2 to phase 1.
 - **Never print, log or commit it.** Don't put it in SQL, YAML, dbt vars,

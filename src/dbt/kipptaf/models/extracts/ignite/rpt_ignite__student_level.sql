@@ -22,8 +22,7 @@ with
         where e.state = 'NJ' and e.grade_level between 9 and 12
     ),
 
-    /* nces_school_id is filled only for schools that have one, and those
-     PowerSchool ids are unique, so the join cannot fan out */
+    -- unique among NCES rows, tested on stg_google_sheets__people__locations
     nces_schools as (
         select powerschool_school_id, nces_school_id,
         from {{ ref("stg_google_sheets__people__locations") }}
