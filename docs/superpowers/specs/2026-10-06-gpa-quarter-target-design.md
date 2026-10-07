@@ -64,7 +64,7 @@ Three new kipptaf models, all reading existing columns, plus columns on two
 existing extracts. Student-level outputs are tier-3 PII; every new model is
 tagged `contains_pii`.
 
-### `int_gpa__student_quarter_target`
+### `int_gpa__student_y1_target`
 
 One row per student and school for the current year.
 
@@ -90,7 +90,7 @@ Status values, in precedence order:
 B. The floor is a display rule, not a math rule: a student above 3.0 still sees
 a B target.
 
-### `int_gpa__course_quarter_pace`
+### `int_gpa__course_pace`
 
 One row per student, course, and current year, for unlocked GPA courses.
 
@@ -229,3 +229,39 @@ fix lands.
   Gradebook rollup, which already has the course grain.
 - Exam-term handling: pace applies to exams as written. A quarter-only pace
   under an assumed exam score is a possible revision.
+
+## Revision 2026-10-07, from review of PR #5773
+
+- Names. `int_gpa__student_quarter_target` is `int_gpa__student_y1_target` and
+  `int_gpa__course_quarter_pace` is `int_gpa__course_pace`. Neither model has a
+  quarter grain: the target is a Y1 letter and the pace is the percent needed in
+  every remaining term through year end. `rpt_tableau__gpa_course_pace` keeps
+  its name.
+- `int_gpa__course_quickest_win` is folded into `int_gpa__course_pace` as
+  columns (`next_letter_grade`, `next_cutoff_percent`, `next_grade_points`,
+  `points_gained`, `pace_percent_to_next`, `need_gap`, `score`,
+  `quickest_win_rank`). It shared the pace model's grain and only input, and
+  every consumer joined it back one-to-one.
+- `pace_status` reads `on_pace` when every open course that has started is
+  graded and none sits below target. A course that has not started yet, such as
+  a spring-semester course in the fall, neither blocks nor counts. The earlier
+  rule, which waited for every course to carry a grade, held every student with
+  a spring course at `not_on_pace` all fall.
+- `schedule_bump` is averaged over the open credits, the same base
+  `gpa_needed_unweighted` is averaged over, so `gpa_needed_weighted` is the
+  weighted average needed in the open courses. Locked courses are outside both.
+- The edge rule for other scales is implemented: an open course whose unweighted
+  grade scale is not the 2019 reference scale by name, or resolves to nothing,
+  makes the status `unknown` and nulls the target and needed GPA. Every
+  unweighted scale on a current HS GPA course today is the 2019 scale (Newark
+  and Camden on id 976; Paterson's id 487 is the same scale and has no high
+  school students), so the rule fires on nothing yet.
+- `pace_status` is the source for the "percent on pace" goal type that #4581
+  planned and `int_gpa__goal_student_metrics` still stubs as NULL under
+  `TODO(#4581)`. The mapping is `is_on_pace = pace_status = 'on_pace'` and
+  `is_on_pace_denominator = pace_status in ('on_pace', 'not_on_pace')`, the
+  students for whom a 3.0 is still reachable; `goal_not_attainable` and
+  `unknown` fall outside the denominator. Phase 2 wires those two columns from
+  `int_gpa__student_y1_target` and drops the separate
+  `rpt_tableau__gpa_pace_rollup` in favor of the existing goal aggregations, so
+  there is one on-pace rollup.

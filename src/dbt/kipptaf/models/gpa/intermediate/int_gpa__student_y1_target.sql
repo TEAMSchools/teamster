@@ -4,23 +4,30 @@ with
            letter once per district with identical points and cutoffs */
         select distinct letter_grade, grade_points, min_cutoffpercentage,
         from {{ ref("int_powerschool__gradescaleitem_lookup") }}
-        /* every scale in use shares these cutoffs; 2019 Unweighted is the
-           reference, and the 83 floor is the B cutoff */
+        /* the reference scale; the 83 floor is the B cutoff */
         where
             gradescale_name = 'KIPP NJ 2019 (5-12) Unweighted'
             and min_cutoffpercentage >= 83
     ),
 
+    /* grain projection, not dup-masking: one name per scale id across the
+       district copies of the lookup */
+    scale_names as (
+        select distinct gradescaleid, gradescale_name,
+        from {{ ref("int_powerschool__gradescaleitem_lookup") }}
+    ),
+
     /* final_grades is one row per course and termbin, and its Y1 columns are
        running year-to-date values that differ from term to term. The current
        Y1 is the one on the current or latest-started term row, ranked the
-       same way as int_gpa__course_quarter_pace */
+       same way as int_gpa__course_pace */
     term_rows as (
         select
             studentid,
             course_number,
             _dbt_source_project,
             potential_credit_hours,
+            courses_gradescaleid_unweighted,
             y1_percent_grade_adjusted,
             y1_grade_points_unweighted,
             termbin_end_date,
@@ -61,13 +68,37 @@ with
 
             max(potential_credit_hours) as credits,
             max(bump) as bump,
+            max(courses_gradescaleid_unweighted) as courses_gradescaleid_unweighted,
             max(if(rn_current = 1, y1_percent_grade_adjusted, null)) as y1_percent,
             max(
                 if(rn_current = 1, y1_grade_points_unweighted, null)
             ) as y1_points_unweighted,
             logical_and(is_ended) as is_locked,
+            logical_or(is_started) as is_started,
         from term_rows_ranked
         group by studentid, course_number, _dbt_source_project
+    ),
+
+    courses_with_scale as (
+        select
+            c.studentid,
+            c.course_number,
+            c._dbt_source_project,
+            c.credits,
+            c.bump,
+            c.y1_percent,
+            c.y1_points_unweighted,
+            c.is_locked,
+            c.is_started,
+
+            /* a course on any other scale, or one the lookup cannot resolve,
+               cannot be read on the reference cutoffs */
+            coalesce(
+                sn.gradescale_name = 'KIPP NJ 2019 (5-12) Unweighted', false
+            ) as is_reference_scale,
+        from courses as c
+        left join
+            scale_names as sn on c.courses_gradescaleid_unweighted = sn.gradescaleid
     ),
 
     schedule as (
@@ -75,10 +106,12 @@ with
             studentid,
             _dbt_source_project,
 
-            sum(credits) as gpa_credits,
-            sum(credits * bump) as bump_points,
             countif(not is_locked) as n_courses_unlocked,
+            countif(
+                not is_locked and not is_reference_scale
+            ) as n_courses_unknown_scale,
             sum(if(is_locked, 0.0, credits)) as unlocked_credits,
+            sum(if(is_locked, 0.0, credits * bump)) as unlocked_bump_points,
             /* a locked course with no live Y1 counts nowhere, as in the Y1
                average PowerSchool computes */
             sum(
@@ -91,7 +124,7 @@ with
             sum(
                 if(is_locked and y1_points_unweighted is not null, credits, 0.0)
             ) as locked_credits,
-        from courses
+        from courses_with_scale
         group by studentid, _dbt_source_project
     ),
 
@@ -106,16 +139,18 @@ with
             gc.cumulative_y1_gpa_projected_unweighted,
 
             s.n_courses_unlocked,
+            s.n_courses_unknown_scale,
 
-            safe_divide(s.bump_points, s.gpa_credits) as schedule_bump,
+            /* the bonus is averaged over the same open credits the need is
+               averaged over, so the two add */
+            safe_divide(s.unlocked_bump_points, s.unlocked_credits) as schedule_bump,
 
             /* the Monitor's need times its credit base is the constant
                3.0 x (prior + current credits) - prior points. Re-base it on
                every scheduled course, then take out the locked courses at
                their live points and solve over the open credits */
             safe_divide(
-                round(gc.gpa_needed_for_cumulative_3_0, 4)
-                * gc.potential_gpa_credits_current_year
+                gc.gpa_needed_for_cumulative_3_0 * gc.potential_gpa_credits_current_year
                 + 3.0
                 * (
                     s.locked_credits
@@ -167,6 +202,7 @@ with
             st.is_cumulative_3_0_attainable,
             st.cumulative_y1_gpa_projected_unweighted,
             st.n_courses_unlocked,
+            st.n_courses_unknown_scale,
 
             t.target_cutoff_percent,
 
@@ -191,53 +227,82 @@ with
             wt._dbt_source_project,
 
             countif(c.y1_percent < wt.target_cutoff_percent) as n_courses_below_target,
-            countif(c.y1_percent is null) as n_courses_ungraded,
+            /* a course that has not started yet has no grade to be missing */
+            countif(c.is_started and c.y1_percent is null) as n_courses_ungraded,
         from with_target as wt
         inner join
-            courses as c
+            courses_with_scale as c
             on wt.studentid = c.studentid
             and wt._dbt_source_project = c._dbt_source_project
         where not c.is_locked
         group by wt.studentid, wt.schoolid, wt._dbt_source_project
+    ),
+
+    with_status as (
+        select
+            wt.studentid,
+            wt.schoolid,
+            wt.student_number,
+            wt._dbt_source_project,
+            wt.gpa_needed_unweighted,
+            wt.target_cutoff_percent,
+            wt.target_letter_grade,
+            wt.target_grade_points,
+            wt.is_cumulative_3_0_attainable,
+            wt.cumulative_y1_gpa_projected_unweighted,
+            wt.schedule_bump,
+
+            coalesce(wt.n_courses_unlocked, 0) as n_courses_unlocked,
+            coalesce(bt.n_courses_below_target, 0) as n_courses_below_target,
+
+            case
+                when
+                    wt.gpa_needed_unweighted is null
+                    or wt.is_cumulative_3_0_attainable is null
+                    or wt.n_courses_unknown_scale > 0
+                then 'unknown'
+                /* the re-solved need decides, not the Monitor's flag, which
+                   counts only the courses already started (#5756) and so reads
+                   false for students whose full schedule can still reach 3.0 */
+                when wt.target_cutoff_percent is null
+                then 'goal_not_attainable'
+                when wt.cumulative_y1_gpa_projected_unweighted >= 3.0
+                then 'on_pace'
+                when
+                    wt.n_courses_unlocked > 0
+                    and bt.n_courses_ungraded = 0
+                    and bt.n_courses_below_target = 0
+                then 'on_pace'
+                else 'not_on_pace'
+            end as pace_status,
+        from with_target as wt
+        left join
+            below_target as bt
+            on wt.studentid = bt.studentid
+            and wt.schoolid = bt.schoolid
+            and wt._dbt_source_project = bt._dbt_source_project
     )
 
 select
-    wt.studentid,
-    wt.schoolid,
-    wt.student_number,
-    wt._dbt_source_project,
-    wt.gpa_needed_unweighted,
-    wt.target_cutoff_percent,
-    wt.target_letter_grade,
-    wt.target_grade_points,
-    wt.is_cumulative_3_0_attainable,
-    wt.cumulative_y1_gpa_projected_unweighted,
+    studentid,
+    schoolid,
+    student_number,
+    _dbt_source_project,
+    is_cumulative_3_0_attainable,
+    cumulative_y1_gpa_projected_unweighted,
+    n_courses_unlocked,
+    pace_status,
 
-    coalesce(wt.n_courses_unlocked, 0) as n_courses_unlocked,
-    coalesce(bt.n_courses_below_target, 0) as n_courses_below_target,
-    round(wt.schedule_bump, 4) as schedule_bump,
-    round(wt.gpa_needed_unweighted + wt.schedule_bump, 2) as gpa_needed_weighted,
+    round(schedule_bump, 4) as schedule_bump,
 
-    case
-        when wt.gpa_needed_unweighted is null or wt.is_cumulative_3_0_attainable is null
-        then 'unknown'
-        /* the re-solved need decides, not the Monitor's flag, which counts only
-           the courses already started (#5756) and so reads false for students
-           whose full schedule can still reach 3.0 */
-        when wt.target_cutoff_percent is null
-        then 'goal_not_attainable'
-        when wt.cumulative_y1_gpa_projected_unweighted >= 3.0
-        then 'on_pace'
-        when
-            wt.n_courses_unlocked > 0
-            and bt.n_courses_ungraded = 0
-            and bt.n_courses_below_target = 0
-        then 'on_pace'
-        else 'not_on_pace'
-    end as pace_status,
-from with_target as wt
-left join
-    below_target as bt
-    on wt.studentid = bt.studentid
-    and wt.schoolid = bt.schoolid
-    and wt._dbt_source_project = bt._dbt_source_project
+    /* an unknown status carries no numbers: a course on another scale could
+       make every one of them a wrong letter */
+    if(pace_status = 'unknown', 0, n_courses_below_target) as n_courses_below_target,
+    if(pace_status = 'unknown', null, gpa_needed_unweighted) as gpa_needed_unweighted,
+    if(pace_status = 'unknown', null, target_cutoff_percent) as target_cutoff_percent,
+    if(pace_status = 'unknown', null, target_letter_grade) as target_letter_grade,
+    if(pace_status = 'unknown', null, target_grade_points) as target_grade_points,
+    if(
+        pace_status = 'unknown', null, round(gpa_needed_unweighted + schedule_bump, 2)
+    ) as gpa_needed_weighted,
+from with_status

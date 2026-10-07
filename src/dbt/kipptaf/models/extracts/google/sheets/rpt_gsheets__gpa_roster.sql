@@ -7,7 +7,7 @@ with
 
             /* Y1 percents are whole numbers upstream, so no decimal is lost */
             format('%s %.0f', course_name, y1_percent_current) as course_label,
-        from {{ ref("int_gpa__course_quarter_pace") }}
+        from {{ ref("int_gpa__course_pace") }}
         where is_below_target and not is_locked
     ),
 
@@ -16,7 +16,6 @@ with
             studentid,
             _dbt_source_project,
 
-            count(*) as n_courses_below_target,
             string_agg(course_label, '; ' order by course_name) as courses_below_target,
         from courses_below
         group by studentid, _dbt_source_project
@@ -29,7 +28,7 @@ with
             course_name as quickest_win_course,
             pace_percent_to_next as quickest_win_pace_percent,
             next_letter_grade as quickest_win_next_letter,
-        from {{ ref("int_gpa__course_quickest_win") }}
+        from {{ ref("int_gpa__course_pace") }}
         where quickest_win_rank = 1
     ),
 
@@ -68,8 +67,8 @@ with
             t.gpa_needed_weighted,
             t.target_letter_grade,
             t.target_cutoff_percent,
+            t.n_courses_below_target,
 
-            bt.n_courses_below_target,
             bt.courses_below_target,
 
             qw.quickest_win_course,
@@ -97,7 +96,7 @@ with
             and co.schoolid = gc.schoolid
             and co._dbt_source_project = gc._dbt_source_project
         left join
-            {{ ref("int_gpa__student_quarter_target") }} as t
+            {{ ref("int_gpa__student_y1_target") }} as t
             on co.studentid = t.studentid
             and co.schoolid = t.schoolid
             and co._dbt_source_project = t._dbt_source_project

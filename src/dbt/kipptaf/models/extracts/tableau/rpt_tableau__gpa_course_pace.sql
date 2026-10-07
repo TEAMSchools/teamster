@@ -12,6 +12,10 @@ select
     p.is_below_target,
     p.is_secured,
     p.is_locked,
+    p.next_letter_grade,
+    p.next_cutoff_percent,
+    p.pace_percent_to_next,
+    p.quickest_win_rank,
 
     co.academic_year,
     co.region,
@@ -21,12 +25,7 @@ select
     co.student_name,
     co.advisory,
     co.school_leader_tableau_username,
-
-    qw.next_letter_grade,
-    qw.next_cutoff_percent,
-    qw.pace_percent_to_next,
-    qw.quickest_win_rank,
-from {{ ref("int_gpa__course_quarter_pace") }} as p
+from {{ ref("int_gpa__course_pace") }} as p
 inner join
     {{ ref("int_extracts__student_enrollments") }} as co
     on p.studentid = co.studentid
@@ -34,8 +33,3 @@ inner join
     and p._dbt_source_project = co._dbt_source_project
     and co.academic_year = {{ var("current_academic_year") }}
     and co.rn_year = 1
-left join
-    {{ ref("int_gpa__course_quickest_win") }} as qw
-    on p.studentid = qw.studentid
-    and p.course_number = qw.course_number
-    and p._dbt_source_project = qw._dbt_source_project
