@@ -1,22 +1,23 @@
 with
     section_rows as (
         select
-            academic_year,
-            school_name,
-            course_number,
-            section_number,
-            credit_type,
-            course_name,
-            section_or_period,
-            student_number,
-            sectionid,
+            ce.academic_year,
+            ce.school_name,
+            ce.course_number,
+            ce.section_number,
+            ce.credit_type,
+            ce.course_name,
+            ce.section_or_period,
+            ce.student_number,
+            ce.sectionid,
 
-            cast(grade_level as string) as grade_level_string,
-        from {{ ref("int_extracts__course_enrollments_by_term") }}
-        where
-            academic_year in ({{ var("ignite_academic_years") | join(", ") }})
-            and grade_level in ({{ var("ignite_grade_levels") | join(", ") }})
-            and region in ({{ "'" ~ (var("ignite_regions") | join("', '")) ~ "'" }})
+            cast(ce.grade_level as string) as grade_level_string,
+        from {{ ref("int_extracts__course_enrollments_by_term") }} as ce
+        inner join
+            {{ ref("int_ignite__student_years") }} as sy
+            on ce.student_number = sy.student_number
+            and ce.academic_year = sy.academic_year
+        where ce.state = 'NJ' and ce.grade_level between 9 and 12
     ),
 
     /* credit_type and course_name are constant within a section, so min() picks
@@ -62,7 +63,7 @@ with
             d.student_count,
 
             cast(d.classid_number as string) as classid,
-        from {{ ref("seed_ignite__treatment_sections") }} as s
+        from {{ ref("stg_google_sheets__ignite__treatment_sections") }} as s
         left join
             section_detail as d
             on s.academic_year = d.academic_year

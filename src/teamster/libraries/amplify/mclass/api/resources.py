@@ -3,13 +3,13 @@ import json
 from bs4 import BeautifulSoup, Tag
 from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
 from dagster_shared import check
-from pydantic import PrivateAttr
+from pydantic import Field, PrivateAttr
 from requests import Response, Session, exceptions
 
 
 class MClassResource(ConfigurableResource):
     username: str
-    password: str
+    password: str = Field(repr=False)
     request_timeout: float = 60.0
 
     _base_url: str = PrivateAttr(default="https://mclass.amplify.com")

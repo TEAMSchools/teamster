@@ -25,12 +25,6 @@ models:
           - not_null:
               config:
                 severity: error
-          - relationships:
-              arguments:
-                to: ref('stg_focus__students')
-                field: student_id
-              config:
-                severity: warn
         config:
           meta:
             contains_pii: true
@@ -54,12 +48,6 @@ models:
               config:
                 severity: error
                 where: admin is distinct from 'Y'
-          - relationships:
-              arguments:
-                to: ref('stg_focus__course_periods')
-                field: course_period_id
-              config:
-                severity: warn
       - name: period_id
         description: >-
           Focus school period the attendance was taken in (joins

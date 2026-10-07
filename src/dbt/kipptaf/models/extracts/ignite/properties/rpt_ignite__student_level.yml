@@ -58,9 +58,9 @@ models:
       - name: school_id
         data_type: string
         description:
-          NCES school identifier from `seed_ignite__school_nces_ids`. The two
-          Newark high schools share one identifier, because KIPP Newark is a
-          single school in the Common Core of Data and its campuses are an
+          NCES school identifier from `stg_google_sheets__people__locations`.
+          The two Newark high schools share one identifier, because KIPP Newark
+          is a single school in the Common Core of Data and its campuses are an
           internal delineation with no federal counterpart. This column
           therefore cannot distinguish the two treatment sites, and
           `school_name` is the column that can — which matters for any

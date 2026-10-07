@@ -1,13 +1,13 @@
 from dagster import ConfigurableResource, InitResourceContext
 from ldap3 import ALL, NTLM, Connection, Server
-from pydantic import PrivateAttr
+from pydantic import Field, PrivateAttr
 
 
 class LdapResource(ConfigurableResource):
     host: str
     port: str
     user: str
-    password: str
+    password: str = Field(repr=False)
 
     _server: Server = PrivateAttr()
     _connection: Connection = PrivateAttr()

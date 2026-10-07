@@ -4,13 +4,12 @@ models:
       Focus student schedules with section, course and marking-period context
       resolved — one row per student per scheduled course period, the same grain
       as stg_focus__schedule. Course period and course are inner-joined because
-      a schedule row without them is not interpretable; stg_focus__schedule
-      carries relationships tests on both keys so an orphan fails there rather
-      than silently disappearing here. Marking period is left-joined on syear
-      and school_id as well as the id, resolving Focus's full-year sentinel
-      (marking_period_id 0) to the school's year-level marking period.
-      Internal-only — a rpt_ view must sit between this model and any external
-      consumer.
+      a schedule row without them is not interpretable, so a schedule row whose
+      course period or course is missing drops out here. Marking period is
+      left-joined on syear and school_id as well as the id, resolving Focus's
+      full-year sentinel (marking_period_id 0) to the school's year-level
+      marking period. Internal-only — a rpt_ view must sit between this model
+      and any external consumer.
     columns:
       - name: student_schedule_id
         description: >-
