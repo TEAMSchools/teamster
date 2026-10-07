@@ -1,7 +1,17 @@
 models:
   - name: stg_google_sheets__assessments__standard_domains
+    description: >-
+      Maps an Illuminate standard code to its domain. Consumers join
+      standard_code to the Illuminate standard custom code (response_type_code).
+      Intended grain is one row per standard_code.
     columns:
       - name: standard_code
         data_type: string
+        description: Illuminate standard custom code.
+        data_tests:
+          - unique:
+              config:
+                severity: error
       - name: standard_domain
         data_type: string
+        description: Domain the standard belongs to.
