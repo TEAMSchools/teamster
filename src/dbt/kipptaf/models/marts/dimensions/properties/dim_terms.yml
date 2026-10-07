@@ -19,12 +19,12 @@ models:
             warn_unsupported: false
             warn_unenforced: false
         data_tests:
-          # warn, not error: dim_terms is a view, so this only re-runs on a SQL
-          # edit. The grain check that fires on sheet edits lives on
-          # stg_google_sheets__reporting__terms.
+          # Sheet-driven duplicates are caught on every sheet edit by the grain
+          # test on stg_google_sheets__reporting__terms. This one catches
+          # fan-out from the region and school joins, which that test can't.
           - unique:
               config:
-                severity: warn
+                severity: error
 
       - name: location_key
         data_type: string
