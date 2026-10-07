@@ -552,7 +552,10 @@ cubes:
         # the value changes, so answers trail the fact by the check interval
         # plus one build. Each full rebuild scans the fact once per partition
         # (about 12 x 3.6 GiB), because the partition filter sits on joined
-        # dim_dates and cannot prune the fact (#5557 A3).
+        # dim_dates and cannot prune the fact (#5557 A3). last_modified_time
+        # also moves on metadata-only changes (description, labels), and on
+        # every load if the fact ever becomes incremental or loads more often:
+        # each of those triggers a full rebuild too.
         refresh_key:
           every: 30 minute
           sql: >-
