@@ -439,8 +439,7 @@ here moves those consumers too):
 
 - `int_assessments__response_rollup` — the family workhorse: scaffold x
   responses x bands, one row per expected student-assessment-response. Also read
-  by `int_topline__formative_assessment_weekly`,
-  `rpt_gsheets__assessment_roster`, `rpt_gsheets__school_metrics_extract`,
+  by `rpt_gsheets__assessment_roster`, `rpt_gsheets__school_metrics_extract`,
   `rpt_tableau__miami_fast`, and `int_assessments__college_assessment_practice`
   (CARAT family), so a rollup change also moves the practice-SAT chain.
 - `int_assessments__assessments_members` — also read by

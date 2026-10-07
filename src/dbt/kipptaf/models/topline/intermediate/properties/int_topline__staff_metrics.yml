@@ -1,4 +1,4 @@
 models:
-  - name: int_topline__staff_retention
+  - name: int_topline__staff_metrics
     config:
       enabled: false

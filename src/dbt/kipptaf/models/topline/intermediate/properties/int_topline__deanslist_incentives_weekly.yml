@@ -12,6 +12,7 @@ models:
           1 when the student has at least one Progress to Quarterly Incentive
           award in the week, otherwise 0.
     config:
+      enabled: false
       materialized: table
       meta:
         dagster:
@@ -23,6 +24,8 @@ models:
 
 unit_tests:
   - name: unit_topline_deanslist_incentives_weekly_week_bucketing
+    config:
+      enabled: false
     description:
       Two students across two enrolled weeks. Student 1 has a Thursday award and
       a Saturday award in the first week, which flag that week once without

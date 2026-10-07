@@ -646,17 +646,14 @@ off the gates, supply Not Tested.
   `rpt_gsheets__mtss_rti`, `rpt_gsheets__kippmiami_payout_roster`,
   `rpt_gsheets__assessment_roster`,
   `int_extracts__student_enrollments_subjects`,
-  `int_reporting__promotional_status`, `rpt_deanslist__reading_levels`,
-  `int_assessments__score_anchors` and `int_topline__dibels_benchmark_weekly`.
-  Most are safe from the one-row-per-method change only because they filter
-  Benchmark or the composite; when touching one, state its `model_type` scope.
+  `int_reporting__promotional_status`, `rpt_deanslist__reading_levels`, and
+  `int_assessments__score_anchors`. Most are safe from the one-row-per-method
+  change only because they filter Benchmark or the composite; when touching one,
+  state its `model_type` scope.
 - `int_amplify__benchmark_student_summary` is also read by
   `int_extracts__student_enrollments_subjects`.
 - `int_amplify__mclass__benchmark_student_summary` is also read by
   `rpt_gsheets__njdoe_universal_screener_data`.
-- `int_amplify__pm_met_criteria` is also read by
-  `int_topline__dibels_pm_weekly`, which collapses its round verdicts to one per
-  student-round with `min()`.
 
 ## Inputs
 
