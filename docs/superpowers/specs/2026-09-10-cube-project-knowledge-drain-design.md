@@ -855,10 +855,13 @@ intervals clustered on prompt, and the median cost per conversation:
 - **Arm C.** It scores 0% on both models, against B's 4.8% on Haiku. The
   intervals overlap, so C is no worse than B and possibly better; the first
   run's "C adds nothing" rested on a Paterson verdict that was a scoring error.
-- **The empty-result note is not measured.** No conversation in any run read
-  Paterson's empty result as a 0% rate, arm A included, so the Paterson prompt
-  has no headroom. The note stays because it fires on every empty result and
-  costs one sentence, not because the eval shows it helps.
+- **The eval cannot show whether the empty-result note helps, because no model
+  fell for the Paterson trap.** Across every run and both models, no answer read
+  Paterson's empty result as a 0% rate, including arm A, which gets no note.
+  That is what "no headroom" means here: the eval worked, and the baseline was
+  already at 0%, so the note had nothing left to fix on this question. The note
+  stays because it fires on every empty result and costs one sentence, not
+  because the eval shows it helps.
 - **Sonnet changed between runs.** The `sonnet` alias now costs about a third as
   much per conversation, and its arm A no longer falls for
   `grade_filter_on_vendor` (3 of 3 before, 0 now). The records do not store the
