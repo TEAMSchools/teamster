@@ -11,8 +11,11 @@ models:
       - name: event_id
         data_type: string
         description: >-
-          Unique identifier for the attendance record, taken from the underlying
-          attendance fact's surrogate key.
+          Unique identifier for the attendance record — a hash of
+          student_number, district project, and calendar date, the same inputs
+          as student_day_key on fct_student_attendance_enrollment_daily.
+          Branching Minds treats it as the record's identity, so its inputs and
+          their order must never change.
         data_tests:
           - unique:
               config:
