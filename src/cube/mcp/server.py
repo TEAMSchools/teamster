@@ -290,6 +290,67 @@ def _with_default_timezone(query: dict[str, Any]) -> dict[str, Any]:
     return {**query, "timezone": DEFAULT_QUERY_TIMEZONE}
 
 
+EMPTY_RESULT_NOTE = (
+    "Empty result: no rows, or one row of null or zero measures. The data may "
+    "not exist for this slice, or your access may not include it. Before "
+    "concluding it does not exist, re-run without the narrowing filter, grouped "
+    "by region or school, and check the filter values against the values the "
+    "member's `meta` description lists."
+)
+
+
+def _groups_rows(query: dict[str, Any]) -> bool:
+    """True when the query groups by a dimension or a time-dimension grain.
+    Without one, Cube answers an empty slice with 1 row of null measures (a
+    plain count may come back as 0), not with `data: []`."""
+    if query.get("dimensions"):
+        return True
+    return any(
+        isinstance(t, dict) and t.get("granularity")
+        for t in query.get("timeDimensions") or []
+    )
+
+
+def _is_null_or_zero(value: Any) -> bool:
+    if value is None:
+        return True
+    try:
+        return float(value) == 0
+    except (TypeError, ValueError):
+        return False
+
+
+def _with_empty_result_note(
+    payload: dict[str, Any], query: dict[str, Any]
+) -> dict[str, Any]:
+    """Add a note to an empty load result, so a zero is not read as "no data
+    exists". Empty is `data: []`, or, for a `query` with no grouping, the
+    single all-null-or-zero row Cube returns instead. A multi-query response
+    (`results`, e.g. compareDateRange) gets the note on each empty result. Any
+    other payload (rows, errors, no data key) is returned unchanged."""
+    data = payload.get("data")
+    if isinstance(data, list) and (
+        not data
+        or (
+            len(data) == 1
+            and isinstance(data[0], dict)
+            and not _groups_rows(query)
+            and all(_is_null_or_zero(v) for v in data[0].values())
+        )
+    ):
+        return {**payload, "note": EMPTY_RESULT_NOTE}
+    results = payload.get("results")
+    if isinstance(results, list):
+        return {
+            **payload,
+            "results": [
+                _with_empty_result_note(r, query) if isinstance(r, dict) else r
+                for r in results
+            ],
+        }
+    return payload
+
+
 def _meta_scope_key(views: list[str] | None) -> str:
     """Distinguish a filtered fetch from the full `/meta` catalog in the cache
     key — a filtered call must never read or write the full catalog's cache
@@ -413,11 +474,16 @@ async def meta(
     (not an error) — see the `load` tool's grain rule before dropping a
     dimension.
 
+    Members may carry `meta.ai_context` (`aiContext` on some view-specific
+    members): usage rules written for you. Read and follow a member's
+    `ai_context` before building a query that uses it.
+
     Cached per (email, requested scope) for one hour (in-memory, with disk
     fallback across process restarts) — a filtered call never reads or writes
     the full-catalog cache entry, or another view-set's, though it does reuse
     the full catalog's cached fetch to build its filtered result. Pass
-    `force_refresh=True` after a model deploy.
+    `force_refresh=True` after a model deploy. Refresh before concluding a member
+    is missing.
     """
     email = await _get_user_email(ctx)
     scope = _meta_scope_key(views)
@@ -459,7 +525,9 @@ async def load(ctx: Context, query: dict[str, Any]) -> dict[str, Any]:
     just which columns come back. (This includes count_distinct measures like
     count_students: at a coarser grain Cube computes a correct distinct count
     for that grain — the "non-additive" note on some measures refers to
-    pre-aggregation rollup, not query-time grain.)
+    pre-aggregation rollup, not query-time grain.) A query with no measure
+    groups by its dimensions, so identical rows collapse into one; add a count,
+    the primary key, or `"ungrouped": true` to see every row.
 
     Example — same filters and measure (pct_proficient), two grains: dimensions
     [is_iep, module_code, academic_year] returns one proficiency rate per (IEP
@@ -480,7 +548,8 @@ async def load(ctx: Context, query: dict[str, Any]) -> dict[str, Any]:
 
     Filter operators are named, not SQL: `equals`, `notEquals`, `contains`,
     `gt`/`gte`/`lt`/`lte`, `set`/`notSet`, `inDateRange`, `beforeDate`,
-    `afterDate`. SQL-style `=`/`IN`/`LIKE` won't parse.
+    `afterDate`. SQL-style `=`/`IN`/`LIKE` won't parse. `equals "null"` matches
+    the literal string and returns zero rows; filter a null with `notSet`.
 
     Date dimensions: for a single date use `filters` with `equals`; for a range
     or when you need `granularity` (day/week/month/etc.), use `timeDimensions`
@@ -513,7 +582,9 @@ async def load(ctx: Context, query: dict[str, Any]) -> dict[str, Any]:
     full_name, birth_date, state/lea IDs) unless drill-down is explicitly
     requested. Staff sensitive fields (personal contact, birth date,
     demographics) live in `staff_pii`, gated separately from the open
-    `staff_directory` roster. Keep any identifying values — student or staff —
+    `staff_directory` roster. Student views return only the schools the user
+    can access; before describing a result as network-wide, check which regions
+    or schools it covers. Keep any identifying values — student or staff —
     in the local conversation only, never to PR comments, issues, Slack, or
     scheduled-agent outputs.
 
@@ -521,13 +592,14 @@ async def load(ctx: Context, query: dict[str, Any]) -> dict[str, Any]:
     explicit `timezone` only when wall-clock conversion is intended.
     """
     email = await _get_user_email(ctx)
-    return await _request(
+    result = await _request(
         "POST",
         "/load",
         json={"query": _with_default_timezone(query)},
         email=email,
         poll=True,
     )
+    return _with_empty_result_note(result, query)
 
 
 @mcp.tool()

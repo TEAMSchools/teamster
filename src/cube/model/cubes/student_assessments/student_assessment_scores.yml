@@ -45,17 +45,19 @@ cubes:
 
       - name: date_taken
         description: >-
-          Date the assessment was taken (completion date), as a standalone date
-          dimension not joined to a calendar cube. date_taken is corrupt for a
-          small share of internal rows, so calendar and academic-year rollups
-          use the date_day / academic_year members instead (backed by
-          assessment_date_key: the administration date for internal and college,
-          the reliable test date for state and vendor). Populated for state and
-          vendor rows; nullable for a small share of internal rows lacking a
-          recorded sitting.
+          Date the assessment was taken (completion date). Every source. Null on
+          every Illuminate not_taken row, and null or wrong on a small share of
+          other Illuminate rows.
         sql: CAST(test_date_key AS TIMESTAMP)
         type: time
         public: true
+        meta:
+          ai_context: >-
+            A standalone date, not joined to the calendar. Do not use it to find
+            the most recent diagnostic; administration_period covers that. For
+            year and calendar rollups use date_day and academic_year, which read
+            the administration date for Illuminate and college and the test date
+            for state tests and vendor diagnostics (i-Ready, DIBELS, STAR).
 
       - name: term_key
         description: FK to terms — the reporting quarter containing the score.
@@ -64,74 +66,162 @@ cubes:
 
       - name: enrollment_resolution
         description: >-
-          How the section enrollment was resolved: subject_section or homeroom.
-          Filter to subject_section for course/section-level rollups.
+          How the section enrollment was resolved: subject_section (the section
+          for the assessment's subject, active on the test date) or homeroom
+          (the student's HR section, used when no subject section resolved).
         sql: enrollment_resolution
         type: string
         public: true
+        meta:
+          ai_context: >-
+            Filter to subject_section for course- and section-level rollups.
 
       - name: proficiency_level
         description: >-
-          Proficiency band label (performance band for internal, achievement
-          level for state).
+          Proficiency label; the vocabulary is per source. i-Ready: 3 or More
+          Grade Levels Below, 2 Grade Levels Below, 1 Grade Level Below, Early
+          On Grade Level, Mid or Above Grade Level. DIBELS: Well Below
+          Benchmark, Below Benchmark, At Benchmark, Above Benchmark, and Tested
+          Out on some subtest (group) rows. STAR and FL state: Level 1 to Level
+          5; STAR is null on a share of rows. NJSLA: Did Not Yet Meet
+          Expectations, Partially Met Expectations, Approached Expectations, Met
+          Expectations, Exceeded Expectations. NJSLA Science: the same without
+          Partially Met Expectations. NJGPA: Graduation Ready, Not Yet
+          Graduation Ready. Illuminate: the performance band label.
+          Tier-movement rates are not comparable across instruments: fewer,
+          wider tiers mechanically raise the stayed-the-same rate.
         sql: proficiency_level
         type: string
         public: true
+        meta:
+          ai_context: >-
+            On Illuminate standard and group rows, a band can carry more than
+            one label spelling; group by performance_band_label_number there.
+            For STAR rows with no proficiency level, filter it with notSet;
+            equals "null" matches the literal string and returns zero rows.
+            DIBELS rows with no verdict nearly all carry Tested Out here, not
+            null. To find every row with no verdict, filter is_mastery with
+            notSet.
 
       - name: performance_band_label_number
         description: >-
-          Numeric ordering of the performance band label within the band scale.
-          Null for state assessments.
+          Position of the score's band within the performance band set it was
+          scored against. Illuminate only; null for every other source. Band
+          sets differ in cut points, in band count, and in which band starts
+          mastery, so band 5 is not always the top. Not comparable across
+          assessments, or across response types within one assessment: standard
+          and group rows can carry different band labels than the assessment's
+          overall rows.
         sql: performance_band_label_number
         type: number
         public: true
+        meta:
+          ai_context: >-
+            Compare band numbers within one assessment and one response_type.
+            There, prefer this number to proficiency_level text for grouping and
+            ordering; on standard and group rows a few bands carry more than one
+            label spelling.
 
       - name: is_mastery
         description: >-
-          TRUE if the student met the mastery/proficiency threshold for this
-          assessment.
+          Per-row proficient flag that pct_proficient is built from. The bar is
+          per source: i-Ready, Early On Grade Level and Mid or Above Grade Level
+          — Early On is a looser bar than at or above grade level; DIBELS, At
+          and Above Benchmark; STAR and FL, Level 3 and up; NJSLA, Met and
+          Exceeded Expectations; NJGPA, Graduation Ready; Illuminate, set by
+          each assessment's band set, so an Illuminate rate mixes different
+          bars. Null where the source gives no verdict: Illuminate not_taken
+          rows, DIBELS Tested Out subtests, STAR rows with no level, and a few
+          Illuminate and DIBELS rows with no band or level.
         sql: is_mastery
         type: boolean
         public: true
+        meta:
+          ai_context: >-
+            For i-Ready at or above grade level, filter proficiency_level to Mid
+            or Above Grade Level instead. When reporting an Illuminate rate, say
+            which assessments it covers.
 
       - name: scale_score
-        description:
-          Scale score achieved. Null for internal (percent-correct) rows.
+        description: >-
+          Scale score achieved. Every source except Illuminate, which reports
+          percent_correct instead; also null on some i-Ready and DIBELS group
+          rows. Scales differ by source and are not comparable across sources or
+          subjects; within i-Ready the scale also compresses at higher grades,
+          so a change in score is not comparable between elementary and middle
+          grades.
         sql: scale_score
         type: number
         public: true
+        meta:
+          ai_context: >-
+            Report a scale-score change separately for elementary and middle
+            grades, and as a point difference, not a percent of the BOY score.
+            Do not label a computed change with i-Ready's growth-measure names;
+            those norms are not in this view.
 
       - name: percent_correct
-        description: Percent correct. Null for state assessments.
+        description: >-
+          Percent of questions answered correctly. Illuminate only; null for
+          every other source.
         sql: percent_correct
         type: number
         public: true
 
       - name: response_type
         description: >-
-          Response-type breakdown. Never null; four values — overall (every
-          source), standard and not_taken (Illuminate only), and group
-          (Illuminate, i-Ready and DIBELS). Not additive across values, so
-          filter it explicitly; default to overall.
+          Response-type breakdown. Never null; 4 values: overall (a subject,
+          course-level or composite score; every source), group (a strand or
+          domain rollup within a subject; Illuminate, i-Ready and DIBELS),
+          standard (one Illuminate standard; Illuminate only) and not_taken (an
+          Illuminate assessment a student was assigned and never sat, with no
+          recorded response). Not additive across values.
         sql: response_type
         type: string
         public: true
+        meta:
+          ai_context: >-
+            Filter it on every query; default to overall unless a standard or
+            group breakdown is asked for.
 
       - name: response_type_code
-        description: Short code identifying the response type. Null for state.
+        description: >-
+          Breakdown identifier — the standard code on Illuminate standard rows,
+          the domain on i-Ready group rows, the subtest on DIBELS group rows.
+          Null on Illuminate group rows and on every overall and not_taken row.
+          Some CCSS Math standards carry 2 spellings
+          (CCSS.Math.Content.8.EE.C.8.b and CCSS.Math.Content.8.EE.C.8b), and a
+          small share of older rows have an empty code (an empty string, not
+          null).
         sql: response_type_code
         type: string
         public: true
+        meta:
+          ai_context: >-
+            For a standards rollup, merge the 2 spellings first: remove a dot
+            only when it sits right before a trailing lowercase letter. Then
+            recompute the rate from the merged counts (summed count_proficient
+            over summed count_scored); never average the 2 reported rates. For
+            an Illuminate group-level cut, group on response_type_description —
+            this code is null there, so keying on it drops every Illuminate
+            group row and keeps i-Ready and DIBELS.
 
       - name: response_type_description
-        description: Human-readable response-type description. Null for state.
+        description: >-
+          Human-readable breakdown label. Populated on standard rows and every
+          group row; null on overall and not_taken. A few labels, on standard
+          and group rows, carry punctuation, capitalization or spacing variants
+          of the same text.
         sql: response_type_description
         type: string
         public: true
 
       - name: response_type_root_description
         description: >-
-          Description of the root (top-level) response type. Null for state.
+          CCSS domain the standard rolls up to. Populated on every Illuminate
+          standard row and null on every other row. Unreliable for Illuminate
+          content aligned to Florida's own standards, whose codes do not fit the
+          CCSS hierarchy.
         sql: response_type_root_description
         type: string
         public: true
@@ -140,8 +230,10 @@ cubes:
         description: >-
           Illuminate-only flag. TRUE when a K-8 student sat a
           replacement-curriculum assessment off their enrolled grade level. Null
-          for all non-Illuminate sources (state and vendor: iReady, DIBELS,
-          STAR), which have no replacement-curriculum concept.
+          for every other source (the state tests and the i-Ready, DIBELS and
+          STAR diagnostics), which have no replacement-curriculum concept. Never
+          TRUE here: no replacement-curriculum sitting resolves to a section
+          enrollment, so none survive enrollment scoping.
         sql: is_replacement
         type: boolean
         public: true
@@ -151,15 +243,13 @@ cubes:
       # scored. Each answers a different question and they are not
       # interchangeable — see each description. Renamed from count_scores in
       # #5501, which counted the widest population under the narrowest name.
+      # COUNT(*) over the unique PK (assessment_score_key): additive, so pre-
+      # aggregations roll it up to any grain.
       - name: count_assigned
         description: >-
           Every assessment row, including the Illuminate not_taken rows where a
-          student was assigned an assessment and never sat it. This is the
-          widest of the three counts and the denominator for pct_taken. For
-          assessments actually sat use count_taken; for the population
-          pct_proficient is computed over use count_scored. COUNT(*) over the
-          unique PK (assessment_score_key) — additive, so pre-aggregations roll
-          it up to any grain.
+          student was assigned an assessment and never sat it. The widest of 3
+          nested counts: assigned contains taken contains scored.
         type: count
         public: true
         # Forces joins to student_assessments and regions so all proficiency
@@ -168,33 +258,46 @@ cubes:
         filters:
           - sql: "{student_assessments.assessment_key} IS NOT NULL"
           - sql: "{regions.region_key} IS NOT NULL"
+        meta:
+          ai_context: >-
+            For assessments actually sat use count_taken; for the population
+            pct_proficient is computed over use count_scored.
 
       - name: count_taken
         description: >-
-          Assessments a student actually sat — every row except the Illuminate
-          not_taken placeholders. Use this for "how many assessments were
-          taken". It is wider than count_scored: a student can sit an assessment
-          that carries no proficiency verdict, which is most STAR kindergarten
-          and Early Literacy rows and the DIBELS K-2 phonics subtests. Only
-          Illuminate can express non-participation, so for every other source
-          this equals count_assigned.
+          Assessments a student actually sat: every row except the Illuminate
+          not_taken placeholders. Only Illuminate records non-participation, so
+          for every other source this equals count_assigned. Wider than
+          count_scored, because a sat assessment can carry no proficiency
+          verdict: STAR rows with no level (Early Literacy and nearly all
+          kindergarten, where STAR publishes no benchmark), and DIBELS Tested
+          Out subtests.
         type: count
         public: true
         filters:
           - sql: "{CUBE}.response_type != 'not_taken'"
           - sql: "{student_assessments.assessment_key} IS NOT NULL"
           - sql: "{regions.region_key} IS NOT NULL"
+        meta:
+          ai_context: >-
+            Use this for "how many assessments were taken".
 
+      # Exact count_distinct: non-additive, so a rollup pre-aggregation cannot
+      # re-aggregate it to a coarser grain. Switch to count_distinct_approx
+      # (HLL) if this is pre-aggregated and an approximate distinct is
+      # acceptable.
       - name: count_students
         description: >-
           Distinct students (per student-year) with a score in the filtered
-          slice. Exact count_distinct — non-additive, so a rollup
-          pre-aggregation cannot re-aggregate it to a coarser grain; switch to
-          count_distinct_approx (HLL) if/when this is pre-aggregated and an
-          approximate distinct is acceptable.
+          slice.
         sql: "{student_section_enrollments.student_enrollment_key}"
         type: count_distinct
         public: true
+        meta:
+          ai_context: >-
+            Heavier than the plain counts, and has timed out at standard grain;
+            use count_taken there, and report it as assessments taken, not
+            students.
 
       - name: _sum_proficient
         description: >-
@@ -210,18 +313,33 @@ cubes:
           - sql: "{student_assessments.assessment_key} IS NOT NULL"
           - sql: "{regions.region_key} IS NOT NULL"
 
+      # Exact count_distinct: non-additive, so proficiency_rollup cannot serve
+      # it and every query using it reads the fact. Measured 2026-09-30 at
+      # standard grain (one year, Illuminate, by response_type_code): 7.5s,
+      # well inside the MCP deadline, so it carries no timeout caveat.
+      - name: count_assessments
+        description: >-
+          Distinct Illuminate assessments in the filtered set — not sittings,
+          not scored responses. Illuminate only: every other source has no
+          source_assessment_id, so it reads 0 there.
+        sql: "{student_assessment_administrations.source_assessment_id}"
+        type: count_distinct
+        public: true
+        # Same join-forcing filters as the other counts, so every measure
+        # shares one CTE (see count_assigned).
+        filters:
+          - sql: "{student_assessments.assessment_key} IS NOT NULL"
+          - sql: "{regions.region_key} IS NOT NULL"
+        meta:
+          ai_context: >-
+            Use this for "how many times was this assessed". A standard resting
+            on 1 assessment is a thin base for a trend; say so rather than
+            trending it.
+
       - name: count_scored
         description: >-
-          Assessments carrying a proficiency verdict (is_mastery set) — the
-          narrowest of the three counts and the denominator pct_proficient is
-          computed over. A row with no verdict cannot enter the numerator, so
-          counting it would only drag the rate down. Narrower than count_taken
-          by the rows that were sat but cannot be judged: STAR publishes no
-          proficiency benchmark for kindergarten at any subject or for Early
-          Literacy at any grade, and the DIBELS K-2 phonics subtests have no
-          benchmark level set upstream. Report this alongside pct_proficient
-          whenever the rate carries weight — it is the n the rate rests on, and
-          it is not count_assigned.
+          Assessments carrying a proficiency verdict (is_mastery set). The
+          narrowest count, and the denominator of pct_proficient.
         type: count
         public: true
         # Forces joins to student_assessments and regions so all proficiency
@@ -231,49 +349,54 @@ cubes:
           - sql: "{CUBE}.is_mastery IS NOT NULL"
           - sql: "{student_assessments.assessment_key} IS NOT NULL"
           - sql: "{regions.region_key} IS NOT NULL"
+        meta:
+          ai_context: >-
+            Report it alongside pct_proficient whenever the rate carries weight;
+            it is the n the rate rests on.
 
       - name: count_proficient
         description: >-
-          Assessments where the student met the proficiency threshold — the
-          numerator of pct_proficient, whose denominator is count_scored. Use
-          this for "how many were proficient" rather than multiplying
-          pct_proficient by a count.
+          Assessments where the student met the proficiency threshold. The
+          numerator of pct_proficient, whose denominator is count_scored.
         sql: "{_sum_proficient}"
         type: number
         public: true
+        meta:
+          ai_context: >-
+            Use this for "how many were proficient" rather than multiplying
+            pct_proficient by a count.
 
+      # Built from additive primitives (count_taken / count_assigned) so pre-
+      # aggregations roll it up to any grain.
       - name: pct_taken
         description: >-
-          Grain: recomputes at any query grain, but meaningful only within
-          Illuminate — pooling it across sources is a silent-failure trap
-          (numerically valid, semantically meaningless). Participation rate —
-          assessments sat / assessments assigned. Only Illuminate records
-          non-participation, so every other source reads exactly 100% by
-          construction rather than by fact, and a pooled cross-source rate is
-          diluted by sources that cannot express a no-show. Filter
-          assessment_type to illuminate before reporting this. Built from
-          additive primitives (count_taken / count_assigned) so pre-aggregations
-          roll it up to any grain.
+          Grain: meaningful only within Illuminate; pooling across sources is a
+          silent-failure trap. Participation rate: assessments sat / assessments
+          assigned. Every other source reads 100% by construction.
         sql: "1.0 * {count_taken} / NULLIF({count_assigned}, 0)"
         type: number
         format: percent
         public: true
+        meta:
+          ai_context: >-
+            Filter assessment_type to illuminate before reporting it.
 
+      # Built from additive primitives (_sum_proficient / count_scored) so
+      # pre-aggregations roll it up to any grain.
       - name: pct_proficient
         description: >-
-          Proficiency/mastery rate — proficient scores / scores carrying a
-          proficiency verdict. The headline, source-agnostic metric (the only
-          score measure comparable across the incompatible scales of internal vs
-          state assessments). Its denominator is count_scored, NOT
-          count_assigned, so multiplying this rate by count_assigned overstates
-          the proficient count, badly on the sources where many rows carry no
-          verdict. Pair it with count_scored, which is the n it rests on. Built
-          from additive primitives (_sum_proficient / count_scored) so
-          pre-aggregations roll it up to any grain.
+          Proficiency rate: proficient scores / scores carrying a verdict
+          (count_scored). The headline metric, and the only score measure on a
+          common 0-to-1 scale across sources; the mastery bar behind it differs
+          by source.
         sql: "1.0 * {_sum_proficient} / NULLIF({count_scored}, 0)"
         type: number
         format: percent
         public: true
+        meta:
+          ai_context: >-
+            Pair it with count_scored; never multiply it by count_assigned to
+            get a proficient count.
 
       - name: _sum_percent_correct
         description: >-
@@ -297,8 +420,9 @@ cubes:
           Grain: recomputes at any query grain, but meaningful only within a
           single subject/standard — pooling percent-correct across assessments
           is a silent-failure trap (numerically valid, semantically
-          meaningless). Average percent correct, internal-effective (null for
-          state), built from additive primitives so pre-aggregations roll it up.
+          meaningless). Average percent correct. Illuminate only; null for every
+          other source. Built from additive primitives so pre-aggregations roll
+          it up.
         sql: "{_sum_percent_correct} / NULLIF({_count_percent_correct}, 0)"
         type: number
         public: true
@@ -313,8 +437,8 @@ cubes:
 
       - name: _count_scale_score
         description: >-
-          Count of rows with a non-null scale_score (state scores). Building
-          block for avg_scale_score.
+          Count of rows with a non-null scale_score (every source except
+          Illuminate). Building block for avg_scale_score.
         type: count
         public: false
         filters:
@@ -357,20 +481,24 @@ cubes:
           - sql: "{regions.region_key} IS NOT NULL"
           - sql: "{student_assessments.module_type} IN ('QA', 'MQQ', 'CRQ')"
 
+      # Built from additive primitives so pre-aggregations roll it up.
       - name: pct_proficient_formative
         description: >-
-          Proficiency rate across all formative module types (Quick Assessments,
-          Multiple-Choice Quick Questions, and Constructed Response Questions).
-          CRQ is included and also available as the standalone
-          pct_proficient_crq measure. The denominator excludes rows with no
-          proficiency verdict (is_mastery unset), matching pct_proficient. Built
-          from additive primitives so pre-aggregations roll it up.
+          Proficiency rate across the QA, MQQ and CRQ module types only;
+          excludes every other module type (TP, UA, ET, WPP and older types).
+          Its denominator counts only rows with a proficiency verdict, as in
+          pct_proficient. CRQ is also available alone as pct_proficient_crq.
         sql:
           "1.0 * {_sum_proficient_formative} / NULLIF({_count_scored_formative},
           0)"
         type: number
         format: percent
         public: true
+        meta:
+          ai_context: >-
+            Not "all internal checkpoints". For that, build the rollup from the
+            intended module types and flag the pooling choice as an open
+            decision.
 
       - name: _sum_proficient_crq
         description: >-

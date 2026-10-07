@@ -88,26 +88,28 @@ models:
           Illuminate, derived by unnesting the regions_assessed list — a
           multi-region assessment produces one row per district.
 
+      # The upstream NJ value FallBlock is normalized to Fall.
       - name: administration_period
         data_type: string
         description: >-
-          The scheduling period that distinguishes one administration of the
-          same assessment from another within the same academic year. For
-          college-entrance assessments (Official and Practice), this is the
-          College Board administration round (e.g. Sept, Oct, Nov). For NJ state
-          assessments, this is the testing season (Fall, Winter, Spring), with
-          the upstream value FallBlock normalized to Fall. For FL state
-          assessments, this is the administration window as reported by FLDOE.
-          Null for Illuminate and AP assessments.
+          Window within the academic year; the vocabulary is per source. i-Ready
+          and DIBELS: BOY, MOY, EOY, plus Outside Round for i-Ready sittings
+          outside the 3 windows. STAR: Fall, Winter, Spring. NJGPA: Fall (the
+          routine retake window) and Spring. NJSLA and NJSLA Science: Spring. FL
+          FAST: PM1 to PM3; FL end-of-course and science: PM3. College: the
+          sitting's month and 2-digit year (for example Apr 24), for SAT, ACT
+          and PSAT. Null for Illuminate and AP. i-Ready EOY falls after spring
+          state testing and DIBELS EOY overlaps it; MOY is the last named round
+          before it.
 
+      # A discriminator within the administration hash, so region-specific
+      # copies of the same Illuminate module checkpoint stay distinct
+      # administration rows.
       - name: source_assessment_id
         data_type: int64
         description: >-
-          Illuminate assessment identifier carried through to the administration
-          grain. Populated for Illuminate assessments only; null for all other
-          branches. Acts as a discriminator within the hash so that
-          region-specific copies of the same Illuminate module checkpoint remain
-          distinct administration rows.
+          Illuminate assessment id at the administration grain (the canonical
+          id). Illuminate only; null for every other source.
 
       - name: test_type
         data_type: string

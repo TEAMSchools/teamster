@@ -1,0 +1,691 @@
+{
+  "cubes": [
+    {
+      "description": "Assessment scores across internal Illuminate interims, NJ/FL state assessments, and vendor benchmarks (i-Ready, DIBELS, STAR) \u2014 row-level (one row per student x assessment x administration x response type) and aggregate breakdowns in a single view. pct_proficient (mastery rate) is the source-agnostic headline; scale_score is null for internal rows and percent_correct is null for state and vendor rows. response_type / response_type_code carry the standard/skill breakdown (Illuminate only). State and vendor administrations have no single administered date, so the Date members (academic_year, academic_year_label, date_day, month_number, month_name) resolve for every source but are scoped by different dates per source: the administration date for Illuminate/college, the student's completion (test) date for state/vendor. A cross-source date cut (e.g. \"scores in May\") therefore mixes those two date concepts. Contains direct student identifiers \u2014 see access_policy for PII gating.",
+      "dimensions": [
+        {
+          "description": "Surrogate key. Primary key for this fact.",
+          "name": "student_assessment_scores_view.assessment_score_key",
+          "title": "Student Assessment Scores View Assessment Score Key",
+          "type": "string"
+        },
+        {
+          "description": "Date the assessment was taken (completion date), as a standalone date dimension not joined to a calendar cube. date_taken is corrupt for a small share of internal rows, so calendar and academic-year rollups use the date_day / academic_year members instead (backed by assessment_date_key: the administration date for internal and college, the reliable test date for state and vendor). Populated for state and vendor rows; nullable for a small share of internal rows lacking a recorded sitting.",
+          "name": "student_assessment_scores_view.date_taken",
+          "title": "Student Assessment Scores View Date Taken",
+          "type": "time"
+        },
+        {
+          "description": "How the section enrollment was resolved: subject_section or homeroom. Filter to subject_section for course/section-level rollups.",
+          "name": "student_assessment_scores_view.enrollment_resolution",
+          "title": "Student Assessment Scores View Enrollment Resolution",
+          "type": "string"
+        },
+        {
+          "description": "Proficiency band label (performance band for internal, achievement level for state).",
+          "name": "student_assessment_scores_view.proficiency_level",
+          "title": "Student Assessment Scores View Proficiency Level",
+          "type": "string"
+        },
+        {
+          "description": "Numeric ordering of the performance band label within the band scale. Null for state assessments.",
+          "name": "student_assessment_scores_view.performance_band_label_number",
+          "title": "Student Assessment Scores View Performance Band Label Number",
+          "type": "number"
+        },
+        {
+          "description": "TRUE if the student met the mastery/proficiency threshold for this assessment.",
+          "name": "student_assessment_scores_view.is_mastery",
+          "title": "Student Assessment Scores View Is Mastery",
+          "type": "boolean"
+        },
+        {
+          "description": "Scale score achieved. Null for internal (percent-correct) rows.",
+          "name": "student_assessment_scores_view.scale_score",
+          "title": "Student Assessment Scores View Scale Score",
+          "type": "number"
+        },
+        {
+          "description": "Percent correct. Null for state assessments.",
+          "name": "student_assessment_scores_view.percent_correct",
+          "title": "Student Assessment Scores View Percent Correct",
+          "type": "number"
+        },
+        {
+          "description": "Response-type breakdown. Never null; four values \u2014 overall (every source), standard and not_taken (Illuminate only), and group (Illuminate, i-Ready and DIBELS). Not additive across values, so filter it explicitly; default to overall.",
+          "name": "student_assessment_scores_view.response_type",
+          "title": "Student Assessment Scores View Response Type",
+          "type": "string"
+        },
+        {
+          "description": "Short code identifying the response type. Null for state.",
+          "name": "student_assessment_scores_view.response_type_code",
+          "title": "Student Assessment Scores View Response Type Code",
+          "type": "string"
+        },
+        {
+          "description": "Human-readable response-type description. Null for state.",
+          "name": "student_assessment_scores_view.response_type_description",
+          "title": "Student Assessment Scores View Response Type Description",
+          "type": "string"
+        },
+        {
+          "description": "Description of the root (top-level) response type. Null for state.",
+          "name": "student_assessment_scores_view.response_type_root_description",
+          "title": "Student Assessment Scores View Response Type Root Description",
+          "type": "string"
+        },
+        {
+          "description": "Illuminate-only flag. TRUE when a K-8 student sat a replacement-curriculum assessment off their enrolled grade level. Null for all non-Illuminate sources (state and vendor: iReady, DIBELS, STAR), which have no replacement-curriculum concept.",
+          "name": "student_assessment_scores_view.is_replacement",
+          "title": "Student Assessment Scores View Is Replacement",
+          "type": "boolean"
+        },
+        {
+          "description": "Display name of the assessment.",
+          "name": "student_assessment_scores_view.title",
+          "title": "Student Assessment Scores View Title",
+          "type": "string"
+        },
+        {
+          "description": "Subject tested (e.g., Mathematics, English Language Arts, Reading, Science).",
+          "name": "student_assessment_scores_view.academic_subject",
+          "title": "Student Assessment Scores View Academic Subject",
+          "type": "string"
+        },
+        {
+          "description": "Source-system category. Values that currently carry scores on the assessment-scores view: illuminate (internal interims), iready, dibels, star, and the state assessments state_nj_njsla, state_nj_njsla_science, state_nj_njgpa, state_fl_fast, state_fl_science, state_fl_eoc. Other categories exist upstream (college, ap, state_nj_parcc, state_fl_fsa, plus _unknown fallbacks) but carry no scores on this view today; treat this list as current, not closed.",
+          "name": "student_assessment_scores_view.assessment_type",
+          "title": "Student Assessment Scores View Assessment Type",
+          "type": "string"
+        },
+        {
+          "description": "Assessment category by format/content (e.g., CMA, CGI, NJSLA, FAST, SAT).",
+          "name": "student_assessment_scores_view.category",
+          "title": "Student Assessment Scores View Category",
+          "type": "string"
+        },
+        {
+          "description": "Module/test code identifying the assessment variant (e.g., QA1, ELA05, sat_total_score).",
+          "name": "student_assessment_scores_view.module_code",
+          "title": "Student Assessment Scores View Module Code",
+          "type": "string"
+        },
+        {
+          "description": "Module type for internal Illuminate assessments (e.g., QA, CR). Null for state and college.",
+          "name": "student_assessment_scores_view.module_type",
+          "title": "Student Assessment Scores View Module Type",
+          "type": "string"
+        },
+        {
+          "description": "Grade level the assessment targets. Null for college-entrance assessments.",
+          "name": "student_assessment_scores_view.grade_level_tested",
+          "title": "Student Assessment Scores View Grade Level Tested",
+          "type": "number"
+        },
+        {
+          "description": "How scores link to students: enrollment (tied to a section enrollment) or student.",
+          "name": "student_assessment_scores_view.scope",
+          "title": "Student Assessment Scores View Scope",
+          "type": "string"
+        },
+        {
+          "description": "TRUE for KIPP-created internal assessments via Illuminate; FALSE for state and college.",
+          "name": "student_assessment_scores_view.is_internal_assessment",
+          "title": "Student Assessment Scores View Is Internal Assessment",
+          "type": "boolean"
+        },
+        {
+          "description": "Scheduling period distinguishing administrations within an academic year. NJ state: testing season (Fall, Winter, Spring). FL state: FLDOE window. College: College Board round. Null for Illuminate and AP.",
+          "name": "student_assessment_scores_view.administration_period",
+          "title": "Student Assessment Scores View Administration Period",
+          "type": "string"
+        },
+        {
+          "description": "Official vs Practice for college-entrance administrations. Null for Illuminate, state, and AP.",
+          "name": "student_assessment_scores_view.test_type",
+          "title": "Student Assessment Scores View Test Type",
+          "type": "string"
+        },
+        {
+          "description": "Illuminate assessment id carried to the administration grain (the canonical id). Null for non-Illuminate branches.",
+          "name": "student_assessment_scores_view.source_assessment_id",
+          "title": "Student Assessment Scores View Source Assessment ID",
+          "type": "number"
+        },
+        {
+          "description": "Timestamp cast of date_key. Required by Cube for date dimension joins.\nGrain: a year granularity on this dimension buckets on the CALENDAR year, not the KIPP academic year \u2014 silent-failure trap. Asking for year granularity here splits every academic year across two buckets and answers a different question with no error. Measured on student_attendance_enrollment_daily_view: distinct students by year granularity returns 12,847 / 13,163 / 10,726 where the academic-year answer is 10,158 / 10,849 / 11,260. Group by academic_year_label (or academic_year) for anything school-year-shaped, and reserve this dimension's granularities for day, week, month and quarter.",
+          "name": "student_assessment_scores_view.date_day",
+          "title": "Student Assessment Scores View Date Day",
+          "type": "time"
+        },
+        {
+          "description": "KIPP academic year (July start). The calendar year in which the academic year begins (e.g., 2025 for the 2025-26 school year). For filtering by year, prefer academic_year_label (the unambiguous \"2025-2026\" string form) over this integer.",
+          "name": "student_assessment_scores_view.academic_year",
+          "title": "Student Assessment Scores View Academic Year",
+          "type": "number"
+        },
+        {
+          "description": "Full span label for the academic year (e.g. \"2025-2026\" for the year beginning July 2025). Use this as the canonical filter surface when querying by year \u2014 it is unambiguous regardless of SY vs. start-year notation. academic_year 2025 = academic_year_label \"2025-2026\" = SY26. The integer academic_year is retained for sort/group/math only.",
+          "name": "student_assessment_scores_view.academic_year_label",
+          "title": "Student Assessment Scores View Academic Year Label",
+          "type": "string"
+        },
+        {
+          "description": "Month number (1-12).",
+          "name": "student_assessment_scores_view.month_number",
+          "title": "Student Assessment Scores View Month Number",
+          "type": "number"
+        },
+        {
+          "description": "Full month name (January, February, etc.).",
+          "name": "student_assessment_scores_view.month_name",
+          "title": "Student Assessment Scores View Month Name",
+          "type": "string"
+        },
+        {
+          "description": "Course discipline from the course-subject crosswalk \u2014 broad grouping (ELA, Math, Science, Social Studies, CCR, World Language). Distinct from the assessment's academic_subject, which is the granular subject tested. (dim_courses.academic_subject is sourced from csc.discipline.)",
+          "name": "student_assessment_scores_view.discipline",
+          "title": "Student Assessment Scores View Discipline",
+          "type": "string"
+        },
+        {
+          "description": "Course name.",
+          "name": "student_assessment_scores_view.course_title",
+          "title": "Student Assessment Scores View Course Title",
+          "type": "string"
+        },
+        {
+          "description": "PowerSchool course number.",
+          "name": "student_assessment_scores_view.course_code",
+          "title": "Student Assessment Scores View Course Code",
+          "type": "string"
+        },
+        {
+          "description": "Credit type for the course.",
+          "name": "student_assessment_scores_view.credit_type",
+          "title": "Student Assessment Scores View Credit Type",
+          "type": "string"
+        },
+        {
+          "description": "TRUE if this is a Foundations (intervention) course, per the course-subject crosswalk.",
+          "name": "student_assessment_scores_view.is_foundations",
+          "title": "Student Assessment Scores View Is Foundations",
+          "type": "boolean"
+        },
+        {
+          "description": "Section number for this class.",
+          "name": "student_assessment_scores_view.identifier",
+          "title": "Student Assessment Scores View Identifier",
+          "type": "string"
+        },
+        {
+          "description": "Period expression encoding the days/periods the section meets (e.g., '1(A-F)').",
+          "name": "student_assessment_scores_view.period",
+          "title": "Student Assessment Scores View Period",
+          "type": "string"
+        },
+        {
+          "description": "Surrogate key (cc_dcid, _dbt_source_project). Primary key \u2014 one row per CC record.",
+          "name": "student_assessment_scores_view.student_section_enrollment_key",
+          "title": "Student Assessment Scores View Student Section Enrollment Key",
+          "type": "string"
+        },
+        {
+          "description": "FK to student_school_enrollments (resolved school enrollment stint).",
+          "name": "student_assessment_scores_view.student_enrollment_key",
+          "title": "Student Assessment Scores View Student Enrollment Key",
+          "type": "string"
+        },
+        {
+          "description": "Date the student enrolled in this section. Cast to TIMESTAMP for Cube time joins.",
+          "name": "student_assessment_scores_view.entry_date",
+          "title": "Student Assessment Scores View Entry Date",
+          "type": "time"
+        },
+        {
+          "description": "Date the student left this section. Cast to TIMESTAMP for Cube time joins.",
+          "name": "student_assessment_scores_view.exit_date",
+          "title": "Student Assessment Scores View Exit Date",
+          "type": "time"
+        },
+        {
+          "description": "TRUE if this section enrollment was dropped mid-term (negative section id + early exit).",
+          "name": "student_assessment_scores_view.is_dropped_section",
+          "title": "Student Assessment Scores View Is Dropped Section",
+          "type": "boolean"
+        },
+        {
+          "description": "TRUE if all enrollments for this student x course x year were dropped.",
+          "name": "student_assessment_scores_view.is_dropped_course",
+          "title": "Student Assessment Scores View Is Dropped Course",
+          "type": "boolean"
+        },
+        {
+          "description": "FK to staff \u2014 the section's Lead Teacher.",
+          "name": "student_assessment_scores_view.lead_teacher_staff_key",
+          "title": "Student Assessment Scores View Lead Teacher Staff Key",
+          "type": "string"
+        },
+        {
+          "description": "Staff member's preferred name in Last, First Middle format.",
+          "name": "student_assessment_scores_view.staff_lead_teacher_full_name",
+          "title": "Student Assessment Scores View Staff Lead Teacher Full Name",
+          "type": "string"
+        },
+        {
+          "description": "Staff member's preferred first name.",
+          "name": "student_assessment_scores_view.staff_lead_teacher_first_name",
+          "title": "Student Assessment Scores View Staff Lead Teacher First Name",
+          "type": "string"
+        },
+        {
+          "description": "Staff member's preferred last name.",
+          "name": "student_assessment_scores_view.staff_lead_teacher_last_name",
+          "title": "Student Assessment Scores View Staff Lead Teacher Last Name",
+          "type": "string"
+        },
+        {
+          "description": "The grade the student is in. Since this is an integer: 0=Kindergarten, -2=Preschool.",
+          "name": "student_assessment_scores_view.grade_level",
+          "title": "Student Assessment Scores View Grade Level",
+          "type": "number"
+        },
+        {
+          "description": "Student graduation year.",
+          "name": "student_assessment_scores_view.graduation_year",
+          "title": "Student Assessment Scores View Graduation Year",
+          "type": "number"
+        },
+        {
+          "description": "Count of years the student has been enrolled in the network. Populated on the student's primary enrollment stint per academic year; null on additional same-year stints.",
+          "name": "student_assessment_scores_view.year_in_network",
+          "title": "Student Assessment Scores View Year in Network",
+          "type": "number"
+        },
+        {
+          "description": "TRUE if the student repeated this grade level in the same school compared to the prior academic year.",
+          "name": "student_assessment_scores_view.is_retained_year",
+          "title": "Student Assessment Scores View Is Retained Year",
+          "type": "boolean"
+        },
+        {
+          "description": "TRUE if the student was classified as an English Language Learner during this enrollment stint. FALSE when no ELL span exists for the stint. Newark, Camden, and Paterson draw from historical LEP entry/exit dates; Miami uses a single current-state span.",
+          "name": "student_assessment_scores_view.is_ell",
+          "title": "Student Assessment Scores View Is Ell",
+          "type": "boolean"
+        },
+        {
+          "description": "TRUE if the student had an active Individualized Education Program during this enrollment stint. Derived from the latest IEP span by effective date.",
+          "name": "student_assessment_scores_view.is_iep",
+          "title": "Student Assessment Scores View Is Iep",
+          "type": "boolean"
+        },
+        {
+          "description": "IEP placement classification for this enrollment stint (latest span). Examples: Resource Center, In-Class Resource, Self-Contained. NULL when no IEP span exists.",
+          "name": "student_assessment_scores_view.iep_classification",
+          "title": "Student Assessment Scores View Iep Classification",
+          "type": "string"
+        },
+        {
+          "description": "NJ state special education code (NJ regions only; NULL for Miami).",
+          "name": "student_assessment_scores_view.special_education_code",
+          "title": "Student Assessment Scores View Special Education Code",
+          "type": "string"
+        },
+        {
+          "description": "Human-readable label for the NJ special education code (NJ regions only; NULL for Miami).",
+          "name": "student_assessment_scores_view.special_education_name",
+          "title": "Student Assessment Scores View Special Education Name",
+          "type": "string"
+        },
+        {
+          "description": "NJ special education placement category (NJ regions only; NULL for Miami).",
+          "name": "student_assessment_scores_view.special_education_placement",
+          "title": "Student Assessment Scores View Special Education Placement",
+          "type": "string"
+        },
+        {
+          "description": "TRUE if the student was eligible for free, reduced-price, or direct certification meals during this enrollment stint.",
+          "name": "student_assessment_scores_view.is_meal_eligible",
+          "title": "Student Assessment Scores View Is Meal Eligible",
+          "type": "boolean"
+        },
+        {
+          "description": "Meal eligibility category for this enrollment stint. Values: F (Free), R (Reduced), FDC (Free Direct Certification), P (Paid), Unknown. NULL when no meal span exists.",
+          "name": "student_assessment_scores_view.meal_eligibility",
+          "title": "Student Assessment Scores View Meal Eligibility",
+          "type": "string"
+        },
+        {
+          "description": "Surrogate key derived from student_number. Primary key for the student dimension.",
+          "name": "student_assessment_scores_view.student_key",
+          "title": "Student Assessment Scores View Student Key",
+          "type": "string"
+        },
+        {
+          "description": "Student's full name in \"Last, First, Mi.\" format. Matches dim_staff.full_name naming.",
+          "name": "student_assessment_scores_view.full_name",
+          "title": "Student Assessment Scores View Full Name",
+          "type": "string"
+        },
+        {
+          "name": "student_assessment_scores_view.birth_date",
+          "title": "Student Assessment Scores View Birth Date",
+          "type": "time"
+        },
+        {
+          "description": "KIPP's own SIS identifier for the student. KIPP is a charter Local Education Agency (LEA) operating within a host public school district; this column is the identifier issued by KIPP as the LEA. Sourced from the SIS student number for NJ regions (and Focus local ID for Miami once Focus lands). Maps to Ed-Fi District / CEDS District-assigned number from KIPP-as-LEA's perspective.",
+          "name": "student_assessment_scores_view.lea_student_identifier",
+          "title": "Student Assessment Scores View Lea Student Identifier",
+          "type": "number"
+        },
+        {
+          "description": "The state-assigned student number for the student. In most cases, this number should stay the same from school to school.",
+          "name": "student_assessment_scores_view.state_student_identifier",
+          "title": "Student Assessment Scores View State Student Identifier",
+          "type": "string"
+        },
+        {
+          "description": "Host public school district's identifier for the student. Populated for Miami (MDCPS student ID) and null for NJ regions where the host district's ID is not surfaced upstream. Generalizes the previously Miami-only mdcps_student_identifier. Ed-Fi District / CEDS District-assigned number from the host district's perspective.",
+          "name": "student_assessment_scores_view.district_student_identifier",
+          "title": "Student Assessment Scores View District Student Identifier",
+          "type": "string"
+        },
+        {
+          "description": "KIPPADB (Salesforce) contact identifier for the student. Populated where the student has a KIPPADB record; null otherwise. Used across KIPPADB consumer tools (Overgrad, alumni tracking, etc.).",
+          "name": "student_assessment_scores_view.salesforce_contact_id",
+          "title": "Student Assessment Scores View Salesforce Contact ID",
+          "type": "string"
+        },
+        {
+          "description": "Self-identified gender for the student (e.g., M=Male F=Female). Matches Ed-Fi's genderIdentity attribute (modern inclusive naming).",
+          "name": "student_assessment_scores_view.gender_identity",
+          "title": "Student Assessment Scores View Gender Identity",
+          "type": "string"
+        },
+        {
+          "description": "Racial category for the student. Decoded from PowerSchool ethnicity code to a full category label (e.g., Black/African American, Hispanic or Latino, Not Hispanic or Latino, Two or More Races, White). Cross-model consistency with dim_staff.race.",
+          "name": "student_assessment_scores_view.race",
+          "title": "Student Assessment Scores View Race",
+          "type": "string"
+        },
+        {
+          "description": "Current enrollment status of the student. Values: Currently Enrolled, Pre-registered, Inactive, Transferred Out, Graduated, Imported as Historical.",
+          "name": "student_assessment_scores_view.enrollment_status",
+          "title": "Student Assessment Scores View Enrollment Status",
+          "type": "string"
+        },
+        {
+          "description": "TRUE if the student has a gifted-and-talented identification on either the PowerSchool NJ extension or Miami user-fields extension.",
+          "name": "student_assessment_scores_view.is_gifted",
+          "title": "Student Assessment Scores View Is Gifted",
+          "type": "boolean"
+        },
+        {
+          "description": "Canonical location name.",
+          "name": "student_assessment_scores_view.location_name",
+          "title": "Student Assessment Scores View Location Name",
+          "type": "string"
+        },
+        {
+          "description": "Short display name for the location.",
+          "name": "student_assessment_scores_view.abbreviation",
+          "title": "Student Assessment Scores View Abbreviation",
+          "type": "string"
+        },
+        {
+          "description": "Foreign key to regions. Surrogate key derived from `business_unit_code` so this column hashes exactly the keys produced by `regions.region_key`. Network-level locations (e.g., KIPP NJ) map to KIPP_TAF.",
+          "name": "student_assessment_scores_view.region_key",
+          "title": "Student Assessment Scores View Region Key",
+          "type": "string"
+        },
+        {
+          "description": "Grade band served (ES, MS, HS).",
+          "name": "student_assessment_scores_view.grade_band",
+          "title": "Student Assessment Scores View Grade Band",
+          "type": "string"
+        },
+        {
+          "description": "Physical campus name. Multiple schools may share a campus.",
+          "name": "student_assessment_scores_view.campus",
+          "title": "Student Assessment Scores View Campus",
+          "type": "string"
+        },
+        {
+          "description": "City. Nullable for non-physical rows (e.g., campus rollups).",
+          "name": "student_assessment_scores_view.city",
+          "title": "Student Assessment Scores View City",
+          "type": "string"
+        },
+        {
+          "description": "Region name (Camden, Miami, Newark, Paterson, TAF).",
+          "name": "student_assessment_scores_view.region_name",
+          "title": "Student Assessment Scores View Region Name",
+          "type": "string"
+        },
+        {
+          "description": "US state (NJ or FL).",
+          "name": "student_assessment_scores_view.state",
+          "title": "Student Assessment Scores View State",
+          "type": "string"
+        },
+        {
+          "description": "Semester this period falls within. S1 for term_name Q1/Q2, S2 for Q3/Q4. NULL for periods that don't map to a quarter.",
+          "name": "student_assessment_scores_view.semester",
+          "title": "Student Assessment Scores View Semester",
+          "type": "string"
+        },
+        {
+          "description": "Display name for the period.",
+          "name": "student_assessment_scores_view.term_name",
+          "title": "Student Assessment Scores View Term Name",
+          "type": "string"
+        },
+        {
+          "description": "Short code for the period (e.g., Q1, Q2, PM1, Fall).",
+          "name": "student_assessment_scores_view.term_code",
+          "title": "Student Assessment Scores View Term Code",
+          "type": "string"
+        },
+        {
+          "description": "Category of period (e.g., academic, PM, survey, assessment, fiscal).",
+          "name": "student_assessment_scores_view.term_type",
+          "title": "Student Assessment Scores View Term Type",
+          "type": "string"
+        }
+      ],
+      "measures": [
+        {
+          "description": "Every assessment row, including the Illuminate not_taken rows where a student was assigned an assessment and never sat it. This is the widest of the three counts and the denominator for pct_taken. For assessments actually sat use count_taken; for the population pct_proficient is computed over use count_scored. COUNT(*) over the unique PK (assessment_score_key) \u2014 additive, so pre-aggregations roll it up to any grain.",
+          "name": "student_assessment_scores_view.count_assigned",
+          "title": "Student Assessment Scores View Count Assigned",
+          "type": "number"
+        },
+        {
+          "description": "Assessments a student actually sat \u2014 every row except the Illuminate not_taken placeholders. Use this for \"how many assessments were taken\". It is wider than count_scored: a student can sit an assessment that carries no proficiency verdict, which is most STAR kindergarten and Early Literacy rows and the DIBELS K-2 phonics subtests. Only Illuminate can express non-participation, so for every other source this equals count_assigned.",
+          "name": "student_assessment_scores_view.count_taken",
+          "title": "Student Assessment Scores View Count Taken",
+          "type": "number"
+        },
+        {
+          "description": "Assessments carrying a proficiency verdict (is_mastery set) \u2014 the narrowest of the three counts and the denominator pct_proficient is computed over. A row with no verdict cannot enter the numerator, so counting it would only drag the rate down. Narrower than count_taken by the rows that were sat but cannot be judged: STAR publishes no proficiency benchmark for kindergarten at any subject or for Early Literacy at any grade, and the DIBELS K-2 phonics subtests have no benchmark level set upstream. Report this alongside pct_proficient whenever the rate carries weight \u2014 it is the n the rate rests on, and it is not count_assigned.",
+          "name": "student_assessment_scores_view.count_scored",
+          "title": "Student Assessment Scores View Count Scored",
+          "type": "number"
+        },
+        {
+          "description": "Distinct students (per student-year) with a score in the filtered slice. Exact count_distinct \u2014 non-additive, so a rollup pre-aggregation cannot re-aggregate it to a coarser grain; switch to count_distinct_approx (HLL) if/when this is pre-aggregated and an approximate distinct is acceptable.",
+          "name": "student_assessment_scores_view.count_students",
+          "title": "Student Assessment Scores View Count Students",
+          "type": "number"
+        },
+        {
+          "description": "Grain: recomputes at any query grain, but meaningful only within Illuminate \u2014 pooling it across sources is a silent-failure trap (numerically valid, semantically meaningless). Participation rate \u2014 assessments sat / assessments assigned. Only Illuminate records non-participation, so every other source reads exactly 100% by construction rather than by fact, and a pooled cross-source rate is diluted by sources that cannot express a no-show. Filter assessment_type to illuminate before reporting this. Built from additive primitives (count_taken / count_assigned) so pre-aggregations roll it up to any grain.",
+          "name": "student_assessment_scores_view.pct_taken",
+          "title": "Student Assessment Scores View Pct Taken",
+          "type": "number"
+        },
+        {
+          "description": "Proficiency/mastery rate \u2014 proficient scores / scores carrying a proficiency verdict. The headline, source-agnostic metric (the only score measure comparable across the incompatible scales of internal vs state assessments). Its denominator is count_scored, NOT count_assigned, so multiplying this rate by count_assigned overstates the proficient count, badly on the sources where many rows carry no verdict. Pair it with count_scored, which is the n it rests on. Built from additive primitives (_sum_proficient / count_scored) so pre-aggregations roll it up to any grain.",
+          "name": "student_assessment_scores_view.pct_proficient",
+          "title": "Student Assessment Scores View Pct Proficient",
+          "type": "number"
+        },
+        {
+          "description": "Proficiency rate across all formative module types (Quick Assessments, Multiple-Choice Quick Questions, and Constructed Response Questions). CRQ is included and also available as the standalone pct_proficient_crq measure. The denominator excludes rows with no proficiency verdict (is_mastery unset), matching pct_proficient. Built from additive primitives so pre-aggregations roll it up.",
+          "name": "student_assessment_scores_view.pct_proficient_formative",
+          "title": "Student Assessment Scores View Pct Proficient Formative",
+          "type": "number"
+        },
+        {
+          "description": "Proficiency rate for Constructed Response Questions (CRQ) across all regions. CRQ is a subset of pct_proficient_formative. The denominator excludes rows with no proficiency verdict (is_mastery unset), matching pct_proficient. Built from additive primitives so pre-aggregations roll it up.",
+          "name": "student_assessment_scores_view.pct_proficient_crq",
+          "title": "Student Assessment Scores View Pct Proficient Crq",
+          "type": "number"
+        },
+        {
+          "description": "Grain: recomputes at any query grain, but meaningful only within a single subject/standard \u2014 pooling percent-correct across assessments is a silent-failure trap (numerically valid, semantically meaningless). Average percent correct, internal-effective (null for state), built from additive primitives so pre-aggregations roll it up.",
+          "name": "student_assessment_scores_view.avg_percent_correct",
+          "title": "Student Assessment Scores View Avg Percent Correct",
+          "type": "number"
+        },
+        {
+          "description": "Grain: recomputes at any query grain, but meaningful only within a single assessment source/subject/grade \u2014 scale scores are not comparable across sources, so pooling them is a silent-failure trap (numerically valid, semantically meaningless). Average scale score, built from additive primitives so pre-aggregations roll it up.",
+          "name": "student_assessment_scores_view.avg_scale_score",
+          "title": "Student Assessment Scores View Avg Scale Score",
+          "type": "number"
+        }
+      ],
+      "meta": {
+        "folders": [
+          {
+            "members": [
+              "title",
+              "academic_subject",
+              "assessment_type",
+              "category",
+              "module_code",
+              "module_type",
+              "grade_level_tested",
+              "scope",
+              "is_internal_assessment",
+              "administration_period",
+              "test_type",
+              "source_assessment_id",
+              "date_taken",
+              "enrollment_resolution",
+              "proficiency_level",
+              "performance_band_label_number",
+              "is_mastery",
+              "scale_score",
+              "percent_correct",
+              "response_type",
+              "response_type_code",
+              "response_type_description",
+              "response_type_root_description",
+              "is_replacement"
+            ],
+            "name": "Assessment"
+          },
+          {
+            "members": [
+              "date_day",
+              "academic_year",
+              "academic_year_label",
+              "month_number",
+              "month_name"
+            ],
+            "name": "Date"
+          },
+          {
+            "members": [
+              "discipline",
+              "course_title",
+              "course_code",
+              "credit_type",
+              "is_foundations",
+              "identifier",
+              "period"
+            ],
+            "name": "Course"
+          },
+          {
+            "members": ["semester", "term_name", "term_code", "term_type"],
+            "name": "Term"
+          },
+          {
+            "members": [
+              "location_name",
+              "abbreviation",
+              "region_key",
+              "grade_band",
+              "campus",
+              "city",
+              "region_name",
+              "state"
+            ],
+            "name": "Location"
+          },
+          {
+            "members": [
+              "student_key",
+              "full_name",
+              "birth_date",
+              "lea_student_identifier",
+              "state_student_identifier",
+              "district_student_identifier",
+              "salesforce_contact_id",
+              "gender_identity",
+              "race",
+              "enrollment_status",
+              "is_gifted"
+            ],
+            "name": "Student"
+          },
+          {
+            "members": [
+              "is_ell",
+              "is_iep",
+              "iep_classification",
+              "special_education_code",
+              "special_education_name",
+              "special_education_placement",
+              "is_meal_eligible",
+              "meal_eligibility"
+            ],
+            "name": "Status"
+          },
+          {
+            "members": [
+              "student_section_enrollment_key",
+              "student_enrollment_key",
+              "entry_date",
+              "exit_date",
+              "grade_level",
+              "graduation_year",
+              "year_in_network",
+              "is_retained_year",
+              "is_dropped_section",
+              "is_dropped_course"
+            ],
+            "name": "Enrollment"
+          },
+          {
+            "members": [
+              "lead_teacher_staff_key",
+              "staff_lead_teacher_full_name",
+              "staff_lead_teacher_first_name",
+              "staff_lead_teacher_last_name"
+            ],
+            "name": "Teacher"
+          }
+        ]
+      },
+      "name": "student_assessment_scores_view",
+      "segments": [],
+      "title": "Student Assessment Scores View",
+      "type": "view"
+    }
+  ]
+}
