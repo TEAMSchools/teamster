@@ -8,10 +8,10 @@ Two ingestion paths for **Finalsite** (school website/communications platform):
 ## `api/`
 
 **`assets.py`** (`build_finalsite_asset()`): Partitioned GCS Avro asset
-(`DailyPartitionsDefinition`, `start_date="2026-08-11"`) — derives the API
-`since` parameter from the partition key, so each tick pulls only records
-changed since the prior partition rather than the full `finalsite.list`
-response.
+(`CONTACTS_PARTITIONS_DEF`, shared by all four districts; its `start_date` is
+the seed partition, the day before cutover) — derives the API `since` parameter
+from the partition key, so each tick pulls only records changed since the prior
+partition rather than the full `finalsite.list` response.
 
 **Concurrency (do NOT parallelize).** All districts' `contacts` schedules fire
 at `00:15` and `12:00` ET simultaneously. The Finalsite gateway throttles by

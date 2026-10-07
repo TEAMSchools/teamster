@@ -44,7 +44,7 @@ expect one same-named check per location.
 ## 4. Seed one full partition per district (manual, Dagster+ UI)
 
 For each location, materialize `<location>/finalsite/contacts` for partition
-`2026-08-11` with run config:
+`2026-08-11` (the day before cutover — see below) with run config:
 
 ```yaml
 ops:
@@ -60,12 +60,15 @@ They serialize through the `finalsite_api` pool, so budget ~35 minutes total.
 Verify each run's `record_count` metadata matches step 1's baseline, and that
 its `since` metadata reads `FULL PULL`.
 
-The partition key `2026-08-11` must equal the asset's configured
-`DailyPartitionsDefinition(start_date=...)` in all four code locations'
-`finalsite/assets.py` — seeding the wrong partition key puts the base data on a
-partition the schedule will never revisit. If the cutover happens later than
-`2026-08-11`, bump `start_date` in all four `finalsite/assets.py` files and this
-runbook's partition key together, in the same change.
+The seed partition key must be the day BEFORE cutover, and must equal
+`CONTACTS_PARTITIONS_DEF`'s `start_date` in
+`src/teamster/libraries/finalsite/api/assets.py` (one definition shared by all
+four districts). Both daily ticks target today's key, so seeding the cutover
+day's own key lets that day's 12:00 tick overwrite the full seed with an
+incremental pull — staging silently shrinks to the few contacts changed since
+yesterday. Before merging, set `start_date` to cutover-day-minus-one and replace
+`2026-08-11` in this step's partition key with the same date, in the same
+change.
 
 ## 5. Delete the legacy root object (manual, destructive)
 

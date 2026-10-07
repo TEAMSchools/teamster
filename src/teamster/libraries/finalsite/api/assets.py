@@ -3,8 +3,8 @@ from datetime import date, timedelta
 from dagster import (
     AssetExecutionContext,
     Config,
+    DailyPartitionsDefinition,
     Output,
-    PartitionsDefinition,
     asset,
 )
 
@@ -13,6 +13,16 @@ from teamster.core.asset_checks import (
     check_avro_schema_valid,
 )
 from teamster.libraries.finalsite.api.resources import FinalsiteResource
+
+# One partition per pull date; the partition key is the incremental watermark
+# (see get_finalsite_since). start_date is the seed partition and must be the day
+# BEFORE cutover: both daily ticks target today's key, so seeding today's key
+# lets the 12:00 tick overwrite the full seed with an incremental pull (cutover
+# runbook step 4). end_offset=1 is required: without it today's partition does
+# not exist until tomorrow, and every tick fails with DagsterUnknownPartitionError.
+CONTACTS_PARTITIONS_DEF = DailyPartitionsDefinition(
+    start_date="2026-08-11", timezone="America/New_York", end_offset=1
+)
 
 
 def get_finalsite_since(partition_key: str) -> str:
@@ -29,17 +39,13 @@ def get_finalsite_since(partition_key: str) -> str:
 
 
 def build_contacts_request_params(
-    params: dict | None, partition_key: str | None, full_pull: bool
+    params: dict | None, partition_key: str, full_pull: bool
 ) -> dict:
     """Build the query params for one contacts pull.
 
-    Three cases, in the order they are decided:
-
-    - `full_pull` omits `since` entirely, pulling every contact. This is the seed
-      run each district performs once at cutover.
-    - A partitioned run derives `since` from its own partition key, so the
-      partition key is the watermark.
-    - An unpartitioned asset has no partition key and therefore pulls in full.
+    `full_pull` omits `since` entirely, pulling every contact -- the seed run each
+    district performs once at cutover. Otherwise `since` derives from the
+    partition key, so the partition key is the watermark.
 
     Never mutates `params` — it is captured once at asset-definition time and
     reused on every invocation, so writing `since` into it would leak the first
@@ -47,7 +53,7 @@ def build_contacts_request_params(
     """
     request_params = {**(params or {})}
 
-    if partition_key is not None and not full_pull:
+    if not full_pull:
         request_params["since"] = get_finalsite_since(partition_key)
 
     return request_params
@@ -69,14 +75,13 @@ def build_finalsite_asset(
     asset_name: str,
     schema,
     params: dict | None = None,
-    partitions_def: PartitionsDefinition | None = None,
 ):
     key = [code_location, "finalsite", asset_name]
 
     @asset(
         key=key,
         io_manager_key="io_manager_gcs_avro",
-        partitions_def=partitions_def,
+        partitions_def=CONTACTS_PARTITIONS_DEF,
         check_specs=[build_check_spec_avro_schema_valid(key)],
         group_name="finalsite",
         # One shared pool across ALL districts (not per-location): the Finalsite
@@ -93,13 +98,10 @@ def build_finalsite_asset(
     ):
         # A partitioned asset pulls incrementally: the partition key IS the
         # watermark, so a failed run writes no partition and advances nothing.
-        # `full_pull` is the seed escape hatch. `context.partition_key` raises on
-        # an unpartitioned asset, so it is only read when there is a partition.
+        # `full_pull` is the seed escape hatch.
         request_params = build_contacts_request_params(
             params=params,
-            partition_key=(
-                context.partition_key if partitions_def is not None else None
-            ),
+            partition_key=context.partition_key,
             full_pull=config.full_pull,
         )
 

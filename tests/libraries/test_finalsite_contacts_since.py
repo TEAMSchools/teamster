@@ -36,12 +36,6 @@ def test_full_pull_omits_since_entirely():
     ) == {"includes": "contacts.relationships"}
 
 
-def test_unpartitioned_asset_pulls_in_full():
-    assert build_contacts_request_params(
-        params=INCLUDES, partition_key=None, full_pull=False
-    ) == {"includes": "contacts.relationships"}
-
-
 def test_caller_params_are_never_mutated():
     """`params` is captured once at asset-definition time and reused every run.
 

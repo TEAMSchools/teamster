@@ -11,6 +11,10 @@ schedule targets the CURRENT day's key, so without `end_offset=1` every tick
 fails with `DagsterUnknownPartitionError` in all four districts.
 """
 
+import importlib
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
 import pytest
 from dagster import DailyPartitionsDefinition
 from dagster_shared import check
@@ -19,9 +23,8 @@ CODE_LOCATIONS = ["kippnewark", "kippcamden", "kippmiami", "kipppaterson"]
 
 
 def _contacts_partitions_def(code_location: str) -> DailyPartitionsDefinition:
-    module = __import__(
-        f"teamster.code_locations.{code_location}.finalsite.assets",
-        fromlist=["contacts"],
+    module = importlib.import_module(
+        f"teamster.code_locations.{code_location}.finalsite.assets"
     )
 
     return check.inst(module.contacts.partitions_def, DailyPartitionsDefinition)
@@ -35,16 +38,16 @@ def test_contacts_exposes_the_current_day_partition(code_location: str):
     property the schedule depends on rather than the flag that implements it.
     """
     partitions_def = _contacts_partitions_def(code_location)
+    today = datetime.now(ZoneInfo("America/New_York")).date().isoformat()
 
-    assert partitions_def.end_offset == 1
+    assert partitions_def.has_partition_key(today)
 
 
 @pytest.mark.parametrize("code_location", CODE_LOCATIONS)
 def test_contacts_asset_key_is_unchanged(code_location: str):
     """The dbt source and every downstream consumer key off this exact path."""
-    module = __import__(
-        f"teamster.code_locations.{code_location}.finalsite.assets",
-        fromlist=["contacts"],
+    module = importlib.import_module(
+        f"teamster.code_locations.{code_location}.finalsite.assets"
     )
 
     assert module.contacts.key.to_user_string() == f"{code_location}/finalsite/contacts"
