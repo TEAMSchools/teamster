@@ -11,6 +11,7 @@ models:
       half-open interval resolves every week to exactly one version. Feeds
       int_topline__student_metrics, which scores each row against the 3.00 bar.
     config:
+      enabled: false
       materialized: table
       meta:
         dagster:
@@ -27,6 +28,7 @@ models:
               - academic_year
               - week_start_monday
           config:
+            enabled: false
             severity: error
     columns:
       - name: student_number

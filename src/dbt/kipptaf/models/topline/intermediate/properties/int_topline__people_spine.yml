@@ -1,0 +1,4 @@
+models:
+  - name: int_topline__people_spine
+    config:
+      enabled: false

@@ -12,6 +12,7 @@ models:
       on the Monday, or the later stint when both are. Feeds
       int_topline__student_metrics.
     config:
+      enabled: false
       materialized: table
       meta:
         dagster:
@@ -29,6 +30,7 @@ models:
               - week_start_monday
               - discipline
           config:
+            enabled: false
             severity: error
     columns:
       - name: student_number

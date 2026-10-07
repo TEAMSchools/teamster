@@ -13,6 +13,7 @@ models:
       null counts. Feeds int_topline__student_metrics, which scores successful
       calls against anticipated calls.
     config:
+      enabled: false
       materialized: table
       meta:
         dagster:
@@ -29,6 +30,7 @@ models:
               - academic_year
               - week_start_monday
           config:
+            enabled: false
             severity: error
     columns:
       - name: student_number

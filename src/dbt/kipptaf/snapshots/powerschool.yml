@@ -29,9 +29,7 @@ snapshots:
           # which matches versions against a local-midnight boundary instant.
           # 23:00 clears that boundary with an hour of margin; 00:00 lands
           # just past it and can resolve one day stale on sub-second
-          # run-start timing. The topline models derive their date with
-          # date(..., local_timezone), so the cron hour doesn't affect their
-          # attribution either way.
+          # run-start timing.
           #
           # Intra-day versions are lost. No consumer reads them. Refs #5218
           automation_condition:

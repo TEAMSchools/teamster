@@ -11,6 +11,7 @@ models:
       response wins, with title as the tie-break. Feeds
       int_topline__student_metrics.
     config:
+      enabled: false
       materialized: table
       meta:
         dagster:
@@ -29,6 +30,7 @@ models:
               - discipline
               - formative_strategy
           config:
+            enabled: false
             severity: error
     columns:
       - name: student_number

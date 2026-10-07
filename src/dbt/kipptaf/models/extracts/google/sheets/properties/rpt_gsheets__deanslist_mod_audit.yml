@@ -4,9 +4,18 @@ models:
       Row-level QA view exposing the individual assessment scores that feed the
       three DeansList mod CDO extracts: mod_assessment, mod_standards, and
       mod_standards_domains. Each row is one pre-aggregation response from
-      int_assessments__response_rollup with filters and joins that mirror each
-      published model exactly. Use computed_avg_pct_correct to verify that the
-      published model averages match the underlying data.
+      int_assessments__response_rollup, filtered and joined like the published
+      model it feeds, with these differences. It covers the current and prior
+      academic year, where mod_assessment and mod_standards publish the current
+      year only and mod_standards_domains publishes every year. It keeps the raw
+      subject area, so Writing rows stay Writing where mod_standards reports
+      them as Text Study. It does not join performance band sets, so it keeps
+      rows the published models drop for falling in no band. Use
+      computed_avg_pct_correct to check the published averages against the
+      underlying data.
+    config:
+      meta:
+        contains_pii: true
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -52,9 +61,9 @@ models:
       - name: assessment_id
         data_type: int64
         description: >
-          Illuminate assessment ID. For internal multipart assessments this is
-          the min assessment_id across the module, as normalized by
-          int_assessments__response_rollup.
+          Canonical Illuminate assessment ID from
+          int_assessments__response_rollup. For internal multipart assessments
+          this is the lowest member assessment_id in the canonical group.
       - name: title
         data_type: string
         description: Assessment title.
@@ -69,8 +78,8 @@ models:
       - name: term_administered
         data_type: string
         description: >
-          Reporting term in which the assessment was administered, resolved from
-          the administered_at date against the reporting terms calendar.
+          RT reporting term for the student's school whose date range contains
+          the assessment's administered date.
       - name: response_type
         data_type: string
         description:
@@ -92,7 +101,9 @@ models:
         description: Performance band label assigned to the individual score.
       - name: is_internal_assessment
         data_type: boolean
-        description: True if the assessment was internally administered by KIPP.
+        description:
+          True when the assessment has a row in the AppSheet Illuminate
+          Assessments Extension.
       - name: illuminate_student_responses
         data_type: string
         description: >
@@ -104,8 +115,8 @@ models:
       - name: is_current_term
         data_type: boolean
         description: >
-          True if term_administered is a reporting term whose date range
-          contains today.
+          True if term_administered names an RT reporting term whose date range
+          contains today at any school.
       - name: grade_level_display
         data_type: string
         description:
@@ -122,9 +133,12 @@ models:
           Average of percent_correct over the same grouping used by the
           corresponding published model. For mod_assessment and
           mod_standards_domains Progress Report, this partitions by
-          (source_model, student, year, subject, term). For mod_standards, it
-          also partitions by response_type_description (one average per
-          reporting group). For mod_standards_domains Report Card, it also
-          partitions by standard_domain. Should equal the published model's
-          avg_pct_correct or avg_percent_correct for the same student, subject,
-          and term.
+          (source_model, report_type, student, year, subject, term). For
+          mod_standards, it also partitions by response_type and
+          response_type_description (one average per reporting group). For
+          mod_standards_domains Report Card, it also partitions by
+          standard_domain. Should equal the published model's avg_pct_correct or
+          avg_percent_correct for the same student, subject, and term, except
+          for mod_standards Writing rows (averaged separately here, merged into
+          Text Study there) and mod_standards groups that span more than one
+          performance band set (split there, merged here).
