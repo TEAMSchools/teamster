@@ -540,5 +540,18 @@ cubes:
           sql: SELECT DATE('2015-07-01')
         build_range_end:
           sql: SELECT CURRENT_DATE('America/New_York')
+        # Rebuild when the fact rebuilds, not on a fixed daily timer. The fact
+        # is a full CREATE OR REPLACE about 5 times a day (12 AM, 10 AM, 1 PM,
+        # 3 PM, 5 PM ET in October 2026), while `every: 1 day` refreshed this
+        # rollup once, at about 8 PM, so rollup-served answers trailed the
+        # fact by up to about 27 hours. Cube checks this metadata query
+        # (0 bytes billed) every 30 minutes and rebuilds every partition when
+        # the value changes, so answers trail the fact by the check interval
+        # plus one build. Each full rebuild scans the fact once per partition
+        # (about 12 x 3.6 GiB), because the partition filter sits on joined
+        # dim_dates and cannot prune the fact (#5557 A3).
         refresh_key:
-          every: 1 day
+          every: 30 minute
+          sql: >-
+            SELECT last_modified_time FROM kipptaf_marts.__TABLES__ WHERE
+            table_id = 'fct_assessment_scores_enrollment_scoped'
