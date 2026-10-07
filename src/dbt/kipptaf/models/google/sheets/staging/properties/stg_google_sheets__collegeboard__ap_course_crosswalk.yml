@@ -1,11 +1,32 @@
 models:
   - name: stg_google_sheets__collegeboard__ap_course_crosswalk
+    description: >-
+      Maps each AP test name, per score source, to its AP course and PowerSchool
+      course subject code. Kept by hand in a Google Sheet. One row per
+      Data_Source and Test_Name, which the kippadb and College Board AP unpivots
+      rely on to join without fanning out.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - Data_Source
+              - Test_Name
+          config:
+            severity: error
     columns:
       - name: Data_Source
         data_type: string
+        description: >-
+          Score source the row applies to — ADB for kippadb (Salesforce) or CB
+          File for College Board score files.
       - name: Test_Name
         data_type: string
+        description: AP test name as the source system spells it.
       - name: AP_Course_Name
         data_type: string
+        description: AP course the test maps to.
       - name: PS_AP_Course_Subject_Code
         data_type: string
+        description: >-
+          PowerSchool course subject codes for the AP course, comma-separated
+          when the course has more than one.
