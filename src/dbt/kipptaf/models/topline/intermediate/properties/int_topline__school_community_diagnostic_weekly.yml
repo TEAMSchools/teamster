@@ -1,6 +1,7 @@
 models:
   - name: int_topline__school_community_diagnostic_weekly
     config:
+      enabled: false
       materialized: table
       meta:
         dagster:
