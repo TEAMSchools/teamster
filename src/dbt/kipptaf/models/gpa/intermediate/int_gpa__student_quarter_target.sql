@@ -11,8 +11,48 @@ with
             and min_cutoffpercentage >= 83
     ),
 
-    /* one row per current-year GPA course; final_grades is one row per course
-       and termbin */
+    /* final_grades is one row per course and termbin, and its Y1 columns are
+       running year-to-date values that differ from term to term. The current
+       Y1 is the one on the current or latest-started term row, ranked the
+       same way as int_gpa__course_quarter_pace */
+    term_rows as (
+        select
+            studentid,
+            course_number,
+            _dbt_source_project,
+            potential_credit_hours,
+            y1_percent_grade_adjusted,
+            y1_grade_points_unweighted,
+            termbin_end_date,
+            termbin_is_current,
+
+            /* scale ids and bump sizes mirror base_powerschool__sections */
+            case
+                courses_gradescaleid when 991 then 1.0 when 1075 then 0.5 else 0.0
+            end as bump,
+
+            termbin_end_date < current_date('{{ var("local_timezone") }}') as is_ended,
+            termbin_start_date
+            <= current_date('{{ var("local_timezone") }}') as is_started,
+        from {{ ref("base_powerschool__final_grades") }}
+        where
+            academic_year = {{ var("current_academic_year") }}
+            and exclude_from_gpa = 0
+            and not is_dropped_section
+            and potential_credit_hours > 0
+    ),
+
+    term_rows_ranked as (
+        select
+            *,
+
+            row_number() over (
+                partition by studentid, course_number, _dbt_source_project
+                order by termbin_is_current desc, is_started desc, termbin_end_date desc
+            ) as rn_current,
+        from term_rows
+    ),
+
     courses as (
         select
             studentid,
@@ -20,22 +60,13 @@ with
             _dbt_source_project,
 
             max(potential_credit_hours) as credits,
-            max(y1_percent_grade_adjusted) as y1_percent,
-            max(y1_grade_points_unweighted) as y1_points_unweighted,
+            max(bump) as bump,
+            max(if(rn_current = 1, y1_percent_grade_adjusted, null)) as y1_percent,
             max(
-                case
-                    courses_gradescaleid when 991 then 1.0 when 1075 then 0.5 else 0.0
-                end
-            ) as bump,
-            logical_and(
-                termbin_end_date < current_date('{{ var("local_timezone") }}')
-            ) as is_locked,
-        from {{ ref("base_powerschool__final_grades") }}
-        where
-            academic_year = {{ var("current_academic_year") }}
-            and exclude_from_gpa = 0
-            and not is_dropped_section
-            and potential_credit_hours > 0
+                if(rn_current = 1, y1_grade_points_unweighted, null)
+            ) as y1_points_unweighted,
+            logical_and(is_ended) as is_locked,
+        from term_rows_ranked
         group by studentid, course_number, _dbt_source_project
     ),
 
@@ -190,7 +221,10 @@ select
     case
         when wt.gpa_needed_unweighted is null or wt.is_cumulative_3_0_attainable is null
         then 'unknown'
-        when not wt.is_cumulative_3_0_attainable or wt.target_cutoff_percent is null
+        /* the re-solved need decides, not the Monitor's flag, which counts only
+           the courses already started (#5756) and so reads false for students
+           whose full schedule can still reach 3.0 */
+        when wt.target_cutoff_percent is null
         then 'goal_not_attainable'
         when wt.cumulative_y1_gpa_projected_unweighted >= 3.0
         then 'on_pace'

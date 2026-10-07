@@ -1,13 +1,4 @@
 select
-    co.academic_year,
-    co.region,
-    co.school,
-    co.grade_level,
-    co.student_number,
-    co.student_name,
-    co.advisory,
-    co.school_leader_tableau_username,
-
     p.studentid,
     p.schoolid,
     p.course_number,
@@ -21,6 +12,15 @@ select
     p.is_below_target,
     p.is_secured,
     p.is_locked,
+
+    co.academic_year,
+    co.region,
+    co.school,
+    co.grade_level,
+    co.student_number,
+    co.student_name,
+    co.advisory,
+    co.school_leader_tableau_username,
 
     qw.next_letter_grade,
     qw.next_cutoff_percent,

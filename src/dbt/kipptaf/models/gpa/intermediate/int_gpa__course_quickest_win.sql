@@ -71,8 +71,7 @@ with
             is_locked
             or next_cutoff_percent is null
             or pace_percent_to_next > 100
-            or pace_percent_to_next - percent_now <= 0
-            or points_gained <= 0 as is_disqualified,
+            or pace_percent_to_next - percent_now <= 0 as is_disqualified,
         from scored
     ),
 

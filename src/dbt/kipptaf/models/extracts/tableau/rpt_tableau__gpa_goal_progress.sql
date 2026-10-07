@@ -1,20 +1,9 @@
 -- Temporary wrapper. Passes rpt_tableau__gpa_cumulative_year through unchanged
--- and adds the four gpa_goal_* columns. A column added to that model does NOT
--- arrive here on its own -- add it to the select list below AND to this model's
--- contract yml, or it silently never reaches the Cumulative GPA Monitor.
--- Folding this into the extract is planned; see
+-- and adds the gpa_goal_* columns and the quarter-target columns. A column
+-- added to that model does NOT arrive here on its own -- add it to the select
+-- list below AND to this model's contract yml, or it silently never reaches the
+-- Cumulative GPA Monitor. Folding this into the extract is planned; see
 -- docs/superpowers/specs/2026-09-01-student-goal-definitions-design.md
-with
-    below_target as (
-        select
-            studentid,
-            _dbt_source_project,
-
-            countif(is_below_target and not is_locked) as n_courses_below_target,
-        from {{ ref("int_gpa__course_quarter_pace") }}
-        group by studentid, _dbt_source_project
-    )
-
 select
     cy._dbt_source_relation,
     cy._dbt_source_project,
@@ -78,8 +67,7 @@ select
     t.gpa_needed_weighted,
     t.target_letter_grade,
     t.target_cutoff_percent,
-
-    bt.n_courses_below_target,
+    t.n_courses_below_target,
 from {{ ref("rpt_tableau__gpa_cumulative_year") }} as cy
 left join
     {{ ref("int_gpa__student_goal_definitions") }} as gd
@@ -91,9 +79,4 @@ left join
     on cy.studentid = t.studentid
     and cy.schoolid = t.schoolid
     and cy._dbt_source_project = t._dbt_source_project
-    and cy.academic_year = {{ var("current_academic_year") }}
-left join
-    below_target as bt
-    on cy.studentid = bt.studentid
-    and cy._dbt_source_project = bt._dbt_source_project
     and cy.academic_year = {{ var("current_academic_year") }}

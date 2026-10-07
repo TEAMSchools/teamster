@@ -1,19 +1,24 @@
 with
+    courses_below as (
+        select
+            studentid,
+            _dbt_source_project,
+            course_name,
+
+            /* Y1 percents are whole numbers upstream, so no decimal is lost */
+            format('%s %.0f', course_name, y1_percent_current) as course_label,
+        from {{ ref("int_gpa__course_quarter_pace") }}
+        where is_below_target and not is_locked
+    ),
+
     below_target as (
         select
             studentid,
             _dbt_source_project,
 
-            countif(is_below_target and not is_locked) as n_courses_below_target,
-            string_agg(
-                if(
-                    is_below_target and not is_locked,
-                    concat(course_name, ' ', cast(y1_percent_current as string)),
-                    null
-                ),
-                '; '
-            ) as courses_below_target,
-        from {{ ref("int_gpa__course_quarter_pace") }}
+            count(*) as n_courses_below_target,
+            string_agg(course_label, '; ' order by course_name) as courses_below_target,
+        from courses_below
         group by studentid, _dbt_source_project
     ),
 

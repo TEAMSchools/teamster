@@ -442,8 +442,10 @@ network target.
   student and school with the lowest unweighted letter whose grade points reach
   the needed GPA, floored at B; the weighted GPA that target corresponds to on
   the student's own schedule; and a pace status of `on_pace`, `not_on_pace`,
-  `goal_not_attainable`, or `unknown`. It reads the needed GPA and attainability
-  from `int_powerschool__gpa_cumulative`.
+  `goal_not_attainable`, or `unknown`. It reads the needed GPA from
+  `int_powerschool__gpa_cumulative`, re-bases it on every scheduled course with
+  locked courses held at their current Y1 points, and decides attainability from
+  that re-solved need rather than the Monitor's flag.
 - `int_gpa__course_quarter_pace`: one row per current-year GPA course per
   student with the average percent needed in each remaining term for the course
   Y1 to land on the target cutoff. The in-progress term is a remaining term, so
