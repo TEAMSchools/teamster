@@ -1,32 +1,33 @@
 select
-    fsd.student_day_key as event_id,
-    fsd.date_key as `date`,
+    {{
+        dbt_utils.generate_surrogate_key(
+            ["student_number", "_dbt_source_project", "calendardate"]
+        )
+    }} as event_id,
 
-    cast(dd.academic_year + 1 as string) as school_year_id,
-    cast(ds.lea_student_identifier as string) as student_id,
+    calendardate as `date`,
+
+    cast(academic_year + 1 as string) as school_year_id,
+    cast(student_number as string) as student_id,
 
     -- no excused/unexcused split exists anywhere upstream -- only
     -- Present / Tardy / Absent / In-School Suspension / Out-of-School
     -- Suspension. Suspensions collapse into "Absent" below.
     case
-        fsd.attendance_category
+        attendance_category
         when 'Present'
         then 'Present'
         when 'Tardy'
         then 'Tardy'
         else 'Absent'
     end as record_category,
-from {{ ref("fct_student_attendance_enrollment_daily") }} as fsd
-inner join
-    {{ ref("dim_student_enrollments") }} as dse
-    on fsd.student_enrollment_key = dse.student_enrollment_key
-inner join {{ ref("dim_students") }} as ds on dse.student_key = ds.student_key
-inner join {{ ref("dim_locations") }} as dl on dse.location_key = dl.location_key
-inner join {{ ref("dim_regions") }} as dr on dl.region_key = dr.region_key
-inner join {{ ref("dim_dates") }} as dd on fsd.date_key = dd.date_key
+from {{ ref("int_students__attendance_daily") }}
 where
-    dr.name in ('Newark', 'Camden', 'Paterson')
-    and dd.is_current_academic_year
-    and fsd.membership_value > 0
+    _dbt_source_project in ('kippnewark', 'kippcamden', 'kipppaterson')
+    and academic_year = {{ var("current_academic_year") }}
+    -- scheduled days carry a placeholder Present until the register is taken,
+    -- and the feed runs before school, so today is excluded too
+    and calendardate < current_date('{{ var("local_timezone") }}')
+    and membershipvalue > 0
     -- days with no recorded attendance have no category to send
-    and fsd.attendance_category is not null
+    and attendance_category is not null

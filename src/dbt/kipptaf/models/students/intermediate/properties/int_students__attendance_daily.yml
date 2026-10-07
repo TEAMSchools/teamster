@@ -58,6 +58,22 @@ models:
           - not_null:
               config:
                 severity: error
+      - name: attendance_category
+        description: >-
+          Coarse attendance category from the is_* flags, in priority order —
+          Out-of-School Suspension, In-School Suspension, Absent, Tardy,
+          Present. Null when is_absent is null, meaning unknown, never Present.
+          The only place the ladder is defined; downstream models read this
+          column rather than recompute it.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - Out-of-School Suspension
+                  - In-School Suspension
+                  - Absent
+                  - Tardy
+                  - Present
       - name: _dbt_source_relation
         description: >-
           Originating source relation for the union branch (PowerSchool
