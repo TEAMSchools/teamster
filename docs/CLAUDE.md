@@ -1,54 +1,15 @@
 # CLAUDE.md — `docs/`
 
 MkDocs site for **engineering** documentation — architecture, operational
-guides, and infrastructure patterns. Analyst documentation lives in dbt YAML
+guides, and infrastructure patterns — plus `launch/`, the staff tool catalog and
+the build that renders it into a page. Analyst documentation lives in dbt YAML
 (properties files + exposures), not here.
-
-## Structure
-
-```text
-docs/
-  README.md                # Site homepage (nav/TOC hidden via hooks.py)
-  CONTRIBUTING.md          # Development workflow and PR guidelines
-  hooks.py                 # MkDocs hook: hides nav/TOC on homepage
-  reference/               # Architectural patterns and operational guides
-    architecture.md
-    adding-an-integration.md
-    io-managers.md
-    fiscal-year-partitioning.md
-    dbt-conventions.md
-    finalsite-focus-import.md
-    marts-data-models.md
-    automation-conditions.md
-    automations.md         # GENERATED — do not edit manually
-    claude-code-security-hooks.md  # Not in nav
-  models/                  # Per-dashboard/pipeline data-model reference docs
-    gradebook-audit-data-model.md
-  guides/                  # Task-focused walkthroughs
-    index.md               # Account setup + guide routing table (section landing)
-    adp-location-renames.md
-    claude-cube-connector.md
-    codespaces.md
-    cube.md
-    dagster.md
-    dbt-development.md
-    google-sheets.md
-    local-development.md
-    sftp-integration.md
-    superpowers.md
-  troubleshooting/         # Diagnostic guides for common failures
-    dagster.md
-    dbt.md
-    vscode.md
-  superpowers/             # Design specs and implementation plans (not in nav)
-    specs/                 # Date-prefixed design documents
-    plans/                 # Date-prefixed implementation plans
-  images/                  # Logos, screenshots
-```
 
 ## MkDocs Configuration
 
-Config: `mkdocs.yml` (project root). Theme: Material for MkDocs.
+Config: `mkdocs.yml` (project root). Theme: Material for MkDocs. `hooks.py`
+hides nav/TOC on the homepage (`README.md`) and generates `launch/index.html`
+from `launch/`.
 
 Navigation is defined explicitly in `mkdocs.yml` `nav:` — adding a new page
 requires a nav entry there. Pages not in `nav:` (e.g.,
@@ -70,11 +31,29 @@ not appear in site navigation.
 `uv run scripts/gen-automations-doc.py`. Never edit it directly. Regenerate when
 adding, removing, or renaming schedules or sensors.
 
-The script imports every code location's `definitions` and silently SKIPS any
-that fail to import — so running it in the codespace (locations fail to import
-without their dbt manifests, and `kipptaf` additionally on unset
-Illuminate/Zendesk dlt credentials) drops those locations from the catalog.
-Regenerate only in a full environment where all locations load.
+Regenerate only where every code location imports — see `scripts/CLAUDE.md` →
+_Prerequisites_.
+
+## `launch/` Directory
+
+The staff tool catalog and the pipeline that publishes it — see
+`docs/guides/launch-page-guide.md` (the published field reference: every
+`links.yml` field, legal values, and validation errors), `docs/launch/README.md`
+(this directory and the state of the catalog) and `docs/launch/PROJECT.md` (why
+and where it stands) before touching anything here. `build.py` is authoritative
+if the guide and the code disagree.
+
+- **`docs/launch/*.{yml,py}` and `template.html` are source, not docs** —
+  `mkdocs.yml` `exclude_docs` keeps `links.yml`, `groups.yml`, `build.py`,
+  `template.html`, `RUNBOOK.md`, `README.md`, and `PROJECT.md` out of the built
+  site. Only the page `hooks.py` generates from them (`launch/index.html`)
+  ships.
+- **`docs/launch/` has its own CODEOWNERS entry** (`analytics-engineers`),
+  separate from the rest of `docs/`.
+- **Changes under `docs/launch/` (plus `docs/hooks.py`, `tests/launch/`,
+  `mkdocs.yml`, and the `docs` dependency group in `pyproject.toml`/`uv.lock`)
+  gate on `.github/workflows/pytest.yaml`** — a catalog or build change that
+  fails validation blocks that PR, not just the launch page.
 
 ## `superpowers/` Directory
 
@@ -84,6 +63,12 @@ engineering planning.
 
 Naming convention: `YYYY-MM-DD-<brief-description>.md` (e.g.,
 `2026-03-20-powerschool-odbc-staleness-refactor-design.md`).
+
+Don't edit a spec or plan to track implementation after it's approved. The PR
+diff, commits and review threads record how the build diverged. Edit one only
+when the user asks, or when review changes the design itself; then add a dated
+revision section rather than rewriting. A doc-only push to a branch with dbt
+changes reruns the whole CI selection.
 
 ## When to Update Docs
 
@@ -105,8 +90,7 @@ documentation mechanism for that work.
 - **Don't use a standalone `**bold**` line as a pseudo-heading** — markdownlint
   MD036 fails it; use a real `###` heading (MD024 is `siblings_only`, so a
   subsection heading repeated across sections is fine). `mkdocs build` does NOT
-  run markdownlint, so `trunk check` the generated/edited `.md` before pushing —
-  MD036 / MD001 fire only at pre-push / CI, not in the mkdocs build.
+  run markdownlint, so a clean build is not lint-clean.
 - SQL examples must follow `.trunk/config/.sqlfluff` rules (BigQuery dialect,
   trailing commas, single quotes, max line length 88)
 - Use admonitions for warnings and notes:

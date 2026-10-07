@@ -1,5 +1,13 @@
 models:
   - name: rpt_appsheet__seat_tracker_roster
+    description: >
+      Seat tracker roster for the AppSheet app — one row per active or pre-start
+      staff member, joined to ITR (intent to return) responses and performance
+      management tier, plus five fixed sentinel rows (`employee_number`
+      999995-999999) for a seat with no active teammate — an open seat, a new
+      hire not yet started, a closed position, a scoot sub, or a name only
+      captured in notes — so the app still has a row to attach seat-tracking
+      actions to when no real employee occupies the seat.
     columns:
       - name: employee_number
         data_type: int64
@@ -51,3 +59,19 @@ models:
         data_type: string
       - name: permission_level
         data_type: int64
+        description: >
+          App access tier derived from `job_title` and `home_department_name`,
+          from broadest to narrowest. 7 sees and edits everything — the Data
+          department, or a Talent Acquisition Director. 6 sees and edits
+          everything within their own state or region — an Operations Director
+          at a room-code location (no lower tiers are assigned within that
+          scope). 5 sees everything and edits only teammate and seat-status
+          fields — Talent Acquisition recruiters and managers. 4 sees their own
+          school and edits teammate fields (name, gutcheck, nonrenewal) — school
+          leader and school-operations-director titles. 3 sees everything and
+          edits nothing — Chiefs, Special Education directors, or the Leadership
+          Development, Human Resources, or Finance and Purchasing departments. 2
+          sees their own state or region and edits nothing — Operations or
+          School Support managing directors, School Support directors at a
+          room-code location, or a Head of Schools title. 1 is the fallback and
+          sees nothing.

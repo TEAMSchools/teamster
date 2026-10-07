@@ -26,21 +26,25 @@ with
             c.grade_canonical_name,
 
             sr.assigned_school,
-            sr.enrolled_date as enrollment_start_date,
+            sr.mid_year_withdrawal_date,
+            sr.summer_withdraw_date,
 
             trk.promotion_status_ss as promotion_status,
 
-            -- withdrawal_last_attended_date (a Finalsite custom attribute) is the
-            -- official signal that a student withdrew. Count it only when it is
-            -- populated AND on/after the current enrollment start — a date before
-            -- enrolled_date belongs to a prior enrollment on this reused contact,
-            -- so a forward (re)enrollment never inherits a stale withdrawal.
+            safe_cast(
+                cca.withdrawal_last_attended_date as date
+            ) as withdrawal_last_attended_date,
+
+            -- Finalsite reuses one contact record across enrollment cycles, so
+            -- enrolled_date can still hold a prior cycle's value while the current
+            -- cycle has none. A date before this cycle's applicant_date is that
+            -- stale value, not an enrollment. A null applicant_date makes the
+            -- comparison null, which leaves enrolled_date intact.
             if(
-                safe_cast(cca.withdrawal_last_attended_date as date)
-                >= sr.enrolled_date,
-                safe_cast(cca.withdrawal_last_attended_date as date),
-                cast(null as date)
-            ) as enrollment_end_date,
+                sr.enrolled_date < sr.applicant_date,
+                cast(null as date),
+                sr.enrolled_date
+            ) as enrollment_start_date,
         from contacts as c
         left join
             status_report_latest as sr
@@ -51,6 +55,36 @@ with
         left join
             {{ ref("int_finalsite__contact_custom_attributes") }} as cca
             on c.finalsite_enrollment_id = cca.finalsite_enrollment_id
+    ),
+
+    ended as (
+        select
+            finalsite_enrollment_id,
+            finalsite_status,
+            school_year_start,
+            grade_canonical_name,
+            assigned_school,
+            promotion_status,
+            enrollment_start_date,
+
+            -- Any one of the three withdrawal signals ends the enrollment, so
+            -- take the earliest. A date before the enrollment start belongs to a
+            -- prior enrollment on this reused contact, so a forward
+            -- (re)enrollment never inherits a stale withdrawal; a null start
+            -- (a stale enrolled_date, above) leaves the enrollment unended.
+            (
+                select min(d),
+                from
+                    unnest(
+                        [
+                            withdrawal_last_attended_date,
+                            mid_year_withdrawal_date,
+                            summer_withdraw_date
+                        ]
+                    ) as d
+                where d >= enrollment_start_date
+            ) as enrollment_end_date,
+        from dated
     )
 
 select
@@ -65,7 +99,7 @@ select
     (
         enrollment_start_date is not null and enrollment_end_date is not null
     ) as is_transfer_out,
-from dated
+from ended
 where
     finalsite_status
     in ('accepted', 'enrollment_in_progress', 'assigned_school', 'enrolled', 'retained')

@@ -7,6 +7,9 @@ models:
       proficiency, DeansList referrals by tier, academic course failure rates,
       and weighted Y1 GPA. All values are PII-free aggregates — no student-level
       data is exposed.
+
+      Network-wide, Miami included. Miami held 12,720 rows in prod as of
+      2026-08-27. Ratified on #4996.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

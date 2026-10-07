@@ -2,15 +2,32 @@
 
 ## What is FRESH?
 
-FRESH is the network's enrollment recruitment dashboard: it tracks progress
-against recruitment targets (seats, new students, application/offer/ enrollment
-funnel counts) broken out by region, school, and grade. It has two reporting
-views — **Progress to Goals** (`rpt_tableau__fresh_dashboard_progress_to_goals`)
-and **Aggregated** (`rpt_tableau__fresh_dashboard_aggregated`) — both built from
-the same underlying scaffold and goals data, plus a third data-quality surface,
-**`rpt_tableau__fresh_dashboard_qc`**, which lists the individual students whose
-Finalsite record disagrees with the SIS (see "The QC worklist" below). All three
-are wired into the `fresh_dashboard` exposure.
+FRESH is the network's enrollment recruitment dashboard. It tracks progress
+against recruitment targets (seats, new students, and the inquiry, application,
+offer and enrollment funnel) by region, school and grade. The Student
+Recruitment and Enrollment team (SRE) and school operations teams use it to see
+where each school stands against its goals and which student records need
+cleanup.
+
+- Owner: the data team, with Anthony Walters as owner.
+- Stakeholder: Maria-Cristina Ventresca, Managing Director, Marketing, Comms,
+  and Enrollment.
+- Targets: owned by SRE. SRE's own workbook is hand-maintained; the Finalsite
+  goals Google Sheet is the copy dbt reads.
+
+The Tableau workbook has four tabs: **Landing Page** (the default view),
+**Progress to Goals**, **School Ops Team** and **SRE Team**. It reads three
+reporting models, all in the `fresh_dashboard` exposure:
+
+- `rpt_tableau__fresh_dashboard_progress_to_goals`: enrolled students against
+  enrollment targets.
+- `rpt_tableau__fresh_dashboard_aggregated`: funnel counts against funnel goals.
+- `rpt_tableau__fresh_dashboard_qc`: a worklist of students whose Finalsite
+  record disagrees with the SIS.
+
+The exposure also reads `int_tableau__finalsite_student_scaffold` directly (see
+_Known issues, need to fix_). Which tab reads which data source, and who opens
+each tab, is an open question (see _Open questions_).
 
 ## Data model overview
 
@@ -20,24 +37,25 @@ are wired into the `fresh_dashboard` exposure.
   stg_powerschool__schools ─────────────┐
   stg_powerschool__students ────────────┤
   int_focus__schools ───────────────────┤
-  int_focus__student_enrollments ───────┼─▶ int_tableau__fresh_enrollment_scaffold
+  int_focus__student_enrollment_roster ─┼─▶ int_tableau__fresh_enrollment_scaffold
   stg_google_sheets__people__locations ─┤
   int_finalsite__status_report_unpivot ─┘   (net-new schools/grades only)
 
 2. THE GOALS (numeric targets)
 
   stg_google_sheets__finalsite__goals ─┬─▶ int_tableau__fresh_goals_scaffold
-                                       │     (inner-joined to the spine above)
+                                       │     (funnel goals, inner-joined to the spine)
                                        └─▶ int_google_sheets__finalsite__goals_pivot
-                                             (Enrollment goal_type targets only)
+                                             (the five Enrollment targets as columns;
+                                              consumers filter goal_type)
 
 3. THE ACTUALS (where students are in the funnel)
 
   stg_finalsite__status_report ─▶ int_finalsite__status_report_unpivot ────────┐
   stg_google_sheets__finalsite__status_crosswalk                              │
     └─▶ int_google_sheets__finalsite__status_crosswalk_unpivot ───────────────┤
-  int_extracts__student_enrollments (PowerSchool; zero Miami rows) ───────────┼─▶ int_tableau__finalsite_student_scaffold
-  int_focus__student_enrollments (Miami; Focus-sourced) ──────────────────────┤
+  int_extracts__student_enrollments (NJ regions; SIS side) ───────────────────┼─▶ int_tableau__finalsite_student_scaffold
+  int_focus__student_enrollment_roster (Miami; SIS side) ─────────────────────┤
   int_finalsite__contact_id_attributes (Focus <-> Finalsite id bridge) ───────┘
 
 4. THE CONSUMERS (the fresh_dashboard exposure)
@@ -50,386 +68,366 @@ are wired into the `fresh_dashboard` exposure.
   int_tableau__fresh_goals_scaffold ─────────┐
   int_tableau__finalsite_student_scaffold ───┴─▶ rpt_tableau__fresh_dashboard_aggregated
 
-  int_tableau__finalsite_student_scaffold ─────▶ rpt_tableau__fresh_dashboard_qc
+  int_tableau__finalsite_student_scaffold ───┐
+  int_extracts__student_enrollments ─────────┤
+  int_finalsite__contact_id_attributes ──────┼─▶ rpt_tableau__fresh_dashboard_qc
+  stg_finalsite__status_report ──────────────┘
+
+  int_tableau__finalsite_student_scaffold ─────▶ fresh_dashboard (read directly)
 ```
 
-The **scaffold** (school × grade spine) and the **goals** (numeric targets) are
-two independent inputs that get joined together. The **actuals** (where students
-actually are in the recruitment funnel) come from a completely separate
-Finalsite pipeline, joined in downstream.
+The spine and the goals are two independent inputs joined together. The actuals
+come from a separate Finalsite pipeline and join in at the reporting layer.
 
-**Package boundaries**: `stg_finalsite__status_report`'s cleaning (grade decode,
-`enrollment_type` default/initcap, `first_name` initcap,
-`active_school_year_display`) lives in the `finalsite` source-system package
-(`src/dbt/finalsite/models/sftp/staging/`); the kipptaf-level model of the same
-name is a thin `union_relations` wrapper over the four district sources plus
-`region` / `_dbt_source_project` / the `exclude_ids` filter.
-`int_focus__student_enrollments` (plural) is likewise a thin kipptaf wrapper —
-adding the Finalsite-ID crosswalk, the locations crosswalk, `region`,
-`district`, `region_school_level` — over the `focus` package's
-`int_focus__student_enrollment` (singular), which carries the full enrollment
-derivation. The three `stg_focus__*` passthroughs this used to depend on
-(`school_gradelevels`, `student_enrollment_codes`,
-`custom_field_select_options`) no longer exist — their source entries were
-removed along with them.
+## Terms
+
+| term                               | meaning                                                                                                                                                    |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| SRE                                | Student Recruitment and Enrollment, the team that owns recruitment targets and Finalsite data entry.                                                       |
+| Spine / scaffold                   | `int_tableau__fresh_enrollment_scaffold`: one row per school and grade being reported on, so the dashboard has a row even where no student or goal exists. |
+| Recruitment year                   | The `finalsite_recruitment_year` dbt var: the Finalsite cycle FRESH reports on. Start-year form (AY2026-2027 = `2026`).                                    |
+| `grade_level = -9`                 | A whole-school total row. A reporting convention, not a SIS grade.                                                                                         |
+| `grade_level = -1`                 | Pre-K (K is `0`, grades 1-12 are `1`-`12`).                                                                                                                |
+| `schoolid = 0`                     | A region rollup row (spine and goals) or a Finalsite record with no assigned school yet (actuals, `school = 'No School Assigned'`).                        |
+| `goal_granularity`                 | `School` (`grade_level = -9`), `School/Grade Level`, or `Region/Grade Level` (`schoolid = 0`).                                                             |
+| `goal_type` / `goal_name`          | The goal family and the specific goal. Funnel goal names come from the status crosswalk; Enrollment goal names are typed into the goals sheet.             |
+| `grouped_status`                   | The funnel stage a Finalsite status maps to, from the crosswalk's `status_group_value`.                                                                    |
+| `grouped_status_timeframe`         | `Ever` counts a student who ever reached the stage; `Current` counts only a student whose latest status is in the stage.                                   |
+| `latest_status`                    | A student's most recent Finalsite status: latest status date, ties broken by `status_order` (highest wins).                                                |
+| `status_order`                     | A hardcoded rank per Finalsite status field in `int_finalsite__status_report_unpivot`, mirroring the crosswalk's `detailed_status_ranking`.                |
+| `enrollment_type`                  | `New` or `Returning`, from Finalsite. `aligned_enrollment_type` is the constant `All`, used to add New and Returning together.                             |
+| `enroll_status`                    | The SIS enrollment code: `0` enrolled, `2` withdrawn, `3` graduated, `-1` pre-registered. `1` is treated as invalid in this repo.                          |
+| `finalsite_expected_enroll_status` | What the SIS should show if Finalsite is right: `0`, `2` or NULL. See _How Finalsite's `latest_status` becomes an expected enrollment status_.             |
+| Persistence                        | A current student returning next year (`Re-Enroll Projection`). "Retention" means grade repetition in this network, a different thing.                     |
+| Reset Protocol                     | SRE's fix for a same-day status tie: move the student to another status, wait a day, then set the status you want.                                         |
+
+## Where the data comes from
+
+| source                                                     | reaches FRESH through                                                                        | owner                                         |
+| ---------------------------------------------------------- | -------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| Finalsite status report (SFTP file drop, all four regions) | `stg_finalsite__status_report` → `int_finalsite__status_report_unpivot`                      | SRE enters the data; data team owns ingestion |
+| Finalsite contact ids                                      | `int_finalsite__contact_id_attributes` (bridges Focus ids to Finalsite ids)                  | data team                                     |
+| PowerSchool (Newark, Camden, Paterson)                     | `stg_powerschool__schools`, `stg_powerschool__students`, `int_extracts__student_enrollments` | school operations enter; data team ingests    |
+| Focus (Miami)                                              | `int_focus__schools`, `int_focus__student_enrollment_roster`                                 | school operations enter; data team ingests    |
+| Finalsite goals Google Sheet                               | `stg_google_sheets__finalsite__goals`                                                        | SRE supplies values; data team pastes them    |
+| Finalsite status crosswalk Google Sheet                    | `stg_google_sheets__finalsite__status_crosswalk`                                             | data team, with SRE confirming the mapping    |
+| Finalsite exclude-ids Google Sheet                         | `stg_google_sheets__finalsite__exclude_ids`, applied inside `stg_finalsite__status_report`   | data team                                     |
+| Locations Google Sheet                                     | `stg_google_sheets__people__locations`, `int_people__location_crosswalk`                     | data team                                     |
+
+`stg_finalsite__status_report`'s cleaning (grade decode, `enrollment_type`
+default, name casing, `active_school_year_display`) lives in the `finalsite`
+source-system package; the kipptaf model of the same name is a thin
+`union_relations` wrapper over the four district sources that adds `region`,
+`_dbt_source_project` and the `exclude_ids` filter.
+`int_focus__student_enrollment_roster` is likewise a thin kipptaf wrapper over a
+`focus` package model.
+
+## The dashboard views
+
+### Progress to Goals: `rpt_tableau__fresh_dashboard_progress_to_goals`
+
+What it shows: Enrolled and in-progress students counted against the five
+Enrollment targets (`Seat Target`, `FDOS Target`, `Budget Target`,
+`New Student Target`, `Re-Enroll Projection`), per school and per school and
+grade.
+
+Grain: One row per scaffold row (`academic_year`, `region`, `schoolid`,
+`grade_level`, `enrollment_type` in `All`/`New`/`Returning`) per matched student
+or goal record. `row_type` is `Student` (with `student_count = 1`) or `Goal`.
+
+Reads:
+
+- `int_tableau__fresh_enrollment_scaffold`: the rows. `School` rows are the
+  `grade_level = -9` rows; `School/Grade Level` rows are every other row except
+  region rollups (`schoolid != 0`). There are no region rows in this view.
+- `int_people__location_crosswalk`: `school_level` for the `-9` rows, from
+  `location_grade_band`. Grade rows take `school_level` from the scaffold.
+- `int_tableau__finalsite_student_scaffold`: students whose `latest_status` is
+  `Enrolled` or `Enrollment In Progress`.
+- `int_google_sheets__finalsite__goals_pivot`: Enrollment targets at `School`
+  and `School/Grade Level`, for the recruitment year.
+
+Worth knowing:
+
+- Each student is unioned in twice, once on their real `enrollment_type` and
+  once on `aligned_enrollment_type = 'All'`, so the `All` rows add New and
+  Returning together. Goals follow the same split: `New Student Target` lands on
+  `New`, `Re-Enroll Projection` on `Returning`, everything else on `All`.
+- A student with no assigned school (`schoolid = 0`) has no scaffold row to land
+  on and does not appear.
+- A student Finalsite has no record for never appears here. Those students are
+  what `is_missing_finalsite_record` on the QC worklist catches.
+
+### Aggregated: `rpt_tableau__fresh_dashboard_aggregated`
+
+What it shows: Funnel counts (inquiries, applications, offers, pending offers by
+age, waitlisted, deferred, enrollment in progress, conversion rates) against
+funnel goals. Which goals and granularities reach it depends on the branch that
+selects them (table below).
+
+Grain: One row per goals-scaffold row per matched student. A goal with no
+matching student keeps one row with NULL student columns.
+
+Reads:
+
+- `int_tableau__fresh_goals_scaffold`: the goal rows (every non-Enrollment goal
+  whose key exists in the spine).
+- `int_tableau__finalsite_student_scaffold`: the students, left-joined in five
+  branches:
+
+| branch                   | goals                                                | student join                                                                           |
+| ------------------------ | ---------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| Deferred / Waitlisted    | `Current`, `goal_name in ('Deferred', 'Waitlisted')` | school, grade, `goal_type`, and `goal_name = latest_status`                            |
+| Enrollment In Progress   | `Current`, `School/Grade Level` only                 | school, grade, `goal_type`, and `goal_name = latest_status`                            |
+| Pending Offers / Offers  | all granularities                                    | school, grade, `goal_type`, `goal_name`                                                |
+| Inquiries / Applications | `Region/Grade Level` only                            | region and grade only (these students have no school yet)                              |
+| Conversion               | `Ever`                                               | school, grade, `goal_type`, `goal_name`, plus the matching `Num` row for the numerator |
+
+Worth knowing:
+
+- `school_level` here comes from the goals sheet, not the scaffold, so it can
+  differ from Progress to Goals for the same school and grade (see
+  _`school_level` is banded per grade, and may disagree with the goals sheet_).
+- `goal_name_value` is a Finalsite id column for counting. In the first four
+  branches it is the matched student's `finalsite_id`. In the Conversion branch
+  it is filled only when the same student also has the matching `Current`
+  `... Num` row, restricted to `enrollment_type = 'New'`. A `... Num` status
+  marks a student who reached the later stage of a conversion (for
+  `Offers to Enrolled`, the enrolled ones), so counting `goal_name_value` gives
+  the rate's numerator and counting `finalsite_id` its denominator.
+- Region rollup goals carry `schoolid = 0`, and so does a Finalsite student with
+  no assigned school. A branch that joins on `schoolid` therefore matches a
+  `Region/Grade Level` goal only to unassigned students, never to the region's
+  students as a whole. Only the Inquiries/Applications branch skips `schoolid`,
+  so it is the only one where a region goal counts every student in the region
+  and grade (see _Known issues, need to fix_).
+- The `School`-granularity goals that reach this view are only `Offers` and
+  `Pending Offers`, and they never match a student (see _Known issues, need to
+  fix_).
+- Only what the five branches select reaches this view: `Accepted` never does,
+  and `Inquiries` and `App Target` only at `Region/Grade Level` (see _Known
+  issues, need to fix_).
+
+### The QC worklist: `rpt_tableau__fresh_dashboard_qc`
+
+What it shows: A worklist, not a report: one row per student per problem, where
+Finalsite and the SIS disagree. An empty result is the good outcome.
+
+Grain: One row per student per fired flag (`flag_name`, with `flag_value` always
+`true`).
+
+Reads:
+
+- `int_tableau__finalsite_student_scaffold` at
+  `grouped_status_timeframe = 'Current'`: four flags, unpivoted into
+  `(flag_name, flag_value)`, keeping only the rows where a flag fired.
+- `int_extracts__student_enrollments`, `int_finalsite__contact_id_attributes`
+  and `stg_finalsite__status_report`: the fifth flag,
+  `is_missing_finalsite_record`, unioned on.
+
+Worth knowing: see _The five flags, in plain language_ and _Implementation
+notes_ below.
 
 ## The scaffold: `int_tableau__fresh_enrollment_scaffold`
 
-This model produces one row per
-`(enrollment_academic_year, region, schoolid, grade_level)` — the spine
-everything else joins against. The `rpt_tableau__fresh_dashboard_*` views alias
-it back to `academic_year` for the Tableau-facing column.
-
-It is now fully SIS-derived. The hand-maintained
-`stg_google_sheets__finalsite__school_scaffold` has been retired: every row type
-it used to supply is computed here instead.
+One row per `(enrollment_academic_year, region, schoolid, grade_level)`, the
+spine everything else joins against. The `rpt_tableau__fresh_dashboard_*` views
+alias the year to `academic_year`. The scaffold is derived entirely from the SIS
+and Finalsite; no hand-maintained sheet feeds it.
 
 ### How the spine is built
 
-1. **`school_directory`** — one row per reporting school, unioned from the two
-   live SIS sources. Non-Miami comes from `stg_powerschool__schools` filtered to
-   `state_excludefromreporting = 0` (that table carries non-reporting
-   administrative rows like the `999999` "Graduated Students" sentinel). Miami
-   comes from `int_focus__schools` filtered to `max_syear is null`, which drops
-   closed schools (Sunrise, Liberty) and non-instructional ones (Virtual
-   Franchise, ZZ Course History), inner-joined to
-   `stg_google_sheets__people__locations` on `focus_school_id` to pick up the
-   school abbreviation and the PowerSchool-space `schoolid`. Focus's own
-   `school_number` is a Focus code (`2332A`), not a PowerSchool id, so that join
-   is what puts Miami in the same id space as everything else. That join also
-   carries `not loc.is_pathways`, keeping Pathways locations out of the
-   recruitment spine — they are not schools FRESH recruits into.
-1. **`current_grade_levels`** — which grades each school actually serves,
-   derived from current enrollment rather than a static grade span.
-   `stg_powerschool__students` at `enroll_status = 0` for non-Miami;
-   `int_focus__student_enrollments` at `enroll_status = 0`,
-   `academic_year = current_academic_year` and `rn_year = 1` for Miami. Focus
-   carries multiple years, so the year filter is what scopes it to now;
-   PowerSchool's table has no year column and is current-state-only.
-   `rn_year = 1` takes one enrollment stint per student-year, which is correct
-   here because Finalsite and the SIS are expected to agree on a student's
-   grade.
-
-   The PowerSchool branch excludes Miami (`_dbt_source_project != 'kippmiami'`)
-   because those rows are a frozen pre-migration snapshot and would resurrect
-   grades those schools no longer serve — Courage still carries a grade 5 there,
-   which it no longer serves. The Focus branch needs no matching exclusion:
-   Focus is Miami-only.
-
-   `enroll_status = 0` alone is sufficient to get a clean 0-12 grade range, so
-   there is no `grade_level >= 0` filter. Verified against real data:
-   `stg_powerschool__students` has zero negative `grade_level` for any
-   `enroll_status`, and its only out-of-range value (`99`, a graduated-student
-   placeholder) occurs only at `enroll_status = 3`, already excluded.
-
-1. **`sis_scaffold`** — the directory joined to grade membership on
-   `(schoolid, _dbt_source_project)`. The source-project half of that key
-   matters: each PowerSchool instance assigns `schoolid` independently, so a
-   bare numeric join can collide across districts.
-
-Grade membership deliberately does **not** use
-`generate_array(low_grade, high_grade)`. The unreliable half is `low_grade`, not
-`high_grade`: verified across all 19 reporting non-Miami schools, `high_grade`
-equals each school's max enrolled grade **everywhere** — it tracks current
-reality rather than an aspirational build-out — but three schools declare a
-`low_grade` below what they actually serve (Hatch 3 vs 5, Purpose 4 vs 5, Rise 4
-vs 5), so expanding the declared span injects four phantom rows for grades those
-schools don't serve. Current enrollment yields the correct ceiling on its own,
-so `high_grade` adds nothing, and enrollment is self-maintaining where
-`low_grade` is not — nobody updates it when a school's band shifts.
-
-The tradeoff is that a school's very first student in a newly-opening grade may
-not be entered in the SIS yet even though Finalsite is already recruiting for
-it. That case is covered by the `finalsite_new` branch below, fed by SRE
-entering the school/grade in Finalsite — see "Rolling the dashboard over to a
-new cycle".
+1. **`school_directory`**: one row per reporting school, from two SIS sources.
+   NJ comes from `stg_powerschool__schools` at `state_excludefromreporting = 0`,
+   which drops administrative rows such as the graduated-students school. Miami
+   comes from `int_focus__schools` at `max_syear is null` (open schools only),
+   inner-joined to `stg_google_sheets__people__locations` on `focus_school_id`
+   to get the abbreviation and the PowerSchool-space `schoolid`. Focus's own
+   school number is a Focus code, not a PowerSchool id, so this join is what
+   puts Miami in the same id space. The join also requires `not is_pathways`:
+   Pathways locations are not schools FRESH recruits into.
+1. **`current_grade_levels`**: which grades each school serves, from current
+   enrollment. NJ: `stg_powerschool__students` at `enroll_status = 0` (that
+   table is current-state only). Miami: `int_focus__student_enrollment_roster`
+   at `enroll_status = 0`, `academic_year = current_academic_year` and
+   `rn_year = 1` (Focus carries several years, so the year filter scopes it).
+   There is no explicit Miami exclusion on the PowerSchool branches; the kipptaf
+   PowerSchool unions carry no Miami rows.
+1. **`sis_scaffold`**: the directory joined to grade membership on
+   `(schoolid, _dbt_source_project)`. Each PowerSchool instance assigns
+   `schoolid` independently, so the source project is part of the key.
 
 ### The three row types the SIS can't produce directly
 
-- **Whole-school totals (`grade_level = -9`)** — derived in `school_priority`,
-  one row per school in the spine, with `school_level` NULL because a
-  whole-school row spans bands.
-- **Region rollups (`schoolid = 0`)** — a `select distinct` over
+- **Whole-school totals (`grade_level = -9`)**: one row per school in the spine,
+  with `school_level` NULL because a whole-school row spans bands.
+  `scaffold_source` is `sis` if any of the school's grade rows came from the
+  SIS, else `finalsite`.
+- **Region rollups (`schoolid = 0`)**: a `select distinct` over
   `(region, grade_level, school_level)`, with `school` set to the region name.
-  This is a safe grain projection only because `school_level` is banded per
-  grade (see below); a per-school value would emit more than one row per
-  `(region, grade_level)` wherever a region's grade spans schools of different
-  levels.
-- **Net-new schools/grades** — `finalsite_new`, anti-joined against the SIS
-  spine on `(region, schoolid, grade_level)` off
-  `int_finalsite__status_report_unpivot`. Region is part of that key because
-  PowerSchool assigns `schoolid` independently per district, so a bare numeric
-  match could suppress a row by colliding with another region's.
+  This is safe only because `school_level` is a function of grade alone.
+- **Net-new schools/grades**: `finalsite_new`. School/grade pairs Finalsite has
+  records for in the recruitment year, with an assigned school
+  (`schoolid != 0`), that are not already in the SIS spine. The anti-join key is
+  `(region, schoolid, grade_level)`.
 
-  This CTE is gated by a predicate comparing the two year vars, which renders as
-  a constant — `finalsite_recruitment_year != current_academic_year` becomes
-  `2026 != 2026` today. BigQuery folds it, so the CTE contributes zero rows at
-  no cost; when SRE's recruitment year runs ahead of PowerSchool's it becomes
-  `2027 != 2026` and the branch activates on its own.
-
-  The gate **is** the mechanism, not a limitation. Two vars being equal means
-  Finalsite and the SIS are on the same cycle, so a Finalsite school/grade
-  absent from the SIS is a data-entry error rather than a legitimately-new
-  entity; the two diverging means Finalsite is recruiting ahead, which is
-  exactly when not-yet-enrolled grades should be trusted. So the way to add a
-  new school/grade is to have SRE enter it in Finalsite under the new Finalsite
-  year and then roll the year over — see "Rolling the dashboard over to a new
-  cycle" below.
-
-  A constant `2026 != 2026` in a `WHERE` clause looks like a mistake; it isn't.
-  It replaced a Jinja `{% if %}` deliberately, so the model is plain SQL like
-  every other model in the repo rather than a compile-time-branching program.
-
-**`grade_level = -9` means "whole-school total row"** in this scaffold's
-convention — a reporting convenience, not a SIS concept. `-1` is reserved for
-Pre-K everywhere downstream (PK = `-1`, K = `0`, 1-12 = `1`-`12`).
+  The CTE is gated by `finalsite_recruitment_year != current_academic_year`.
+  While the two vars are equal the gate is closed and `finalsite_new` returns no
+  rows. So a grade that is being recruited for, with nobody enrolled in the SIS
+  yet, gets no scaffold row: its goals drop out of
+  `int_tableau__fresh_goals_scaffold`'s inner join, and its Finalsite students
+  have no row to land on in either reporting view. The gate opens only when the
+  recruitment year runs ahead of `current_academic_year`. Both vars are in
+  `src/dbt/kipptaf/dbt_project.yml`.
 
 ### `school_level` is banded per grade, and may disagree with the goals sheet
 
-`school_level` is computed from the enrolled grade (`>= 9` HS, `>= 5` MS, else
-ES), **not** read from either SIS's own per-school field
-(`stg_powerschool__schools.school_level` or the locations sheet's `grade_band`).
-Two reasons: it reproduces the retired sheet exactly, and a value determined by
-`grade_level` alone is what keeps the region rollup at one row per grade.
+`school_level` is computed from grade (`>= 9` HS, `>= 5` MS, else ES), not read
+from either SIS's per-school field. A per-grade value keeps the region rollup at
+one row per grade, and some schools report different levels for different
+grades.
 
-A per-school value cannot reproduce the sheet in any case — the sheet's
-`school_level` varies _within_ a school (Sumner reports `ES` for grades 0-4 and
-`MS` for 5-6, though the school is classified `ES` network-wide), while both
-per-school sources are constant down all of a school's rows.
+These are NJ bands. Miami's real ES/MS boundary is 5/6, so Miami ES schools
+serving grade 5 report their grade-5 rows as `MS` here, while the goals sheet
+reports them as `ES`. This is accepted: the goals sheet stays hand-entered
+because some goals are standard by grade across the network.
 
-**These bands are NJ bands, and Miami's real ES/MS boundary is 5/6, not 4/5.**
-So Royalty and Legacy ES — officially `ES`, serving grades 0-5 — report their
-grade-5 rows as `MS` here. That matches the retired sheet, but it does **not**
-match `stg_google_sheets__finalsite__goals`, which uses Miami's real boundary
-and reports those same rows as `ES`.
+Consequence: Progress to Goals takes grade-row `school_level` from this
+scaffold, and Aggregated takes it from the goals sheet (through
+`int_tableau__fresh_goals_scaffold`), so Miami grade 5 can show different
+`school_level` values on the two views.
 
-That divergence is accepted, not a bug to fix. The goals sheet stays manually
-entered because some goals are standard by grade level across the network rather
-than by school level, which is why it splits ES/MS the way it does. Consequence
-to be aware of when reading the dashboards:
-`rpt_tableau__fresh_dashboard_progress_to_goals` takes `school_level` from this
-scaffold, while `rpt_tableau__fresh_dashboard_aggregated` takes it from
-`int_tableau__fresh_goals_scaffold` (i.e. from the goals sheet) — so for Miami
-grade 5 the two views legitimately report different `school_level` values. The
-goals sheet is also internally inconsistent on the Miami region-rollup row for
-grade 5, carrying both `MS` and `ES`; that one is a sheet data-entry issue worth
-cleaning up.
+### Miami is Focus-sourced
 
-### Miami is now Focus-sourced, not sheet-sourced
-
-Miami's SIS moved to Focus (`src/dbt/powerschool/CLAUDE.md`, #4441) and no
-longer consumes the PowerSchool package. Miami is excluded from the PowerSchool
-branch of both `school_directory` and `current_grade_levels`, and supplied
-entirely from `int_focus__schools` / `int_focus__student_enrollments` instead.
-This replaces the previous carve-out, where Miami was 100% sheet-sourced.
-
-One label change came with it: the retired sheet called schoolid `30200805`
-`MTH`, while the locations sheet and `int_people__location_crosswalk` both call
-it `Miami Tech`. `MTH` existed only in the sheets, so the scaffold now emits
-`Miami Tech` — which also aligns it with `int_finalsite__status_report_unpivot`,
-the student-level side, which already resolved to `Miami Tech`. No join in the
-chain keys on the school name.
+Miami's schools and grade membership come from `int_focus__schools` and
+`int_focus__student_enrollment_roster`. The scaffold labels schoolid `30200805`
+`Miami Tech`, the same label `int_finalsite__status_report_unpivot` resolves to
+through `int_people__location_crosswalk`. No join in the chain keys on the
+school name.
 
 ## The current academic year: a dedicated var, not `current_academic_year`
 
 "The current Finalsite recruitment cycle" is the `finalsite_recruitment_year`
-dbt var (`src/dbt/kipptaf/dbt_project.yml`), read at every FRESH site that needs
-it — not a column or joined value, and not the same var as
-`current_academic_year`. It's a distinct var because Finalsite can carry **two
-concurrent academic years of live student data at once** during a transition
-period — individual students and regions roll over on their own uncoordinated
-timeline, with no standardized cadence — so there's no reliable signal in the
-ingested data for "which year is current now." SRE's own recruitment-cycle
-timeline is similarly fluid, with no fixed date (unlike PowerSchool's
-`var('current_academic_year')`, which bumps on a predictable July 1 cadence) to
-key an automatic bump off of.
+dbt var, read at every FRESH site that needs it. It is separate from
+`current_academic_year` because Finalsite can carry two academic years of live
+student data at once during a transition, and students and regions roll over on
+their own timeline. There is no signal in the ingested data for "which year is
+current now", and SRE's cycle has no fixed date. Always confirm the new year
+with SRE before changing it; the fresh-dashboard skill has the file list.
 
-See the fresh-dashboard skill's "Procedure: Update the Finalsite recruitment
-year" section for the full file list and update steps — always confirm the new
-year with SRE before changing it.
-
-`status_crosswalk` still holds config for **exactly one academic year at a
-time** by convention, guarded by
-`test_stg_google_sheets__finalsite__status_crosswalk_single_year` (asserting
-`count(distinct file_year) = 1`) — this guards against the sheet's config ever
-drifting out of sync with whatever year `finalsite_recruitment_year` is
-currently set to.
+The status crosswalk holds config for exactly one academic year at a time,
+guarded by `test_stg_google_sheets__finalsite__status_crosswalk_single_year`
+(`count(distinct file_year) = 1`).
 
 ## Goal definitions
 
-The `Enrollment` goal_type group is **not** computed via `status_crosswalk` at
-all — plain numeric targets entered directly on the goals sheet:
+The `Enrollment` goal_type group is plain numeric targets typed into the goals
+sheet. It reaches the dashboard through
+`int_google_sheets__finalsite__goals_pivot`, never through the status crosswalk:
 
-| `goal_name`            | Definition                                                                                                                                                                                                        |
-| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Seat Target`          | Total seats/capacity the school is targeting for the year.                                                                                                                                                        |
-| `FDOS Target`          | Enrollment target as of First Day of School.                                                                                                                                                                      |
-| `New Student Target`   | Target count of new (not returning) students to enroll.                                                                                                                                                           |
-| `Budget Target`        | The enrollment number the school's budget was built against.                                                                                                                                                      |
-| `Re-Enroll Projection` | Projected count of currently-enrolled students expected to persist (return) — "persistence," not "retention"; retention refers to grade repetition in this org's vocabulary and is a distinct, unrelated concept. |
+| `goal_name`            | Definition                                                                  |
+| ---------------------- | --------------------------------------------------------------------------- |
+| `Seat Target`          | Total seats the school is targeting for the year.                           |
+| `FDOS Target`          | Enrollment target as of the first day of school.                            |
+| `New Student Target`   | Target count of new (not returning) students.                               |
+| `Budget Target`        | The enrollment number the school's budget was built against.                |
+| `Re-Enroll Projection` | Projected count of current students expected to persist (return) next year. |
 
-Everything else is a computed roll-up of the Finalsite recruitment funnel via
-`status_crosswalk`'s `status_group_value` mapping and `grouped_status_timeframe`
-(`Ever` = cumulative, counts a student who ever reached this status even if they
-later moved past or reversed; `Current` = point-in-time, latest status only):
+Every other goal is a roll-up of the Finalsite funnel through the status
+crosswalk. `Ever` goal types are `Inquiries`, `Applications`, `Offers`,
+`Assigned School`, `Accepted` and the three `Conversion` rates; everything else
+is `Current`.
 
-| `goal_name` (`goal_type`)                                                           | Timeframe | Definition                                                                                                                      |
-| ----------------------------------------------------------------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `Inquiries`                                                                         | Ever      | Family ever submitted an inquiry.                                                                                               |
-| `App Target` (`Applications`)                                                       | Ever      | Family ever completed/submitted an application.                                                                                 |
-| `Offers Target` (`Offers`)                                                          | Ever      | Student was ever offered a seat.                                                                                                |
-| `Accepted`                                                                          | Ever      | Family ever accepted an offered seat.                                                                                           |
-| `Waitlisted`                                                                        | Current   | Student's current status is waitlisted.                                                                                         |
-| `Deferred`                                                                          | Current   | Student's current status is deferred.                                                                                           |
-| `Enrollment In Progress`                                                            | Current   | Student is currently mid-enrollment paperwork/process.                                                                          |
-| `Pending Offers` (+ `<= 4 Days` / `>= 5 & <= 10 Days` / `> 10 Days`)                | Current   | Student has an outstanding offer awaiting a family response, bucketed by days pending — an SLA/staleness tracker for follow-up. |
-| `Conversion` — `Accepted to Enrolled` / `Offers to Accepted` / `Offers to Enrolled` | Ever      | Funnel conversion-rate metrics between two funnel stages.                                                                       |
+| `goal_name` (`goal_type`)                                                          | Timeframe | Definition                                                              |
+| ---------------------------------------------------------------------------------- | --------- | ----------------------------------------------------------------------- |
+| `Inquiries`                                                                        | Ever      | Family ever submitted an inquiry.                                       |
+| `App Target` (`Applications`)                                                      | Ever      | Family ever completed an application.                                   |
+| `Offers Target` (`Offers`)                                                         | Ever      | Student was ever offered a seat.                                        |
+| `Accepted`                                                                         | Ever      | Family ever accepted an offered seat.                                   |
+| `Waitlisted`                                                                       | Current   | Current status is waitlisted.                                           |
+| `Deferred`                                                                         | Current   | Current status is deferred.                                             |
+| `Enrollment In Progress`                                                           | Current   | Student is mid-enrollment.                                              |
+| `Pending Offers` (+ `<= 4 Days` / `>= 5 & <= 10 Days` / `> 10 Days`)               | Current   | Outstanding offer awaiting a family response, bucketed by days pending. |
+| `Conversion`: `Accepted to Enrolled` / `Offers to Accepted` / `Offers to Enrolled` | Ever      | Conversion rate between two funnel stages.                              |
 
 ### Which goals exist at which granularity
 
-`goal_granularity` takes three values: `School` (`grade_level = -9`),
-`School/Grade Level`, and `Region/Grade Level` (`schoolid = 0`, with the region
-name repeated in `school`). **Not every goal exists at every level.** Expecting
-a value at a granularity a goal does not live at produces a phantom gap, so
-check this table before treating a missing row as a problem.
+Not every goal exists at every level. Expecting a value at a level a goal does
+not live at produces a phantom gap, so check this before treating a missing row
+as a problem. "scaffold" means the sheet carries rows for the combination with
+no `goal_value`: they give the dashboard grid a row per school, grade and
+status, and are never expected to receive a value. The table reflects the sheet
+for AY2026; re-check it each cycle with the query below.
 
 | `goal_name`                | `School` | `School/Grade Level` | `Region/Grade Level` |
 | -------------------------- | :------: | :------------------: | :------------------: |
-| `Budget Target`            |    ✅    |          --          |          --          |
-| `FDOS Target`              |    ✅    |          ✅          |          --          |
-| `Seat Target`              |    ✅    |          ✅          |          --          |
-| `Conversion` (3 names)     |    --    |          ✅          |          --          |
+| `Budget Target`            |   yes    |          --          |          --          |
+| `FDOS Target`              |   yes    |         yes          |          --          |
+| `Seat Target`              |   yes    |         yes          |          --          |
+| `Conversion` (3 names)     |    --    |         yes          |          --          |
 | `Enrollment In Progress`   |    --    |    scaffold only     |          --          |
-| `New Student Target`       |    ✅    |          ✅          |          ✅          |
-| `Re-Enroll Projection`     |    ✅    |          ✅          |          ✅          |
-| `App Target`               |    ✅    |          ✅          |          ✅          |
-| `Offers Target`            |    ✅    |          ✅          |          ✅          |
+| `New Student Target`       |   yes    |         yes          |         yes          |
+| `Re-Enroll Projection`     |   yes    |         yes          |         yes          |
+| `App Target`               |   yes    |         yes          |         yes          |
+| `Offers Target`            |   yes    |         yes          |         yes          |
 | `Accepted`                 | scaffold |       scaffold       |       scaffold       |
 | `Pending Offers` (4 names) | scaffold |       scaffold       |       scaffold       |
 | `Inquiries`                |    --    |          --          |    scaffold only     |
 | `Deferred`                 |    --    |          --          |    scaffold only     |
 | `Waitlisted`               |    --    |          --          |    scaffold only     |
 
-Notable consequences:
+```sql
+select
+    goal_granularity,
+    goal_type,
+    goal_name,
+    count(*) as sheet_rows,
+    countif(goal_value is not null) as populated_rows,
+from `teamster-332318`.kipptaf_google_sheets.stg_google_sheets__finalsite__goals
+where enrollment_academic_year = <year>
+group by goal_granularity, goal_type, goal_name
+```
 
-- `Budget Target` is **School-only**, so a change to it never fans out to grade
-  rows.
-- `FDOS Target` and `Seat Target` stop at `School/Grade Level` — there is no
-  region-level version of either.
-- `Offers Target` is the widest goal, existing at all three levels, so one
-  change can require up to three paired edits.
-
-### Rows with no value are scaffold, not goals
-
-Of the 39 `(goal_granularity, goal_type, goal_name)` combinations present for
-AY2026, **17 carry no populated `goal_value` at all** — marked `scaffold` above.
-They exist so the dashboard grid has a row per school / grade / status even
-where no target is set, and they are never expected to receive one. Only the ~20
-populated combinations are reconcilable against SRE's workbook.
-
-This rule holds at the **combination** level. A NULL _inside_ an otherwise
-populated combination is ambiguous and cannot be interpreted from the NULL alone
-— e.g. `Offers Target` at `Region/Grade Level` is populated for 31 of 45 rows,
-but all 9 Paterson rows are NULL, which may mean "Paterson has no offer goals"
-or "nobody filled these in." Ask rather than infer.
+A NULL inside an otherwise populated combination is ambiguous: it may mean "no
+goal here" or "nobody filled this in". Ask SRE rather than infer.
 
 ### `Conversion` goals are a flat per-grade lookup
 
-The three `Conversion` goals are supplied by SRE as expected rates **by grade
-level, identical across every school**. Verified for AY2026: each grade has
-exactly one distinct value per metric, and those collapse to **two tiers** —
-Kindergarten, and grades 1-12.
-
-So this is not ~100 independent values but two, per metric. A rate change from
-SRE is a small uniform edit, and a reconciliation should check the _shape_ (one
-value per grade, no per-school variation) rather than diffing every row. Confirm
-the shape with:
+SRE supplies the three `Conversion` rates by grade, identical across schools.
+For AY2026 they collapse to two tiers: Kindergarten, and grades 1-12. A rate
+change is a small uniform edit, and a reconciliation should check the shape (one
+value per grade) rather than diff every row:
 
 ```sql
-select grade_level, goal_name, count(distinct goal_value) as distinct_values
+select grade_level, goal_name, count(distinct goal_value) as distinct_values,
 from `teamster-332318`.kipptaf_google_sheets.stg_google_sheets__finalsite__goals
 where enrollment_academic_year = <year> and goal_type = 'Conversion'
-group by 1, 2
+group by grade_level, goal_name
 ```
 
-Anything other than `1` in `distinct_values` means a school has drifted off the
-common rate.
-
-The `Conversion Rate` column on each per-region tab of SRE's workbook is a
-**separate thing** — a calculation input used to derive that tab's "apps needed"
-from "new students needed", not the source of these goals.
+Anything other than `1` means a school has drifted off the common rate. The
+`Conversion Rate` column on each region tab of SRE's workbook is a different
+thing: an input used to derive "apps needed" from "new students needed".
 
 ### Sourced vs derived goals
 
-Not every populated goal comes from SRE's workbook. Two rules, in this order:
+Where SRE's workbook states a goal, the goals sheet matches it. Where the
+workbook states nothing, the data team derives the value. At
+`Region/Grade Level`, `App Target` is sourced from the cover sheet's region
+grid, while `New Student Target` and `Re-Enroll Projection` are derived as the
+rounded sum of the school rows.
 
-1. **If the workbook states a value, match it.** Never compute a value the
-   workbook already states, even when computing would give a tidier answer.
-2. **Only where nothing states it, derive** — and say so, because a derived goal
-   reconciled against the workbook reports a discrepancy with no source to fix.
-
-The precedence matters more than it looks. A tempting invariant like "a region
-row equals the sum of its school rows" is only testable if rule 1 finds nothing;
-where the workbook states region values, that invariant is simply false, and
-enforcing it would push wrong data into the sheet.
-
-**Classify by searching every tab first, not from one region.** A goal can be
-stated on one region's tab and absent from another's, so "derived" is a
-conclusion about the whole workbook, not about the tab in front of you.
-
-**Per SRE: only the MAIN table on each tab is a source.** Every tab also carries
-secondary tables below or beside it — region-grain rollups, column-total rows,
-side trackers, loose cells. All of it is noise for reconciliation purposes, no
-matter how authoritative the headers look, and `Newark`'s lower block shows why
-the "looks authoritative" caveat is needed: it is headed `Re-Enroll Projection`
-and `New Students` at region grain and reproduces `round(SUM of unrounded)` of
-the main table in **24 of 24** cases. A secondary table that agrees perfectly
-with the right answer is still not the source of it.
-
-At `Region/Grade Level` the three populated Enrollment/Applications goals split
-as follows (Camden and Newark verified; `Miami` and `KPAT` expected to match but
-not yet walked):
-
-| `goal_name`            | source                                              |
-| ---------------------- | --------------------------------------------------- |
-| `App Target`           | **sourced** — the cover sheet's `A26:D37` grid      |
-| `New Student Target`   | **derived** — `round(SUM)` of `New Students Needed` |
-| `Re-Enroll Projection` | **derived** — `round(SUM)` of `Projected Returners` |
-
-Where a goal must be derived, **round the sum once (`round(SUM of unrounded)`),
-never sum already-rounded values.** The evidence is prod itself: across Camden
-and Newark there are five grades where the two methods disagree, and prod
-matches `round(SUM)` in every one (e.g. Newark `Re-Enroll Projection` grade 3 —
-prod 477, `round(SUM)` 477, `SUM(round)` 476). Summing rounded values diverges
-by ±1 on roughly one grade in six.
-
-`App Target` is emphatically **not** the sum of its school rows. Verified for
-AY2026: Camden grade 5 reads 69 on the cover sheet while the three Camden
-grade-5 school rows sum to 101 (LSM 21 + Hatch 48 + Sumner 32) — the cover sheet
-excludes Sumner's grade 5, which is a new grade mid-expansion. Do not "fix" that
-by summing.
-
-Two consequences worth planning around:
-
-- **Edit order matters.** The derived region rows are a function of the school
-  rows, so a reconciliation must apply `School/Grade Level` corrections FIRST
-  and recompute the region rows afterwards. Doing it the other way round leaves
-  the region rows keyed to superseded school values.
-- **A ±1 gap between a region row and the sum of its school rows is a
-  rounding-order artifact, not drift.** SRE's tabs hold unrounded formula
-  output; rounding the sum gives a different answer than summing the rounded
-  values. Verified on Camden: where the two methods diverge, `round(SUM)`
-  matches what is in prod and `SUM(round)` never does. Larger systematic gaps
-  ARE real staleness — Miami's `Re-Enroll Projection` runs 23-31 low across
-  grades 1-6, where the region row predates Royalty's current numbers entirely.
+So a region row need not equal the sum of its school rows. A gap of 1 is
+rounding. `App Target` can differ by more, because the cover sheet can leave out
+a grade that is new mid-expansion; do not "fix" it by summing. The
+fresh-dashboard skill has the reconciliation procedure.
 
 ### A new school is not necessarily recruiting: Miami Tech
 
-`Re-Enroll Projection` measures **persistence in the network**, not retention at
-one school, so a student can be a "returner" at a school that did not exist last
-year. Miami Tech (`MTH`) is the worked example: it opened to take KIPP's own
-grade-8 students up into grade 9, with no external recruitment. Its goals look
-broken and are correct.
+`Re-Enroll Projection` measures persistence in the network, not at one school,
+so a school that did not exist last year can have returners. Miami Tech opened
+to take KIPP's own grade-8 students into grade 9, with no external recruitment.
+Its goals look broken and are correct:
 
 | goal                   | expected      | why                                     |
 | ---------------------- | ------------- | --------------------------------------- |
@@ -438,243 +436,86 @@ broken and are correct.
 | `App Target`           | NULL          | no application funnel                   |
 | `Offers Target`        | NULL          | no lottery, so no offers                |
 
-This is also **why** MTH is the one school missing the lottery-based categories
-(`Accepted`, `Offers`, `Pending Offers`) at `School` granularity — a fact
-previously recorded as an unexplained exception. Do not "correct" the returners
-figure into `New Student Target`, and do not treat the NULLs as gaps to fill.
-
-The trap to watch for: the intuition "a brand-new school cannot have returners"
-is wrong here, and acting on it would move a correct value into the wrong goal
-at three granularities at once.
+This is also why Miami Tech lacks the lottery categories (`Accepted`, `Offers`,
+`Pending Offers`) at `School` granularity. Do not move the returners figure into
+`New Student Target`.
 
 ### Full `grouped_status` → `goal_type` / `goal_name` crosswalk
 
-`grouped_status` (the crosswalk sheet's `status_group_value`) is the thing
-`roster`'s `CASE` logic in `int_tableau__finalsite_student_scaffold.sql`
-actually renames -- everything above is the human-readable summary. The table
-below is the complete, verified mapping (every distinct `grouped_status` the
-crosswalk sheet currently defines, AY2026): only `Applications` → `App Target`
-and `Offers` → `Offers Target` (both `Ever`-only) and the three
-`Accepted to Enrolled(*)`/`Offers to Accepted(*)`/`Offers to Enrolled(*)` pairs
-(→ `Conversion`) get renamed -- every other `grouped_status` passes through
-unchanged as both `goal_type` and `goal_name`. `Current`-timeframe `goal_name`
-never gets renamed at all (`goal_name` = `grouped_status` verbatim); the
-`Applications`/`Offers` rename only applies to `Ever`. `Pending Offers`
-(`Current`) additionally splits into `<= 4 Days` / `>= 5 & <= 10 Days` /
-`> 10 Days` sub-buckets via `filter_days_in_status`, not reflected in this table
-(see the row above).
+`int_tableau__finalsite_student_scaffold`'s `roster` CTE renames
+`grouped_status` into `goal_type` and `goal_name`. Only these change:
 
-| Timeframe | `grouped_status` (status_group_value) | `goal_type`                 | `goal_name`                 |
-| --------- | ------------------------------------- | --------------------------- | --------------------------- |
-| Current   | `Academic Hold`                       | `Academic Hold`             | `Academic Hold`             |
-| Current   | `Accepted to Enrolled Num`            | `Conversion`                | `Accepted to Enrolled Num`  |
-| Current   | `Campus Transfer Requested`           | `Campus Transfer Requested` | `Campus Transfer Requested` |
-| Current   | `Currently Accepted`                  | `Currently Accepted`        | `Currently Accepted`        |
-| Current   | `Deferred`                            | `Deferred`                  | `Deferred`                  |
-| Current   | `Enrolled`                            | `Enrolled`                  | `Enrolled`                  |
-| Current   | `Enrollment In Progress`              | `Enrollment In Progress`    | `Enrollment In Progress`    |
-| Current   | `Financial Hold`                      | `Financial Hold`            | `Financial Hold`            |
-| Current   | `Mid Year Withdrawal`                 | `Mid Year Withdrawal`       | `Mid Year Withdrawal`       |
-| Current   | `Never Attended`                      | `Never Attended`            | `Never Attended`            |
-| Current   | `Not Enrolling`                       | `Not Enrolling`             | `Not Enrolling`             |
-| Current   | `Offers to Accepted Num`              | `Conversion`                | `Offers to Accepted Num`    |
-| Current   | `Offers to Enrolled Num`              | `Conversion`                | `Offers to Enrolled Num`    |
-| Current   | `Parent Declined`                     | `Parent Declined`           | `Parent Declined`           |
-| Current   | `Pending Offers`                      | `Pending Offers`            | `Pending Offers`            |
-| Current   | `Retained Date`                       | `Retained Date`             | `Retained Date`             |
-| Current   | `Summer Withdraw`                     | `Summer Withdraw`           | `Summer Withdraw`           |
-| Current   | `Waitlisted`                          | `Waitlisted`                | `Waitlisted`                |
-| Ever      | `Accepted`                            | `Accepted`                  | `Accepted`                  |
-| Ever      | `Accepted to Enrolled`                | `Conversion`                | `Accepted to Enrolled`      |
-| Ever      | `Applications`                        | `Applications`              | `App Target`                |
-| Ever      | `Inquiries`                           | `Inquiries`                 | `Inquiries`                 |
-| Ever      | `Offers`                              | `Offers`                    | `Offers Target`             |
-| Ever      | `Offers to Accepted`                  | `Conversion`                | `Offers to Accepted`        |
-| Ever      | `Offers to Enrolled`                  | `Conversion`                | `Offers to Enrolled`        |
+- `Ever`: `Applications` → `goal_name` `App Target`; `Offers` → `goal_name`
+  `Offers Target`; `Accepted to Enrolled`, `Offers to Accepted` and
+  `Offers to Enrolled` → `goal_type` `Conversion`.
+- `Current`: the three `... Num` statuses → `goal_type` `Conversion`. A
+  `... Num` status is the numerator of a conversion rate: the students who
+  reached the rate's later stage. `goal_name` is never renamed for `Current`
+  rows.
+- `Current` `Pending Offers` also expands into the three day buckets.
 
-`int_finalsite__status_report_unpivot.sql` resolves each row's `assigned_school`
-to a PowerSchool `schoolid`/`school` abbreviation via
-`int_people__location_crosswalk`. `assigned_school` is null for enrollment
-stages tracked only at region/grade-level granularity (e.g. `Inquiries`,
-`Applications` -- before Finalsite has assigned a school), so those rows fall
-back to `schoolid = 0` / `school = 'No School Assigned'`. `schoolid = 0` is the
-sentinel the goals join keys on to connect these rows to a Region/Grade Level
-goals-sheet row instead of a specific school's goals; `'No School Assigned'` is
-the same condition reflected on the `school` label.
+Every other `grouped_status` passes through unchanged as both `goal_type` and
+`goal_name`. To list the current `grouped_status` values:
 
-For the same reason, `int_tableau__finalsite_student_scaffold.sql`'s
-`latest_status_calc` CTE overrides `school` to the row's `region` (instead of
-its real `school`) when `status_group_value` is `Inquiries` or `Applications` --
-those two funnel stages are only ever tracked at region/grade-level granularity,
-so `school` carries the region for them instead of a specific (and structurally
-absent, at that funnel stage) school.
+```sql
+select distinct grouped_status_timeframe, status_group_value,
+from `teamster-332318`.kipptaf_google_sheets.int_google_sheets__finalsite__status_crosswalk_unpivot
+```
 
-`int_tableau__finalsite_student_scaffold.sql` also stamps every row with
-`aligned_enrollment_type = 'All'` (a constant, alongside the row's real
-`enrollment_type` of `New`/`Returning`).
-`rpt_tableau__fresh_dashboard_progress_to_goals.sql` unions the actuals twice
-per scaffold row -- once keyed on the real `enrollment_type`, once keyed on
-`aligned_enrollment_type` -- so a school/grade's `New` and `Returning` counts
-combine into a single `All` bucket, matching the scaffold's own
-`cross join unnest(['All', 'New', 'Returning'])` `enrollment_type` dimension.
+`int_finalsite__status_report_unpivot` resolves `assigned_school` to a
+PowerSchool `schoolid` and abbreviation through
+`int_people__location_crosswalk`. Before Finalsite assigns a school (inquiries,
+applications), the row falls back to `schoolid = 0` and
+`school = 'No School Assigned'`, which is how those rows meet
+`Region/Grade Level` goals. `int_tableau__finalsite_student_scaffold` also sets
+`school` to the region for `Inquiries` and `Applications` rows.
 
-## Known data model caveats
+## How Finalsite's `latest_status` becomes an expected enrollment status
 
-These are permanent properties of how Finalsite works, not defects — they
-explain real, recurring sources of count discrepancy between raw Finalsite
-numbers and the dashboard:
+`int_tableau__finalsite_student_scaffold` carries two enrollment-status columns:
+`enroll_status` from the SIS, and `finalsite_expected_enroll_status`, derived
+from `latest_status` alone. `rpt_tableau__fresh_dashboard_qc` exposes
+`enroll_status` as `sis_enroll_status`.
 
-- **Concurrent academic years, non-standardized rollover.** Two years of live
-  student data can coexist; individual students/regions roll over on their own
-  uncoordinated timeline.
-- **Status dates are mutable and student-scoped, not year-scoped.** A status
-  date is tied to the student record and can be overwritten when someone edits
-  the status in the Finalsite UI — not an immutable audit trail.
-- **`grouped_status_order` (the 8-stage funnel sequence) is a best-assumption
-  ordering.** Real students can skip steps or move backward through
-  Inquiries→...→Enrolled.
-- **`detailed_status_ranking` (crosswalk sheet) is hand-duplicated into a
-  hardcoded `status_order` `CASE` in `int_finalsite__status_report_unpivot.sql`,
-  and the two can drift out of sync** (per this repo's convention against
-  staging-layer joins to Google Sheets). Guarded by
-  `test_int_finalsite__status_order_matches_crosswalk_ranking`, which compares
-  the sheet's ranking against a static list mirroring the `CASE`'s declaration
-  (not a live query of that model's actual rows — a `fs_status_field` declared
-  in the `CASE` but never populated in the data, e.g. `retained_date` as of this
-  writing, would otherwise produce a false mismatch, since BigQuery's `UNPIVOT`
-  never emits a row for an all-NULL source column). If that `CASE` is ever
-  edited, the test's static list needs a matching manual update.
-- **Same-day status ties can pick the wrong "latest status," and this is
-  permanent and unfixable at the data layer.** The pipeline only compares dates
-  (not full timestamps), and the tie-break (`status_order desc`) assumes "higher
-  rank wins" — which breaks for an exit status (e.g. `Parent Declined`, rank 15)
-  vs. an in-progress one (`Enrollment In Progress`, rank 16) set the same day.
-  **The established fix is the "Reset Protocol™":** (1) put the student in
-  another status, (2) wait a day, (3) put them in the status you want — waiting
-  a day breaks the date-tie so the new status wins outright. To fix: check the
-  FRESH Dashboard's Progress-to-Goals tab for students on the dashboard but not
-  in `Enrolled` status, using the **OPEN ROSTER** button (top right) to see
-  every student's current status. To prevent: avoid giving a student two status
-  changes on the same calendar day.
+The SIS side is `enrollment_lookup`, a `union all` of
+`int_extracts__student_enrollments` (rows with an `infosnap_id`, which excludes
+Miami's rows there) and `int_focus__student_enrollment_roster` bridged to
+Finalsite through `int_finalsite__contact_id_attributes` on the Focus student
+id. Both branches are scoped to the recruitment year, deduplicated per
+`(academic_year, infosnap_id)` preferring an active record.
 
-  This behavior used to be surfaced as its own QC flag
-  (`is_same_day_status_tie`). That flag was removed at the AY2026 definitions
-  review and replaced by the pending statuses in direction 2 of
-  `is_enroll_status_mismatch` — the tie itself still happens, and the Reset
-  Protocol is still the fix; it simply no longer gets its own row on the
-  worklist.
+| `latest_status`                                                                                                                       | expected | meaning                     |
+| ------------------------------------------------------------------------------------------------------------------------------------- | -------- | --------------------------- |
+| `Enrolled`                                                                                                                            | `0`      | should be active in the SIS |
+| `Mid Year Withdrawal`, `Never Attended`, `Summer Withdraw` ("left")                                                                   | `2`      | should not be active        |
+| `Accepted`, `Assigned School`, `Did Not Enroll`, `Campus Transfer Requested`, `Parent Declined`, `Enrollment In Progress` ("pending") | `2`      | should not be active        |
+| anything else                                                                                                                         | `NULL`   | no expectation              |
 
-- **Ingestion lag.** `stg_finalsite__status_report` ingests via a
-  sensor/file-drop-triggered Couchdrop SFTP asset, not a fixed cron — a status
-  cleanup done late in one team member's workday (e.g. a Spain-based team member
-  whose day ends mid-US-night) may not show on the dashboard until the next
-  day's pull. Unconfirmed whether this specifically applies to Miami.
-- **Miami's point-in-time enrollment flags are Focus-sourced, not a gap.**
-  Earlier versions of this doc recorded `enroll_status` / `is_enrolled_fdos` /
-  `is_enrolled_oct01` / `is_enrolled_oct15` / `is_enrolled_mar15` as always NULL
-  for Miami, because `int_extracts__student_enrollments` is PowerSchool-only and
-  carries zero Miami rows. That is no longer true.
-  `int_tableau__finalsite_student_scaffold`'s `enrollment_lookup` CTE is a
-  `union all` of two branches: `int_extracts__student_enrollments` for
-  PowerSchool regions and `int_focus__student_enrollments` for Miami, the latter
-  bridged to Finalsite through `int_finalsite__contact_id_attributes` on
-  `focus_student_id` (Focus's `student_number` is not a Finalsite id, so that
-  bridge is what makes the join possible). Note that `is_enrolled_fdos` is no
-  longer among them — it is now computed in this model from `custom_fdos_date`
-  (see _First day of school is hardcoded per region_ below). Both branches
-  supply the remaining four columns, so Miami students carry real values. The
-  remaining reason a flag can read NULL is the year-toggle window below, which
-  applies to every region equally.
-- **All regions' point-in-time enrollment flags go NULL for a while right after
-  the Finalsite recruitment year is toggled forward.** `enrollment_lookup`
-  scopes **both** of its branches to the Finalsite recruitment year rather than
-  `var("current_academic_year")` -- these two only match once the SIS
-  independently rolls over to the new year, which happens later, on its own
-  schedule. Until then neither PowerSchool nor Focus has real enrollment rows
-  for that year, so
-  `enroll_status`/`is_enrolled_fdos`/`is_enrolled_oct01`/`is_enrolled_oct15`/`is_enrolled_mar15`
-  are NULL for every student, network-wide. Expected, not fixable by the toggle
-  -- see the fresh-dashboard skill's year-toggle procedure.
-- **Fake/test Finalsite records not yet excluded inflate counts, at any time,
-  not just at year rollover.** `stg_google_sheets__finalsite__exclude_ids` is
-  enforced upstream of everything FRESH touches, but a test record created today
-  isn't excluded until someone adds its id to the sheet.
-- **The goals sheet is read live only by the source external table, not by
-  anything downstream.** `src_google_sheets__finalsite__goals` is a
-  `GOOGLE_SHEETS` external and reads the sheet at query time, but
-  `stg_google_sheets__finalsite__goals` and
-  `int_google_sheets__finalsite__goals_pivot` are both materialized as native
-  tables, frozen at their last build. So a goal value edited in the sheet is
-  invisible everywhere downstream until those rebuild — the risk is **staleness,
-  not mid-query drift**. A dashboard number that doesn't match the sheet usually
-  means the sheet was edited after the last build; confirm by comparing the
-  sheet's Drive `modifiedTime` against `last_modified_time` for that table in
-  `kipptaf_google_sheets.__TABLES__`.
+The values mirror the SIS's own `enroll_status` codes on purpose, because the
+two columns are compared. The NULL case covers most of the funnel: a waitlisted
+or deferred applicant has no business having an SIS record yet.
 
-### How Finalsite's `latest_status` becomes an expected enrollment status
+`is_enroll_status_mismatch` fires in two directions:
 
-`int_tableau__finalsite_student_scaffold` carries two enrollment-status columns
-that answer different questions — one is what the SIS actually says, the other
-is what Finalsite implies the SIS _should_ say:
+1. Finalsite says enrolled (`0`) but the SIS says withdrawn or graduated
+   (`enroll_status in (2, 3)`).
+2. Finalsite says the student should not be active (`2`) but the SIS says
+   enrolled (`enroll_status = 0`). This covers both the "left" and the "pending"
+   statuses; `latest_status` tells SRE which situation a row is.
 
-| column                             | where it comes from                                                                                                        |
-| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `enroll_status`                    | the **SIS** — PowerSchool via `int_extracts__student_enrollments`, or Focus via `int_focus__student_enrollments` for Miami |
-| `finalsite_expected_enroll_status` | **Finalsite**, derived from `latest_status` — it reads nothing from the SIS                                                |
+SIS `1` and `-1` never trigger a mismatch. Beware the word "inactive": a
+withdrawn student (`2`) often displays as inactive in the SIS and is caught,
+while `enroll_status = 1` is also called inactive and is excluded on purpose.
+Name the code, or say "withdrawn" and "graduated".
 
-`rpt_tableau__fresh_dashboard_qc` exposes the first of these as
-`sis_enroll_status`, so the two sides of every comparison name their source
-explicitly. The int model keeps the bare `enroll_status` name because the other
-two `fresh_dashboard` views already expose it that way.
-
-`finalsite_expected_enroll_status` is the status the SIS _ought_ to show if
-Finalsite is right, mapped from the student's `latest_status`:
-
-| `latest_status`                                  | `finalsite_expected_enroll_status` | meaning                     |
-| ------------------------------------------------ | ---------------------------------- | --------------------------- |
-| `Enrolled`                                       | `0`                                | should be active in the SIS |
-| the nine statuses listed in the QC section below | `2`                                | should not be active        |
-| anything else                                    | `NULL`                             | no expectation              |
-
-**The values deliberately mirror the SIS's own `enroll_status` domain** — `0`
-means the SIS should read `0`, `2` means it should read `2`. That alignment is
-load-bearing: these two columns are compared to each other, so a value meaning
-one thing here and another there is a trap. An earlier version used `1` for
-withdrawals and `2` for pending statuses, where the SIS's own `2` means
-withdrawn — same number, different meaning, in adjacent columns.
-
-The `NULL` case is deliberate and covers most of the funnel — an applicant who
-is Waitlisted or Deferred has no business having an SIS enrollment record yet,
-so there is nothing to compare and no mismatch can fire.
-
-`is_enroll_status_mismatch` then fires when the expectation and the SIS disagree
-in either direction:
-
-- Finalsite says enrolled (`finalsite_expected_enroll_status = 0`) but the SIS
-  says withdrawn or graduated (`enroll_status in (2, 3)`)
-- Finalsite says the student should not be active
-  (`finalsite_expected_enroll_status = 2`) but the SIS says currently enrolled
-  (`enroll_status = 0`)
-
-Note the asymmetry: the enrolled-side check accepts SIS `2` (withdrawn) and `3`
-(graduated) as contradicting, while the not-active-side check only treats SIS
-`0` as contradicting. `enroll_status = 1` and `-1` (pre-registered) never
-trigger a mismatch on either side.
-
-**Beware the word "inactive" here** — it covers two different things and the
-collision causes real confusion when reading results with SRE. A **withdrawn**
-student (`2`) typically displays as "inactive" in the SIS interface, and that
-student _is_ caught: the comparison keys on `2`, not on the interface label.
-Separately, `enroll_status = 1` is _also_ called inactive, and that one is
-excluded deliberately — this repo treats `1` as invalid and never reports
-against it (`src/dbt/kipptaf/CLAUDE.md`). Prefer naming the code, or say
-"withdrawn" and "graduated" explicitly, rather than "inactive".
+The pending list is SRE-owned. `Did Not Enroll` and `Parent Declined` read as
+exits rather than pending states, and a bare `Accepted` may match no rows.
+Confirm with SRE before changing the list.
 
 ### First day of school is hardcoded per region
 
-`is_enrolled_fdos` is computed in `int_tableau__finalsite_student_scaffold`,
-from a first-day-of-school date hardcoded in that model rather than read from
-either SIS:
+`is_enrolled_fdos` is computed in `int_tableau__finalsite_student_scaffold` from
+a first-day date hardcoded in that model:
 
 | region           | first day |
 | ---------------- | --------- |
@@ -682,199 +523,372 @@ either SIS:
 | Camden           | August 24 |
 | Miami            | August 14 |
 
-**Month and day are hardcoded; the year is not.** It comes from
-`var("finalsite_recruitment_year")`, so the dates roll forward with the cycle
-instead of needing four edits every August. The value is exposed as
-`custom_fdos_date` so a reader can see which date a given row was judged
-against.
+The year comes from `var("finalsite_recruitment_year")`; month and day are
+hardcoded and exposed as `custom_fdos_date`. The dates came from SRE and move
+from year to year, so re-confirming them is a required rollover step.
 
-**The dates came from SRE directly, and only the year rolls itself forward.**
-Start dates move from one year to the next, so the hardcoded month and day are
-right only for the cycle SRE supplied them for — in the SIS's own history
-Paterson's first day sat around September 3 in AY2024 but around August 26-28 in
-AY2025. Re-confirming all four dates with SRE is therefore a required step of
-the recruitment-year rollover, not an optional one.
+The flag is `sis_entry_date <= custom_fdos_date`, where `sis_entry_date` is
+`entrydate` (PowerSchool) or `startdate` (Focus). It checks entry only: a
+student who enrolled before the first day and left before it still reads `true`.
+It is a bare comparison, so a student with no SIS record reads NULL rather than
+`false`. Do not wrap it in `if()` to match its siblings.
 
-**Why not use either SIS's own value.** Focus computes its `is_enrolled_fdos`
-against a single network-wide first day per school year, so Miami schools that
-start later than the earliest one reported `false` for nearly every student.
-PowerSchool's equivalent is per-school rather than per-region. Neither matches
-the date the enrollment team actually reports against, which is regional — so
-the date lives in this model, and only this model.
+Expect no visible effect until school starts: at rollover both SISs give every
+student the same bulk entry date, before any first day, so the flag reads `true`
+for everyone with a record.
 
-**The trade-off this accepts.** One date per region is coarser than
-PowerSchool's per-school date, so wherever schools inside an NJ region open on
-different days the regional date is the less precise of the two. Measured
-against each SIS's own flag on settled prior-year data, it corrects far more
-than it costs: applied to AY2025 it would move 990 Miami students from `false`
-to `true` — Focus's single network-wide cutoff fell on August 11, before Miami's
-own first day — against 83 NJ students moving the other way, having enrolled
-after the regional date at a school that started later. Miami is the case this
-was built for; the NJ imprecision is known and accepted.
+`int_extracts__student_enrollments` and `int_focus__student_enrollment_roster`
+still compute their own `is_enrolled_fdos` for other consumers; this model reads
+their entry dates instead. Their `is_enrolled_oct01` / `oct15` / `mar15` flags
+pass through unchanged.
 
-**Expect no visible change until school starts.** At rollover both SISs assign
-every enrolled student the same bulk entry date (July 1 in NJ, mid-August in
-Miami), all of it well before any first day, so `is_enrolled_fdos` reads `true`
-for every student with a record and `NULL` for every student without one. The
-flag only begins to discriminate once real per-student entry dates land after
-the first day — so a comparison run before then shows this change moving nobody,
-which is expected rather than evidence it does nothing.
+### The QC worklist flags
 
-**What it compares.** `sis_entry_date <= custom_fdos_date`, where
-`sis_entry_date` is the enrollment start date from the matched SIS record
-(`entrydate` in PowerSchool, `startdate` in Focus). This is entry-date only,
-matching the behavior it replaced: a student who enrolled before the first day
-and left before it still reads `true`.
+#### The five flags, in plain language
 
-**It is a bare comparison, deliberately.** Its sibling flags use
-`if(<cmp>, true, false)`, which would report every student with no SIS record as
-`false`. A bare comparison against a NULL `sis_entry_date` yields NULL, so "not
-enrolled on day one" stays distinguishable from "we have no SIS record to
-judge". Do not wrap it to match the siblings.
+Each row is one student with one problem; a student with several problems
+appears once per problem. Listed in SRE's triage order, most urgent first:
 
-**This does not touch `int_extracts__student_enrollments` or
-`int_focus__student_enrollments`.** Both still compute their own
-`is_enrolled_fdos`, still consumed by everything else that reads them; this
-model simply stopped passing theirs through, and reads `entrydate` / `startdate`
-instead. Their `is_enrolled_oct01` / `oct15` / `mar15` flags are still passed
-through untouched.
-
-### The QC worklist: `rpt_tableau__fresh_dashboard_qc`
-
-`is_enroll_status_mismatch` is one of the worklist's four flags. Three of them —
-this one, `is_grade_level_mismatch` and `is_school_mismatch` — are computed in
-`int_tableau__finalsite_student_scaffold`; `is_missing_sis_record` is derived in
-`rpt_tableau__fresh_dashboard_qc` itself. `rpt_tableau__fresh_dashboard_qc` is
-the SRE-facing surface for all four: it takes the roster at
-`grouped_status_timeframe = 'Current'`, `UNPIVOT`s the flags into
-`(flag_name, flag_value)`, and keeps only the rows where a flag actually fired
-(`where flag_value`). So it is a **worklist, not a report** — one row per
-student per problem, and an empty result is the good outcome.
-
-#### The four flags, in plain language
-
-For explaining the worklist to a non-technical audience. Each row is one student
-with one problem; a student with several problems appears once per problem, and
-a student with none does not appear at all.
-
-Listed in the triage order SRE reviews them in, most urgent first — which is not
-the order the flags are declared in the SQL.
-
-| #   | flag                        | what it means                                                                                                                                                                                                                                                                                                                    | how it gets fixed                                                                                                          |
-| --- | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| 1   | `is_missing_sis_record`     | Not a disagreement but an absence — Finalsite says the student is enrolled and the SIS has no enrollment record at all to compare against.                                                                                                                                                                                       | Someone has to create or link the SIS record. A different fix from the disagreement case, which is why it is its own flag. |
-| 2   | `is_school_mismatch`        | Finalsite's assigned school is not the school the SIS has them at, so the student is counted against the wrong school's targets until it is fixed.                                                                                                                                                                               | Confirm the true school, then fix whichever system is wrong.                                                               |
-| 3   | `is_enroll_status_mismatch` | Finalsite and the SIS disagree about whether the student is enrolled — Finalsite says enrolled while the SIS says withdrawn or graduated, or Finalsite says the student left or has not finished enrolling while the SIS still has them active. Documented below as two directions, one per comparison the check actually makes. | Decide which system is right, then correct the other one.                                                                  |
-| 4   | `is_grade_level_mismatch`   | Finalsite's grade for the student is not the grade the SIS has them in.                                                                                                                                                                                                                                                          | Confirm the true grade, then fix whichever system is wrong.                                                                |
-
-#### Which Finalsite statuses drive these checks
-
-"Finalsite says enrolled" is not a category — it is one specific status. Three
-named sets carry an expectation in total: `Enrolled` on its own, the three
-"left" statuses, and the six "pending" ones. Anything outside those ten statuses
-carries no expectation at all, so no enrollment-related flag can fire for it.
-The mapping lives in `finalsite_expected_enroll_status`:
-
-| the student's `latest_status`                                                                                             | expected | drives                                                                  |
-| ------------------------------------------------------------------------------------------------------------------------- | -------- | ----------------------------------------------------------------------- |
-| `Enrolled`                                                                                                                | `0`      | `is_missing_sis_record`, and direction 1 of `is_enroll_status_mismatch` |
-| `Mid Year Withdrawal`, `Never Attended`, `Summer Withdraw`                                                                | `2`      | direction 2 of `is_enroll_status_mismatch` — the "left" half            |
-| `Accepted`, `Assigned School`, `Did Not Enroll`, `Campus Transfer Requested`, `Parent Declined`, `Enrollment In Progress` | `2`      | direction 2 of `is_enroll_status_mismatch` — the "pending" half         |
-| anything else                                                                                                             | `NULL`   | nothing — no expectation exists, so there is nothing to contradict      |
-
-**Direction 2 covers nine statuses at one expected value, and that is one
-direction rather than two** because it is one comparison — expected `2` against
-SIS `0`, currently enrolled. The nine split into two situations by meaning,
-"this student left" (`Mid Year Withdrawal`, `Never Attended`, `Summer Withdraw`)
-and "this student has not finished enrolling" (the other six), and the follow-up
-differs between them — but the check makes no such distinction, so documenting
-them as separate directions overstated what the code does. Which situation a row
-came from is readable from its `latest_status`, which is where SRE should look
-to decide the follow-up.
-
-`2` is a slight overstatement for the pending half — their truer expectation is
-"no active record" rather than "withdrawn" — but the check only ever tests
-against `enroll_status = 0`, so it changes no outcome.
-
-**Direction 2's pending half is SRE-owned, not derived.** Two things about it
-worth knowing rather than rediscovering: `Did Not Enroll` and `Parent Declined`
-read as exits rather than pending states, and `Accepted` matches no rows in
-current data (the `latest_status` values that do occur include
-`Assigned School`, `Did Not Enroll`, `Parent Declined`,
-`Campus Transfer Requested` and `Enrollment In Progress`, but not a bare
-`Accepted`). Neither is a defect — confirm with SRE before changing the list.
-
-**Those pending statuses replaced a separate `is_same_day_status_tie` flag.**
-That flag surfaced students whose two most recent statuses shared a date; it was
-removed at the AY2026 definitions review in favor of this comparison. The
-underlying same-day-tie behavior is unchanged and still documented under _Known
-data model caveats_ above — it is simply no longer surfaced as its own worklist
-row.
-
-Two consequences worth stating explicitly, because neither is obvious from the
-flag names:
-
-- **`is_missing_sis_record` only ever fires for `Enrolled`.** A student who is
-  accepted, mid-enrollment, waitlisted or deferred and has no SIS record does
-  not appear — correctly, since none of those stages expects one. The blind spot
-  is a student who genuinely should have been created in the SIS but whose
-  Finalsite status was never advanced to `Enrolled`; this check cannot see them.
-- **On the SIS side the comparison is asymmetric.** Only `enroll_status` `0`
-  (currently enrolled), `2` (withdrawn) and `3` (graduated) count as
-  contradicting. `1` and `-1` (pre-registered) never trip
-  `is_enroll_status_mismatch` in either direction — `1` because this repo treats
-  it as invalid data. Note that a withdrawn student (`2`) often _displays_ as
-  "inactive" in the SIS; that student is still caught, since the comparison keys
-  on the code rather than the interface label. See the warning above.
-
-#### Questions pending SRE input
-
-Raised at the AY2026 definitions review and **not yet answered** — come back and
-resolve these, then update this section and the flag definitions to match.
-
-1. **Should the `Enrolled`-only gate on `is_missing_sis_record` stay?** As
-   built, a student who should have an SIS record but whose Finalsite status was
-   never advanced to `Enrolled` is invisible to the check. Is that acceptable,
-   or should the gate widen?
-2. **Should "absent from the SIS" and "present but unlinked" be separate
-   flags?** They need different fixes — create the record versus populate the
-   linking id — but currently surface identically under `is_missing_sis_record`.
-3. **Confirm the triage order** in the table above. It reflects SRE's stated
-   priority as of that review, not a derived ranking, so it should be
-   re-confirmed rather than assumed.
+| #   | flag                          | what it means                                                                                                         | how it gets fixed                                                                                 |
+| --- | ----------------------------- | --------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| 1   | `is_missing_sis_record`       | Finalsite says enrolled and the SIS has no enrollment record to compare against.                                      | Create or link the SIS record.                                                                    |
+| 2   | `is_school_mismatch`          | Finalsite's assigned school is not the SIS school, so the student counts against the wrong school's targets.          | Confirm the true school, then fix whichever system is wrong.                                      |
+| 3   | `is_enroll_status_mismatch`   | Finalsite and the SIS disagree about whether the student is enrolled (the two directions above).                      | Decide which system is right, then correct the other.                                             |
+| 4   | `is_grade_level_mismatch`     | Finalsite's grade is not the SIS grade.                                                                               | Confirm the true grade, then fix whichever system is wrong.                                       |
+| 5   | `is_missing_finalsite_record` | Enrolled in the SIS for the recruitment year, but Finalsite has no record at all. These make the dashboard count low. | Create or restore the Finalsite record. Until then the student is invisible on Progress to Goals. |
 
 #### Implementation notes
 
-Two properties worth knowing before reading it:
+- Three flags come from `int_tableau__finalsite_student_scaffold`.
+  `is_missing_sis_record` is computed in the QC model as
+  `finalsite_expected_enroll_status = 0 and enroll_status is null`, so it only
+  fires for `Enrolled`: a student who should have an SIS record but was never
+  advanced to `Enrolled` in Finalsite is invisible to it.
+- `is_missing_finalsite_record` is unioned on rather than unpivoted because it
+  describes a student Finalsite has never heard of, who cannot be in a
+  Finalsite-sourced roster. It starts from `int_extracts__student_enrollments`
+  (`enroll_status = 0`, recruitment year), takes the Finalsite id from
+  `infosnap_id` or, for Miami, from `int_finalsite__contact_id_attributes`, and
+  anti-joins against every `stg_finalsite__status_report` record, unscoped by
+  year: a record under any cycle means Finalsite knows the student.
+- The two absence flags are mirror images: for one Finalsite id, only one can
+  fire. A child whose Finalsite record and SIS record are not linked by id (no
+  or a wrong `infosnap_id`, or no Focus bridge row) fires both, on two rows: the
+  Finalsite side looks for an SIS record and finds none, and the SIS side looks
+  for a Finalsite record and finds none. See the "absent from the SIS" and
+  "present but unlinked" question under _Open questions_.
+- `is_grade_level_mismatch` and `is_school_mismatch` use
+  `if(<cmp>, true, false)`, so they read `false`, not NULL, when the SIS side is
+  missing. Do not use `is null` on them as a missing-SIS proxy. A student with
+  no SIS record surfaces once, under `is_missing_sis_record`.
+- During the window after the recruitment year moves ahead of the SIS (see
+  _Known data model caveats_), the comparison flags fall silent network-wide and
+  `is_missing_sis_record` carries the volume.
 
-- **`is_missing_sis_record` is derived in this model, not upstream.** The other
-  three come through from `int_tableau__finalsite_student_scaffold`; this one is
-  computed here as
-  `finalsite_expected_enroll_status = 0 and enroll_status is null`.
-- **The two comparison flags read `false`, not `true`, when the SIS side is
-  missing — and `false`, not NULL.** `is_grade_level_mismatch` and
-  `is_school_mismatch` wrap their `!=` in `if(<cmp>, true, false)`. The bare
-  comparison against NULL would yield NULL, but `if()` takes its else branch on
-  a NULL condition exactly as it does on FALSE, so the column materializes as
-  `false` (verified against BigQuery: `if(a != b, true, false)` with `b` NULL
-  returns `false`, while the bare `a != b` returns NULL). Do not treat
-  `is_grade_level_mismatch is null` as a missing-SIS proxy — it never fires.
-  Either way `where flag_value` drops the row, so a student with no SIS record
-  still surfaces once, under `is_missing_sis_record`, rather than three times.
-  During the year-toggle window (see the caveat above), when the SIS has no rows
-  for the new year at all, expect the two comparison flags to fall silent
-  network-wide and `is_missing_sis_record` to carry the volume.
+## Supporting models
+
+In the family:
+
+| model                                                    | role                                                                                                                                                                                                                                                                                |
+| -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `int_tableau__fresh_enrollment_scaffold`                 | The school x grade spine (above).                                                                                                                                                                                                                                                   |
+| `int_tableau__fresh_goals_scaffold`                      | Non-Enrollment goals inner-joined to the spine on `(enrollment_academic_year, region, schoolid, grade_level)`; adds `grouped_status_timeframe`.                                                                                                                                     |
+| `int_tableau__finalsite_student_scaffold`                | One row per student per `goal_type`/`goal_name`, with `latest_status`, days in status, SIS comparison columns and the QC flags. Materialized as a table.                                                                                                                            |
+| `int_google_sheets__finalsite__goals_pivot`              | Every goals-sheet row pivoted to one column per Enrollment target, with `enrollment_type` derived from the goal name. No `goal_type` filter: Progress to Goals filters to `Enrollment`. The pivot takes `avg(goal_value)`, so a duplicate goal row is averaged, not doubled. Table. |
+| `int_google_sheets__finalsite__status_crosswalk_unpivot` | The crosswalk unpivoted to one row per status per goal group; adds `grouped_status_order` (1-8 funnel sequence, 0 otherwise) and `grouped_status_timeframe`. Table.                                                                                                                 |
+| `stg_google_sheets__finalsite__goals`                    | `select *` over the goals sheet. Table.                                                                                                                                                                                                                                             |
+| `stg_google_sheets__finalsite__status_crosswalk`         | `select *` over the crosswalk sheet, plus `file_year` from the partition key. Table.                                                                                                                                                                                                |
+| `int_finalsite__status_report_unpivot`                   | The 24 status-date columns of the status report as one row per enrollment, status and load partition, with `schoolid`, `school` and `status_order`. Also read by `rpt_gsheets__finalsite__log`, a retirement candidate pending a check with its user.                               |
+
+Shared upstreams (outside the family):
+
+- `stg_finalsite__status_report`: read by `int_finalsite__status_report_unpivot`
+  for every status date, and by the QC model for Finalsite record existence,
+  joined on `finalsite_enrollment_id`.
+- `stg_google_sheets__finalsite__exclude_ids`: read by
+  `stg_finalsite__status_report` to drop test records
+  (`finalsite_enrollment_id not in` the sheet's `finalsite_student_id`).
+- `int_finalsite__contact_id_attributes`: read by the student scaffold and the
+  QC model for the Focus-to-Finalsite id bridge, joined on the Focus student id
+  and `_dbt_source_project`.
+- `int_extracts__student_enrollments`: read by the student scaffold and the QC
+  model for NJ SIS enrollment, joined on `infosnap_id` and `academic_year`.
+- `int_focus__schools`: read by the scaffold for Miami's school list, joined to
+  the locations sheet on `focus_school_id`.
+- `int_focus__student_enrollment_roster`: read by the scaffold for Miami grade
+  membership (on `ps_schoolid`, `_dbt_source_project`) and by the student
+  scaffold for Miami SIS enrollment (on the Focus student id).
+- `stg_powerschool__schools` / `stg_powerschool__students`: read by the scaffold
+  for the NJ school list and grade membership, joined on
+  `(schoolid, _dbt_source_project)`.
+- `stg_google_sheets__people__locations`: read by the scaffold for Miami school
+  abbreviations and PowerSchool-space ids, joined on `focus_school_id`.
+- `int_people__location_crosswalk`: read by
+  `int_finalsite__status_report_unpivot` for `schoolid` (on
+  `assigned_school = location_name`) and by Progress to Goals for `-9` row
+  `school_level` (on `location_powerschool_school_id`).
+
+## Inputs
+
+All three sheets are Google Sheets external tables; ask the data team for the
+links.
+
+- **Finalsite goals sheet** (`src_google_sheets__finalsite__goals`): one row per
+  year, region, school, grade, granularity, goal type and goal name, with the
+  value. SRE supplies values in a new workbook each cycle; the data team pastes
+  them in. The external table reads the sheet live, but
+  `stg_google_sheets__finalsite__goals` and the pivot are tables frozen at their
+  last build, so an edit is invisible until they rebuild. A dashboard number
+  that doesn't match the sheet usually means the sheet changed after the last
+  build: compare the sheet's Drive modified time against the table's
+  `last_modified_time` in `kipptaf_google_sheets.__TABLES__`.
+- **Finalsite status crosswalk sheet**: maps each Finalsite status and
+  `enrollment_type` to funnel goal groups, for one year at a time. Column
+  reference under _Rolling the dashboard over to a new cycle_.
+- **Finalsite exclude-ids sheet**: Finalsite test and fake records to drop. A
+  test record created today counts until its id is added.
+- **SRE's goals workbook**: not read by dbt. It is the source the goals sheet is
+  reconciled against (see _Sourced vs derived goals_).
+
+## Decisions
+
+- **Grade membership comes from current enrollment, not the declared grade
+  span.** PowerSchool's `low_grade` is below what some schools serve, so
+  `generate_array(low_grade, high_grade)` would add phantom grades, and nobody
+  maintains it when a school's band shifts. Enrollment is self-maintaining. The
+  cost: a newly opening grade with no enrolled student has no row until
+  `finalsite_new` supplies it.
+- **The net-new gate compares the two year vars.** Equal vars mean Finalsite and
+  the SIS are on the same cycle, so a Finalsite school/grade missing from the
+  SIS is treated as a data-entry error. Diverging vars mean Finalsite is
+  recruiting ahead, which is when not-yet-enrolled grades should be trusted. The
+  predicate is plain SQL, not a Jinja `if`, so the model compiles the same way
+  every cycle.
+- **First day of school is regional and hardcoded.** Focus computes its own flag
+  against one network-wide first day, which marked most Miami students late;
+  PowerSchool's is per school. The enrollment team reports against a regional
+  date, so the date lives in this one model. One date per region is coarser than
+  PowerSchool's per-school date for NJ; that imprecision is accepted.
+- **`finalsite_expected_enroll_status` uses the SIS's own codes** so the two
+  compared columns never give one number two meanings. `2` slightly overstates
+  the pending statuses (truer: "no active record"), but the check only tests
+  against SIS `0`, so no outcome changes.
+- **Same-day status ties are not a QC flag.** The pending statuses in direction
+  2 of `is_enroll_status_mismatch` cover the cases SRE needs to act on; the tie
+  itself is handled with the Reset Protocol.
+
+## Known data model caveats
+
+These are properties of how Finalsite works, not defects. They explain recurring
+gaps between raw Finalsite numbers and the dashboard.
+
+- **Concurrent academic years, non-standardized rollover.** Two years of live
+  student data can coexist; students and regions roll over on their own
+  timeline.
+- **Status dates are mutable and student-scoped, not year-scoped.** Editing a
+  status in the Finalsite UI can overwrite its date. It is not an audit trail.
+- **`grouped_status_order` (the 8-stage funnel sequence) is a best-assumption
+  ordering.** Students can skip steps or move backward.
+- **`detailed_status_ranking` (crosswalk sheet) is hand-duplicated into the
+  `status_order` `CASE` in `int_finalsite__status_report_unpivot.sql`**, per the
+  repo's rule against staging-layer joins to Google Sheets.
+  `test_int_finalsite__status_order_matches_crosswalk_ranking` compares the
+  sheet against a static list mirroring the `CASE`. Edit the `CASE`, the test's
+  list and the sheet together.
+- **Same-day status ties can pick the wrong latest status.** The pipeline
+  compares dates, not timestamps, and breaks ties with `status_order desc`,
+  which picks wrong for an exit status (`Parent Declined`, rank 15) against an
+  in-progress one (`Enrollment In Progress`, rank 16) set the same day. The fix
+  is the Reset Protocol. To find them, use the Progress to Goals tab's OPEN
+  ROSTER button to see every student's current status, or the Finalsite Log
+  sheet (`rpt_gsheets__finalsite__log`), which lists students with two or more
+  statuses on their latest date. To prevent them, avoid two status changes for
+  one student on the same day.
+- **Ingestion lag.** `stg_finalsite__status_report` loads on a file-drop sensor,
+  not a fixed schedule, so a cleanup done late in someone's day may not show
+  until the next day's file. Whether this applies to Miami is unconfirmed.
+- **SIS comparison columns go NULL for a while after the recruitment year moves
+  forward.** Both branches of `enrollment_lookup` are scoped to the recruitment
+  year, and neither SIS has rows for a year it has not rolled into. Until each
+  SIS catches up, `enroll_status`, `sis_entry_date` and the `is_enrolled_*`
+  flags are NULL for every student in that region. Expected; no action needed.
+- **Fake or test Finalsite records inflate counts until someone adds their ids
+  to the exclude-ids sheet.**
+
+## Open questions
+
+- **What is each dashboard tab for, who opens it, and which data source feeds
+  it?** Landing Page, Progress to Goals, School Ops Team and SRE Team. This is
+  an open request with the stakeholder. The answer decides which reporting
+  models each audience depends on and whether the direct read of
+  `int_tableau__finalsite_student_scaffold` can move to a `rpt_` model.
+- **What is KIPP Purpose's new student target?** SRE's workbook states two
+  different values for it on different tabs. Asked of the stakeholder; tracked
+  on #5436.
+- **A stray seat-target value on SRE's Miami tab** inflates SRE's own Legacy MS
+  total. Only SRE can fix their workbook; tracked on #5436.
+- **How should the QC checks handle retained students?** Retention can put
+  Finalsite and the SIS legitimately out of step: Finalsite may carry the
+  student at the next grade while the SIS has them repeating
+  (`is_grade_level_mismatch`), and a repeated grade can keep a student at a
+  school they would otherwise have left (`is_school_mismatch`, most likely at
+  the grade 5/6 boundary). Options: suppress them, label them, or leave them
+  firing. Choosing needs agreement on who records retention and when, and
+  whether Finalsite's `Retained Date` is populated anywhere. Pending SRE.
+- **QC questions from the AY2026 definitions review, pending SRE:** should the
+  `Enrolled`-only gate on `is_missing_sis_record` widen? Should "absent from the
+  SIS" and "present but unlinked" be separate flags (they need different fixes)?
+  Is the triage order in _The five flags, in plain language_ still right?
+- **Could `stg_finalsite__status_report.active_school_year` give a per-record
+  rollover signal?** It is the school year a record is active under, and it is
+  mixed at any moment. Comparing it to the recruitment year could replace the
+  single network-wide anchor. An idea, not a design.
+- **Historical or multi-year scaffold reporting is not supported.** Both SIS
+  sources are scoped to the current cycle. Needs its own design if it becomes a
+  requirement.
+
+### Known issues, need to fix
+
+- **School-granularity goals never match students in Aggregated.** Goals at
+  `goal_granularity = 'School'` carry `grade_level = -9`, and every branch of
+  `rpt_tableau__fresh_dashboard_aggregated` except Inquiries/Applications joins
+  students on `grade_level` (lines 58, 108, 161, 261), which no student has as
+  `-9`. The Inquiries/Applications branch is limited to `Region/Grade Level`. So
+  `School` goal rows always show zero students:
+
+  ```sql
+  select
+      goal_granularity,
+      count(*) as goal_rows,
+      countif(finalsite_id is not null) as rows_with_student,
+  from `teamster-332318`.kipptaf_tableau.rpt_tableau__fresh_dashboard_aggregated
+  group by goal_granularity
+  ```
+
+  `rows_with_student` is `0` for `School`.
+
+- **Accepted goals, and App Target goals below region level, never reach
+  Aggregated.** `int_tableau__fresh_goals_scaffold` carries them, but none of
+  Aggregated's five branches selects `goal_type = 'Accepted'`, and the
+  Inquiries/Applications branch keeps only
+  `goal_granularity = 'Region/Grade Level'`, so `App Target` goals at `School`
+  and `School/Grade Level` are dropped too. Compare the two models:
+
+  ```sql
+  select
+      'goals_scaffold' as model, goal_type, goal_granularity, count(*) as goal_rows,
+  from `teamster-332318`.kipptaf_tableau.int_tableau__fresh_goals_scaffold
+  group by goal_type, goal_granularity
+  union all
+  select
+      'aggregated' as model, goal_type, goal_granularity, count(*) as goal_rows,
+  from `teamster-332318`.kipptaf_tableau.rpt_tableau__fresh_dashboard_aggregated
+  group by goal_type, goal_granularity
+  ```
+
+  `Accepted` at every granularity, and `Applications` at `School` and
+  `School/Grade Level`, appear for the goals scaffold only.
+
+  Confirm with the stakeholder whether any tab expects them before adding a
+  branch.
+
+- **Region goals in the Offers, Pending Offers, Deferred and Waitlisted branches
+  count only unassigned students.** These branches join students on `schoolid`
+  (`rpt_tableau__fresh_dashboard_aggregated.sql` lines 57 and 160). A
+  `Region/Grade Level` goal row has `schoolid = 0`, which matches only students
+  with no school assigned, so the region-level count for these goals reads far
+  too low. Most students at these stages have a school:
+
+  ```sql
+  select
+      goal_type,
+      countif(schoolid = 0) as unassigned_students,
+      countif(schoolid != 0) as assigned_students,
+  from `teamster-332318`.kipptaf_tableau.int_tableau__finalsite_student_scaffold
+  where goal_type in ('Offers', 'Pending Offers', 'Deferred', 'Waitlisted')
+  group by goal_type
+  ```
+
+  Only `unassigned_students` can reach a region row. The fix is to join region
+  rows on region and grade only, as the Inquiries/Applications branch does.
+
+- **The `fresh_dashboard` exposure reads
+  `int_tableau__finalsite_student_scaffold` directly**, with no `rpt_` model
+  buffering it (`src/dbt/kipptaf/models/exposures/tableau.yml`). The repo rule
+  is that an external tool never reads an intermediate model directly.
+
+- **`int_tableau__fresh_goals_scaffold`'s uniqueness test includes
+  `goal_value`.** Two goals-sheet rows with the same key and different values
+  pass the test and double the goal. The staging test on
+  `stg_google_sheets__finalsite__goals` (key without `goal_value`) is what
+  currently prevents it. Check the scaffold on its own key:
+
+  ```sql
+  select count(*) as duplicate_keys,
+  from (
+      select enrollment_academic_year,
+      from `teamster-332318`.kipptaf_tableau.int_tableau__fresh_goals_scaffold
+      group by enrollment_academic_year, region, schoolid, grade_level,
+          goal_granularity, goal_type, goal_name, grouped_status_timeframe
+      having count(*) > 1
+  )
+  ```
+
+  The fix is to drop `goal_value` from the test's columns.
+
+- **`int_finalsite__status_report_unpivot.latest_status_date` ignores the load
+  partition.** The model's grain includes `_dagster_partition_key`, but the
+  window partitions by `finalsite_enrollment_id, enrollment_academic_year` only,
+  so a record loaded in several partitions gets one date across all of them.
+  `_dagster_partition_key` names the Finalsite export file a row came from.
+  There is one file per school year, and the key is that year in `2025_26` form,
+  taken from the file name. Finalsite carries an enrollment into more than one
+  school year's export, so the same record repeats across loads. Nothing reads
+  the column today (`rpt_gsheets__finalsite__log` computes its own). Records
+  loaded in several partitions:
+
+  ```sql
+  select count(*) as ids_in_several_partitions,
+  from (
+      select finalsite_enrollment_id, enrollment_academic_year,
+      from `teamster-332318`.kipptaf_finalsite.int_finalsite__status_report_unpivot
+      group by finalsite_enrollment_id, enrollment_academic_year
+      having count(distinct _dagster_partition_key) > 1
+  )
+  ```
+
+  Fix or drop the column.
+
+- **`detailed_status_branched_ranking` is read by nothing.** It is declared in
+  `stg_google_sheets__finalsite__status_crosswalk` and
+  `int_google_sheets__finalsite__status_crosswalk_unpivot` and passed through,
+  but no model reads it. Either wire up its intended use or remove it from both
+  models and the sheet.
+
+- **Pre-K: is it in scope?** The goals staging `accepted_values` test on
+  `grade_level` rejects `-1`, so no Pre-K goal can be entered. The enrollment
+  scaffold has no filter excluding `-1`, so a school with enrolled Pre-K
+  students would get Pre-K spine rows with no possible goals. To check for Pre-K
+  spine rows:
+
+  ```sql
+  select count(*) as prek_rows,
+  from `teamster-332318`.kipptaf_tableau.int_tableau__fresh_enrollment_scaffold
+  where grade_level = -1
+  ```
+
+  Decide with the stakeholder whether FRESH reports Pre-K, then either allow
+  `-1` in the goals test or filter it out of the scaffold.
 
 ## Rolling the dashboard over to a new cycle
 
-There is no fixed date for this. SRE's recruitment cycle advances on its own
-timeline, so the rollover starts when SRE says it has — not on a calendar
-trigger, and not when PowerSchool's `current_academic_year` bumps on July 1.
+There is no fixed date. The rollover starts when SRE says its cycle has
+advanced, not when `current_academic_year` bumps on July 1.
 
-The order matters. `finalsite_recruitment_year` is the switch that repoints the
-whole pipeline at the new cycle, and several models `inner join` against sheets
-scoped to that year. Flipping the var before those sheets carry the new year's
-rows does not error — it silently returns zero rows.
+Order matters. `finalsite_recruitment_year` repoints the whole pipeline, and
+several models inner-join sheets scoped to that year. Flipping the var before
+the sheets carry the new year's rows does not error; it silently returns zero
+rows.
 
 ### Steps, in order
 
@@ -883,188 +897,70 @@ rows does not error — it silently returns zero rows.
 | 1   | Enter any new schools/grades in Finalsite under the new FS year   | SRE             |
 | 2   | Agree which Finalsite enrollment year is now active               | SRE + data team |
 | 3   | Update `status_crosswalk`'s partition key and confirm its columns | Analyst + SRE   |
-| 4   | Supply the new goals workbook URL                                 | SRE             |
+| 4   | Supply the new goals workbook                                     | SRE             |
 | 5   | Reconcile the goals sheet against SRE's workbook                  | Data team + SRE |
 | 6   | Review `exclude_ids` for the new cycle's test records             | Analyst         |
-| 7   | Bump `finalsite_recruitment_year` in `dbt_project.yml`            | Data team       |
-| 8   | Build and verify the FRESH models                                 | Data team       |
+| 7   | Re-confirm the four first-day-of-school dates                     | Data team + SRE |
+| 8   | Bump `finalsite_recruitment_year` in `dbt_project.yml`            | Data team       |
+| 9   | Build and verify the FRESH models                                 | Data team       |
 
 #### 1-2. New schools and grades come from Finalsite
 
-There is nothing to hand-enter into a scaffold sheet. A school or grade that is
-being recruited for but has nobody enrolled yet is entered **in Finalsite** by
-SRE under the new Finalsite academic year. Once that data is in Finalsite and
-SRE and the data team have agreed which Finalsite enrollment year is active, the
-year bump brings those rows in through `finalsite_new` — see "The three row
-types the SIS can't produce directly" above.
-
-This is why the Finalsite year is a separate var from `current_academic_year`:
-the two being different is the signal that Finalsite is recruiting ahead of the
-SIS, and that signal is what activates the net-new branch. Agreeing on the
-active year (step 2) is therefore the real gate on the whole rollover, not a
-formality.
+A school or grade being recruited for with nobody enrolled yet is entered in
+Finalsite by SRE under the new Finalsite year. Once the recruitment year is
+bumped ahead of `current_academic_year`, `finalsite_new` brings those rows in
+(see _The three row types the SIS can't produce directly_). Agreeing on the
+active year is the real gate on the rollover.
 
 #### 3. `status_crosswalk`
 
-Two things, both on the sheet itself rather than in code:
+- Replace the `_dagster_partition_key` value (column A) with the new year. The
+  sheet holds one year at a time.
+- Confirm with SRE that columns D, H, and I-P still make sense for the new
+  cycle. They encode judgment about the funnel; there is no way to derive them.
 
-- **Replace the `_dagster_partition_key` value (column A)** so it matches the
-  new Finalsite enrollment year. This is a replace, not an append — the sheet
-  holds exactly one year at a time, guarded by
-  `test_stg_google_sheets__finalsite__status_crosswalk_single_year`.
-- **Confirm with SRE that columns D, H, and I→P still make sense** for the new
-  cycle. See the column reference below for what each one drives. These encode
-  institutional judgment about the recruitment funnel, so there is no generator
-  and no way to derive them.
-
-Getting this wrong is the loudest failure mode in the rollover:
-`latest_status_calc` inner-joins the crosswalk on the year, so a partition key
-that doesn't match the active year drops every status and the dashboard goes
-empty.
+This is the loudest failure mode: `latest_status_calc` inner-joins the crosswalk
+on `_dagster_partition_key`, and the `Current` roster branch joins it on
+`file_year`, so a key that doesn't match the Finalsite data drops every status
+and the dashboard goes empty.
 
 #### 4-5. Goals
 
-SRE supplies a **new workbook each cycle**, so the first move is asking for the
-URL rather than assuming last cycle's. Then:
+SRE supplies a new workbook each cycle, so ask for it rather than assume last
+cycle's. Then:
 
-- Confirm the **goal names are unchanged**. The goals sheet joins on
-  `goal_name`, so a renamed goal silently stops matching.
-- Reconcile SRE's workbook against `stg_google_sheets__finalsite__goals` and
-  hand the analyst the missing rows to paste in. Cover the **school-level and
-  both grade-level granularities** — SRE's cover sheet only carries school
-  totals, and grade-level goals change independently of them.
-- Repeat until there are no discrepancies. Each round needs
-  `stg_google_sheets__finalsite__goals` rebuilt first — it is a frozen table, so
-  a pasted edit is not visible to the next comparison until then.
+- Confirm goal names are unchanged: the join is on `goal_name`, so a renamed
+  goal silently stops matching.
+- Reconcile the workbook against `stg_google_sheets__finalsite__goals` at all
+  three granularities; grade-level goals change independently of the cover
+  sheet's school totals.
+- Rebuild `stg_google_sheets__finalsite__goals` between rounds; it is a table.
 
-**Run this reconciliation whenever goals change, not only at rollover.** SRE
-does not always flag mid-year goal changes, so it is worth offering proactively
-at the start of any FRESH work. See the `fresh-dashboard` skill for the
-procedure.
+Run this reconciliation whenever goals change, not only at rollover. SRE does
+not always flag mid-year changes. The fresh-dashboard skill has the procedure.
 
-#### 7. The var bump
+#### 8. The var bump
 
-One line in one file. Every model and test site reads
-`var("finalsite_recruitment_year")`, so there are no other literals to chase.
+One line in one file. Every model and test reads
+`var("finalsite_recruitment_year")`.
+
+After the bump, expect the SIS comparison columns to be NULL until each SIS
+rolls over (see _Known data model caveats_).
 
 ### `status_crosswalk` column reference
 
-The staging model is `select *`, so sheet column letters map straight to
-columns. The four groups SRE should re-confirm each cycle are marked.
+The staging model is `select *`, so sheet columns map straight to model columns.
+Bold rows are the ones SRE re-confirms each cycle.
 
-| col     | column                                                                                                                                              | what it drives                                                                                                                                                                                                                                               |
-| ------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| A       | `_dagster_partition_key`                                                                                                                            | the cycle year. Replaced at rollover; `file_year` is derived from it                                                                                                                                                                                         |
-| B       | `enrollment_type`                                                                                                                                   | New vs Returning                                                                                                                                                                                                                                             |
-| C       | `detailed_status`                                                                                                                                   | the Finalsite status name being mapped                                                                                                                                                                                                                       |
-| **D**   | `detailed_status_ranking`                                                                                                                           | **confirm with SRE.** Orders statuses when a student has several. Hand-mirrored by the `status_order` CASE in `int_finalsite__status_report_unpivot` — change one, change both; `test_int_finalsite__status_order_matches_crosswalk_ranking` guards the pair |
-| E       | `detailed_status_branched_ranking`                                                                                                                  | currently unused — declared and passed through, read by nothing                                                                                                                                                                                              |
-| F       | `valid_detailed_status`                                                                                                                             | `false` silently drops the row. Encodes "is this status legitimate for this `enrollment_type`"                                                                                                                                                               |
-| G       | `fs_status_field`                                                                                                                                   | the Finalsite date column the status came from                                                                                                                                                                                                               |
-| **H**   | `qa_flag`                                                                                                                                           | **confirm with SRE.** `true` silently drops the row                                                                                                                                                                                                          |
-| **I-P** | `status_enrollment`, `status_group_numerator`, `status_group_denominator`, `conversion_metric_numerator_1..3`, `conversion_metric_denominator_1..2` | **confirm with SRE.** The goal-group mapping. Unpivoted into `status_group_name` / `status_group_value`, which is how a raw status becomes a `goal_type` / `goal_name` on the dashboard                                                                      |
-| Q       | `file_year`                                                                                                                                         | derived in the staging model from column A; not in the sheet                                                                                                                                                                                                 |
-
-### What no longer needs doing
-
-The scaffold sheet is retired, so the old steps for it are gone: nobody hand-
-enters `-9` whole-school rows, region rollup rows, or per-grade rows any more,
-and the `-9` candidate-row generator is obsolete.
-`int_tableau__fresh_enrollment_scaffold` derives all of it from PowerSchool and
-Focus, picks up new schools and grades once the SIS has an enrolled student in
-them, and picks up not-yet-enrolled ones from Finalsite per steps 1-2 above.
-
-### After the bump
-
-Expect `enrollment_lookup`'s SIS-vs-Finalsite quality-check columns
-(`enroll_status`, `sis_entry_date`, `is_enrolled_*`) in
-`int_tableau__finalsite_student_scaffold` to be null network-wide for a while.
-That CTE scopes **both** of its branches — `int_extracts__student_enrollments`
-and `int_focus__student_enrollments` — to the Finalsite recruitment year, and
-neither SIS has enrollment rows for a year it hasn't rolled into yet, so Miami
-is affected exactly as much as the PowerSchool regions. This is expected,
-resolves on its own once each SIS catches up, and needs no action. Same
-mechanism as the "All regions' point-in-time enrollment flags go NULL" bullet
-under _Known data model caveats_ above.
-
-## Open questions
-
-- **Is KIPP Purpose's new student target 69 or 74?** SRE's 26-27 workbook
-  contradicts itself: `cover sheet` **H11** says 69, while `Newark` **P51** (the
-  Purpose `Total` row) says 73.97, which rounds to 74. Prod currently holds 74.
-  Excluded from the AY2026 goals change set until SRE rules. Raised with SRE Aug
-  2026; pending their response.
-- **Do Miami Tech, Legacy ES and Legacy MS have a `Budget Target`?** On the
-  `cover sheet` the Budget Target column is populated for these three (**F22** =
-  90, **F23** = 196, **F24** = 56) while the Seat Target column immediately left
-  of it is blank (**E22:E24**). But the same three numbers appear on the `Miami`
-  tab as the SY26-27 **seat** target (**H13**, **H25**, **H29**), and prod
-  records them that way with `Budget Target` NULL. So either these three
-  genuinely have no budget target, or `F22:F24` landed one column right of where
-  they belong. No Miami block carries a Budget Target column, so the value
-  cannot be derived — only SRE can settle it. Excluded from the AY2026 change
-  set. Raised with SRE Aug 2026; pending their response.
-
-  Related and worth fixing regardless: `Miami` **H29** reads 56.9 rather than
-  56, because **H28** holds a stray `0.9` in the seat-target column for Legacy
-  MS grade 8 — which inflates SRE's own Legacy MS total.
-
-- **`stg_finalsite__status_report.active_school_year` could give the scaffold a
-  finer per-record rollover signal.** Format is `YYYY-YYYY` (e.g. `2026-2027`)
-  -- it's the school year a given student's Finalsite record is currently active
-  under, and it's genuinely mixed at any moment (verified: as of this writing
-  27,511 rows sit on `2026-2027`, 1,492 are still on the prior `2025-2026`, and
-  a handful are already on `2027-2028`/`2028-2029`). Comparing this per-record
-  value against `finalsite_recruitment_year` could give the scaffold a
-  per-student or per-school rollover signal, instead of relying solely on the
-  single network-wide current-year anchor. Not yet designed or implemented -- an
-  idea to explore, not a decision.
-- **Historical / multi-year scaffold reporting is not solved by this model.**
-  Both SIS sources are scoped to the current cycle -- PowerSchool's
-  `stg_powerschool__students` is current-state only, and the Focus branch
-  filters to `current_academic_year` -- so the scaffold carries one cycle at a
-  time. Needs a dedicated design discussion if this becomes a real requirement.
-- **`detailed_status_branched_ranking` (column E of `status_crosswalk`) has no
-  consumer.** It is declared in the staging and unpivot properties and passes
-  through, but nothing reads it. Either something was intended to and never
-  landed, or it should come out of the sheet and both ymls.
-- **How should the QC checks handle retained students?** Retention (grade
-  repetition) puts the two systems legitimately out of step in a way that is
-  indistinguishable from a data-entry error: Finalsite may carry the student at
-  the next grade while the SIS correctly has them repeating, which fires
-  `is_grade_level_mismatch`, and a repeated grade can keep a student at a school
-  they would otherwise have moved up from, which fires `is_school_mismatch`
-  (most likely around the grade 5/6 ES-MS boundary). `is_enroll_status_mismatch`
-  is unaffected — a retained student is still enrolled and both systems agree on
-  that. Three options: suppress retained students from those two flags, label
-  them and leave them visible, or leave them firing and expect SRE to recognize
-  them. Choosing needs two things first: agreement on who records the retention
-  decision and when (a suppression rule can only key off a signal that lands
-  before the check runs), and confirmation of whether Finalsite's
-  `Retained Date` is genuinely unpopulated network-wide — if it is, the prior
-  question is whether SRE can start populating it. Raised with SRE at the AY2026
-  definitions review; pending their input.
-
-### Resolved (kept for reference, no longer open)
-
-Four questions in earlier versions of this doc are now answered by the
-SIS-derived scaffold:
-
-- **Whether the Miami/Focus carve-out can be removed** -- done. Miami is sourced
-  from `int_focus__schools` and `int_focus__student_enrollments`; no part of the
-  scaffold reads the sheet for Miami.
-- **The Miami scaffold sheet missing Liberty (30200802) and Sunrise (30200801)**
-  -- moot. The sheet is retired, and both schools are closed (`max_syear = 2025`
-  in Focus), so they are excluded deliberately rather than missing accidentally.
-- **Focus school ids need translating to PowerSchool school numbers** -- built.
-  `school_directory` joins `int_focus__schools` to
-  `stg_google_sheets__people__locations` on `focus_school_id` and takes
-  `powerschool_school_id`, so Focus's alphanumeric codes (`2332A`) never reach
-  the `schoolid` column.
-- **What Focus needs to supply for Miami to work on FRESH** -- both gaps are
-  closed. The scaffold's schools/grade-membership gap is covered by the two
-  `int_focus__*` models above, and the point-in-time enrollment flags
-  (`enroll_status`, `is_enrolled_*`) are covered by
-  `int_tableau__finalsite_student_scaffold` reading
-  `int_focus__student_enrollments` alongside
-  `int_extracts__student_enrollments`.
+| col     | column                                                                                                                                              | what it drives                                                                                                                                    |
+| ------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A       | `_dagster_partition_key`                                                                                                                            | The cycle year. Replaced at rollover; `file_year` is derived from it.                                                                             |
+| B       | `enrollment_type`                                                                                                                                   | New vs Returning.                                                                                                                                 |
+| C       | `detailed_status`                                                                                                                                   | The Finalsite status name being mapped.                                                                                                           |
+| **D**   | `detailed_status_ranking`                                                                                                                           | Orders statuses. Hand-mirrored by the `status_order` `CASE`; change both.                                                                         |
+| E       | `detailed_status_branched_ranking`                                                                                                                  | Read by nothing (see _Known issues, need to fix_).                                                                                                |
+| F       | `valid_detailed_status`                                                                                                                             | `false` silently drops the row. "Is this status legitimate for this `enrollment_type`."                                                           |
+| G       | `fs_status_field`                                                                                                                                   | The Finalsite date column the status came from.                                                                                                   |
+| **H**   | `qa_flag`                                                                                                                                           | `true` silently drops the row.                                                                                                                    |
+| **I-P** | `status_enrollment`, `status_group_numerator`, `status_group_denominator`, `conversion_metric_numerator_1..3`, `conversion_metric_denominator_1..2` | The goal-group mapping. Unpivoted into `status_group_name` / `status_group_value`, which is how a raw status becomes a `goal_type` / `goal_name`. |
+| Q       | `file_year`                                                                                                                                         | Derived in the staging model from column A; not in the sheet.                                                                                     |

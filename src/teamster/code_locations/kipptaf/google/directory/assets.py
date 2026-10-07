@@ -11,6 +11,7 @@ from dagster_gcp import BigQueryResource
 
 from teamster.code_locations.kipptaf import CODE_LOCATION
 from teamster.code_locations.kipptaf.google.directory.schema import (
+    GROUPS_SCHEMA,
     ORGUNITS_SCHEMA,
     ROLE_ASSIGNMENTS_SCHEMA,
     ROLES_SCHEMA,
@@ -26,6 +27,23 @@ from teamster.libraries.google.directory.resources import (
 )
 
 key_prefix = [CODE_LOCATION, "google", "directory"]
+
+
+@asset(
+    key=[*key_prefix, "groups"],
+    check_specs=[build_check_spec_avro_schema_valid([*key_prefix, "groups"])],
+    io_manager_key="io_manager_gcs_avro",
+    group_name="google_directory",
+    kinds={"python"},
+)
+def groups(context: AssetExecutionContext, google_directory: GoogleDirectoryResource):
+    data = google_directory.list_groups()
+
+    yield Output(value=(data, GROUPS_SCHEMA), metadata={"record_count": len(data)})
+
+    yield check_avro_schema_valid(
+        asset_key=context.asset_key, records=data, schema=GROUPS_SCHEMA
+    )
 
 
 @asset(
@@ -208,7 +226,15 @@ def google_directory_user_create(
             # Only add users whose creation succeeded — a failed create leaves
             # no account, so its member insert would fail with "resource not
             # found" and double-count the same student in the error check.
-            members_data = members_for_created_users(valid_users, create_errors)
+            # Users whose groupKey did not resolve are skipped and reported
+            # once, rather than once per user.
+            members_data, unresolved_group_errors = members_for_created_users(
+                valid_users, create_errors
+            )
+
+            for ue in unresolved_group_errors:
+                context.log.error(msg=ue)
+                errors.append(ue)
 
             if members_data:
                 members_errors = google_directory.batch_insert_members(members_data)
@@ -280,28 +306,12 @@ assets = [
     google_directory_role_assignments_create,
     google_directory_user_create,
     google_directory_user_update,
+    groups,
     orgunits,
     role_assignments,
     roles,
     users,
 ]
-
-# @asset(
-#     key=[*key_prefix, "groups"],
-#     check_specs=[build_check_spec_avro_schema_valid([*key_prefix, "groups"])],
-#     io_manager_key="io_manager_gcs_avro",
-#     group_name="google_directory",
-#     kinds={"python"},
-# )
-# def groups(context: AssetExecutionContext, google_directory: GoogleDirectoryResource):
-#     data = google_directory.list_groups()
-
-#     yield Output(value=(data, GROUPS_SCHEMA), metadata={"record_count": len(data)})
-
-#     yield check_avro_schema_valid(
-#         asset_key=context.asset_key, records=data, schema=GROUPS_SCHEMA
-#     )
-
 
 # @asset(
 #     key=[*key_prefix, "members"],

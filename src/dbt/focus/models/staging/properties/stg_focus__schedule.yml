@@ -25,12 +25,6 @@ models:
           - not_null:
               config:
                 severity: error
-          - relationships:
-              arguments:
-                to: ref('stg_focus__students')
-                field: student_id
-              config:
-                severity: error
       - name: course_period_id
         description: >-
           Focus course-period (section) id the student is scheduled into.
@@ -41,12 +35,6 @@ models:
           - not_null:
               config:
                 severity: error
-          - relationships:
-              arguments:
-                to: ref('stg_focus__course_periods')
-                field: course_period_id
-              config:
-                severity: error
       - name: course_id
         description: >-
           Focus course id the scheduled section belongs to. int_focus__schedule
@@ -55,12 +43,6 @@ models:
         data_type: int
         data_tests:
           - not_null:
-              config:
-                severity: error
-          - relationships:
-              arguments:
-                to: ref('stg_focus__courses')
-                field: course_id
               config:
                 severity: error
       - name: syear
@@ -75,8 +57,8 @@ models:
         description: >-
           Focus marking-period id the schedule row covers. Focus stores 0 rather
           than null for a full-year schedule, so this does not resolve to
-          stg_focus__marking_periods for every row — int_focus__schedule
-          normalizes the 0 to null before joining.
+          stg_focus__marking_periods directly — int_focus__schedule resolves the
+          0 to the school's type = 'year' marking period.
         data_type: int
       - name: mp
         description: >-

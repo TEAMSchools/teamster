@@ -1,5 +1,8 @@
 models:
   - name: rpt_tableau__miami_k2_star
+    description: >-
+      Miami-only by name and by its `region = 'Miami'` filter. Held 2,256 rows
+      in prod as of 2026-08-27. Ratified on #4996.
     columns:
       - name: academic_year
         data_type: int64

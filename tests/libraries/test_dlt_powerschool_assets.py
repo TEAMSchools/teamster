@@ -1,93 +1,28 @@
 """Unit tests for the probe-gated PowerSchool dlt factory (no external deps)."""
 
-import pathlib
-import types
-from datetime import datetime
-
 import yaml
+from dagster import AssetKey
 
-from teamster.libraries.dlt.powerschool.assets import (
-    PowerSchoolTable,
-    _compute_changed,
-    _stored_signatures,
-    build_powerschool_dlt_assets,
-    probe_signature,
-)
+from teamster.libraries.dlt.powerschool.assets import build_powerschool_dlt_assets
+from teamster.libraries.dlt.probe import ProbeTable
 
 
-class FakeResult:
-    def __init__(self, row):
-        self._row = row
+def _config_entries():
+    # The code location already owns this path and derives it from __file__, so
+    # it resolves regardless of pytest's cwd. Imported inside the function: a
+    # module-scope code-location import needs the dbt manifest at collection.
+    from teamster.code_locations.kipppaterson.powerschool.sis.dlt.assets import (
+        config_file,
+    )
 
-    def one(self):
-        return self._row
-
-
-class FakeConnection:
-    def __init__(self, row):
-        self.row = row
-        self.queries = []
-
-    def execute(self, clause):
-        self.queries.append(str(clause))
-        return FakeResult(self.row)
-
-
-def test_probe_signature_shapes_datetime_cursor():
-    conn = FakeConnection((42, datetime(2026, 7, 15, 13, 30, 0)))
-
-    sig = probe_signature(conn, "students", "transaction_date")
-
-    assert sig == {"count": 42, "max_cursor": "2026-07-15T13:30:00"}
-    assert "COUNT(*)" in conn.queries[0]
-    assert "MAX(transaction_date)" in conn.queries[0]
-    assert "FROM students" in conn.queries[0]
-
-
-def test_probe_signature_empty_table_none_cursor():
-    conn = FakeConnection((0, None))
-
-    sig = probe_signature(conn, "cc", "transaction_date")
-
-    assert sig == {"count": 0, "max_cursor": None}
-
-
-def test_probe_signature_non_datetime_cursor_stringified():
-    # Guard for the ODBC-district template: a future table with a numeric or
-    # string change column has no .isoformat(); it must stringify, not raise.
-    conn = FakeConnection((7, 12345))
-
-    sig = probe_signature(conn, "some_table", "numeric_cursor")
-
-    assert sig == {"count": 7, "max_cursor": "12345"}
-
-
-def test_probe_signature_no_cursor_count_only():
-    # No-cursor tables are count-gated: COUNT(*) only, and the signature keeps
-    # the max_cursor key (None) so it compares equal to the run-config
-    # round-trip shape.
-    conn = FakeConnection((42,))
-
-    sig = probe_signature(conn, "gen", None)
-
-    assert sig == {"count": 42, "max_cursor": None}
-    assert "COUNT(*)" in conn.queries[0]
-    assert "MAX(" not in conn.queries[0]
-
-
-def test_powerschool_table_dataclass():
-    t = PowerSchoolTable(name="students", cursor_column="transaction_date")
-    n = PowerSchoolTable(name="test", cursor_column=None)
-
-    assert t.cursor_column == "transaction_date"
-    assert n.cursor_column is None
+    return yaml.safe_load(config_file.read_text())["assets"]
 
 
 def test_factory_builds_single_subsettable_multiasset():
     tables = [
-        PowerSchoolTable(name="students", cursor_column="transaction_date"),
-        PowerSchoolTable(name="users", cursor_column="whenmodified"),
-        PowerSchoolTable(name="test", cursor_column=None),
+        ProbeTable(name="students", cursor_column="transaction_date"),
+        ProbeTable(name="users", cursor_column="whenmodified"),
+        ProbeTable(name="test", cursor_column=None),
     ]
 
     assets_def = build_powerschool_dlt_assets(
@@ -104,102 +39,44 @@ def test_factory_builds_single_subsettable_multiasset():
     assert assets_def.op.pool == "dlt_powerschool_kipppaterson"
 
 
-CONFIG = pathlib.Path(
-    "src/teamster/code_locations/kipppaterson/powerschool/sis/dlt/config/assets.yaml"
-)
+def test_assets_module_covers_every_configured_table():
+    """ONE multi-asset def whose keys are exactly the configured tables."""
+    from teamster.code_locations.kipppaterson.powerschool.sis.dlt.assets import assets
 
-INTRADAY_TRANSACTION_DATE = {
-    "attendance",
-    "storedgrades",
-    "pgfinalgrades",
-    "cc",
-    "students",
-    "courses",
-    "schools",
-    "sections",
-    "termbins",
-    "terms",
-}
-INTRADAY_WHENMODIFIED = {
-    "gradescaleitem",
-    "roledef",
-    "s_nj_crs_x",
-    "s_nj_ren_x",
-    "s_nj_stu_x",
-    "s_stu_x",
-    "schoolstaff",
-    "sectionteacher",
-    "studentcorefields",
-    "studentrace",
-    "u_studentsuserfields",
-    "users",
-    "userscorefields",
-}
-NIGHTLY_WHENMODIFIED = {
-    "assignmentcategoryassoc",
-    "assignmentscore",
-    "assignmentsection",
-    "districtteachercategory",
-    "gradecalcformulaweight",
-    "gradecalcschoolassoc",
-    "gradecalculationtype",
-    "gradeformulaset",
-    "gradeschoolconfig",
-    "gradeschoolformulaassoc",
-    "teachercategory",
-}
-NIGHTLY_NO_CURSOR = {
-    "attendance_code",
-    "attendance_conversion_items",
-    "bell_schedule",
-    "calendar_day",
-    "cycle_day",
-    "fte",
-    "gen",
-    "log",
-    "reenrollments",
-    "spenrollments",
-    "studenttest",
-    "studenttestscore",
-    "test",
-    "testscore",
-}
+    assert len(assets) == 1
+    assert {key for a in assets for key in a.keys} == {
+        AssetKey(["kipppaterson", "powerschool", "sis", e["table_name"]])
+        for e in _config_entries()
+    }
 
 
-def test_config_matches_spec_membership_map():
-    entries = yaml.safe_load(CONFIG.read_text())["assets"]
-    by_name = {e["table_name"]: e for e in entries}
+def test_triggers_cover_every_table():
+    """Every configured table belongs to at least one trigger.
 
-    assert len(entries) == 48
+    A table with both membership flags false would silently never materialize
+    (the dlt assets carry no automation condition). The overlap between tiers
+    must be exactly the no-cursor set: count-gated intraday, authoritative
+    overnight.
+    """
+    from teamster.code_locations.kipppaterson.powerschool.sis.dlt.schedules import (
+        _nightly_targets,
+    )
 
-    for name in INTRADAY_TRANSACTION_DATE:
-        assert by_name[name] == {
-            "table_name": name,
-            "cursor_column": "transaction_date",
-            "intraday": True,
-            "nightly": False,
-        }
-    for name in INTRADAY_WHENMODIFIED:
-        assert by_name[name] == {
-            "table_name": name,
-            "cursor_column": "whenmodified",
-            "intraday": True,
-            "nightly": False,
-        }
-    for name in NIGHTLY_WHENMODIFIED:
-        assert by_name[name] == {
-            "table_name": name,
-            "cursor_column": "whenmodified",
-            "intraday": False,
-            "nightly": True,
-        }
-    for name in NIGHTLY_NO_CURSOR:
-        assert by_name[name] == {
-            "table_name": name,
-            "cursor_column": None,
-            "intraday": True,
-            "nightly": True,
-        }
+    entries = _config_entries()
+
+    def key(name):
+        return f"kipppaterson/powerschool/sis/{name}"
+
+    expected = {key(e["table_name"]) for e in entries}
+    intraday = {key(e["table_name"]) for e in entries if e["intraday"]}
+    no_cursor = {key(e["table_name"]) for e in entries if e["cursor_column"] is None}
+
+    # Resolve nightly targets through the real scheduling function — the exact
+    # code an orphaned membership would route around.
+    nightly = set(_nightly_targets())
+
+    assert intraday | nightly == expected
+    assert intraday & nightly == no_cursor
 
 
 def test_nightly_schedule_and_intraday_sensor():
@@ -216,153 +93,10 @@ def test_nightly_schedule_and_intraday_sensor():
     assert schedules == [nightly]
     assert nightly.cron_schedule == "0 2 * * *"
     assert nightly.tags == {"dagster/max_runtime": "3600"}
-    assert sensors[0].name == "kipppaterson__powerschool__dlt__intraday_sensor"
-    assert sensors[0].minimum_interval_seconds == 900
 
-
-def test_assets_module_exposes_single_def():
-    from teamster.code_locations.kipppaterson.powerschool.sis.dlt.assets import (
-        assets,
-    )
-
-    assert len(assets) == 1
-    assert len(list(assets[0].keys)) == 48
-
-
-def test_nightly_targets_sis_keys_and_counts():
-    from teamster.code_locations.kipppaterson.powerschool.sis.dlt.schedules import (
-        _nightly_targets,
-    )
-
-    nightly = _nightly_targets()
-
-    assert len(nightly) == 25
-    assert all(t.startswith("kipppaterson/powerschool/sis/") for t in nightly)
-    assert "kipppaterson/powerschool/sis/teachercategory" in nightly
-    assert "kipppaterson/powerschool/sis/test" in nightly
-    assert "kipppaterson/powerschool/sis/students" not in nightly
-
-
-def test_compute_changed_no_cursor_count_drift_included():
-    table = PowerSchoolTable(name="gen", cursor_column=None)
-    current = {"gen": {"count": 43, "max_cursor": None}}
-    stored = {"gen": {"count": 42, "max_cursor": None}}
-
-    changed = _compute_changed([table], current, stored)
-
-    assert changed == [table]
-
-
-def test_compute_changed_no_cursor_stable_count_excluded():
-    table = PowerSchoolTable(name="gen", cursor_column=None)
-    signature = {"count": 42, "max_cursor": None}
-    current = {"gen": dict(signature)}
-    stored = {"gen": dict(signature)}
-
-    changed = _compute_changed([table], current, stored)
-
-    assert changed == []
-
-
-def test_compute_changed_no_stored_baseline_included():
-    # Bootstrap: a table new to intraday (or first tick ever) has no stored
-    # signature and must load once to establish one.
-    table = PowerSchoolTable(name="gen", cursor_column=None)
-    current = {"gen": {"count": 42, "max_cursor": None}}
-
-    changed = _compute_changed([table], current, stored={})
-
-    assert changed == [table]
-
-
-def test_compute_changed_cursor_table_drift_included():
-    table = PowerSchoolTable(name="students", cursor_column="transaction_date")
-    current = {"students": {"count": 43, "max_cursor": "2026-07-16T00:00:00"}}
-    stored = {"students": {"count": 42, "max_cursor": "2026-07-15T00:00:00"}}
-
-    changed = _compute_changed([table], current, stored)
-
-    assert changed == [table]
-
-
-def test_compute_changed_cursor_table_unchanged_excluded():
-    table = PowerSchoolTable(name="students", cursor_column="transaction_date")
-    signature = {"count": 42, "max_cursor": "2026-07-15T00:00:00"}
-    current = {"students": dict(signature)}
-    stored = {"students": dict(signature)}
-
-    changed = _compute_changed([table], current, stored)
-
-    assert changed == []
-
-
-def test_compute_changed_first_run_empty_stored_all_cursor_tables_changed():
-    tables = [
-        PowerSchoolTable(name="students", cursor_column="transaction_date"),
-        PowerSchoolTable(name="users", cursor_column="whenmodified"),
-    ]
-    current = {
-        "students": {"count": 10, "max_cursor": "2026-07-15T00:00:00"},
-        "users": {"count": 5, "max_cursor": "2026-07-14T00:00:00"},
-    }
-
-    changed = _compute_changed(tables, current, stored={})
-
-    assert changed == tables
-
-
-def test_compute_changed_mixed_set_order_preserved():
-    no_cursor = PowerSchoolTable(name="test", cursor_column=None)
-    drifted = PowerSchoolTable(name="students", cursor_column="transaction_date")
-    unchanged = PowerSchoolTable(name="users", cursor_column="whenmodified")
-    selected = [no_cursor, drifted, unchanged]
-
-    unchanged_signature = {"count": 5, "max_cursor": "2026-07-14T00:00:00"}
-    current = {
-        "test": {"count": 9, "max_cursor": None},
-        "students": {"count": 43, "max_cursor": "2026-07-16T00:00:00"},
-        "users": dict(unchanged_signature),
-    }
-    stored = {
-        "test": {"count": 8, "max_cursor": None},
-        "students": {"count": 42, "max_cursor": "2026-07-15T00:00:00"},
-        "users": dict(unchanged_signature),
-    }
-
-    changed = _compute_changed(selected, current, stored)
-
-    assert changed == [no_cursor, drifted]
-
-
-def test_stored_signatures_returns_resource_signatures():
-    pipeline = types.SimpleNamespace(
-        state={
-            "sources": {
-                "powerschool": {
-                    "resources": {
-                        "students": {
-                            "signature": {
-                                "count": 5,
-                                "max_cursor": "2026-07-15T00:00:00",
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    )
-
-    stored = _stored_signatures(pipeline, "powerschool")
-
-    assert stored == {"students": {"count": 5, "max_cursor": "2026-07-15T00:00:00"}}
-
-
-def test_stored_signatures_first_run_empty_state():
-    pipeline = types.SimpleNamespace(state={})
-
-    stored = _stored_signatures(pipeline, "powerschool")
-
-    assert stored == {}
+    (sensor,) = sensors
+    assert sensor.name == "kipppaterson__powerschool__dlt__intraday_sensor"
+    assert sensor.minimum_interval_seconds == 900
 
 
 def _resolved_probe_job(tables):
@@ -392,8 +126,8 @@ def _resolved_probe_job(tables):
 def test_run_config_schema_accepts_probe_payload():
     job = _resolved_probe_job(
         [
-            PowerSchoolTable(name="students", cursor_column="transaction_date"),
-            PowerSchoolTable(name="gen", cursor_column=None),
+            ProbeTable(name="students", cursor_column="transaction_date"),
+            ProbeTable(name="gen", cursor_column=None),
         ]
     )
 
@@ -423,7 +157,7 @@ def test_run_config_schema_accepts_probe_payload():
 
 def test_run_config_schema_accepts_empty_full_refresh():
     job = _resolved_probe_job(
-        [PowerSchoolTable(name="students", cursor_column="transaction_date")]
+        [ProbeTable(name="students", cursor_column="transaction_date")]
     )
 
     from dagster import validate_run_config

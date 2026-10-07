@@ -2,8 +2,6 @@ select
     id,
     title,
     short_name,
-    sort_order,
-    credits,
     rollover_id,
     request_group,
     ahs_subject,
@@ -12,4 +10,7 @@ select
     district_id,
     created_at,
     updated_at,
+
+    cast(credits as numeric) as credits,
+    cast(sort_order as numeric) as sort_order,
 from {{ source("focus", "grad_subjects") }}

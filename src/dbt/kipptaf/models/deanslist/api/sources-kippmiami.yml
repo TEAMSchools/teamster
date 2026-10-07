@@ -1,8 +1,13 @@
 sources:
+  # retired in #5110: kippmiami no longer builds the deanslist package
   - name: kippmiami_deanslist
-    schema:
-      "{%- if target.name == 'dev' -%}zz_{{ env_var('GITHUB_USER', 'dev') }}_{%-
-      endif -%}kippmiami_deanslist"
+    description: >-
+      Miami's DeansList archive. Miami no longer uses DeansList, so these tables
+      are frozen and nothing rebuilds them. The kipptaf unions keep them so
+      Miami's behavior history stays queryable. The dataset must not be dropped.
+      Declared BQ-native (plain schema, no target branch) so every target reads
+      the prod tables directly.
+    schema: kippmiami_deanslist
     tables:
       - name: stg_deanslist__behavior
         config:
@@ -121,33 +126,3 @@ sources:
                 - kippmiami
                 - deanslist
                 - int_deanslist__roster_assignments
-      - name: stg_deanslist__roster_assignments
-        config:
-          enabled: false
-          meta:
-            dagster:
-              group: deanslist
-              asset_key:
-                - kippmiami
-                - deanslist
-                - stg_deanslist__roster_assignments
-      - name: stg_deanslist__rosters
-        config:
-          enabled: false
-          meta:
-            dagster:
-              group: deanslist
-              asset_key:
-                - kippmiami
-                - deanslist
-                - stg_deanslist__rosters
-      - name: stg_deanslist__followups
-        config:
-          enabled: false
-          meta:
-            dagster:
-              group: deanslist
-              asset_key:
-                - kippmiami
-                - deanslist
-                - stg_deanslist__followups

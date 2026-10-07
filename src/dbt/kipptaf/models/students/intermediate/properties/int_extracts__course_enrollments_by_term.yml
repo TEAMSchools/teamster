@@ -1,19 +1,54 @@
 models:
   - name: int_extracts__course_enrollments_by_term
     description: >
-      One row per student per academic year per course per quarter based on
+      One row per student per academic year per course per quarter, based on
       course enrollment overlap with term dates. Students who re-enrolled in the
       same course within a quarter are deduped to the most recent stint.
+
+      Covers all regions and all academic years, including Miami. The student
+      join keys on `student_number` rather than PowerSchool's internal
+      `cc_studentid`, which Focus (Miami's SIS) leaves null.
+
+      The `sections_no_of_students` exclusion is null-safe (`is distinct from
+      0`): Focus records no section student count, so every Focus row is null
+      there and must not be dropped by the filter. The filter still excludes the
+      PowerSchool quirk it targets — a section that holds enrollment rows while
+      recording its count as zero.
+
+      `dateleft` is non-null in both SIS branches. For an open enrollment it is
+      the day after the section's term ends — PowerSchool's own convention,
+      which the Focus leg of `int_students__course_enrollments` conforms to —
+      not a departure date, so this model compares it unchanged.
     config:
       schema: extracts
       materialized: table
+      meta:
+        dagster:
+          # Cron instead of the default eager table condition, which
+          # re-fires on ANY upstream data change, recursing through view
+          # chains up to 10 levels.
+          # ~109 executions/day on the eager table condition. Only 4 models
+          # depend on it; the earliest scheduled consumer is
+          # int_extracts__gradebook_audit_student_flags at `0 3 * * *`, then
+          # the gradebook_and_gpa_dashboard exposure at `0 4 * * *`. A 02:00
+          # tick leads both.
+          #
+          # Refs #4821
+          automation_condition:
+            cron_schedule: 0 2 * * *
     data_tests:
+      # grain keyed on student_number, not studentid: studentid is null on
+      # every Focus row, so Miami's rows would all collide on a null key.
+      # student_number is non-null on both SIS branches and matches the
+      # model's own dedup partition. It is also the stricter assertion --
+      # distinct student_number equals the row count exactly, where distinct
+      # studentid does not.
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
               - _dbt_source_project
               - academic_year
-              - studentid
+              - student_number
               - course_number
               - quarter
           config:
@@ -24,7 +59,9 @@ models:
       - name: studentid
         data_type: int64
         description:
-          The internal number and ID of the associated Students record.
+          The internal number and ID of the associated Students record. Null for
+          Miami from AY2026 forward -- Focus has no equivalent internal id. Use
+          student_number to identify a student across both SIS branches.
         config:
           meta:
             source_system: PowerSchool
@@ -68,6 +105,7 @@ models:
           The date the student enrolled in school for the current enrollment.
         config:
           meta:
+            contains_pii: true
             source_system: PowerSchool
             source_model: stg_powerschool__students
             source_column: entrydate
@@ -78,6 +116,7 @@ models:
           the day after the student's last attended class.
         config:
           meta:
+            contains_pii: true
             source_system: PowerSchool
             source_model: stg_powerschool__students
             source_column: exitdate
@@ -85,6 +124,7 @@ models:
         data_type: string
         config:
           meta:
+            contains_pii: true
             source_system: PowerSchool
             source_model: stg_powerschool__students
             source_column: entrycode
@@ -92,6 +132,7 @@ models:
         data_type: string
         config:
           meta:
+            contains_pii: true
             source_system: PowerSchool
             source_model: stg_powerschool__students
             source_column: exitcode
@@ -99,6 +140,7 @@ models:
         data_type: string
         config:
           meta:
+            contains_pii: true
             source_system: PowerSchool
             source_model: stg_powerschool__students
             source_column: exitcomment
@@ -114,6 +156,7 @@ models:
         description: The enrollment status of the student.
         config:
           meta:
+            contains_pii: true
             source_system: PowerSchool
             source_model: stg_powerschool__students
             source_column: enroll_status
@@ -166,6 +209,7 @@ models:
         data_type: int64
         config:
           meta:
+            contains_pii: true
             source_system: PowerSchool
             source_model: stg_powerschool__students
             source_column: fedethnicity
@@ -190,6 +234,7 @@ models:
         description: M=Male F=Female.
         config:
           meta:
+            contains_pii: true
             source_system: PowerSchool
             source_model: stg_powerschool__students
             source_column: gender
@@ -198,6 +243,7 @@ models:
         description: Heritage background of a student.
         config:
           meta:
+            contains_pii: true
             source_system: PowerSchool
             source_model: stg_powerschool__students
             source_column: ethnicity
@@ -242,24 +288,51 @@ models:
         data_type: int64
       - name: is_enrolled_y1
         data_type: boolean
+        config:
+          meta:
+            contains_pii: true
       - name: is_enrolled_oct01
         data_type: boolean
+        config:
+          meta:
+            contains_pii: true
       - name: is_enrolled_oct15
         data_type: boolean
+        config:
+          meta:
+            contains_pii: true
       - name: is_enrolled_mar15
         data_type: boolean
+        config:
+          meta:
+            contains_pii: true
       - name: is_enrolled_recent
         data_type: boolean
+        config:
+          meta:
+            contains_pii: true
       - name: is_enrolled_fdos
         data_type: boolean
+        config:
+          meta:
+            contains_pii: true
       - name: is_retained_year
         data_type: boolean
+        config:
+          meta:
+            contains_pii: true
       - name: cohort_graduated
         data_type: int64
       - name: is_retained_ever
         data_type: boolean
+        config:
+          meta:
+            contains_pii: true
       - name: boy_status
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: cohort_secondary
         data_type: int64
       - name: entry_schoolid
@@ -270,6 +343,9 @@ models:
         data_type: string
       - name: is_homeless
         data_type: boolean
+        config:
+          meta:
+            contains_pii: true
       - name: advisory_name
         data_type: string
       - name: advisor_teachernumber
@@ -614,12 +690,24 @@ models:
         data_type: string
       - name: exit_code_kf
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: exit_code_ts
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: is_self_contained
         data_type: boolean
+        config:
+          meta:
+            contains_pii: true
       - name: is_out_of_district
         data_type: boolean
+        config:
+          meta:
+            contains_pii: true
       - name: reporting_schoolid
         data_type: int64
       - name: reporting_school_name
@@ -634,72 +722,174 @@ models:
         data_type: string
       - name: fleid
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: newark_enrollment_number
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: infosnap_id
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: infosnap_opt_in
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: media_release
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: rides_staff
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: districtcoderesident
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: referral_date
         data_type: date
+        config:
+          meta:
+            contains_pii: true
       - name: parental_consent_eval_date
         data_type: date
+        config:
+          meta:
+            contains_pii: true
       - name: eligibility_determ_date
         data_type: date
+        config:
+          meta:
+            contains_pii: true
       - name: initial_iep_meeting_date
         data_type: date
+        config:
+          meta:
+            contains_pii: true
       - name: parent_consent_intial_iep_date
         data_type: date
+        config:
+          meta:
+            contains_pii: true
       - name: annual_iep_review_meeting_date
         data_type: date
+        config:
+          meta:
+            contains_pii: true
       - name: reevaluation_date
         data_type: date
+        config:
+          meta:
+            contains_pii: true
       - name: parent_consent_obtain_code
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: initial_process_delay_reason
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: special_education_placement
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: time_in_regular_program
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: early_intervention_yn
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: determined_ineligible_yn
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: counseling_services_yn
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: occupational_therapy_serv_yn
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: physical_therapy_services_yn
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: speech_lang_theapy_services_yn
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: other_related_services_yn
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: lepbegindate
         data_type: date
+        config:
+          meta:
+            contains_pii: true
       - name: lependdate
         data_type: date
+        config:
+          meta:
+            contains_pii: true
       - name: lep_tf
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
       - name: liep_parent_refusal_date
         data_type: date
+        config:
+          meta:
+            contains_pii: true
       - name: programtypecode
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: home_language
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: advisor_email
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: advisor_phone
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: lunch_balance
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
       - name: salesforce_contact_kipp_hs_class
         data_type: int64
       - name: salesforce_contact_owner_id
@@ -713,20 +903,36 @@ models:
             source_column: graduation_year
       - name: salesforce_contact_owner_phone
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: salesforce_contact_owner_email
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: illuminate_student_id
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
       - name: gifted_and_talented
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: is_504
         data_type: boolean
+        config:
+          meta:
+            contains_pii: true
       - name: ktc_cohort
         data_type: int64
       - name: student_web_id
         data_type: string
         config:
           meta:
+            contains_pii: true
             source_system: PowerSchool
             source_model: stg_powerschool__students
             source_column: student_web_id
@@ -740,16 +946,29 @@ models:
             contains_pii: true
       - name: is_fldoe_fte_2
         data_type: boolean
+        config:
+          meta:
+            contains_pii: true
       - name: is_fldoe_fte_3
         data_type: boolean
+        config:
+          meta:
+            contains_pii: true
       - name: is_fldoe_fte_all
         data_type: boolean
+        config:
+          meta:
+            contains_pii: true
       - name: special_education_code
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: spedlep
         data_type: string
         config:
           meta:
+            contains_pii: true
             source_system: PowerSchool
             source_model: stg_powerschool__studentcorefields
             source_column: spedlep
@@ -758,17 +977,27 @@ models:
         description: Student Limited English Proficiency status.
         config:
           meta:
+            contains_pii: true
             source_system: PowerSchool
             source_model: stg_powerschool__studentcorefields
             source_column: lep_status
       - name: lunch_status
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: lunch_application_status
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: salesforce_graduation_year
         data_type: int64
       - name: pearson_local_student_identifier
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
       - name: student_name
         data_type: string
         description: Last, First, Mi.
@@ -813,14 +1042,29 @@ models:
             source_column: team
       - name: student_email
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: salesforce_id
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: has_fafsa
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: college_match_gpa
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
       - name: college_match_gpa_bands
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: contact_owner_name
         data_type: string
       - name: region_official_name
@@ -837,10 +1081,19 @@ models:
         data_type: string
       - name: home_instruction_enter_date
         data_type: date
+        config:
+          meta:
+            contains_pii: true
       - name: home_instruction_exit_date
         data_type: date
+        config:
+          meta:
+            contains_pii: true
       - name: home_instruction_sp_comment
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: hos
         data_type: string
       - name: school_leader
@@ -849,50 +1102,113 @@ models:
         data_type: string
       - name: best_guess_pathway
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: ada_unweighted_term_q1
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: ada_unweighted_semester_s1
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: unweighted_ada
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: ada_weighted_term_q1
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: ada_weighted_semester_s1
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: weighted_ada
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: absences_unexcused_year
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: ada_unweighted_year_prev
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: ada_weighted_year_prev
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: cumulative_y1_gpa
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: cumulative_y1_gpa_unweighted
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: cumulative_y1_gpa_projected
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: cumulative_y1_gpa_projected_s1
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: cumulative_y1_gpa_projected_s1_unweighted
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: cumulative_y1_gpa_projected_unweighted
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: core_cumulative_y1_gpa
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: earned_credits_cum
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: earned_credits_cum_projected
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: potential_credits_cum
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: next_year_school
         data_type: string
       - name: next_year_schoolid
         data_type: int64
       - name: finalsite_student_id
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: district
         data_type: string
       - name: region_school_level
@@ -901,26 +1217,51 @@ models:
         data_type: string
         description: >
           Region concatenated with school_level_alt. Differs from
-          region_school_level only for KIPP Sumner G5, where school_level_alt =
-          'MS' instead of 'ES' (e.g. CamdenMS instead of CamdenES).
+          region_school_level only for grade 5 and above at KIPP Sumner Academy
+          (AY2025+), where school_level_alt = 'MS' instead of 'ES' (e.g.
+          CamdenMS instead of CamdenES).
       - name: guardian_email
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: academic_year_display
         data_type: string
       - name: next_year_enrollment_history
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: overgrad_fafsa_opt_out
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: grad_iep_exempt_status_overall
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: iep_status
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: ml_status
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: status_504
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: self_contained_status
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: state_studentnumber
         data_type: string
         config:
@@ -931,28 +1272,64 @@ models:
             contains_pii: true
       - name: secondary_state_studentnumber
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: ada
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: met_fafsa_requirement
         data_type: boolean
+        config:
+          meta:
+            contains_pii: true
       - name: is_counseling_services
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
       - name: is_student_athlete
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
       - name: is_tutoring
         data_type: boolean
+        config:
+          meta:
+            contains_pii: true
       - name: is_sipps
         data_type: boolean
+        config:
+          meta:
+            contains_pii: true
       - name: student_slideback
         data_type: boolean
+        config:
+          meta:
+            contains_pii: true
       - name: is_ada_above_or_at_80_cum_gpa_less_2
         data_type: boolean
+        config:
+          meta:
+            contains_pii: true
       - name: aligned_gender
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: enroll_status_string
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: race_ethnicity
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: school_level_alt
         data_type: string
       - name: advisory
@@ -961,13 +1338,20 @@ models:
         data_type: string
         config:
           meta:
+            contains_pii: true
             source_system: PowerSchool
             source_model: stg_powerschool__students
             source_column: state
       - name: ada_above_or_at_80
         data_type: boolean
+        config:
+          meta:
+            contains_pii: true
       - name: fafsa_status_mismatch_category
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: sectionid
         data_type: int64
         description: Internal ID of the course section.
@@ -1108,7 +1492,7 @@ models:
         config:
           meta:
             source_system: PowerSchool
-            source_model: int_powerschool__terms
+            source_model: int_powerschool__terms_spine
             source_column: term
       - name: semester
         data_type: string
@@ -1116,7 +1500,7 @@ models:
         config:
           meta:
             source_system: PowerSchool
-            source_model: int_powerschool__terms
+            source_model: int_powerschool__terms_spine
             source_column: semester
       - name: quarter_start_date
         data_type: date
@@ -1124,7 +1508,7 @@ models:
         config:
           meta:
             source_system: PowerSchool
-            source_model: int_powerschool__terms
+            source_model: int_powerschool__terms_spine
             source_column: term_start_date
       - name: quarter_end_date
         data_type: date
@@ -1132,7 +1516,7 @@ models:
         config:
           meta:
             source_system: PowerSchool
-            source_model: int_powerschool__terms
+            source_model: int_powerschool__terms_spine
             source_column: term_end_date
       - name: quarter_start_date_alt
         data_type: date
@@ -1167,7 +1551,12 @@ models:
             source_column: cc_dateenrolled
       - name: dateleft
         data_type: date
-        description: Raw cc_dateleft for the enrolled course section stint.
+        description: >
+          Raw `cc_dateleft` for the enrolled course section stint. Non-null in
+          both SIS branches, and for an open enrollment it is the day after the
+          section's term ends rather than a departure date, so it cannot be read
+          as a still-enrolled signal. See the column description on
+          `int_students__course_enrollments`.
         config:
           meta:
             source_system: PowerSchool
@@ -1216,8 +1605,15 @@ models:
       - name: section_or_period
         data_type: string
         description: >
-          Period expression for HS students (external_expression); section
-          number for non-HS students (section_number).
+          Display label identifying one section to a school-based staff member.
+          HS combines the external expression (period/day schedule) with the
+          section number, because two HS sections of the same course can meet in
+          the same period with the same teacher, and the period alone does not
+          tell them apart. Non-HS uses the section number alone. Held identical
+          to the column of the same name on
+          int_extracts__course_schedule_by_term, which derives it independently
+          from the same PowerSchool columns for the teacher-facing side of the
+          gradebook audit.
       - name: pct_enrolled_in_quarter
         data_type: float64
         description: >
@@ -1226,7 +1622,8 @@ models:
       - name: rn
         data_type: int64
         description: >
-          Row number within (project, academic_year, studentid, course_number,
-          quarter), ordered by school exitdate desc then CC dateleft desc.
-          Always 1 in this model's output — filtered by a WHERE clause after
-          computing the window, not QUALIFY. Retained for downstream reference.
+          Row number within (project, academic_year, student_number,
+          course_number, quarter), ordered by school exitdate desc then CC
+          dateleft desc. Always 1 in this model's output — filtered by a WHERE
+          clause after computing the window, not QUALIFY. Retained for
+          downstream reference.

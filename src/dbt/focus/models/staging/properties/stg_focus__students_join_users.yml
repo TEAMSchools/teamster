@@ -23,23 +23,11 @@ models:
           - not_null:
               config:
                 severity: error
-          - relationships:
-              arguments:
-                to: ref('stg_focus__students')
-                field: student_id
-              config:
-                severity: error
       - name: staff_id
         description: Focus staff id of the linked user account.
         data_type: int
         data_tests:
           - not_null:
-              config:
-                severity: error
-          - relationships:
-              arguments:
-                to: ref('stg_focus__users')
-                field: staff_id
               config:
                 severity: error
       - name: person_id

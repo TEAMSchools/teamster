@@ -1,10 +1,20 @@
 models:
   - name: stg_amplify__mclass__sftp__pm_student_summary
-    # config:
-    #   materialized: table
+    description: >-
+      Union of the Newark and Paterson package staging models for the live
+      Amplify mCLASS SFTP progress monitoring file, one row per probe.
+      device_date falls back to sync_date when null, repeating the package
+      model's fallback so the union never exposes a raw null device_date.
+      _dbt_source_relation names the source district. Column docs live on the
+      package model yml under src/dbt/amplify/models/mclass/sftp/staging/.
+    config:
+      # materialized: table
+      meta:
+        contains_pii: true
     columns:
       - name: school_name
         data_type: string
+        description: School name as provided in the vendor file.
         data_tests:
           - relationships:
               arguments:

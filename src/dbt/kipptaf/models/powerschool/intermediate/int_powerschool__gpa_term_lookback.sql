@@ -26,21 +26,18 @@ with
             gpa.yearid,
             gpa.gpa_y1,
             gpa.gpa_y1_unweighted,
-            gpa.n_failing_y1,
 
             lb.days_prior,
+
+            /* the snapshot carries n_failing_y1 = 0 on versions with no gpa_y1,
+               which reads as "failing nothing" rather than "not yet graded" */
+            if(gpa.gpa_y1 is not null, gpa.n_failing_y1, null) as n_failing_y1,
         from {{ ref("snapshot_powerschool__gpa_term") }} as gpa
         inner join
             lookbacks as lb
             on gpa.dbt_valid_from < lb.as_of_boundary
             and gpa.dbt_valid_to >= lb.as_of_boundary
-        where
-            gpa.yearid = {{ var("current_academic_year") - 1990 }}
-            /* TODO(#4318): drop once dev-relation ghost rows are purged — the prod
-               snapshot holds permanently-open zz_cbini_* rows injected 2025-12-03 */
-            and regexp_contains(
-                gpa._dbt_source_relation, r'\.`kipp[a-z]+_powerschool`\.'
-            )
+        where gpa.yearid = {{ var("current_academic_year") - 1990 }}
     )
 
 select

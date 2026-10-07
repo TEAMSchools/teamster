@@ -47,7 +47,6 @@ with
     ),
 
     data_stack_school as (
-        -- PART 1A: THE STUDENTS (Actuals) by enroll type
         select
             enrollment_academic_year,
             region,
@@ -85,7 +84,6 @@ with
 
         union all
 
-        -- PART 1B: THE STUDENTS (Actuals) by aligned enroll type
         select
             enrollment_academic_year,
             region,
@@ -123,7 +121,6 @@ with
 
         union all
 
-        -- PART 2: THE GOALS (Targets) - School
         select
             gp.enrollment_academic_year,
             gp.region,
@@ -164,7 +161,6 @@ with
     ),
 
     data_stack_school_grade as (
-        -- PART 1A: THE STUDENTS (Actuals) by enroll type
         select
             enrollment_academic_year,
             region,
@@ -202,7 +198,6 @@ with
 
         union all
 
-        -- PART 1B: THE STUDENTS (Actuals) by aligned enroll type
         select
             enrollment_academic_year,
             region,
@@ -240,7 +235,6 @@ with
 
         union all
 
-        -- PART 2: THE GOALS (Targets) - School
         select
             gp.enrollment_academic_year,
             gp.region,

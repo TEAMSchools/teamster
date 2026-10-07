@@ -18,7 +18,6 @@ select
 
     cast(student_aid_index as int) as student_aid_index,
 
-    /* records */
     school.id as school__id,
     school.object as school__object,
     school.name as school__name,

@@ -18,10 +18,12 @@ from collections.abc import Iterator
 from typing import Any
 
 import pytest
+from dagster import AssetKey
 from dlt.common.configuration.specs import ConnectionStringCredentials
 
 from teamster.libraries.dlt.focus.assets import build_focus_dlt_assets
 from teamster.libraries.dlt.illuminate.assets import build_illuminate_dlt_assets
+from teamster.libraries.dlt.probe import ProbeTable
 
 CREDENTIALS = ConnectionStringCredentials("postgresql+psycopg://localhost:5432/db")
 
@@ -37,6 +39,26 @@ class _RecordingDltResource:
         return iter(())
 
 
+class _StubLog:
+    def info(self, message: str) -> None:
+        pass
+
+
+class _StubRun:
+    def __init__(self) -> None:
+        self.tags: dict[str, str] = {}
+
+
+class _StubContext:
+    def __init__(self, keys: set[Any]) -> None:
+        self.log = _StubLog()
+        self.run = _StubRun()
+        self.selected_asset_keys = keys
+
+
+FOCUS_KEY = AssetKey(["kippmiami", "dlt", "focus", "discipline_referrals"])
+
+
 def _run_kwargs(assets: Any, config: Any = None) -> dict[str, Any]:
     """Invoke the asset body with a recording resource and return its run kwargs.
 
@@ -47,11 +69,18 @@ def _run_kwargs(assets: Any, config: Any = None) -> dict[str, Any]:
 
     kwargs: dict[str, Any] = {"context": None, "dlt": dlt_resource}
 
-    # the focus op takes run config; the illuminate op does not
+    # the focus op takes run config and reads the context; the illuminate op does
+    # neither
     if "config" in assets.op.compute_fn.decorated_fn.__annotations__:
         from teamster.libraries.dlt.focus.assets import FocusDltConfig
+        from teamster.libraries.dlt.probe import ProbeSignatureConfig
 
-        kwargs["config"] = config or FocusDltConfig()
+        kwargs["context"] = _StubContext({FOCUS_KEY})
+        kwargs["config"] = config or FocusDltConfig(
+            probe={
+                "discipline_referrals": ProbeSignatureConfig(count=1, max_cursor=None)
+            }
+        )
 
     # consume the generator so the `yield from dlt.run(...)` line executes
     list(assets.op.compute_fn.decorated_fn(**kwargs))
@@ -64,7 +93,7 @@ def fixture_focus_assets() -> Any:
     return build_focus_dlt_assets(
         sql_database_credentials=CREDENTIALS,
         code_location="kippmiami",
-        table_name="discipline_referrals",
+        tables=[ProbeTable(name="discipline_referrals", cursor_column="updated_at")],
     )
 
 

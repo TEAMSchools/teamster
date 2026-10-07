@@ -1,4 +1,4 @@
--- Guards the school_level decode in int_focus__student_enrollment, which maps
+-- Guards the school_level decode in int_focus__schools, which maps
 -- these SISSchool level labels to the ES/MS/HS abbreviation. A Focus label
 -- rename, or a new level Focus starts assigning, would otherwise null
 -- school_level silently. Any returned row is a failure.

@@ -32,101 +32,49 @@ with
 
     state_test_union as (
         select
-            localstudentidentifier as student_number,
+            student_number,
             academic_year,
-            testscalescore as scale_score,
-            testperformancelevel as `level`,
+            scale_score,
+            performance_level as `level`,
 
-            assessment_name as assessment_type,
+            if(
+                score_source = 'state_nj', assessment_name, 'FAST PM3'
+            ) as assessment_type,
 
-            academic_year + 1 as academic_year_plus,
+            -- grade 3 FAST reads PM1 of the same year, not PM3 of the prior year
+            academic_year + if(
+                score_source = 'state_fl' and administration_period = 'PM1', 0, 1
+            ) as academic_year_plus,
 
             is_proficient_int,
             is_approaching_int,
             is_below_int,
+            raw_subject,
+            source_system,
 
-            case
-                when illuminate_subject = 'Text Study'
-                then 'Reading'
-                when illuminate_subject = 'Mathematics'
-                then 'Math'
-            end as `subject`,
-
-        from {{ ref("int_pearson__all_assessments") }}
+            illuminate_subject_area as `subject`,
+        from {{ ref("int_assessments__state_scores") }}
         where
-            assessment_name = 'NJSLA'
-            and not (assessmentgrade = 'Grade 8' and `subject` like 'Algebra%')
+            (
+                score_source = 'state_nj'
+                and assessment_name = 'NJSLA'
+                and not (grade_level_when_assessed = 8 and raw_subject like 'Algebra%')
+            )
+            or (
+                score_source = 'state_fl'
+                and assessment_name = 'FAST'
+                and scale_score is not null
+                and (
+                    (administration_period = 'PM3' and test_grade != 3)
+                    or (administration_period = 'PM1' and test_grade = 3)
+                )
+            )
 
         union all
 
-        select
-            s.student_number,
-
-            f.academic_year,
-            f.scale_score,
-            f.achievement_level_int as `level`,
-
-            'FAST PM3' as assessment_type,
-
-            f.academic_year + 1 as academic_year_plus,
-
-            f.is_proficient_int,
-            f.is_approaching_int,
-            f.is_below_int,
-
-            if(f.illuminate_subject = 'Text Study', 'Reading', 'Math') as `subject`,
-
-        from {{ ref("int_fldoe__all_assessments") }} as f
-        inner join
-            {{ ref("stg_powerschool__u_studentsuserfields") }} as suf
-            on f.student_id = suf.fleid
-            and f._dbt_source_project = suf._dbt_source_project
-        inner join
-            {{ ref("stg_powerschool__students") }} as s
-            on suf.studentsdcid = s.dcid
-            and suf._dbt_source_project = s._dbt_source_project
-            and s.grade_level >= 4
-        where
-            f.assessment_name = 'FAST'
-            and f.administration_window = 'PM3'
-            and f.scale_score is not null
-
-        union all
-
-        select
-            s.student_number,
-
-            f.academic_year,
-            f.scale_score,
-            f.achievement_level_int as `level`,
-
-            'FAST PM3' as assessment_type,
-
-            f.academic_year as academic_year_plus,
-
-            f.is_proficient_int,
-            f.is_approaching_int,
-            f.is_below_int,
-
-            if(f.illuminate_subject = 'Text Study', 'Reading', 'Math') as `subject`,
-
-        from {{ ref("int_fldoe__all_assessments") }} as f
-        inner join
-            {{ ref("stg_powerschool__u_studentsuserfields") }} as suf
-            on f.student_id = suf.fleid
-            and f._dbt_source_project = suf._dbt_source_project
-        inner join
-            {{ ref("stg_powerschool__students") }} as s
-            on suf.studentsdcid = s.dcid
-            and suf._dbt_source_project = s._dbt_source_project
-            and s.grade_level = 3
-        where
-            f.assessment_name = 'FAST'
-            and f.administration_window = 'PM1'
-            and f.scale_score is not null
-
-        union all
-
+        -- `star_discipline` is not an illuminate_subject value (it is
+        -- already Reading/Math), so this branch stays outside the
+        -- crosswalk's scope and keeps deriving `subject` directly.
         select
             student_display_id as student_number,
 
@@ -142,12 +90,29 @@ with
             if(state_benchmark_category_level = 4, 1, 0) as is_approaching_int,
             if(state_benchmark_category_level = 5, 1, 0) as is_below_int,
 
+            cast(null as string) as raw_subject,
+            cast(null as string) as source_system,
+
             if(star_discipline = 'ELA', 'Reading', star_discipline) as `subject`,
         from {{ ref("stg_renlearn__star") }}
         where
             rn_subject_round = 1
             and screening_period_window_name = 'Spring'
             and grade_level between 1 and 2
+    ),
+
+    state_test_resolved as (
+        select
+            s.* except (raw_subject, source_system, `subject`),
+
+            case
+                when s.source_system is null
+                then s.`subject`
+                when s.`subject` = 'Text Study'
+                then 'Reading'
+                else 'Math'
+            end as `subject`,
+        from state_test_union as s
     ),
 
     iready as (
@@ -304,7 +269,7 @@ with
             and not cc.is_dropped_section
             and cc.rn_student_year_illuminate_subject_desc = 1
         left join
-            state_test_union as st
+            state_test_resolved as st
             on co.student_number = st.student_number
             and co.academic_year = st.academic_year_plus
             and co.iready_subject = st.subject

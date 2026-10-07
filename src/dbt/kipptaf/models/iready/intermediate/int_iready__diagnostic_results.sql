@@ -10,6 +10,18 @@ with
         }}
     ),
 
+    sourced as (
+        select
+            * except (student_id),
+
+            {{
+                focus_student_number(
+                    "student_id", "academic_year_int", extract_source_project()
+                )
+            }} as student_id,
+        from union_relations
+    ),
+
     transformations as (
         select
             dr.* except (_dbt_source_relation),
@@ -35,7 +47,7 @@ with
                 when 'kippmiami'
                 then 'FL'
             end as state_assessment_type,
-        from union_relations as dr
+        from sourced as dr
         left join
             {{ ref("int_people__location_crosswalk") }} as lc
             on dr.school = lc.location_name
@@ -88,7 +100,7 @@ with
 
             row_number() over (
                 partition by _dbt_source_relation, student_id, academic_year, subject
-                order by completion_date desc
+                order by completion_date desc, rn_subj_day asc
             ) as rn_subj_year,
         from transformations
     )
@@ -138,10 +150,6 @@ select
         then 'At/Above'
     end as iready_proficiency,
 
-    case
-        wc.subject when 'Reading' then 'Text Study' when 'Math' then 'Mathematics'
-    end as illuminate_subject,
-
     if(
         cwp.scale_low - wc.most_recent_overall_scale_score <= 0,
         0,
@@ -163,7 +171,7 @@ select
             wc.academic_year,
             wc.subject,
             rt.name
-        order by wc.completion_date desc
+        order by wc.completion_date desc, wc.rn_subj_day asc
     ) as rn_subj_round,
 
 from window_calcs as wc

@@ -31,6 +31,10 @@ select
 
     tac.yearid,
 
+    cw.week_start_monday,
+    cw.week_end_sunday,
+    cw.week_number_academic_year,
+
     coalesce(ada_0.att_code, ada_1.att_code) as att_code,
 
     if(ada_0.id is not null, 0, aci_real.attendance_value)
@@ -77,3 +81,8 @@ left join
     on mv.fteid = aci_potential.fteid
     and mv.attendance_conversion_id = aci_potential.attendance_conversion_id
     and tac.id = aci_potential.input_value
+left join
+    {{ ref("int_powerschool__calendar_week") }} as cw
+    on mv.schoolid = cw.schoolid
+    and tac.yearid = cw.yearid
+    and mv.calendardate between cw.week_start_monday and cw.week_end_sunday

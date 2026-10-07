@@ -253,7 +253,25 @@ select
     *,
 
     'NJSLA Science' as assessment_name,
+    'NJSLA Science' as assessment_version,
     'Science' as discipline,
+
+    if(
+        `subject` = 'English Language Arts/Literacy', 'English Language Arts', `subject`
+    ) as subject_area,
+
+    if(`period` = 'FallBlock', 'Fall', `period`) as administration_period,
+
+    case
+        testcode
+        when 'SC05'
+        then 'SCI05'
+        when 'SC08'
+        then 'SCI08'
+        when 'SC11'
+        then 'SCI11'
+        else testcode
+    end as module_code,
 
     if(testperformancelevel >= 3, true, false) as is_proficient,
 

@@ -15,7 +15,7 @@ with
                     null
                 )
             ) as n_mem_ytd,
-        from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }}
+        from {{ ref("int_students__attendance_daily") }}
         where membershipvalue = 1
         group by studentid, yearid, _dbt_source_relation, _dbt_source_project
     )
@@ -51,7 +51,7 @@ inner join
     and co.yearid = sub.yearid
     and co._dbt_source_project = sub._dbt_source_project
 left join
-    {{ ref("int_powerschool__calendar_rollup") }} as d
+    {{ ref("int_students__calendar_rollup") }} as d
     on co.schoolid = d.schoolid
     and co.yearid = d.yearid
     and co.track = d.track

@@ -1,8 +1,6 @@
 models:
   - name: stg_amplify__mclass__api__pm_student_summary
     columns:
-      - name: surrogate_key
-        data_type: string
       - name: account_name
         data_type: string
       - name: alternate_assessment

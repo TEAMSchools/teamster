@@ -108,6 +108,8 @@ class DiagnosticResults(IReadyBaseModel):
     algebra_and_algebraic_thinking_scale_score: str | None = None
     annual_stretch_growth_measure: str | None = None
     annual_typical_growth_measure: str | None = None
+    assessment_gain: str | None = None
+    baseline_assessment_y_n: str | None = None
     baseline_diagnostic_y_n: str | None = None
     completion_date: str | None = None
     comprehension_informational_text_placement: str | None = None
@@ -135,6 +137,7 @@ class DiagnosticResults(IReadyBaseModel):
     measurement_and_data_relative_placement: str | None = None
     measurement_and_data_scale_score: str | None = None
     mid_on_grade_level_scale_score: str | None = None
+    most_recent_assessment_ytd_y_n: str | None = None
     most_recent_diagnostic_y_n: str | None = None
     most_recent_diagnostic_ytd_y_n: str | None = None
     number_and_operations_placement: str | None = None
@@ -167,6 +170,7 @@ class DiagnosticResults(IReadyBaseModel):
     reading_difficulty_indicator_y_n: str | None = None
     rush_flag: str | None = None
     start_date: str | None = None
+    tactile_graphics: str | None = None
     vocabulary_placement: str | None = None
     vocabulary_relative_placement: str | None = None
     vocabulary_scale_score: str | None = None

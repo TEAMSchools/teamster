@@ -1,27 +1,17 @@
 models:
   - name: stg_pearson__njsla_science
+    description: >
+      NJSLA science student test records from Pearson, unioned across Newark and
+      Camden (district stg_pearson__njsla_science) and Paterson
+      (int_pearson__njsla_science). Passes through every column of those
+      district models, which document them.
     config:
       materialized: table
+      meta:
+        contains_pii: true
     columns:
-      - name: subject_area
-        data_type: string
-        description:
-          Normalized from `subject` ('English Language Arts/Literacy' → 'English
-          Language Arts').
-      - name: module_code
-        data_type: string
-        description:
-          Normalized from `testcode` (SC05/SC08/SC11 remapped to
-          SCI05/SCI08/SCI11).
-      - name: administration_period
-        data_type: string
-        description: Normalized from `period` ('FallBlock' → 'Fall').
       - name: _dbt_source_project
         data_type: string
-        description: Source project (extract_source_project()) — e.g.,
-          'kippnewark' / 'kippcamden'. Per #3142, materialized at the union model so consumers don't re-derive per-call.
-      - name: test_date
-        data_type: date
-        description: >-
-          Date the student took the assessment, derived from the earliest online
-          unit start datetime, falling back to the paper attempt create date.
+        description: >
+          District project the row came from, extracted from
+          _dbt_source_relation (kippnewark, kippcamden, or kipppaterson).

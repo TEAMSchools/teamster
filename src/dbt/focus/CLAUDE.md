@@ -19,11 +19,6 @@ the Focus import column order is contract-fixed. ST06 firing is
 expression-shape-dependent, so keep the ignore even when a diff makes it look
 vestigial.
 
-## Data Flow
-
-Focus Postgres → dlt `sql_database` → BigQuery (`dagster_<project>_dlt_focus`) →
-dbt staging models → dbt intermediate models
-
 ## Focus field value codes
 
 A Focus custom field's allowed value codes live in
@@ -97,6 +92,24 @@ positional `custom_N` / `custom_field_N` slots DO resolve to catalog titles
 catalog row): `course_subjects` (no `CourseSubject` class) and
 `master_courses.custom_field_11`.
 
+## Identifier spaces
+
+**Three distinct school identifier spaces.** Focus `schools.id` is an internal
+integer (14, 15, 58...); `school_number` is a Florida school code (`2008A`); the
+network id is `powerschool_school_id`, reachable only via
+`stg_google_sheets__people__locations.focus_school_id`. Joining the wrong one
+null-fills every school attribute with no error.
+
+**Same column name, different concept.** Focus `fteid` holds a Florida education
+identifier string (`FL000007024992`); the network `fteid` is a PowerSchool
+numeric id. Casting fails outright and `safe_cast` would null real data under a
+misleading heading — drop such columns and let the consuming union null-fill.
+
+The student id has the same shape of trap: `students.student_id` is the network
+student number prefixed with `8400` (Miami-Dade's FLDOE district number), and
+`int_focus__student_enrollment_roster.student_number` holds that PREFIXED form
+despite its name, so joining on it by name returns zero matches with no error.
+
 ## Source data conventions
 
 **Soft-delete.** Focus `deleted INT64` is `NULL` for live rows and `1` for
@@ -111,41 +124,29 @@ attributes, not delete sentinels.
 students→`student_id`, users→`staff_id` (`profile_id` is null for nearly all
 rows).
 
+**Add a cross-table `relationships` test only for an orphan you have seen
+persist.** The load has no cross-table snapshot: every table is its own
+`@dlt.resource` with `write_disposition="replace"` and `parallelized=True`, each
+opening its own engine, so two related tables are read seconds apart from a live
+Postgres. A row written between the parent read and the child read lands as an
+orphan until the next load, so a `relationships` test here fires on teacher
+activity, not on defects. The one kept, `stg_focus__test_history_scores`
+`administration_id`, guards a persistent orphan. Any `relationships` test stays
+`severity: warn`, because at `error` a teacher saving mid-load fails the whole
+district build. Single-table tests (`unique`, `not_null`) stay
+`severity: error`, since one table IS read atomically.
+
 ## Model Structure
 
-```text
-models/
-  staging/
-    sources-bigquery.yml          # BQ-native sources (dlt-loaded, not external)
-    stg_focus__<table>.sql        # one contract-enforced model per source table
-    properties/
-      stg_focus__<table>.yml      # contract columns, tests, descriptions
-```
-
-Staging models are contract-enforced (`contract: enforced: true`, set at the
-`staging` directory level in `dbt_project.yml`): every projected column is
-declared with a `data_type` in `properties/`, with a `unique` + `not_null` PK
-test at `severity: error`. Each model selects from a
-`{{ source("focus", ...) }}` relation, drops dlt bookkeeping (`_dlt_*`) and the
-audit-quad, and applies the soft-delete filter where the table has one. Data
-comes from dlt (not external tables), so sources use `sources-bigquery.yml` with
-a plain schema var. Intermediate (`int_focus__*`) models layer on top.
-
-## Key Variables
-
-| Variable                | Default                            | Notes                           |
-| ----------------------- | ---------------------------------- | ------------------------------- |
-| `focus_schema`          | `dagster_<project_name>_dlt_focus` | BQ dataset with dlt-loaded data |
-| `current_academic_year` | `0`                                | Overridden per district         |
-| `current_fiscal_year`   | `0`                                | Overridden per district         |
-| `local_timezone`        | `UTC`                              | Overridden per district         |
+Staging models declare every projected column with a `data_type` in
+`properties/`, plus a `unique` + `not_null` PK test at `severity: error`. Each
+model selects from a `{{ source("focus", ...) }}` relation, drops dlt
+bookkeeping (`_dlt_*`) and the audit-quad, and applies the soft-delete filter
+where the table has one. Data comes from dlt (not external tables), so sources
+use `sources-bigquery.yml` with a plain schema var. Intermediate
+(`int_focus__*`) models layer on top.
 
 ## Cross-Project Usage
-
-This project is never run standalone in production. District projects reference
-it as a dbt package and override variables. `{{ project_name }}` in source
-definitions resolves to the consuming district project name, enabling correct
-Dagster asset key lineage.
 
 To add a NEW kipptaf dependency on Focus data in a single PR, declare the dlt
 landing dataset (`dagster_kippmiami_dlt_focus`) as a BQ-native

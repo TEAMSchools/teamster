@@ -73,10 +73,15 @@ models:
         data_type: string
         description:
           The parent's mobile number as 10 digits, with the US country code and
-          any extension digits removed. Null when they have no mobile on file,
-          in which case `email` is present. A number that does not reduce to
-          exactly 10 digits is an upstream data-entry typo and is dropped rather
-          than sent in a form ParentSquare would reject.
+          any extension digits removed. Falls back to the parent's untyped
+          Finalsite number when no number is labelled Cell — such a number
+          reaches none of the typed columns, and a parent carrying neither a
+          mobile nor an email is dropped as undeliverable, so without the
+          fallback these families get no ParentSquare account at all. Null when
+          they have no number on file at all, in which case `email` is present.
+          A number that does not reduce to exactly 10 digits is an upstream
+          data-entry typo and is dropped rather than sent in a form ParentSquare
+          would reject.
         config:
           meta:
             contains_pii: true
@@ -97,3 +102,72 @@ models:
         config:
           meta:
             contains_pii: true
+
+unit_tests:
+  - name: test_parents_untyped_phone_fills_mobile
+    description:
+      Locks the untyped-phone fallback and its precedence. Finalsite lets a
+      number be saved with no Cell/Home/Work label, and such a number reaches
+      none of the typed columns — a parent carrying only one had no mobile and
+      no email, so the deliverability filter dropped them and they never got a
+      ParentSquare account. contact_1 carries only an untyped number and must
+      surface it as mobile; contact_2 carries both a typed Cell and an untyped
+      number, and the typed Cell must win. A flipped coalesce argument order
+      would silently resume dropping the first parent.
+    model: rpt_parentsquare__parents
+    given:
+      - input: ref('int_students__contacts')
+        format: sql
+        rows: |
+          select
+            400001 as student_number,
+            'kippnewark' as _dbt_source_project,
+            'contact_1' as contact_slot,
+            'parent' as relationship,
+            'Nan' as contact_first_name,
+            'Untyped' as contact_last_name,
+            cast(null as string) as email_current,
+            cast(null as string) as phone_mobile,
+            cast(null as string) as phone_home,
+            cast(null as string) as phone_work,
+            '+18564730100' as phone_untyped
+          union all
+          select
+            400001, 'kippnewark', 'contact_2', 'parent',
+            'Ted', 'Typed', cast(null as string), '+18564730200',
+            cast(null as string), cast(null as string), '+18564730300'
+      - input: ref('int_extracts__student_enrollments')
+        format: sql
+        rows: |
+          select
+            400001 as student_number,
+            'kippnewark' as _dbt_source_project,
+            2026 as academic_year,
+            1 as rn_year,
+            false as is_out_of_district,
+            0 as enroll_status,
+            73253 as schoolid
+    expect:
+      rows:
+        - {
+            first_name: Nan,
+            last_name: Untyped,
+            relationship: parent,
+            mobile: "8564730100",
+            secondary_phone: null,
+            email: null,
+            school_id: "73253",
+            code_location: kippnewark,
+            student_id: "400001",
+          }
+        - {
+            first_name: Ted,
+            last_name: Typed,
+            relationship: parent,
+            mobile: "8564730200",
+            secondary_phone: null,
+            email: null,
+            school_id: "73253",
+            code_location: kippnewark,
+            student_id: "400001",
+          }

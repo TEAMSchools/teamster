@@ -46,7 +46,6 @@ select
             '1FAIpQLSdxkHheRKAQQL5WjhbWwwGiC34weMX1LKcIDAt94cR78csfXw',
             '/viewform',
             '?usp=pp_url',
-            /* Name + ID */
             '&entry.1744062351=',
             coalesce(given_name, legal_given_name),
             ' ',
@@ -56,49 +55,35 @@ select
             ' (',
             ltrim(cast(employee_number as string format '999999')),
             ')',
-            /* Race/Ethnicity */
             '&entry.1688914034=',
             replace(coalesce(race_ethnicity, ''), ', ', '&entry.1688914034='),
-            /* gender identity */
             '&entry.600247632=',
             coalesce(gender_identity, ''),
-            /* Community Grew Up */
             '&entry.2102492257=',
             replace(coalesce(community_grew_up, ''), ', ', '&entry.2102492257='),
-            /* Community Work Exp */
             '&entry.1197736651=',
             replace(
                 coalesce(community_professional_exp, ''), ', ', '&entry.1197736651='
             ),
-            /* languages spoken */
             '&entry.1551531542=',
             replace(coalesce(languages_spoken, ''), ',', '&entry.1551531542='),
-            /* additional languages */
             '&entry.53823493=',
             coalesce(additional_languages, ''),
-            /* level of education */
             '&entry.928329961=',
             coalesce(level_of_education, ''),
-            /* undergraduate school */
             '&entry.844913390=',
             -- trunk-ignore(sqlfluff/CV10)
             coalesce(replace(undergraduate_school, "'", ""), ''),
-            /* years outside of kipp */
             '&entry.2136123484=',
             coalesce(cast(years_exp_outside_kipp as string), ''),
-            /* years teaching njfl */
             '&entry.2038589601=',
             coalesce(cast(years_teaching_in_njfl as string), ''),
-            /* years outside njfl */
             '&entry.1922494504=',
             coalesce(cast(years_teaching_outside_njfl as string), ''),
-            /* alumni status */
             '&entry.1216415935=',
             coalesce(alumni_status, ''),
-            /* relay status */
             '&entry.553510009=',
             coalesce(relay_status, ''),
-            /* path to education' */
             '&entry.1130804124=',
             replace(coalesce(path_to_education, ''), ',', '&entry.1130804124='),
             if(

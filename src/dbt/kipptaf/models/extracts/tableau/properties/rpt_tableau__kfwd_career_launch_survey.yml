@@ -165,11 +165,16 @@ models:
         description:
           Postsecondary advisor assigned to the alumnus on their Salesforce
           contact record.
+      - name: college_counselor
+        data_type: string
+        description:
+          College counselor assigned to the alumnus, resolved from the
+          counselor's own Salesforce contact record.
       - name: advisor
         data_type: string
         description:
           Effective advisor for the alumnus — 'Collab' when the advising
-          provider is KIPP NYC, otherwise the Salesforce contact owner.
+          provider is KIPP NYC, otherwise the alumnus's college counselor.
       - name: high_school_graduated_from
         data_type: string
         description:
@@ -301,3 +306,9 @@ models:
           Whether all seven KFWD career conversation checklist items are marked
           complete for the alumnus in the Career Conversation Tracker AppSheet
           app. False when any item is incomplete or no conversation is recorded.
+      - name: last_ccr_date
+        data_type: date
+        description:
+          Contact note date of the alumnus's most recent Career Conversation
+          (CC1 through CC5) record in Salesforce, across all academic years.
+          NULL when no Career Conversation note is logged.

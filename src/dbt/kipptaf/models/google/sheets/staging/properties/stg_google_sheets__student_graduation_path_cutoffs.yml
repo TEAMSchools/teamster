@@ -1,17 +1,136 @@
 models:
   - name: stg_google_sheets__student_graduation_path_cutoffs
+    description: >-
+      Minimum scores a student must reach to satisfy a New Jersey graduation
+      pathway, maintained by hand from the NJDOE broadcast that publishes them
+      for each graduating class. One row per cohort, discipline, score type and
+      assessment version. NJDOE sets the state assessment cut score after the
+      administration is scored, so rows for a class can only be added once that
+      broadcast lands. The alternative assessment menu has held the same values
+      since the class of 2024.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - cohort
+              - discipline
+              - score_type
+              - assessment_version
+          config:
+            severity: error
     columns:
-      - name: Cohort
+      - name: cohort
         data_type: int64
-      - name: Pathway
+        description: >-
+          Graduating class the cut score applies to, matched against a student's
+          entry cohort. A retained or accelerated student sits the assessment
+          with a different class than their cohort, so a cohort can legitimately
+          need rows for more than one assessment version.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+
+      - name: pathway
         data_type: string
-      - name: Pathway_Option
+        description: >-
+          Broad pathway family the option belongs to, either State Assessment or
+          College Entrance. Carried for readability on the sheet and not used by
+          any downstream model.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - accepted_values:
+              arguments:
+                values: [State Assessment, College Entrance]
+              config:
+                severity: error
+
+      - name: pathway_option
         data_type: string
-      - name: Discipline
+        description: >-
+          Assessment the student may use to meet the pathway. Both NJGPA
+          versions share the value NJGPA so that a change of test version does
+          not add a new option to the downstream pivot.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - accepted_values:
+              arguments:
+                values: [NJGPA, ACT, SAT, PSAT10, PSAT NMSQT]
+              config:
+                severity: error
+
+      - name: assessment_version
         data_type: string
-      - name: Score_Type
+        description: >-
+          Version of the assessment the cut score belongs to. NJGPA rows carry
+          NJGPA for the retired Pearson form and NJGPA-A for the Cambium
+          adaptive form, which use different score scales and therefore
+          different cut scores. Every other row repeats pathway_option, since
+          those assessments have only one version. Scores join on this value so
+          that a score is only ever compared against the threshold set for its
+          own scale.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - accepted_values:
+              arguments:
+                values: [NJGPA, NJGPA-A, ACT, SAT, PSAT10, PSAT NMSQT]
+              config:
+                severity: error
+
+      - name: discipline
         data_type: string
-      - name: Pathway_Code
+        description: Subject the cut score applies to.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - accepted_values:
+              arguments:
+                values: [ELA, Math]
+              config:
+                severity: error
+
+      - name: score_type
         data_type: string
-      - name: Cutoff
+        description: >-
+          Specific score within the assessment that the cut score is measured
+          against, matching the score type reported by the source system. The
+          two NJGPA versions report the same codes, ELAGP and MATGP, which is
+          why assessment_version is needed to tell their cut scores apart.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+
+      - name: pathway_code
+        data_type: string
+        description: >-
+          Letter New Jersey uses to report which pathway the student met,
+          written back to PowerSchool for state reporting. S is the state
+          assessment, E is ACT, D is SAT, J is PSAT10 and K is PSAT/NMSQT.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - accepted_values:
+              arguments:
+                values: [S, E, D, J, K]
+              config:
+                severity: error
+
+      - name: cutoff
         data_type: int64
+        description: >-
+          Lowest score that meets the pathway for this cohort, discipline, score
+          type and assessment version. A student meets the pathway when their
+          score is greater than or equal to this value.
+        data_tests:
+          - not_null:
+              config:
+                severity: error

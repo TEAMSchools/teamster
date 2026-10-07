@@ -31,13 +31,11 @@ with
                 or (
                     home_business_unit_name
                     in ('TEAM Academy Charter School', 'KIPP Cooper Norcross Academy')
-                    and job_title in (
-                        'Director School Operations',
-                        'Director Campus Operations',
-                        'Managing Director of School Operations',
-                        'Managing Director of Operations',
-                        'Fellow School Operations Director'
-                    )
+                    and home_department_name = 'Operations'
+                    and contains_substr(job_title, 'Director')
+                    -- Associate Directors of School Operations are excluded by
+                    -- decision, not by oversight
+                    and not contains_substr(job_title, 'Associate')
                 )
                 or (
                     home_business_unit_name

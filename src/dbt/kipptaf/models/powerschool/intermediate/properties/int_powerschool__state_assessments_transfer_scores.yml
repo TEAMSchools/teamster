@@ -1,0 +1,29 @@
+models:
+  - name: int_powerschool__state_assessments_transfer_scores
+    description: >-
+      Union of each NJ district's
+      int_powerschool__state_assessments_transfer_scores (the powerschool
+      package model). Column docs and the per-instance tests live there; this
+      wrapper adds _dbt_source_project so studentid, which is only unique within
+      one PowerSchool instance, can be disambiguated downstream. Paterson has no
+      holder configured and contributes no rows.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - _dbt_source_project
+              - studenttestid
+              - score_name
+          config:
+            severity: error
+    columns:
+      - name: _dbt_source_relation
+        data_type: string
+        description: Source relation identifier from dbt_utils.union_relations.
+
+      - name: _dbt_source_project
+        data_type: string
+        description: >-
+          District code location derived from _dbt_source_relation. Needed to
+          disambiguate studentid, which is only unique within a single
+          PowerSchool instance.

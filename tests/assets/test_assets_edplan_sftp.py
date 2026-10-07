@@ -56,3 +56,9 @@ def test_edplan_kippnewark():
     from teamster.code_locations.kippnewark.edplan.assets import njsmart_powerschool
 
     _test_asset(asset=njsmart_powerschool, code_location="kippnewark")
+
+
+def test_edplan_kipppaterson():
+    from teamster.code_locations.kipppaterson.edplan.assets import njsmart_powerschool
+
+    _test_asset(asset=njsmart_powerschool, code_location="kipppaterson")

@@ -1,0 +1,136 @@
+models:
+  - name: int_focus__attendance_period
+    description: >-
+      Focus class-period attendance with both attendance codes resolved to their
+      titles and excused/tardy flags — one row per student per school date per
+      course period, the same grain as stg_focus__attendance_period. Both code
+      columns are attendance_codes ids here, unlike attendance_day where the
+      daily code is a short_name. Deliberately does not join course_periods or
+      courses: int_focus__schedule already resolves those from course_period_id,
+      and duplicating that resolution would mean two models to change when it
+      changes. Internal-only — a rpt_ view must sit between this model and any
+      external consumer.
+    columns:
+      - name: student_attendance_period_id
+        description: >-
+          Primary key — Focus attendance_period id; one row per student per
+          school date per course period.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: academic_year
+        description: >-
+          Focus school year start year, resolved from the marking period because
+          attendance_period carries no syear of its own.
+      - name: schoolid
+        description: >-
+          Focus school id, resolved from the marking period. Null on rows whose
+          marking_period_id does not resolve.
+      - name: student_id
+        description: >-
+          Focus student id. Note this is the network student number prefixed
+          with `8400` (Miami-Dade's FLDOE district number), not the bare student
+          number.
+        config:
+          meta:
+            contains_pii: true
+      - name: school_date
+        description: Calendar date the attendance was recorded for.
+      - name: period_id
+        description: Focus school period id the attendance was taken in.
+      - name: course_period_id
+        description: >-
+          Focus course period (section) the attendance was taken in. Join
+          int_focus__schedule on this to reach course, teacher and room.
+      - name: marking_period_id
+        description: Focus marking-period id the school date falls in.
+      - name: attendance_code
+        description: >-
+          Official attendance_codes id recorded for the period — the code of
+          record after any office correction.
+      - name: attendance_teacher_code
+        description: >-
+          attendance_codes id the teacher originally entered. Differs from
+          attendance_code where the office amended the record, and is null where
+          the teacher did not take attendance.
+      - name: attendance_reason
+        description: Reason code recorded alongside the attendance.
+      - name: hourly_attendance
+        description: Whether the period is tracked as hourly attendance.
+      - name: hours
+        description: Hours credited for the period.
+      - name: minutes_present
+        description: Minutes the student was present for the period.
+      - name: minutes_absent
+        description: Minutes the student was absent for the period.
+      - name: breaks
+        description: Number of breaks recorded during the period.
+      - name: break_minutes
+        description: Total break minutes recorded during the period.
+      - name: break_times
+        description: Break start and end times recorded during the period.
+      - name: break_out_time
+        description: Time the student left for a break.
+      - name: admin
+        description: Whether the row was entered administratively.
+      - name: admin_user_id
+        description: Focus user id of the administrator who recorded the row.
+      - name: mass_assigned
+        description: Whether the code was applied by a mass-assignment action.
+      - name: notified
+        description: Whether a notification was sent for the row.
+      - name: notified_callouts
+        description: Callout notifications sent for the row.
+      - name: last_updated_user
+        description: Identifier of the user who last updated the row.
+      - name: last_updated_date
+        description: Source last-updated timestamp.
+      - name: imported
+        description: Y/N — whether the attendance row was imported.
+      - name: attendance_code_title
+        description: >-
+          Readable name of the official attendance code (Present, Tardy, Absent
+          Unexcused, Absent Excused, Absent Documented).
+      - name: attendance_code_short_name
+        description: Abbreviated official attendance code (P, T, U, AE, AD).
+      - name: attendance_code_type
+        description: >-
+          Whether the official code is teacher-entered or official
+          (office-entered).
+      - name: attendance_code_state_code
+        description: State-reported attendance code — P present, A absent.
+      - name: attendance_code_excused
+        description: Y when the official code marks the absence excused.
+      - name: attendance_code_tardy
+        description: Y when the official code represents a tardy.
+      - name: attendance_teacher_code_title
+        description: Readable name of the code the teacher originally entered.
+      - name: attendance_teacher_code_short_name
+        description: Abbreviated teacher-entered attendance code.
+      - name: attendance_teacher_code_type
+        description: >-
+          Focus's own classification of the code the teacher entered — teacher
+          or official. Independent of which column held it: a teacher-entered
+          code can itself be classified official, and usually the official code
+          is classified teacher.
+      - name: attendance_teacher_code_state_code
+        description: State-reported code for the teacher-entered code.
+      - name: attendance_teacher_code_excused
+        description: Y when the teacher-entered code marks the absence excused.
+      - name: attendance_teacher_code_tardy
+        description: Y when the teacher-entered code represents a tardy.
+      - name: marking_period_title
+        description: Marking-period name from stg_focus__marking_periods.
+      - name: marking_period_short_name
+        description: Abbreviated marking-period name.
+      - name: marking_period_type
+        description: >-
+          Marking-period granularity (year, semester, quarter, progress period).
+      - name: marking_period_start_date
+        description: First date of the marking period.
+      - name: marking_period_end_date
+        description: Last date of the marking period.

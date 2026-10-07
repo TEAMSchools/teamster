@@ -23,11 +23,11 @@ models:
       - name: staff_key
         data_type: string
         description: Foreign key to `dim_staff.staff_key` — the reportee.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_staff')
-            to_columns: [staff_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_staff')
+              to_columns: [staff_key]
         data_tests:
           - not_null
           - relationships:
@@ -39,11 +39,11 @@ models:
         description: >-
           Foreign key to `dim_staff.staff_key` — the manager for this period.
           Nullable: a primary reporting-relationship row may carry no manager.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_staff')
-            to_columns: [staff_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_staff')
+              to_columns: [staff_key]
         data_tests:
           - relationships:
               arguments:

@@ -1,5 +1,8 @@
 models:
   - name: rpt_deanslist__final_grades
+    description: >-
+      Pushes current-year final grades to DeansList for the regions that use it.
+      Miami is excluded because it no longer uses DeansList.
     columns:
       - name: student_number
         data_type: int64

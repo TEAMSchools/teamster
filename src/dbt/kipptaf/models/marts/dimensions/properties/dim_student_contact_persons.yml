@@ -123,8 +123,7 @@ unit_tests:
             500001 as student_number,
             'kippnewark' as _dbt_source_project,
             'contact_1' as contact_slot,
-            'con1' as finalsite_contact_id,
-            cast(null as string) as personid,
+            'con1' as person_identity,
             'Jane Doe1' as contact_name,
             'jane1@example.com' as email_current,
             cast(null as string) as phone_mobile,
@@ -135,20 +134,20 @@ unit_tests:
             '1 Main St' as address_home
           union all
           select
-            500001, 'kippnewark', 'contact_2', 'con2', cast(null as string),
+            500001, 'kippnewark', 'contact_2', 'con2',
             'Jane Doe2', 'jane2@example.com', cast(null as string),
             cast(null as string), cast(null as string), cast(null as string),
             '+19170000002', '1 Main St'
           union all
           select
-            500001, 'kippnewark', 'contact_3', 'con3', cast(null as string),
+            500001, 'kippnewark', 'contact_3', 'con3',
             'Jane Doe3', 'jane3@example.com', cast(null as string),
             cast(null as string), cast(null as string), cast(null as string),
             '+19170000003', '1 Main St'
           union all
           select
             500001, 'kippnewark', 'emergency_1', cast(null as string),
-            cast(null as string), 'Jane Doe4', cast(null as string),
+            'Jane Doe4', cast(null as string),
             cast(null as string), cast(null as string), cast(null as string),
             cast(null as string), '+19170000004', cast(null as string)
     expect:

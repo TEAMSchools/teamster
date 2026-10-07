@@ -5,9 +5,13 @@ models:
       employee numbers and contact attributes of the school leader, head of
       school, director of school operations (DSO), managing director of school
       operations (MDSO), and regional managing director of operations (MDO).
-      Derived from `int_people__staff_roster` after filtering to the relevant
-      leadership job titles. Grouped on `home_work_location_reporting_name` so
-      an ADP rename does not split a school into two rows.
+      The school leader, DSO, and MDO are picked from `int_people__staff_roster`
+      by job title. Their managers (head of school, MDSO) are resolved through
+      `reports_to_employee_number` against every non-terminated employee, with
+      no title filter, because those managers hold varied titles (Head of
+      Schools, Managing Director, Chief Academic Officer). Grouped on
+      `home_work_location_reporting_name` so an ADP rename does not split a
+      school into two rows.
     config:
       materialized: table
     columns:
@@ -55,8 +59,11 @@ models:
         data_type: string
       - name: head_of_school_employee_number
         description: |
-          Employee number of the Head of School (the School Leader's
-          supervisor).
+          Employee number of the School Leader's manager, taken from the School
+          Leader's `reports_to_employee_number` with no job-title filter. Today
+          that is a Head of Schools, Managing Director, or Chief Academic
+          Officer; check `head_of_school_job_title` before treating the name as
+          a Head of Schools. NULL only when the school has no School Leader.
         data_type: int64
       - name: head_of_school_preferred_name_lastfirst
         description: Head of School's preferred name in `Last, First` format.
@@ -93,8 +100,10 @@ models:
         data_type: string
       - name: mdso_employee_number
         description: |
-          Employee number of the Managing Director of School Operations (the
-          DSO's supervisor).
+          Employee number of the DSO's manager, taken from the DSO's
+          `reports_to_employee_number` with no job-title filter. Usually the
+          Managing Director of School Operations; see `mdso_job_title`. NULL
+          when the school has no DSO.
         data_type: int64
       - name: mdso_preferred_name_lastfirst
         description: MDSO's preferred name in `Last, First` format.

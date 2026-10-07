@@ -1,5 +1,9 @@
 models:
   - name: rpt_tableau__college_assessment_dashboard_historic
+    description: >-
+      **Not evaluated for Miami.** This model is disabled and never compiled. It
+      also covers the college-testing population Miami has no cohort for.
+      Recorded on #4996.
     config:
       enabled: false
     columns:

@@ -121,8 +121,10 @@ class University(UniversityID):
     city: str | None = None
     name: str | None = None
     object: str | None = None
+    public_school: bool | None = None
     state: str | None = None
     status: str | None = None
+    university_type: str | None = None
 
 
 class DueDate(BaseModel):

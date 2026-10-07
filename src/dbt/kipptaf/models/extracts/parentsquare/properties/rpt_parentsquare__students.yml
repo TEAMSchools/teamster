@@ -51,7 +51,9 @@ models:
         description:
           The student's grade level as a string. ParentSquare's scale runs -4 to
           12 with kindergarten as 0, which the NJ grade domain of 0 through 12
-          already satisfies, so no remapping is applied.
+          already satisfies, so no remapping is applied. A PreK grade would need
+          its own mapping — PreK1 as -4, PreK2 as -3, Junior K as -2,
+          Transitional K as -1 — but no NJ region operates one.
         data_tests:
           - not_null:
               config:

@@ -30,4 +30,8 @@ select
     null as `16 Enrollment Entry Code`,
 -- trunk-ignore-end(sqlfluff/RF05)
 from {{ ref("int_extracts__student_enrollments") }}
-where academic_year = {{ current_school_year(var("local_timezone")) }} and rn_year = 1
+-- Miami left Illuminate ahead of AY2026-27 (#4777, #5537)
+where
+    region in ('Newark', 'Camden', 'Paterson')
+    and academic_year = {{ current_school_year(var("local_timezone")) }}
+    and rn_year = 1

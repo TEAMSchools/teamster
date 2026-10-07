@@ -1,0 +1,21 @@
+models:
+  - name: int_focus__schedule
+    description: >-
+      Kipptaf-level union_relations passthrough of kippmiami's
+      int_focus__schedule, exposing Miami's student schedules at network level —
+      one row per student per scheduled course period, with section, course, and
+      marking-period context resolved. Deduplicated to the currently-open stint
+      when Focus carries a same-day-superseded row alongside it for the same
+      student and course period. Column docs/tests live on the kippmiami source
+      model.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_id
+              - course_period_id
+          config:
+            severity: error
+    columns:
+      - name: _dbt_source_project
+        description: District code location derived from _dbt_source_relation.

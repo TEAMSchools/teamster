@@ -1,5 +1,8 @@
 models:
   - name: int_powerschool__gpa_term
+    config:
+      meta:
+        contains_pii: true
     columns:
       - name: _dbt_source_relation
         data_type: string

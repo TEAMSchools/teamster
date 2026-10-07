@@ -4,16 +4,69 @@ models:
       Amplify mCLASS DIBELS progress monitoring aimline data from the PM_CUSTOM
       SFTP file. Each row represents a single probe assessment for a student
       within a PM period, with aimline goal and status.
+    config:
+      meta:
+        contains_pii: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_primary_id
+              - school_year
+              - pm_period
+              - measure
+              - probe_number
+              - device_date
+              - assessment_grade
+          config:
+            severity: error
     columns:
-      - name: surrogate_key
+      - name: measure
         data_type: string
         description: >-
-          Hash of student_primary_id, school_year, pm_period, measure, and
-          probe_number.
+          Long-form DIBELS measure label, for example 'Reading Fluency (ORF)'.
+          Amplify sends this feed as short codes such as 'ORF' while the sibling
+          PM feed sends long labels, so the mapping translates known short codes
+          and passes long-form values through unchanged. Both models therefore
+          emit the same values. Joins to expected_measure_standard downstream,
+          which carries the long labels.
         data_tests:
-          - unique
-        constraints:
-          - type: primary_key
+          - not_null:
+              config:
+                severity: error
+          - accepted_values:
+              arguments:
+                values:
+                  - Composite
+                  - Decoding (NWF-WRC)
+                  - Irregular Words (DEC-IW)
+                  - Letter Names (LNF)
+                  - Letter Sounds (NWF-CLS)
+                  - Phonemic Awareness (PSF)
+                  - Reading Accuracy (ORF-Accu)
+                  - Reading Comprehension (Maze)
+                  - Reading Fluency (ORF)
+                  - Word Reading (WRF)
+              config:
+                severity: error
+      - name: measure_name_code
+        data_type: string
+        description: >-
+          Short measure abbreviation, for example 'ORF' from 'Reading Fluency
+          (ORF)'. Derived from the NORMALIZED measure produced by the preceding
+          CTE, so only long-form labels need arms here and vendor format
+          tolerance lives in exactly one place. There is deliberately no
+          fallback — an unrecognized measure yields NULL, which the not_null
+          test below flags on every row, rather than being silently truncated to
+          a three-character code that could collide with a real one. The test
+          alerts, it does not block: no staging test gates cross-code-location
+          propagation, so a NULL still reaches kipptaf. NULL is chosen because
+          it is the most inert failure value — a NULL partition key can only
+          group with other NULLs.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
       - name: source_file_name
         data_type: string
         description: Name of the SFTP source CSV file.
@@ -39,8 +92,10 @@ models:
         data_type: string
         description: School name.
       - name: school_primary_id
-        data_type: int64
-        description: School primary identifier.
+        data_type: string
+        description: >-
+          Amplify school identifier, kept as a string because some Miami ids
+          carry letters (for example 2332A).
       - name: student_last_name
         data_type: string
         description: Student last name.
@@ -100,11 +155,6 @@ models:
       - name: sync_date
         data_type: date
         description: Date the assessment data was synced.
-      - name: measure
-        data_type: string
-        description: >-
-          Expanded measure name with abbreviation (e.g., 'Reading Fluency
-          (ORF)'). Unmapped values pass through.
       - name: probe_number
         data_type: int64
         description: Probe sequence number within the PM period.
@@ -195,11 +245,6 @@ models:
       - name: enrollment_grade_int
         data_type: int64
         description: Enrollment grade as integer (K mapped to 0).
-      - name: measure_name_code
-        data_type: string
-        description: >-
-          Short measure abbreviation extracted from the expanded measure name
-          parenthetical (e.g., 'ORF' from 'Reading Fluency (ORF)').
       - name: measure_name
         data_type: string
         description: >-

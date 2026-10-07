@@ -155,35 +155,43 @@ assets:
           contact1_blocked: CONTACT1_BLOCKED
           contact1_unlisted: CONTACT1_UNLISTED
           contact1_callout: CONTACT1_CALLOUT
+          contact1_sms: CONTACT1_SMS
           contact2_type: CONTACT2_TYPE
           contact2_value: CONTACT2_VALUE
           contact2_blocked: CONTACT2_BLOCKED
           contact2_unlisted: CONTACT2_UNLISTED
           contact2_callout: CONTACT2_CALLOUT
+          contact2_sms: CONTACT2_SMS
           contact3_type: CONTACT3_TYPE
           contact3_value: CONTACT3_VALUE
           contact3_blocked: CONTACT3_BLOCKED
           contact3_unlisted: CONTACT3_UNLISTED
           contact3_callout: CONTACT3_CALLOUT
+          contact3_sms: CONTACT3_SMS
           contact4_type: CONTACT4_TYPE
           contact4_value: CONTACT4_VALUE
           contact4_blocked: CONTACT4_BLOCKED
           contact4_unlisted: CONTACT4_UNLISTED
           contact4_callout: CONTACT4_CALLOUT
+          contact4_sms: CONTACT4_SMS
           contact5_type: CONTACT5_TYPE
           contact5_value: CONTACT5_VALUE
           contact5_blocked: CONTACT5_BLOCKED
           contact5_unlisted: CONTACT5_UNLISTED
           contact5_callout: CONTACT5_CALLOUT
+          contact5_sms: CONTACT5_SMS
           contact6_type: CONTACT6_TYPE
           contact6_value: CONTACT6_VALUE
           contact6_blocked: CONTACT6_BLOCKED
           contact6_unlisted: CONTACT6_UNLISTED
           contact6_callout: CONTACT6_CALLOUT
+          contact6_sms: CONTACT6_SMS
           contact7_type: CONTACT7_TYPE
           contact7_value: CONTACT7_VALUE
           contact7_blocked: CONTACT7_BLOCKED
           contact7_unlisted: CONTACT7_UNLISTED
+          contact7_callout: CONTACT7_CALLOUT
+          contact7_sms: CONTACT7_SMS
     destination_config:
       name: focus
       path: incoming

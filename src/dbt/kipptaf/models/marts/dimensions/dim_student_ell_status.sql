@@ -1,8 +1,4 @@
 with
-    -- Per-enrollment-stint PowerSchool enrollment range. One row per stint;
-    -- multi-stint students get multiple dim rows per LEP record, each clipped
-    -- to its specific entry/exit window. Aggregating to min/max would span
-    -- gaps between stints.
     enrollments as (
         select
             students_dcid,
@@ -18,7 +14,7 @@ with
             coalesce(
                 date_sub(exitdate, interval 1 day), cast('9999-12-31' as date)
             ) as enrollment_end,
-        from {{ ref("int_powerschool__student_enrollment_union") }}
+        from {{ ref("int_students__student_enrollment_union") }}
         -- graduates carry NULL entry/exit as a placeholder row; drop them
         -- (no enrollment context to clip against).
         where entrydate is not null
@@ -104,8 +100,8 @@ with
             e.enrollment_end as effective_date_end,
         from enrollments as e
         inner join
-            {{ ref("stg_powerschool__studentcorefields") }} as scf
-            on e.students_dcid = scf.studentsdcid
+            {{ ref("int_students__student_core_fields") }} as scf
+            on e.student_number = scf.student_number
             and e._dbt_source_project = scf._dbt_source_project
         -- Miami only: Paterson is already covered by stg_powerschool__s_nj_stu_x
         -- (NJ leg). Including Paterson here double-counts ELL spans.

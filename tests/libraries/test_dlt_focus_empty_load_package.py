@@ -20,6 +20,7 @@ from dlt.common.configuration.specs import ConnectionStringCredentials
 from dlt.destinations import bigquery
 
 from teamster.libraries.dlt.focus.assets import build_focus_source
+from teamster.libraries.dlt.probe import ProbeTable
 
 
 def test_empty_table_package_carries_reflected_columns(tmp_path: Path) -> None:
@@ -49,7 +50,7 @@ def test_empty_table_package_carries_reflected_columns(tmp_path: Path) -> None:
         pipeline.extract(
             build_focus_source(
                 sql_database_credentials=ConnectionStringCredentials(url),
-                table_name="referrals",
+                tables=[ProbeTable(name="referrals", cursor_column=None)],
                 db_schema=None,
             ),
             loader_file_format="parquet",

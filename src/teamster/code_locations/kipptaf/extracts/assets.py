@@ -10,6 +10,13 @@ from teamster.libraries.extracts.assets import build_bigquery_query_sftp_asset
 
 config_dir = pathlib.Path(__file__).parent / "config"
 
+branchingminds_extract_assets = [
+    build_bigquery_query_sftp_asset(
+        code_location=CODE_LOCATION, timezone=LOCAL_TIMEZONE, **a
+    )
+    for a in config_from_files([f"{config_dir}/branchingminds.yaml"])["assets"]
+]
+
 clever_extract_assets = [
     build_bigquery_query_sftp_asset(
         code_location=CODE_LOCATION,
@@ -199,6 +206,7 @@ assets = [
     intacct_extract,
     lattice_extract,
     littlesis_extract,
+    *branchingminds_extract_assets,
     *clever_extract_assets,
     *deanslist_annual_extract_assets,
     *illuminate_extract_assets,

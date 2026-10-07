@@ -43,24 +43,31 @@ with
 
     -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
     fleid_lookup_raw as (
-        -- TODO: #3887 — 14 FLEIDs map to multiple student_numbers in PS;
-        -- dedupe is a workaround until source is cleaned.
-        select s.student_number, suf.fleid,
-        from {{ source("kippmiami_powerschool", "stg_powerschool__students") }} as s
+        select
+            t.student_id as fleid,
+            t.academic_year,
+
+            s.student_number,
+
+            e.student_id is not null as is_enrolled,
+        from transformed as t
         inner join
-            {{
-                source(
-                    "kippmiami_powerschool", "stg_powerschool__u_studentsuserfields"
-                )
-            }} as suf on s.dcid = suf.studentsdcid and suf.fleid is not null
+            {{ ref("int_focus__students") }} as s
+            on t.student_id = s.florida_education_identifier
+        left join
+            {{ ref("int_focus__student_enrollment") }} as e
+            on s.student_id = e.student_id
+            and t.academic_year = e.syear
     ),
 
     fleid_lookup as (
+        -- some FLEIDs sit on more than one Focus record (#5584): prefer the one
+        -- enrolled that year, else the lower student_number
         {{
             dbt_utils.deduplicate(
                 relation="fleid_lookup_raw",
-                partition_by="fleid",
-                order_by="student_number desc",
+                partition_by="fleid, academic_year",
+                order_by="is_enrolled desc, student_number asc",
             )
         }}
     )
@@ -81,14 +88,6 @@ select
     ) as assessment_name,
 
     case
-        when t.assessment_subject like 'English Language Arts%'
-        then 'Text Study'
-        when t.assessment_subject in ('Algebra I', 'Algebra II', 'Geometry')
-        then 'Mathematics'
-        else t.assessment_subject
-    end as illuminate_subject,
-
-    case
         when t.performance_level = 1
         then 'Below/Far Below'
         when t.performance_level = 2
@@ -98,4 +97,5 @@ select
     end as fast_aggregated_proficiency,
 
 from transformed as t
-left join fleid_lookup as fl on t.student_id = fl.fleid
+left join
+    fleid_lookup as fl on t.student_id = fl.fleid and t.academic_year = fl.academic_year

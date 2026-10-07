@@ -10,18 +10,22 @@ from collections.abc import Iterator
 from typing import Any
 
 import pytest
+from dagster import AssetKey
 from dlt import config as dlt_config
+from dlt.common.configuration.exceptions import ConfigFieldMissingException
 from dlt.common.configuration.specs import ConnectionStringCredentials
 
 from teamster.libraries.dlt.focus.assets import (
     FocusDltConfig,
     build_focus_dlt_assets,
 )
+from teamster.libraries.dlt.probe import ProbeSignatureConfig, ProbeTable
 
 CREDENTIALS = ConnectionStringCredentials("postgresql+psycopg://localhost:5432/db")
 
 ADD_DLT_ID = "normalize.parquet_normalizer.add_dlt_id"
 ADD_DLT_LOAD_ID = "normalize.parquet_normalizer.add_dlt_load_id"
+EXTRACT_WORKERS = "extract.workers"
 
 
 class _RecordingDltResource:
@@ -41,14 +45,26 @@ class _StubLog:
         self.messages.append(message)
 
 
-class _StubContext:
-    """The op logs the refresh mode, so the context needs a `.log`.
+class _StubRun:
+    def __init__(self, tags: dict[str, str] | None = None) -> None:
+        self.tags = tags or {}
 
-    Nothing else on the context is touched before `dlt.run()`.
+
+class _StubContext:
+    """The op logs its mode and reads the run's asset selection and run tags.
+
+    `selected_asset_keys` drives which tables the narrowed source carries, and
+    every test here runs in sensor mode (`probe` set) so the op never opens a
+    connection to probe. `run.tags` backs the `dlt_extract_workers` diagnostic
+    knob.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, tags: dict[str, str] | None = None) -> None:
         self.log = _StubLog()
+        self.run = _StubRun(tags)
+        self.selected_asset_keys = {
+            AssetKey(["kippmiami", "dlt", "focus", "discipline_referrals"])
+        }
 
 
 @pytest.fixture(name="focus_assets")
@@ -56,7 +72,7 @@ def fixture_focus_assets() -> Any:
     return build_focus_dlt_assets(
         sql_database_credentials=CREDENTIALS,
         code_location="kippmiami",
-        table_name="discipline_referrals",
+        tables=[ProbeTable(name="discipline_referrals", cursor_column="updated_at")],
     )
 
 
@@ -66,6 +82,15 @@ def reset_knobs() -> Iterator[None]:
     yield
     dlt_config[ADD_DLT_ID] = False
     dlt_config[ADD_DLT_LOAD_ID] = False
+    dlt_config[EXTRACT_WORKERS] = None
+
+
+PROBE = {"discipline_referrals": ProbeSignatureConfig(count=1, max_cursor=None)}
+
+
+def _config(**kwargs: Any) -> FocusDltConfig:
+    """Sensor-mode config: `probe` set, so the op does not open a connection."""
+    return FocusDltConfig(probe=PROBE, **kwargs)
 
 
 def _run(
@@ -86,14 +111,14 @@ def test_op_sets_both_row_id_knobs(focus_assets: Any) -> None:
     dlt_config[ADD_DLT_ID] = False
     dlt_config[ADD_DLT_LOAD_ID] = False
 
-    _run(focus_assets, FocusDltConfig())
+    _run(focus_assets, _config())
 
     assert dlt_config[ADD_DLT_ID] is True
     assert dlt_config[ADD_DLT_LOAD_ID] is True
 
 
 def test_refresh_is_omitted_by_default(focus_assets: Any) -> None:
-    kwargs = _run(focus_assets, FocusDltConfig())
+    kwargs = _run(focus_assets, _config())
 
     assert "refresh" not in kwargs
     assert kwargs["write_disposition"] == "replace"
@@ -101,9 +126,31 @@ def test_refresh_is_omitted_by_default(focus_assets: Any) -> None:
 
 
 def test_refresh_is_forwarded_when_set(focus_assets: Any) -> None:
-    kwargs = _run(focus_assets, FocusDltConfig(refresh="drop_resources"))
+    kwargs = _run(focus_assets, _config(refresh="drop_resources"))
 
     assert kwargs["refresh"] == "drop_resources"
+
+
+def test_op_sets_extract_workers_from_tag(focus_assets: Any) -> None:
+    dlt_config[EXTRACT_WORKERS] = None
+
+    _run(
+        focus_assets,
+        _config(),
+        context=_StubContext(tags={"dlt_extract_workers": "3"}),
+    )
+
+    assert dlt_config[EXTRACT_WORKERS] == 3
+
+
+def test_op_leaves_extract_workers_unset_without_tag(focus_assets: Any) -> None:
+    dlt_config[EXTRACT_WORKERS] = None
+
+    _run(focus_assets, _config(), context=_StubContext())
+
+    # dlt_config[...] raises when a field is unset -- that IS "unset" here.
+    with pytest.raises(ConfigFieldMissingException):
+        dlt_config[EXTRACT_WORKERS]
 
 
 def test_unrecognized_refresh_raises(focus_assets: Any) -> None:
@@ -115,4 +162,4 @@ def test_unrecognized_refresh_raises(focus_assets: Any) -> None:
     (its Pythonic config rejects a `Literal`), so the op guards it.
     """
     with pytest.raises(ValueError, match="refresh must be one of"):
-        _run(focus_assets, FocusDltConfig(refresh="drop_resource"))
+        _run(focus_assets, _config(refresh="drop_resource"))

@@ -47,8 +47,6 @@ select
     mail_secondary_unit_type,
     mail_secondary_unit_number,
     phone,
-    latitude,
-    longitude,
     address_import_key,
     imported,
     unlisted,
@@ -65,6 +63,9 @@ select
     uuid,
     created_at,
     updated_at,
+
+    cast(latitude as numeric) as latitude,
+    cast(longitude as numeric) as longitude,
 
     nullif(
         array_to_string([address, address2, city, state, zipcode], ', '), ''

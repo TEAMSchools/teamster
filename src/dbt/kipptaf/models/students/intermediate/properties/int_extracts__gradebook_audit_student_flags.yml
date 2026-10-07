@@ -13,6 +13,21 @@ models:
     config:
       schema: extracts
       materialized: table
+      meta:
+        dagster:
+          # Nightly instead of the default eager table condition, which re-fires
+          # on ANY upstream data change — ~120 executions/day, the highest of
+          # any eager table. Neither consumer sees that churn:
+          # rpt_tableau__gradebook_audit feeds the `gradebook_audit` exposure,
+          # which declares no cron_schedule and so never gets a
+          # ScheduleDefinition (kipptaf/tableau/schedules.py) — its asset has
+          # zero materializations ever; the other exposure,
+          # gradebook_audit_teacher_report, is `enabled: false`. The Google
+          # Sheet extract, rpt_gsheets__gradebook_audit_student_flags, last
+          # built 2026-07-21. 03:00 leads the neighbouring
+          # gradebook_and_gpa_dashboard tick at `0 4 * * *`. Refs #4821
+          automation_condition:
+            cron_schedule: 0 3 * * *
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -123,16 +138,28 @@ models:
           The student's quarter course percent grade, from
           base_powerschool__final_grades (current year) or
           stg_powerschool__storedgrades (prior year, summer-toggle only).
+        config:
+          meta:
+            contains_pii: true
       - name: quarter_comment_value
         data_type: string
         description: >
           The end-of-quarter comment entered in PowerSchool for this
           student/section/quarter. Null when no comment has been entered.
+        config:
+          meta:
+            contains_pii: true
       - name: qt_percent_grade_greater_100
         data_type: boolean
         description: True when quarter_course_percent_grade is above 100.
+        config:
+          meta:
+            contains_pii: true
       - name: qt_grade_70_comment_missing
         data_type: boolean
         description: >
           True when quarter_course_percent_grade is below 70 and
           quarter_comment_value is null.
+        config:
+          meta:
+            contains_pii: true

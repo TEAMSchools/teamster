@@ -1,0 +1,142 @@
+models:
+  - name: int_students__gpa_cumulative
+    description: >-
+      SIS-neutral cumulative GPA, one row per student and school. Cumulative GPA
+      is calculated per school, not per year, so there is no year in the grain.
+      Unions PowerSchool's `int_powerschool__gpa_cumulative` with Miami's Focus
+      `student_gpa_calculated`, conformed to the PowerSchool column vocabulary,
+      and computes the KTAF GPA bands once for both systems.
+
+
+      **Focus wins over the Miami PowerSchool archive.** Where a Miami student
+      has both a frozen PowerSchool value and a Focus value at the same school,
+      only the Focus row is kept. The two never agree, and Focus always shows
+      fewer cumulative credits, so the Focus value does not appear to include
+      the student's PowerSchool history at that school.
+
+
+      **Miami Focus coverage is partial, and that comes from the source.** A
+      Miami student missing from Focus has no imported course history, and falls
+      back to the PowerSchool archive where one exists.
+    config:
+      materialized: table
+      meta:
+        dagster:
+          # Hourly, matching int_extracts__student_enrollments (0 * * * *),
+          # which takes its GPA from here. This model is cumulative-only, so an
+          # hourly build is a fraction of the old term-grained
+          # int_students__gpa's 0.137 GiB. Refs #5462
+          #
+          # Not a view, even though the intermediate layer permits it. The
+          # uniqueness test here guards the Focus-over-PowerSchool anti-join:
+          # if it breaks, a Miami student-school emits from both branches,
+          # both carrying _dbt_source_project = 'kippmiami'. As a view the test
+          # would fire only on code change, because the data-change condition
+          # re-materializes tables only.
+          automation_condition:
+            cron_schedule: 0 * * * *
+    data_tests:
+      # Scoped to rows that resolved a student_number; see
+      # int_students__gpa_term for the 4 Camden AY2015 rows with none.
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - schoolid
+              - _dbt_source_project
+          config:
+            where: student_number is not null
+    columns:
+      - name: _dbt_source_relation
+        data_type: string
+        description: District relation the row was unioned from.
+      - name: _dbt_source_project
+        data_type: string
+        description: District code location derived from `_dbt_source_relation`.
+      - name: student_number
+        data_type: int64
+        description: >-
+          Network student number. The only student key both branches share.
+        config:
+          meta:
+            contains_pii: true
+      - name: studentid
+        data_type: int64
+        description: >-
+          PowerSchool student id. Null on every Focus row — Focus has no
+          PowerSchool student id.
+      - name: schoolid
+        data_type: int64
+        description: >-
+          PowerSchool school id. On the Focus branch it is
+          `stg_google_sheets__people__locations.powerschool_school_id`, reached
+          by joining Focus's `school_number` to that model's `focus_school_id`.
+      - name: calculated_academic_year
+        data_type: int64
+        description: >-
+          Academic year the SIS calculated the value in, from Focus's `syear`.
+          Null on every PowerSchool row, which stores only the current value.
+      - name: cumulative_y1_gpa
+        data_type: float64
+        description: >-
+          Cumulative weighted GPA. Mapped from Focus's
+          `cumulative_weighted_gpa`, which is the weighted measure despite the
+          unqualified PowerSchool column name.
+      - name: cumulative_y1_gpa_unweighted
+        data_type: float64
+        description: >-
+          Cumulative unweighted GPA. Mapped from Focus's `cumulative_gpa`.
+      - name: cumulative_y1_gpa_projected
+        data_type: float64
+        description: >-
+          Projected year-end cumulative weighted GPA. Null on every Focus row —
+          Focus projects nothing.
+      - name: cumulative_y1_gpa_projected_unweighted
+        data_type: float64
+        description: >-
+          Projected year-end cumulative unweighted GPA. Null on every Focus row.
+      - name: cumulative_y1_gpa_projected_s1
+        data_type: float64
+        description: >-
+          Projected cumulative weighted GPA counting current-year Y1 grades as
+          of the end of Q2. Null on every Focus row.
+      - name: cumulative_y1_gpa_projected_s1_unweighted
+        data_type: float64
+        description: >-
+          Unweighted counterpart of `cumulative_y1_gpa_projected_s1`. Null on
+          every Focus row.
+      - name: core_cumulative_y1_gpa
+        data_type: float64
+        description: >-
+          Cumulative weighted GPA over math, science, English and social studies
+          courses only. Null on every Focus row.
+      - name: earned_credits_cum
+        data_type: float64
+        description: >-
+          Cumulative credits earned. Mapped from Focus's `cumulative_credits`.
+      - name: earned_credits_cum_projected
+        data_type: float64
+        description: >-
+          Projected cumulative credits earned, counting in-progress courses.
+          Null on every Focus row.
+      - name: potential_credits_cum
+        data_type: float64
+        description: Cumulative credits attempted. Null on every Focus row.
+      - name: class_rank
+        data_type: int64
+        description: >-
+          Class rank as the SIS computed it. Null on every PowerSchool row —
+          that chain does not produce a rank — and populated on only a handful
+          of Focus rows so far, so it is not yet usable as a reporting measure.
+      - name: cumulative_y1_gpa_unweighted_band
+        data_type: int64
+        description: >-
+          KTAF GPA band for `cumulative_y1_gpa_unweighted` (4 = 3.00 and above,
+          3 = 2.50–2.99, 2 = 2.00–2.49, 1 = below 2.00). Null when the GPA is
+          null.
+      - name: cumulative_y1_gpa_projected_unweighted_band
+        data_type: int64
+        description: >-
+          KTAF GPA band for `cumulative_y1_gpa_projected_unweighted`, on the
+          same cut-offs. Null when the projected GPA is null, which is every
+          Focus row.

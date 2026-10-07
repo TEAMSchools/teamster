@@ -180,7 +180,7 @@ with
             week_number_academic_year,
 
             sum(is_tardy) as n_tardies_week,
-        from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }}
+        from {{ ref("int_students__attendance_daily") }}
         group by
             _dbt_source_project,
             student_number,
@@ -239,6 +239,8 @@ select
     co.ml_status,
     co.status_504,
     co.self_contained_status,
+    co.homeless_status,
+    co.homeless_primary_nighttime_residence,
     co.week_start_monday,
     co.week_end_sunday,
     co.week_number_academic_year,
@@ -250,6 +252,7 @@ select
     dli.create_ts_date,
     dli.return_date_date as return_date,
     dli.category,
+    dli.referral_tier,
     dli.reported_details,
     dli.admin_summary,
     dli.infraction as incident_type,
@@ -294,29 +297,13 @@ select
 
     if(co.unweighted_ada <= 0.90, true, false) as is_chronically_absent,
 
+    if(
+        co.unweighted_ada <= 0.90, 'Chronic Absence', 'Not Chronic Absence'
+    ) as chronic_absence_status,
+
     if(sr.incident_id is not null, true, false) as is_discrepant_incident,
 
     if(tr.student_school_id is not null, true, false) as is_tier3_4,
-
-    case
-        when
-            left(dli.category, 2) in ('SW', 'SS')
-            or left(dli.category, 3) in ('SSC', 'SSW')
-        then 'Social Work'
-        when (left(dli.category, 2) = 'TX' or dli.category like 'Documentation%')
-        then 'Non-Behavioral'
-        when left(dli.category, 2) = 'TB'
-        then 'Bus Referral (Miami)'
-        when left(dli.category, 2) = 'T1' or left(dli.category, 6) = 'Tier 1'
-        then 'Low'
-        when left(dli.category, 2) = 'T2' or left(dli.category, 6) = 'Tier 2'
-        then 'Middle'
-        when left(dli.category, 2) = 'T3' or left(dli.category, 6) = 'Tier 3'
-        then 'High'
-        when dli.category is null
-        then null
-        else 'Other'
-    end as referral_tier,
 
     count(distinct co.student_number) over (
         partition by co.week_start_monday, co.schoolid
@@ -400,6 +387,11 @@ select
         1,
         0
     ) as is_suspended_y1_iss_2plus_int,
+
+    sum(if(dli.suspension_type = 'OSS', coalesce(dli.num_days, 0), 0)) over (
+        partition by co.academic_year, co.student_number
+    )
+    >= 2 as is_suspended_y1_oss_2plus_days,
 
     if(
         dli.incident_id is null,

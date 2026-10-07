@@ -2,6 +2,10 @@ select
     * except (
         student_primary_id,
         student_primary_id_studentnumber,
+        enrollment_teacher_staff_id,
+        assessing_teacher_staff_id,
+        secondary_student_id,
+        additional_student_id,
         device_date,
         sync_date,
         basic_comprehension_maze_score,
@@ -41,12 +45,13 @@ select
     ),
 
     cast(left(school_year, 4) as int) as academic_year,
-    cast(student_primary_id_studentnumber as int) as student_primary_id,
+    cast(
+        coalesce(student_primary_id_studentnumber, student_primary_id) as int
+    ) as student_primary_id,
 
     cast(device_date as date) as device_date,
     cast(sync_date as date) as sync_date,
 
-    -- scores
     cast(basic_comprehension_maze_score as numeric) as basic_comprehension_maze_score,
     cast(composite_score as numeric) as composite_score,
     cast(correct_responses_maze_score as numeric) as correct_responses_maze_score,
@@ -64,6 +69,21 @@ select
     cast(vocabulary_score as numeric) as vocabulary_score,
     cast(word_reading_wrf_score as numeric) as word_reading_wrf_score,
 
+    coalesce(
+        enrollment_teacher_staff_id_teachernumber, enrollment_teacher_staff_id
+    ) as enrollment_teacher_staff_id,
+    coalesce(
+        assessing_teacher_staff_id_teachernumber, assessing_teacher_staff_id
+    ) as assessing_teacher_staff_id,
+    coalesce(
+        secondary_student_id_stateid, secondary_student_id
+    ) as secondary_student_id,
+    coalesce(
+        additional_student_id_primarysisid,
+        additional_student_id_sisid,
+        additional_student_id
+    ) as additional_student_id,
+
     if(
         assessment_grade = 'K', 0, safe_cast(assessment_grade as int)
     ) as assessment_grade_int,
@@ -72,7 +92,6 @@ select
         enrollment_grade = 'K', 0, safe_cast(enrollment_grade as int)
     ) as enrollment_grade_int,
 
-    -- Tested Out
     if(
         composite_national_norm_percentile = 'Tested Out', true, false
     ) as composite_tested_out,
@@ -109,7 +128,6 @@ select
         word_reading_wrf_national_norm_percentile = 'Tested Out', true, false
     ) as word_reading_wrf_tested_out,
 
-    -- Discontinued
     if(
         composite_national_norm_percentile = 'Discontinued', true, false
     ) as composite_discontinued,
@@ -138,7 +156,6 @@ select
         word_reading_wrf_national_norm_percentile = 'Discontinued', true, false
     ) as word_reading_wrf_discontinued,
 
-    -- Local Percentiles
     safe_cast(composite_local_percentile as numeric) as composite_local_percentile,
     safe_cast(
         letter_names_lnf_local_percentile as numeric
@@ -165,7 +182,6 @@ select
         basic_comprehension_maze_local_percentile as numeric
     ) as basic_comprehension_maze_local_percentile,
 
-    -- National Percentiles
     safe_cast(
         composite_national_norm_percentile as numeric
     ) as composite_national_norm_percentile,
@@ -193,15 +209,4 @@ select
     safe_cast(
         basic_comprehension_maze_national_norm_percentile as numeric
     ) as basic_comprehension_maze_national_norm_percentile,
-
-    {{
-        dbt_utils.generate_surrogate_key(
-            [
-                "student_primary_id_studentnumber",
-                "school_year",
-                "benchmark_period",
-                "assessment_grade",
-            ]
-        )
-    }} as surrogate_key,
 from {{ source("amplify_mclass_sftp", "benchmark_student_summary") }}

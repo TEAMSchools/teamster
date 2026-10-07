@@ -1,33 +1,79 @@
 models:
   - name: rpt_tableau__college_assessment_dashboard_de
+    description: >-
+      Dual-enrollment course results for the CARAT workbook. One row per
+      PowerSchool stored grade for a course whose name ends in (DE), at store
+      code Y1 or Q2, with the college course, pass flag, score, semester, and
+      institution from the dual-enrollment extension table. Reads PowerSchool
+      only, not the college assessment models. A student can hold both a Q2 and
+      a Y1 row for one course in one year; see the inline TODO.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - storedgrades_dcid
     columns:
       - name: student_number
+        description: >-
+          PowerSchool student number.
         data_type: int64
       - name: lastfirst
+        description: >-
+          Student's full name, last name first.
         data_type: string
       - name: studentid
+        description: >-
+          PowerSchool student ID (database key) on the stored grade.
         data_type: int64
       - name: schoolname
+        description: >-
+          School where the grade was stored.
         data_type: string
       - name: academic_year
+        description: >-
+          Academic year of the stored grade.
         data_type: int64
       - name: course_name
+        description: >-
+          PowerSchool course name; always ends in (DE).
         data_type: string
       - name: course_number
+        description: >-
+          PowerSchool course number.
         data_type: string
       - name: teacher_name
+        description: >-
+          Teacher of record on the stored grade.
         data_type: string
       - name: storedgrades_dcid
+        description: >-
+          PowerSchool stored grade record key.
         data_type: int64
       - name: de_course_name
+        description: >-
+          College course name from the dual-enrollment extension table. Null
+          when the stored grade has no extension row.
         data_type: string
       - name: de_pass_yn
+        description: >-
+          Pass flag from the dual-enrollment extension table.
         data_type: int64
       - name: de_score
+        description: >-
+          College course score from the dual-enrollment extension table.
         data_type: string
       - name: de_semester
+        description: >-
+          Semester of the college course.
         data_type: string
       - name: de_institution
+        description: >-
+          College that granted the grade.
         data_type: string
       - name: unique_identifier
+        description: >-
+          student_number and course_number joined with an underscore. Not unique
+          when a student has both Q2 and Y1 rows, or takes the course in two
+          years.
         data_type: string

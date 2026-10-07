@@ -4,8 +4,7 @@ with
        AND their date windows overlap. Open-ended endpoints on either side
        use 9999-12-31 (NSC term rows may carry a NULL enrollment_end for
        in-progress terms, propagating to stint_end). */
-    -- grain projection: every selected column is functionally determined
-    -- by the partition key; not a mask for upstream duplicates
+    -- grain projection, not dup-masking
     covered_stints as (
         select distinct n.contact_id, n.account_id, n.stint_num,
         from {{ ref("int_nsc__enrollment_stints") }} as n

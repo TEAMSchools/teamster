@@ -2,12 +2,20 @@ models:
   - name: int_powerschool__gpa_cumulative_year
     description: >-
       Network union of the district int_powerschool__gpa_cumulative_year models
-      (Newark, Camden, Miami) — one row per student, school, and academic year
-      with cumulative Y1 GPA as of the end of that year; current-year rows are
-      projected (is_projected = true) and match int_powerschool__gpa_cumulative
-      projected values exactly.
+      (Newark, Camden, Paterson) — one row per student, school, and academic
+      year with cumulative Y1 GPA as of the end of that year. Running totals
+      accumulate within a student-school pair, so a student who changed schools
+      restarts at the new school. Completed-year rows are recomputed from Y1
+      stored grades; the current-year row (is_projected = true) copies the
+      projected values from int_powerschool__gpa_cumulative for students with a
+      current-year primary enrollment at that school. Also carries
+      students_dcid, students_student_number, school_name, school_abbreviation,
+      and school_level unchanged from the package model of the same name, which
+      is where their descriptions live.
     config:
       materialized: table
+      meta:
+        contains_pii: true
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -53,24 +61,33 @@ models:
       - name: earned_credits_cum
         data_type: float64
         description: >-
-          Running earned credit hours through this academic year
-          (graduation-credit basis). Projected basis on the current-year row.
+          Running earned credit hours at this school through this academic year,
+          excluding grades flagged excludefromgraduation. On the current-year
+          row, `earned_credits_cum_projected` from
+          int_powerschool__gpa_cumulative.
       - name: potential_gpa_credits_cum
         data_type: float64
         description: >-
-          Running potential GPA credit hours through this academic year — the
-          denominator of the cumulative GPAs.
+          Running potential GPA credit hours at this school through this
+          academic year, excluding grades flagged excludefromgpa — the
+          denominator of the cumulative GPAs. On the current-year row,
+          `potential_gpa_credits_cum_projected` from
+          int_powerschool__gpa_cumulative.
       - name: cumulative_y1_gpa
         data_type: float64
         description: >-
-          Cumulative weighted Y1 GPA through this academic year. On the
-          current-year row this matches `cumulative_y1_gpa_projected` verbatim.
+          Cumulative weighted Y1 GPA at this school through this academic year —
+          credit-weighted GPA points over potential GPA credits, rounded to two
+          decimals. On the current-year row, `cumulative_y1_gpa_projected` from
+          int_powerschool__gpa_cumulative.
       - name: cumulative_y1_gpa_unweighted
         data_type: float64
         description: >-
-          Cumulative unweighted Y1 GPA through this academic year. On the
-          current-year row this matches `cumulative_y1_gpa_projected_unweighted`
-          verbatim.
+          Cumulative unweighted Y1 GPA at this school through this academic
+          year, using grade points from the unweighted grade scale, rounded to
+          two decimals. On the current-year row,
+          `cumulative_y1_gpa_projected_unweighted` from
+          int_powerschool__gpa_cumulative.
       - name: is_projected
         data_type: boolean
         description: >-

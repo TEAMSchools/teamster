@@ -43,12 +43,6 @@ def _test_asset(
     assert extras.text == ""
 
 
-def test_renlearn_star_kippnj():
-    from teamster.code_locations.kippnewark.renlearn.assets import star
-
-    _test_asset(asset=star, code_location="kippnj")
-
-
 def test_renlearn_star_kippmiami():
     from teamster.code_locations.kippmiami.renlearn.assets import star
 

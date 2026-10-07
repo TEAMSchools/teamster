@@ -1,10 +1,3 @@
-{#
-    Student-level assessment scores joined to enrollment demographics,
-    then aggregated via GROUPING SETS into demographic comparison rows.
-
-    Each grouping set produces one demographic focus at a time (or a total),
-    crossed with region present-or-rolled-up — 12 sets total.
-#}
 {% set base_dims = [
     "academic_year",
     "district_state",
@@ -24,7 +17,7 @@ with
     /*
         Prelim score gating: automatically includes preliminary NJ scores only
         when official scores for that assessment/year have not yet landed in
-        int_pearson__all_assessments. This eliminates the need to manually
+        int_assessments__state_nj_scores. This eliminates the need to manually
         comment/uncomment the prelim branch each time a new student list file
         is loaded — the branch self-deactivates once official scores arrive.
     */
@@ -45,11 +38,11 @@ with
 
         from prelim_assessments as pa
         left join
-            {{ ref("int_pearson__all_assessments") }} as p
+            {{ ref("int_assessments__state_nj_scores") }} as p
             on pa.academic_year = p.academic_year
             -- test_type in prelim data matches assessment_name in official records
             and pa.test_type = p.assessment_name
-            and p.`admin` = 'Spring'
+            and p.administration_round = 'Spring'
         group by pa.academic_year, pa.test_type
         having count(p.assessment_name) = 0
     ),
@@ -116,12 +109,13 @@ with
 
         from {{ ref("int_extracts__student_enrollments") }} as e
         inner join
-            {{ ref("int_pearson__all_assessments") }} as a
+            {{ ref("int_assessments__state_scores") }} as a
             on e.academic_year = a.academic_year
-            and e.pearson_local_student_identifier = a.localstudentidentifier
+            and e.pearson_local_student_identifier = a.student_number
             and e._dbt_source_project = a._dbt_source_project
-            and a.`admin` = 'Spring'
-            and a.testscalescore is not null
+            and a.score_source = 'state_nj'
+            and a.administration_round = 'Spring'
+            and a.scale_score is not null
         where
             e.rn_year = 1
             -- 2018: earliest year with available comps data
@@ -236,7 +230,7 @@ with
             a.district_state,
             a.assessment_name,
             a.is_proficient_int,
-            a.test_code,
+            a.aligned_test_code as test_code,
 
             e.ml_status,
             e.aligned_gender as gender,
@@ -276,10 +270,15 @@ with
 
         from {{ ref("int_extracts__student_enrollments") }} as e
         inner join
-            {{ ref("int_fldoe__all_assessments") }} as a
+            {{ ref("int_assessments__state_scores") }} as a
             on e.academic_year = a.academic_year
-            and e.state_studentnumber = a.student_id
+            -- network student_number, the same key the NJ legs above use;
+            -- Miami state_studentnumber reads fleid, null under Focus (#5042).
+            -- Guarded by test_state_assessment_joins_resolve_miami, which
+            -- asserts this leg holds rows -- a revert re-drops Miami silently.
+            and e.pearson_local_student_identifier = a.student_number
             and e._dbt_source_project = a._dbt_source_project
+            and a.score_source = 'state_fl'
             and a.results_type = 'Actual'
             and a.scale_score is not null
             and a.season = 'Spring'
@@ -306,7 +305,6 @@ select
 
     avg(s.is_proficient_int) as percent_proficient,
 
-    /* (a) focus_level + demographic labels */
     case
         {% for dim in focus_dims %}
             when grouping({{ dim }}) = 0 then '{{ dim }}'
@@ -347,10 +345,8 @@ select
             )
     end as comparison_demographic_subgroup,
 
-    /* (b) comparison_entity from region null-ness */
     if(grouping(s.region) = 1, s.district_state, 'Region') as comparison_entity,
 
-    /* (c) test_code-derived columns via sheet lookup */
     any_value(m.school_level) as school_level,
     any_value(m.grade_range_band) as grade_range_band,
     any_value(m.discipline) as discipline,

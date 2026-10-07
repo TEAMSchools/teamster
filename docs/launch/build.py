@@ -1,0 +1,341 @@
+"""Render the staff launch page from the catalog in this directory.
+
+Four functions, in order: load, select, validate, render. Nothing here
+writes to the filesystem — render() returns a string and the MkDocs hook
+decides where it goes. That is what keeps the tests free of temp files
+and what stops `mkdocs serve` rebuilding itself in a loop.
+"""
+
+from __future__ import annotations
+
+import json
+import re
+import subprocess
+from dataclasses import dataclass
+from pathlib import Path
+
+import yaml
+
+HERE = Path(__file__).resolve().parent
+
+ID_RE = re.compile(r"^[a-z0-9_]+$")
+
+# The nine values documented in README.md, mapped to display labels.
+SYSTEMS = {
+    "tableau": "Tableau",
+    "appsheet": "AppSheet",
+    "zendesk": "Zendesk",
+    "google-sheet": "Google Sheet",
+    "google-slides": "Google Slides",
+    "google-form": "Google Form",
+    "google-doc": "Google Doc",
+    "apps-script": "Apps Script",
+    "other": "Other",
+}
+
+STATUSES = {"needs-review", "verified"}
+AUDIENCES = {"teachers", "leaders", "ops", "region"}
+
+VIEWS = [
+    ("all", "All tools"),
+    ("teachers", "Teachers"),
+    ("leaders", "Leaders"),
+    ("ops", "Operations"),
+    ("region", "Regional & CMO"),
+]
+
+# Region accents come from the KIPP NJ | Miami design system. `all` is a
+# legal value on a normal entry but never on a family member.
+REGIONS = {
+    "newark": ("Newark", "var(--kipp-blue)"),
+    "camden": ("Camden", "var(--kipp-green)"),
+    "miami": ("Miami", "var(--kipp-orange)"),
+    "paterson": ("Paterson", "var(--kipp-red)"),
+}
+REGION_VALUES = set(REGIONS) | {"all"}
+
+
+class CatalogError(Exception):
+    """Every validation problem found, not just the first one."""
+
+    def __init__(self, errors: list[str]) -> None:
+        self.errors = errors
+        super().__init__(
+            f"{len(errors)} problem(s) in the launch catalog:\n"
+            + "\n".join(f"  - {e}" for e in errors)
+        )
+
+
+@dataclass(frozen=True)
+class Catalog:
+    entries: list[dict]
+    config: dict
+    template: str
+
+
+def load(root: Path = HERE) -> Catalog:
+    """Read links.yml, groups.yml and template.html from `root`."""
+    entries = yaml.safe_load((root / "links.yml").read_text()) or []
+    config = yaml.safe_load((root / "groups.yml").read_text()) or {}
+    template = (root / "template.html").read_text()
+    return Catalog(entries=entries, config=config, template=template)
+
+
+def _tier_one(catalog: Catalog) -> list[str]:
+    errors: list[str] = []
+    entries = catalog.entries
+    config = catalog.config
+
+    if not isinstance(entries, list):
+        return ["links.yml must be a list of entries"]
+
+    group_ids = {g["id"] for g in config.get("groups") or []}
+
+    seen: set[str] = set()
+    for i, entry in enumerate(entries):
+        if not isinstance(entry, dict):
+            errors.append(f"links.yml entry {i} is not a mapping")
+            continue
+
+        where = entry.get("name") or entry.get("id") or f"entry {i}"
+
+        entry_id = entry.get("id")
+        if not entry_id:
+            errors.append(f"{where}: missing `id`")
+        elif not ID_RE.match(str(entry_id)):
+            errors.append(f"{where}: `id` {entry_id!r} must match ^[a-z0-9_]+$")
+        elif entry_id in seen:
+            errors.append(f"{where}: duplicate `id` {entry_id!r}")
+        else:
+            seen.add(entry_id)
+
+        if not (entry.get("name") or "").strip():
+            errors.append(f"{where}: missing `name`")
+
+        url = entry.get("url")
+        if not url:
+            errors.append(f"{where}: missing `url`")
+        elif not str(url).startswith("https://"):
+            errors.append(f"{where}: `url` must be https")
+
+        system = entry.get("system")
+        if system not in SYSTEMS:
+            errors.append(f"{where}: unknown `system` {system!r}")
+
+        status = entry.get("status")
+        if status not in STATUSES:
+            errors.append(f"{where}: `status` must be one of {sorted(STATUSES)}")
+
+        access = entry.get("access")
+        if access is not None and access != "limited":
+            errors.append(f"{where}: `access` may only be 'limited', got {access!r}")
+
+        for region in entry.get("regions") or []:
+            if region not in REGION_VALUES:
+                errors.append(f"{where}: unknown region {region!r}")
+
+        group = entry.get("group")
+        if not group:
+            errors.append(f"{where}: missing `group`")
+        elif group not in group_ids:
+            errors.append(f"{where}: unknown `group` {group!r}")
+
+    for key in ("groups", "families", "promos"):
+        if key not in config:
+            errors.append(f"groups.yml is missing the `{key}` key")
+
+    # Silent-disable (missing/misspelled -> falls back to 0) and silent-
+    # unpublish (set absurdly high -> a green build that 404s) are both live
+    # risks, so this key gets a real check rather than the .get() default at
+    # render() time. isinstance(True, int) is True in Python, so bool is
+    # rejected explicitly -- otherwise `minimum_verified: true` would pass as 1.
+    minimum_verified = config.get("minimum_verified")
+    if isinstance(minimum_verified, bool) or not isinstance(minimum_verified, int):
+        errors.append(
+            f"groups.yml: `minimum_verified` must be an int, got {minimum_verified!r}"
+        )
+    elif minimum_verified < 0:
+        errors.append(
+            f"groups.yml: `minimum_verified` must be >= 0, got {minimum_verified}"
+        )
+
+    names = {e.get("name") for e in entries if isinstance(e, dict)}
+
+    for family in config.get("families") or []:
+        if family.get("group") not in group_ids:
+            errors.append(
+                f"family {family.get('id')!r} names unknown group "
+                f"{family.get('group')!r}"
+            )
+        for member in family.get("members") or []:
+            if member not in names:
+                errors.append(
+                    f"family {family.get('id')!r} names missing tool {member!r}"
+                )
+
+    for promo in config.get("promos") or []:
+        url = (promo.get("url") or "").strip()
+        if not url or url == "#":
+            errors.append(f"promo {promo.get('label')!r} has no destination")
+        elif not url.startswith("https://"):
+            errors.append(f"promo {promo.get('label')!r} `url` must be https")
+
+    return errors
+
+
+def select(catalog: Catalog) -> list[dict]:
+    """Entries that publish. Partitions only — never short-circuits."""
+    return [
+        e
+        for e in catalog.entries
+        if isinstance(e, dict) and e.get("status") == "verified"
+    ]
+
+
+def _tier_two(catalog: Catalog, verified: list[dict]) -> list[str]:
+    errors: list[str] = []
+    family_members = {
+        member
+        for family in catalog.config.get("families") or []
+        for member in family.get("members") or []
+    }
+
+    for entry in verified:
+        where = entry.get("name") or entry.get("id") or "<unnamed>"
+
+        if not (entry.get("description") or "").strip():
+            errors.append(f"{where}: verified entries need a `description`")
+
+        audiences = entry.get("audiences") or []
+        if not audiences:
+            errors.append(f"{where}: needs a non-empty `audiences` list")
+        for audience in audiences:
+            if audience not in AUDIENCES:
+                errors.append(f"{where}: unknown audience {audience!r}")
+
+        guide = entry.get("guide")
+        if guide and not str(guide).startswith("https://"):
+            errors.append(f"{where}: `guide` must be https")
+
+        if entry.get("name") in family_members:
+            regions = entry.get("regions") or []
+            if len(regions) != 1 or regions[0] not in REGIONS:
+                errors.append(
+                    f"{where}: a family member needs exactly one region "
+                    f"from {sorted(REGIONS)}, got {regions!r}"
+                )
+
+    return errors
+
+
+def validate(catalog: Catalog, verified: list[dict]) -> list[str]:
+    """Tier 1 over everything; tier 2 over the verified subset."""
+    return _tier_one(catalog) + _tier_two(catalog, verified)
+
+
+def _tool(entry: dict, family: dict | None) -> dict:
+    regions = entry.get("regions") or []
+    label, colour = REGIONS.get(regions[0], ("", "")) if regions else ("", "")
+    return {
+        "id": entry["id"],
+        "name": entry["name"],
+        "url": entry["url"],
+        "description": (entry.get("description") or "").strip(),
+        "audiences": entry.get("audiences") or [],
+        "system": entry["system"],
+        "systemLabel": SYSTEMS.get(entry["system"], entry["system"]),
+        "group": entry["group"],
+        "guide": entry.get("guide"),
+        "regionLabel": label,
+        "regionColor": colour,
+        "limited": entry.get("access") == "limited",
+        "family": (
+            {
+                "id": family["id"],
+                "name": family["name"],
+                "description": family["description"],
+                "group": family["group"],
+            }
+            if family
+            else None
+        ),
+    }
+
+
+def render(
+    catalog: Catalog, verified: list[dict], updated: str | None = None
+) -> str | None:
+    """The page, or None when too little of the catalog is verified."""
+    minimum = catalog.config.get("minimum_verified", 0)
+    if len(verified) < minimum:
+        return None
+
+    member_of = {
+        member: family
+        for family in catalog.config.get("families") or []
+        for member in family.get("members") or []
+    }
+
+    payload = {
+        "tools": [_tool(e, member_of.get(e["name"])) for e in verified],
+        "groups": catalog.config["groups"],
+        "views": [{"id": i, "label": lbl} for i, lbl in VIEWS],
+        "systems": [
+            {"id": i, "label": lbl}
+            for i, lbl in SYSTEMS.items()
+            if any(e["system"] == i for e in verified)
+        ],
+        "promos": catalog.config["promos"],
+        "meta": {"updated": updated or "", "count": len(verified)},
+    }
+
+    # json.dumps escapes quotes and control characters but NOT `<`, so a
+    # value containing a closing script tag would end the block early and
+    # blank the page with an exit-zero build. Escaping at the unicode
+    # level keeps the JSON valid.
+    encoded = (
+        json.dumps(payload, indent=1)
+        .replace("<", "\\u003c")
+        .replace(">", "\\u003e")
+        .replace("&", "\\u0026")
+    )
+    return catalog.template.replace("__CATALOG__", encoded)
+
+
+def _updated(root: Path) -> str:
+    """Tip-commit date, or empty when git cannot answer.
+
+    Deliberately not path-filtered: `git log -1 -- <path>` returns empty
+    under actions/checkout's shallow clone, while the unfiltered tip
+    resolves at depth 1. A missing date is not worth failing a build for,
+    so every failure mode returns "" and the template omits the stamp.
+    """
+    try:
+        # trunk-ignore(bandit/B603,bandit/B607): hardcoded git command, no user input
+        return subprocess.run(
+            [
+                "git",
+                "-C",
+                str(root),
+                "log",
+                "-1",
+                "--format=%ad",
+                "--date=format:%-d %b %Y",
+            ],
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=5,
+        ).stdout.strip()
+    except (subprocess.SubprocessError, OSError):
+        return ""
+
+
+def build(root: Path = HERE, updated: str | None = None) -> str | None:
+    """Load, validate and render. Raises CatalogError on any problem."""
+    catalog = load(root)
+    verified = select(catalog)
+    errors = validate(catalog, verified)
+    if errors:
+        raise CatalogError(errors)
+    return render(catalog, verified, updated or _updated(root))

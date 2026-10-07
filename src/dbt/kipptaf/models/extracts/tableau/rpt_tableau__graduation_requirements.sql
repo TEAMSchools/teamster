@@ -51,6 +51,7 @@ select
     c.met_ela,
     c.met_math,
     c.final_grad_path_code,
+    c.final_grad_path_name,
     c.grad_eligibility,
 
     if(e.met_fafsa_requirement, 'Yes', 'No') as has_fafsa,

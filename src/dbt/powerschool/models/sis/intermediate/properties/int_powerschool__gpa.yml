@@ -1,0 +1,169 @@
+models:
+  - name: int_powerschool__gpa
+    description: >-
+      Term-grained GPA joined to the student's cumulative GPA, so a consumer
+      reads one row per student, school, year and term without joining the two
+      GPA models itself. The cumulative measures repeat across a student's term
+      rows — they are cumulative to date, not per term.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - studentid
+              - schoolid
+              - yearid
+              - term_name
+    columns:
+      - name: students_student_number
+        data_type: int64
+        description: The school-facing student number.
+        config:
+          meta:
+            contains_pii: true
+      - name: studentid
+        data_type: int64
+        description: Internal PowerSchool student id.
+      - name: schoolid
+        data_type: int64
+        description: PowerSchool school number.
+      - name: yearid
+        data_type: int64
+        description:
+          PowerSchool's year id, which is the academic year minus 1990.
+      - name: academic_year
+        data_type: int64
+        description:
+          Academic year the term falls in, as the calendar year the year
+          started.
+      - name: term_name
+        data_type: string
+        description: Store code for the term, such as Q1 or Y1.
+      - name: semester
+        data_type: string
+        description:
+          Semester the term rolls up to — S1 for Q1 and Q2, S2 for Q3 and Q4.
+      - name: gpa_term
+        data_type: float64
+        description: Credit-weighted GPA for this term alone.
+      - name: gpa_y1
+        data_type: float64
+        description: Credit-weighted year-to-date GPA as of this term.
+      - name: gpa_y1_unweighted
+        data_type: float64
+        description: Unweighted year-to-date GPA as of this term.
+      - name: gpa_semester
+        data_type: float64
+        description: Credit-weighted GPA across the terms in this semester.
+      - name: n_failing_y1
+        data_type: int64
+        description: Count of year-to-date course grades starting with F.
+      - name: total_credit_hours_term
+        data_type: float64
+        description: Credit hours behind this term's GPA.
+      - name: total_credit_hours_y1
+        data_type: float64
+        description: Credit hours behind the year-to-date GPA.
+      - name: grade_avg_term
+        data_type: float64
+        description:
+          Mean percent grade across this term's courses, rounded to a whole
+          number.
+      - name: grade_avg_y1
+        data_type: float64
+        description: Mean year-to-date percent grade, rounded to a whole number.
+      - name: cumulative_y1_gpa
+        data_type: float64
+        description:
+          Credit-weighted GPA across every stored year, cumulative to date.
+      - name: cumulative_y1_gpa_unweighted
+        data_type: float64
+        description:
+          Unweighted GPA across every stored year, cumulative to date.
+      - name: cumulative_y1_gpa_projected
+        data_type: float64
+        description:
+          Cumulative credit-weighted GPA projected to year end, including
+          in-progress courses.
+      - name: earned_credits_cum
+        data_type: float64
+        description: Credits earned across every stored year.
+      - name: potential_credits_cum
+        data_type: float64
+        description: Credits attempted across every stored year.
+
+unit_tests:
+  - name: int_powerschool__gpa__joins_cumulative
+    description:
+      One term row joins its student's single cumulative row, and a term row
+      with no cumulative match survives with null cumulative measures.
+    model: int_powerschool__gpa
+    given:
+      - input: ref('int_powerschool__gpa_term')
+        format: sql
+        rows: |
+          select
+            1 as studentid, 100 as schoolid, 35 as yearid, 2025 as academic_year,
+            'Q1' as term_name, 'S1' as semester,
+            3.5 as gpa_term, 3.4 as gpa_y1, 3.3 as gpa_y1_unweighted,
+            3.45 as gpa_semester, 0 as n_failing_y1,
+            5.0 as total_credit_hours_term, 5.0 as total_credit_hours_y1,
+            90 as grade_avg_term, 89 as grade_avg_y1,
+            8400001 as students_student_number
+          union all
+          select
+            2, 100, 35, 2025, 'Q1', 'S1',
+            2.0, 2.0, 2.0, 2.0, 1, 5.0, 5.0, 70, 70, 8400002
+      - input: ref('int_powerschool__gpa_cumulative')
+        format: sql
+        rows: |
+          select
+            1 as studentid, 100 as schoolid,
+            3.2 as cumulative_y1_gpa,
+            3.1 as cumulative_y1_gpa_unweighted,
+            3.3 as cumulative_y1_gpa_projected,
+            20.0 as earned_credits_cum,
+            22.0 as potential_credits_cum
+    expect:
+      rows:
+        - studentid: 1
+          schoolid: 100
+          yearid: 35
+          academic_year: 2025
+          term_name: Q1
+          semester: S1
+          gpa_term: 3.5
+          gpa_y1: 3.4
+          gpa_y1_unweighted: 3.3
+          gpa_semester: 3.45
+          n_failing_y1: 0
+          total_credit_hours_term: 5.0
+          total_credit_hours_y1: 5.0
+          grade_avg_term: 90
+          grade_avg_y1: 89
+          students_student_number: 8400001
+          cumulative_y1_gpa: 3.2
+          cumulative_y1_gpa_unweighted: 3.1
+          cumulative_y1_gpa_projected: 3.3
+          earned_credits_cum: 20.0
+          potential_credits_cum: 22.0
+        - studentid: 2
+          schoolid: 100
+          yearid: 35
+          academic_year: 2025
+          term_name: Q1
+          semester: S1
+          gpa_term: 2.0
+          gpa_y1: 2.0
+          gpa_y1_unweighted: 2.0
+          gpa_semester: 2.0
+          n_failing_y1: 1
+          total_credit_hours_term: 5.0
+          total_credit_hours_y1: 5.0
+          grade_avg_term: 70
+          grade_avg_y1: 70
+          students_student_number: 8400002
+          cumulative_y1_gpa: null
+          cumulative_y1_gpa_unweighted: null
+          cumulative_y1_gpa_projected: null
+          earned_credits_cum: null
+          potential_credits_cum: null

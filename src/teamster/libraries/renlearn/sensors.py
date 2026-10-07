@@ -1,9 +1,14 @@
+import csv
+import io
 import json
 import re
+import tempfile
+import zipfile
 from collections import defaultdict
 from datetime import datetime
 from itertools import groupby
 from operator import itemgetter
+from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from dagster import (
@@ -21,6 +26,51 @@ from dagster import (
 from dagster_shared import check
 
 from teamster.libraries.ssh.resources import SSHResource
+
+
+def _school_year_start_date(ssh: SSHResource, remote_filepath: str) -> str | None:
+    """Read the school year out of the archive and return its fiscal-year key.
+
+    Renaissance publishes one fixed-name archive holding a single school year,
+    so the archive's own ``SchoolYear`` column -- not the wall clock -- says
+    which fiscal-year partition the drop belongs to. ``"2026-2027"`` maps to
+    the ``2026-07-01`` key, i.e. ``_dagster_partition_fiscal_year=2027``.
+
+    Returns None when no member carries a populated ``SchoolYear``, leaving the
+    caller to fall back to its configured partition key.
+    """
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        local_filepath = ssh.sftp_get(
+            remote_filepath=remote_filepath,
+            local_filepath=str(Path(tmp_dir) / Path(remote_filepath).name),
+        )
+
+        with zipfile.ZipFile(local_filepath) as zip_file:
+            for info in zip_file.infolist():
+                if info.file_size == 0:
+                    continue
+
+                with zip_file.open(info) as member:
+                    reader = csv.DictReader(io.TextIOWrapper(member, encoding="utf-8"))
+
+                    row = next(reader, None)
+
+                if row is None:
+                    continue
+
+                school_year = next(
+                    (
+                        value
+                        for key, value in row.items()
+                        if key is not None and key.lower() == "schoolyear" and value
+                    ),
+                    None,
+                )
+
+                if school_year is not None:
+                    return f"{school_year.split('-')[0]}-07-01"
+
+    return None
 
 
 def build_renlearn_sftp_sensor(
@@ -60,6 +110,9 @@ def build_renlearn_sftp_sensor(
         run_requests = []
         cursor: dict = json.loads(context.cursor or "{}")
 
+        # one archive is shared by every asset, so peek it once per evaluation
+        start_date_by_remote_filepath: dict[str, str | None] = {}
+
         files = ssh_renlearn.listdir_attr_r_or_skip()
 
         if isinstance(files, SkipReason):
@@ -75,11 +128,12 @@ def build_renlearn_sftp_sensor(
             partitions_def = check.inst(asset.partitions_def, MultiPartitionsDefinition)
 
             subjects = partitions_def.get_partitions_def_for_dimension("subject")
+            start_dates = partitions_def.get_partitions_def_for_dimension("start_date")
             job_name = (
                 f"{base_job_name}_{partitions_def.get_serializable_unique_identifier()}"
             )
 
-            for f, _ in files:
+            for f, path in files:
                 match = re.match(
                     pattern=asset_metadata["remote_file_regex"], string=f.filename
                 )
@@ -90,6 +144,31 @@ def build_renlearn_sftp_sensor(
                     and check.not_none(value=f.st_size) > 0
                 ):
                     context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
+
+                    # advance the cursor even if the drop is skipped below, so a
+                    # year we cannot place is not re-downloaded every tick
+                    cursor[asset_identifier] = now_timestamp
+
+                    if path not in start_date_by_remote_filepath:
+                        start_date_by_remote_filepath[path] = _school_year_start_date(
+                            ssh=ssh_renlearn, remote_filepath=path
+                        )
+
+                    start_date = start_date_by_remote_filepath[path]
+
+                    if start_date is None:
+                        context.log.warning(
+                            f"{path}: found no SchoolYear, falling back to "
+                            f"{partition_key_start_date}"
+                        )
+                        start_date = partition_key_start_date
+                    elif start_date not in start_dates.get_partition_keys():
+                        context.log.warning(
+                            f"{path}: SchoolYear resolves to {start_date}, which is "
+                            "outside the partitions definition; skipping"
+                        )
+                        continue
+
                     for subject in subjects.get_partition_keys():
                         run_request_kwargs.append(
                             {
@@ -97,14 +176,12 @@ def build_renlearn_sftp_sensor(
                                 "job_name": job_name,
                                 "partition_key": MultiPartitionKey(
                                     {
-                                        "start_date": partition_key_start_date,
+                                        "start_date": start_date,
                                         "subject": subject,
                                     }
                                 ),
                             }
                         )
-
-                    cursor[asset_identifier] = now_timestamp
 
         item_getter_key = itemgetter("job_name", "partition_key")
 

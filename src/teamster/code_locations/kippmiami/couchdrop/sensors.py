@@ -13,7 +13,7 @@ couchdrop_sftp_sensor = build_couchdrop_sftp_sensor(
     # worst case at 5 min, ~16 min at 10). The 12:30 freshness check on #4736 has
     # to be able to fire on a genuinely-stalled chain rather than one still in
     # flight, and a push at the 12:15 late bound has to be rebuilt well before the
-    # 12:45 delivery -- 10 min breaks both. Raising this back silently erodes the
+    # 13:15 delivery -- 10 min breaks both. Raising this back silently erodes the
     # push window the 2pm commitment depends on. See #4736.
     minimum_interval_seconds=(60 * 5),
     folder_id="1BLu_qlbcw_jcRZ8m9KIib0UbkPgK4uiM",

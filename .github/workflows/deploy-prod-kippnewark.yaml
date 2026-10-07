@@ -3,6 +3,7 @@ name: kippnewark
 permissions:
   contents: read
   pull-requests: write
+  packages: write
   id-token: write
 
 on:
@@ -16,6 +17,7 @@ on:
       - Dockerfile
       - uv.lock
       - src/dbt/amplify/**
+      - src/dbt/cambium/**
       - src/dbt/deanslist/**
       - src/dbt/edplan/**
       - src/dbt/finalsite/**
@@ -29,6 +31,7 @@ on:
       - src/teamster/code_locations/kippnewark/**
       - src/teamster/core/**
       - src/teamster/libraries/amplify/**
+      - src/teamster/libraries/cambium/**
       - src/teamster/libraries/couchdrop/**
       - src/teamster/libraries/extracts/**
       - src/teamster/libraries/dbt/**
@@ -54,6 +57,7 @@ on:
       - src/teamster/code_locations/kippnewark/**
       - src/teamster/core/**
       - src/teamster/libraries/amplify/**
+      - src/teamster/libraries/cambium/**
       - src/teamster/libraries/couchdrop/**
       - src/teamster/libraries/extracts/**
       - src/teamster/libraries/finalsite/**

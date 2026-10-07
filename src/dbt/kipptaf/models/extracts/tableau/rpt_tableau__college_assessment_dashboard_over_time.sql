@@ -1,53 +1,49 @@
 with
-    attempts as (
+    scores as (
         select
             student_number,
-            attempt_count_lifetime,
+            test_type,
+            scope,
+            score_type,
+            subject_area,
+            aligned_subject_area,
+            aligned_subject,
+            strategy_case,
 
-            case
-                scope
-                when 'act_count_lifetime'
-                then 'ACT'
-                when 'sat_count_lifetime'
-                then 'SAT'
-                when 'psatnmsqt_count_lifetime'
-                then 'PSAT NMSQT'
-                when 'psat10_count_lifetime'
-                then 'PSAT10'
-                when 'psat89_count_lifetime'
-                then 'PSAT 8/9'
-            end as scope,
+            max(scale_score) as max_scale_score,
+            max(attempt_lifetime) as attempt_count_lifetime,
 
-        from
-            {{ ref("int_students__college_assessment_participation_roster") }} unpivot (
-                attempt_count_lifetime for scope in (
-                    psat89_count_lifetime,
-                    psat10_count_lifetime,
-                    psatnmsqt_count_lifetime,
-                    sat_count_lifetime,
-                    act_count_lifetime
-                )
-            )
-        where rn_lifetime = 1
-    ),
-
-    alt_attempts as (
-        select student_number, scope, count(*) as alt_attempt_count_lifetime,
-        from {{ ref("int_assessments__college_assessment") }}
-        where aligned_subject_area = 'Total'
-        group by student_number, scope
-    ),
-
-    alt_max_scale_score as (
-        select student_number, score_type, max(scale_score) as alt_max_scale_score,
-        from {{ ref("int_assessments__college_assessment") }}
-        group by student_number, score_type
+        from {{ ref("int_assessments__all_college_assessments") }}
+        group by
+            student_number,
+            test_type,
+            scope,
+            score_type,
+            subject_area,
+            aligned_subject_area,
+            aligned_subject,
+            strategy_case
     ),
 
     goals as (
-        select *,
-        from {{ ref("stg_google_sheets__kippfwd__goals") }}
-        where region is null and schoolid is null and expected_goal_type != 'Board'
+        select
+            test_type as expected_test_type,
+            score_type as expected_score_type,
+            expected_scope,
+            expected_aligned_scope,
+            expected_subject_area,
+            expected_aligned_subject_area,
+            expected_aligned_subject,
+            expected_goal_type,
+            expected_goal_subtype,
+            expected_metric_name,
+            expected_metric_goal as pct_goal,
+
+            cast(expected_min_score as float64) as min_score,
+
+        from {{ ref("int_google_sheets__kippfwd__goals_unpivot") }}
+        cross join unnest(rpt_consumers) as rpt_consumer
+        where rpt_consumer = 'rpt_tableau__college_assessment_dashboard_over_time'
     ),
 
     roster as (
@@ -90,43 +86,20 @@ with
             coalesce(s.strategy_case, 'No testing history') as strategy_case,
 
             avg(
-                case
-                    when
-                        g.expected_goal_type = 'Benchmark' and s.max_scale_score is null
-                    then c.alt_max_scale_score
-                    when
-                        g.expected_goal_type = 'Benchmark'
-                        and s.max_scale_score is not null
-                    then s.max_scale_score
-                    when
-                        g.expected_goal_type = 'Attempts'
-                        and a.attempt_count_lifetime is null
-                    then b.alt_attempt_count_lifetime
-                    when
-                        g.expected_goal_type = 'Attempts'
-                        and a.attempt_count_lifetime != b.alt_attempt_count_lifetime
-                    then b.alt_attempt_count_lifetime
-                    else a.attempt_count_lifetime
-                end
+                if(
+                    g.expected_goal_type = 'Attempts',
+                    s.attempt_count_lifetime,
+                    s.max_scale_score
+                )
             ) as score,
 
         from {{ ref("int_extracts__student_enrollments") }} as e
         cross join goals as g
         left join
-            {{ ref("int_assessments__college_assessment") }} as s
+            scores as s
             on e.student_number = s.student_number
+            and g.expected_test_type = s.test_type
             and g.expected_score_type = s.score_type
-            and s.rn_highest = 1
-        left join
-            attempts as a on s.student_number = a.student_number and s.scope = a.scope
-        left join
-            alt_attempts as b
-            on s.student_number = b.student_number
-            and s.scope = b.scope
-        left join
-            alt_max_scale_score as c
-            on s.student_number = c.student_number
-            and s.score_type = c.score_type
         where
             e.school_level = 'HS'
             and e.rn_undergrad = 1

@@ -157,6 +157,14 @@ class _FakeResponse:
             raise HTTPError(f"{self.status_code} Server Error", response=self)  # pyright: ignore[reportArgumentType]
 
 
+# the body ADP's edge gateway returned on run 19266296 (issue #5076)
+OPENRESTY_404_BODY = (
+    "<html>\r\n<head><title>404 Not Found</title></head>\r\n<body>\r\n"
+    "<center><h1>404 Not Found</h1></center>\r\n<hr><center>openresty</center>\r\n"
+    "</body>\r\n</html>\r\n"
+)
+
+
 def _build_offline_resource(request_fn) -> AdpWorkforceNowResource:
     """Instantiate the resource without the network setup_for_execution path."""
     adp_wfn = AdpWorkforceNowResource(
@@ -273,7 +281,8 @@ def test_request_non_json_client_error_raises_adp_error(
     """A non-JSON 4xx surfaces ``AdpWorkforceNowError`` without retrying.
 
     The deterministic-4xx branch must tolerate a non-JSON body instead of
-    crashing on ``response.json()``.
+    crashing on ``response.json()``. Uses a 400 because a non-JSON 404 is the
+    gateway signature and is retried instead (see the gateway-404 test below).
     """
     monkeypatch.setattr(AdpWorkforceNowResource._request.retry, "wait", wait_none())  # pyright: ignore[reportFunctionMemberAccess]
 
@@ -281,7 +290,7 @@ def test_request_non_json_client_error_raises_adp_error(
 
     def request_fn(method: str, url: str, **kwargs) -> _FakeResponse:
         calls["n"] += 1
-        return _FakeResponse(404, {}, json_raises=True, text="404 Not Found")
+        return _FakeResponse(400, {}, json_raises=True, text="400 Bad Request")
 
     adp_wfn = _build_offline_resource(request_fn)
 
@@ -291,13 +300,22 @@ def test_request_non_json_client_error_raises_adp_error(
     assert calls["n"] == 1
 
 
-def test_request_retries_on_transient_gateway_404(monkeypatch: pytest.MonkeyPatch):
-    """ADP's gateway returns a transient ``default backend - 404`` mid-pagination.
+@pytest.mark.parametrize(
+    "body",
+    ["default backend - 404", OPENRESTY_404_BODY],
+    ids=["default_backend", "openresty"],
+)
+def test_request_retries_on_transient_gateway_404(
+    body: str, monkeypatch: pytest.MonkeyPatch
+):
+    """ADP's gateway returns a transient 404 when it has no healthy backend.
 
-    Regression: this load-balancer 404 was classified as a deterministic 4xx and
-    raised ``AdpWorkforceNowError`` without retrying. It must be re-raised as the
-    retryable ``HTTPError`` so tenacity retries with backoff (the genuine-404
-    case above must still fail fast).
+    Regression: the retry predicate matched only the literal ``default backend``
+    body, so the openresty variant was classified as a deterministic 4xx and
+    failed on the first attempt. The real signal is the body format -- ADP's API
+    layer answers with JSON, the gateway does not -- so any non-JSON 404 must be
+    re-raised as the retryable ``HTTPError``. The JSON-bodied 404 below must
+    still fail fast.
     """
     monkeypatch.setattr(AdpWorkforceNowResource._request.retry, "wait", wait_none())  # pyright: ignore[reportFunctionMemberAccess]
 
@@ -306,7 +324,7 @@ def test_request_retries_on_transient_gateway_404(monkeypatch: pytest.MonkeyPatc
     def request_fn(method: str, url: str, **kwargs) -> _FakeResponse:
         calls["n"] += 1
         if calls["n"] < 3:
-            return _FakeResponse(404, {}, text="default backend - 404")
+            return _FakeResponse(404, {}, json_raises=True, text=body)
         return _FakeResponse(200, {"ok": True})
 
     adp_wfn = _build_offline_resource(request_fn)
@@ -315,6 +333,30 @@ def test_request_retries_on_transient_gateway_404(monkeypatch: pytest.MonkeyPatc
 
     assert response.status_code == 200
     assert calls["n"] == 3
+
+
+def test_request_json_404_raises_adp_error(monkeypatch: pytest.MonkeyPatch):
+    """A 404 carrying a JSON body is a genuine resource error and fails fast.
+
+    ADP's API layer answers with JSON, so a parseable 404 body did not come from
+    the gateway. It must raise ``AdpWorkforceNowError`` after one request and
+    never enter the retry path — the guard that keeps the widened gateway-404
+    predicate from swallowing real 404s.
+    """
+    monkeypatch.setattr(AdpWorkforceNowResource._request.retry, "wait", wait_none())  # pyright: ignore[reportFunctionMemberAccess]
+
+    calls = {"n": 0}
+
+    def request_fn(method: str, url: str, **kwargs) -> _FakeResponse:
+        calls["n"] += 1
+        return _FakeResponse(404, {"error": "not found"})
+
+    adp_wfn = _build_offline_resource(request_fn)
+
+    with pytest.raises(AdpWorkforceNowError):
+        adp_wfn._request(method="GET", url="https://api.adp.com/hr/v2/workers")
+
+    assert calls["n"] == 1
 
 
 def test_request_persistent_gateway_404_retries_as_httperror(
@@ -332,7 +374,7 @@ def test_request_persistent_gateway_404_retries_as_httperror(
 
     def request_fn(method: str, url: str, **kwargs) -> _FakeResponse:
         calls["n"] += 1
-        return _FakeResponse(404, {}, text="default backend - 404")
+        return _FakeResponse(404, {}, json_raises=True, text="default backend - 404")
 
     adp_wfn = _build_offline_resource(request_fn)
 

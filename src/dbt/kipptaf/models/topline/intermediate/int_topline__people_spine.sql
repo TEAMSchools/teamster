@@ -54,7 +54,7 @@ select
     ds.is_current_week_mon_sun as is_current_week,
 from staff_roster_history as srh
 inner join
-    {{ ref("int_powerschool__calendar_week") }} as ds
+    {{ ref("int_students__calendar_week") }} as ds
     on srh.schoolid = ds.schoolid
     and ds.week_end_sunday between srh.effective_date_start and srh.effective_date_end
     and (

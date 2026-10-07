@@ -1,9 +1,12 @@
 from dagster import ConfigurableResource, InitResourceContext
-from pydantic import PrivateAttr
+from pydantic import Field, PrivateAttr
 from requests.exceptions import ConnectionError as RequestsConnectionError
 from requests.exceptions import Timeout
 from tableauserverclient.models.tableau_auth import PersonalAccessTokenAuth
-from tableauserverclient.server.endpoint.exceptions import InternalServerError
+from tableauserverclient.server.endpoint.exceptions import (
+    FailedSignInError,
+    InternalServerError,
+)
 from tableauserverclient.server.server import Server
 from tenacity import (
     retry,
@@ -13,10 +16,14 @@ from tenacity import (
 )
 
 
+class StaleSessionError(Exception):
+    """Tableau rejected the session it issued a moment earlier."""
+
+
 class TableauServerResource(ConfigurableResource):
     server_address: str
     token_name: str
-    personal_access_token: str
+    personal_access_token: str = Field(repr=False)
     site_id: str
     api_version: str = "3.25"
 
@@ -30,7 +37,7 @@ class TableauServerResource(ConfigurableResource):
 
     @retry(
         retry=retry_if_exception_type(
-            (RequestsConnectionError, Timeout, InternalServerError)
+            (RequestsConnectionError, Timeout, InternalServerError, StaleSessionError)
         ),
         stop=stop_after_attempt(5),
         wait=wait_exponential_jitter(initial=2, max=60),
@@ -49,6 +56,11 @@ class TableauServerResource(ConfigurableResource):
         transport-level ``ConnectionError`` / ``Timeout``), while a
         ``FailedSignInError`` (401) or ``ServerResponseError`` (other 4xx) is a
         deterministic credential/request failure left to fail fast.
+
+        Regression for prod runs afa747ef, 1de7236e, dd451efd: sign-in succeeded
+        and the first request 0.2-0.4s later returned ``401002``. A fresh sign-in
+        always recovered, so a self-lookup probes the new session and a rejected
+        probe (``StaleSessionError``) re-enters the same retry loop.
         """
         self._server.auth.sign_in(
             PersonalAccessTokenAuth(
@@ -57,3 +69,8 @@ class TableauServerResource(ConfigurableResource):
                 site_id=self.site_id,
             )
         )
+
+        try:
+            self._server.users.get_by_id(self._server.user_id)
+        except FailedSignInError as e:
+            raise StaleSessionError(str(e)) from e

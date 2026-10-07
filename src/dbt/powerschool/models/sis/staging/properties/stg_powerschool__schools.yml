@@ -20,11 +20,6 @@ models:
               config:
                 severity: error
                 where: state_excludefromreporting = 0
-          - accepted_values:
-              arguments:
-                values: [ES, MS, HS]
-              config:
-                severity: error
         description: >
           Grade-band classification derived from high_grade -- ES, MS, or HS.
           Null where high_grade falls outside the classified bands, which today

@@ -1,5 +1,4 @@
 with
-    -- students who already have an address in Focus; import once, never overwrite
     focus_address as (
         select distinct cast(student_id as string) as student_id,
         from {{ ref("stg_focus__students_join_address") }}

@@ -1,6 +1,16 @@
 models:
   - name: rpt_gsheets__csgf_enrollment
     columns:
+      - name: school
+        data_type: string
+        data_tests:
+          - unique
+        description:
+          Remaps stg_powerschool__schools' "Paterson Prep Middle School" /
+          "Paterson Prep Elementary School" to "KIPP Paterson Prep MS" / "KIPP
+          Paterson Prep ES" -- verified against CSGF's own Portal school-list
+          export, which carries the "Prep" in both names. A prior version of
+          this remap dropped "Prep" and didn't match.
       - name: total_instructional_days
         data_type: float64
       - name: total_budgeted_enrollment
@@ -62,6 +72,4 @@ models:
       - name: race_ethnicity_of_primary_leader
         data_type: string
       - name: gender_of_primary_leader
-        data_type: string
-      - name: school
         data_type: string

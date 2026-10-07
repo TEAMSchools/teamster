@@ -1,5 +1,11 @@
 models:
   - name: rpt_clever__students
+    description:
+      Clever roster feed for students — one row per (student, contact slot,
+      phone type). UNPIVOT drops null inputs, so a contact with no phone of a
+      given type emits no row for it. contact_1 is the single reportable parent
+      (contact_type 'primary'); emergency_1 through emergency_4 are emergency
+      contacts.
     columns:
       - name: last_name
         data_type: string

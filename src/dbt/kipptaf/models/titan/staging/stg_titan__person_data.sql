@@ -5,6 +5,7 @@ with
                 relations=[
                     source("kippnewark_titan", "stg_titan__person_data"),
                     source("kippcamden_titan", "stg_titan__person_data"),
+                    source("kipppaterson_titan", "stg_titan__person_data"),
                 ]
             )
         }}

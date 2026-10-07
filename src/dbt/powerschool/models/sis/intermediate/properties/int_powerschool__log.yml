@@ -1,0 +1,30 @@
+models:
+  - name: int_powerschool__log
+    columns:
+      - name: dcid
+        data_type: int64
+        data_tests:
+          - unique:
+              config:
+                severity: error
+      - name: studentid
+        data_type: int64
+      - name: logtypeid
+        data_type: int64
+      - name: entry_date
+        data_type: date
+        config:
+          meta:
+            contains_pii: true
+      - name: entry
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: academic_year
+        data_type: int64
+      - name: log_type
+        data_type: string
+        config:
+          meta:
+            contains_pii: true

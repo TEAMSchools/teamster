@@ -1,27 +1,120 @@
 models:
   - name: int_tableau__college_assessment_roster_scores
+    description: >-
+      One row per score category for each administration the Expected
+      Assessments tab expects of a student that the student has a score for, for
+      students graduating this school year or later. Administrations without a
+      score do not appear here; the reporting view left joins the tab to supply
+      them. Covers a student's whole high school history rather than the current
+      year, so the reporting view can show progress across administrations.
+
+
+      The tab defines the administrations — a score sat in a month (or, for
+      practice, a scope_round) the tab does not list has nowhere to land and
+      does not appear. Widening coverage is an edit to the tab, not to this
+      model. See the carat-dashboard skill for regenerating it.
+
+
+      Scores come from int_assessments__all_college_assessments, so official and
+      practice arrive already reconciled to one vocabulary and join on the same
+      key. The join binds academic year for SAT only. Practice administrations
+      are ordinary rows here: they occupy their own season and are links in the
+      SAT growth chain.
+
+
+      See docs/models/carat-dashboard-data-model.md.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - expected_test_type
+              - expected_score_type
+              - grade_level
+              - expected_admin_season
+              - score_category
+          config:
+            severity: error
     columns:
       - name: student_number
         data_type: int64
+        description: Student Number assigned by the school. Indexed.
       - name: grade_level
         data_type: int64
+        description: >-
+          Grade the student was in for this administration, from the enrollment
+          row the tab row was matched against — not their current grade.
       - name: expected_test_type
         data_type: string
+        description: >-
+          Official or Practice, from the tab. Bound to the score's own test
+          type, so a practice row carries a practice score and never an official
+          one.
       - name: expected_grouping
         data_type: string
+        description: >-
+          Total, EBRW, or Math — which shape of score the row reports. The tab's
+          Growth rows never appear, because their score type exists only on the
+          tab and matches no score.
       - name: expected_scope
         data_type: string
+        description: The test itself, such as SAT, PSAT 8/9, PSAT10, PSAT NMSQT.
       - name: expected_score_type
         data_type: string
+        description: Score identifier, unique per test and section.
       - name: expected_admin_season
         data_type: string
+        description: >-
+          Fall, Winter, or Spring — the administration window this score belongs
+          to, resolved from the month it was sat in (official) or its
+          scope_round (practice).
       - name: expected_admin_season_order
         data_type: int64
+        description: >-
+          Position of the administration across all four grades, reverse
+          chronological — 1 is the most recent. A single sequence spanning the
+          whole high school arc, so ordering by it descending walks a student's
+          history forwards in time.
       - name: expected_field_name
         data_type: string
-      - name: scale_score
+        description: Display label for the administration, built by the tab.
+      - name: score_category
+        data_type: string
+        description: >-
+          Scale Score or Score Change, matching expected_score_category on the
+          Expected Assessments tab so a reporting view joins straight through
+          instead of unioning the two categories itself.
+
+
+          An administration with no growth yields no Score Change row at all
+          rather than one holding null, because the UNPIVOT producing these rows
+          drops nulls. A consumer left joining the scaffold reads null either
+          way.
+      - name: score
         data_type: numeric
-      - name: total_growth_score_change
-        data_type: numeric
+        description: >-
+          The value for this score category.
+
+
+          On a Scale Score row, the highest score the student earned in this
+          administration, on the test's own scale — highest rather than latest
+          because an administration can hold more than one row for a student.
+
+
+          On a Score Change row, the change in total score from the student's
+          previous administration, in season order rather than by date, so it
+          measures the seasons this report displays rather than every sitting
+          the student had. Practice administrations are links in that chain — a
+          grade 11 Winter SAT score is measured against the grade 11 practice
+          SAT that precedes it when the student sat it. Computed from SAT Total
+          rows only, and attached to every row of that SAT administration
+          (student, grade, test type, season), whatever its grouping; the
+          reporting view reads it through the tab's Growth row.
       - name: unique_test_admin_id
         data_type: string
+        description: >-
+          Hash of test type, score type, grade level, and season, matching the
+          tab's own expected_unique_test_admin_id so the reporting view can join
+          the two. The tab hashes its Growth rows with the total score type, so
+          a tab Growth row matches this model's Total row; score category
+          separates Scale Score from Score Change.

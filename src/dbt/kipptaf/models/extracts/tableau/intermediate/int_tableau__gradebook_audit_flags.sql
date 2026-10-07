@@ -156,8 +156,7 @@ with
     ),
 
     eoq_items as (
-        select  -- All but Conduct Code
-            r.*, f.cte_grouping, f.audit_category, f.code_type,
+        select r.*, f.cte_grouping, f.audit_category, f.code_type,
 
         from
             {{ ref("int_tableau__gradebook_audit_student_scaffold") }} unpivot (
@@ -245,8 +244,6 @@ with
             r.school_level = 'ES' and e1.include_row is null and e2.include_row is null
     ),
 
-    /* w_grade_inflation, qt_effort_grade_missing, qt_formative_grade_missing,
-    qt_summative_grade_missing */
     student_course_category as (
         select r.*, f.cte_grouping, f.audit_category, f.code_type,
 
@@ -283,7 +280,6 @@ with
         where e.include_row is null
     )
 
--- this captures all flags from assignment_student
 select
     r._dbt_source_relation,
     r.academic_year,
@@ -420,9 +416,6 @@ left join
 
 union all
 
-/* this captures all student_course_category: qt_effort_grade_missing,
-qt_formative_grade_missing, qt_summative_grade_missing, and
-w_grade_inflation */
 select
     _dbt_source_relation,
     academic_year,
@@ -551,7 +544,6 @@ from student_course_category
 
 union all
 
--- this captures all eoq items except conduct_code
 select
     _dbt_source_relation,
     academic_year,
@@ -679,7 +671,6 @@ select
 from eoq_items
 
 union all
--- this captures conduct_code
 select
     _dbt_source_relation,
     academic_year,
@@ -809,8 +800,6 @@ select
 from eoq_items_conduct_code
 
 union all
-/* this captures 'class_category_assignment': w_assign_max_score_not_10,
-   f_assign_max_score_not_10, h_assign_max_score_not_10, s_max_score_greater_100 */
 select
     r._dbt_source_relation,
     r.academic_year,
@@ -950,7 +939,6 @@ select
 from teacher_unpivot_cca as r
 
 union all
--- this captures 'class_category'
 select
     r._dbt_source_relation,
     r.academic_year,

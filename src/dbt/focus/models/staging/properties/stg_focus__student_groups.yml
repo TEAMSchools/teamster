@@ -1,0 +1,97 @@
+models:
+  - name: stg_focus__student_groups
+    description: >-
+      Focus student groups — one row per group definition. Miami's groups are
+      all `dynamic`, meaning membership is recomputed from a saved search rather
+      than assigned by hand; `stg_focus__students_join_groups` holds the
+      resolved membership.
+    columns:
+      - name: id
+        description: Primary key — Focus student group id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: title
+        description: Group name.
+        data_type: string
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: district_id
+        description: Focus district id the group belongs to.
+        data_type: int
+      - name: saved_search_id
+        description: >-
+          Saved search that resolves membership for a `dynamic` group. Null for
+          a group assigned by hand.
+        data_type: int
+      - name: assignment_type
+        description: >-
+          How membership is assigned — `dynamic` (recomputed from
+          `saved_search_id`) or assigned by hand.
+        data_type: string
+      - name: assignment_values
+        description: Serialized assignment criteria for the group.
+        data_type: string
+      - name: schools
+        description: Serialized list of Focus school ids the group applies to.
+        data_type: string
+      - name: visible_to_profiles
+        description: >-
+          Serialized list of Focus profile ids that can see the group.
+        data_type: string
+      - name: limit_visible_profiles
+        description: >-
+          `1` when visibility is limited to `visible_to_profiles`, `0` or null
+          when it is not.
+        data_type: int
+      - name: limit_assigned_users
+        description: >-
+          `1` when only certain users may assign membership, `0` or null when
+          any may.
+        data_type: int
+      - name: default_search_for_assigned
+        description: >-
+          `1` when the group is the default search for its assigned users, `0`
+          or null when it is not.
+        data_type: int
+      - name: requires_eligibility
+        description: >-
+          `1` when membership requires an eligibility check, `0` or null when it
+          does not.
+        data_type: int
+      - name: parent_portal
+        description: >-
+          `1` when the group is exposed in the parent portal, `0` or null when
+          it is not.
+        data_type: int
+      - name: student_portal
+        description: >-
+          `1` when the group is exposed in the student portal, `0` or null when
+          it is not.
+        data_type: int
+      - name: start_date
+        description: First date the group is active.
+        data_type: date
+      - name: end_date
+        description: Last date the group is active.
+        data_type: date
+      - name: last_refresh
+        description:
+          Timestamp membership was last recomputed for a dynamic group.
+        data_type: timestamp
+      - name: uuid
+        description: Focus global unique identifier for the row.
+        data_type: string
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp

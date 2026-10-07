@@ -31,15 +31,7 @@ def test_couchdrop_sftp_sensor_kippcamden():
         couchdrop_sftp_sensor,
     )
 
-    _test_sensor(
-        sftp_sensor=couchdrop_sftp_sensor,
-        cursor={
-            "kippcamden__pearson__njgpa": 1733760579,
-            "kippcamden__pearson__njsla": 1725032365,
-            "kippcamden__pearson__njsla_science": 1725033354,
-            "kippcamden__pearson__student_list_report": 1746540340,
-        },
-    )
+    _test_sensor(sftp_sensor=couchdrop_sftp_sensor)
 
 
 def test_couchdrop_sftp_sensor_kippmiami():
@@ -63,15 +55,7 @@ def test_couchdrop_sftp_sensor_kippnewark():
         couchdrop_sftp_sensor,
     )
 
-    _test_sensor(
-        sftp_sensor=couchdrop_sftp_sensor,
-        cursor={
-            "kippnewark__pearson__njgpa": 1730782802,
-            "kippnewark__pearson__njsla": 1725032353,
-            "kippnewark__pearson__njsla_science": 1725033292,
-            "kippnewark__pearson__student_list_report": 1746539795,
-        },
-    )
+    _test_sensor(sftp_sensor=couchdrop_sftp_sensor)
 
 
 def test_couchdrop_sftp_sensor_kipptaf():

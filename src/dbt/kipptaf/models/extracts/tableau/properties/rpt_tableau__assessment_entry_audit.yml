@@ -1,39 +1,82 @@
 models:
   - name: rpt_tableau__assessment_entry_audit
+    description: >-
+      Score-entry audit for the Data Quality Dashboard. One row per student and
+      member internal assessment the student is expected to take this academic
+      year, from the internal branch of `int_assessments__scaffold` (replacement
+      sittings excluded), limited to students currently enrolled. The overall
+      percent correct is LEFT JOINed, so a null `percent_correct` marks an
+      expected assessment with no score entered.
+    config:
+      meta:
+        contains_pii: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - assessment_id
     columns:
       - name: student_number
         data_type: int64
+        description: Student number, from `int_assessments__scaffold`.
       - name: assessment_id
         data_type: int64
+        description:
+          Illuminate assessment id at member grain, not the canonical id.
       - name: title
         data_type: string
+        description: Member assessment title.
       - name: scope
         data_type: string
+        description: Assessment scope.
       - name: subject_area
         data_type: string
+        description: Assessment subject area.
       - name: academic_year
         data_type: int64
+        description:
+          Academic year as the starting calendar year. Always the current
+          academic year.
       - name: administered_at
         data_type: date
+        description: Administered date of the member assessment.
       - name: module_type
         data_type: string
+        description: AppSheet extension module type.
       - name: module_number
         data_type: string
+        description: AppSheet extension module code (module type plus sequence).
       - name: lastfirst
         data_type: string
+        description: Student's name as recorded in the SIS.
       - name: enroll_status
         data_type: int64
+        description: SIS enrollment status. Always 0 (currently enrolled).
       - name: region
         data_type: string
+        description: The student's region.
       - name: reporting_schoolid
         data_type: int64
+        description: The student's reporting school id.
       - name: grade_level
         data_type: int64
+        description: The student's grade level, with K as 0.
       - name: team
         data_type: string
+        description: The student's advisory or homeroom.
       - name: term
         data_type: string
+        description:
+          Name of the RT reporting term for the assessment's school whose date
+          range contains `administered_at`.
       - name: percent_correct
         data_type: numeric
+        description:
+          Overall percent correct from `int_illuminate__agg_student_responses`.
+          Null when the student has no score entered.
       - name: is_replacement
         data_type: int64
+        description:
+          Always null. Replacement sittings are excluded; the field is kept for
+          the Tableau workbook.

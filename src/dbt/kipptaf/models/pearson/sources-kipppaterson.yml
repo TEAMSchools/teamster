@@ -4,24 +4,6 @@ sources:
       "{%- if target.name == 'dev' -%}zz_{{ env_var('GITHUB_USER', 'dev') }}_{%-
       elif target.name == 'staging' -%}zz_stg_{%- endif -%}kipppaterson_pearson"
     tables:
-      - name: stg_pearson__njgpa
-        config:
-          meta:
-            dagster:
-              group: pearson
-              asset_key:
-                - kipppaterson
-                - pearson
-                - stg_pearson__njgpa
-      - name: stg_pearson__njsla
-        config:
-          meta:
-            dagster:
-              group: pearson
-              asset_key:
-                - kipppaterson
-                - pearson
-                - stg_pearson__njsla
       - name: int_pearson__njsla
         config:
           meta:
@@ -31,15 +13,6 @@ sources:
                 - kipppaterson
                 - pearson
                 - int_pearson__njsla
-      - name: stg_pearson__njsla_science
-        config:
-          meta:
-            dagster:
-              group: pearson
-              asset_key:
-                - kipppaterson
-                - pearson
-                - stg_pearson__njsla_science
       - name: int_pearson__njsla_science
         config:
           meta:
@@ -49,7 +22,7 @@ sources:
                 - kipppaterson
                 - pearson
                 - int_pearson__njsla_science
-      - name: stg_pearson__parcc
+      - name: int_pearson__student_list_report
         config:
           meta:
             dagster:
@@ -57,8 +30,8 @@ sources:
               asset_key:
                 - kipppaterson
                 - pearson
-                - stg_pearson__parcc
-      - name: stg_pearson__student_list_report
+                - int_pearson__student_list_report
+      - name: int_pearson__all_assessments
         config:
           meta:
             dagster:
@@ -66,13 +39,4 @@ sources:
               asset_key:
                 - kipppaterson
                 - pearson
-                - stg_pearson__student_list_report
-      - name: stg_pearson__student_test_update
-        config:
-          meta:
-            dagster:
-              group: pearson
-              asset_key:
-                - kipppaterson
-                - pearson
-                - stg_pearson__student_test_update
+                - int_pearson__all_assessments

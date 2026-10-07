@@ -342,6 +342,15 @@ sources:
                 - dlt
                 - focus
                 - student_report_card_grades
+      - name: student_gpa_calculated
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - dlt
+                - focus
+                - student_gpa_calculated
       - name: report_card_grades
         config:
           meta:
@@ -486,6 +495,24 @@ sources:
                 - dlt
                 - focus
                 - gradebook_templates
+      - name: gradebook_assignments_join_course_periods
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - dlt
+                - focus
+                - gradebook_assignments_join_course_periods
+      - name: gradebook_assignment_types_join_course_periods
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - dlt
+                - focus
+                - gradebook_assignment_types_join_course_periods
       # Discipline
       - name: discipline_referrals
         config:
@@ -578,15 +605,6 @@ sources:
                 - dlt
                 - focus
                 - permission
-      - name: login_history
-        config:
-          meta:
-            dagster:
-              asset_key:
-                - "{{ project_name }}"
-                - dlt
-                - focus
-                - login_history
       # Custom Fields
       - name: custom_fields
         config:

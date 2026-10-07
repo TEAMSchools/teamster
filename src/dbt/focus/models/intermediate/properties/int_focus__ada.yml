@@ -1,0 +1,34 @@
+models:
+  - name: int_focus__ada
+    description: >-
+      Per-student-per-year Focus attendance rollup. Counts only realized session
+      days (school_date on or before today), so a future year-end day cannot
+      dilute the average.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [student_number, academic_year]
+          config:
+            severity: error
+    columns:
+      - name: student_number
+        description: Network student number, unprefixed.
+        config:
+          meta:
+            contains_pii: true
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: academic_year
+        description: Academic year start year (2026 = 2026-27).
+      - name: days_in_session
+        description: Realized in-session days the student was enrolled for.
+      - name: days_present
+        description: Realized session days the student was present for.
+      - name: days_absent
+        description: >-
+          Realized session days the student was absent for. Focus does not split
+          excused from unexcused at this grain.
+      - name: ada
+        description: Average daily attendance across realized session days.

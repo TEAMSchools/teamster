@@ -1,49 +1,128 @@
 models:
   - name: stg_google_sheets__dibels_expected_assessments
+    description: >
+      Which DIBELS measures each region expects to assess, per academic year,
+      grade and round -- Benchmark administrations and PM rounds alike. The
+      internal method's configuration table, one sheet row per measure per
+      round. Passes the sheet through and adds parsed measure fields, the round
+      number, a K-labelled grade, the assessment type and the matching PM
+      season.
+
+      The sibling stg_google_sheets__dibels__expected_assessments_by_levels
+      carries PM rows only, split by student cohort, for the aimline method.
+      Benchmark expectations come from this model alone.
+
+      The sheet, not SQL, decides what is live. Assessment_Include and
+      PM_Goal_Include pass through untouched for consumers to filter.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - Academic_Year
+              - Region
+              - Grade
+              - Admin_Season
+              - Test_Code
+              - Measure_Standard
+          config:
+            severity: error
     columns:
       - name: Academic_Year
         data_type: int64
+        description:
+          Starting calendar year of the school year (e.g. 2025 for 2025-2026).
       - name: Region
         data_type: string
+        description:
+          The city form of the region -- Newark, Camden, Miami, Paterson.
       - name: Grade
         data_type: int64
+        description:
+          Grade level the expectation applies to, with kindergarten as 0.
       - name: Test_Type
         data_type: string
+        description: Assessment family the row belongs to.
       - name: Discipline
         data_type: string
+        description: Discipline the assessment sits under, e.g. Literacy.
       - name: Subject_Area
         data_type: string
+        description: Subject area the assessment sits under.
       - name: Measure_Standard
         data_type: string
+        description:
+          Raw underscore-delimited measure token from the sheet. The three
+          expected_measure_ columns are parsed out of it.
       - name: Test_Code
         data_type: string
+        description:
+          Term code the round maps to in reporting terms, e.g. LIT1 or PLIT3.
       - name: Admin_Season
         data_type: string
+        description:
+          The administration or PM season -- BOY, MOY or EOY for Benchmark rows;
+          BOY->MOY or MOY->EOY for PM rows.
       - name: Month_Round
         data_type: string
+        description:
+          Month label for the round, hand-written on the sheet. Not reliable;
+          derive the month from the round's start date instead.
       - name: Illuminate_Subject
         data_type: string
+        description:
+          Course-subject mapping used by the section-enrollment resolver.
       - name: iReady_Subject
         data_type: string
+        description: iReady subject the row maps to.
       - name: PS_Credit_Type
         data_type: string
+        description: PowerSchool credit type the row maps to.
       - name: Assessment_Include
         data_type: boolean
+        description:
+          Null means the round runs. Non-null cancels the whole round for that
+          grade and region.
       - name: PM_Goal_Include
         data_type: boolean
+        description:
+          Null means a real tested round; non-null marks a scaffold row that
+          keeps the internal trajectory continuous across a round the measure
+          was not tested in.
       - name: PM_Goal_Criteria
         data_type: string
+        description:
+          How the round's measure codes combine. AND requires every code; NULL
+          is the OR criteria.
       - name: assessment_type
         data_type: string
+        description:
+          Benchmark when Admin_Season is BOY, MOY or EOY; PM for every other
+          season. Derived in this model, not read from the sheet.
       - name: matching_pm_season
         data_type: string
+        description:
+          The PM season that follows a Benchmark administration -- BOY->MOY for
+          BOY, MOY->EOY for MOY. Null for EOY and for PM rows.
       - name: expected_measure_name_code
         data_type: string
+        description:
+          Measure code parsed from Measure_Standard -- the text before the first
+          underscore.
       - name: expected_measure_name
         data_type: string
+        description:
+          Measure name parsed from Measure_Standard -- the text between the
+          first pair of underscores.
       - name: expected_measure_standard
         data_type: string
+        description:
+          Measure standard parsed from Measure_Standard -- the text after the
+          last underscore.
       - name: grade_level_text
         data_type: string
+        description: Grade level as text, with 0 rendered as K.
       - name: round_number
         data_type: int64
+        description:
+          Round number parsed from the digits after LIT in Test_Code, so a
+          double-digit round parses whole.

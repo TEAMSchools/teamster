@@ -7,6 +7,7 @@ import logging
 import types
 
 import pytest
+from requests.exceptions import ChunkedEncodingError
 from requests.exceptions import ConnectionError as RequestsConnectionError
 from requests.exceptions import HTTPError
 from tenacity import wait_none
@@ -136,6 +137,30 @@ def test_connection_error_retries_then_surfaces_as_grow_api_error(
         calls["n"] += 1
 
         raise RequestsConnectionError("connection reset by peer")
+
+    grow = _build_offline_resource(request_fn)
+
+    with pytest.raises(GrowAPIError):
+        grow.put("users", "abc", json={"name": "x"})
+
+    assert calls["n"] == 3
+
+
+def test_chunked_encoding_error_retries(monkeypatch: pytest.MonkeyPatch):
+    """A body truncated mid-stream retries like a reset connection.
+
+    Regression: Grow dropped the ``observations`` page 1771 bytes short and
+    ``requests`` raised ``ChunkedEncodingError``, which is not a
+    ``ConnectionError``, so the step failed on the first attempt.
+    """
+    monkeypatch.setattr(GrowResource._request.retry, "wait", wait_none())  # pyright: ignore[reportFunctionMemberAccess]
+
+    calls = {"n": 0}
+
+    def request_fn(method: str, url: str, **kwargs) -> _FakeResponse:
+        calls["n"] += 1
+
+        raise ChunkedEncodingError("Connection broken: IncompleteRead")
 
     grow = _build_offline_resource(request_fn)
 

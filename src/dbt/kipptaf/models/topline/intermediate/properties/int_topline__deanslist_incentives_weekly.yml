@@ -1,11 +1,90 @@
 models:
   - name: int_topline__deanslist_incentives_weekly
+    description: >-
+      One row per student per enrolled week, flagging whether the student earned
+      a Progress to Quarterly Incentive award in DeansList that week. Schools
+      log these awards on Thursdays. Awards are bucketed into Sunday-start weeks
+      and labeled by the Monday, so a Thursday award counts toward that Monday's
+      week and a Sunday-dated award counts toward the following week.
+    columns:
+      - name: is_receiving_incentive
+        description: >-
+          1 when the student has at least one Progress to Quarterly Incentive
+          award in the week, otherwise 0.
     config:
+      enabled: false
       materialized: table
       meta:
         dagster:
-          # table + nightly cron flattens the ~660-stage view-inlined plan of
+          # table + cron flattens the deep view-inlined plan of
           # int_topline__student_metrics without eager rebuilds; shares its
-          # midnight tick (deps-in-progress guard serializes). Refs #4153
+          # tick (deps-in-progress guard serializes). Refs #4153
           automation_condition:
-            cron_schedule: 0 0 * * *
+            cron_schedule: 30 0 * * *
+
+unit_tests:
+  - name: unit_topline_deanslist_incentives_weekly_week_bucketing
+    config:
+      enabled: false
+    description:
+      Two students across two enrolled weeks. Student 1 has a Thursday award and
+      a Saturday award in the first week, which flag that week once without
+      fanning out, plus a non-incentive behavior in the second week that flags
+      nothing. Student 2 has a Sunday award, which counts toward the following
+      Monday's week, not the week it ends.
+    model: int_topline__deanslist_incentives_weekly
+    given:
+      - input: ref('int_extracts__student_enrollments_weeks')
+        rows:
+          - student_number: 1
+            academic_year: 2026
+            week_start_monday: 2026-09-14
+            week_end_sunday: 2026-09-20
+            is_enrolled_week: true
+          - student_number: 1
+            academic_year: 2026
+            week_start_monday: 2026-09-21
+            week_end_sunday: 2026-09-27
+            is_enrolled_week: true
+          - student_number: 2
+            academic_year: 2026
+            week_start_monday: 2026-09-14
+            week_end_sunday: 2026-09-20
+            is_enrolled_week: true
+          - student_number: 2
+            academic_year: 2026
+            week_start_monday: 2026-09-21
+            week_end_sunday: 2026-09-27
+            is_enrolled_week: true
+      - input: ref('stg_deanslist__behavior')
+        rows:
+          - student_school_id: 1
+            academic_year: 2026
+            behavior: Progress to Quarterly Incentive
+            behavior_date: 2026-09-17
+          - student_school_id: 1
+            academic_year: 2026
+            behavior: Progress to Quarterly Incentive
+            behavior_date: 2026-09-19
+          - student_school_id: 1
+            academic_year: 2026
+            behavior: Earned Quarterly Incentive
+            behavior_date: 2026-09-22
+          - student_school_id: 2
+            academic_year: 2026
+            behavior: Progress to Quarterly Incentive
+            behavior_date: 2026-09-20
+    expect:
+      rows:
+        - student_number: 1
+          week_start_monday: 2026-09-14
+          is_receiving_incentive: 1
+        - student_number: 1
+          week_start_monday: 2026-09-21
+          is_receiving_incentive: 0
+        - student_number: 2
+          week_start_monday: 2026-09-14
+          is_receiving_incentive: 0
+        - student_number: 2
+          week_start_monday: 2026-09-21
+          is_receiving_incentive: 1

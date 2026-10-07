@@ -29,10 +29,6 @@ with
         from enrolled
     )
 
--- One row per student, placing them in their school-and-grade section. The
--- section_id expression is identical to the one in rpt_parentsquare__sections and
--- both models read the same enrollment filter, so every roster row resolves to a
--- section by construction; the relationships test on section_id enforces it.
 select
     school_id,
     code_location,

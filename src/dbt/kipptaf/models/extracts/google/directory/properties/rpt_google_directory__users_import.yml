@@ -4,10 +4,9 @@ models:
       Google Workspace student accounts to create or update, consumed by the
       google_directory user_create and user_update assets. Rows are the union of
       two enrollment sources — PowerSchool for the NJ regions, and Focus for
-      Miami, whose PowerSchool instance is a frozen archive. Paterson is
-      excluded. A row appears only when the account is missing (is_create) or
-      when its name, suspension state, or org unit has drifted from the source
-      of record (is_update).
+      Miami, whose PowerSchool instance is a frozen archive. A row appears only
+      when the account is missing (is_create) or when its name, suspension
+      state, or org unit has drifted from the source of record (is_update).
     config:
       meta:
         contains_pii: true
@@ -43,6 +42,11 @@ models:
         data_type: string
       - name: groupKey
         data_type: string
+        description: >
+          Address of the region's student group, resolved against
+          stg_google_directory__groups. Null when that group does not exist in
+          Google Workspace, in which case the account is still created and the
+          membership add is skipped.
       - name: name
         data_type: record
       - name: name.givenName

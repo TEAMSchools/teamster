@@ -8,12 +8,12 @@ set -euo pipefail
 # point back to setup.sh on any error (the clean "Aborted." exit 0 path skips
 # this trap).
 on_error() {
-  status=$?
-  echo "" >&2
-  echo "install.sh failed (exit ${status})." >&2
-  echo "Missing tool, unreachable cluster, or missing namespace? Run the" >&2
-  echo "environment bootstrap first, then retry:" >&2
-  echo "  bash .k8s/setup.sh" >&2
+	status=$?
+	echo "" >&2
+	echo "install.sh failed (exit ${status})." >&2
+	echo "Missing tool, unreachable cluster, or missing namespace? Run the" >&2
+	echo "environment bootstrap first, then retry:" >&2
+	echo "  bash .k8s/setup.sh" >&2
 }
 trap on_error ERR
 
@@ -24,22 +24,26 @@ helm show values dagster-cloud/dagster-cloud-agent >.k8s/dagster/values.yaml
 
 echo "Running dry-run..."
 helm upgrade \
-  --install user-cloud dagster-cloud/dagster-cloud-agent \
-  --namespace dagster-cloud \
-  -f .k8s/dagster/values-override.yaml \
-  --dry-run
+	--install user-cloud dagster-cloud/dagster-cloud-agent \
+	--namespace dagster-cloud \
+	-f .k8s/dagster/values-override.yaml \
+	--dry-run
 
 read -r -p "Dry-run succeeded. Apply to cluster? [y/N] " response
 if [[ ! ${response} =~ ^[Yy]$ ]]; then
-  echo "Aborted."
-  exit 0
+	echo "Aborted."
+	exit 0
 fi
 
 helm upgrade \
-  --install user-cloud dagster-cloud/dagster-cloud-agent \
-  --namespace dagster-cloud \
-  -f .k8s/dagster/values-override.yaml
+	--install user-cloud dagster-cloud/dagster-cloud-agent \
+	--namespace dagster-cloud \
+	-f .k8s/dagster/values-override.yaml
 
 # ConfigMap changes don't trigger a rollout — force restart to pick up new env vars.
 kubectl rollout restart deployment/user-cloud-dagster-cloud-agent-agent -n dagster-cloud
-kubectl rollout status deployment/user-cloud-dagster-cloud-agent-agent -n dagster-cloud --timeout=600s
+# Must match the agent readinessProbe budget in values-override.yaml
+# (failureThreshold x periodSeconds = 1300s). A shorter timeout here reports a
+# healthy-but-slow first reconcile as a failure and fires the on_error trap,
+# which then misdirects the reader to setup.sh.
+kubectl rollout status deployment/user-cloud-dagster-cloud-agent-agent -n dagster-cloud --timeout=1300s

@@ -22,12 +22,13 @@ with
         cross join unnest(regions_array) as region
     ),
 
-    -- grain projection: every selected column is functionally determined
-    -- by the partition key; not a mask for upstream duplicates
-    -- State NJ PARCC: one administration per (testcode, period, academic_year,
-    -- _dbt_source_project).
-    state_nj_parcc_administrations as (
+    -- grain projection, not dup-masking
+    -- one administration per (assessment_type, module_code, administration_period,
+    -- academic_year, _dbt_source_project)
+    state_nj_administrations as (
         select distinct
+            assessment_type,
+            assessment_name as title,
             subject_area,
             discipline as scope,
             module_code,
@@ -36,186 +37,36 @@ with
             administration_period,
             _dbt_source_project,
 
-            'state_nj_parcc' as assessment_type,
-            'PARCC' as title,
-
             cast(null as date) as administered_date,
             cast(null as int64) as source_assessment_id,
             cast(null as string) as test_type,
-        from {{ ref("stg_pearson__parcc") }}
-        where testscalescore is not null
-    ),
-
-    -- grain projection: every selected column is functionally determined
-    -- by the partition key; not a mask for upstream duplicates
-    -- State NJ NJSLA: one administration per (testcode, period, academic_year,
-    -- _dbt_source_project).
-    state_nj_njsla_administrations as (
-        select distinct
-            subject_area,
-            discipline as scope,
-            module_code,
-            test_grade as grade_level,
-            academic_year,
-            administration_period,
-            _dbt_source_project,
-
-            'state_nj_njsla' as assessment_type,
-            'NJSLA' as title,
-
-            cast(null as date) as administered_date,
-            cast(null as int64) as source_assessment_id,
-            cast(null as string) as test_type,
-        from {{ ref("stg_pearson__njsla") }}
-        where testscalescore is not null
-    ),
-
-    -- grain projection: every selected column is functionally determined
-    -- by the partition key; not a mask for upstream duplicates
-    -- State NJ NJSLA Science: one administration per (testcode, period,
-    -- academic_year, _dbt_source_project).
-    state_nj_njsla_science_administrations as (
-        select distinct
-            subject_area,
-            discipline as scope,
-            module_code,
-            test_grade as grade_level,
-            academic_year,
-            administration_period,
-            _dbt_source_project,
-
-            'state_nj_njsla_science' as assessment_type,
-            'NJSLA Science' as title,
-
-            cast(null as date) as administered_date,
-            cast(null as int64) as source_assessment_id,
-            cast(null as string) as test_type,
-        from {{ ref("stg_pearson__njsla_science") }}
-        where testscalescore is not null
-    ),
-
-    -- grain projection: every selected column is functionally determined
-    -- by the partition key; not a mask for upstream duplicates
-    -- State NJ NJGPA: one administration per (testcode, period, academic_year,
-    -- _dbt_source_project).
-    state_nj_njgpa_administrations as (
-        select distinct
-            subject_area,
-            discipline as scope,
-            module_code,
-            test_grade as grade_level,
-            academic_year,
-            administration_period,
-            _dbt_source_project,
-
-            'state_nj_njgpa' as assessment_type,
-            'NJGPA' as title,
-
-            cast(null as date) as administered_date,
-            cast(null as int64) as source_assessment_id,
-            cast(null as string) as test_type,
-        from {{ ref("stg_pearson__njgpa") }}
-        where testscalescore is not null
-    ),
-
-    -- grain projection: every selected column is functionally determined
-    -- by the partition key; not a mask for upstream duplicates
-    -- State FL FAST: one administration per (test_code, administration_window,
-    -- academic_year).
-    state_fl_fast_administrations as (
-        select distinct
-            assessment_subject as subject_area,
-            discipline as scope,
-            test_code as module_code,
-            grade_level,
-            academic_year,
-            administration_window as administration_period,
-            _dbt_source_project,
-
-            'state_fl_fast' as assessment_type,
-            'FAST' as title,
-
-            cast(null as date) as administered_date,
-            cast(null as int64) as source_assessment_id,
-            cast(null as string) as test_type,
-        from {{ ref("stg_fldoe__fast") }}
+        from {{ ref("int_assessments__state_nj_scores") }}
         where scale_score is not null
     ),
 
-    -- grain projection: every selected column is functionally determined
-    -- by the partition key; not a mask for upstream duplicates
-    -- State FL FSA: one administration per (test_code, administration_window,
-    -- academic_year).
-    state_fl_fsa_administrations as (
+    -- grain projection, not dup-masking
+    -- one administration per (assessment_type, test_code, administration_window,
+    -- academic_year, _dbt_source_project)
+    state_fl_administrations as (
         select distinct
+            assessment_type,
+            assessment_name as title,
             assessment_subject as subject_area,
             discipline as scope,
             test_code as module_code,
-            grade_level,
             academic_year,
             administration_window as administration_period,
             _dbt_source_project,
-
-            'state_fl_fsa' as assessment_type,
-            'FSA' as title,
+            grade_level,
 
             cast(null as date) as administered_date,
             cast(null as int64) as source_assessment_id,
             cast(null as string) as test_type,
-        from {{ ref("stg_fldoe__fsa") }}
+        from {{ ref("int_fldoe__all_assessments") }}
         where scale_score is not null
     ),
 
-    -- grain projection: every selected column is functionally determined
-    -- by the partition key; not a mask for upstream duplicates
-    -- State FL EOC: one administration per (test_code, administration_window,
-    -- academic_year).
-    state_fl_eoc_administrations as (
-        select distinct
-            assessment_subject as subject_area,
-            discipline as scope,
-            test_code as module_code,
-            grade_level,
-            academic_year,
-            administration_window as administration_period,
-            _dbt_source_project,
-
-            'state_fl_eoc' as assessment_type,
-            'EOC' as title,
-
-            cast(null as date) as administered_date,
-            cast(null as int64) as source_assessment_id,
-            cast(null as string) as test_type,
-        from {{ ref("stg_fldoe__eoc") }}
-        where scale_score is not null
-    ),
-
-    -- grain projection: every selected column is functionally determined
-    -- by the partition key; not a mask for upstream duplicates
-    -- State FL Science: one administration per (test_code, administration_window,
-    -- academic_year).
-    state_fl_science_administrations as (
-        select distinct
-            assessment_subject as subject_area,
-            discipline as scope,
-            test_code as module_code,
-            grade_level,
-            academic_year,
-            administration_window as administration_period,
-            _dbt_source_project,
-
-            'state_fl_science' as assessment_type,
-            'Science' as title,
-
-            cast(null as date) as administered_date,
-            cast(null as int64) as source_assessment_id,
-            cast(null as string) as test_type,
-        from {{ ref("stg_fldoe__science") }}
-        where scale_score is not null
-    ),
-
-    -- grain projection: every selected column is functionally determined
-    -- by the partition key; not a mask for upstream duplicates
+    -- grain projection, not dup-masking
     -- iReady: one administration per (subject, test_round, academic_year,
     -- _dbt_source_project).
     iready_administrations as (
@@ -239,8 +90,7 @@ with
         where overall_scale_score is not null and _dbt_source_project is not null
     ),
 
-    -- grain projection: every selected column is functionally determined
-    -- by the partition key; not a mask for upstream duplicates
+    -- grain projection, not dup-masking
     -- STAR: one administration per (star_subject, screening window,
     -- academic_year, _dbt_source_project).
     star_administrations as (
@@ -267,8 +117,7 @@ with
             and _dbt_source_project is not null
     ),
 
-    -- grain projection: every selected column is functionally determined
-    -- by the partition key; not a mask for upstream duplicates
+    -- grain projection, not dup-masking
     -- DIBELS: one administration per (benchmark window, academic_year,
     -- _dbt_source_project); module_code is the Composite measure.
     dibels_administrations as (
@@ -294,8 +143,7 @@ with
     -- College Official: one administration per (score_type, test_date,
     -- administration_round). _dbt_source_project is null because college tests
     -- are region-agnostic.
-    -- grain projection: every selected column is functionally determined
-    -- by the partition key; not a mask for upstream duplicates
+    -- grain projection, not dup-masking
     college_administrations as (
         select distinct
             scope,
@@ -344,8 +192,7 @@ with
 
     -- AP: one administration per (subject, academic_year). Test date is
     -- not captured upstream.
-    -- grain projection: every selected column is functionally determined
-    -- by the partition key; not a mask for upstream duplicates
+    -- grain projection, not dup-masking
     ap_administrations as (
         select distinct
             title,
@@ -377,28 +224,10 @@ with
         from illuminate_administrations
         union all
         select {{ union_cols }},
-        from state_nj_njgpa_administrations
+        from state_nj_administrations
         union all
         select {{ union_cols }},
-        from state_nj_njsla_administrations
-        union all
-        select {{ union_cols }},
-        from state_nj_njsla_science_administrations
-        union all
-        select {{ union_cols }},
-        from state_nj_parcc_administrations
-        union all
-        select {{ union_cols }},
-        from state_fl_eoc_administrations
-        union all
-        select {{ union_cols }},
-        from state_fl_fast_administrations
-        union all
-        select {{ union_cols }},
-        from state_fl_fsa_administrations
-        union all
-        select {{ union_cols }},
-        from state_fl_science_administrations
+        from state_fl_administrations
         union all
         select {{ union_cols }},
         from iready_administrations

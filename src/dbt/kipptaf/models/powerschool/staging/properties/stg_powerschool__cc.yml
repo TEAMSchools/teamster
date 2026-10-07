@@ -1,2 +1,7 @@
 models:
   - name: stg_powerschool__cc
+    description: >-
+      Cross-district union of the district-level stg_powerschool__cc models.
+      Inherits the frozen PowerSchool double-write corpus described on the
+      package-level model — duplicate rows for the same student, section, and
+      dateleft combination.

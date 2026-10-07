@@ -1,13 +1,14 @@
 models:
   - name: int_topline__student_retention_weekly_aggregations
     config:
+      enabled: false
       materialized: table
       meta:
         dagster:
-          # nightly instead of eager: int_students__retention_over_time updates
-          # all day, driving 35-150 rebuilds/day that each cascade to
-          # rpt_tableau__topline_cascade_dashboard — whose Tableau refresh runs
-          # once at 05:00 ET. Same treatment as int_topline__student_metrics
-          # (the chain's other table input). Refs #4559
+          # cron instead of eager: int_students__retention_over_time updates
+          # all day, and each rebuild would cascade to
+          # rpt_tableau__topline_cascade_dashboard, whose Tableau refresh runs
+          # once a day. Same treatment as int_topline__student_metrics (the
+          # chain's other table input). Refs #4559
           automation_condition:
-            cron_schedule: 0 0 * * *
+            cron_schedule: 30 0 * * *

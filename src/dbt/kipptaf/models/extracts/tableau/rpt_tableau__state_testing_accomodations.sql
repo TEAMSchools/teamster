@@ -10,7 +10,6 @@ with
             parcc_test_format,
             state_assessment_name,
 
-            -- unpivot fields
             accommodation,
             accommodation_value,
         from

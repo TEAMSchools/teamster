@@ -1,0 +1,183 @@
+models:
+  - name: int_focus__student_enrollment_roster
+    description: >-
+      Focus student enrollment stints (Focus is kippmiami's live SIS today), one
+      row per enrollment stint. The full derivation (numeric grade level,
+      resolved enrollment/withdrawal code labels, the June 30 open-enrollment
+      exitdate default, point-in-time enrollment flags, and
+      year-in-school/year-in-network counters mirroring PowerSchool's equivalent
+      coding) now lives in the focus package's
+      int_focus__student_enrollment_roster. This wrapper unions the district
+      relation, then adds location enrichment from
+      stg_google_sheets__people__locations and the region/network constants.
+    columns:
+      - name: student_enrollment_id
+        description: Primary key — Focus student_enrollment id.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: _dbt_source_relation
+        description: >-
+          Source relation this row was unioned from, carried through from
+          stg_focus__students.
+      - name: _dbt_source_project
+        description: District code location derived from _dbt_source_relation.
+      - name: student_number
+        description: >-
+          Focus student id (10-digit, FLDOE-district-prefixed) — the student
+          this enrollment stint belongs to.
+        config:
+          meta:
+            contains_pii: true
+      - name: student_first_name
+        description: Student's first name.
+        config:
+          meta:
+            contains_pii: true
+      - name: student_last_name
+        description: Student's last name.
+        config:
+          meta:
+            contains_pii: true
+      - name: fteid
+        description: >-
+          Florida Education Identifier (FLEID), Focus's state student
+          identifier.
+        config:
+          meta:
+            contains_pii: true
+      - name: student_email
+        description: Student's school-issued email address.
+        config:
+          meta:
+            contains_pii: true
+      - name: academic_year
+        description:
+          Focus school year (start-year form) the enrollment belongs to.
+      - name: schoolid
+        description: Focus school id the enrollment belongs to.
+      - name: startdate
+        description: Enrollment start date.
+      - name: state
+        description:
+          State the enrolling school reports to (Focus's
+          stg_focus__schools.state).
+      - name: ps_schoolid
+        description: >-
+          PowerSchool-aligned school id, resolved via
+          stg_google_sheets__people__locations.focus_school_id (matched on
+          Focus's own school_number, an FLDOE-style code, not schoolid).
+      - name: school
+        description: >-
+          School display name from stg_google_sheets__people__locations,
+          resolved via the same focus_school_id crosswalk as ps_schoolid.
+      - name: school_abbreviation
+        description: >-
+          School abbreviation from stg_google_sheets__people__locations,
+          resolved via the same focus_school_id crosswalk as ps_schoolid.
+      - name: reporting_schoolid
+        description: >-
+          Reporting school id from stg_google_sheets__people__locations,
+          resolved via the same focus_school_id crosswalk as ps_schoolid.
+      - name: region_official_name
+        description: >-
+          Long-form region/entity name (e.g. "KIPP Miami") from
+          stg_google_sheets__people__locations.location_region.
+      - name: deanslist_school_id
+        description: >-
+          DeansList school id from stg_google_sheets__people__locations,
+          resolved via the same focus_school_id crosswalk as ps_schoolid.
+      - name: entrycode
+        description: Abbreviated label for the enrollment (entry) code.
+      - name: exitcode
+        description: >-
+          Abbreviated label for the withdrawal (drop) code. Null while the
+          enrollment is still open.
+      - name: first_day_of_school
+        description: >-
+          First day of school for the enrollment's academic_year, from
+          int_focus__school_year_first_day.
+      - name: district
+        description: Literal 'KTAF' — Focus is network-managed under KTAF.
+      - name: dob
+        description: Student's date of birth.
+        config:
+          meta:
+            contains_pii: true
+      - name: student_name
+        description: Student's display name, formatted as "Last, First".
+      - name: region
+        description: District region derived from _dbt_source_project.
+      - name: academic_year_display
+        description: >-
+          Human-readable school year, formatted as "<academic_year>-<next year's
+          last 2 digits>" (e.g. 2026-27).
+      - name: exitdate
+        description: >-
+          Enrollment end date. When Focus's own end_date is null (the enrollment
+          is still open), coalesced to June 30 of the following calendar year.
+      - name: grade_level
+        description: >-
+          Numeric grade level derived from the enrollment's grade-level
+          short_name (PK = -1, KG = 0, else the numeric grade).
+      - name: enroll_status
+        description: >-
+          Enrollment status derived from drop_code and its grad_type, mirroring
+          PowerSchool's enroll_status coding — 0 when drop_code is null (still
+          enrolled), 3 when the drop code's grad_type is 'graduated', else 2
+          (withdrawn).
+      - name: school_level
+        description: >-
+          School level abbreviated to ES/MS/HS, decoded from the school's
+          school_level custom field (id 681) via
+          stg_focus__custom_field_select_options's code ('E'/'M'/'H'), falling
+          back to the locations crosswalk's grade_band when Focus has no
+          school_level set. The fallback covers the two closed legacy schools
+          (Sunrise, Liberty), which carry no Focus school_level label at all.
+          Still null for Combined/Adult-Higher-Ed schools where the crosswalk
+          also has no grade band.
+      - name: region_school_level
+        description: >-
+          Concatenation of region and school_level (e.g. "MiamiES"), using the
+          same Focus-else-grade_band value school_level resolves to. Null only
+          when both are null (Combined/Adult-Higher-Ed schools with no crosswalk
+          grade band).
+      - name: is_enrolled_fdos
+        description: >-
+          True when the enrollment's startdate is on or before the school year's
+          first day of school.
+      - name: is_enrolled_oct01
+        description: >-
+          True when the enrollment spans October 1 of the school year (startdate
+          through exitdate).
+      - name: is_enrolled_oct15
+        description: >-
+          True when the enrollment spans October 15 of the school year
+          (startdate through exitdate).
+      - name: is_enrolled_mar15
+        description: >-
+          True when the enrollment spans March 15 of the following calendar year
+          (startdate through exitdate).
+      - name: is_pre_year_withdrawal
+        description: >-
+          True when the enrollment's exitdate falls before the school year's
+          first day of school.
+      - name: rn_year
+        description: >-
+          Row number per (student_number, academic_year), ordered by
+          academic_year desc then exitdate desc — 1 is the most recent stint for
+          that student in that year. Mirrors PowerSchool's rn_year.
+      - name: year_in_school
+        description: >-
+          Sequential count of school years this student has spent at this
+          specific schoolid, ordered oldest to newest. Null on rows where
+          rn_year != 1 (a student's non-latest stint within a year).
+      - name: year_in_network
+        description: >-
+          Sequential count of school years this student has spent anywhere in
+          the network (resets only on a true gap, not on a school change). Null
+          on rows where rn_year != 1.

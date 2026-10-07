@@ -5,7 +5,6 @@ with
                 relations=[
                     source("kippnewark_powerschool", "stg_powerschool__users"),
                     source("kippcamden_powerschool", "stg_powerschool__users"),
-                    source("kippmiami_powerschool", "stg_powerschool__users"),
                     source("kipppaterson_powerschool", "stg_powerschool__users"),
                 ]
             )

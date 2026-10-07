@@ -11,14 +11,17 @@ models:
       concept. Three boolean flags carried on every row: not_enough_assignments
       (category_summary rows only), has_grade_above_100 and
       has_grade_below_70_no_comment (broadcast from an aggregate over
-      rpt_gsheets__gradebook_audit_student_flags — section x quarter facts,
+      int_extracts__gradebook_audit_student_flags — section x quarter facts,
       identical across all rows for a given section). Two health booleans,
       computed across all of a teacher's sections for the quarter and broadcast
       onto every row: is_healthy_gradebook_all_flags (false if any of the three
       flags fired anywhere) and is_healthy_gradebook_excl_comments (same, but
       has_grade_below_70_no_comment doesn't count toward this one — it's an
       end-of-quarter item, still visible as data). A Tableau parameter picks
-      which health column to read.
+      which health column to read. flag_reasons carries a plain-language list of
+      the assignment validity checks that tripped for the category, so a teacher
+      reading assignments_entered_count against expectation can see why the
+      category is off track.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -56,6 +59,9 @@ models:
       - name: school
         data_type: string
         description: School abbreviation.
+      - name: school_name
+        data_type: string
+        description: Full school name (e.g., 'KIPP Rise Academy').
       - name: course_number
         data_type: string
         description: PowerSchool course number.
@@ -84,8 +90,13 @@ models:
       - name: section_or_period
         data_type: string
         description: >
-          Display identifier for the section. Uses external_expression for HS;
-          section_number otherwise.
+          Display identifier for the section, and the dimension the dashboard
+          groups its section rows on. HS combines external_expression with
+          section_number, so that two HS sections of the same course meeting in
+          the same period with the same teacher get separate rows instead of one
+          row carrying both sections' assignment counts. Non-HS uses
+          section_number alone. Unique within teacher, course, and quarter,
+          which is the property the dashboard depends on.
       - name: teacher_number
         data_type: string
         description: PowerSchool teacher number.
@@ -161,12 +172,37 @@ models:
         description: >
           Actual count of assignments entered for this category, regardless of
           flag status. Populated on row_type = 'category_summary' rows only.
+      - name: assignments_entered_count_no_flags
+        data_type: int64
+        description: >
+          Count of assignments entered for this category that pass every
+          assignment validity check, i.e. the assignments that actually count
+          toward the category expectation. This is the number
+          not_enough_assignments compares against expectation, so it is always
+          less than or equal to assignments_entered_count. Exposed so the
+          dashboard can display a count that agrees with the flag beside it.
+          Populated on row_type = 'category_summary' rows only.
       - name: not_enough_assignments
         data_type: boolean
         description: >
           True when the count of non-flagged assignments entered for this
           category is below expectation. Populated on row_type =
           'category_summary' rows only.
+      - name: flag_reasons
+        data_type: string
+        description: >
+          Plain-language list of the assignment validity checks that tripped for
+          this category, joined by '; ' in a fixed order: 'Under 90% graded',
+          'Invalid scores entered', 'Not out of 10 points', 'Half the class
+          exempt'. The four labels correspond 1:1 to the four terms of
+          assignment_has_flags in
+          int_powerschool__gradebook_assignment_scores_rollup
+          (percent_graded_min_not_met, flags_sum > 0, assign_max_score_not_10,
+          overly_exempt_assignment). Built as a display vector so Tableau needs
+          no calculated field. NULL when no check tripped, and NULL on row_type
+          = 'assignment_detail' rows. Populates whenever a check tripped, even
+          when not_enough_assignments is false — a category can hold flawed
+          assignments and still clear its expectation.
       - name: assignmentid
         data_type: int64
         description: >

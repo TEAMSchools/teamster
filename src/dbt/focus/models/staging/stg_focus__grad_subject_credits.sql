@@ -2,7 +2,6 @@ select
     id,
     grad_subject_id,
     grad_program_id,
-    credits,
     sql,
     title,
     type,
@@ -11,4 +10,6 @@ select
     `language`,
     created_at,
     updated_at,
+
+    cast(credits as numeric) as credits,
 from {{ source("focus", "grad_subject_credits") }}

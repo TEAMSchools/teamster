@@ -1,13 +1,33 @@
 models:
   - name: int_powerschool__ada_term_pivot
+    description:
+      Average daily attendance reshaped to one row per student per academic
+      year, pivoting the per-term rates from `int_powerschool__ada_term` into
+      quarter columns alongside semester and year rollups. Every ADA column is a
+      rate in the range 0 to 1. Downstream consumers read ADA from this model
+      rather than from `int_powerschool__ada_term`.
     config:
       materialized: table
+      meta:
+        dagster:
+          # Twice daily instead of the default eager table condition, which
+          # re-fires on ANY upstream data change through the two intervening
+          # views -- 86 executions/day, 90.8 GiB and 28.6 slot-hours in 24h to
+          # rebuild an 83k-row table. Every exposure that reads an ADA column
+          # refreshes daily: earliest okrts_dashboard and
+          # gradebook_and_gpa_dashboard `0 4 * * *`, plus attendance_dashboard's
+          # afternoon `0 15 * * *`. ops_dashboard is hourly and reachable in the
+          # graph, but projects no ADA column, so it sets no floor here. Same
+          # tick as the earliest consumers; the ~any_deps_in_progress guard
+          # serializes this model ahead of them.
+          automation_condition:
+            cron_schedule: 0 4,15 * * *
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
               - _dbt_source_project
-              - studentid
+              - student_number
               - academic_year
           config:
             severity: error
@@ -15,6 +35,15 @@ models:
       - name: _dbt_source_project
         data_type: string
         description: District code location derived from `_dbt_source_relation`.
+      - name: student_number
+        data_type: int64
+        description:
+          Network-wide student identifier. The model's real key -- populated for
+          both branches, whereas studentid is PowerSchool-internal and null for
+          every Focus-sourced row.
+        config:
+          meta:
+            contains_pii: true
       - name: studentid
         data_type: int64
         description:
@@ -41,16 +70,40 @@ models:
         description: Derived from ada_term_q4.
       - name: ada_weighted_term_q1
         data_type: float64
-        description: Derived from ada_weighted_term_q1.
+        description: Weighted average daily attendance for Q1.
+        data_tests:
+          - dbt_utils.expression_is_true:
+              arguments:
+                expression: between 0 and 1
+              config:
+                severity: error
       - name: ada_weighted_term_q2
         data_type: float64
-        description: Derived from ada_weighted_term_q2.
+        description: Weighted average daily attendance for Q2.
+        data_tests:
+          - dbt_utils.expression_is_true:
+              arguments:
+                expression: between 0 and 1
+              config:
+                severity: error
       - name: ada_weighted_term_q3
         data_type: float64
-        description: Derived from ada_weighted_term_q3.
+        description: Weighted average daily attendance for Q3.
+        data_tests:
+          - dbt_utils.expression_is_true:
+              arguments:
+                expression: between 0 and 1
+              config:
+                severity: error
       - name: ada_weighted_term_q4
         data_type: float64
-        description: Derived from ada_weighted_term_q4.
+        description: Weighted average daily attendance for Q4.
+        data_tests:
+          - dbt_utils.expression_is_true:
+              arguments:
+                expression: between 0 and 1
+              config:
+                severity: error
       - name: ada_year_running_q1
         data_type: float64
         description: Derived from ada_year_running_q1.
@@ -77,26 +130,250 @@ models:
         description: Derived from ada_weighted_year_running_q4.
       - name: ada_semester_s1
         data_type: float64
-        description: Derived from ada_semester_q1, ada_semester_q2.
+        description:
+          Unweighted average daily attendance for semester 1, taking the Q2
+          value where present and falling back to Q1.
+        data_tests:
+          - dbt_utils.expression_is_true:
+              arguments:
+                expression: between 0 and 1
+              config:
+                severity: error
       - name: ada_semester_s2
         data_type: float64
-        description: Derived from ada_semester_q3, ada_semester_q4.
+        description:
+          Unweighted average daily attendance for semester 2, taking the Q4
+          value where present and falling back to Q3.
+        data_tests:
+          - dbt_utils.expression_is_true:
+              arguments:
+                expression: between 0 and 1
+              config:
+                severity: error
       - name: ada_year
         data_type: float64
         description:
-          Derived from ada_year_q1, ada_year_q2, ada_year_q3, ada_year_q4.
+          Unweighted average daily attendance for the academic year, taking the
+          latest populated quarter's year-to-date value.
+        data_tests:
+          - dbt_utils.expression_is_true:
+              arguments:
+                expression: between 0 and 1
+              config:
+                severity: error
       - name: ada_weighted_semester_s1
         data_type: float64
         description:
-          Derived from ada_weighted_semester_q1, ada_weighted_semester_q2.
+          Weighted average daily attendance for semester 1, taking the Q2 value
+          where present and falling back to Q1.
+        data_tests:
+          - dbt_utils.expression_is_true:
+              arguments:
+                expression: between 0 and 1
+              config:
+                severity: error
       - name: ada_weighted_semester_s2
         data_type: float64
         description:
-          Derived from ada_weighted_semester_q3, ada_weighted_semester_q4.
+          Weighted average daily attendance for semester 2, taking the Q4 value
+          where present and falling back to Q3.
+        data_tests:
+          - dbt_utils.expression_is_true:
+              arguments:
+                expression: between 0 and 1
+              config:
+                severity: error
       - name: ada_weighted_year
         data_type: float64
         description:
-          Derived from ada_year_q1, ada_year_q2, ada_year_q3, ada_year_q4.
+          Weighted average daily attendance for the academic year, taking the
+          latest populated quarter's weighted year-to-date value. This is the
+          column the SY26 high school weighted-ADA rule reads through
+          `int_extracts__student_enrollments`.
+        data_tests:
+          - dbt_utils.expression_is_true:
+              arguments:
+                expression: between 0 and 1
+              config:
+                severity: error
       - name: sum_absences_year
         data_type: int64
         description: Sum of unexcused absences across all four quarters.
+
+unit_tests:
+  - name: unit_ada_term_pivot_coalesce_reads_weighted_columns
+    description:
+      Guards the wrong-column coalesce a prior revision shipped, where
+      ada_weighted_year coalesced the UNWEIGHTED ada_year_q* columns and
+      produced a value still inside 0 to 1, invisible to a range test. Every
+      weighted fixture value differs from its unweighted twin, so a swap changes
+      an asserted output. Replaces the singular test
+      int_powerschool__ada_term_pivot__weighted_year_matches_source, which
+      compared this table against int_powerschool__ada_term while that model was
+      a view, so the two sides read different instants of the source data
+      (#5023). Student 2 is the case that actually failed in production, a
+      Q1-only student whose unweighted rate is 0.8 and weighted rate 0.734.
+      Student 3 carries a null studentid, the Focus-sourced Miami shape the old
+      test silently skipped because null never joins.
+    model: int_powerschool__ada_term_pivot
+    given:
+      - input: ref('int_powerschool__ada_term')
+        format: sql
+        rows: |
+          /* Student 1: full year. ada_year and ada_weighted_year are
+             year-grain window values, so they repeat on every term row;
+             ada_semester repeats within its semester. */
+          select
+              'kippnewark' as _dbt_source_project,
+              1 as student_number,
+              11 as studentid,
+              2026 as academic_year,
+              'Q1' as term,
+              40 as count_attendance_value_term,
+              cast(36 as float64) as sum_attendance_value_term,
+              cast(34 as float64) as sum_attendance_value_weighted_term,
+              cast(40 as float64) as sum_membership_value_term,
+              cast(4 as float64) as sum_absences_term,
+              cast(0.89 as float64) as ada_term,
+              cast(0.9 as float64) as ada_semester,
+              cast(0.91 as float64) as ada_year,
+              cast(0.89 as float64) as ada_year_running,
+              cast(0.85 as float64) as ada_weighted_term,
+              cast(0.86 as float64) as ada_weighted_semester,
+              cast(0.87 as float64) as ada_weighted_year,
+              cast(0.85 as float64) as ada_weighted_year_running
+          union all
+          select 'kippnewark', 1, 11, 2026, 'Q2', 40,
+              cast(37 as float64), cast(35 as float64), cast(40 as float64),
+              cast(3 as float64), cast(0.911 as float64), cast(0.9 as float64),
+              cast(0.91 as float64), cast(0.9 as float64),
+              cast(0.871 as float64), cast(0.86 as float64),
+              cast(0.87 as float64), cast(0.86 as float64)
+          union all
+          select 'kippnewark', 1, 11, 2026, 'Q3', 40,
+              cast(38 as float64), cast(36 as float64), cast(40 as float64),
+              cast(2 as float64), cast(0.915 as float64), cast(0.92 as float64),
+              cast(0.91 as float64), cast(0.905 as float64),
+              cast(0.875 as float64), cast(0.88 as float64),
+              cast(0.87 as float64), cast(0.865 as float64)
+          union all
+          select 'kippnewark', 1, 11, 2026, 'Q4', 40,
+              cast(39 as float64), cast(37 as float64), cast(40 as float64),
+              cast(1 as float64), cast(0.925 as float64), cast(0.92 as float64),
+              cast(0.91 as float64), cast(0.91 as float64),
+              cast(0.885 as float64), cast(0.88 as float64),
+              cast(0.87 as float64), cast(0.87 as float64)
+          union all
+          /* Student 2: Q1 only. Every year and semester coalesce must fall
+             all the way back to Q1, and must land on 0.734 rather than the
+             unweighted 0.8 sitting beside it. */
+          select 'kippnewark', 2, 22, 2026, 'Q1', 5,
+              cast(4 as float64), cast(3.67 as float64), cast(5 as float64),
+              cast(1 as float64), cast(0.8 as float64), cast(0.8 as float64),
+              cast(0.8 as float64), cast(0.8 as float64),
+              cast(0.734 as float64), cast(0.734 as float64),
+              cast(0.734 as float64), cast(0.734 as float64)
+          union all
+          /* Student 3: Focus-sourced Miami, null studentid, half a year. */
+          select 'kippmiami', 3, null, 2026, 'Q1', 20,
+              cast(19 as float64), cast(18 as float64), cast(20 as float64),
+              cast(1 as float64), cast(0.95 as float64), cast(0.96 as float64),
+              cast(0.96 as float64), cast(0.95 as float64),
+              cast(0.9 as float64), cast(0.91 as float64),
+              cast(0.91 as float64), cast(0.9 as float64)
+          union all
+          select 'kippmiami', 3, null, 2026, 'Q2', 20,
+              cast(20 as float64), cast(19 as float64), cast(20 as float64),
+              cast(0 as float64), cast(0.97 as float64), cast(0.96 as float64),
+              cast(0.96 as float64), cast(0.96 as float64),
+              cast(0.92 as float64), cast(0.91 as float64),
+              cast(0.91 as float64), cast(0.91 as float64)
+    expect:
+      rows:
+        - {
+            _dbt_source_project: kippnewark,
+            studentid: 11,
+            student_number: 1,
+            academic_year: 2026,
+            ada_term_q1: 0.89,
+            ada_term_q2: 0.911,
+            ada_term_q3: 0.915,
+            ada_term_q4: 0.925,
+            ada_weighted_term_q1: 0.85,
+            ada_weighted_term_q2: 0.871,
+            ada_weighted_term_q3: 0.875,
+            ada_weighted_term_q4: 0.885,
+            ada_year_running_q1: 0.89,
+            ada_year_running_q2: 0.9,
+            ada_year_running_q3: 0.905,
+            ada_year_running_q4: 0.91,
+            ada_weighted_year_running_q1: 0.85,
+            ada_weighted_year_running_q2: 0.86,
+            ada_weighted_year_running_q3: 0.865,
+            ada_weighted_year_running_q4: 0.87,
+            ada_semester_s1: 0.9,
+            ada_semester_s2: 0.92,
+            ada_year: 0.91,
+            ada_weighted_semester_s1: 0.86,
+            ada_weighted_semester_s2: 0.88,
+            ada_weighted_year: 0.87,
+            sum_absences_year: 10.0,
+          }
+        - {
+            _dbt_source_project: kippnewark,
+            studentid: 22,
+            student_number: 2,
+            academic_year: 2026,
+            ada_term_q1: 0.8,
+            ada_term_q2: null,
+            ada_term_q3: null,
+            ada_term_q4: null,
+            ada_weighted_term_q1: 0.734,
+            ada_weighted_term_q2: null,
+            ada_weighted_term_q3: null,
+            ada_weighted_term_q4: null,
+            ada_year_running_q1: 0.8,
+            ada_year_running_q2: null,
+            ada_year_running_q3: null,
+            ada_year_running_q4: null,
+            ada_weighted_year_running_q1: 0.734,
+            ada_weighted_year_running_q2: null,
+            ada_weighted_year_running_q3: null,
+            ada_weighted_year_running_q4: null,
+            ada_semester_s1: 0.8,
+            ada_semester_s2: null,
+            ada_year: 0.8,
+            ada_weighted_semester_s1: 0.734,
+            ada_weighted_semester_s2: null,
+            ada_weighted_year: 0.734,
+            sum_absences_year: 1.0,
+          }
+        - {
+            _dbt_source_project: kippmiami,
+            studentid: null,
+            student_number: 3,
+            academic_year: 2026,
+            ada_term_q1: 0.95,
+            ada_term_q2: 0.97,
+            ada_term_q3: null,
+            ada_term_q4: null,
+            ada_weighted_term_q1: 0.9,
+            ada_weighted_term_q2: 0.92,
+            ada_weighted_term_q3: null,
+            ada_weighted_term_q4: null,
+            ada_year_running_q1: 0.95,
+            ada_year_running_q2: 0.96,
+            ada_year_running_q3: null,
+            ada_year_running_q4: null,
+            ada_weighted_year_running_q1: 0.9,
+            ada_weighted_year_running_q2: 0.91,
+            ada_weighted_year_running_q3: null,
+            ada_weighted_year_running_q4: null,
+            ada_semester_s1: 0.96,
+            ada_semester_s2: null,
+            ada_year: 0.96,
+            ada_weighted_semester_s1: 0.91,
+            ada_weighted_semester_s2: null,
+            ada_weighted_year: 0.91,
+            sum_absences_year: 1.0,
+          }

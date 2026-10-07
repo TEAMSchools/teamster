@@ -12,6 +12,9 @@ exposures:
         dagster:
           kinds:
             - googlesheets
+  # Archive only. Leadership Development moved to Lattice on 2026-07-30 and the
+  # upstream dbt models are disabled. If an Apps Script on this sheet still
+  # mails reminders, it has to be stopped in the sheet itself. Refs #4627
   - name: leadership_pm_reminders
     label: Leadership PM Reminders
     type: application
@@ -21,6 +24,7 @@ exposures:
     depends_on:
       - ref("rpt_gsheets__leadership_pm_reminders")
     config:
+      enabled: false
       meta:
         dagster:
           kinds:
@@ -72,6 +76,19 @@ exposures:
     url: https://docs.google.com/spreadsheets/d/1A0gr0mDLIKwgEfA7IojhU3f1nFGl2lM0Vv4EqD3uMeo
     depends_on:
       - ref("rpt_gsheets__kfwd_taf_contact_feed")
+    config:
+      meta:
+        dagster:
+          kinds:
+            - googlesheets
+  - name: kfwd_student_salesforce_ids
+    label: KIPP Forward Student Salesforce IDs
+    type: application
+    owner:
+      name: Data Team
+    url: https://docs.google.com/spreadsheets/d/1AAiEQ46OeMbgLjRawoFayfW-4WavtkNPwCvxMOkdSLo
+    depends_on:
+      - ref("rpt_gsheets__kfwd_student_salesforce_ids")
     config:
       meta:
         dagster:
@@ -435,7 +452,7 @@ exposures:
     label: Unified KFWD Processes Document
     type: application
     owner:
-      name: Data Team - grangel
+      name: Data Team - awalters
     url: https://docs.google.com/spreadsheets/d/1mX5SnRvMXU-Gbm07raHA3UkEhvo0zhqffz0uah1GSHE
     depends_on:
       - ref("rpt_gsheets__kippfwd_contacts")
@@ -560,7 +577,7 @@ exposures:
     label: gsheets__gpa_roster
     type: application
     owner:
-      name: Data Team - grangel
+      name: Data Team - awalters
     url: https://docs.google.com/spreadsheets/d/1hXFEfXEEU9aGG5k29nvTTn459JJHEWs0b__iqVoG9-M
     depends_on:
       - ref("rpt_gsheets__gpa_roster")
@@ -645,7 +662,7 @@ exposures:
     label: NJDOE Universal Screener Data
     type: analysis
     owner:
-      name: Data Team - grangel
+      name: Data Team - awalters
     url: https://docs.google.com/spreadsheets/d/1EdsbhchfyGoRcabyofeHVohKLIKezAXXn5BXSYwL_wo
     depends_on:
       - ref("rpt_gsheets__njdoe_universal_screener_data")
@@ -658,7 +675,7 @@ exposures:
     label: College Assessments Long
     type: analysis
     owner:
-      name: Data Team - grangel
+      name: Data Team - awalters
     url: https://docs.google.com/spreadsheets/d/1ij4Ik1xXep73cput3cyR7jnVk9MGRh45L88qTlzN10A
     depends_on:
       - ref("rpt_gsheets__college_assessments_long")
@@ -671,7 +688,7 @@ exposures:
     label: College Assessments Wide
     type: analysis
     owner:
-      name: Data Team - grangel
+      name: Data Team - awalters
     url: https://docs.google.com/spreadsheets/d/1gmYyGYxtlnh_DiTAphjUoJQv1hNiYwUABliSXe6AuYk
     depends_on:
       - ref("rpt_gsheets__college_assessments_wide")
@@ -741,7 +758,7 @@ exposures:
     label: GPA Flags Report
     type: analysis
     owner:
-      name: Data Team - grangel
+      name: Data Team - awalters
     url: https://docs.google.com/spreadsheets/d/1zJUjzKBmGLmx5ldEit-q8BukqDiNREp3ihzRwDnl0H4
     depends_on:
       - ref("rpt_gsheets__gpa_flags_report")
@@ -755,7 +772,7 @@ exposures:
     label: Award Ceremony GPA
     type: analysis
     owner:
-      name: Data Team - grangel
+      name: Data Team - awalters
     url: https://docs.google.com/spreadsheets/d/1e9CvEtzNEK3zY0ObI3VOL3_K2O6-dWV65B0Lyb5106Y
     depends_on:
       - ref("rpt_gsheets__award_ceremony_gpa")
@@ -769,7 +786,7 @@ exposures:
     label: Grad Plan Tracking
     type: analysis
     owner:
-      name: Data Team - grangel
+      name: Data Team - awalters
     url: https://docs.google.com/spreadsheets/d/1pp-1OBUQrRQMskC2WwG91s79LsRWkPluv5evJ8TJS2E
     depends_on:
       - ref("rpt_gsheets__grad_plan_tracking")
@@ -783,10 +800,26 @@ exposures:
     label: Gradebook Audit Student Flags
     type: analysis
     owner:
-      name: Data Team - grangel
-    url: https://docs.google.com/spreadsheets/d/1e52D42Zhlhasj-_Tf429ZWxJdtSr05YedsI4Ur0Tva8
+      name: Data Team - awalters
+    url: https://docs.google.com/spreadsheets/d/1d9hApvHMf_865-rQgXwnpxcbOLhiMaP6tkDz_YZTdSU
     depends_on:
       - ref("rpt_gsheets__gradebook_audit_student_flags")
+    config:
+      meta:
+        dagster:
+          kinds:
+            - googlesheets
+
+  - name: rpt_gsheets__gradebook_audit_template
+    label: Gradebook Audit Expectations Upload Template
+    type: application
+    owner:
+      name: Data Team - awalters
+    url: https://docs.google.com/spreadsheets/d/1ofCxW0pLniywn_XZT69S23vhcDs6y9ElAtJa5fTtiT0
+    depends_on:
+      - ref("rpt_gsheets__gradebook_audit_template")
+      - ref("rpt_gsheets__gradebook_audit_current_expectations")
+      - ref("rpt_gsheets__gradebook_audit_all_weeks")
     config:
       meta:
         dagster:

@@ -5,11 +5,11 @@ models:
       `int_students__contacts`. Preserves the legacy contact column surface
       (`contact_1`/`contact_2`, `emergency_1` through `emergency_3`, and
       `pickup_1` through `pickup_3`, each with the nine attribute suffixes) plus
-      the new additive `emergency_4` set. Under the 2+4 contact shape,
-      `contact_1`, `contact_2` (NJ Finalsite regions), and `emergency_1` through
-      `emergency_4` carry data; the `pickup` slots are retained as NULL so
-      downstream extracts keep their column lists. Grain is one row per
-      (student, source project).
+      the new additive `emergency_4` set, so downstream extracts do not churn on
+      column names. Under the 2+4 contact shape, `contact_1`, `contact_2` (NJ
+      Finalsite regions), and `emergency_1` through `emergency_4` carry data;
+      the `pickup` slots are retained as NULL so downstream extracts keep their
+      column lists. Grain is one row per (student, source project).
     config:
       materialized: table
     data_tests:
@@ -95,48 +95,54 @@ models:
       - name: contact_2_address_home
         data_type: string
         description:
-          Home address for the second contact slot, always null under the 1+4
-          shape.
+          Home address for the second contact slot, populated for NJ Finalsite
+          regions when the student has a second parent contact — always null for
+          Miami, where Focus fills only `contact_1`.
         config:
           meta:
             contains_pii: true
       - name: contact_2_email_current
         data_type: string
         description:
-          Email address for the second contact slot, always null under the 1+4
-          shape.
+          Email address for the second contact slot, populated for NJ Finalsite
+          regions when the student has a second parent contact — always null for
+          Miami, where Focus fills only `contact_1`.
         config:
           meta:
             contains_pii: true
       - name: contact_2_name
         data_type: string
         description:
-          Full name for the second contact slot, always null under the 1+4
-          shape.
+          Full name for the second contact slot, populated for NJ Finalsite
+          regions when the student has a second parent contact — always null for
+          Miami, where Focus fills only `contact_1`.
         config:
           meta:
             contains_pii: true
       - name: contact_2_phone_daytime
         data_type: string
         description:
-          Daytime phone number for the second contact slot, always null under
-          the 1+4 shape.
+          Daytime phone number for the second contact slot, populated for NJ
+          Finalsite regions when the student has a second parent contact —
+          always null for Miami, where Focus fills only `contact_1`.
         config:
           meta:
             contains_pii: true
       - name: contact_2_phone_home
         data_type: string
         description:
-          Home phone number for the second contact slot, always null under the
-          1+4 shape.
+          Home phone number for the second contact slot, populated for NJ
+          Finalsite regions when the student has a second parent contact —
+          always null for Miami, where Focus fills only `contact_1`.
         config:
           meta:
             contains_pii: true
       - name: contact_2_phone_mobile
         data_type: string
         description:
-          Mobile (Cell) phone number for the second contact slot, always null
-          under the 1+4 shape.
+          Mobile (Cell) phone number for the second contact slot, populated for
+          NJ Finalsite regions when the student has a second parent contact —
+          always null for Miami, where Focus fills only `contact_1`.
         config:
           meta:
             contains_pii: true
@@ -144,23 +150,27 @@ models:
         data_type: string
         description:
           Primary phone number (first regardless of type) for the second contact
-          slot, always null under the 1+4 shape.
+          slot, populated for NJ Finalsite regions when the student has a second
+          parent contact — always null for Miami, where Focus fills only
+          `contact_1`.
         config:
           meta:
             contains_pii: true
       - name: contact_2_phone_work
         data_type: string
         description:
-          Work phone number for the second contact slot, always null under the
-          1+4 shape.
+          Work phone number for the second contact slot, populated for NJ
+          Finalsite regions when the student has a second parent contact —
+          always null for Miami, where Focus fills only `contact_1`.
         config:
           meta:
             contains_pii: true
       - name: contact_2_relationship
         data_type: string
         description:
-          Relationship to the student for the second contact slot, always null
-          under the 1+4 shape.
+          Relationship to the student for the second contact slot, populated for
+          NJ Finalsite regions when the student has a second parent contact —
+          always null for Miami, where Focus fills only `contact_1`.
       - name: emergency_1_address_home
         data_type: string
         description: Home address for emergency contact 1.
@@ -376,47 +386,48 @@ models:
       - name: pickup_1_address_home
         data_type: string
         description:
-          Home address for the first pickup slot, always null under the 1+4
-          shape.
+          Home address for the first pickup slot, always null — the contact
+          sources emit no pickup slot rows.
         config:
           meta:
             contains_pii: true
       - name: pickup_1_email_current
         data_type: string
         description:
-          Email address for the first pickup slot, always null under the 1+4
-          shape.
+          Email address for the first pickup slot, always null — the contact
+          sources emit no pickup slot rows.
         config:
           meta:
             contains_pii: true
       - name: pickup_1_name
         data_type: string
         description:
-          Full name for the first pickup slot, always null under the 1+4 shape.
+          Full name for the first pickup slot, always null — the contact sources
+          emit no pickup slot rows.
         config:
           meta:
             contains_pii: true
       - name: pickup_1_phone_daytime
         data_type: string
         description:
-          Daytime phone number for the first pickup slot, always null under the
-          1+4 shape.
+          Daytime phone number for the first pickup slot, always null — the
+          contact sources emit no pickup slot rows.
         config:
           meta:
             contains_pii: true
       - name: pickup_1_phone_home
         data_type: string
         description:
-          Home phone number for the first pickup slot, always null under the 1+4
-          shape.
+          Home phone number for the first pickup slot, always null — the contact
+          sources emit no pickup slot rows.
         config:
           meta:
             contains_pii: true
       - name: pickup_1_phone_mobile
         data_type: string
         description:
-          Mobile (Cell) phone number for the first pickup slot, always null
-          under the 1+4 shape.
+          Mobile (Cell) phone number for the first pickup slot, always null —
+          the contact sources emit no pickup slot rows.
         config:
           meta:
             contains_pii: true
@@ -424,67 +435,68 @@ models:
         data_type: string
         description:
           Primary phone number (first regardless of type) for the first pickup
-          slot, always null under the 1+4 shape.
+          slot, always null — the contact sources emit no pickup slot rows.
         config:
           meta:
             contains_pii: true
       - name: pickup_1_phone_work
         data_type: string
         description:
-          Work phone number for the first pickup slot, always null under the 1+4
-          shape.
+          Work phone number for the first pickup slot, always null — the contact
+          sources emit no pickup slot rows.
         config:
           meta:
             contains_pii: true
       - name: pickup_1_relationship
         data_type: string
         description:
-          Relationship to the student for the first pickup slot, always null
-          under the 1+4 shape.
+          Relationship to the student for the first pickup slot, always null —
+          the contact sources emit no pickup slot rows.
       - name: pickup_2_address_home
         data_type: string
         description:
-          Home address for the second pickup slot, always null under the 1+4
-          shape.
+          Home address for the second pickup slot, always null — the contact
+          sources emit no pickup slot rows.
         config:
           meta:
             contains_pii: true
       - name: pickup_2_email_current
         data_type: string
         description:
-          Email address for the second pickup slot, always null under the 1+4
-          shape.
+          Email address for the second pickup slot, always null — the contact
+          sources emit no pickup slot rows.
         config:
           meta:
             contains_pii: true
       - name: pickup_2_name
         data_type: string
         description:
-          Full name for the second pickup slot, always null under the 1+4 shape.
+          Full name for the second pickup slot, always null — the contact
+          sources emit no pickup slot rows.
         config:
           meta:
             contains_pii: true
       - name: pickup_2_phone_daytime
         data_type: string
         description:
-          Daytime phone number for the second pickup slot, always null under the
-          1+4 shape.
+          Daytime phone number for the second pickup slot, always null — the
+          contact sources emit no pickup slot rows.
         config:
           meta:
             contains_pii: true
       - name: pickup_2_phone_home
         data_type: string
         description:
-          Home phone number for the second pickup slot, always null under the
-          1+4 shape.
+          Home phone number for the second pickup slot, always null — the
+          contact sources emit no pickup slot rows.
         config:
           meta:
             contains_pii: true
       - name: pickup_2_phone_mobile
         data_type: string
         description:
-          Mobile (Cell) phone number for the second pickup slot, always null
-          under the 1+4 shape.
+          Mobile (Cell) phone number for the second pickup slot, always null —
+          the contact sources emit no pickup slot rows.
         config:
           meta:
             contains_pii: true
@@ -492,67 +504,68 @@ models:
         data_type: string
         description:
           Primary phone number (first regardless of type) for the second pickup
-          slot, always null under the 1+4 shape.
+          slot, always null — the contact sources emit no pickup slot rows.
         config:
           meta:
             contains_pii: true
       - name: pickup_2_phone_work
         data_type: string
         description:
-          Work phone number for the second pickup slot, always null under the
-          1+4 shape.
+          Work phone number for the second pickup slot, always null — the
+          contact sources emit no pickup slot rows.
         config:
           meta:
             contains_pii: true
       - name: pickup_2_relationship
         data_type: string
         description:
-          Relationship to the student for the second pickup slot, always null
-          under the 1+4 shape.
+          Relationship to the student for the second pickup slot, always null —
+          the contact sources emit no pickup slot rows.
       - name: pickup_3_address_home
         data_type: string
         description:
-          Home address for the third pickup slot, always null under the 1+4
-          shape.
+          Home address for the third pickup slot, always null — the contact
+          sources emit no pickup slot rows.
         config:
           meta:
             contains_pii: true
       - name: pickup_3_email_current
         data_type: string
         description:
-          Email address for the third pickup slot, always null under the 1+4
-          shape.
+          Email address for the third pickup slot, always null — the contact
+          sources emit no pickup slot rows.
         config:
           meta:
             contains_pii: true
       - name: pickup_3_name
         data_type: string
         description:
-          Full name for the third pickup slot, always null under the 1+4 shape.
+          Full name for the third pickup slot, always null — the contact sources
+          emit no pickup slot rows.
         config:
           meta:
             contains_pii: true
       - name: pickup_3_phone_daytime
         data_type: string
         description:
-          Daytime phone number for the third pickup slot, always null under the
-          1+4 shape.
+          Daytime phone number for the third pickup slot, always null — the
+          contact sources emit no pickup slot rows.
         config:
           meta:
             contains_pii: true
       - name: pickup_3_phone_home
         data_type: string
         description:
-          Home phone number for the third pickup slot, always null under the 1+4
-          shape.
+          Home phone number for the third pickup slot, always null — the contact
+          sources emit no pickup slot rows.
         config:
           meta:
             contains_pii: true
       - name: pickup_3_phone_mobile
         data_type: string
         description:
-          Mobile (Cell) phone number for the third pickup slot, always null
-          under the 1+4 shape.
+          Mobile (Cell) phone number for the third pickup slot, always null —
+          the contact sources emit no pickup slot rows.
         config:
           meta:
             contains_pii: true
@@ -560,20 +573,20 @@ models:
         data_type: string
         description:
           Primary phone number (first regardless of type) for the third pickup
-          slot, always null under the 1+4 shape.
+          slot, always null — the contact sources emit no pickup slot rows.
         config:
           meta:
             contains_pii: true
       - name: pickup_3_phone_work
         data_type: string
         description:
-          Work phone number for the third pickup slot, always null under the 1+4
-          shape.
+          Work phone number for the third pickup slot, always null — the contact
+          sources emit no pickup slot rows.
         config:
           meta:
             contains_pii: true
       - name: pickup_3_relationship
         data_type: string
         description:
-          Relationship to the student for the third pickup slot, always null
-          under the 1+4 shape.
+          Relationship to the student for the third pickup slot, always null —
+          the contact sources emit no pickup slot rows.

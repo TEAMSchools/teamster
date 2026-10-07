@@ -1,8 +1,5 @@
 with
     households_normalized as (
-        -- the same normalization stg_finalsite__contacts applies to its scalar
-        -- address columns: Finalsite emits empty strings (not null) and
-        -- mixed-case states. Blank -> null; uppercase the state code.
         select
             c.finalsite_enrollment_id,
 
@@ -28,8 +25,6 @@ select
     zip,
     country,
 
-    -- address_2 is legitimately null (no apartment line), so it is not part of
-    -- completeness. Everything needed to mail a letter is.
     (
         address_1 is not null
         and city is not null

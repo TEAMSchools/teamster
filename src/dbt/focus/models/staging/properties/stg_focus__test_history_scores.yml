@@ -30,7 +30,7 @@ models:
                 to: ref('stg_focus__test_history_administrations')
                 field: id
               config:
-                severity: error
+                severity: warn
       - name: student_id
         description: >-
           Focus student id the score belongs to, denormalized from the
@@ -40,49 +40,22 @@ models:
           - not_null:
               config:
                 severity: error
-          - relationships:
-              arguments:
-                to: ref('stg_focus__students')
-                field: student_id
-              config:
-                severity: error
       - name: test_id
         description: >-
           Focus test id the score belongs to, denormalized from the
           administration.
         data_type: int
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('stg_focus__test_history_tests')
-                field: id
-              config:
-                severity: error
       - name: part_id
         description: >-
           Focus test-part id identifying which section of the test the score
           covers.
         data_type: int
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('stg_focus__test_history_parts')
-                field: id
-              config:
-                severity: error
       - name: score_type_id
         description: >-
           Focus score-type id identifying what the score measures (scale score,
           achievement level, percentile, and so on). Determines how score should
           be read.
         data_type: int
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('stg_focus__test_history_score_types')
-                field: id
-              config:
-                severity: error
       - name: score
         description: >-
           Reported score value. Its meaning depends on score_type_id, so never

@@ -7,9 +7,6 @@ from teamster.libraries.google.directory.resources import GoogleDirectoryResourc
 from teamster.libraries.knowbe4.resources import KnowBe4Resource
 from teamster.libraries.ldap.resources import LdapResource
 from teamster.libraries.level_data.grow.resources import GrowResource
-from teamster.libraries.powerschool.enrollment.resources import (
-    PowerSchoolEnrollmentResource,
-)
 from teamster.libraries.smartrecruiters.resources import SmartRecruitersResource
 from teamster.libraries.ssh.resources import SSHResource
 from teamster.libraries.tableau.resources import TableauServerResource
@@ -51,10 +48,6 @@ LDAP_RESOURCE = LdapResource(
     password=EnvVar("LDAP_PASSWORD"),
 )
 
-POWERSCHOOL_ENROLLMENT_RESOURCE = PowerSchoolEnrollmentResource(
-    api_key=EnvVar("PS_ENROLLMENT_API_KEY"), page_size=1000
-)
-
 GROW_RESOURCE = GrowResource(
     client_id=EnvVar("SCHOOLMINT_GROW_CLIENT_ID"),
     client_secret=EnvVar("SCHOOLMINT_GROW_CLIENT_SECRET"),
@@ -82,6 +75,13 @@ SSH_RESOURCE_ADP_WORKFORCE_NOW = SSHResource(
     remote_port=22,
     username=EnvVar("ADP_SFTP_USERNAME"),
     password=EnvVar("ADP_SFTP_PASSWORD"),
+)
+
+SSH_RESOURCE_BRANCHINGMINDS = SSHResource(
+    remote_host=EnvVar("BRANCHINGMINDS_SFTP_HOST"),
+    remote_port=22,
+    username=EnvVar("BRANCHINGMINDS_SFTP_USERNAME"),
+    password=EnvVar("BRANCHINGMINDS_SFTP_PASSWORD"),
 )
 
 SSH_RESOURCE_CLEVER = SSHResource(
