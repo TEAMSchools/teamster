@@ -21,7 +21,7 @@ from teamster.libraries.finalsite.api.resources import FinalsiteResource
 # runbook step 4). end_offset=1 is required: without it today's partition does
 # not exist until tomorrow, and every tick fails with DagsterUnknownPartitionError.
 CONTACTS_PARTITIONS_DEF = DailyPartitionsDefinition(
-    start_date="2026-08-11", timezone="America/New_York", end_offset=1
+    start_date="2026-10-06", timezone="America/New_York", end_offset=1
 )
 
 

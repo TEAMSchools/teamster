@@ -9,16 +9,14 @@ appears twice at the storage layer. That window is steps 3 to 5.
 
 ## Before you merge
 
-dbt Cloud CI will be **red** on this PR, by design:
+A green dbt Cloud CI run does not validate this PR's dbt changes: CI builds only
+`kipptaf`, never the `finalsite` package models, so it never reads the
+partitioned source. Steps 6 and 7 are the real validation.
 
-- CI runs `dbt build` only — it never runs `stage_external_sources` — so it
-  reads the pre-cutover production `finalsite.contacts` external table, which
-  has no `_dagster_partition_*` columns. `stg_finalsite__contacts` therefore
-  fails in CI and cannot pass until the cutover in step 6 runs.
-- Merging requires overriding that required check.
-- Every prod dbt model downstream of contacts is broken from merge until step 6
-  completes. Schedule the merge and the cutover together — do not merge and walk
-  away.
+Production's `finalsite.contacts` external table has no `_dagster_partition_*`
+columns until step 6 re-stages it, so every prod dbt model downstream of
+contacts is broken from merge until step 6 completes. Schedule the merge and the
+cutover together — do not merge and walk away.
 
 ## 1. Record the pre-cutover baseline (manual)
 
@@ -44,7 +42,8 @@ expect one same-named check per location.
 ## 4. Seed one full partition per district (manual, Dagster+ UI)
 
 For each location, materialize `<location>/finalsite/contacts` for partition
-`2026-08-11` (the day before cutover — see below) with run config:
+`2026-10-06` (the day before the 2026-10-07 cutover — see below) with run
+config:
 
 ```yaml
 ops:
@@ -66,9 +65,12 @@ The seed partition key must be the day BEFORE cutover, and must equal
 four districts). Both daily ticks target today's key, so seeding the cutover
 day's own key lets that day's 12:00 tick overwrite the full seed with an
 incremental pull — staging silently shrinks to the few contacts changed since
-yesterday. Before merging, set `start_date` to cutover-day-minus-one and replace
-`2026-08-11` in this step's partition key with the same date, in the same
-change.
+yesterday. If the cutover slips past 2026-10-07, set `start_date` to the new
+cutover-day-minus-one and update this step's partition key to match, in the same
+change, before merging. A cutover after the day's 12:00 tick leaves the cutover
+day's own partition unwritten, since the next tick is tomorrow's 00:15. That is
+not a data gap — the seed plus tomorrow's `since = today` pull cover it — so the
+_Ongoing_ check below can ignore it; backfilling it is also harmless.
 
 ## 5. Delete the legacy root object (manual, destructive)
 
