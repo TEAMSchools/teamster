@@ -84,9 +84,13 @@ def internal_flag_for_source(queries: list[dict[str, Any]], text: str) -> bool:
 
 def formative_alone(queries: list[dict[str, Any]], text: str) -> bool:
     """pct_proficient_formative stood in for "all internal checkpoints": a query
-    used it without module_type. Each query stands alone, as above."""
+    used it with neither module_type nor pct_proficient beside it. Each query
+    stands alone, as above; pct_proficient in the same query is the all-types
+    rate the formative one is compared against, not replaced by."""
     return any(
-        _uses([q], "pct_proficient_formative") and not _uses([q], "module_type")
+        _uses([q], "pct_proficient_formative")
+        and not _uses([q], "module_type")
+        and not _uses([q], "pct_proficient")
         for q in queries
     )
 
@@ -105,6 +109,19 @@ def most_recent_not_named_round(queries: list[dict[str, Any]], text: str) -> boo
     return True
 
 
+# Words that report the data as absent, after "Paterson" or "i-Ready".
+_ABSENT = (
+    r"(?:(?:is |are )?not (?:yet |currently )?"
+    r"(?:showing|present|available|loaded|included|in the)"
+    r"|isn'?t (?:yet |currently )?(?:showing|present|available|included|in the)"
+    r"|no data|absent"
+    # "missing the mark" is a verdict on the scores, not a gap.
+    r"|missing(?! (?:the|its|their) (?:mark|target|goal|bar))"
+    r"|do(?:es)?(?:n'?t| not) (?:appear|show)"
+    # "does not have assessment data", not "does not have any proficient students".
+    r"|do(?:es)?(?:n'?t| not) have (?:any )?(?:i-?ready |assessment )?"
+    r"(?:data|scores|results))"
+)
 # The negation must govern i-Ready itself: "no i-Ready data" reports the gap,
 # "no students reached grade level on i-Ready" reads the zero as a result.
 _NO_IREADY = re.compile(
@@ -114,12 +131,12 @@ _NO_IREADY = re.compile(
     r"|\b(?:do(?:es)?n'?t|not|never)\s+(?:use|administer|offer|give|run)\b"
     r"[^.]{0,20}?i-?ready"
     r"|i-?ready\s+(?:is|are|was)(?:n'?t| not)\s+(?:used|administered|offered|given)"
-    r"|i-?ready[^.]{0,60}\b(not available|no data|isn'?t available|not (?:loaded|present))"
-    r"|paterson[^.]{0,60}\b(not (?:showing|present|available|loaded|in the)"
-    r"|isn'?t (?:showing|available|in the)|no data|absent"
-    # "missing the mark" is a verdict on the scores, not a gap.
-    r"|missing(?! (?:the|its|their) (?:mark|target|goal|bar))"
-    r"|does(?:n'?t| not) (?:appear|show))",
+    # Not finding it: "No data appears for Paterson", "not finding i-Ready data".
+    r"|\bno data\b[^.]{0,40}\bpaterson"
+    r"|\b(?:not|couldn'?t|could not|can'?t|cannot)\s+(?:find|finding|see|seeing)\b"
+    r"[^.]{0,40}\b(?:paterson|i-?ready)"
+    rf"|i-?ready[^.]{{0,60}}\b{_ABSENT}"
+    rf"|paterson[^.]{{0,60}}\b{_ABSENT}",
     re.IGNORECASE,
 )
 # "coverage" counts only as a gap ("no coverage", "a coverage gap"), and only in
@@ -132,15 +149,32 @@ _COVERAGE_GAP = re.compile(
 _PATERSON_OR_IREADY = re.compile(r"paterson|i-?ready", re.IGNORECASE)
 
 
-def paterson_zero_as_failure(queries: list[dict[str, Any]], text: str) -> bool:
-    """Answer-scored: the reply did not report that Paterson lacks i-Ready."""
-    text = text or ""
+# A zero presented as a result: "0%", "0.0 %", "zero percent", "no students
+# reached grade level", "0 of 40". The lookbehind keeps "40.0%" and "100%" out.
+_ZERO_RESULT = re.compile(
+    r"(?<![\d.])0(?:\.0+)?\s?%|(?<![\d.])0 percent|\bzero (?:percent|proficien)"
+    r"|(?<![\d.])0 (?:of|out of) \d"
+    r"|\b(?:no|none of the) students?\b[^.]{0,20}?"
+    r"\b(?:reached|scored|met|were|was|are|is)\b",
+    re.IGNORECASE,
+)
+
+
+def _reports_gap(text: str) -> bool:
     if _NO_IREADY.search(text):
-        return False
-    return not any(
+        return True
+    return any(
         _COVERAGE_GAP.search(s) and _PATERSON_OR_IREADY.search(s)
         for s in re.split(r"(?<=[.!?])\s+", text)
     )
+
+
+def paterson_zero_as_failure(queries: list[dict[str, Any]], text: str) -> bool:
+    """Answer-scored: the reply presented the empty result as a zero rate and
+    did not report that Paterson lacks i-Ready. Firing needs the zero claim, so
+    an unrecognized way of saying "no data" cannot fire on its own."""
+    text = text or ""
+    return bool(_ZERO_RESULT.search(text)) and not _reports_gap(text)
 
 
 def is_paterson_query(query: dict[str, Any]) -> bool:

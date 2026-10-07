@@ -832,8 +832,75 @@ each reaches `/meta` as `aiContext`.
 
 ### Family 4 result
 
-Arm B passes rule 1 on Haiku after 1 revision round. The Sonnet report run
-agrees. Run 2026-09-29, 7 prompts, 3 reps, 21 conversations per arm.
+Arm B passes rule 1 on both models. The current result is the 2026-10-07 re-run
+below. It measures the text as shipped after the second review round, on a
+harness that review corrected. The 2026-09-29 run and its revisions follow it as
+history.
+
+Re-run 2026-10-06 and 2026-10-07: 7 prompts, 3 reps, 21 conversations per arm
+and model, jobs interleaved across arms. Trap rate over all 7 traps, Wilson 95%
+intervals clustered on prompt, and the median cost per conversation:
+
+| Arm        | Haiku        | Sonnet      | Median cost, Haiku / Sonnet |
+| ---------- | ------------ | ----------- | --------------------------- |
+| `A4_pre`   | 19.0% [3–62] | 9.5% [1–49] | $0.039 / $0.040             |
+| `B4_post`  | 4.8% [1–30]  | 0.0% [0–22] | $0.055 / $0.049             |
+| `C4_skill` | 0.0% [0–26]  | 0.0% [0–22] | $0.041 / $0.043             |
+
+- **What B still misses.** Haiku arm B falls for `most_recent_not_named_round`
+  once: it lists all 3 rounds of 2025-26 instead of picking the latest. Arm A's
+  fires are `most_recent_not_named_round` (Haiku 3, Sonnet 2) and
+  `null_via_equals` (Haiku 1, which filtered with `isNull`, not a Cube
+  operator).
+- **Arm C.** It scores 0% on both models, against B's 4.8% on Haiku. The
+  intervals overlap, so C is no worse than B and possibly better; the first
+  run's "C adds nothing" rested on a Paterson verdict that was a scoring error.
+- **The empty-result note is not measured.** No conversation in any run read
+  Paterson's empty result as a 0% rate, arm A included, so the Paterson prompt
+  has no headroom. The note stays because it fires on every empty result and
+  costs one sentence, not because the eval shows it helps.
+- **Sonnet changed between runs.** The `sonnet` alias now costs about a third as
+  much per conversation, and its arm A no longer falls for
+  `grade_filter_on_vendor` (3 of 3 before, 0 now). The records do not store the
+  model id, so the alias likely points to a newer model, unconfirmed. Compare
+  arms within one run, not across runs.
+- **1 error.** One Haiku arm C conversation hit the 12-turn limit; it still
+  scores, because its queries were captured.
+
+What the re-run changed in the harness, each after reading the records that
+scored wrong:
+
+- **The stub follows Cube on an empty slice:** `[]` for a grouped query, 1 row
+  of null measures for an ungrouped one (review finding).
+- **The stub gives academic year 2026-27 only its BOY round.** The re-run fell
+  on October 2026. B and C, following `administration_period`'s "latest named
+  round that has data in the latest academic_year_label", queried 2026-27, and
+  the stub returned MOY and EOY rows that cannot exist yet. Sonnet flagged them
+  as impossible and stopped, which scored as the trap on 5 conversations. Only
+  `f4_most_recent` queried 2026-27, so that prompt alone was re-run on the
+  corrected stub (18 conversations, `family4_r2_most_recent.jsonl`). There,
+  Sonnet B and C filter 2026-27 BOY, the right answer.
+- **`paterson_zero_as_failure` fires only on a zero presented as a result**
+  ("0%", "zero percent", "no students reached …") with no gap report. Firing
+  whenever no gap phrasing matched scored 6 correct "Paterson has no data"
+  answers as trapped in the re-run, on wording such as "not yet populated" and
+  "there is no Paterson region". Across all 69 Paterson answers in every run,
+  none reads the empty result as a rate.
+- **`formative_alone` does not fire when `pct_proficient` sits in the same
+  query.** That query compares the formative rate with the all-types rate; it
+  does not substitute one for the other. 2 conversations did this and named the
+  excluded module types.
+- **Arms are compared only over prompts every arm completed,** and jobs run
+  interleaved, so a usage cutoff no longer drops one arm's prompts (review
+  finding). No prompt was dropped in the re-run.
+
+Raw records: `src/cube/mcp/eval/out/family4_r2.jsonl` and
+`family4_r2_most_recent.jsonl` (gitignored, local only).
+
+#### First run, 2026-09-29 (superseded)
+
+Arm B passed rule 1 on Haiku after 1 revision round, and the Sonnet report run
+agreed. 7 prompts, 3 reps, 21 conversations per arm.
 
 Trap rate over all 7 traps, with Wilson 95% intervals clustered on prompt (see
 the 2026-10-01 revision below):
@@ -853,8 +920,9 @@ the 2026-10-01 revision below):
   corrects itself after reading `meta`.
 - **Arm C adds nothing measurable.** On Haiku it fires the Paterson trap 1 of 3
   times, where B fires it 0 times; that one conversation asked which benchmark
-  window was meant and never reached the empty result. On Sonnet, 15 of C's 21
-  conversations hit the account's session limit and are not scored, so its 6
+  window was meant and never reached the empty result. The 2026-10-07 predicate
+  scores it as not trapped: it never claimed a zero rate. On Sonnet, 15 of C's
+  21 conversations hit the account's session limit and are not scored, so its 6
   scored conversations settle nothing.
 - **Cost.** B reads more `meta` text, and costs about the same per conversation.
   Median per conversation: Haiku A $0.042 and B $0.048; Sonnet A $0.143 and B

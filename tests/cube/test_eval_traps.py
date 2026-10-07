@@ -163,6 +163,15 @@ def test_paterson_zero_read_as_a_result_fires(text):
         "Paterson schools do not administer i-Ready.",
         "Paterson doesn't use i-Ready.",
         "i-Ready isn't used in Paterson.",
+        # Gap reports from the 2026-10-06 re-run that an earlier pattern missed.
+        "I'm not finding i-Ready Math data for Paterson schools in 2025-26.",
+        "No data appears for Paterson in the 2025-26 academic year at this time.",
+        "Paterson does not have assessment data in the current system.",
+        "Paterson is not included in the assessment scores data as of today.",
+        "i-Ready data for Paterson is not yet available in 2025-26.",
+        "There is no Paterson region currently in the assessment data.",
+        "I don't see any data for Paterson in 2025-26.",
+        "Camden is at 40.0% and Miami at 100%; Paterson has no rows here.",
     ],
 )
 def test_paterson_not_using_iready_does_not_fire(text):
@@ -576,3 +585,41 @@ def test_stub_load_rows_follow_the_query():
 def test_sql_stub_does_not_look_like_an_access_denial():
     sql = run_eval_cc._SQL_RESULT["sql"]["sql"][0]
     assert "SELECT 1" not in sql and "1 = 0" not in sql
+
+
+def test_formative_beside_pct_proficient_does_not_fire():
+    # The all-types rate in the same query is the comparison, not a stand-in.
+    measures = [f"{V}.pct_proficient", f"{V}.pct_proficient_formative"]
+    assert not traps.TRAPS["formative_alone"]([q(measures=measures)], "")
+
+
+def test_shaped_rows_give_the_in_progress_year_only_its_boy_round():
+    year = f("academic_year_label", values=["2026-2027"])
+    eoy = f("administration_period", values=["EOY"])
+    measures = [f"{V}.pct_proficient"]
+    # A round that has not happened yet is an empty slice.
+    assert run_eval_cc._shaped_rows(q(measures=measures, filters=[year, eoy])) == {
+        "data": [{f"{V}.pct_proficient": None}]
+    }
+    by_round = run_eval_cc._shaped_rows(
+        q(measures=measures, dimensions=[f"{V}.administration_period"], filters=[year])
+    )
+    assert [r[f"{V}.administration_period"] for r in by_round["data"]] == ["BOY"]
+    # A finished year keeps all 3 rounds.
+    both = f("academic_year_label", values=["2025-2026", "2026-2027"])
+    rows = run_eval_cc._shaped_rows(
+        q(
+            measures=measures,
+            dimensions=[f"{V}.academic_year_label", f"{V}.administration_period"],
+            filters=[both],
+        )
+    )["data"]
+    pairs = {
+        (r[f"{V}.academic_year_label"], r[f"{V}.administration_period"]) for r in rows
+    }
+    assert pairs == {
+        ("2025-2026", "BOY"),
+        ("2025-2026", "MOY"),
+        ("2025-2026", "EOY"),
+        ("2026-2027", "BOY"),
+    }

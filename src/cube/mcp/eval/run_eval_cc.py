@@ -150,6 +150,24 @@ _DIMENSION_VALUES = {
 }
 
 
+# The eval runs in October 2026, so academic year 2026-27 has only its BOY round.
+# Returning MOY or EOY rows for it made models flag the data as impossible and
+# stop, which scored as a trap the Cube text had not caused.
+_IN_PROGRESS_YEARS = {"2026", "2026-2027"}
+_ROUNDS_SO_FAR = {"BOY"}
+
+
+def _round_not_yet_given(values: dict[str, list[str]]) -> bool:
+    years = values.get("academic_year", []) + values.get("academic_year_label", [])
+    periods = values.get("administration_period", [])
+    return (
+        bool(years)
+        and all(y in _IN_PROGRESS_YEARS for y in years)
+        and bool(periods)
+        and not any(p in _ROUNDS_SO_FAR for p in periods)
+    )
+
+
 def _shaped_rows(query: dict[str, Any]) -> dict[str, Any]:
     """Deterministic rows shaped by the query: one row per value combination of
     its dimensions (filter values echoed where the query pins them), with
@@ -168,7 +186,12 @@ def _shaped_rows(query: dict[str, Any]) -> dict[str, Any]:
         short = d.split(".")[-1]
         choices.append(pinned.get(short) or _DIMENSION_VALUES.get(short, ["A", "B"]))
     rows = []
-    for i, combo in enumerate(itertools.product(*choices) if dims else [()]):
+    combos = itertools.product(*choices) if dims else [()]
+    for i, combo in enumerate(combos):
+        values = dict(pinned)
+        values.update({d.split(".")[-1]: [v] for d, v in zip(dims, combo, strict=True)})
+        if _round_not_yet_given(values):
+            continue
         row: dict[str, str] = dict(zip(dims, combo, strict=True))
         for j, m in enumerate(query.get("measures") or []):
             x = (seed >> (8 * ((i * 7 + j) % 24))) & 0xFF
@@ -179,6 +202,8 @@ def _shaped_rows(query: dict[str, Any]) -> dict[str, Any]:
                 else str(300 + x * 7)
             )
         rows.append(row)
+    if not rows:
+        return _empty_rows(query)
     return {"data": rows[:24]}
 
 
