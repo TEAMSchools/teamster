@@ -8,10 +8,20 @@ updates:
     schedule:
       interval: daily
     open-pull-requests-limit: 250
+    # dagster libraries release in lockstep; one PR per release, not one per package
+    groups:
+      dagster:
+        patterns:
+          - dagster*
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: daily
+    # all dagster-cloud-action pins must move together
+    groups:
+      dagster-cloud-action:
+        patterns:
+          - dagster-io/*
   - package-ecosystem: npm
     directory: /src/cube
     schedule:

@@ -1,10 +1,17 @@
 models:
   - name: int_iready__instruction_by_lesson
+    description: >-
+      One row per student per completed classic i-Ready lesson, unioned across
+      the Newark/Camden/Paterson and Miami district staging models. The student
+      number is normalized to the network student number and the source relation
+      is rewritten to the school's Dagster code location.
     config:
       materialized: table
     columns:
       - name: school
         data_type: string
+        description: >-
+          The name of the school i-Ready has the student enrolled at.
         data_tests:
           - relationships:
               arguments:
@@ -15,41 +22,101 @@ models:
         description: Derived from _dbt_source_relation, dagster_code_location.
       - name: academic_year_int
         data_type: int64
+        description: >-
+          The academic year the export was pulled for, as the integer start year
+          of the school year.
       - name: student_id
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
         description: >-
-          Network student number. Miami rows through SY2025 carry the bare
-          pre-Focus number in the source; they are brought onto the
-          8400-prefixed Focus student number here.
+          Network student number. Miami rows with academic_year_int 2025 and
+          earlier carry the bare pre-Focus number in the source; they are
+          brought onto the 8400-prefixed Focus student number here.
       - name: academic_year
         data_type: string
+        description: >-
+          The academic year label i-Ready assigns to the row, as reported in the
+          vendor's export.
       - name: subject
         data_type: string
+        description: >-
+          The subject of the completed lesson, Math or Reading.
       - name: domain
         data_type: string
+        description: >-
+          The domain of the completed lesson.
       - name: lesson_grade
         data_type: string
+        description: >-
+          The grade level of the completed lesson.
       - name: lesson_level
         data_type: string
+        description: >-
+          The level of the completed lesson, such as Emerging (Grade K), Early,
+          Mid, or Late on grade level.
       - name: lesson_id
         data_type: string
+        description: >-
+          The vendor's unique ID for the lesson.
       - name: lesson_name
         data_type: string
+        description: >-
+          The name of the completed lesson.
       - name: lesson_objective
         data_type: string
+        description: >-
+          The objective or objectives of the completed lesson.
       - name: lesson_language
         data_type: string
+        description: >-
+          The language of the completed lesson.
       - name: passed_or_not_passed
         data_type: string
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Whether the student passed or did not pass the completed lesson, as
+          reported by the vendor.
       - name: teacher_assigned_lesson
         data_type: string
+        description: >-
+          Y if a teacher assigned the lesson, N if i-Ready assigned it through
+          the student's personalized path.
       - name: student_grade
         data_type: string
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          The student's grade level, as loaded from the vendor roster.
       - name: score
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          The score the student received on the completed lesson.
       - name: total_time_on_lesson_min
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          The number of minutes the student spent on the completed lesson.
       - name: completion_date
         data_type: date
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          The date the student completed the lesson.
       - name: passed_or_not_passed_numeric
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Numeric pass flag, 1.0 when the lesson was passed and 0.0 otherwise.

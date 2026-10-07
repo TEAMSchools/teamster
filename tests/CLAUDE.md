@@ -22,6 +22,10 @@
 - **`EnvVar` in integration tests**: `EnvVar("X")` / `EnvVar.int("X")` inside
   `build_resources()`, per `src/teamster/CLAUDE.md` _Int env-var config_. Plain
   `int(EnvVar("X"))` casts the marker object, not the value.
+- **Credentialed one-offs print secrets in third-party frames**: resources hide
+  credential fields from `repr`, but a failure inside a token fetch still prints
+  the frame's arguments (e.g. `fetch_token(client_secret=...)`). Run
+  live-credential tests with `--tb=short` before pasting a traceback anywhere.
 - **Worktree tests**: VS Code doesn't discover tests in worktrees. Run from the
   CLI: `cd <abs-worktree> && uv run pytest ...` (conftest reads the token file
   itself). Invocation details: `.claude/rules/worktrees.md`.
