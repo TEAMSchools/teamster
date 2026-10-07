@@ -93,8 +93,7 @@ Then check the two ways that layout loses data without an error:
   change since the sheet was created, nobody refreshes them, and that refresh
   becomes a procedure in the family skill.
 
-The convention is written up in `docs/guides/google-sheets.md` once PR #5525
-merges.
+The convention is written up in `docs/guides/google-sheets.md`.
 
 ## Propose the boundary
 
@@ -176,3 +175,12 @@ the user to confirm or edit it.
   issue bodies drift (on athletic eligibility, an open question said two regions
   were excluded after the code had already brought one back). A resolved one is
   a candidate to comment on and close, with the user's go-ahead.
+- Support channels: search the ticket system's warehouse copy and the team's
+  Slack channels for the family over the last six months — the themes become the
+  skill's triage routes and the doc's support section. Ask the user for the
+  names users actually type before searching: they share few words with the
+  model names, so run a second pass with the surface terms the first pass
+  uncovers (on DDI, users wrote "DKI" and "enrichment grades on report cards";
+  no model-derived keyword matched either). In BigQuery the Airbyte
+  `kipptaf_zendesk.tickets` copy is live; the dlt
+  `dagster_kipptaf_dlt_zendesk_support` copy is frozen at 2025-02.
