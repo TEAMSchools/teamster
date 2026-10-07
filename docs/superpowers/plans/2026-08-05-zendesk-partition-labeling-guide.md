@@ -52,10 +52,22 @@ label in _both_ 2024 and 2025.
 
 ## Pass 2 — the partition (rest of the week)
 
-**File:** `partition_sample_uncategorized.tsv` — 350 rows.
+Two worksheets, same rubric. Both were redrawn after measuring that
+"uncategorized" turned out to mean _never worked_ rather than _worked but
+unlabeled_ — of 581 uncategorized tickets, 42% were deleted and only 27.5% ever
+drew a reply. An earlier draw was 71% blank in the `reply_excerpt` column and is
+retired. Every row in both worksheets below has a reply to read.
 
-Every row is a ticket nobody categorized. Read `subject`, `request_excerpt`, and
-`reply_excerpt`, then fill three columns.
+| Worksheet                                     | Rows | What it settles                                                             |
+| --------------------------------------------- | ---- | ----------------------------------------------------------------------------- |
+| `partition_uncategorized_answered_census.tsv` | 160  | Is the uncategorized bucket hidden demand, or queue detritus? Every row, so the answer is exact. |
+| `partition_answered_slice_a.tsv` / `_b.tsv`   | 175 each | What share of tickets the team actually worked should never have existed. This is the number the project turns on. |
+
+The two slices are disjoint and interleaved, so two people can label in parallel
+without touching the same file and each still gets a representative mix of both
+school years. Do not swap rows between them.
+
+Read `subject`, `request_excerpt`, and `reply_excerpt`, then fill four columns.
 
 ### The `label` column
 
@@ -83,6 +95,32 @@ nothing.
   the staff roster instead of per request." "Rename the measure so it stops
   reading as year-to-date."
 
+### The `class` column
+
+**Required on every row, whatever the label.**
+Tickets split into two very different kinds of work — a support question, and a
+piece of net-new analytical work that happened to arrive as a ticket. The
+demand-management design treats those as separate classes with separate intake
+paths, so the partition has to tell them apart or it cannot size the second one.
+
+This is independent of `label`. A ticket can be both self-inflicted _and_
+net-new analytical work — someone built a one-off list because the platform gave
+them no way to self-serve it. Scoping `class` to `genuine` rows only would drop
+exactly those from the request sizing, which is why it applies everywhere.
+
+| Class     | Meaning                                                                                                       |
+| --------- | ------------------------------------------------------------------------------------------------------------- |
+| `ticket`  | A question or a break/fix answered by explaining, checking, or correcting something. No new artifact produced. |
+| `request` | Net-new analytical work — a data pull, a list, a number, a one-off analysis. Somebody did work to produce it.  |
+
+The test is whether the reply required **producing** something that did not
+exist before. "Both of those students transferred, so they show under the old
+school" is a `ticket` — it explains existing state. "Final ADA for that school
+is 93.08%" is a `request` — someone ran a query and produced a number.
+
+When it is genuinely both, pick `request`. Undercounting requests is the failure
+mode that matters here.
+
 ### Worked examples
 
 Paraphrased from real tickets, identifiers removed.
@@ -98,10 +136,10 @@ Paraphrased from real tickets, identifiers removed.
 
 ### Misrouted mail
 
-A small number of rows (roughly 3%) are not support tickets at all — vendor
-invoices, statements of account, and sales outreach that landed in the Data
-queue by accident. Label those `vendor_or_user_error` and move on. They are not
-a defect and they are not demand; there are too few to matter to the result.
+Both worksheets require a ticket that someone actually answered, which removes
+almost all of the vendor invoices, statements of account, and sales outreach
+that had landed in the Data queue by accident. If one still surfaces, label it
+`vendor_or_user_error`, class it `ticket`, and move on.
 
 ### When you are unsure
 
@@ -130,8 +168,13 @@ trustworthy.
 
 ## What happens with the result
 
-The share of the 350 rows confirmed `self_inflicted` is compared against a 20%
-threshold set before any labeling began.
+The share of the 350 sampled rows confirmed `self_inflicted` is compared against
+a 20% threshold set before any labeling began. `zendesk_merge_labels.py`
+recombines the slices, applies the demotion rule mechanically, and reports the
+rate with a 95% interval, so the headline number cannot drift from this rubric.
+
+The 160-row census is reported separately and has no threshold — it is a
+complete count, so it simply answers its question.
 
 - **20% or above** — the queue is substantially a defect backlog. The project
   pivots to fixing artifacts, and the confirmed `artifact_name` values become
