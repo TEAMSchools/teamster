@@ -21,9 +21,11 @@ cubes:
           and answers a different question with no error. Measured on
           student_attendance_enrollment_daily_view: distinct students by year
           granularity returns 12,847 / 13,163 / 10,726 where the academic-year
-          answer is 10,158 / 10,849 / 11,260. Group by academic_year_label (or
-          academic_year) for anything school-year-shaped, and reserve this
-          dimension's granularities for day, week, month and quarter.
+          answer is 10,158 / 10,849 / 11,260. Group or filter by
+          academic_year_label (or academic_year) for anything
+          school-year-shaped, including "this year" and "year to date", rather
+          than a July-to-June date range, and reserve this dimension's
+          granularities for day, week, month and quarter.
         sql: date_timestamp
         type: time
         public: true
