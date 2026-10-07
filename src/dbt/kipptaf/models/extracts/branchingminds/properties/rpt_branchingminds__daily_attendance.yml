@@ -6,7 +6,9 @@ models:
       category collapses in-school and out-of-school suspension into Absent,
       since Branching Minds' excused/unexcused absence distinction isn't modeled
       anywhere upstream. Drops days where the source recorded no attendance
-      (NULL attendance_value). Scoped to the current academic year only.
+      (NULL attendance_value). Scoped to the current academic year, through
+      yesterday. The upstream fills every scheduled day with a placeholder
+      Present until the register is taken, so today and later are excluded.
     columns:
       - name: event_id
         data_type: string

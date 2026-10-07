@@ -25,8 +25,9 @@ from {{ ref("int_students__attendance_daily") }}
 where
     _dbt_source_project in ('kippnewark', 'kippcamden', 'kipppaterson')
     and academic_year = {{ var("current_academic_year") }}
-    -- the intermediate carries scheduled future days with flags filled in
-    and calendardate <= current_date('{{ var("local_timezone") }}')
+    -- scheduled days carry a placeholder Present until the register is taken,
+    -- and the feed runs before school, so today is excluded too
+    and calendardate < current_date('{{ var("local_timezone") }}')
     and membershipvalue > 0
     -- days with no recorded attendance have no category to send
     and attendance_category is not null
