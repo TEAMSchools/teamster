@@ -420,7 +420,10 @@ cubes:
       # rollup. A rollup only serves a query whose grouped members are all in
       # it, so the name must be here (and exposed on the view) or a name-grouped
       # query falls back to the fact. The key adds cardinality; the name is 1:1
-      # with the key (adds width, not rows).
+      # with the key (adds width, not rows). Also includes the members real
+      # queries filter on (academic_year_label, assessment_type, title,
+      # enrollment_resolution; #5557), and refreshes whenever the fact
+      # rebuilds (refresh_key below).
       - name: proficiency_rollup
         measures:
           # All three nested counts plus the proficient sum, so every rate the
@@ -493,21 +496,21 @@ cubes:
           # added rows) — supports region-name filter phrasing (e.g. "Newark").
           - regions.region_name
           # lead teacher (key + name) so proficiency-by-teacher queries hit the
-          # rollup rather than the ~14.2M-row fact; the key adds cardinality,
+          # rollup rather than the ~15M-row fact; the key adds cardinality,
           # the name is 1:1 with the key (width, not rows).
           - student_section_enrollments.lead_teacher_staff_key
           - staff_lead_teacher.full_name
-        # Partitioned refresh: without a time_dimension, Cube rebuilds this
-        # entire rollup from the ~14.2M-row fact on every refresh_key check,
-        # regardless of what changed. dates.date_day (via
-        # student_assessment_scores -> dates, keyed on assessment_date_key), not
-        # the cube's own date_taken, is the time anchor — date_taken is
-        # documented above as corrupt for a small share of rows, whereas
-        # assessment_date_key is the administration date where present, else the
-        # test date. Year partitioning (not day/month) matches how corrections
-        # actually land: restatements replace a whole academic year at a time,
-        # so a correction only invalidates the partition(s) touching that year,
-        # not the full history.
+        # Partitioned build: Cube builds each yearly partition as its own job,
+        # in parallel, so a refresh finishes in one partition's build time
+        # rather than the whole history's. It does NOT limit what a refresh
+        # rebuilds: the refresh_key below returns one value for every
+        # partition, so a change rebuilds all ~12 (verified 2026-10-07,
+        # 12 build jobs per refresh), each scanning the whole ~15M-row fact.
+        # dates.date_day (via student_assessment_scores -> dates, keyed on
+        # assessment_date_key), not the cube's own date_taken, is the time
+        # anchor — date_taken is documented above as corrupt for a small share
+        # of rows, whereas assessment_date_key is the administration date where
+        # present, else the test date.
         # State/vendor administrations are diagnostic windows, not single days,
         # so one straddling July 1 lands its scores across two academic_year
         # partitions here, by each score's own test date. That is correct

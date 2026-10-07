@@ -517,7 +517,7 @@ different copy. Two traps:
   schema**, whose symptom is `Table or CTE with name '<view>' not found` — the
   same string as an RLS denial. Count the `../` segments from `src/cube`.
 - Set `CUBEJS_REFRESH_WORKER=false` or the refresh worker starts building the
-  `student_assessment_scores` pre-agg off the ~14.2M-row fact.
+  `student_assessment_scores` pre-agg off the ~15M-row fact.
 
 **Cube caches a query result by its text, so a repeat run measures the cache**
 (0.25s vs 2-4s). To time anything, append a unique never-matching predicate per
