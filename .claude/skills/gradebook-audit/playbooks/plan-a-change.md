@@ -39,8 +39,10 @@ it, and is not repeated here.
   logic lives in the intermediate;
 - the **summer-toggle** state
   ([`../references/summer-toggle.md`](../references/summer-toggle.md));
-- both **exposures** — the Tableau workbook and the Google Sheet each consume an
-  output of this pipeline.
+- all three **exposures** — the Tableau workbook (`tableau.yml`), the Google
+  Sheets (`google-sheets.yml`), and the `gradebook-flag-triage` end-user skill
+  (`claude.yml`, which reads four intermediates by name) each consume an output
+  of this pipeline.
 
 To map what feeds and consumes a model you plan to touch, use the lineage
 procedure in [`../references/data-model.md`](../references/data-model.md) rather
