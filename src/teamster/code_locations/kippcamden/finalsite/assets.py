@@ -1,4 +1,7 @@
-from teamster.code_locations.kippcamden import CODE_LOCATION, CURRENT_FISCAL_YEAR
+from teamster.code_locations.kippcamden import (
+    CODE_LOCATION,
+    CURRENT_FISCAL_YEAR,
+)
 from teamster.code_locations.kippcamden.finalsite.schema import (
     CONTACTS_SCHEMA,
     STATUS_REPORT_SCHEMA,
