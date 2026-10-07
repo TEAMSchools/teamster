@@ -94,9 +94,8 @@ intermediates directly (`int_powerschool__gradebook_assignment_scores_rollup`,
 `int_powerschool__gradebook_assignments_scores`,
 `int_powerschool__u_expectations_qtd_unpivot`,
 `int_extracts__course_enrollments_by_term`), so a column change on any of those
-reaches a Slack answer with no rpt_ in between. The exposure records lineage
-only; the skill's `references/queries.md` in ps-plugins is the column list to
-update.
+reaches a Slack answer with no rpt_ in between. What to update and when:
+[`../playbooks/change-a-flag.md`](../playbooks/change-a-flag.md).
 
 Two companion Google Sheets have their own exposures in
 `src/dbt/kipptaf/models/exposures/google-sheets.yml` — check there if asked

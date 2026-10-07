@@ -4,15 +4,15 @@ description: >-
   Use when any question or task touches the gradebook audit pipeline end to end:
   the dbt models and dashboards, the PowerSchool Gradebook Audit plugin,
   shipping a change to the gradebook-expectations-upload or
-  gradebook-flag-triage end-user skills, or the published Google Sheet pairs it
-  feeds. Triggers: explaining the model, listing refs/lineage/sources for the
-  gradebook audit dashboard, adding/removing a flag, adding a region, debugging
-  a flag that isn't firing, a flag caused by blank scores for a withdrawn or
-  transferred student, rolling the assignment expectations over to a new year
-  (turning T&L's expectations sheet into U_EXPECTATIONS count rows to upload to
-  PowerSchool), changing or deploying the PowerSchool plugin in the private
-  TEAMSchools/ps-plugins repo, bumping or distributing a new version of the
-  gradebook-expectations-upload skill, a change to a gradebook audit
+  gradebook-flag-triage end-user skills, or the published Google Sheet pairs the
+  pipeline feeds. Triggers: explaining the model, listing refs/lineage/sources
+  for the gradebook audit dashboard, adding/removing a flag, adding a region,
+  debugging a flag that isn't firing, a flag caused by blank scores for a
+  withdrawn or transferred student, rolling the assignment expectations over to
+  a new year (turning T&L's expectations sheet into U_EXPECTATIONS count rows to
+  upload to PowerSchool), changing or deploying the PowerSchool plugin in the
+  private TEAMSchools/ps-plugins repo, bumping or distributing a new version of
+  the gradebook-expectations-upload skill, a change to a gradebook audit
   IMPORTRANGE/Reports sheet pair, grades, GPA, or GPA goals on the Academic &
   Gradebook Health Suite, or working on rpt_tableau__gradebook_audit or
   rpt_gsheets__gradebook_audit_student_flags and their upstream models.

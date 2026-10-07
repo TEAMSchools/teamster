@@ -49,13 +49,13 @@ Out of scope, decided on 2026-10-07:
 
 ## Decisions
 
-| Decision                         | Choice                                                                                                   | Alternative rejected                 | Why                                                                                                                                                                                     |
-| -------------------------------- | -------------------------------------------------------------------------------------------------------- | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Data path                        | BigQuery through a Claude in Slack connector                                                             | Cube view with row-level security    | No gradebook cube exists; building one is weeks. The two staff have network-wide legitimate educational interest, so row scoping is not needed for them.                                |
-| Identity the connector runs as   | A dedicated GCP service account with Data Viewer on the needed datasets and Job User on the project      | The data team director's own account | Anyone in the channel runs any SELECT the identity can. A dedicated account bounds that to the gradebook datasets, keeps job history separate, and survives staff changes.              |
-| Default answer names the student | Yes, as the ticket replies did                                                                           | Assignment-level counts only         | The teacher has to find the score. The two staff already have the right to see it. Channel is private with short retention; names stay in the channel and the teacher message.          |
-| Where the skill files live       | ps-plugins                                                                                               | teamster                             | One home for both end-user skills and one shipping procedure. ps-plugins' "no SQL in a skill" rule is scoped to the upload skill; the triage skill's readers run a warehouse connector. |
-| Drift guard                      | A YAML-only exposure here, plus playbook lines in `gradebook-audit`, plus a column list inside the skill | Nothing in teamster                  | A flag change would otherwise silently break Slack answers. The exposure records lineage; it does not fail on a rename. The column list in the skill is the checklist.                  |
+| Decision                         | Choice                                                                                                   | Alternative rejected                 | Why                                                                                                                                                                                                                 |
+| -------------------------------- | -------------------------------------------------------------------------------------------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Data path                        | BigQuery through a Claude in Slack connector                                                             | Cube view with row-level security    | No gradebook cube exists; building one is weeks. The two staff have network-wide legitimate educational interest, so row scoping is not needed for them.                                                            |
+| Identity the connector runs as   | A dedicated GCP service account with Data Viewer on the needed datasets and Job User on the project      | The data team director's own account | Anyone in the channel runs any SELECT the identity can. A dedicated account makes the grant the control, keeps job history separate, and survives staff changes. How wide the grant is: see _Security and privacy_. |
+| Default answer names the student | Yes, as the ticket replies did                                                                           | Assignment-level counts only         | The teacher has to find the score. The two staff already have the right to see it. Channel is private with short retention; names stay in the channel and the teacher message.                                      |
+| Where the skill files live       | ps-plugins                                                                                               | teamster                             | One home for both end-user skills and one shipping procedure. ps-plugins' "no SQL in a skill" rule is scoped to the upload skill; the triage skill's readers run a warehouse connector.                             |
+| Drift guard                      | A YAML-only exposure here, plus playbook lines in `gradebook-audit`, plus a column list inside the skill | Nothing in teamster                  | A flag change would otherwise silently break Slack answers. The exposure records lineage; it does not fail on a rename. The column list in the skill is the checklist.                                              |
 
 ## How it works
 
@@ -95,7 +95,7 @@ ask.
 
 ### Models read
 
-All in `teamster-332318`. Three are intermediates read directly, against the
+All in `teamster-332318`. Four are intermediates read directly, against the
 rpt_-in-between rule, as the short-term path.
 
 | Dataset and model                                                         | Role                                                                   |
@@ -141,11 +141,25 @@ Verified against the model SQL during review on 2026-10-07.
 
 ## Security and privacy
 
-- The connector's service account has Data Viewer on the gradebook datasets and
-  their district upstreams only, and Job User on the project. The connector's
-  tokens carry a read-only scope that refuses table creation and load jobs
-  regardless of roles. The key is held at Anthropic's proxy and never enters
-  Claude's sandbox.
+- The connector's service account has Job User on the project and Data Viewer
+  scoped as narrowly as BigQuery allows for these relations. Four of the five
+  are views, and BigQuery checks the querying identity against every table a
+  view reads. So a plain dataset grant reaches `kipptaf_tableau`,
+  `kipptaf_powerschool`, `kipptaf_extracts`, the three district PowerSchool
+  datasets, and whatever the dashboard view reads upstream, which together hold
+  far more student data than gradebook scores. Two ways to set the grant, for
+  the engineer and the FERPA owner to choose between before the runbook's
+  dry-run step:
+  - **Narrow (preferred):** make the three kipptaf datasets authorized datasets
+    on their upstreams, then grant table-level Data Viewer on the five relations
+    only. The account can then read exactly those five.
+  - **Wide (accepted risk):** dataset-level Data Viewer on the datasets the dry
+    run names. Acceptable only because the channel holds two staff with
+    network-wide legitimate educational interest, and must be revisited before
+    anyone else joins.
+- The connector's tokens carry a read-only scope that refuses table creation and
+  load jobs regardless of roles. The key is held at Anthropic's proxy and never
+  enters Claude's sandbox.
 - A daily BigQuery custom quota on the service account bounds a runaway thread.
   Anthropic's Claude Tag spend limit is set separately.
 - Student names and scores appear in the channel by design. The channel is
@@ -226,3 +240,7 @@ triage answer is a bug in the skill unless the model is wrong.
 - Phase 2: a Cube view with row-level security replacing the BigQuery path, so
   school leaders can ask the same question about their own building. Separate
   issue; the skill keeps data access in one file so the swap is contained.
+- If a rename bites before phase 2, the cheap interim guard is a thin contracted
+  `rpt_` view over the four intermediates, which is also what the layer rule
+  asks for. It would make a rename fail CI and give the service account one
+  dataset to read. Not built now because this PR changes no dbt models.
