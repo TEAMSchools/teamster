@@ -12,14 +12,15 @@ models:
       per test type. Only student-weeks with a recorded score appear. Feeds
       int_topline__student_metrics.
     config:
+      enabled: false
       materialized: table
       meta:
         dagster:
-          # table + nightly cron flattens the ~660-stage view-inlined plan of
+          # table + cron flattens the deep view-inlined plan of
           # int_topline__student_metrics without eager rebuilds; shares its
-          # midnight tick (deps-in-progress guard serializes). Refs #4153
+          # tick (deps-in-progress guard serializes). Refs #4153
           automation_condition:
-            cron_schedule: 0 0 * * *
+            cron_schedule: 30 0 * * *
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -29,6 +30,7 @@ models:
               - week_start_monday
               - test_type
           config:
+            enabled: false
             severity: error
     columns:
       - name: student_number

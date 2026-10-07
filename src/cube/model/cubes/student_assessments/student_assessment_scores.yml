@@ -496,6 +496,15 @@ cubes:
         time_dimension: dates.date_day
         granularity: year
         partition_granularity: year
+        # Serve a date range only when it aligns with the year grain. Cube
+        # defaults this to true, via
+        # CUBEJS_PRE_AGGREGATIONS_ALLOW_NON_STRICT_DATE_RANGE_MATCH, which lets
+        # this rollup serve any date_day range by comparing it to each row's
+        # January 1 bucket: a Sep-Oct range returned 0 rows and a July-June
+        # school year returned the wrong calendar year (#5744).
+        # Misaligned ranges now read the fact; academic_year filters and
+        # January-to-December ranges still hit the rollup.
+        allow_non_strict_date_range_match: false
         # Bound the build range to real assessment history. Without this, Cube
         # derives the range from the time_dimension's min/max — and
         # dates.date_day resolves through dim_dates, whose calendar spine runs
