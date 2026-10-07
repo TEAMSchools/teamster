@@ -671,15 +671,15 @@ data_tests:
       student_id in enrollments must exist in students. students is scoped to
       the current academic year and enrollments is not, so a region whose SIS is
       frozen at a prior year keeps shipping course enrollments for students that
-      no longer appear in the student feed. Warns rather than errors, unlike the
-      school_id check, because the two feeds rebuild asymmetrically under
-      state:modified+ -- students descends from
-      int_extracts__student_enrollments while enrollments descends only from the
-      powerschool staging models, so a PR touching the enrollment chain rebuilds
-      one side and reads the other frozen from the staging defer copies. That
-      vintage gap alone produces orphans and blocks CI on changes that cannot
-      affect feed membership.
+      no longer appear in the student feed, and an out-of-district filter
+      applied to one feed but not the other ships enrollments for students
+      Clever was never sent. Both feeds filter the same population from
+      int_extracts__student_enrollments, each with its own copy of the filter;
+      this test catches the two copies drifting apart. A PR touching only
+      int_students__course_enrollments rebuilds enrollments alone, but that
+      cannot change which students either feed carries.
     config:
+      severity: error
       meta:
         dagster:
           ref:

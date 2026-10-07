@@ -3,7 +3,7 @@ import time
 from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
 from dagster_shared import check
 from oauthlib.oauth2 import BackendApplicationClient
-from pydantic import PrivateAttr
+from pydantic import Field, PrivateAttr
 from requests import Response
 from requests.auth import HTTPBasicAuth
 from requests.exceptions import ConnectionError as RequestsConnectionError
@@ -22,8 +22,8 @@ class AdpWorkforceNowError(Exception):
 
 
 class AdpWorkforceNowResource(ConfigurableResource):
-    client_id: str
-    client_secret: str
+    client_id: str = Field(repr=False)
+    client_secret: str = Field(repr=False)
     cert_filepath: str
     key_filepath: str
     masked: bool = True
