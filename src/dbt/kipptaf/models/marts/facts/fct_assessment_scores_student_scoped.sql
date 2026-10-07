@@ -48,7 +48,15 @@ with
 
             row_number() over (
                 partition by powerschool_student_number, scope
-                order by scale_score desc, test_date desc
+                order by
+                    scale_score desc,
+                    test_date desc,
+                    response_type asc,
+                    assessment_id asc,
+                    response_type_description asc,
+                    academic_year asc,
+                    scope_round asc,
+                    grade_level asc
             ) as rn_highest,
         from {{ ref("int_assessments__college_assessment_practice") }}
     ),
