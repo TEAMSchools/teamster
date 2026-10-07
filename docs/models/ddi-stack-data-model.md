@@ -111,10 +111,11 @@ A new score therefore reaches a consumer only after:
 - **Canonical assessment** (`canonical_assessment_id`): internal assessments are
   created once per region/variant in Illuminate, so members that share
   `(academic_year, scope, subject_area, module_code, grade_level_id)` are
-  grouped, and the lowest member `assessment_id` names the group. Non-internal
-  assessments are their own canonical. Known defects: the grouping ignores
-  region ([#5653](https://github.com/TEAMSchools/teamster/issues/5653)) and
-  inconsistent SY25-26 tagging destabilizes it
+  grouped, and the lowest member `assessment_id` names the group. Miami-only
+  Florida copies (AppSheet `regions_assessed` exactly `Miami`) group separately,
+  so New Jersey rows never inherit a Florida title or date. Non-internal
+  assessments are their own canonical. Known defect: inconsistent SY25-26
+  tagging destabilizes the grouping
   ([#5654](https://github.com/TEAMSchools/teamster/issues/5654)).
 - **Scope**: Illuminate's assessment category (decoded from `dna_scopes`) — Unit
   Assessment ("UA"), Cumulative Review Quizzes ("CRQ"), Cold Read Quizzes, Sight
@@ -481,9 +482,10 @@ state testing results, both, or eventually Focus Apex assessments.
   what is a DDI assessment. This keeps the stack robust to Illuminate's messy
   catalog (duplicates, "Copy of" titles) at the cost of making the tags a single
   point of failure.
-- **Canonical grouping by attributes, not region.** Regional copies of one
-  assessment share a canonical id via their shared attributes. #5653 documents
-  where that breaks.
+- **Canonical grouping by attributes, not region.** Network policy is one shared
+  internal assessment per module, so regional copies share a canonical id via
+  their shared attributes. The one exception is Miami's own Florida versions,
+  which stay in a separate group.
 - **Replacement sittings are visible but unscored.** Off-grade sittings show on
   rosters and the student-scoped bridge but never anchor scores — the section
   resolver cannot place them.
@@ -548,8 +550,6 @@ roll). That is a workbook/extract change, not a data defect.
 
 Tracked elsewhere:
 
-- [#5653](https://github.com/TEAMSchools/teamster/issues/5653) — canonical merge
-  ignores region; Newark CRQs link to Miami assessments in the DDI Suite.
 - [#5654](https://github.com/TEAMSchools/teamster/issues/5654) — inconsistent
   SY25-26 scope/module tagging destabilizes canonical groups.
 - [#5399](https://github.com/TEAMSchools/teamster/issues/5399) — performance

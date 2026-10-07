@@ -65,7 +65,7 @@ prerequisite.
 | Week has no row at all on the DDI dashboard  | By design: the `module_type != 'WPP'` filter makes the rollup join inner                           |
 | Same-day scores unscored                     | Band tables sync at midnight only (#5399)                                                          |
 | Module Dashboard vs DKI View disagree        | Denominators: not-taken rows, grade-level vs course population — [triage.md](references/triage.md) |
-| Newark rows linked to a Miami assessment     | Canonical merge ignores region (#5653)                                                             |
+| Newark rows linked to a Miami assessment     | Florida copy tagged with a region besides Miami — [tagging.md](references/tagging.md)              |
 | Honors/second section missing; wrong teacher | One section per subject pick, or a PowerSchool course assignment                                   |
 | Blank workbook / login failure               | Tableau licensing or permissions — not data                                                        |
 

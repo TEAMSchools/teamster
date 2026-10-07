@@ -40,13 +40,14 @@ the lowest member `assessment_id`. Consequences:
 
 - One mistagged copy (wrong module or grade) splits or merges a group — the
   instability behind [#5654].
-- The grouping ignores region, so same-attribute assessments from different
-  regions merge — the Newark-CRQ-linked-to-Miami defect ([#5653]).
+- Copies from different regions merge by design, except Miami-only Florida
+  copies (`regions_assessed` exactly `Miami`), which group apart. A Florida copy
+  also tagged with another region falls back into the New Jersey group, and its
+  title or date can leak onto New Jersey rows.
 - A tag edit changes `canonical_assessment_id`s, which are hash inputs in the
   assessment star: expect administration and score keys to churn on the next
   tick.
 
-[#5653]: https://github.com/TEAMSchools/teamster/issues/5653
 [#5654]: https://github.com/TEAMSchools/teamster/issues/5654
 
 ## After a tag fix
