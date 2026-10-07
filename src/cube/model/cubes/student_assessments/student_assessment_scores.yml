@@ -481,10 +481,11 @@ cubes:
         # the whole fact because the partition filter sits on joined dim_dates
         # (#5557). The anchor is dates.date_day, keyed on assessment_date_key
         # (the administration date where present, else the test date), not the
-        # cube's own date_taken, which is corrupt for a small share of rows. A
-        # state or vendor window that straddles July 1 splits its scores across
-        # two partitions by each score's test date: correct per-score
-        # attribution, not a fan-out (#4546).
+        # cube's own date_taken, which is corrupt for a small share of rows.
+        # Partitions are calendar years, so a state or vendor window that
+        # straddles January 1 splits its scores across two partitions by each
+        # score's anchor date: correct per-score attribution, not a fan-out
+        # (#4546).
         time_dimension: dates.date_day
         granularity: year
         partition_granularity: year
