@@ -194,12 +194,22 @@ def load_checks(path) -> dict:
         )
         for n, d in data["dimensions"].items()
     }
-    if "date" not in dims or not dims["date"].cube:
+    window = data.get("window")
+    if window is not None:
+        # An academic-year window (state tests are scored by year, not by day).
+        years = window.get("academic_years") if isinstance(window, dict) else None
+        if not years or not all(isinstance(y, int) for y in years):
+            raise CheckError(f"{path}: window needs a list of academic_years")
+        if not dims.get("academic_year") or not dims["academic_year"].cube:
+            raise CheckError(
+                f"{path}: an academic-year window needs an academic_year dimension"
+            )
+    elif "date" not in dims or not dims["date"].cube:
         raise CheckError(
             f"{path}: 'dimensions.date' needs a cube member and a sql column"
         )
     for d in dims.values():
-        if d.granularity and d.cube != dims["date"].cube:
+        if d.granularity and ("date" not in dims or d.cube != dims["date"].cube):
             raise CheckError(
                 f"{path}: dimension '{d.name}' has a granularity but is not on the "
                 f"date member '{dims['date'].cube}'"
@@ -263,6 +273,8 @@ def load_checks(path) -> dict:
     data["dimensions"] = dims
     # Cube-side only: what the dashboard's table already excludes (e.g. break days).
     data.setdefault("cube_filters", [])
+    # Extract-side only: rows the dashboard's table holds that Cube never carries.
+    data.setdefault("truth_filters", [])
     data.setdefault("scope_measure", "count_students")
     data.setdefault("students_sql", "count(distinct student_number)")
     return data
@@ -272,6 +284,20 @@ def academic_window(today: dt.date) -> tuple[dt.date, dt.date]:
     """July 1 of the academic year that contains yesterday, through yesterday."""
     end = today - dt.timedelta(days=1)
     return dt.date(end.year if end.month >= 7 else end.year - 1, 7, 1), end
+
+
+def resolve_window(checks: dict, today: dt.date):
+    """The checks file's academic-year window, or July 1 through yesterday."""
+    if checks.get("window"):
+        return {"academic_years": sorted(checks["window"]["academic_years"])}
+    return academic_window(today)
+
+
+def _window_label(window) -> list[str]:
+    if isinstance(window, dict):
+        years = window["academic_years"]
+        return [f"{y}-{str(y + 1)[-2:]}" for y in (years[0], years[-1])]
+    return [window[0].isoformat(), window[1].isoformat()]
 
 
 def cube_key(view: str, dim: Dim) -> str:
@@ -285,10 +311,10 @@ def cube_key(view: str, dim: Dim) -> str:
 def cube_query(
     view, measures, grain, dims, hard_filters, window, cube_filters=()
 ) -> dict:
-    td = {
-        "dimension": f"{view}.{dims['date'].cube}",
-        "dateRange": [window[0].isoformat(), window[1].isoformat()],
-    }
+    by_year = isinstance(window, dict)
+    td: dict = {"dimension": f"{view}.{dims['date'].cube}"} if "date" in dims else {}
+    if not by_year:
+        td["dateRange"] = [window[0].isoformat(), window[1].isoformat()]
     plain = []
     for name in grain:
         d = dims[name]
@@ -296,11 +322,23 @@ def cube_query(
             td["granularity"] = d.granularity
         else:
             plain.append(f"{view}.{d.cube}")
+    year_filter = (
+        [
+            {
+                "member": f"{view}.{dims['academic_year'].cube}",
+                "operator": "equals",
+                "values": [str(y) for y in window["academic_years"]],
+            }
+        ]
+        if by_year
+        else []
+    )
     return {
         "measures": [f"{view}.{m}" for m in measures],
         "dimensions": plain,
-        "timeDimensions": [td],
-        "filters": [
+        "timeDimensions": [td] if not by_year or "granularity" in td else [],
+        "filters": year_filter
+        + [
             {
                 "member": f"{view}.{dims[f['dim']].cube}",
                 "operator": "equals",
@@ -320,7 +358,9 @@ def _sql_literal(v) -> str:
     return "'" + str(v).replace("'", "\\'") + "'"
 
 
-def truth_sql(table, metrics, grain, dims, hard_filters, window, students_sql) -> str:
+def truth_sql(
+    table, metrics, grain, dims, hard_filters, window, students_sql, truth_filters=()
+) -> str:
     select = [f"{dims[n].sql} as g{i}" for i, n in enumerate(grain)]
     for i, m in enumerate(metrics):
         if m["kind"] == "count":
@@ -335,10 +375,15 @@ def truth_sql(table, metrics, grain, dims, hard_filters, window, students_sql) -
                 f"{m['den_without']} as m{i}_alt_den",
             ]
     select.append(f"{students_sql} as n_students")
-    where = [f"{dims['date'].sql} between '{window[0]}' and '{window[1]}'"]
+    if isinstance(window, dict):
+        years = ", ".join(str(y) for y in window["academic_years"])
+        where = [f"{dims['academic_year'].sql} in ({years})"]
+    else:
+        where = [f"{dims['date'].sql} between '{window[0]}' and '{window[1]}'"]
     for f in hard_filters:
         values = ", ".join(_sql_literal(v) for v in f["values"])
         where.append(f"{dims[f['dim']].sql} in ({values})")
+    where += list(truth_filters)
     # trunk-ignore(bandit/B608): SQL comes from a reviewed checks file and runs read-only
     sql = f"select {', '.join(select)} from `{table}` where {' and '.join(where)}"
     if grain:
@@ -811,6 +856,7 @@ def _diagnose(checks, cube_load, bq, window, view, metric) -> dict:
                 hard,
                 window,
                 checks["students_sql"],
+                checks["truth_filters"],
             )
         )
     except Exception as e:  # noqa: BLE001 - a missing breakdown never changes the verdict
@@ -866,7 +912,16 @@ def scope_guard(checks, cube_load, bq, window) -> None:
         for r in rows
     }
     for r in bq(
-        truth_sql(EXTRACT_TABLE, [], [name], dims, hard, window, checks["students_sql"])
+        truth_sql(
+            EXTRACT_TABLE,
+            [],
+            [name],
+            dims,
+            hard,
+            window,
+            checks["students_sql"],
+            checks["truth_filters"],
+        )
     ):
         value, n = norm_key(r["g0"]), r["n_students"]
         if n and not seen.get(value):
@@ -880,12 +935,12 @@ def scope_guard(checks, cube_load, bq, window) -> None:
 def run_dashboard(
     checks, cube_load, bq, today, rows=None, scope_only=False, snapshots=None
 ) -> dict:
-    window = academic_window(today)
+    window = resolve_window(checks, today)
     dims, hard = checks["dimensions"], checks["hard_filters"]
     scope_guard(checks, cube_load, bq, window)
     result = {
         "dashboard": checks["dashboard"],
-        "window": [window[0].isoformat(), window[1].isoformat()],
+        "window": _window_label(window),
         "run_date": today.isoformat(),
         "snapshots": snapshots or {},
         "rows": {},
@@ -935,6 +990,7 @@ def run_dashboard(
                     hard,
                     window,
                     checks["students_sql"],
+                    checks["truth_filters"],
                 )
             )
             if not trows or (not g and not trows[0].get("n_students")):

@@ -1094,3 +1094,54 @@ def test_blocked_only_members_do_not_reopen(tmp_path):
     latest = json.loads((tmp_path / "latest.json").read_text())
     assert latest["rows"]["1"]["missing_members"] == ["team"]  # blocks a grain only
     assert latest["rows"]["1"]["reopen_for"] == []
+
+
+# ---------------------------------------------------------------- academic-year windows
+def _year_window(d):
+    d["window"] = {"academic_years": [2024, 2025]}
+    d["dimensions"]["academic_year"] = {"cube": "academic_year", "sql": "academic_year"}
+    d["truth_filters"] = ["results_type = 'Actual'"]
+    for row in d["rows"]:
+        row["grains"] = [g for g in row["grains"] if "month" not in g]
+
+
+def test_year_window_filters_by_academic_year_on_both_sides(tmp_path):
+    c = cv.load_checks(_write_variant(tmp_path, _year_window))
+    window = cv.resolve_window(c, TODAY)
+    q = cv.cube_query(
+        "demo_view", ["count_tardy_days"], ["region"], c["dimensions"], [], window
+    )
+    assert q["timeDimensions"] == []
+    assert {
+        "member": "demo_view.academic_year",
+        "operator": "equals",
+        "values": ["2024", "2025"],
+    } in q["filters"]
+    sql = cv.truth_sql(
+        "t",
+        c["rows"][0]["metrics"],
+        ["region"],
+        c["dimensions"],
+        [],
+        window,
+        "count(1)",
+        c["truth_filters"],
+    )
+    assert "academic_year in (2024, 2025)" in sql
+    assert "results_type = 'Actual'" in sql
+    assert "calendardate" not in sql
+
+
+def test_year_window_needs_an_academic_year_dimension(tmp_path):
+    def mutate(d):
+        _year_window(d)
+        del d["dimensions"]["academic_year"]
+
+    with pytest.raises(cv.CheckError, match="academic_year"):
+        cv.load_checks(_write_variant(tmp_path, mutate))
+
+
+def test_year_window_labels_the_run(tmp_path):
+    c = cv.load_checks(_write_variant(tmp_path, _year_window))
+    result = cv.run_dashboard(c, FakeCube(), FakeBQ(), TODAY)
+    assert result["window"] == ["2024-25", "2025-26"]
