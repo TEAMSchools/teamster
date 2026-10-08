@@ -22,7 +22,7 @@ dimensions many-to-many.
 
 ### Column-naming rubric
 
-Applied to every column in every mart model.
+Applied to every mart column a PR adds, renames, or changes.
 
 - R1. Strip source-system prefixes/names (`powerschool_`, `adp_`, `deanslist_`,
   `focus_`, `finalsite_`) unless disambiguating unified columns. Source-agnostic

@@ -27,22 +27,26 @@ Data flows from source to consumer through these layers. Each layer has 1 job.
 | `rpt_`        | Thin shaping of marts for 1 tool, including that tool's pivots                                                 | `extracts/<tool>/`                      |
 
 Source packages hold `stg_` and source `int_` only. District projects hold
-package config, district-only source models, and thin `rpt_` wrappers over
-kipptaf extracts. Cross-region business logic lives only in kipptaf.
+package config, district-only source models, and `rpt_` wrappers over kipptaf
+extracts. Cross-region business logic lives only in kipptaf.
+
+Until the domain tags land, a kipptaf `int_` that reads more than 1 source
+system counts as domain `int_`.
 
 ### Allowed edges
 
-| Model         | May read                                                                                                |
-| ------------- | ------------------------------------------------------------------------------------------------------- |
-| `stg_`        | `source()`                                                                                              |
-| Source `int_` | `stg_` and source `int_` in the same source folder; `source()` for district union wrappers              |
-| Domain `int_` | `stg_`, any source `int_`, domain `int_`, `snapshot_`                                                   |
-| Marts         | Domain `int_`, other marts                                                                              |
-| `rpt_`        | Marts, domain `int_`; in a district project, its kipptaf `rpt_` through `source("kipptaf_extracts", …)` |
-| Exposures     | `rpt_`, marts; Cube reads marts only                                                                    |
+| Model         | May read                                                                                                                                                                                                                   |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `stg_`        | `source()`                                                                                                                                                                                                                 |
+| Source `int_` | `stg_`, source `int_`, and `snapshot_` of a model in the same source folder; `source()` for district union wrappers                                                                                                        |
+| Domain `int_` | `stg_`, any source `int_`, domain `int_`, `snapshot_`                                                                                                                                                                      |
+| Marts         | Domain `int_`, other marts                                                                                                                                                                                                 |
+| `rpt_`        | Marts, domain `int_`; in a district project, its kipptaf `rpt_` through `source("kipptaf_extracts", …)`; a wrapper that reconciles against its target system (kippmiami `rpt_focus__*`) may also read that system's `stg_` |
+| Exposures     | `rpt_`, marts; Cube reads marts only                                                                                                                                                                                       |
 
-`base_` models count as domain `int_` until
-[#2541](https://github.com/TEAMSchools/teamster/issues/2541) renames them.
+`base_` models count as `int_` until
+[#2541](https://github.com/TEAMSchools/teamster/issues/2541) renames them;
+classify each as source or domain by what it reads, as for any `int_`.
 
 ### Rules
 
@@ -101,6 +105,10 @@ adding a sibling.
 - Enforced by: review; `dbt-layer-check` warns on a shared uniqueness grain.
 
 #### A5. Dedup only in `stg_` or source `int_`
+
+Exception: a mart dedupe whose duplicate rows are identical in every column
+(duplicate parents that yield the same key hash). Annotate it
+`-- A5 exception: identical-hash duplicates`.
 
 - Why: a dedup further down hides an upstream bug instead of fixing it.
 - Good: `dbt_utils.deduplicate` in a staging model over a source that resends
@@ -180,9 +188,7 @@ PR.
 - Apply the A, S, and R rules only to lines you add or change. Never propose a
   sweep of untouched models. An existing A1, A2, or A8 edge is known backlog,
   not a finding.
-- Until domain folders carry the `+meta: {layer: domain}` tag, treat a kipptaf
-  `int_` that reads more than 1 source system as domain. Key macros live in
-  `src/dbt/kipptaf/macros/`; an entity with none yet uses
+- Key macros live in `src/dbt/kipptaf/macros/`; an entity with none yet uses
   `generate_surrogate_key` (see PK shapes in `.claude/rules/dbt-marts.md`).
 
 - Mart column naming, strict-chain traversal, and PK/FK shapes:
