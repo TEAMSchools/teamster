@@ -102,6 +102,8 @@ def test_run() -> None:
 
 - Aggregates only. Never put student names or ids in a comment, the report, or
   chat. Comments already hide cells under 10 students.
+- Render only tabs that show aggregates. A roster tab (one row per student)
+  renders student names into the session; list it under `renders:` never.
 - The scratchpad can be wiped: workbooks go in
   `.claude/scratch/cube-dashboard/`, results in `~/asana-sync/validation/`,
   checks in this folder.

@@ -38,12 +38,19 @@ dimensions:
       then 'Not Hispanic or Latino' else 'Not Listed' end
   # Cube's is_ell is false when no ELL span exists; a null lep_status means the same.
   ell: { cube: is_ell, sql: "coalesce(lep_status, false)" }
+  # Same decode as dim_students.enrollment_status.
+  enroll_status:
+    cube: enrollment_status
+    sql: >-
+      case enroll_status when -2 then 'Inactive' when -1 then 'Pre-registered'
+      when 0 then 'Currently Enrolled' when 1 then 'Inactive' when 2 then
+      'Transferred Out' when 3 then 'Graduated' when 4 then 'Imported as
+      Historical' end
   # No Cube member: grains using these are reported as not comparable.
   homeroom:
     { cube: null, sql: "if(school_level = 'HS', teacher_name, section_number)" }
   teacher_name: { cube: null, sql: teacher_name }
   team: { cube: null, sql: team }
-  enroll_status: { cube: null, sql: enroll_status }
   schoolid: { cube: null, sql: schoolid }
   is_truant_current: { cube: null, sql: is_truant }
   c_504_status: { cube: null, sql: c_504_status }
@@ -59,6 +66,11 @@ dimensions:
 # Every NJ tab hard-codes these three regions (Miami - NSLP is Miami-only).
 hard_filters:
   - { dim: region, values: [Camden, Newark, Paterson] }
+
+# The rpt_ table holds school days only (membershipvalue = 1); Cube's fact also
+# carries break days, which count_students would count at a day grain.
+cube_filters:
+  - { member: is_in_session_day, operator: equals, values: ["true"] }
 
 rows:
   - row_gid: "1219087795895880"

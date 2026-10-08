@@ -710,3 +710,20 @@ def test_run_dashboard_prints_progress_per_query(capsys):
     err = capsys.readouterr().err
     assert "[1/5] demo_view total" in err
     assert "[4/5] demo_view region x team: not comparable" in err
+
+
+def test_cube_filters_apply_to_cube_queries_only(tmp_path):
+    def mutate(d):
+        d["cube_filters"] = [
+            {"member": "is_in_session_day", "operator": "equals", "values": ["true"]}
+        ]
+
+    c = cv.load_checks(_write_variant(tmp_path, mutate))
+    cube = FakeCube()
+    cv.run_dashboard(c, cube, FakeBQ(), TODAY)
+    for q in cube.queries[1:]:  # every compared grain; the scope guard is first
+        assert {
+            "member": "demo_view.is_in_session_day",
+            "operator": "equals",
+            "values": ["true"],
+        } in q["filters"]

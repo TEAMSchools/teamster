@@ -228,6 +228,8 @@ def load_checks(path) -> dict:
             if sum(1 for n in g if dims[n].granularity) > 1:
                 raise CheckError(f"{where}: grain {g} has more than one date part")
     data["dimensions"] = dims
+    # Cube-side only: what the dashboard's table already excludes (e.g. break days).
+    data.setdefault("cube_filters", [])
     data.setdefault("scope_measure", "count_students")
     data.setdefault("students_sql", "count(distinct student_number)")
     return data
@@ -247,7 +249,9 @@ def cube_key(view: str, dim: Dim) -> str:
     )
 
 
-def cube_query(view, measures, grain, dims, hard_filters, window) -> dict:
+def cube_query(
+    view, measures, grain, dims, hard_filters, window, cube_filters=()
+) -> dict:
     td = {
         "dimension": f"{view}.{dims['date'].cube}",
         "dateRange": [window[0].isoformat(), window[1].isoformat()],
@@ -270,7 +274,8 @@ def cube_query(view, measures, grain, dims, hard_filters, window) -> dict:
                 "values": [str(v) for v in f["values"]],
             }
             for f in hard_filters
-        ],
+        ]
+        + [dict(f, member=f"{view}.{f['member']}") for f in cube_filters],
         "limit": CUBE_LIMIT,
         "timezone": "UTC",
     }
@@ -519,7 +524,15 @@ def scope_guard(checks, cube_load, bq, window) -> None:
     view, dims, hard = checks["view"], checks["dimensions"], checks["hard_filters"]
     name = hard[0]["dim"]
     rows, _ = cube_load(
-        cube_query(view, [checks["scope_measure"]], [name], dims, hard, window)
+        cube_query(
+            view,
+            [checks["scope_measure"]],
+            [name],
+            dims,
+            hard,
+            window,
+            checks["cube_filters"],
+        )
     )
     seen = {
         norm_key(r.get(cube_key(view, dims[name]))): _num(
@@ -578,7 +591,13 @@ def run_dashboard(checks, cube_load, bq, today, rows=None, scope_only=False) -> 
         try:
             crows, preaggs = cube_load(
                 cube_query(
-                    view, [m["cube"] for m in metrics], list(g), dims, hard, window
+                    view,
+                    [m["cube"] for m in metrics],
+                    list(g),
+                    dims,
+                    hard,
+                    window,
+                    checks["cube_filters"],
                 )
             )
             trows = bq(
