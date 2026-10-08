@@ -352,3 +352,211 @@ def test_duplicate_name_across_packages_is_keyed_by_package() -> None:
         ("finalsite.int_finalsite__x", "A1", "powerschool.stg_powerschool__students"),
         ("kippnewark.int_finalsite__x", "A1", "powerschool.stg_powerschool__students"),
     ]
+
+
+# --- touched-model rules (A3, A4, A7, A9) ---------------------------------
+
+
+def coded(name, path, code, meta=None, parents=(), patch=None) -> dict:
+    node = model(name, path, parents)
+    node["raw_code"] = code
+    node["config"]["meta"] = meta or {}
+    node["patch_path"] = patch
+    return node
+
+
+def unique_test(node, column=None, combo=None) -> dict:
+    kwargs = {"combination_of_columns": combo} if combo else {}
+    return {
+        "unique_id": f"test.kipptaf.u_{node['name']}_{column or '_'.join(combo or [])}",
+        "resource_type": "test",
+        "attached_node": node["unique_id"],
+        "column_name": column,
+        "test_metadata": {
+            "name": "unique_combination_of_columns" if combo else "unique",
+            "kwargs": kwargs,
+        },
+        "depends_on": {"nodes": [node["unique_id"]]},
+    }
+
+
+def touched(*nodes, changed=None, added=()) -> list:
+    m = manifest(*BASE, *nodes)
+    if changed is None:
+        changed = {
+            n["original_file_path"]: set(range(1, 200))
+            for n in nodes
+            if n["resource_type"] == "model"
+        }
+    v = mod.check_touched(m, "kipptaf", changed, set(added), DOMAIN)
+    return [(x.model, x.rule, x.severity) for x in v]
+
+
+MART_STAR = "with final as (select 1 as a)\n\nselect *\nfrom final\n"
+
+
+def test_a9_star_final_select_on_changed_line() -> None:
+    node = coded("dim_y", "models/marts/dimensions/b.sql", MART_STAR)
+    assert touched(node) == [("kipptaf.dim_y", "A9", "error")]
+
+
+def test_a9_ignores_star_final_select_on_unchanged_line() -> None:
+    node = coded("dim_y", "models/marts/dimensions/b.sql", MART_STAR)
+    assert touched(node, changed={"models/marts/dimensions/b.sql": {1}}) == []
+
+
+def test_a9_ignores_star_in_cte_and_int() -> None:
+    mart = coded(
+        "dim_y",
+        "models/marts/dimensions/b.sql",
+        "with x as (\n    select *\n    from t\n)\n\nselect a,\nfrom x\n",
+    )
+    int_ = coded("int_people__y", "models/people/b.sql", MART_STAR)
+    assert touched(mart, int_) == []
+
+
+def test_a9_dropped_by_standard_exempt() -> None:
+    node = coded(
+        "rpt_x__y",
+        "models/extracts/x/b.sql",
+        MART_STAR,
+        meta={"standard_exempt": {"A9": "tool needs every column"}},
+    )
+    assert touched(node) == []
+
+
+@pytest.mark.parametrize(
+    "name", ["int_people__staff_pivoted", "int_people__staff_unioned"]
+)
+def test_a3_near_miss_suffix_on_added_int(name) -> None:
+    path = "models/people/b.sql"
+    node = coded(name, path, "select 1 as a,\n")
+    assert touched(node, added=[path]) == [(f"kipptaf.{name}", "A3", "error")]
+
+
+@pytest.mark.parametrize(
+    "name", ["int_people__staff_pivot", "int_people__staff", "int_people__roster"]
+)
+def test_a3_valid_names_pass(name) -> None:
+    path = "models/people/b.sql"
+    assert touched(coded(name, path, "select 1 as a,\n"), added=[path]) == []
+
+
+def test_a3_only_judges_added_models() -> None:
+    node = coded("int_people__staff_pivoted", "models/people/b.sql", "select 1,\n")
+    assert touched(node) == []
+
+
+SK = "{{ dbt_utils.generate_surrogate_key(['employee_number']) }}"
+
+
+@pytest.mark.parametrize(
+    "code",
+    [
+        f"select\n    {SK} as staff_key,\nfrom t\n",
+        f"select\n    {SK} as submitter_staff_key,\nfrom t\n",
+        "select\n    {{-\n        dbt_utils.generate_surrogate_key(\n"
+        "            ['employee_number']\n        )\n    }} as staff_key,\nfrom t\n",
+        f"select\n    if(\n        e is not null,\n        {SK},\n"
+        "        cast(null as string)\n    ) as staff_key,\nfrom t\n",
+        f"select\n    {SK} as staff_observation_key,\nfrom t\n",
+    ],
+)
+def test_a7_direct_hash_of_macro_key(code) -> None:
+    node = coded("fct_y", "models/marts/facts/b.sql", code)
+    assert touched(node) == [("kipptaf.fct_y", "A7", "error")]
+
+
+@pytest.mark.parametrize(
+    "code",
+    [
+        "select\n    {{ staff_key('employee_number') }} as staff_key,\nfrom t\n",
+        f"select\n    {SK} as assessment_score_key,\nfrom t\n",
+    ],
+)
+def test_a7_passes_macro_call_and_keys_without_macro(code) -> None:
+    assert touched(coded("fct_y", "models/marts/facts/b.sql", code)) == []
+
+
+def test_a7_ignores_unchanged_lines() -> None:
+    node = coded(
+        "fct_y", "models/marts/facts/b.sql", f"select\n    {SK} as staff_key,\n"
+    )
+    assert touched(node, changed={"models/marts/facts/b.sql": {1}}) == []
+
+
+def test_a4_warns_on_added_int_sharing_a_grain() -> None:
+    a = coded("int_people__a", "models/people/a.sql", "select 1,\n")
+    b = coded("int_people__b", "models/people/b.sql", "select 1,\n")
+    tests = [unique_test(a, combo=["x", "y"]), unique_test(b, combo=["y", "x"])]
+    assert touched(a, b, *tests, added=["models/people/b.sql"]) == [
+        ("kipptaf.int_people__b", "A4", "warning")
+    ]
+
+
+def test_a4_skips_parents_and_siblings_sharing_a_consumer() -> None:
+    a = coded("int_people__a", "models/people/a.sql", "select 1,\n")
+    b = coded("int_people__b", "models/people/b.sql", "select 1,\n", parents=[uid(a)])
+    c = coded("int_people__c", "models/people/c.sql", "select 1,\n")
+    d = coded("int_people__d", "models/people/d.sql", "select 1,\n")
+    u = coded(
+        "int_people__u", "models/people/u.sql", "select 1,\n", parents=[uid(c), uid(d)]
+    )
+    tests = [unique_test(a, column="k"), unique_test(b, column="k")]
+    tests += [unique_test(c, column="j"), unique_test(d, column="j")]
+    added = ["models/people/b.sql", "models/people/d.sql"]
+    assert touched(a, b, c, d, u, *tests, added=added) == []
+
+
+# --- file selection, baseline, diff ---------------------------------------
+
+
+def test_load_baseline_and_compare(tmp_path) -> None:
+    f = tmp_path / "b.tsv"
+    f.write_text(
+        "model\trule\tdetail\tissue\n"
+        "kipptaf.a\tA1\tkipptaf.p\t#1\n"
+        "kipptaf.b\tA1\tkipptaf.p\t\n"
+        "kipptaf.gone\tA1\tkipptaf.p\t#2\n"
+    )
+    baseline = mod.load_baseline(f)
+    v = [
+        mod.Violation(m_, "A1", "kipptaf.p", "error", "")
+        for m_ in ("kipptaf.a", "kipptaf.b", "kipptaf.new")
+    ]
+    new, stale, missing = mod.compare(v, baseline)
+    assert [x.model for x in new] == ["kipptaf.new"]
+    assert stale == [("kipptaf.gone", "A1", "kipptaf.p")]
+    assert missing == [("kipptaf.b", "A1", "kipptaf.p")]
+
+
+DIFF = """diff --git a/src/dbt/kipptaf/models/a.sql b/src/dbt/kipptaf/models/a.sql
+index 1..2 100644
+--- a/src/dbt/kipptaf/models/a.sql
++++ b/src/dbt/kipptaf/models/a.sql
+@@ -3,0 +4,2 @@ select
++    x,
++    y,
+@@ -10 +12 @@ from t
+-where a
++where b
+diff --git a/src/dbt/kipptaf/models/new.sql b/src/dbt/kipptaf/models/new.sql
+new file mode 100644
+--- /dev/null
++++ b/src/dbt/kipptaf/models/new.sql
+@@ -0,0 +1,2 @@
++select 1 as a,
++from t
+diff --git a/src/dbt/kippnewark/models/z.sql b/src/dbt/kippnewark/models/z.sql
+--- a/src/dbt/kippnewark/models/z.sql
++++ b/src/dbt/kippnewark/models/z.sql
+@@ -1 +1 @@
+-a
++b
+"""
+
+
+def test_parse_diff_scopes_to_project() -> None:
+    changed, added = mod.parse_diff(DIFF, "src/dbt/kipptaf")
+    assert changed == {"models/a.sql": {4, 5, 12}, "models/new.sql": {1, 2}}
+    assert added == {"models/new.sql"}
