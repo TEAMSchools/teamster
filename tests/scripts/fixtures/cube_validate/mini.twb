@@ -1,0 +1,67 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<workbook xmlns:user='http://www.tableausoftware.com/xml/user'>
+  <datasources>
+    <datasource caption='rpt_demo (kipptaf_tableau)' name='federated.abc'>
+      <column caption='# Tardy' datatype='integer' name='[Calculation_1]' role='measure' type='quantitative'>
+        <calculation class='tableau' formula="IIF([att_code] = 'T', 1, 0)" />
+      </column>
+      <column caption='School' datatype='string' name='[school_abbreviation]' role='dimension' type='nominal' />
+    </datasource>
+  </datasources>
+  <worksheets>
+    <worksheet name='Tardy by School'>
+      <table>
+        <view>
+          <filter class='categorical' column='[federated.abc].[none:gender:nk]' />
+          <filter class='categorical' column='[federated.abc].[Region User Filter]' />
+          <filter class='categorical' column='[federated.abc].[none:region:nk]' />
+        </view>
+        <panes>
+          <pane>
+            <encodings>
+              <text column='[federated.abc].[sum:Calculation_1:qk]' />
+            </encodings>
+          </pane>
+        </panes>
+        <rows>([federated.abc].[none:region:nk] / [federated.abc].[none:school_abbreviation:nk])</rows>
+        <cols>[federated.abc].[mn:calendardate:ok]</cols>
+      </table>
+    </worksheet>
+    <worksheet name='Scratch Sheet'>
+      <table>
+        <rows>[federated.abc].[sum:Calculation_1:qk]</rows>
+        <cols>[federated.abc].[none:grade_level:ok]</cols>
+      </table>
+    </worksheet>
+    <worksheet name='Headcount'>
+      <table>
+        <rows>[federated.abc].[ctd:student_number:qk]</rows>
+        <cols />
+      </table>
+    </worksheet>
+    <worksheet name='Team Counts'>
+      <table>
+        <view>
+          <filter class='categorical' column='[federated.abc].[:Measure Names]'>
+            <groupfilter function='union' user:op='manual'>
+              <groupfilter function='member' level='[:Measure Names]' member='&quot;[federated.abc].[sum:Calculation_1:qk]&quot;' />
+            </groupfilter>
+          </filter>
+        </view>
+        <rows>[federated.abc].[none:team:nk]</rows>
+        <cols>[federated.abc].[:Measure Names]</cols>
+      </table>
+    </worksheet>
+  </worksheets>
+  <dashboards>
+    <dashboard name='Live'>
+      <zones><zone name='Tardy by School' /><zone name='Headcount' /></zones>
+    </dashboard>
+    <dashboard name='Counts'>
+      <zones><zone name='Team Counts' /></zones>
+    </dashboard>
+    <dashboard name='Retired'>
+      <zones><zone name='Scratch Sheet' /></zones>
+    </dashboard>
+  </dashboards>
+</workbook>
