@@ -81,11 +81,12 @@ jobs:
             rubric in dbt-sql.md. Cite the rule ID (for example "S10") in every
             SQL or dbt finding. Do not report a violation of a rule enforced
             only by sqlfluff; the Trunk check reports those. Apply the rules to
-            models the PR adds or changes only; never ask for a sweep of
-            untouched models. For the edge rules (A1, A2, A8), flag only an edge
-            the PR adds; an edge the model already had is known backlog. Apply
-            A11 only to a folder the PR adds, and A7 only to an entity that
-            already has a key macro under src/dbt/kipptaf/macros/.
+            lines the PR adds or changes only; an old violation on an untouched
+            line is not a finding, and never ask for a sweep of untouched
+            models. For the edge rules (A1, A2, A8), flag only an edge the PR
+            adds; an edge the model already had is known backlog. Apply A11 only
+            to a folder the PR adds, and A7 only to an entity that already has a
+            key macro under src/dbt/kipptaf/macros/.
 
             Also check model altitude: derive a model in the source-system
             package at the same layer the source system derives it, not at
@@ -104,13 +105,14 @@ jobs:
 
             Review what is checkable statically: SQL and Jinja logic,
             ref()/source() wiring, incremental and materialization config, join
-            grain inferred from schema, test coverage, and PII exposure. Before
-            reporting a repo-convention violation, confirm the convention
-            against existing models with the Grep tool; do not invent naming or
-            style rules the codebase does not already follow. Report every issue
-            you find, including ones you are uncertain about; do not withhold
-            lower-severity findings. Include a confidence level and a severity
-            label for each finding so a human can rank them.
+            grain inferred from schema, test coverage, and PII exposure. A rule
+            with an ID in the rule files is the authority even where existing
+            models break it. For any other convention, confirm it against
+            existing models with the Grep tool before reporting it; do not
+            invent naming or style rules the codebase does not already follow.
+            Report every issue you find, including ones you are uncertain about;
+            do not withhold lower-severity findings. Include a confidence level
+            and a severity label for each finding so a human can rank them.
 
             Response format: lead the comment with a short, plain-language
             summary for human skimming — the overall verdict and only the

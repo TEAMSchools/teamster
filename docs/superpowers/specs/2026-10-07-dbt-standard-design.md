@@ -267,3 +267,15 @@ The rollout ships as 2 PRs, not 5. The split now follows risk, not component.
 - PR 2, enforcement: key macros, lint, manifest check, workflow, baseline, and
   backlog issues (rollout items 2-4). It can trigger dbt Cloud CI and fail other
   PRs, so it stays separate from the docs.
+
+## Revision 2026-10-08: rules apply to changed lines
+
+Review of PR 1 found that "touched code" read as touched models in some places
+and touched lines in others. The rules apply to the lines a PR adds or changes.
+An old violation elsewhere in an edited model is not a finding. The manifest
+check in PR 2 still works per model for edge rules (A1, A2, A8), where the
+baseline already exempts edges the model had before.
+
+The mart rubric (R1-R4, R6-R10) moved from `dbt-architecture.md` into
+`.claude/rules/dbt-marts.md`, scoped to kipptaf `models/marts/`. R5 is retired
+and its number left unused.

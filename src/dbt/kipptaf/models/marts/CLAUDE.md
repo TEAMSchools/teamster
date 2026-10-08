@@ -60,7 +60,9 @@ Exception to A5: a dedupe on such a join is information-preserving — not
 dup-masking — when every matched parent yields the SAME hash (e.g. duplicate
 stints sharing the key's only input). Confirm the duplicate output rows are
 identical across every column; a genuine ambiguity produces differing rows and
-must still fail the PK test.
+must still fail the PK test. Annotate the dedupe in SQL
+(`-- A5 exception: identical-hash duplicates`) so a reviewer reading the
+published A5 sees the basis.
 
 ## BigQuery reserved identifiers
 
@@ -261,7 +263,7 @@ Exposure requirements: `kipptaf/CLAUDE.md` → Exposures. Before removing a colu
 from any `dim_*` / `fct_*`, grep `src/cube/model/` for `sql: <col>` and bare
 `<col>` — Cube YAML reads by name and dbt has no exposure to surface the dep.
 
-Every mart must appear in `cube.yml`'s `cube_semantic_layer.depends_on` (A8).
+Every mart must appear in `cube.yml`'s `cube_semantic_layer.depends_on`.
 
 ## SCD2 status dims bound to enrollments
 

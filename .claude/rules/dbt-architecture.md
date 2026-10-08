@@ -176,9 +176,9 @@ PR.
 
 ## Claude-only notes
 
-- Apply the A, S, and R rules only to models and lines you add or change. Never
-  propose a sweep of untouched models. An existing A1, A2, or A8 edge is known
-  backlog, not a finding.
+- Apply the A, S, and R rules only to lines you add or change. Never propose a
+  sweep of untouched models. An existing A1, A2, or A8 edge is known backlog,
+  not a finding.
 - Until domain folders carry the `+meta: {layer: domain}` tag, treat a kipptaf
   `int_` that reads more than 1 source system as domain. Key macros live in
   `src/dbt/kipptaf/macros/`; an entity with none yet uses

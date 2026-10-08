@@ -61,7 +61,7 @@ an array, which is row-local.
 - Why: a CTE has a name and can be read and tested on its own.
 - Good: `(select min(x) from unnest([d1, d2, d3]) as x) as earliest_date`.
 - Bad: `where student_number in (select student_number from enrolled)`.
-- Enforced by: sqlfluff ST05 and review.
+- Enforced by: review.
 
 #### S4. No pass-through import CTEs
 
@@ -197,7 +197,7 @@ countable flags may be `int64` 0/1 instead (mart rubric R3).
 Derive them from the model name.
 
 - Why: short aliases keep joins readable; the repo already uses them.
-- Good: `int_extracts__student_enrollments as enr`.
+- Good: `int_extracts__student_enrollments as e`.
 - Bad: `as t1`, or 2 tables both aliased `s`.
 - Enforced by: review.
 
@@ -239,6 +239,10 @@ Reviewers, human or Claude, check these and cite the rule ID:
 ## Rule details and traps
 
 Claude-only. Bullets expand the rules above; the rule ID leads where 1 applies.
+
+Apply the S rules only to lines you add or change. An old violation elsewhere in
+the file is not yours to fix, and never propose a sweep of untouched models,
+macros, or tests.
 
 The `dbt:using-dbt-for-analytics-engineering` skill's process guidance (plan
 backwards, validate results) applies here, but where it conflicts, this file
