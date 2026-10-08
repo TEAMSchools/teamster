@@ -1,8 +1,9 @@
 # Zendesk Ticketing API, as this skill uses it
 
 Base: `https://<subdomain>.zendesk.com/api/v2`. Basic auth, username
-`<email>/token`, password the API token. The token is an admin's with no scope,
-so every write is production. Rate limit 700 requests per minute.
+`<email>/token`, password the API token. The token is an admin's with no scope.
+The client sends only GET requests, so the skill reads production and changes
+nothing. Rate limit 700 requests per minute.
 
 ## Calls per operation
 
@@ -18,7 +19,6 @@ so every write is production. Rate limit 700 requests per minute.
 | resolve, queue  | `GET /users/show_many.json?ids=1,2`               | names for ids                                                                                                            |
 | resolve         | `GET /macros.json?active=true`                    | cursor pages                                                                                                             |
 | draft_macro     | `GET /tickets/{id}/macros/{macro_id}/apply.json`  | `result.ticket` is the rendered change set; nothing is committed                                                         |
-| apply           | `PUT /tickets/{id}.json`                          | body `{"ticket": {...}}`                                                                                                 |
 
 ## Search syntax used
 
@@ -37,36 +37,18 @@ so every write is production. Rate limit 700 requests per minute.
   `page[after]`. Search uses offset pagination (`page=N`, `next_page` url); the
   client follows it to `max_results`, 1000 by default and Zendesk's own ceiling.
   `research` passes 11 for each similarity search, `queue` uses the default.
-- Every draft ends with a notice naming the token owner from
-  `GET /users/me.json`; that is who an `apply` posts as.
 - The ticket's `custom_fields[]` carries tag values, not option names. Map
   through the field's `custom_field_options`.
 - A comment's `public: false` is an internal note. The requester never sees it.
 - The macro preview returns the whole ticket with the macro's changes applied.
   Only `status`, `priority`, `type`, `assignee_id`, `group_id`, `tags`,
-  `custom_fields`, `comment`, and `email_ccs` go into the PUT.
-- `updated_at` changes on every comment and field edit, including ones made by
-  triggers and automations. The apply guard compares it exactly.
+  `custom_fields`, `comment`, and `email_ccs` count as changes (`CHANGE_KEYS`).
 
-## Guards on `apply`
+## Guards on drafts
 
-Each one came out of an adversarial review on 2026-09-30.
-
-- `public` on `draft_comment` must be the bool `True` or `False`. `None`, `0`,
-  or a string would display INTERNAL yet post publicly, because Zendesk reads a
-  null or truthy `public` as public.
-- The draft file stores `payload_sha256`. `apply` recomputes it and refuses a
-  file whose payload was edited after the draft was printed, so what the user
-  saw is what posts.
-- `apply` refuses when a draft was written in the same Python process. Draft and
-  apply are two pytest runs, with the user reading the draft in between.
-- The payload may hold only `{"ticket": {...}}` with keys in `WRITABLE_KEYS`;
-  `updated_at` must be a non-empty string; an unreadable or non-JSON file is a
-  `TicketError`, not a traceback.
-- The PUT carries `safe_update: true` and `updated_stamp: <updated_at>`, so
-  Zendesk itself answers 409 if the ticket moved between the guard's GET and the
-  PUT.
-- `drafts_dir` under a git checkout is refused: draft files hold ticket text.
+- `public` on `draft_comment` must be the bool `True` or `False`. The draft's
+  PUBLIC or INTERNAL label tells the user where to paste, so it comes only from
+  their answer, never from `None`, `0`, or a string.
 - A macro draft keeps only the keys the preview changed, and an `Assign to`
   macro whose preview sets status to solved or closed is refused whatever its
   title says.
@@ -93,9 +75,4 @@ Each one came out of an adversarial review on 2026-09-30.
   `group_id`, `priority`, `status`, `tags`, `type`: the ticket's current values
   plus the macro's changes, not a diff. Placeholders were rendered
   (`Hi <first name>`). `comment.body` came back as HTML with `<p>` tags and
-  `comment.public: true`, so the PUT sends it as `html_body`.
-- `apply` posted an internal note with the signature line, on the user's yes.
-  The thread read back showed it as the last comment with `public: false`, and
-  the draft file was deleted. The `updated_at` guard passed because nothing
-  touched the ticket between draft and apply; the refusal path is covered
-  offline only.
+  `comment.public: true`, so the draft display strips the tags to text.

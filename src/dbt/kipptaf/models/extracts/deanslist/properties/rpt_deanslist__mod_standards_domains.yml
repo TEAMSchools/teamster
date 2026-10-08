@@ -1,19 +1,60 @@
 models:
   - name: rpt_deanslist__mod_standards_domains
+    description: >-
+      DeansList SFTP CDO extract of K-4 progress report and report card
+      averages, for every academic year in the rollup. Two UNION ALL branches.
+      Progress Report rows average the overall percent correct per student,
+      subject, and term across assessments whose AppSheet progress-report
+      regions include the student's region. Report Card rows average the
+      standard-level percent correct per student, subject, term, and standard
+      domain across assessments whose AppSheet report-card regions include the
+      student's region, mapping each standard code to a domain through the
+      standard domains sheet; standards with no domain mapping are dropped.
+    config:
+      meta:
+        contains_pii: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - report_type
+              - academic_year
+              - student_number
+              - subject_area
+              - term_administered
+              - standard_domain
     columns:
       - name: report_type
         data_type: string
+        description: Progress Report or Report Card, naming the branch.
       - name: academic_year
         data_type: int64
+        description: Academic year as the starting calendar year.
       - name: student_number
         data_type: int64
+        description: PowerSchool student number.
       - name: subject_area
         data_type: string
+        description: Illuminate subject area of the averaged assessments.
       - name: term_administered
         data_type: string
+        description:
+          RT reporting term for the student's school whose date range contains
+          the assessment's administered date.
       - name: standard_domain
         data_type: string
+        description:
+          Standard domain from the standard domains sheet. Null on Progress
+          Report rows.
       - name: avg_percent_correct
         data_type: numeric
+        description:
+          Rounded average percent correct for the row's student, subject, term,
+          and (on Report Card rows) standard domain.
       - name: performance_level
         data_type: string
+        description: >-
+          Expectations level from avg_percent_correct. Grades K-2 use 90 and
+          above for Exceeds, 75 for Met, and 50 for Approaching Expectations,
+          then 30 for Below and 0 for Far Below. Grades 3-4 use 85 for Exceeds,
+          70 for Met, 50 for Approaching, 30 for Below, and 0 for Far Below.

@@ -157,11 +157,10 @@ def widen_unbounded_numeric_adapter(col_type: TypeEngine) -> TypeEngine:
     already-loaded columns that reflect as unbounded ``numeric`` need
     recreating.
 
-    ``Float`` subclasses ``Numeric`` and also reflects ``precision=None``, so it
-    is returned untouched — otherwise every ``double precision`` column would
-    land as BIGNUMERIC. The guard now covers all 79 tables in the source.
-    (Illuminate's ``unbounded_numeric_adapter`` omits that guard; it has no
-    float columns reaching this path today.)
+    ``Float`` is returned untouched so ``double precision`` lands as FLOAT64.
+    Before SQLAlchemy 2.1 it subclassed ``Numeric`` with ``precision=None`` and
+    would have been widened to BIGNUMERIC; the guard keeps that from depending
+    on the installed version. It covers all 79 tables in the source.
     """
     if isinstance(col_type, Float):
         return col_type

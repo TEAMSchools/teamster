@@ -68,9 +68,9 @@ models:
       - name: school_id
         data_type: string
         description:
-          NCES school identifier from `seed_ignite__school_nces_ids`. The two
-          Newark high schools share one identifier; `school_name` is the column
-          that separates them.
+          NCES school identifier from `stg_google_sheets__people__locations`.
+          The two Newark high schools share one identifier; `school_name` is the
+          column that separates them.
 
       - name: course_number
         data_type: string

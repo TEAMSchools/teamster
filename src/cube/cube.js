@@ -454,7 +454,11 @@ module.exports = {
     };
   },
 
+  // Domain allowlist and super-user gate: access.canSwitchSqlUser (#5517).
   canSwitchSqlUser: (current_user, new_user) =>
-    current_user === process.env.CUBEJS_SQL_SUPER_USER &&
-    new_user.endsWith("@apps.teamschools.org"),
+    access.canSwitchSqlUser(
+      current_user,
+      new_user,
+      process.env.CUBEJS_SQL_SUPER_USER,
+    ),
 };

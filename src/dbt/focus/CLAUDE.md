@@ -124,20 +124,17 @@ attributes, not delete sentinels.
 students→`student_id`, users→`staff_id` (`profile_id` is null for nearly all
 rows).
 
-**Cross-table `relationships` tests are `severity: warn` here — keep them that
-way.** The load has no cross-table snapshot: every table is its own
+**Add a cross-table `relationships` test only for an orphan you have seen
+persist.** The load has no cross-table snapshot: every table is its own
 `@dlt.resource` with `write_disposition="replace"` and `parallelized=True`, each
 opening its own engine, so two related tables are read seconds apart from a live
 Postgres. A row written between the parent read and the child read lands as an
-orphan that no code change can prevent, and the Dagster run retry cannot absorb
-it — the retry re-runs dbt against identical data. The next dlt load clears it.
-Precedent: assignment 424551 on 2026-09-15 orphaned
-`stg_focus__gradebook_assignments_join_course_periods` for one load and healed
-on the next. A **persistent** orphan — one still present after a later
-`_dlt_load_id` — is a real defect; that is what these warnings are for.
-Single-table tests (`unique`, `not_null`) stay `severity: error`: one table IS
-read atomically. Raising a `relationships` test back to `error` would fail a
-whole district build on a teacher saving an assignment mid-load.
+orphan until the next load, so a `relationships` test here fires on teacher
+activity, not on defects. The one kept, `stg_focus__test_history_scores`
+`administration_id`, guards a persistent orphan. Any `relationships` test stays
+`severity: warn`, because at `error` a teacher saving mid-load fails the whole
+district build. Single-table tests (`unique`, `not_null`) stay
+`severity: error`, since one table IS read atomically.
 
 ## Model Structure
 

@@ -208,6 +208,9 @@ def _persist_legacy_rsa(transport: Transport) -> None:
 
 
 class SSHResource(DagsterSSHResource):
+    # redeclared only to hide the inherited credentials from repr
+    password: str | None = Field(default=None, repr=False)
+    key_string: str | None = Field(default=None, repr=False)
     tunnel_remote_host: str | None = None
     test: bool = False
     # paramiko 5.0 dropped `ssh-rsa` (SHA-1 RSA host keys) from its default

@@ -1,5 +1,11 @@
 models:
   - name: stg_pearson__njsla
+    description: >-
+      Pearson NJSLA ELA and Math summative score records, one row per student
+      test (studenttestuuid). Keeps only rows with summativeflag and
+      testattemptednessflag both 'Y'. Source columns pass through with a star
+      select, with codes and scores cast to numeric types. Frozen history; no
+      new rows are expected.
     columns:
       - name: accountabledistrictcode
         data_type: int64
@@ -13,228 +19,516 @@ models:
         data_type: string
       - name: administrationdirectionsclarifiedinstudentsnativelanguage
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: administrationdirectionsreadaloudinstudentsnativelanguage
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: alternaterepresentationpapertest
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: americanindianoralaskanative
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: answermasking
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: answersrecordedintest_booklet
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: answersrecordedintestbooklet
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: asian
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: aslvideo
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: assessmentgrade
         data_type: string
       - name: assessmentyear
         data_type: string
       - name: assistivetechnologynonscreenreader
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: assistivetechnologyscreenreader
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: batteryformid
         data_type: string
       - name: birthdate
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: blackorafricanamerican
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: braillewithtactilegraphics
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: calculationdeviceandmathematicstools
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: claimcode
         data_type: string
       - name: classname
         data_type: string
       - name: closedcaptioningforela
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: closedcaptioningforelal
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: colorcontrast
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
       - name: critiquingpracticesperformancelevel
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: datefirstenrolledinusschool
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: earthandspacescienceperformancelevel
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: economicdisadvantagestatus
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: elaccommodation
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: elaconstructedresponse
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
       - name: elalconstructedresponse
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
       - name: elalselectedresponseortechnologyenhanceditems
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
       - name: elaselectedresponseortechnologyenhanceditems
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
       - name: electronicbrailleresponse
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: elexemptfromtakingela
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: elexemptfromtakingelal
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: emergencyaccommodation
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
       - name: englishlearneraccommodatedresponses
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
       - name: extendedtime
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: federalraceethnicity
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
       - name: first_high_school_math_assessment
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: firsthighschoolmathassessment
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: firstname
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: formeriep
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: formid
         data_type: string
       - name: frequentbreaks
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: gender
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: gradelevelwhenassessed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
       - name: hispanicorlatinoethnicity
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: home_language
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: homelanguage
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: homeless
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: homelessprimarynighttimeresidence
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
       - name: humanreaderorhumansigner
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
       - name: humansignerfortestdirections
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: iepexemptfrompassing
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: investigatingpracticesperformancelevel
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: languagecode
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: largeprint
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: lastorsurname
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: lifescienceperformancelevel
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: localstudentidentifier
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
       - name: mathematics_scienceaccommodatedresponse
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
       - name: mathematicsscienceaccommodatedresponse
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
       - name: middlename
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: migrantstatus
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: mlaccommodation
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: mlexemptfromtakingela
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: monitortestresponse
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: multilinguallearneraccommodatedresponses
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
       - name: multipletestregistration
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: nativehawaiianorotherpacificislander
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: njelstatus
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: njmlstatus
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: njnotattemptflag
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: nottestedcode
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: nottestedreason
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
       - name: onlinepcr1
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: onlinepcr2
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: paperattemptcreatedate
         data_type: string
       - name: paperformid
         data_type: string
       - name: paperpcr1
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
       - name: paperpcr2
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
       - name: papersection1numberofattempteditems
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
       - name: papersection1totaltestitems
         data_type: numeric
       - name: papersection2numberofattempteditems
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
       - name: papersection2totaltestitems
         data_type: numeric
       - name: papersection3numberofattempteditems
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
       - name: papersection3totaltestitems
         data_type: numeric
       - name: papersection4numberofattempteditems
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
       - name: papersection4totaltestitems
         data_type: numeric
       - name: period
         data_type: string
       - name: physicalscienceperformancelevel
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: primarydisabilitytype
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: refreshablebrailledisplay
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: reportsuppressionaction
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: reportsuppressioncode
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: retest
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: rosterflag
         data_type: string
       - name: sensemakingpracticesperformancelevel
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: separatealternatelocation
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: sex
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: shipreportdistrictcode
         data_type: int64
       - name: shipreportschoolcode
         data_type: int64
       - name: smallgrouptesting
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: spanishtransadaptation
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: specialeducationplacement
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
       - name: specializedequipmentorfurniture
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: specifiedareaorsetting
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: speechtotextandwordprediction
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: statestudentidentifier
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
       - name: studentassessmentidentifier
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: studentreadsassessmentaloudtoself
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: studenttestuuid
         data_type: string
       - name: studentunit1testuuid
@@ -247,26 +541,59 @@ models:
         data_type: string
       - name: studentwithdisabilities
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: subclaim1category
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
       - name: subclaim1categoryifnotattempted
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: subclaim2category
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
       - name: subclaim2categoryifnotattempted
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: subclaim3category
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
       - name: subclaim3categoryifnotattempted
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: subclaim4category
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
       - name: subclaim4categoryifnotattempted
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: subclaim5category
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
       - name: subclaim5categoryifnotattempted
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: subject
         data_type: string
       - name: summativeflag
@@ -275,12 +602,21 @@ models:
         data_type: string
       - name: testattemptednessflag
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: testcode
         data_type: string
       - name: testcsemprobablerange
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
       - name: testcsemprobablerangeifnotattempted
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: testformat
         data_type: string
       - name: testingdistrictcode
@@ -295,48 +631,108 @@ models:
         data_type: string
       - name: testperformancelevel
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
       - name: testperformancelevelifnotattempted
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: testreadingcsem
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
       - name: testreadingcsemifnotattempted
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: testreadingscalescore
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
       - name: testreadingscalescoreifnotattempted
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: testscalescore
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
       - name: testscalescoreifnotattempted
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: testscorecomplete
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
       - name: teststatus
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: testwritingcsem
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
       - name: testwritingcsemifnotattempted
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: testwritingscalescore
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
       - name: testwritingscalescoreifnotattempted
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: texttospeech
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
       - name: timeofday
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: totaltestitems
         data_type: numeric
       - name: totaltestitemsattempted
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
       - name: twoormoreraces
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: uniqueaccommodation
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: unit1formid
         data_type: string
       - name: unit1numberofattempteditems
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
       - name: unit1onlinetestenddatetime
         data_type: string
       - name: unit1onlineteststartdatetime
@@ -347,6 +743,9 @@ models:
         data_type: string
       - name: unit2numberofattempteditems
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
       - name: unit2onlinetestenddatetime
         data_type: string
       - name: unit2onlineteststartdatetime
@@ -357,6 +756,9 @@ models:
         data_type: string
       - name: unit3numberofattempteditems
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
       - name: unit3onlinetestenddatetime
         data_type: string
       - name: unit3onlineteststartdatetime
@@ -369,38 +771,91 @@ models:
         data_type: string
       - name: voidscorecode
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: voidscorereason
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
       - name: white
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: wordprediction
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: wordtoworddictionaryenglishnativelanguage
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: percentofitemsattempted
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
       - name: _dagster_partition_key
         data_type: int64
       - name: assessment_name
         data_type: string
+        description: Literal 'NJSLA'.
       - name: staffmemberidentifier
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: testadministrator
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: academic_year
         data_type: int64
+        description: First four characters of assessmentyear, as an integer.
       - name: test_grade
         data_type: int64
+        description:
+          Grade number extracted from assessmentgrade ('Grade 5' → 5).
       - name: englishlearnerel
         data_type: string
+        description: >-
+          English learner flag, taken from multilinguallearnerml when present
+          and englishlearnerel otherwise.
+        config:
+          meta:
+            contains_pii: true
       - name: discipline
         data_type: string
+        description: >-
+          'ELA' when subject is 'English Language Arts' or 'English Language
+          Arts/Literacy', else 'Math'.
       - name: is_proficient
         data_type: boolean
+        description: True when testperformancelevel is 4 or higher.
+        config:
+          meta:
+            contains_pii: true
       - name: testperformancelevel_text
         data_type: string
+        description: >-
+          Label for testperformancelevel — 5 'Exceeded Expectations', 4 'Met
+          Expectations', 3 'Approached Expectations', 2 'Partially Met
+          Expectations', 1 'Did Not Yet Meet Expectations'.
+        config:
+          meta:
+            contains_pii: true
       - name: is_bl_fb
         data_type: boolean
+        description: >-
+          Below or far below — true when testperformancelevel is 2 or lower.
+        config:
+          meta:
+            contains_pii: true
       - name: test_date
         data_type: date
         description: >-
@@ -408,10 +863,19 @@ models:
           unit start datetime, falling back to the paper attempt create date.
       - name: homeless_primary_nighttime_residence
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: multilinguallearneraccommodatedresponse
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: requiredhighschoolmathassessment
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: assessment_version
         data_type: string
         description: >-

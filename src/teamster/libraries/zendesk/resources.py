@@ -2,7 +2,7 @@ import time
 
 from dagster import ConfigurableResource, InitResourceContext
 from dagster_shared import check
-from pydantic import PrivateAttr
+from pydantic import Field, PrivateAttr
 from requests import HTTPError, Response, Session
 from requests.exceptions import ConnectionError as RequestsConnectionError
 from requests.exceptions import Timeout
@@ -16,8 +16,8 @@ from tenacity import (
 
 class ZendeskResource(ConfigurableResource):
     subdomain: str
-    client_id: str
-    client_secret: str
+    client_id: str = Field(repr=False)
+    client_secret: str = Field(repr=False)
     page_size: int = 100
     api_version: str = "v2"
 

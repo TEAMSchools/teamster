@@ -75,3 +75,11 @@ models:
           Salesforce contact ID for the student, used to join this roster to
           KIPP Forward records in Salesforce.
         data_type: string
+      - name: is_hs_honors_program
+        description:
+          High School Honors Program flag, from
+          `int_extracts__student_enrollments`. Null for Miami.
+        data_type: boolean
+        config:
+          meta:
+            contains_pii: true

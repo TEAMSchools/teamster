@@ -289,10 +289,26 @@ models:
         data_type: int64
       - name: rn_all
         data_type: int64
+        description:
+          Stint order across all years, latest first. 1 is the student's most
+          recent enrollment. PowerSchool numbers within each district's
+          studentid, so a student enrolled in two districts has two 1s. Focus
+          (Miami) numbers by network student_number.
       - name: rn_year
         data_type: int64
+        description:
+          Stint order within the academic year, latest exit date first. Filter
+          on 1 to reduce this model to one row per student per year, instead of
+          select distinct. PowerSchool numbers within each district's studentid,
+          so a student enrolled in two districts in one year has two 1s; the
+          model-level warn test on student_number and academic_year where
+          rn_year = 1 flags those. Focus (Miami) numbers by network
+          student_number.
       - name: rn_school
         data_type: int64
+        description:
+          Stint order within each school across years, latest first. Null for
+          Focus (Miami) enrollments.
       - name: grade_level_prev
         data_type: int64
       - name: yearid_prev
@@ -937,6 +953,24 @@ models:
       - name: is_sipps
         data_type: boolean
         description: Conditional on students_student_number.
+      - name: is_hs_honors_program
+        data_type: boolean
+        description: >-
+          True when the student has a PowerSchool High School Honors Program
+          record that covers the as-of date, which is the earlier of today and
+          June 30 at the end of the academic year. A student who leaves the
+          program mid-year reads false from the day after the exit date. An exit
+          date earlier than the entry date counts as still in the program; that
+          covers blank exit dates, which PowerSchool stores as 1900-01-01, and
+          date typos. The flag follows the program record, not the enrollment,
+          so a student who left the school mid-year reads true when the honors
+          record still covers the as-of date and false when staff closed the
+          record as the student left. The value is per student per academic
+          year, so it repeats on every enrollment row in that year. Null for
+          Miami, whose SIS has no equivalent program record.
+        config:
+          meta:
+            contains_pii: true
       - name: student_slideback
         data_type: boolean
         description: >
@@ -958,6 +992,11 @@ models:
           academic year — a registration that was cancelled before the school
           year began (summer melt or pre-year transfer). These stints have no
           course enrollments and should be excluded from course-level reporting.
+      - name: is_current_academic_year
+        data_type: boolean
+        description: >
+          True when academic_year equals the project's current_academic_year
+          variable, which rolls over each July. False otherwise.
       - name: aligned_gender
         data_type: string
         description: >

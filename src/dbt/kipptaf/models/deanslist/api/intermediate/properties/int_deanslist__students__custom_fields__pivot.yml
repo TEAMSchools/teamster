@@ -1,4 +1,19 @@
 models:
   - name: int_deanslist__students__custom_fields__pivot
+    description: >-
+      Network-wide union of the per-region DeansList student custom-field pivots
+      (Newark, Camden, Miami, Paterson). One row per DeansList student per
+      region, with one column per custom field - community service hours by
+      grade, device asset tag and deployment date, hotspot info, locker number
+      and combination, graduation date, and a test checkbox. Values are the
+      strings entered in DeansList. Passes rows through unchanged and adds
+      _dbt_source_project; column descriptions live on the package model.
+      student_school_id is tested unique within a region, not across the union,
+      so consumers normally join on _dbt_source_project as well.
+      rpt_tableau__community_service is the deliberate exception, joining on
+      student_school_id alone so a student who moved regions keeps prior-year
+      hours.
     config:
       materialized: table
+      meta:
+        contains_pii: true

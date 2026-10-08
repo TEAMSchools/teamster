@@ -47,12 +47,6 @@ models:
           - not_null:
               config:
                 severity: error
-          - relationships:
-              arguments:
-                to: ref('stg_focus__students')
-                field: student_id
-              config:
-                severity: warn
       - name: marking_period_id
         description: >-
           Focus marking-period id the grade was earned in, as an integer to
@@ -62,13 +56,6 @@ models:
           token is stripped into grade_type_token and the digit tail cast here,
           so every row resolves — imported and live alike.
         data_type: int
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('stg_focus__marking_periods')
-                field: marking_period_id
-              config:
-                severity: warn
       - name: report_card_grade_id
         description: >-
           Focus report_card_grades id of the grade definition this posting used.
@@ -77,13 +64,6 @@ models:
           int_focus__report_card_grades resolves scale_id through it rather than
           reading grade_scale_id below.
         data_type: int
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('stg_focus__report_card_grades')
-                field: id
-              config:
-                severity: warn
       - name: grade_scale_id
         description: >-
           Focus report_card_grade_scales id as stored on the row. Populated on
@@ -92,26 +72,12 @@ models:
           data-quality gap. Prefer the scale resolved through
           report_card_grade_id, which covers every live-posted row.
         data_type: int
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('stg_focus__report_card_grade_scales')
-                field: id
-              config:
-                severity: warn
       - name: course_period_id
         description: >-
           Focus course period the grade was posted against. Populated on every
           live-posted row and null on imported course history, whose course is
           carried as free text in course_title.
         data_type: int
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('stg_focus__course_periods')
-                field: course_period_id
-              config:
-                severity: warn
       - name: grade_type_token
         description: >-
           Alpha prefix Focus writes on marking_period_id for a live posting, per

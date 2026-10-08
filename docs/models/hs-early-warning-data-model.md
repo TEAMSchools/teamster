@@ -1,9 +1,14 @@
 # High School Early Warning Data Model
 
 The **High School Early Warning Dashboard** is a Tableau dashboard owned by the
-Data Team. It answers whether a high school student is on track to graduate,
-combining three independent feeds — course performance, community service, and
-New Jersey graduation pathway status.
+Data Team; Walters owns the family from 2026-09-30. It answers whether a high
+school student is on track to graduate, combining three independent feeds —
+course performance, community service, and New Jersey graduation pathway status.
+School leaders and the high school teams use it to find students who need
+support before the end of the year.
+
+Claude sessions working on this family use the `hs-early-warning` skill, which
+routes graduation pathway work to the `graduation-pathways` skill.
 
 Exposure: `high_school_early_warning_dashboard` in
 `src/dbt/kipptaf/models/exposures/tableau.yml`. Tableau LSID
@@ -13,38 +18,67 @@ Exposure: `high_school_early_warning_dashboard` in
 
     Every threshold on this dashboard is a Tableau calculation, not dbt logic.
     They are written out below because they are otherwise invisible to anyone
-    without workbook access, and they were recovered by reading the calculations
-    and checking them against the extracts.
+    without workbook access.
+
+## How it fits together
+
+```mermaid
+flowchart LR
+    ps[PowerSchool] --> grades[base_powerschool__final_grades<br/>int_powerschool__gpa_term]
+    dl[DeansList] --> pen[int_deanslist__incidents__penalties]
+    dl --> beh[stg_deanslist__behavior]
+    dl --> cf[int_deanslist__students__custom_fields__pivot]
+    sheets[Google Sheets] --> terms[stg_google_sheets__reporting__terms]
+    sheets --> cut[stg_google_sheets__student_graduation_path_cutoffs]
+    enr[int_extracts__student_enrollments<br/>and _subjects] --> ew
+    enr --> cs
+    enr --> scores
+    vendors[Pearson, Cambium,<br/>College Board, ACT] --> scores[int_students__graduation_pathway_scores]
+    ps --> ts[int_powerschool__state_assessments_transfer_scores] --> scores
+    cut --> scores
+    scores --> codes[int_students__graduation_path_codes]
+    grades --> ew[rpt_tableau__hs_early_warning_dashboard]
+    pen --> ew
+    terms --> ew
+    beh --> cs[rpt_tableau__community_service]
+    cf --> cs
+    codes --> gr[rpt_tableau__graduation_requirements]
+    codes --> ac[rpt_powerschool__autocomm_students<br/>PowerSchool write-back]
+    ac -. next day, as ps_grad_path_code .-> enr
+    ew --> tab[Tableau workbook]
+    cs --> tab
+    gr --> tab
+```
 
 ## Dashboard tabs
 
-| Tab                    | Purpose                                  | Views to date |
-| ---------------------- | ---------------------------------------- | ------------- |
-| Landing Page           | Pathway mix by subject and NJGPA attempt | 387           |
-| On Track 9th           | Ninth grade promotion status by school   | 516           |
-| Early Warning          | Five per-student risk flags              | 1,876         |
-| Graduation Eligibility | Progress toward a graduation pathway     | 1,452         |
-| Community Service      | Progress toward the 50 hour service goal | 242           |
-
-Confirmed against the Tableau server rather than the older design doc, which
-also listed a Graduation Planner Tracker and an Athletic Eligibility tab.
-Neither exists; an athletic eligibility spec was written but never built.
+| Tab                    | Purpose                                  | Extract                                   |
+| ---------------------- | ---------------------------------------- | ----------------------------------------- |
+| Landing Page           | Pathway mix by subject and NJGPA attempt | `rpt_tableau__graduation_requirements`    |
+| On Track 9th           | Ninth grade promotion status by school   | `rpt_tableau__hs_early_warning_dashboard` |
+| Early Warning          | Five per-student risk flags              | `rpt_tableau__hs_early_warning_dashboard` |
+| Graduation Eligibility | Progress toward a graduation pathway     | `rpt_tableau__graduation_requirements`    |
+| Community Service      | Progress toward the 50 hour service goal | `rpt_tableau__community_service`          |
 
 The workbook has exactly three embedded datasources, one per `rpt_` model below,
 so every threshold on it is a Tableau calculation over those three extracts.
+Athletic eligibility, once planned as a tab here, is its own tracker with its
+own skill.
 
 ## The three feeds
 
-| Feed                                      | Answers                                   | Upstreams                                                                                                                                                                 |
-| ----------------------------------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `rpt_tableau__graduation_requirements`    | Has the student met a graduation pathway? | `int_students__graduation_path_codes`, `int_extracts__student_enrollments_subjects`, `base_powerschool__course_enrollments`                                               |
-| `rpt_tableau__community_service`          | Are service hours on track?               | `int_deanslist__students__custom_fields__pivot`, `stg_deanslist__behavior`, `int_extracts__student_enrollments`                                                           |
-| `rpt_tableau__hs_early_warning_dashboard` | Grades, GPA, and discipline flags         | `base_powerschool__final_grades`, `base_powerschool__sections`, `int_powerschool__gpa_term`, `int_deanslist__incidents__penalties`, `stg_google_sheets__reporting__terms` |
+| Feed                                      | Answers                                   | Upstreams                                                                                                                                                                                                      |
+| ----------------------------------------- | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `rpt_tableau__graduation_requirements`    | Has the student met a graduation pathway? | `int_extracts__student_enrollments_subjects`, `int_students__graduation_path_codes`, `base_powerschool__course_enrollments`                                                                                    |
+| `rpt_tableau__community_service`          | Are service hours on track?               | `int_deanslist__students__custom_fields__pivot`, `stg_deanslist__behavior`, `int_extracts__student_enrollments`                                                                                                |
+| `rpt_tableau__hs_early_warning_dashboard` | Grades, GPA, and discipline flags         | `int_extracts__student_enrollments`, `stg_google_sheets__reporting__terms`, `base_powerschool__final_grades`, `base_powerschool__sections`, `int_powerschool__gpa_term`, `int_deanslist__incidents__penalties` |
 
-Miami is out of scope throughout. NJ graduation pathways do not apply in
-Florida, and `int_students__graduation_path_codes` filters
-`where e.region != 'Miami'`. Miami also only opened a high school this year, so
-there is no history to report on either way.
+Miami is out of scope for graduation pathways: NJ pathways do not apply in
+Florida, and both `int_students__graduation_pathway_scores` and
+`rpt_tableau__graduation_requirements` filter `region != 'Miami'`. The other two
+feeds have no region filter. Miami Tech appears on the Community Service tab,
+but not on Early Warning: it has no reporting term rows, and its grades live in
+Focus, which the grades models do not read (see Known issues).
 
 The two graduation feeds are scoped differently on purpose, which looks like an
 inconsistency and is not. `rpt_tableau__graduation_requirements` filters cohort
@@ -58,8 +92,9 @@ concern at all; it reports on whoever is enrolled now.
 ## Course performance and discipline
 
 `rpt_tableau__hs_early_warning_dashboard` is the widest of the three feeds. One
-row per **student, reporting term and course**, currently around 52,000 rows
-over 1,851 students.
+row per **student, reporting term and course**, tested by a uniqueness test on
+`student_number`, `reporting_term` and `course_number`. A student with no stored
+grade for a term keeps one row with a null course.
 
 Scope: the current academic year, high schools only, one enrollment row per
 student (`rn_year = 1`), recently enrolled. Reporting terms come from the terms
@@ -75,34 +110,28 @@ What it carries, per row:
 - **Discipline** — suspension count and total days for the year, aggregated from
   DeansList incident penalties where the penalty is a suspension.
 
-!!! note "`need_65` was renamed to `need_60`"
+!!! note "Why `need_60` uses 60"
 
-    The extract used to alias `gr.need_60` to `need_65`. The calculation was
-    always the 0.600 one — the percentage a student needs on remaining work to
-    finish the year at 60 — and only the label was wrong.
-
-    60 is correct, because it is the lowest passing grade on both scales the high
+    `need_60` is the grade a student needs in that term for their year-to-date
+    course grade, through that term, to reach 60; on the last term's row that is
+    what they need to finish the year at 60. 60 is correct, because it is the lowest passing grade on both scales the high
     schools actually use: `KIPP NJ 2019 (5-12) Unweighted`, where D- starts at 60,
     and `NCA 2011`, where D starts at 60. The `A, B, C, D` scale does put D at 65,
     but no high school grade rows use it — check which scale is in play before
     reasoning about a cutoff.
 
-    `rpt_tableau__gradebook_dashboard` carries the same mislabel in two places. It
-    is deprecated and was deliberately left alone.
-
 ### The five early warning flags
 
-This extract carries raw measures; every flag is a Tableau calculation.
-Percentages are as of Q1 across all schools, and the last column says whether
-the rule was reproduced from the extract.
+This extract carries raw measures; every flag is a Tableau calculation. Each
+rule below except over age reproduces the dashboard's figures from the extract.
 
-| Flag                   | Rule                                                                                          | Checked              |
-| ---------------------- | --------------------------------------------------------------------------------------------- | -------------------- |
-| On track for promotion | `earned_credits_cum_projected` at or above **25 / 50 / 85 / 120** for grades 9 / 10 / 11 / 12 | From the calculation |
-| Chronically absent     | `ada` below **90%**                                                                           | 53.8% against 54.2%  |
-| Below 2.0 GPA          | `cumulative_y1_gpa_projected` below **2.0**                                                   | 10.4%, exact         |
-| Core Fs                | any Y1 grade of F in credit type **MATH, ENG, SCI or SOC**                                    | 75.2% against 75.3%  |
-| Over age               | derived from `dob` against grade level                                                        | **Not reproduced**   |
+| Flag                   | Rule                                                                                          |
+| ---------------------- | --------------------------------------------------------------------------------------------- |
+| On track for promotion | `earned_credits_cum_projected` at or above **25 / 50 / 85 / 120** for grades 9 / 10 / 11 / 12 |
+| Chronically absent     | `ada` below **90%**                                                                           |
+| Below 2.0 GPA          | `cumulative_y1_gpa_projected` below **2.0**                                                   |
+| Core Fs                | any Y1 grade of F in credit type **MATH, ENG, SCI or SOC**                                    |
+| Over age               | derived from `dob` against grade level; not reproduced from the extract                       |
 
 **Both the GPA and the credits flags read projected values on purpose.** A
 first-year 9th grader has no real Y1 GPA until the year ends, so scoring them on
@@ -131,18 +160,21 @@ rule is date-precise in a way the extract alone does not reveal.
 ## Community service
 
 `rpt_tableau__community_service` tracks service hours toward graduation. One row
-per student per DeansList community service entry, with students who have logged
-nothing appearing once with nulls.
+per student per DeansList community service entry (`dl_said`, tested unique with
+`student_number`), with students who have logged nothing appearing once with
+nulls.
 
-Scope: the current academic year, grade 9 and up, actively enrolled. Service
-entries are matched to the enrollment stint they fall inside.
+Scope: the current academic year, grade 9 and up, actively enrolled, one
+enrollment per student (`rn_year = 1`). Service entries count only when dated
+inside that enrollment, so hours logged during an earlier stint the same year (a
+mid-year transfer) do not show.
 
 Two different measures of hours travel together, from two different places:
 
-| Column                             | Source                                    | Grain                  |
-| ---------------------------------- | ----------------------------------------- | ---------------------- |
-| `cs_hours`                         | Parsed out of the DeansList behavior name | Per entry              |
-| `grade_9_hours` … `grade_12_hours` | DeansList student custom fields           | Per student, per grade |
+| Column                             | Source                                  | Grain                  |
+| ---------------------------------- | --------------------------------------- | ---------------------- |
+| `cs_hours`                         | Parsed from the DeansList behavior name | Per entry              |
+| `grade_9_hours` … `grade_12_hours` | DeansList student custom fields         | Per student, per grade |
 
 **Both are used, and the requirement is 50 cumulative hours.** Tableau adds
 them:
@@ -153,9 +185,7 @@ LOD Student Hours Current Year = {FIXED [Student Number] : SUM([Cs Hours])}
 LOD Total All Years            = current year + previous years
 ```
 
-Grad Goal Met is that total at or above **50**. Checked against the workbook
-filtered to Newark Collegiate, where 50 reproduces both grade 11 at 23 students
-and grade 12 at 38 exactly, and no other threshold does.
+Grad Goal Met is that total at or above **50**.
 
 The custom fields are last year and earlier; the behavior log is this year.
 Early in the year the total is almost entirely prior years, which makes
@@ -163,15 +193,14 @@ Early in the year the total is almost entirely prior years, which makes
 
 !!! warning "Hours are parsed out of a text label"
 
-    `cs_hours` comes from stripping the last five characters off the behavior
-    name and casting what remains. It works on today's three values — `1 hour`,
-    `5 hours`, `10 hours` — but only by luck: five characters happens to remove
-    `" hour"` from one and `"hours"` from the others.
+    `cs_hours` is the number at the start of the behavior name, parsed in
+    `stg_deanslist__behavior`. Today's three names — `1 hour`, `5 hours`,
+    `10 hours` — all start with one.
 
-    A new label like `Half hour` or `Community Service - 5 hours` parses to null
-    and the `coalesce` turns it into **0**. A student's hours quietly go missing
-    and nothing fails. Anyone adding a behavior name in DeansList needs to match
-    the existing pattern.
+    A new name like `Half hour` or `Community Service - 5 hours` parses to null
+    and the extract's `coalesce` turns it into **0**. A student's hours quietly
+    go missing and nothing fails. Anyone adding a behavior name in DeansList
+    needs to start it with the number of hours.
 
 Repeated rows for the same student, date and behavior are **expected**, not a
 join fan-out — a student can log the same activity more than once in a day, and
@@ -179,13 +208,19 @@ the source holds thousands of such pairs.
 
 !!! warning "If last year's hours stop showing, ask Jabari"
 
-    Community service depends on a step somebody performs in DeansList, and the
-    specific action is not recorded anywhere. The symptom to watch for is a prior
-    year's hours disappearing from the dashboard.
+    The grade custom fields hold last year's behavior-log totals, which someone
+    writes into DeansList once a year. In September 2026, about 96% of students
+    who logged hours the year before had a custom field equal to the sum of
+    those entries. Jabari performs the step; the exact procedure is not written
+    down anywhere yet.
 
-    If that happens, flag Jabari before investigating the models — this is not a
-    pipeline failure and there is nothing in dbt to fix. Whoever learns what the
-    step actually is should write it down here.
+    The symptom of it not having happened is a prior year's hours disappearing
+    from the dashboard. Flag Jabari before investigating the models — there is
+    nothing in dbt to fix.
+
+    A disabled model, `rpt_gsheets__community_service_upload`, computes the same
+    per-grade totals in upload shape. It has no exposure and still uses an older
+    hours parse; confirm with Jabari what he uploads before re-enabling it.
 
 ## Graduation pathways
 
@@ -196,8 +231,12 @@ the PowerSchool fields `s_nj_stu_x__graduation_pathway_ela` and
 `s_nj_stu_x__graduation_pathway_math`, dropped daily for AutoComm import. **A
 wrong code here becomes a wrong state submission.** The same fields are the
 model's own input, read back through `stg_powerschool__s_nj_stu_x` as
-`ps_grad_path_code`, so a code PowerSchool already holds is never overridden.
-The write-back is no longer restricted to 12th grade.
+`ps_grad_path_code` (unpivoted per subject into
+`int_extracts__student_enrollments_subjects`). For grades 10 and below the model
+carries that code through unchanged, and an `M`, `N`, `O` or `P` is never
+overridden at any grade. For grade 11 and up every other code is recomputed on
+each build, so a code the write-back sent earlier can change when a new score
+lands. The write-back covers every grade the model scores, not only 12th grade.
 
 For the working rules, cut score maintenance, and the failure modes, use the
 `graduation-pathways` skill. The essentials:
@@ -279,24 +318,25 @@ The landing page charts exactly this column, under the display labels in
 
 The label is decoded in `int_students__graduation_path_codes` rather than in the
 workbook, so the dashboard and any other consumer read the same string.
-`No Data` on the dashboard is not a label -- it is a student with no row at all.
-`E`, `O` and `P` are mapped but have never appeared in our data.
+`test_type` falls back to `No Data` in `int_students__graduation_path_codes`
+when there is no pathway code, but those rows have no score and the extract
+drops them, so on the dashboard `No Data` means a student with no pathway row at
+all. `E`, `O` and `P` are mapped but rare; do not read their absence as a
+defect.
 
 For a student coded straight from PowerSchool, the same label is produced twice
 in two different models -- once as `pathway_option` in
 `int_students__graduation_pathway_scores`, which `test_type` passes through, and
 once here. The lists have to stay identical, so
 `int_students__graduation_path_codes__labels_agree` fails the build if they
-drift. Code `O` had already drifted before that test existed, reading
-`No Pathway` in dbt and `Met No Requirements` in the workbook.
+drift.
 
 That makes the landing page the fastest check on this model's health. NJGPA is
 the pathway nearly every student is supposed to meet, so the `S` band should be
 the largest one. When it is a sliver and `Default` is enormous, scores are not
 reaching their cut scores -- which is what a cut score sheet missing a cohort or
-an `assessment_version` looks like from the outside. Before the adaptive cut
-scores landed, the whole network showed 2 students on `S` and 217 on `D`, and
-that shape on the landing page is what to look for if it happens again.
+an `assessment_version` looks like from the outside: a handful of students on
+`S` and hundreds on `D`.
 
 ### Which eligibility label a student gets
 
@@ -335,19 +375,6 @@ is grade 12 AND on or after the January deadline, so for half the year every
 FAFSA label is unreachable by construction. Finding zero of them in a summer
 build is correct, not a bug.
 
-#### The eligibility combinations sheet, retired
-
-This label used to come from a hand-maintained Google Sheet that enumerated
-every combination of the boolean inputs and named the label for each. Any
-combination nobody had thought to add fell through to the literal string
-`New category. Need new logic.`, which rendered on the dashboard as its own
-colour and meant a student's status was simply unknown until someone edited the
-sheet. It was showing on 4 students at the point the sheet was retired.
-
-The `CASE` above replaces it. There is no combination it cannot label, so that
-category no longer exists and the sheet is gone. If a new rule arrives from the
-state, it is a branch in the model, not a row in a spreadsheet.
-
 ### How the model is put together
 
 Two models, split by grain:
@@ -355,14 +382,16 @@ Two models, split by grain:
 - `int_students__graduation_pathway_scores` pairs every student with every
   pathway their cohort has a cut score for, and decides whether their score
   cleared it. One row per student, subject, score type, assessment version and
-  sitting. Nothing is filtered out, so the dashboard can show near misses.
-- `int_students__graduation_path_codes` rolls that up into a per-student
-  standing and produces `final_grad_path_code`, its display label
-  `final_grad_path_name`, and `grad_eligibility`.
+  sitting. Failing scores are kept, so the dashboard can show near misses. It
+  keeps undergraduate students in grade 8 and up outside Miami, and only
+  complete NJGPA ELA and Math scores.
+- `int_students__graduation_path_codes` keeps actively enrolled students
+  (`enroll_status = 0`) and rolls that up into a per-student standing and
+  produces `final_grad_path_code`, its display label `final_grad_path_name`, and
+  `grad_eligibility`.
 
-`grad_eligibility` is derived, not looked up. It used to come from a
-hand-maintained sheet joined on eight boolean columns, which is now retired.
-Three rules drive it:
+`grad_eligibility` is derived in the model, so there is no combination it cannot
+label; a new state rule is a new branch in the model. Three rules drive it:
 
 1. A subject only counts if the student sat the NJGPA in it.
 2. FAFSA is required to graduate, but is not counted against a student until the
@@ -374,10 +403,10 @@ Three rules drive it:
 
 ### Picking a student's best score
 
-A student can hold scores on both NJGPA versions — eight do today, and two of
-them failed the retired test by a few points and then passed the adaptive one.
-The two scales are not comparable, so `rn_highest` ranks by **whether the score
-passed, then by how far it cleared its own cut score**, not by the raw score.
+A student can hold scores on both NJGPA versions, and some failed the retired
+test by a few points and then passed the adaptive one. The two scales are not
+comparable, so `rn_highest` ranks by **whether the score passed, then by how far
+it cleared its own cut score**, not by the raw score.
 
 This matters because consumers filter `rn_highest = 1` to get one row per score
 type. Ranking on the raw score would put a failing 700 on the retired scale
@@ -391,10 +420,12 @@ across both versions, so passing either one counts.
 ### Portfolio appeals
 
 A portfolio appeal is pathway code `N`, granted by NJDOE and imported into each
-region's PowerSchool by hand from PDFs the C3 team sends. There is no pipeline;
-the model only reads the resulting `ps_grad_path_code`. The full procedure,
-including the Excel workbook that must never be opened in Google Sheets, is in
-the `graduation-pathways` skill.
+region's PowerSchool by hand from the decision PDFs the C3 team sends each June.
+There is no pipeline; the model only reads the resulting `ps_grad_path_code`. A
+script in the `graduation-pathways` skill turns the PDFs into the four
+PowerSchool import files (one per region and subject) and checks every state ID
+resolves to a student in the right region. The skill has the full procedure and
+the check to run after the import.
 
 ### Transfer scores are entered by hand in PowerSchool
 
@@ -441,8 +472,7 @@ The dbt layer rolls over on its own. All three feeds filter on
 `var("current_academic_year")`, which is set per project in `dbt_project.yml`
 and rolls each July, so no SQL changes when the year advances.
 
-Four things need a human. Two of them have no owner and no schedule, which is
-recorded here as fact rather than dressed up as a process.
+Four things need a human. Two of them have no owner and no schedule.
 
 ### Step 1 — Cut scores, whenever NJDOE publishes
 
@@ -461,8 +491,7 @@ is the classes of 2028, 2029 and 2030.
 
 The enforcement is the `scores_have_cutoffs` test, which warns and names the
 students who cannot be scored rather than letting them fall through to a default
-`R`. Hand that list to the HS team; in September 2026 it went to Casey and
-Walters.
+`R`. Hand that list to the high school team.
 
 Run that test again after the new rows land, and read what is left rather than
 assuming the rows closed it. Three causes leave a student unscoreable and the
@@ -474,12 +503,16 @@ nothing.
 
 ### Step 2 — Community service custom fields
 
-Jabari does this in DeansList, when he remembers or when someone asks. There is
-no trigger and no schedule.
+Jabari writes last year's community service totals into each student's grade
+custom field in DeansList. There is no trigger and no schedule, and the steps
+are not written down. Open questions for him: which file he uploads from,
+whether the upload adds to the field or replaces it, and how outside hours for
+transfer students are handled.
 
 The symptom of it not having happened is a prior year's hours disappearing from
 the dashboard -- see the warning under Community service. There is nothing in
-dbt to fix when that happens, so asking Jabari IS the procedure.
+dbt to fix when that happens, so asking Jabari is the procedure. The
+`hs-early-warning` skill has a check that shows whether the upload happened.
 
 ### Step 3 — Reporting terms
 
@@ -496,3 +529,106 @@ Unknown, and never confirmed. The three inputs above are the ones that have been
 traced; nobody has verified the list is complete. Treat this as an open question
 rather than a clean bill of health, and add to it when the next rollover turns
 something up.
+
+## Supporting models
+
+In the family:
+
+- `int_students__graduation_pathway_scores` and
+  `int_students__graduation_path_codes` -- see _How the model is put together_.
+  `int_students__graduation_path_codes` is also read by
+  `rpt_powerschool__autocomm_students` (the PowerSchool write-back) and
+  `int_kippadb__roster`, so a change there moves both.
+- `stg_google_sheets__student_graduation_path_cutoffs` -- the cut score sheet.
+- `int_powerschool__state_assessments_transfer_scores` -- hand-entered transfer
+  NJGPA scores.
+- `int_deanslist__students__custom_fields__pivot` -- DeansList custom fields,
+  one row per student, unioned across regions.
+- `rpt_gsheets__community_service_upload` -- disabled; see _Community service_.
+
+Shared upstreams, one line each:
+
+- `int_extracts__student_enrollments` -- the roster for Early Warning and
+  Community Service, joined on `student_number` (and `studentid`, `yearid`,
+  `_dbt_source_project` for PowerSchool joins).
+- `int_extracts__student_enrollments_subjects` -- the per-subject roster for
+  Graduation Eligibility, joined on `student_number` and `discipline`.
+- `base_powerschool__final_grades` and `base_powerschool__sections` -- term and
+  Y1 grades, course and teacher, joined on `studentid`, `yearid`, term name and
+  `_dbt_source_project`.
+- `int_powerschool__gpa_term` -- term and Y1 GPA, joined the same way.
+- `base_powerschool__course_enrollments` -- the College and Career section for
+  Graduation Eligibility.
+- `int_deanslist__incidents__penalties` -- suspensions, summed per student and
+  year.
+- `stg_deanslist__behavior` -- community service entries.
+- `stg_google_sheets__reporting__terms` -- the `RT` reporting terms.
+- `int_assessments__state_nj_scores` (documented with the STAT dashboard) and
+  `int_assessments__college_assessment` (documented with CARAT) -- the scores
+  pathway scoring reads.
+
+## Inputs
+
+| Input                                | Kept by             | When                        |
+| ------------------------------------ | ------------------- | --------------------------- |
+| Cut score Google Sheet               | Data team           | When NJDOE publishes        |
+| Reporting terms Google Sheet (`RT`)  | Data team           | Before each school year     |
+| DeansList community service entries  | School staff        | All year                    |
+| DeansList grade custom fields        | Jabari              | Once a year, after rollover |
+| Portfolio appeal PDFs                | C3 team, from NJDOE | June                        |
+| Transfer NJGPA scores in PowerSchool | School staff        | As transfers arrive         |
+
+## Known issues, need to fix
+
+### A student in two College and Career courses repeats on Graduation Eligibility
+
+`rpt_tableau__graduation_requirements` left-joins the student's College and
+Career section, keeping the first enrollment per course number. A student
+enrolled in two different College and Career courses gets every pathway row once
+per course. Fewer than five students were affected in September 2026. The
+uniqueness test on `student_number`, `discipline` and `test_type` warns while it
+happens:
+
+```sql
+select count(*) as duplicate_keys,
+from (
+    select student_number, discipline, test_type,
+    from `teamster-332318`.kipptaf_tableau.rpt_tableau__graduation_requirements
+    group by student_number, discipline, test_type
+    having count(*) > 1
+)
+```
+
+The fix is a choice of which section to show (one per student and year), so it
+waits on the owner.
+
+### Miami Tech is missing from Early Warning
+
+Miami Tech has no reporting term rows in `stg_google_sheets__reporting__terms`,
+and the Early Warning extract INNER joins to them, so its students do not
+appear. Even with terms, the tab would show no grades: Miami's grades are in
+Focus, which `base_powerschool__final_grades` does not read. Whether Miami
+belongs on this tab is a scope decision for the owner:
+
+```sql
+select count(distinct student_number) as miami_hs_students,
+from `teamster-332318`.kipptaf_extracts.int_extracts__student_enrollments
+where
+    academic_year = 2026
+    and rn_year = 1
+    and region = 'Miami'
+    and school_level = 'HS'
+    and is_enrolled_recent
+```
+
+A non-zero result with no Miami rows in the extract means the gap is still open.
+
+### The over-age flag has never been reproduced
+
+See _The five early warning flags_. The Tableau calculation needs reading to
+settle it.
+
+### `int_powerschool__gpa_term` has duplicate rows
+
+Tracked in #4938. The duplicates do not reach the Early Warning extract today:
+its uniqueness test passes. If that test starts warning, check #4938 first.

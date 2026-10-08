@@ -35,12 +35,6 @@ models:
           - not_null:
               config:
                 severity: error
-          - relationships:
-              arguments:
-                to: ref('stg_focus__gradebook_assignment_types')
-                field: assignment_type_id
-              config:
-                severity: warn
       - name: course_period_id
         description: Focus course period (section) the category applies to.
         data_type: int

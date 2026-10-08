@@ -300,8 +300,8 @@ stays here is what to do and what not to do.
   `stg_renlearn__star`.
 - **`stg_adp_workforce_now__workers` ghosts** — fix by rematerializing the ADP
   `workers` partitions spanning the record's active dates; the re-pull drops the
-  ghost and downstream tables rebuild via automation. Detection check tracked in
-  [#4407](https://github.com/TEAMSchools/teamster/issues/4407).
+  ghost and downstream tables rebuild via automation. The
+  `stg_adp_workforce_now__workers__ghost_open_records` asset check flags them.
 
 ## Exposures
 

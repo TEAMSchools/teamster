@@ -14,6 +14,7 @@ select
     co.student_email,
     co.school as school_name,
 
+    b.dl_said,
     b.behavior_date,
     b.behavior,
     b.notes,

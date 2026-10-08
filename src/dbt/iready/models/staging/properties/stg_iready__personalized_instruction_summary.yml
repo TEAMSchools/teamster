@@ -1,223 +1,880 @@
 models:
   - name: stg_iready__personalized_instruction_summary
+    description: >-
+      One row per student per date range per subject from the vendor's
+      Personalized Instruction Summary export, typed and with the vendor's per-
+      domain and per-strand columns renamed. Covers both classic i-Ready lessons
+      and i-Ready Pro lessons, with lesson counts for classic i-Ready domains
+      and skill counts for i-Ready Pro strands. Students who used only one
+      product carry zeros in the other product's count columns and blanks in its
+      percent columns, so read a zero together with the percent and the all-
+      lessons totals. Comprehension and vocabulary counts take the classic value
+      whenever it is present, including 0, so students who used only i-Ready Pro
+      show 0 there; the comprehension and vocabulary percents fall through to
+      the Pro value when the classic percent is blank.
     columns:
       - name: student_id
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: The vendor's Student ID for the student, cast to integer.
         data_tests:
           - not_null
       - name: academic_year
         data_type: string
+        description: >-
+          The academic year label as reported in the vendor's export. See
+          academic_year_int for the integer form.
       - name: all_lessons_completed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of classic i-Ready and i-Ready Pro lessons the student
+          completed in the date range.
       - name: all_lessons_passed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of classic i-Ready and i-Ready Pro lessons the student passed
+          in the date range.
       - name: class_es
         data_type: string
+        description: >-
+          Name(s) of the class(es) the student is enrolled in within i-Ready.
       - name: class_teacher_s
         data_type: string
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Name(s) of the teacher(s) of record for the student's i-Ready
+          class(es).
       - name: date_range_end
         data_type: date
+        description: >-
+          Last date of the date range this row covers, parsed from the vendor's
+          month/day/year text.
       - name: date_range_start
         data_type: date
+        description: >-
+          First date of the date range this row covers, parsed from the vendor's
+          month/day/year text.
       - name: date_range
         data_type: string
+        description: >-
+          Label for the date range this row covers, either a week or the year to
+          date, as selected in the vendor export.
       - name: economically_disadvantaged
         data_type: string
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Flag for whether the student is economically disadvantaged, per the
+          roster i-Ready received.
       - name: english_language_learner
         data_type: string
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Flag for whether the student is an English Language Learner, per the
+          roster i-Ready received.
       - name: enrolled
         data_type: string
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Flag for whether the student is currently enrolled in i-Ready. The
+          export includes both enrolled and unenrolled students who worked on
+          lessons in the period.
       - name: first_name
         data_type: string
+        config:
+          meta:
+            contains_pii: true
+        description: The student's first name, as loaded from the vendor roster.
       - name: hispanic_or_latino
         data_type: string
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Flag for whether the student is Hispanic or Latino, per the roster
+          i-Ready received.
       - name: last_name
         data_type: string
+        config:
+          meta:
+            contains_pii: true
+        description: The student's last name, as loaded from the vendor roster.
       - name: migrant
         data_type: string
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Flag for whether the student is a migrant student, per the roster
+          i-Ready received.
       - name: percent_all_lessons_passed
         data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Percent of classic i-Ready and i-Ready Pro lessons the student passed
+          in the date range, kept as a decimal.
       - name: race
         data_type: string
+        config:
+          meta:
+            contains_pii: true
+        description: The student's race, per the roster i-Ready received.
       - name: report_group_s
         data_type: string
+        description: >-
+          Name(s) of the i-Ready Report Group(s) the student belongs to.
       - name: school
         data_type: string
+        description: >-
+          The school the student is rostered to in i-Ready, as reported in the
+          vendor export.
       - name: sex
         data_type: string
+        config:
+          meta:
+            contains_pii: true
+        description: The student's sex, per the roster i-Ready received.
       - name: special_education
         data_type: string
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Flag for whether the student receives special education services, per
+          the roster i-Ready received.
       - name: student_grade
         data_type: string
+        config:
+          meta:
+            contains_pii: true
+        description: The student's grade level, as reported by the vendor.
       - name: subject
         data_type: string
+        description: >-
+          The subject of the export the row came from, as reported by the
+          vendor.
       - name: total_lesson_time_on_task_min
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Minutes the student spent on lessons during the date range, across
+          classic i-Ready and i-Ready Pro.
       - name: user_name
         data_type: string
+        config:
+          meta:
+            contains_pii: true
+        description: The student's i-Ready login username.
       - name: comprehension_close_reading_lessons_completed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of classic i-Ready Comprehension Close Reading (Reading)
+          lessons the student completed in the date range. Zero for students who
+          used only i-Ready Pro.
       - name: comprehension_close_reading_lessons_passed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of classic i-Ready Comprehension Close Reading (Reading)
+          lessons the student passed in the date range. Zero for students who
+          used only i-Ready Pro.
       - name: comprehension_close_reading_percent_lessons_passed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Percent of classic i-Ready Comprehension Close Reading lessons the
+          student passed in the date range, as a whole number. Blank for
+          students who used only i-Ready Pro.
       - name: comprehension_lessons_completed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of Reading Comprehension lessons the student completed in the
+          date range. Takes the classic i-Ready value and falls back to the
+          i-Ready Pro Comprehension category value only when the classic value
+          is blank. The vendor reports 0 rather than blank, so students who used
+          only i-Ready Pro show 0 here; read the percent column for their Pro
+          result.
       - name: comprehension_lessons_passed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of Reading Comprehension lessons the student passed in the date
+          range. Takes the classic i-Ready value and falls back to the i-Ready
+          Pro Comprehension category value only when the classic value is blank.
+          The vendor reports 0 rather than blank, so students who used only
+          i-Ready Pro show 0 here; read the percent column for their Pro result.
       - name: comprehension_percent_lessons_passed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Percent of Reading Comprehension lessons the student passed in the
+          date range, as a whole number. Takes the classic i-Ready value when
+          present and otherwise the i-Ready Pro Comprehension category value.
+          The classic percent is blank for students who used only i-Ready Pro,
+          so they carry their Pro percent here.
       - name: high_frequency_words_lessons_completed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of classic i-Ready High-Frequency Words (Reading) lessons the
+          student completed in the date range. Zero for students who used only
+          i-Ready Pro.
       - name: high_frequency_words_lessons_passed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of classic i-Ready High-Frequency Words (Reading) lessons the
+          student passed in the date range. Zero for students who used only
+          i-Ready Pro.
       - name: high_frequency_words_percent_lessons_passed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Percent of classic i-Ready High-Frequency Words lessons the student
+          passed in the date range, as a whole number. Blank for students who
+          used only i-Ready Pro.
       - name: phonics_lessons_completed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of classic i-Ready Phonics (Reading) lessons the student
+          completed in the date range. Zero for students who used only i-Ready
+          Pro.
       - name: phonics_lessons_passed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of classic i-Ready Phonics (Reading) lessons the student passed
+          in the date range. Zero for students who used only i-Ready Pro.
       - name: phonics_percent_lessons_passed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Percent of classic i-Ready Phonics lessons the student passed in the
+          date range, as a whole number. Blank for students who used only
+          i-Ready Pro.
       - name: phonological_awareness_lessons_completed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of classic i-Ready Phonological Awareness (Reading) lessons the
+          student completed in the date range. Zero for students who used only
+          i-Ready Pro.
       - name: phonological_awareness_lessons_passed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of classic i-Ready Phonological Awareness (Reading) lessons the
+          student passed in the date range. Zero for students who used only
+          i-Ready Pro.
       - name: phonological_awareness_percent_lessons_passed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Percent of classic i-Ready Phonological Awareness lessons the student
+          passed in the date range, as a whole number. Blank for students who
+          used only i-Ready Pro.
       - name: vocabulary_lessons_completed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of Reading Vocabulary lessons the student completed in the date
+          range. Takes the classic i-Ready value and falls back to the i-Ready
+          Pro Vocabulary category value only when the classic value is blank.
+          The vendor reports 0 rather than blank, so students who used only
+          i-Ready Pro show 0 here; read the percent column for their Pro result.
       - name: vocabulary_lessons_passed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of Reading Vocabulary lessons the student passed in the date
+          range. Takes the classic i-Ready value and falls back to the i-Ready
+          Pro Vocabulary category value only when the classic value is blank.
+          The vendor reports 0 rather than blank, so students who used only
+          i-Ready Pro show 0 here; read the percent column for their Pro result.
       - name: vocabulary_percent_lessons_passed
         data_type: int64
-      - name: comprehension_lessons_completed
-        data_type: int64
-      - name: comprehension_lessons_passed
-        data_type: int64
-      - name: comprehension_percent_lessons_passed
-        data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Percent of Reading Vocabulary lessons the student passed in the date
+          range, as a whole number. Takes the classic i-Ready value when present
+          and otherwise the i-Ready Pro Vocabulary category value. The classic
+          percent is blank for students who used only i-Ready Pro, so they carry
+          their Pro percent here.
       - name: endings_affixes_percent_skills_successful
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Percent of i-Ready Pro Endings and Affixes skills the student was
+          successful on in the date range, as a whole number. Blank for students
+          who used only classic i-Ready.
       - name: endings_affixes_skills_completed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of i-Ready Pro Endings and Affixes (Reading) skills the student
+          completed in the date range. Zero for students who used only classic
+          i-Ready.
       - name: endings_affixes_skills_successful
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of i-Ready Pro Endings and Affixes (Reading) skills the student
+          was successful on in the date range. Zero for students who used only
+          classic i-Ready.
       - name: high_frequency_words_percent_skills_successful
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Percent of i-Ready Pro High-Frequency Words skills the student was
+          successful on in the date range, as a whole number. Blank for students
+          who used only classic i-Ready.
       - name: high_frequency_words_skills_completed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of i-Ready Pro High-Frequency Words (Reading) skills the
+          student completed in the date range. Zero for students who used only
+          classic i-Ready.
       - name: high_frequency_words_skills_successful
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of i-Ready Pro High-Frequency Words (Reading) skills the
+          student was successful on in the date range. Zero for students who
+          used only classic i-Ready.
       - name: language_structures_lessons_completed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of i-Ready Pro Language Structures lessons the student
+          completed in the date range (Reading only).
       - name: language_structures_lessons_passed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of i-Ready Pro Language Structures lessons the student passed
+          in the date range (Reading only).
       - name: language_structures_percent_lessons_passed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Percent of i-Ready Pro Language Structures lessons the student passed
+          in the date range (Reading only), as a whole number.
       - name: multi_syllable_percent_skills_successful
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Percent of i-Ready Pro Multisyllable skills the student was successful
+          on in the date range, as a whole number. Blank for students who used
+          only classic i-Ready.
       - name: multi_syllable_skills_completed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of i-Ready Pro Multisyllable (Reading) skills the student
+          completed in the date range. Zero for students who used only classic
+          i-Ready.
       - name: multi_syllable_skills_successful
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of i-Ready Pro Multisyllable (Reading) skills the student was
+          successful on in the date range. Zero for students who used only
+          classic i-Ready.
       - name: single_syllable_percent_skills_successful
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Percent of i-Ready Pro Single Syllable skills the student was
+          successful on in the date range, as a whole number. Blank for students
+          who used only classic i-Ready.
       - name: single_syllable_skills_completed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of i-Ready Pro Single Syllable (Reading) skills the student
+          completed in the date range. Zero for students who used only classic
+          i-Ready.
       - name: single_syllable_skills_successful
         data_type: int64
-      - name: vocabulary_lessons_completed
-        data_type: int64
-      - name: vocabulary_lessons_passed
-        data_type: int64
-      - name: vocabulary_percent_lessons_passed
-        data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of i-Ready Pro Single Syllable (Reading) skills the student was
+          successful on in the date range. Zero for students who used only
+          classic i-Ready.
       - name: algebra_and_algebraic_thinking_lessons_completed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of classic i-Ready Algebra and Algebraic Thinking (Math)
+          lessons the student completed in the date range. Zero for students who
+          used only i-Ready Pro.
       - name: algebra_and_algebraic_thinking_lessons_passed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of classic i-Ready Algebra and Algebraic Thinking (Math)
+          lessons the student passed in the date range. Zero for students who
+          used only i-Ready Pro.
       - name: algebra_and_algebraic_thinking_percent_lessons_passed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Percent of classic i-Ready Algebra and Algebraic Thinking lessons the
+          student passed in the date range, as a whole number. Blank for
+          students who used only i-Ready Pro.
       - name: geometry_lessons_completed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of classic i-Ready Geometry (Math) lessons the student
+          completed in the date range. Zero for students who used only i-Ready
+          Pro.
       - name: geometry_lessons_passed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of classic i-Ready Geometry (Math) lessons the student passed
+          in the date range. Zero for students who used only i-Ready Pro.
       - name: geometry_percent_lessons_passed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Percent of classic i-Ready Geometry lessons the student passed in the
+          date range, as a whole number. Blank for students who used only
+          i-Ready Pro.
       - name: measurement_and_data_lessons_completed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of classic i-Ready Measurement and Data (Math) lessons the
+          student completed in the date range. Zero for students who used only
+          i-Ready Pro.
       - name: measurement_and_data_lessons_passed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of classic i-Ready Measurement and Data (Math) lessons the
+          student passed in the date range. Zero for students who used only
+          i-Ready Pro.
       - name: measurement_and_data_percent_lessons_passed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Percent of classic i-Ready Measurement and Data lessons the student
+          passed in the date range, as a whole number. Blank for students who
+          used only i-Ready Pro.
       - name: number_and_operations_lessons_completed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of classic i-Ready Number and Operations (Math) lessons the
+          student completed in the date range. Zero for students who used only
+          i-Ready Pro.
       - name: number_and_operations_lessons_passed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of classic i-Ready Number and Operations (Math) lessons the
+          student passed in the date range. Zero for students who used only
+          i-Ready Pro.
       - name: number_and_operations_percent_lessons_passed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Percent of classic i-Ready Number and Operations lessons the student
+          passed in the date range, as a whole number. Blank for students who
+          used only i-Ready Pro.
       - name: data_statistics_and_probability_percent_skills_successful
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Percent of i-Ready Pro Data, Statistics, and Probability skills the
+          student was successful on in the date range, as a whole number. Blank
+          for students who used only classic i-Ready.
       - name: data_statistics_and_probability_skills_completed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of i-Ready Pro Data, Statistics, and Probability (Math) skills
+          the student completed in the date range. Zero for students who used
+          only classic i-Ready.
       - name: data_statistics_and_probability_skills_successful
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of i-Ready Pro Data, Statistics, and Probability (Math) skills
+          the student was successful on in the date range. Zero for students who
+          used only classic i-Ready.
       - name: decimals_and_operations_percent_skills_successful
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Percent of i-Ready Pro Decimals and Operations skills the student was
+          successful on in the date range, as a whole number. Blank for students
+          who used only classic i-Ready.
       - name: decimals_and_operations_skills_completed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of i-Ready Pro Decimals and Operations (Math) skills the
+          student completed in the date range. Zero for students who used only
+          classic i-Ready.
       - name: decimals_and_operations_skills_successful
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of i-Ready Pro Decimals and Operations (Math) skills the
+          student was successful on in the date range. Zero for students who
+          used only classic i-Ready.
       - name: equations_and_functions_percent_skills_successful
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Percent of i-Ready Pro Equations and Functions skills the student was
+          successful on in the date range, as a whole number. Blank for students
+          who used only classic i-Ready.
       - name: equations_and_functions_skills_completed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of i-Ready Pro Equations and Functions (Math) skills the
+          student completed in the date range. Zero for students who used only
+          classic i-Ready.
       - name: equations_and_functions_skills_successful
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of i-Ready Pro Equations and Functions (Math) skills the
+          student was successful on in the date range. Zero for students who
+          used only classic i-Ready.
       - name: fractions_and_operations_percent_skills_successful
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Percent of i-Ready Pro Fractions and Operations skills the student was
+          successful on in the date range, as a whole number. Blank for students
+          who used only classic i-Ready.
       - name: fractions_and_operations_skills_completed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of i-Ready Pro Fractions and Operations (Math) skills the
+          student completed in the date range. Zero for students who used only
+          classic i-Ready.
       - name: fractions_and_operations_skills_successful
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of i-Ready Pro Fractions and Operations (Math) skills the
+          student was successful on in the date range. Zero for students who
+          used only classic i-Ready.
       - name: geometric_measurement_and_figures_percent_skills_successful
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Percent of i-Ready Pro Geometric Measurement and Figures skills the
+          student was successful on in the date range, as a whole number. Blank
+          for students who used only classic i-Ready.
       - name: geometric_measurement_and_figures_skills_completed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of i-Ready Pro Geometric Measurement and Figures (Math) skills
+          the student completed in the date range. Zero for students who used
+          only classic i-Ready.
       - name: geometric_measurement_and_figures_skills_successful
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of i-Ready Pro Geometric Measurement and Figures (Math) skills
+          the student was successful on in the date range. Zero for students who
+          used only classic i-Ready.
       - name: number_relationships_and_operation_concepts_percent_k_2_skills_successful
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Percent of i-Ready Pro Number Relationships and Operation Concepts
+          (K-2) skills the student was successful on in the date range, as a
+          whole number. Blank for students who used only classic i-Ready.
       - name: number_relationships_and_operation_concepts_k_2_skills_completed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of i-Ready Pro Number Relationships and Operation Concepts
+          (K-2) (Math) skills the student completed in the date range. Zero for
+          students who used only classic i-Ready.
       - name: number_relationships_and_operation_concepts_k_2_skills_successful
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of i-Ready Pro Number Relationships and Operation Concepts
+          (K-2) (Math) skills the student was successful on in the date range.
+          Zero for students who used only classic i-Ready.
       - name: number_sense_percent_k_2_skills_successful
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Percent of i-Ready Pro Number Sense (K-2) skills the student was
+          successful on in the date range, as a whole number. Blank for students
+          who used only classic i-Ready.
       - name: number_sense_k_2_skills_completed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of i-Ready Pro Number Sense (K-2) (Math) skills the student
+          completed in the date range. Zero for students who used only classic
+          i-Ready.
       - name: number_sense_k_2_skills_successful
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of i-Ready Pro Number Sense (K-2) (Math) skills the student was
+          successful on in the date range. Zero for students who used only
+          classic i-Ready.
       - name: rational_numbers_and_operations_percent_skills_successful
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Percent of i-Ready Pro Rational Numbers and Operations skills the
+          student was successful on in the date range, as a whole number. Blank
+          for students who used only classic i-Ready.
       - name: rational_numbers_and_operations_skills_completed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of i-Ready Pro Rational Numbers and Operations (Math) skills
+          the student completed in the date range. Zero for students who used
+          only classic i-Ready.
       - name: rational_numbers_and_operations_skills_successful
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of i-Ready Pro Rational Numbers and Operations (Math) skills
+          the student was successful on in the date range. Zero for students who
+          used only classic i-Ready.
       - name: ratios_and_proportions_percent_skills_successful
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Percent of i-Ready Pro Ratios and Proportions skills the student was
+          successful on in the date range, as a whole number. Blank for students
+          who used only classic i-Ready.
       - name: ratios_and_proportions_skills_completed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of i-Ready Pro Ratios and Proportions (Math) skills the student
+          completed in the date range. Zero for students who used only classic
+          i-Ready.
       - name: ratios_and_proportions_skills_successful
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of i-Ready Pro Ratios and Proportions (Math) skills the student
+          was successful on in the date range. Zero for students who used only
+          classic i-Ready.
       - name: whole_numbers_and_operations_percent_skills_successful
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Percent of i-Ready Pro Whole Numbers and Operations skills the student
+          was successful on in the date range, as a whole number. Blank for
+          students who used only classic i-Ready.
       - name: whole_numbers_and_operations_skills_completed
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of i-Ready Pro Whole Numbers and Operations (Math) skills the
+          student completed in the date range. Zero for students who used only
+          classic i-Ready.
       - name: whole_numbers_and_operations_skills_successful
         data_type: int64
+        config:
+          meta:
+            contains_pii: true
+        description: >-
+          Number of i-Ready Pro Whole Numbers and Operations (Math) skills the
+          student was successful on in the date range. Zero for students who
+          used only classic i-Ready.
       - name: academic_year_int
         data_type: integer
+        description: >-
+          Integer academic year taken from the Dagster partition that loaded the
+          row's source file. Prefer this over academic_year for joins and
+          filters.
       - name: _dagster_partition_subject
         data_type: string
+        description: >-
+          Subject partition of the Dagster asset that loaded the row's source
+          file.

@@ -27,8 +27,9 @@ models:
         description: >-
           Date of the earliest online unit start across units 1 through 4,
           coalesced to the parsed assessment session start. The coalesce is
-          required, not defensive: unit timestamps are populated for ELA only,
-          so unit-only derivation nulls every Mathematics row.
+          required, not defensive: unit timestamps are populated for English
+          Language Arts and Science but not Mathematics, so unit-only derivation
+          nulls every Mathematics row.
         data_tests:
           - not_null:
               config:
@@ -82,6 +83,9 @@ models:
       - name: grade_level_when_assessed
         data_type: int64
         description: The student's grade at the time of testing.
+        config:
+          meta:
+            contains_pii: true
       - name: test_code
         data_type: string
         description: >-
@@ -91,57 +95,110 @@ models:
         data_type: string
         description: >-
           Cambium test lifecycle status, e.g. 'completed'. Not filtered on.
+        config:
+          meta:
+            contains_pii: true
       - name: test_performance_level
         data_type: numeric
         description: >-
           1 through 5 for English Language Arts and Mathematics, 1 through 4 for
           Science.
+        config:
+          meta:
+            contains_pii: true
       - name: test_scale_score
         data_type: numeric
         description: Scale score.
+        config:
+          meta:
+            contains_pii: true
       - name: test_score_complete
         data_type: numeric
         description: >-
           Entirely NULL from Cambium, where Pearson set it to 1 on every
           filtered row. Deliberately not synthesized.
+        config:
+          meta:
+            contains_pii: true
       - name: state_student_identifier
         data_type: int64
         description: NJ SMART state student identifier (10 digits).
+        config:
+          meta:
+            contains_pii: true
       - name: local_student_identifier
         data_type: int64
         description: >-
           PowerSchool student_number. Null for a small number of students each
-          administration; patched in kipptaf from the student crosswalk sheet.
+          administration. kipptaf int_assessments__state_nj_scores overrides it
+          from the student crosswalk sheet where the sheet lists this row's
+          student_test_uuid.
+        config:
+          meta:
+            contains_pii: true
       - name: first_name
         data_type: string
         description: Student first name as reported by Cambium.
+        config:
+          meta:
+            contains_pii: true
       - name: last_or_surname
         data_type: string
         description: Student surname as reported by Cambium.
+        config:
+          meta:
+            contains_pii: true
       - name: student_with_disabilities
         data_type: string
         description: N, IEP, 504, or B (both IEP and 504).
+        config:
+          meta:
+            contains_pii: true
       - name: multilingual_learner
         data_type: string
         description: Y/N multilingual learner flag.
+        config:
+          meta:
+            contains_pii: true
       - name: hispanic_or_latino_ethnicity
         data_type: string
         description: Y/N federal ethnicity flag.
+        config:
+          meta:
+            contains_pii: true
       - name: american_indian_or_alaska_native
         data_type: string
         description: Y/N federal race flag.
+        config:
+          meta:
+            contains_pii: true
       - name: asian
         data_type: string
         description: Y/N federal race flag.
+        config:
+          meta:
+            contains_pii: true
       - name: black_or_african_american
         data_type: string
         description: Y/N federal race flag.
+        config:
+          meta:
+            contains_pii: true
       - name: native_hawaiian_or_other_pacific_islander
         data_type: string
         description: Y/N federal race flag.
+        config:
+          meta:
+            contains_pii: true
       - name: two_or_more_races
         data_type: string
         description: Y/N federal race flag.
+        config:
+          meta:
+            contains_pii: true
       - name: white
         data_type: string
         description: Y/N federal race flag.
+        config:
+          meta:
+            contains_pii: true

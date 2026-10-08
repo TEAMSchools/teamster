@@ -1,37 +1,47 @@
 models:
   - name: int_assessments__resolved_section_enrollments
     description: >-
-      Resolves one PowerSchool course-section enrollment per score row for all
-      assessment types — internal (Illuminate-sourced), NJ state (Pearson), FL
-      state (FLDOE), and vendor assessments (iReady, STAR, DIBELS). Joins the
+      Resolves one course-section enrollment per score grain (one row per
+      `score_grain_key` of int_assessments__score_anchors) for all assessment
+      types — internal (Illuminate-sourced), NJ state (Pearson), FL state
+      (FLDOE), and vendor assessments (iReady, STAR, DIBELS). Joins the
       course-enrollment inventory from int_assessments__course_enrollments
-      directly; does not carry cc_dcid as an output column. Resolution is
+      directly, on student number and `_dbt_source_project`, and only to rows
+      with a non-null `cc_dcid`, so synthesized ES Writing rows never resolve.
+      Does not carry cc_dcid or score_grain_key as output columns. Resolution is
       tiered: tier 1 matches a subject section whose half-open enrollment window
       contains the score's anchor date (earliest date_taken across the
       canonical's members, falling back to the canonical administered_date for
       internal; test_date for state rows; the vendor completion/screening/
-      client date for iReady, STAR, and DIBELS); tier 2 falls back to the
-      homeroom section active on the same anchor date. Scores with no matching
-      section in either tier are dropped. The resolution_type column identifies
-      which tier resolved the row. Also carries the resolved section's school
-      and region so consumers can resolve a score's reporting quarter by date.
-      The score rows themselves come from int_assessments__score_anchors, which
+      client date for iReady, STAR, and DIBELS); tier 2, for NJ and FL state
+      scores only, matches a section in the score's discipline (ELA, Math,
+      Science, or Social Studies for Civics) active on the anchor date, which
+      catches high school sections whose course-level subject area (English 100,
+      Algebra II, Biology) never equals the state score's subject; tier 3 falls
+      back to the homeroom section active on the same anchor date. When several
+      candidates match — including across a grain's multiple anchor dates — the
+      lowest tier wins, then the latest `cc_dateleft`, then the highest
+      `cc_dcid`. Scores with no matching section in any tier are dropped. The
+      resolution_type column identifies whether a subject section or the
+      homeroom resolved the row. Also carries the resolved section's school and
+      region so consumers can resolve a score's reporting quarter by date. The
+      score rows themselves come from int_assessments__score_anchors, which
       carries each score's anchor date and score_grain_key.
     config:
       materialized: table
       meta:
+        contains_pii: true
         dagster:
           # Cron instead of the default eager table condition, which
           # re-fires on ANY upstream data change, recursing through view
-          # chains up to 10 levels.
-          # ~93 executions/day on the eager table condition. Its ONLY consumer
-          # is fct_assessment_scores_enrollment_scoped, already on
-          # `0 0,10,13,15,17 * * *`. Sharing that tick lets the deps-in-progress
-          # guard serialize the pass instead of rebuilding per upstream change.
+          # chains up to 10 levels. Its ONLY consumer is
+          # fct_assessment_scores_enrollment_scoped. Sharing its tick lets the
+          # deps-in-progress guard serialize the pass instead of rebuilding per
+          # upstream change.
           #
           # Refs #4821
           automation_condition:
-            cron_schedule: 0 0,10,13,15,17 * * *
+            cron_schedule: 30 0,10,13,15,17 * * *
     columns:
       - name: source_type
         data_type: string
@@ -43,17 +53,16 @@ models:
       - name: resolution_type
         data_type: string
         description: >-
-          Tier at which a matching section was found. subject_section means tier
-          1 resolved the row (a subject-matched enrollment window contained the
-          anchor date); homeroom means tier 2 resolved it (no subject section
-          matched; the homeroom section active on the anchor date was used
-          instead).
+          Kind of section that resolved the row. subject_section means tier 1 or
+          tier 2 resolved it (a section for the score's subject, matched on
+          subject area or, for state scores, on discipline, whose enrollment
+          window contained the anchor date); homeroom means tier 3 resolved it
+          (no subject section matched; the homeroom section active on the anchor
+          date was used instead).
       - name: powerschool_student_number
         data_type: int64
         description: >-
-          Student identifier. Sourced from int_assessments__scaffold for
-          internal scores, from int_assessments__state_nj_scores for NJ state
-          scores, and from int_fldoe__all_assessments for FL state scores.
+          Student number, carried from int_assessments__score_anchors.
         config:
           meta:
             source_column: int_assessments__scaffold.powerschool_student_number
@@ -62,16 +71,16 @@ models:
         description: >-
           Canonical assessment identifier grouping member assessments into one
           logical assessment. Populated only for internal scores; NULL for state
-          score rows.
+          and vendor rows.
         config:
           meta:
             source_column: int_assessments__scaffold.canonical_assessment_id
       - name: academic_year
         data_type: int64
         description: >-
-          Academic year of the assessment sitting. Populated only for state
-          score rows (sourced from the state intermediate); NULL for internal
-          score rows, which derive their year from the enrollment window.
+          Academic year of the assessment sitting. Populated for state and
+          vendor rows; NULL for internal rows, which derive their year from the
+          enrollment window.
         config:
           meta:
             source_column: int_assessments__state_nj_scores.academic_year
@@ -89,13 +98,9 @@ models:
         data_type: string
         description: >-
           Subject area of the assessment, aligned to illuminate_subject_area
-          values in int_assessments__course_enrollments. Carried through from
-          int_assessments__score_anchors, where state and vendor scores are
-          resolved from each source's raw subject value via a LEFT JOIN to
-          stg_google_sheets__assessments__vendor_subject_crosswalk, falling back
-          to the raw value when a source_system/raw_subject pair has no
-          crosswalk row, and internal scores keep the scaffold's subject_area
-          unchanged.
+          values in int_assessments__course_enrollments, and the tier 1 join
+          key. Carried through from int_assessments__score_anchors; see that
+          model for how state and vendor subjects are resolved.
         config:
           meta:
             source_column: int_assessments__scaffold.subject_area
@@ -309,13 +314,12 @@ unit_tests:
 
   - name: test_iready_dibels_source_type_prevents_grain_collision
     description: >-
-      Regression test for #3625 (fixed in a743b7d6c). An iReady Reading score
-      and a DIBELS Composite score for the same student/project/academic
-      year/administration_period/subject_area (Text Study) carry distinct
-      score_grain_key values because source_type is a key input. Both must
-      resolve to the subject section and survive as distinct output rows -- the
-      resolved-tier dedupe partitions on score_grain_key, so a shared key would
-      silently collapse them into one.
+      An iReady Reading score and a DIBELS Composite score for the same
+      student/project/academic year/administration_period/subject_area (Text
+      Study) carry distinct score_grain_key values because source_type is a key
+      input. Both must resolve to the subject section and survive as distinct
+      output rows -- the resolved-tier dedupe partitions on score_grain_key, so
+      a shared key would silently collapse them into one.
     model: int_assessments__resolved_section_enrollments
     given:
       - input: ref('int_assessments__score_anchors')
@@ -366,4 +370,240 @@ unit_tests:
             powerschool_student_number: 5,
             source_type: dibels,
             student_section_enrollment_key: 862d5edd93004a2ab12782487a3292a7,
+          }
+
+  - name: test_state_score_resolves_course_level_section_by_discipline
+    description: >-
+      A state score whose subject_area matches no section's
+      illuminate_subject_area resolves to the section in the same discipline.
+      Covers a NJ high school ELA score against an English 100 section and a FL
+      Civics score against a US History section. Both resolve as
+      subject_section.
+    model: int_assessments__resolved_section_enrollments
+    given:
+      - input: ref('int_assessments__score_anchors')
+        format: sql
+        rows: |
+          select
+              7 as powerschool_student_number,
+              cast(null as int64) as canonical_assessment_id,
+              2025 as academic_year,
+              'Spring' as administration_period,
+              'Text Study' as subject_area,
+              'kippnewark' as _dbt_source_project,
+              date('2026-04-14') as anchor_date,
+              'state_nj' as source_type,
+              'k7' as score_grain_key
+          union all
+          select
+              9 as powerschool_student_number,
+              cast(null as int64) as canonical_assessment_id,
+              2025 as academic_year,
+              'Spring' as administration_period,
+              'Civics' as subject_area,
+              'kippmiami' as _dbt_source_project,
+              date('2026-05-04') as anchor_date,
+              'state_fl' as source_type,
+              'k9' as score_grain_key
+      - input: ref('int_assessments__course_enrollments')
+        rows:
+          - {
+              powerschool_student_number: 7,
+              _dbt_source_project: kippnewark,
+              illuminate_subject_area: English 100,
+              discipline: ELA,
+              courses_credittype: ENG,
+              cc_dateenrolled: 2025-09-02,
+              cc_dateleft: 2026-06-19,
+              cc_dcid: 701,
+              powerschool_school_id: 73253,
+              region: Newark,
+            }
+          - {
+              powerschool_student_number: 9,
+              _dbt_source_project: kippmiami,
+              illuminate_subject_area: US History,
+              discipline: Social Studies,
+              courses_credittype: SOC,
+              cc_dateenrolled: 2025-08-11,
+              cc_dateleft: 2026-06-04,
+              cc_dcid: 901,
+              powerschool_school_id: 30200804,
+              region: Miami,
+            }
+    expect:
+      rows:
+        - {
+            powerschool_student_number: 7,
+            source_type: state_nj,
+            resolution_type: subject_section,
+            student_section_enrollment_key: e79e1c231c32598d915358218e146d27,
+          }
+        - {
+            powerschool_student_number: 9,
+            source_type: state_fl,
+            resolution_type: subject_section,
+            student_section_enrollment_key: a88dfa2c0671a2db1e3bc471f46aef56,
+          }
+
+  - name: test_state_score_prefers_discipline_section_over_homeroom
+    description: >-
+      A state score with both a same-discipline section and a homeroom section
+      active on its anchor date resolves to the discipline section, not the
+      homeroom.
+    model: int_assessments__resolved_section_enrollments
+    given:
+      - input: ref('int_assessments__score_anchors')
+        format: sql
+        rows: |
+          select
+              8 as powerschool_student_number,
+              cast(null as int64) as canonical_assessment_id,
+              2025 as academic_year,
+              'Spring' as administration_period,
+              'Mathematics' as subject_area,
+              'kippnewark' as _dbt_source_project,
+              date('2026-04-15') as anchor_date,
+              'state_nj' as source_type,
+              'k8' as score_grain_key
+      - input: ref('int_assessments__course_enrollments')
+        rows:
+          - {
+              powerschool_student_number: 8,
+              _dbt_source_project: kippnewark,
+              illuminate_subject_area: Algebra I,
+              discipline: Math,
+              courses_credittype: MATH,
+              cc_dateenrolled: 2025-09-02,
+              cc_dateleft: 2026-06-19,
+              cc_dcid: 701,
+              powerschool_school_id: 73253,
+              region: Newark,
+            }
+          - {
+              powerschool_student_number: 8,
+              _dbt_source_project: kippnewark,
+              illuminate_subject_area: null,
+              discipline: null,
+              courses_credittype: HR,
+              cc_dateenrolled: 2025-09-02,
+              cc_dateleft: 2026-06-19,
+              cc_dcid: 702,
+              powerschool_school_id: 73253,
+              region: Newark,
+            }
+    expect:
+      rows:
+        - {
+            powerschool_student_number: 8,
+            resolution_type: subject_section,
+            student_section_enrollment_key: e79e1c231c32598d915358218e146d27,
+          }
+
+  - name: test_state_score_with_unmapped_subject_falls_back_to_homeroom
+    description: >-
+      A state score whose subject_area has no discipline mapping gets a null
+      discipline, so it skips the discipline tier and resolves to the homeroom
+      even when a section in some discipline is active on its anchor date.
+    model: int_assessments__resolved_section_enrollments
+    given:
+      - input: ref('int_assessments__score_anchors')
+        format: sql
+        rows: |
+          select
+              8 as powerschool_student_number,
+              cast(null as int64) as canonical_assessment_id,
+              2025 as academic_year,
+              'Spring' as administration_period,
+              'Health' as subject_area,
+              'kippnewark' as _dbt_source_project,
+              date('2026-04-15') as anchor_date,
+              'state_nj' as source_type,
+              'k8-unmapped' as score_grain_key
+      - input: ref('int_assessments__course_enrollments')
+        rows:
+          - {
+              powerschool_student_number: 8,
+              _dbt_source_project: kippnewark,
+              illuminate_subject_area: Algebra I,
+              discipline: Math,
+              courses_credittype: MATH,
+              cc_dateenrolled: 2025-09-02,
+              cc_dateleft: 2026-06-19,
+              cc_dcid: 701,
+              powerschool_school_id: 73253,
+              region: Newark,
+            }
+          - {
+              powerschool_student_number: 8,
+              _dbt_source_project: kippnewark,
+              illuminate_subject_area: null,
+              discipline: null,
+              courses_credittype: HR,
+              cc_dateenrolled: 2025-09-02,
+              cc_dateleft: 2026-06-19,
+              cc_dcid: 702,
+              powerschool_school_id: 73253,
+              region: Newark,
+            }
+    expect:
+      rows:
+        - {
+            powerschool_student_number: 8,
+            resolution_type: homeroom,
+            student_section_enrollment_key: 4273d009759f72c159d95d262f431287,
+          }
+
+  - name: test_vendor_score_skips_discipline_match
+    description: >-
+      The discipline match applies to state scores only. A vendor score with a
+      same-discipline section and a homeroom section still falls back to the
+      homeroom.
+    model: int_assessments__resolved_section_enrollments
+    given:
+      - input: ref('int_assessments__score_anchors')
+        format: sql
+        rows: |
+          select
+              8 as powerschool_student_number,
+              cast(null as int64) as canonical_assessment_id,
+              2025 as academic_year,
+              'MOY' as administration_period,
+              'Mathematics' as subject_area,
+              'kippnewark' as _dbt_source_project,
+              date('2026-01-20') as anchor_date,
+              'iready' as source_type,
+              'k8-iready' as score_grain_key
+      - input: ref('int_assessments__course_enrollments')
+        rows:
+          - {
+              powerschool_student_number: 8,
+              _dbt_source_project: kippnewark,
+              illuminate_subject_area: Algebra I,
+              discipline: Math,
+              courses_credittype: MATH,
+              cc_dateenrolled: 2025-09-02,
+              cc_dateleft: 2026-06-19,
+              cc_dcid: 701,
+              powerschool_school_id: 73253,
+              region: Newark,
+            }
+          - {
+              powerschool_student_number: 8,
+              _dbt_source_project: kippnewark,
+              illuminate_subject_area: null,
+              discipline: null,
+              courses_credittype: HR,
+              cc_dateenrolled: 2025-09-02,
+              cc_dateleft: 2026-06-19,
+              cc_dcid: 702,
+              powerschool_school_id: 73253,
+              region: Newark,
+            }
+    expect:
+      rows:
+        - {
+            powerschool_student_number: 8,
+            resolution_type: homeroom,
+            student_section_enrollment_key: 4273d009759f72c159d95d262f431287,
           }

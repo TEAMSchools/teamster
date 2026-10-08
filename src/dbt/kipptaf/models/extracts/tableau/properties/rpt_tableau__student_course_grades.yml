@@ -135,6 +135,14 @@ models:
         config:
           meta:
             contains_pii: true
+      - name: is_hs_honors_program
+        data_type: boolean
+        description:
+          High School Honors Program flag, from
+          `int_extracts__student_enrollments`. Null for Miami.
+        config:
+          meta:
+            contains_pii: true
       - name: is_retained_year
         data_type: boolean
         description: Retained in the row's academic year.

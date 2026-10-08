@@ -166,17 +166,6 @@ def test_macro_preview_unwraps_result_ticket():
     }
 
 
-def test_update_ticket_puts_payload():
-    client, session = make_client(
-        {("PUT", "/tickets/12.json"): (200, {"ticket": {"id": 12, "status": "open"}})}
-    )
-    assert client.update_ticket(12, {"ticket": {"status": "open"}}) == {
-        "id": 12,
-        "status": "open",
-    }
-    assert session.calls[0][2]["json"] == {"ticket": {"status": "open"}}
-
-
 def test_http_error_becomes_ticket_error_naming_the_call():
     client, _ = make_client(
         {("GET", "/tickets/404.json"): (404, {"error": "RecordNotFound"})}

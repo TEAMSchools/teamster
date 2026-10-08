@@ -1,11 +1,10 @@
 views:
   - name: student_attendance_enrollment_periods_view
     description: >-
-      Student counts and rates for a period — chronic absence and ADA tier mix
-      as of the period's last membership day, truancy on any membership day in
-      it. Use this view for "how many students crossed a line" questions
-      (chronic absence rate this year, ADA tier mix this month, truancy trend by
-      week).
+      Student counts and rates for a period — chronic absence, ADA tier mix and
+      truancy, all as of the period's last membership day. Use this view for
+      "how many students crossed a line" questions (chronic absence rate this
+      year, ADA tier mix this month, truancy trend by week).
 
       Every measure here is student-weighted: it counts students against a
       threshold they reached cumulatively by period end. There is no
@@ -27,11 +26,10 @@ views:
       student stops appearing rather than carrying forward, and a trend's
       denominator shifts between points.
 
-      Truancy is the one measure here that is not read as of period end. Chronic
-      absence and ADA tier only ever accumulate, so their last-day reading is
-      their high-water mark; truancy is a status that turns on and off within a
-      period, so count_truants and pct_truant count a student who met the
-      criteria on any membership day in it. For truancy as of one specific date,
+      Truancy is read as of period end like every other measure here. It is a
+      status that can turn on and off within a period, so count_truants and
+      pct_truant leave out a student who was truant earlier in the period and
+      recovered by its last membership day. For truancy as of any other date,
       pin attendance_date on student_attendance_enrollment_daily_view instead.
 
       No minimum-membership-day floor is applied to any rate on this view. Every

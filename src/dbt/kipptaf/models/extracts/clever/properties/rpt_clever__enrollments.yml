@@ -1,9 +1,24 @@
 models:
   - name: rpt_clever__enrollments
+    description: >-
+      Clever enrollments.csv -- one row per student per active section, plus a
+      grade-level homeroom section per student. Built on the conformed
+      enrollment models rather than SIS staging, and restricted to the same
+      student population as students.csv (current year, active or
+      pre-registered, in district, NJ only); an enrollment for a student Clever
+      never received is an orphan it drops.
     columns:
       - name: school_id
         data_type: int64
+        description: PowerSchool school number.
       - name: section_id
         data_type: string
+        description: >-
+          Region-prefixed PowerSchool section id, or for the homeroom section
+          the academic-year offset, school number, and zero-padded grade level.
       - name: student_id
         data_type: int64
+        description: PowerSchool student_number.
+        config:
+          meta:
+            contains_pii: true

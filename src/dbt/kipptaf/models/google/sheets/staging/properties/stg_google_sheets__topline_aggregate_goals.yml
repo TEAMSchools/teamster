@@ -1,5 +1,7 @@
 models:
   - name: stg_google_sheets__topline_aggregate_goals
+    config:
+      enabled: false
     columns:
       - name: Layer
         data_type: string

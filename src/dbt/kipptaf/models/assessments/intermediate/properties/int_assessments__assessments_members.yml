@@ -1,68 +1,107 @@
 models:
   - name: int_assessments__assessments_members
     description: >-
-      Assessment-definition layer (member-grain). Joins Illuminate `assessments`
-      with the AppSheet `Illuminate Assessments Extension` overrides and an
-      `agl_dedup` CTE for `grade_level_id`. Exposes `canonical_assessment_id` as
-      the FK to `int_assessments__assessments_canonical` — computed via
-      `first_value(assessment_id) over (partition by is_internal_assessment,
-      academic_year, scope, subject_area, module_code, grade_level_id order by
-      assessment_id)`. Consumers needing canonical attrs (title, administered
-      date, grade level, etc.) join `int_assessments__assessments_canonical` on
-      that FK.
+      Assessment-definition layer, one row per Illuminate `assessment_id`. LEFT
+      JOINs Illuminate `assessments` to the AppSheet `Illuminate Assessments
+      Extension` overrides and to an `agl_dedup` CTE (lowest `grade_level_id`
+      per assessment). Exposes `canonical_assessment_id` — for internal
+      assessments, `first_value(assessment_id) over (partition by
+      is_internal_assessment, is_florida_assessment, academic_year, scope,
+      subject_area, module_code, grade_level_id order by assessment_id)`; for
+      external assessments, the row's own `assessment_id`. Consumers needing
+      canonical attrs (title, administered date, grade level, etc.) join
+      `int_assessments__assessments_canonical` on that FK. Network policy is one
+      shared internal assessment per module across regions, so copies merge
+      across regions by design. The exception is Miami, which built its own
+      Florida versions of internal assessments in SY24-25 and SY25-26 (before it
+      left Illuminate). `is_florida_assessment`, an internal flag that is not
+      projected (true when AppSheet `regions_assessed` is exactly `Miami`),
+      keeps those copies out of New Jersey canonical groups, so New Jersey
+      students never inherit a Florida title or administered date. Assessments
+      tagged with Miami alongside other regions stay on the New Jersey side.
     columns:
       - name: assessment_id
         data_tests:
           - unique
           - not_null
         data_type: int64
+        description: Primary key. Illuminate assessment id.
       - name: title
         data_type: string
+        description: Assessment title, from `int_illuminate__assessments`.
       - name: academic_year
         data_type: int64
+        description: From `int_illuminate__assessments`.
       - name: academic_year_clean
         data_type: int64
+        description: From `int_illuminate__assessments`.
       - name: scope
         data_type: string
+        description: Assessment scope, from `int_illuminate__assessments`.
       - name: creator_first_name
         data_type: string
+        description: >-
+          First name of the staff member who created the assessment, from
+          `int_illuminate__assessments`.
       - name: creator_last_name
         data_type: string
+        description: >-
+          Last name of the staff member who created the assessment, from
+          `int_illuminate__assessments`.
       - name: performance_band_set_id
         data_type: int64
+        description: From `int_illuminate__assessments`.
       - name: assessment_type
         data_type: string
+        description: From `int_illuminate__assessments`.
       - name: tags
         data_type: string
+        description: From `int_illuminate__assessments`.
       - name: module_code
         data_type: string
+        description: >-
+          AppSheet extension `module_code` (`module_type` concatenated with
+          `module_sequence`). Null for external assessments.
       - name: module_type
         data_type: string
+        description: AppSheet extension value. Null for external assessments.
       - name: module_sequence
         data_type: int64
+        description: AppSheet extension value. Null for external assessments.
       - name: illuminate_grade_level_id
         data_type: int64
+        description: >-
+          AppSheet extension grade level plus one, matching Illuminate's
+          1-indexed grade level ids. Null for external assessments.
       - name: regions_assessed
         data_type: string
+        description: >-
+          Comma-separated region list from the AppSheet extension. Null for
+          external assessments.
       - name: regions_report_card
         data_type: string
+        description: AppSheet extension value. Null for external assessments.
       - name: regions_progress_report
         data_type: string
+        description: AppSheet extension value. Null for external assessments.
       - name: regions_assessed_array
         data_type: array<string>
         description: >-
           `regions_assessed` with all whitespace stripped, then split on comma.
-          Within-row duplicates and any empty-string elements (from leading or
-          trailing commas) are resolved by `illuminate_deduped` in
-          `dim_assessment_administrations`. Consumers can `cross join
+          Within-row duplicates and empty-string elements (from leading or
+          trailing commas) are not removed. Consumers can `cross join
           unnest(regions_assessed_array)` to get one row per (assessment,
           region).
       - name: administered_at
         data_type: date
-        description: First non-null of administered_at.
+        description: >-
+          AppSheet extension `administered_at`, falling back to Illuminate
+          `administered_at`.
       - name: subject_area
         data_type: string
-        description: First non-null of subject, subject_area.
+        description: >-
+          AppSheet extension `subject`, falling back to Illuminate
+          `subject_area`.
       - name: grade_level_id
         data_type: int64
         description: >-
@@ -72,14 +111,16 @@ models:
           assessment.
       - name: is_internal_assessment
         data_type: boolean
-        description: Conditional on assessment_id.
+        description: True when the assessment has an AppSheet extension row.
 
       - name: canonical_assessment_id
         data_type: int64
         description: >-
-          FK to `int_assessments__assessments_canonical`. The lowest
-          `assessment_id` within the partition `(academic_year, scope,
+          FK to `int_assessments__assessments_canonical` for internal
+          assessments — the lowest `assessment_id` among internal assessments in
+          the partition `(is_florida_assessment, academic_year, scope,
           subject_area, module_code, grade_level_id)`. Multipart administrations
           (e.g., the CRA + CRA-Essay halves of one logical Unit Quarterly
-          Assessment) share a `canonical_assessment_id`. Solo assessments equal
-          their own `assessment_id`.
+          Assessment) share a `canonical_assessment_id`. Solo internal
+          assessments and every external assessment equal their own
+          `assessment_id`; external ids have no row in the canonical model.

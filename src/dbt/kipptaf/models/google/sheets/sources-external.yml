@@ -526,6 +526,7 @@ sources:
             sheet_range: src_google_sheets__topline_aggregate_goals
             skip_leading_rows: 1
         config:
+          enabled: false
           meta:
             dagster:
               asset_key:
@@ -1607,7 +1608,7 @@ sources:
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/1FCc28XWxFj3gSfItGGJ2tVU0C1fYD1JxKRxuSFqisMo
-            sheet_range: src_google_sheets__people__locations_v3
+            sheet_range: src_google_sheets__people__locations_v4
             skip_leading_rows: 1
         config:
           meta:
@@ -1656,6 +1657,10 @@ sources:
           - name: Focus_School_ID
             data_type: STRING
           - name: Google_Student_orgUnitPath
+            data_type: STRING
+          - name: NCES_LEA_ID
+            data_type: STRING
+          - name: NCES_School_ID
             data_type: STRING
       - name: src_google_sheets__people__campus_crosswalk
         external:
@@ -2363,3 +2368,41 @@ sources:
                 - sheets
                 - people
                 - cube_access_individual_exceptions
+      - name: src_google_sheets__ignite__treatment_sections
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1FKVaJD-7RIvMkzM1_4mJ8IbNQDlWAXbhpPRw29CkGf8
+            sheet_range: src_ignite__treatment_sections
+            skip_leading_rows: 1
+        columns:
+          - name: ref_id
+            data_type: string
+          - name: school_name
+            data_type: string
+          - name: academic_year
+            data_type: int64
+          - name: course_number
+            data_type: string
+          - name: section_number
+            data_type: string
+          - name: class_period
+            data_type: string
+          - name: treatment_cp
+            data_type: int64
+          - name: treatment_rdc
+            data_type: int64
+          - name: treatment_rr
+            data_type: int64
+          - name: status
+            data_type: string
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - ignite
+                - treatment_sections

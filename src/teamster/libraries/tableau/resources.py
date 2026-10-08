@@ -1,5 +1,5 @@
 from dagster import ConfigurableResource, InitResourceContext
-from pydantic import PrivateAttr
+from pydantic import Field, PrivateAttr
 from requests.exceptions import ConnectionError as RequestsConnectionError
 from requests.exceptions import Timeout
 from tableauserverclient.models.tableau_auth import PersonalAccessTokenAuth
@@ -23,7 +23,7 @@ class StaleSessionError(Exception):
 class TableauServerResource(ConfigurableResource):
     server_address: str
     token_name: str
-    personal_access_token: str
+    personal_access_token: str = Field(repr=False)
     site_id: str
     api_version: str = "3.25"
 

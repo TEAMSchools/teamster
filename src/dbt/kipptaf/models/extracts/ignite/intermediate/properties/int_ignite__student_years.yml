@@ -1,0 +1,28 @@
+models:
+  - name: int_ignite__student_years
+    description:
+      The IGNITE R2I study population — one row per student per study year. A
+      student is in scope for a year when their latest enrollment that year is
+      grades 9-12 at a New Jersey school, and the year appears on a resolved row
+      of `stg_google_sheets__ignite__treatment_sections`. Every IGNITE model
+      joins here rather than restating the population, so adding a study year to
+      the treatment sheet widens the whole extract at once.
+    config:
+      meta:
+        contains_pii: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - academic_year
+          config:
+            severity: error
+    columns:
+      - name: student_number
+        data_type: int64
+        description:
+          KIPP student number. School-facing identifier and therefore PII.
+      - name: academic_year
+        data_type: int64
+        description: Start year of the school year, so 2024 is SY2024-2025.

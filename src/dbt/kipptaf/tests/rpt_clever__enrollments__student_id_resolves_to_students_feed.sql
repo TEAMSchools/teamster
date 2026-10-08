@@ -1,8 +1,3 @@
--- Every student_id shipped in enrollments.csv must resolve to a row in
--- students.csv. students.csv is scoped to the current academic year while
--- enrollments.csv is not, so a region whose SIS is frozen at a prior year keeps
--- shipping enrollments against students Clever no longer has -- the failure mode
--- that left Miami with live enrollment rows and zero students.
 with
     enrollment_students as (
         select cast(student_id as string) as student_id,

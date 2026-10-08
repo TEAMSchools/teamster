@@ -23,6 +23,8 @@ class NJSmartPowerschool(BaseModel):
     nj_se_reevaluationdate: str | None = None
     nj_se_referraldate: str | None = None
     nj_timeinregularprogram: str | None = None
+    preschooledenvironment: str | None = None
+    schoolageedenvironment: str | None = None
     sldbasicreadingskills: str | None = None
     sldlisteningcomprehension: str | None = None
     sldmathcalculations: str | None = None

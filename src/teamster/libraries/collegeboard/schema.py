@@ -1132,6 +1132,7 @@ class SAT(SFTPFile):
     latest_sat_reading: str | None = None
     latest_sat_revised: str | None = None
     latest_sat_sci_cross: str | None = None
+    latest_sat_sci_practices_foundations: str | None = None
     latest_sat_total: str | None = None
     latest_sat_words_context: str | None = None
     latest_sat_writ_lang: str | None = None

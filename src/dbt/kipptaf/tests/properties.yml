@@ -259,6 +259,14 @@ data_tests:
             name: dim_regions
 
   - name: test_incorrect_student_number_pearson
+    description: >-
+      Returns int_assessments__state_nj_scores rows from academic year 2017
+      onward whose student_number is null or does not match a student_number
+      enrolled in the same district and year. Each failure is a crosswalk gap to
+      fix by adding the row's student_test_uuid and correct student_number to
+      the Pearson student crosswalk sheet. Failure rows carry student names and
+      state and local ids, so treat stored failures as PII and never paste them
+      into GitHub.
     config:
       meta:
         dagster:
@@ -663,15 +671,15 @@ data_tests:
       student_id in enrollments must exist in students. students is scoped to
       the current academic year and enrollments is not, so a region whose SIS is
       frozen at a prior year keeps shipping course enrollments for students that
-      no longer appear in the student feed. Warns rather than errors, unlike the
-      school_id check, because the two feeds rebuild asymmetrically under
-      state:modified+ -- students descends from
-      int_extracts__student_enrollments while enrollments descends only from the
-      powerschool staging models, so a PR touching the enrollment chain rebuilds
-      one side and reads the other frozen from the staging defer copies. That
-      vintage gap alone produces orphans and blocks CI on changes that cannot
-      affect feed membership.
+      no longer appear in the student feed, and an out-of-district filter
+      applied to one feed but not the other ships enrollments for students
+      Clever was never sent. Both feeds filter the same population from
+      int_extracts__student_enrollments, each with its own copy of the filter;
+      this test catches the two copies drifting apart. A PR touching only
+      int_students__course_enrollments rebuilds enrollments alone, but that
+      cannot change which students either feed carries.
     config:
+      severity: error
       meta:
         dagster:
           ref:
@@ -1137,3 +1145,24 @@ data_tests:
         dagster:
           ref:
             name: int_extracts__student_enrollments
+  - name: stg_adp_workforce_now__workers__ghost_open_records
+    description: >-
+      Flags associates whose open (9999-12-31) record comes from a workers
+      partition older than the second-newest one. Terminated workers stay in
+      every asOfDate snapshot, so the newest partition holds every associate,
+      and dropping out of the newest two means ADP hard-deleted or merged the
+      record. One day of slack absorbs a single missed or partial nightly pull.
+      A burst of hits points to two bad pulls in a row, not ghosts; re-pull the
+      newest partitions before rematerializing per associate. The nightly
+      schedule re-pulls only a rolling window, so a deletion never reaches older
+      partitions on its own. On a hit, rematerialize the ADP workers partitions
+      spanning the associate's active dates (through last_seen_partition_date);
+      the re-pull drops the record and the downstream tables rebuild. Warn
+      rather than error so a ghost does not stop the staging build and every ADP
+      consumer behind it.
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: stg_adp_workforce_now__workers

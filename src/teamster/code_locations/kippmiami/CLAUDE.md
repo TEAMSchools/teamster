@@ -12,7 +12,7 @@ LOCAL_TIMEZONE = ZoneInfo("America/New_York")
 | Module      | Type          | Trigger                                                                |
 | ----------- | ------------- | ---------------------------------------------------------------------- |
 | `dbt`       | dbt assets    | `AutomationConditionSensor`                                            |
-| `finalsite` | API + SFTP    | schedule (contacts 04:00 + 12:00 ET) + couchdrop sensor                |
+| `finalsite` | API + SFTP    | schedule (contacts 00:15 + 12:00 ET) + couchdrop sensor                |
 | `fldoe`     | SFTP assets   | `AutomationConditionSensor`                                            |
 | `iready`    | SFTP assets   | sensor (`build_iready_sftp_sensor`)                                    |
 | `renlearn`  | SFTP assets   | sensor (`build_renlearn_sftp_sensor`)                                  |
@@ -77,6 +77,11 @@ Constraints to preserve when touching any of these:
   be enabled by hand after a one-off manual load of all 79 tables has seeded
   their baselines (the 04:00 tier seeds only the count-only tables). A stopped
   sensor silently freezes every `updated_at`-tracked table.
+- **The `contacts` API pull runs at 00:15, not 04:00.** That still lands before
+  FRESH's 05:00 Tableau extract, so Miami's morning dashboard reads same-day
+  data, and it puts `contacts` ahead of the NJ consumers of
+  `stg_finalsite__contacts` at 01:00 (Google Directory user sync) and 01:25
+  (DeansList). It is independent of the dlt Focus 04:00 tier above. See #4715.
 
 `kippmiami__extracts__focus__asset_job_schedule` also has to be STARTED in the
 Dagster+ UI; its `defaultStatus` is STOPPED and it had never run in prod as of

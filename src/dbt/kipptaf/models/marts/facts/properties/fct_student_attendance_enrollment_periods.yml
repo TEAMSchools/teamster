@@ -9,11 +9,9 @@ models:
       fct_student_attendance_enrollment_daily, which is where the tier ladder,
       the eligibility floor and the year-to-date accumulation are expressed — so
       this fact and that one cannot disagree. All this model decides is which of
-      a period's rows to read: the row at period_end_date_key for every value
-      but is_truant, which reads across the period's membership days because
-      truancy is a status that turns on and off within a period. Identity comes
-      from int_students__enrollment_daily, because no fact in this layer
-      publishes a natural student identifier.
+      a period's rows to read: the row at period_end_date_key, for every value
+      including is_truant. Identity comes from int_students__enrollment_daily,
+      because no fact in this layer publishes a natural student identifier.
 
       School is not projected. It groups the periods and is a hash input to
       student_period_key, but it is reachable from student_enrollment_key
@@ -258,27 +256,21 @@ models:
       - name: is_truant
         data_type: boolean
         description: >-
-          Whether the student met regional truancy criteria on any membership
-          day in the period. Regional criteria (Miami: 15 or more absences in a
-          90-day window; the NJ regions: a projected 50 or more for the year)
-          are computed upstream in int_students__attendance_daily and carried
-          through unchanged. No membership-day floor is applied to it, which
-          matches both regional rules — neither requires one.
+          Whether the student met regional truancy criteria as of
+          period_end_date_key, the student's last membership day in the period.
+          Regional criteria (Miami: 15 or more absences in a 90-day window; the
+          NJ regions: a projected 50 or more for the year) are computed upstream
+          in int_students__attendance_daily and carried through unchanged. No
+          membership-day floor is applied to it, which matches both regional
+          rules — neither requires one.
 
-          This is the only column here not read as of period_end_date_key.
-          Truancy is a status rather than an event, so it turns on and off
-          within a period, and a period-end reading would report only whether it
-          happened to be on that last day — dropping every student who was
-          truant earlier in the period and had recovered by its end. The two
-          readings diverge most in the opening weeks of an academic year, where
-          the NJ projection swings on a handful of days, and converge as the
-          year settles.
-
-          Break days are excluded because is_truant is carried forward across
-          them on fct_student_attendance_enrollment_daily: without the
-          membership-day restriction, a period starting on a holiday would
-          import the previous period's status. Null when the period contains no
-          measured membership day.
+          Read as of period end like every other value here. Truancy is a status
+          that can turn on and off within a period, so a student who was truant
+          earlier in the period and recovered by its end reads false. For
+          "truant at any point in the period", aggregate the daily fact's
+          is_truant over the period's membership days instead. Null when the
+          student has no measured membership day year-to-date as of
+          period_end_date_key, the same rule as ada_tier.
 
       - name: ada_tier
         data_type: string
@@ -648,9 +640,8 @@ unit_tests:
 
       This is the join fct_student_attendance_enrollment_periods now depends on,
       since it reads every value from fct_student_attendance_enrollment_daily
-      rather than deriving any of them. is_truant is the one column that reads
-      across the period rather than at its end;
-      test_periods_truancy_reads_any_membership_day covers it.
+      rather than deriving any of them. test_periods_truancy_reads_period_end
+      covers is_truant on its own.
     model: fct_student_attendance_enrollment_periods
     given:
       - input: ref('int_students__enrollment_daily')
@@ -739,18 +730,16 @@ unit_tests:
           ('da4753748381ee38275c6a5649f378dc', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'week', date '2025-09-01', date '2025-09-01', date '2025-09-05', 5.0, 5.0, true, 'Tier 4', true)
         ])
 
-  - name: test_periods_truancy_reads_any_membership_day
+  - name: test_periods_truancy_reads_period_end
     description:
-      Two students who are not truant on their period's last membership day, for
-      opposite reasons. Student 1 is truant on the second and third of five
-      membership days and has recovered by the fifth, so is_truant must read
-      true from the middle of the period while ada_tier and
-      is_chronically_absent still read the fifth day's Tier 1 and false --
-      truancy is the one column that reads across the period rather than at its
-      end. Student 2 opens the period with a break day carrying true from the
-      prior month and is not truant on either membership day that follows, so
-      is_truant must read false -- the aggregate is restricted to membership
-      days, or a leading holiday would import the previous period's status.
+      Two students who are not truant on their period's last membership day.
+      Student 1 is truant on the second and third of five membership days and
+      has recovered by the fifth, so is_truant must read false, matching the
+      fifth day's ada_tier and is_chronically_absent -- truancy is read as of
+      period end like every other column, not across the period. Student 2 opens
+      the period with a break day carrying true from the prior month and is not
+      truant on either membership day that follows, so is_truant must read false
+      -- a leading holiday must not import the previous period's status.
     model: fct_student_attendance_enrollment_periods
     given:
       - input: ref('int_students__enrollment_daily')
@@ -838,9 +827,9 @@ unit_tests:
             n_present_days_ytd float64, is_truant bool,
             ada_tier string, is_chronically_absent bool
           >
-          ('4c63e1617a32c43b1a19311bc66f3c12', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'year', date '2025-07-01', date '2025-09-01', date '2025-09-05', 5.0, 4.0, true, 'Tier 1', false),
-          ('27c6f1c36f4368eb481fcf495685c2a0', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'month', date '2025-09-01', date '2025-09-01', date '2025-09-05', 5.0, 4.0, true, 'Tier 1', false),
-          ('da4753748381ee38275c6a5649f378dc', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'week', date '2025-09-01', date '2025-09-01', date '2025-09-05', 5.0, 4.0, true, 'Tier 1', false),
+          ('4c63e1617a32c43b1a19311bc66f3c12', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'year', date '2025-07-01', date '2025-09-01', date '2025-09-05', 5.0, 4.0, false, 'Tier 1', false),
+          ('27c6f1c36f4368eb481fcf495685c2a0', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'month', date '2025-09-01', date '2025-09-01', date '2025-09-05', 5.0, 4.0, false, 'Tier 1', false),
+          ('da4753748381ee38275c6a5649f378dc', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'week', date '2025-09-01', date '2025-09-01', date '2025-09-05', 5.0, 4.0, false, 'Tier 1', false),
           ('a28bd0cb8d767fda67687b3e03ac54b4', '9f1c2b7d4e6a8035bc17d92f4e0a6b58', null, 2025, 'year', date '2025-07-01', date '2025-09-02', date '2025-09-03', 12.0, 10.0, false, 'Tier 1', false),
           ('469b5b8b6ef42be202979e0bbf7699bd', '9f1c2b7d4e6a8035bc17d92f4e0a6b58', null, 2025, 'month', date '2025-09-01', date '2025-09-02', date '2025-09-03', 12.0, 10.0, false, 'Tier 1', false),
           ('f9e83d295f5293f1eb52d94a028ed666', '9f1c2b7d4e6a8035bc17d92f4e0a6b58', null, 2025, 'week', date '2025-09-01', date '2025-09-02', date '2025-09-03', 12.0, 10.0, false, 'Tier 1', false)

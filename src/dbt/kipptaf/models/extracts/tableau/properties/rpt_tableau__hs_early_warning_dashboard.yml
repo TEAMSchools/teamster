@@ -1,108 +1,327 @@
 models:
   - name: rpt_tableau__hs_early_warning_dashboard
+    description: >-
+      One row per student, reporting term and course for current-year high
+      school students, feeding the HS Early Warning Tableau dashboard. Starts
+      from int_extracts__student_enrollments, filtered to the current academic
+      year, high school, the student's primary enrollment for the year (rn_year
+      = 1), and students who finished the year or are still enrolled
+      (is_enrolled_recent). Each student is crossed with their school's
+      reporting terms from the reporting terms sheet (type RT, excluding Summer
+      School and Y1). That join is inner, so a school with no RT rows in the
+      sheet drops out entirely. Course grades attach per term from
+      base_powerschool__final_grades, leaving out courses excluded from GPA; a
+      student-term with no qualifying grades still appears once, with null
+      course and grade columns. Term and year GPA attach per student and term.
+      Suspension counts and days attach per student for the whole academic year,
+      so they repeat on every term and course row. The dashboard's early-warning
+      flags are Tableau calculations built on these columns, not dbt columns.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - reporting_term
+              - course_number
     columns:
       - name: studentid
         data_type: int64
+        description: >-
+          PowerSchool internal student id (surrogate key). Unique within a
+          region only.
       - name: student_number
         data_type: int64
+        description: Student number assigned by the school.
+        config:
+          meta:
+            contains_pii: true
       - name: student_name
         data_type: string
+        description: Student name, formatted Last, First.
+        config:
+          meta:
+            contains_pii: true
       - name: dob
         data_type: date
+        description: Student date of birth.
+        config:
+          meta:
+            contains_pii: true
       - name: academic_year
         data_type: int64
+        description: >-
+          Starting year of the academic year (July start). Always the current
+          academic year in this model.
       - name: region
         data_type: string
+        description: >-
+          Region name (Newark, Camden, Paterson or Miami), taken from the source
+          relation of the enrollment record.
       - name: school_level
         data_type: string
+        description: School level of the enrollment. Always HS in this model.
       - name: schoolid
         data_type: int64
+        description: PowerSchool school number of the enrollment.
       - name: school_name
         data_type: string
+        description: Full name of the school.
       - name: school
         data_type: string
+        description: Short school abbreviation.
       - name: grade_level
         data_type: int64
+        description: Grade level of the enrollment.
       - name: cohort
         data_type: int64
+        description: >-
+          Class cohort (expected graduation year). For high school students, the
+          cohort set in the student's first year at the school.
       - name: advisory
         data_type: string
+        description: >-
+          Advisor name (Last, First) for the student's high school advisory
+          section.
       - name: iep_status
         data_type: string
+        description: >-
+          Has IEP when the student's special education field starts with SPED,
+          otherwise No IEP.
+        config:
+          meta:
+            contains_pii: true
       - name: lep_status
         data_type: boolean
+        description: Whether the student is flagged as an English learner.
+        config:
+          meta:
+            contains_pii: true
       - name: c_504_status
         data_type: boolean
+        description: >-
+          Whether the student has a 504 plan. Null means the status is unknown,
+          not that there is no plan.
+        config:
+          meta:
+            contains_pii: true
       - name: gender
         data_type: string
+        description: Student gender code (for example M or F).
+        config:
+          meta:
+            contains_pii: true
       - name: ethnicity
         data_type: string
+        description: Student race/ethnicity code from the SIS.
+        config:
+          meta:
+            contains_pii: true
       - name: enroll_status
         data_type: int64
+        description: >-
+          SIS enrollment status code. 0 is currently enrolled; other values can
+          appear for students who completed the year and have since left or
+          graduated.
       - name: is_retained_year
         data_type: boolean
+        description:
+          Whether the student is repeating a grade this academic year.
+        config:
+          meta:
+            contains_pii: true
       - name: is_retained_ever
         data_type: boolean
+        description: >-
+          Whether the student has repeated a grade in any year on record.
+        config:
+          meta:
+            contains_pii: true
       - name: year_in_network
         data_type: int64
+        description: >-
+          Which year of enrollment in the network this is for the student,
+          starting at 1.
       - name: db_name
         data_type: string
+        description: >-
+          Dagster code location of the region's data (for example kippnewark).
       - name: boy_status
         data_type: string
+        description: >-
+          Beginning-of-year status compared with the student's previous
+          enrollment year - New, Re-Enrolled, Promoted, Retained, Demoted or
+          Graduated.
+        config:
+          meta:
+            contains_pii: true
       - name: term_name
         data_type: string
+        description: >-
+          Reporting term name from the reporting terms sheet (for example Q1),
+          matched to PowerSchool store codes for grades and term GPA.
       - name: reporting_term
         data_type: string
+        description: >-
+          Reporting term code from the reporting terms sheet (for example RT1).
       - name: term_start_date
         data_type: date
+        description: First day of the reporting term.
       - name: term_end_date
         data_type: date
+        description: Last day of the reporting term.
       - name: is_curterm
         data_type: boolean
+        description: >-
+          Whether this is the current reporting term, per the reporting terms
+          sheet. True when the term's dates cover today, or when it is the
+          latest term of a past academic year.
       - name: course_number
         data_type: string
+        description: >-
+          PowerSchool course number. Null when the student has no qualifying
+          grade for the term.
       - name: credit_hours
         data_type: float64
+        description: >-
+          Potential credit hours for the course, from the stored grade when one
+          exists, otherwise the course's credit hours.
       - name: term_grade_percent_adjusted
         data_type: float64
+        description: >-
+          Term grade percent for the course. Uses the stored grade when one
+          exists; otherwise the in-progress gradebook grade, floored at 50.
+        config:
+          meta:
+            contains_pii: true
       - name: term_grade_letter_adjusted
         data_type: string
+        description: >-
+          Term letter grade for the course. Uses the stored grade when one
+          exists; otherwise the in-progress gradebook grade, shown as F* when
+          that grade is below 50.
+        config:
+          meta:
+            contains_pii: true
       - name: y1_grade_percent_adjusted
         data_type: float64
+        description: >-
+          Year-to-date course percent through this term, a weighted average of
+          the adjusted term grades that have a value so far.
+        config:
+          meta:
+            contains_pii: true
       - name: y1_grade_letter
         data_type: string
+        description: >-
+          Letter grade for y1_grade_percent_adjusted on the course's grade
+          scale.
+        config:
+          meta:
+            contains_pii: true
       - name: need_60
         data_type: float64
         description: >-
-          Percentage the student needs on their remaining work to finish the
-          year at 60, which is the lowest passing grade on both grading scales
-          the high schools use. Previously exposed under the name need_65, which
-          did not match the calculation behind it or any grading scale in use.
+          Percent the student needs in this row's term for their year-to-date
+          course grade through that term to reach 60, the lowest passing grade
+          on both grading scales the high schools use. Calculated as 60 percent
+          of the term weights through this term, minus the weighted points
+          already earned in earlier terms, divided by this term's weight. On the
+          final term's row, this is the percent needed on the remaining work to
+          finish the year at 60.
+        config:
+          meta:
+            contains_pii: true
       - name: credittype
         data_type: string
+        description: >-
+          Credit type the course counts toward for graduation (for example Math
+          or elective).
       - name: course_name
         data_type: string
+        description: Course name.
       - name: teacher_name
         data_type: string
+        description: Name (Last, First) of the section's teacher.
       - name: gpa_y1
         data_type: float64
+        description: >-
+          Weighted year-to-date GPA for the academic year as of this term,
+          across courses counted in GPA and weighted by credit hours.
+        config:
+          meta:
+            contains_pii: true
       - name: gpa_y1_unweighted
         data_type: float64
+        description: >-
+          Unweighted year-to-date GPA for the academic year as of this term,
+          weighted by credit hours.
+        config:
+          meta:
+            contains_pii: true
       - name: gpa_term
         data_type: float64
+        description: >-
+          GPA for this term alone, across courses counted in GPA and weighted by
+          credit hours.
+        config:
+          meta:
+            contains_pii: true
       - name: cumulative_y1_gpa
         data_type: float64
+        description: >-
+          Cumulative weighted GPA at the student's current school.
+        config:
+          meta:
+            contains_pii: true
       - name: cumulative_y1_gpa_projected
         data_type: float64
+        description: >-
+          Projected year-end cumulative weighted GPA, counting current-year
+          grades as they stand.
+        config:
+          meta:
+            contains_pii: true
       - name: earned_credits_cum
         data_type: float64
+        description: Cumulative credits earned.
+        config:
+          meta:
+            contains_pii: true
       - name: earned_credits_cum_projected
         data_type: float64
+        description: >-
+          Projected cumulative credits earned, counting in-progress courses.
+        config:
+          meta:
+            contains_pii: true
       - name: potential_credits_cum
         data_type: float64
+        description: Cumulative credits attempted.
+        config:
+          meta:
+            contains_pii: true
       - name: ada
         data_type: float64
+        description: >-
+          Year-to-date average daily attendance as a decimal fraction. High
+          schools use weighted ADA from academic year 2025 on.
+        config:
+          meta:
+            contains_pii: true
       - name: suspension_count
         data_type: int64
+        description: >-
+          Number of DeansList suspension penalties for the student in the
+          academic year, by incident creation date. Null when the student has
+          none.
+        config:
+          meta:
+            contains_pii: true
       - name: suspension_days
         data_type: float64
+        description: >-
+          Total days across the student's DeansList suspension penalties in the
+          academic year. Null when the student has none.
+        config:
+          meta:
+            contains_pii: true

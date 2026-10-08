@@ -124,7 +124,7 @@ select
 
     row_number() over (
         partition by u.contact, u.test_type, u.score_type, acc.ap_course_name
-        order by u.score desc
+        order by u.score desc, u.`date` desc, u.id asc
     ) as rn_highest,
 
 from unpivoted as u

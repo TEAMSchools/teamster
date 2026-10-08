@@ -303,6 +303,7 @@
   audiences: [region]
   system: tableau
   group: college
+  guide: https://teamschools.zendesk.com/hc/en-us/articles/43936219469207--User-Guide-Promotional-Status-Dashboard
   status: verified
 
 - id: recruitment_dashboard

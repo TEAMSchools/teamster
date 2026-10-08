@@ -1,11 +1,24 @@
 models:
   - name: rpt_tableau__assessment_dashboard
     description: >-
-      Internal assessment results for the DDI Suite dashboard. Network-wide,
-      Miami included: Miami held 281,010 AY2025 rows in prod as of 2026-08-27.
-      Miami has no AY2026 rows yet because its AY2026 Illuminate results have
-      not landed upstream, not because this model filters it out. Ratified on
-      #4996.
+      Assessment results for the DDI Suite dashboard, for the current and prior
+      academic year. Each row is one `int_assessments__response_rollup` row
+      (student, canonical assessment, response, and replacement flag) joined to
+      the student's year enrollment (`rn_year` 1, grade 99 excluded), so
+      scaffold rows with no responses are kept. Course and teacher columns come
+      from a LEFT JOIN to the student's top-ranked, non-dropped course
+      enrollment for the assessment's subject. Subject-level tier, intervention,
+      DIBELS, and prior-year state test columns come from
+      `int_extracts__student_enrollments_subjects`, matched on the subject area
+      (K-8) or course credit type (grades 9-12), and are null for subjects other
+      than ELA and Math.
+
+      The model applies no region filter; Miami's Illuminate responses no longer
+      match an enrollment after the Focus cutover, and Miami left this stack
+      after SY25-26, so no new Miami data lands.
+    config:
+      meta:
+        contains_pii: true
     columns:
       - name: student_number
         data_type: int64
@@ -95,10 +108,13 @@ models:
         data_type: string
       - name: power_standard_goal
         data_type: int64
+        description: Always null. Retired field kept for the Tableau workbook.
       - name: is_power_standard
         data_type: int64
+        description: Always null. Retired field kept for the Tableau workbook.
       - name: standard_domain
         data_type: int64
+        description: Always null. Retired field kept for the Tableau workbook.
       - name: nj_student_tier
         data_type: string
       - name: tutoring_nj

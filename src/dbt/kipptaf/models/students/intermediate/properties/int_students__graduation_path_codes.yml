@@ -1,5 +1,19 @@
 models:
   - name: int_students__graduation_path_codes
+    description: >-
+      Graduation pathway standing for currently enrolled New Jersey students in
+      grade 8 and up (Miami excluded). Keeps every row of
+      int_students__graduation_pathway_scores -- one per student, subject, score
+      type, assessment version and sitting -- and adds the student's roll-ups.
+      Per student and subject, whether each pathway was met, whether the student
+      sat the NJGPA, the final pathway code and its display label. Per student,
+      whether each subject is met overall and the graduation eligibility label.
+      Roll-up columns repeat on every row they apply to. Feeds the graduation
+      requirements dashboard through rpt_tableau__graduation_requirements, and
+      the PowerSchool write-back through rpt_powerschool__autocomm_students,
+      which sends final_grad_path_code to the PowerSchool graduation pathway
+      fields reported to the state. A wrong code here is a wrong state
+      submission.
     config:
       materialized: table
       meta:
@@ -46,11 +60,13 @@ models:
     columns:
       - name: _dbt_source_relation
         data_type: string
+        description: Source relation identifier from dbt_utils.union_relations.
       - name: _dbt_source_project
         data_type: string
         description: District code location derived from `_dbt_source_relation`.
       - name: students_dcid
         data_type: int64
+        description: PowerSchool durable identifier for the student.
       - name: studentid
         data_type: int64
         description: >-
@@ -67,9 +83,9 @@ models:
             column_role: primary_key
       - name: state_studentnumber
         data_type: string
-        description:
-          The state-assigned student number for the student. In most cases, this
-          number should stay thesame from school to school.
+        description: >-
+          The state-assigned student number for the student. In most cases this
+          number stays the same from school to school.
         config:
           meta:
             source_system: PowerSchool
@@ -78,11 +94,15 @@ models:
             contains_pii: true
       - name: salesforce_id
         data_type: string
+        description: KIPP Forward contact identifier for the student.
+        config:
+          meta:
+            contains_pii: true
       - name: grade_level
         data_type: int64
-        description:
-          "The grade the student is in. Since this is an integer: 0=Kindergarten
-          1, -2=Preschool. Indexed."
+        description: >-
+          Grade the student is in. Grade 10 and below always reads Grad Eligible
+          and carries the PowerSchool pathway code through unchanged.
         config:
           meta:
             source_system: PowerSchool
@@ -90,15 +110,45 @@ models:
             source_column: grade_level
       - name: cohort
         data_type: int64
+        description: >-
+          Graduating class the student entered high school with. Frozen at first
+          year in the school, so a retained or accelerated student can sit an
+          assessment alongside a different class.
       - name: discipline
         data_type: string
+        description: ELA or Math.
+      - name: enroll_status
+        data_type: int64
+        description: >-
+          PowerSchool enrollment status. Always 0 here, because the model keeps
+          only currently enrolled students.
+      - name: assessment_version
+        data_type: string
+        description: >-
+          Which version of the assessment the score and cut score belong to. The
+          retired NJGPA and the adaptive NJGPA-A use different scales, so a
+          score is only ever compared against the cut score set for its own
+          scale. Null where PowerSchool already decided the pathway, since no
+          assessment is involved.
       - name: powerschool_credittype
         data_type: string
+        description: Credit type the subject maps to in PowerSchool.
       - name: ps_grad_path_code
         data_type: string
+        description: >-
+          Pathway code already recorded in PowerSchool for this subject. M is
+          IEP, N is portfolio appeal, O is attempted but passed nothing, P is
+          incomplete credits. Any of those four means PowerSchool has decided
+          and no cut score applies.
+        config:
+          meta:
+            contains_pii: true
       - name: has_fafsa
         data_type: boolean
         description: Whether the student has met the FAFSA requirement.
+        config:
+          meta:
+            contains_pii: true
       - name: njgpa_season_11th
         data_type: boolean
         description: >-
@@ -111,56 +161,189 @@ models:
           12th-grade FAFSA accountability.
       - name: pathway_option
         data_type: string
+        description: >-
+          Assessment that could satisfy the pathway. Both NJGPA versions share
+          the value NJGPA, so a change of test version does not create a new
+          option. For a pathway PowerSchool already decided, the label for that
+          decision instead -- DLM, Portfolio, Met No Requirements or Incomplete
+          Credits.
+        config:
+          meta:
+            contains_pii: true
       - name: score_type
         data_type: string
+        description: >-
+          Specific score within the assessment, matching the code the source
+          system reports and the cut score sheet keys on. For a pathway
+          PowerSchool already decided, a code naming the decision and subject.
       - name: pathway_code
         data_type: string
+        description: >-
+          Letter New Jersey uses to report the pathway this row belongs to. S is
+          the state assessment, E is ACT, D is SAT, J is PSAT10, K is
+          PSAT/NMSQT, and M, N, O or P for a pathway PowerSchool already
+          decided. Null for a student with no cut score row for their class and
+          subject.
+        config:
+          meta:
+            contains_pii: true
       - name: cutoff
         data_type: numeric
+        description: >-
+          Lowest score that satisfies this pathway for the student's class,
+          subject and assessment version. Null where PowerSchool already decided
+          the pathway, since no cut score applies.
       - name: scale_score
         data_type: numeric
+        description: >-
+          Score the student earned. Null where the student has no score for this
+          pathway. Zero, not a real score, where PowerSchool already decided the
+          pathway, so those students survive the non-null score filter in
+          rpt_tableau__graduation_requirements.
+        config:
+          meta:
+            contains_pii: true
       - name: subject_area
         data_type: string
+        description: >-
+          Subject the score belongs to, as the source system labels it. The
+          discipline where PowerSchool already decided the pathway.
       - name: met_pathway_cutoff
         data_type: boolean
-      - name: met_sat_ela
-        data_type: boolean
-      - name: met_sat_math
-        data_type: boolean
+        description: >-
+          Whether this score reached its cut score. Null where the student has
+          no score for this pathway. Where PowerSchool already decided the
+          pathway, true for M and N and false for O and P.
+        config:
+          meta:
+            contains_pii: true
       - name: met_dlm
         data_type: boolean
+        description: >-
+          Whether the student holds the DLM (IEP) pathway in this subject, which
+          only a PowerSchool code of M grants. False when there is nothing to
+          roll up.
+        config:
+          meta:
+            contains_pii: true
       - name: met_portfolio
         data_type: boolean
+        description: >-
+          Whether the student holds a portfolio appeal in this subject, which
+          only a PowerSchool code of N grants. False when there is nothing to
+          roll up.
+        config:
+          meta:
+            contains_pii: true
       - name: njgpa_attempt
         data_type: boolean
+        description: >-
+          Whether the student sat the NJGPA in this row's subject. Sitting it is
+          a prerequisite for any other pathway in the subject to count. False
+          when the student has no scored row in the subject.
+        config:
+          meta:
+            contains_pii: true
       - name: met_njgpa
         data_type: boolean
+        description: >-
+          Whether any of the student's NJGPA scores in this subject cleared its
+          cut score, taking the best result across the retired and adaptive
+          versions. False when there is nothing to roll up.
+        config:
+          meta:
+            contains_pii: true
       - name: met_act
         data_type: boolean
+        description: >-
+          Whether any of the student's ACT scores in this subject cleared its
+          cut score. False when there is nothing to roll up.
+        config:
+          meta:
+            contains_pii: true
       - name: met_sat
         data_type: boolean
+        description: >-
+          Whether any of the student's SAT scores in this subject cleared its
+          cut score. False when there is nothing to roll up.
+        config:
+          meta:
+            contains_pii: true
       - name: met_psat10
         data_type: boolean
+        description: >-
+          Whether any of the student's PSAT10 scores in this subject cleared its
+          cut score. False when there is nothing to roll up.
+        config:
+          meta:
+            contains_pii: true
       - name: met_psat_nmsqt
         data_type: boolean
+        description: >-
+          Whether any of the student's PSAT/NMSQT scores in this subject cleared
+          its cut score. False when there is nothing to roll up.
+        config:
+          meta:
+            contains_pii: true
       - name: attempted_njgpa_ela
         data_type: boolean
-      - name: attemped_njgpa_math
+        description: >-
+          Whether the student sat the NJGPA in English language arts at all.
+          True on the rows of a subject PowerSchool coded M. Defaults to false.
+        config:
+          meta:
+            contains_pii: true
+      - name: attempted_njgpa_math
         data_type: boolean
+        description: >-
+          Whether the student sat the NJGPA in mathematics at all. True on the
+          rows of a subject PowerSchool coded M. Defaults to false.
+        config:
+          meta:
+            contains_pii: true
       - name: met_ela
         data_type: boolean
+        description: >-
+          Whether the student met a pathway in ELA by any route, repeated on
+          every row for the student. Through DLM alone when PowerSchool coded
+          ELA M, and otherwise any pathway met, counted only if the student sat
+          the NJGPA in ELA. Defaults to false.
+        config:
+          meta:
+            contains_pii: true
       - name: met_math
         data_type: boolean
+        description: >-
+          Whether the student met a pathway in Math by any route, repeated on
+          every row for the student. Through DLM alone when PowerSchool coded
+          Math M, and otherwise any pathway met, counted only if the student sat
+          the NJGPA in Math. Defaults to false.
+        config:
+          meta:
+            contains_pii: true
       - name: rn_highest
         data_type: int64
+        description: >-
+          Passed through from int_students__graduation_pathway_scores. Ranks a
+          student's sittings of the same score type, best result first, by
+          whether the score passed and then by how far it cleared its own cut
+          score. Consumers wanting one row per score type filter on 1.
       - name: points_short
         data_type: numeric
-        description: Conditional on cutoff, scale_score.
+        description: >-
+          Score minus cut score. Negative means the student fell short, positive
+          means they cleared it. Null where there is no score or no cut score.
+        config:
+          meta:
+            contains_pii: true
       - name: final_grad_path_name
         data_type: string
         description: >-
-          Display label for `final_grad_path_code`, so the code is decoded once
-          here rather than in each consumer. Null only where the code is null.
+          Display label for final_grad_path_code, decoded once here rather than
+          in each consumer. Null only where the code is null.
+        config:
+          meta:
+            contains_pii: true
         data_tests:
           - not_null:
               config:
@@ -169,36 +352,55 @@ models:
       - name: final_grad_path_code
         data_type: string
         description: >-
-          Letter New Jersey uses to report which pathway the student met, and
-          the value written back to PowerSchool for the state submission. S is
-          the state assessment, E is ACT, D is SAT, J is PSAT10, K is
-          PSAT/NMSQT, M is IEP, N is portfolio appeal, O is attempted but passed
-          nothing, P is incomplete credits, R is the default for a student who
-          sat the NJGPA and met no pathway. A code PowerSchool already holds is
-          carried through rather than recomputed.
+          Letter New Jersey uses to report which pathway the student met in this
+          subject, and the value written back to PowerSchool for the state
+          submission. S is the state assessment, E is ACT, D is SAT, J is
+          PSAT10, K is PSAT/NMSQT, M is IEP, N is portfolio appeal, O is
+          attempted but passed nothing, P is incomplete credits, R is the
+          default when no pathway is met. For grade 10 and below, and for a
+          subject PowerSchool coded M, N, O or P, the PowerSchool code is
+          carried through, so it can be null in the lower grades. Otherwise S
+          when the student met the NJGPA; failing that, for a student who sat
+          the NJGPA, the first alternative met in New Jersey's order of ACT,
+          SAT, PSAT10 and PSAT/NMSQT; and R when none applies. Any other code
+          PowerSchool holds for grade 11 and up is recomputed, not carried
+          through.
+        config:
+          meta:
+            contains_pii: true
       - name: grad_eligibility
         data_type: string
         description: >-
           Where the student stands against the graduation requirement overall,
-          which is what the dashboard shows. Derived from whether each subject
-          counts, whether FAFSA is required yet, and the 11th grade grace period
-          -- not looked up. Grades 10 and below are always Grad Eligible, since
-          no requirement has come due.
+          which is what the dashboard shows. One value per student. Derived from
+          whether each subject counts, whether FAFSA is required yet, and the
+          11th grade grace period -- not looked up. A subject counts when it is
+          met and the student sat the NJGPA in it. FAFSA is required for 12th
+          graders from the January deadline on. Grades 10 and below are always
+          Grad Eligible, since no requirement has come due, and an 11th grader
+          with no NJGPA record is Grad Eligible until results land in late June.
+        config:
+          meta:
+            contains_pii: true
       - name: test_type
         data_type: string
-        description:
-          The type of test being administered. 1 = National, 2 = State, 3 =
-          Local, 4 =District, 5 = School, 6 = Other, 7 = Fitness (as of 20.11.0)
+        description: >-
+          Label for the pathway test the row shows, built from pathway_code. The
+          subject area code for the state assessment, the assessment and subject
+          area together for ACT, SAT and the PSATs, and the decision label for a
+          pathway PowerSchool already decided. No Data where the row has no
+          pathway code.
         config:
           meta:
             source_system: PowerSchool
             source_model: stg_powerschool__test
             source_column: test_type
+            contains_pii: true
       - name: rn_discipline_distinct
         data_type: int64
         description: >-
-          Ranks a student's rows within a subject so a consumer wanting one row
-          per subject can filter on 1.
+          Ranks a student's rows within a subject, ordered by pathway_option, so
+          a consumer wanting one row per subject can filter on 1.
 
 unit_tests:
   - name: test_met_njgpa_when_either_version_passed
@@ -206,10 +408,10 @@ unit_tests:
       A student who failed one version of the NJGPA and passed the other has met
       the state assessment pathway. Both versions share a pathway_option of
       NJGPA, so the roll-up takes the best result across them rather than the
-      most recent or the highest raw score. Eight students hold scores on both
-      versions today and two of them have exactly this shape -- they missed the
-      retired cut score by a few points and then passed the adaptive test. Pins
-      that they come out with met_njgpa true and a final code of S.
+      most recent or the highest raw score. Some students have exactly this
+      shape -- they missed the retired cut score by a few points and then passed
+      the adaptive test. Pins that they come out with met_njgpa true and a final
+      code of S.
     model: int_students__graduation_path_codes
     given:
       - input: ref('int_students__graduation_pathway_scores')

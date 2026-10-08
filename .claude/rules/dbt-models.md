@@ -144,6 +144,12 @@ to nothing — the `zz_<user>_*` dataset holds no copy.
 needs no authorization. Read the compiled SQL to confirm columns were listed; an
 empty expansion still compiles clean.
 
+### Comments and descriptions
+
+The content test is in `.claude/rules/comments.md`. dbt-specific: a `.sql`
+comment edit marks the model `state:modified` and widens CI's rebuild, so sweep
+comments beyond the block you are editing only when asked.
+
 ### Per-layer requirements
 
 **All staging models must**:

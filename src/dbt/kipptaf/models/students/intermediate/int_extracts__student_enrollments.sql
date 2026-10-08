@@ -105,6 +105,41 @@ with
 
         from {{ ref("stg_powerschool__s_nj_stu_x") }}
         where graduation_pathway_math = 'M' or graduation_pathway_ela = 'M'
+    ),
+
+    hs_honors_dated as (
+        select
+            studentid,
+            academic_year,
+            _dbt_source_project,
+            enter_date,
+
+            -- exit before entry is a blank exit date (stored as 1900-01-01) or a
+            -- typo; treat it as still open
+            if(exit_date < enter_date, null, exit_date) as exit_date_or_open,
+
+            least(
+                current_date('{{ var("local_timezone") }}'),
+                date(academic_year + 1, 6, 30)
+            ) as as_of_date,
+        from {{ ref("int_powerschool__spenrollments") }}
+        where specprog_name = 'High School Honors Program'
+    ),
+
+    hs_honors as (
+        select
+            studentid,
+            academic_year,
+            _dbt_source_project,
+
+            row_number() over (
+                partition by _dbt_source_project, studentid, academic_year
+                order by enter_date desc
+            ) as rn_honors_year,
+        from hs_honors_dated
+        where
+            enter_date <= as_of_date
+            and (exit_date_or_open is null or exit_date_or_open >= as_of_date)
     )
 
 select
@@ -353,6 +388,16 @@ select
 
     if(e.exitdate < cal.first_day_school_year, true, false) as is_pre_year_withdrawal,
 
+    e.academic_year = {{ var("current_academic_year") }} as is_current_academic_year,
+
+    case
+        when e.region = 'Miami'
+        then null
+        when hon.studentid is not null
+        then true
+        else false
+    end as is_hs_honors_program,
+
     case
         when e.grade_level = 99
         then null
@@ -504,6 +549,12 @@ left join
     and e._dbt_source_project = hi._dbt_source_project
     and hi.specprog_name = 'Home Instruction'
     and hi.rn_student_program_year_desc = 1
+left join
+    hs_honors as hon
+    on e.studentid = hon.studentid
+    and e.academic_year = hon.academic_year
+    and e._dbt_source_project = hon._dbt_source_project
+    and hon.rn_honors_year = 1
 left join
     {{ ref("int_people__leadership_crosswalk") }} as hos
     on e.schoolid = hos.home_work_location_powerschool_school_id

@@ -4,8 +4,9 @@ description: >-
   Use when any question or task touches New Jersey graduation pathway codes or
   their lineage. Triggers: adding a cut score after an NJDOE broadcast, a
   student's pathway code looking wrong, NJGPA vs NJGPA-A score scales, entering
-  transfer scores in PowerSchool, the graduation pathway fields written back to
-  PowerSchool for state reporting, or working on
+  transfer scores in PowerSchool, NJDOE portfolio appeal decision PDFs to turn
+  into PowerSchool imports (pathway code N), the graduation pathway fields
+  written back to PowerSchool for state reporting, or working on
   int_students__graduation_path_codes,
   stg_google_sheets__student_graduation_path_cutoffs,
   int_assessments__state_nj_scores or rpt_tableau__graduation_requirements and
@@ -89,11 +90,11 @@ column. The pearson and cambium packages each carry it up through their
 in both of its `union_relations` `include` lists (one for the Pearson tables,
 one for the Cambium tables) and passes it through.
 
-**Students hold scores on both versions, and the number will grow.** Eight do
-today, and two of them failed the retired test by a handful of points and then
-passed the adaptive one. Any logic that picks "the" state assessment score for a
-student has to handle that pair, and cannot compare the two raw scores -- 700 on
-the retired scale is a fail and 500 on the adaptive scale is a pass.
+**Students hold scores on both versions, and the number will grow.** Some failed
+the retired test by a handful of points and then passed the adaptive one. Any
+logic that picks "the" state assessment score for a student has to handle that
+pair, and cannot compare the two raw scores -- 700 on the retired scale is a
+fail and 500 on the adaptive scale is a pass.
 
 That is why `rn_highest` in `int_students__graduation_pathway_scores` orders by
 `met_pathway_cutoff` and then `points_short`, **not** by `scale_score`.
@@ -235,47 +236,10 @@ be captured at all.
 
 ## RUNBOOK: portfolio appeals from NJDOE
 
-A portfolio appeal is pathway code `N`. NJDOE grants them and sends PDFs, which
-have to be converted and imported into each region's PowerSchool by hand. There
-is no pipeline for this and the model only ever reads the resulting
-`ps_grad_path_code`.
-
-Working folder, which holds every file below —
-<https://drive.google.com/drive/folders/1BakRrY_7tlJ0H6ctsjk8F12VpWWXQGLU>
-
-| Artifact                                            | Where it comes from             |
-| --------------------------------------------------- | ------------------------------- |
-| Two appeal PDFs, one per region                     | The C3 team, usually over Slack |
-| Portfolio Converter, an Excel workbook              | The folder above                |
-| NJ Portfolio Appeal Upload Template, a Google Sheet | The folder above                |
-
-Steps:
-
-1. Put both PDFs in the folder, named `Newark` and `Camden`. Replace any
-   existing files, and delete last year's TSVs so they cannot be imported by
-   mistake.
-2. Open the Portfolio Converter **from the desktop Excel app, never from Google
-   Sheets or a browser** — opening it in Sheets breaks its PowerQuery
-   connection. Then Data, Refresh All, to refresh both worksheets.
-3. In the upload template, refresh the Student Numbers tab. It also refreshes
-   itself on the first of each month.
-4. Copy each region's table from the workbook into its Paste Source tab. Copy
-   only three columns; column D pulls the student number by formula.
-5. Check all four region-and-subject tabs. Row counts should match the workbook,
-   student numbers should line up with the state student identifiers, and
-   formulas may need extending.
-6. Click EXPORT TSV FILES on the Newark Math tab. Four TSVs appear in the folder
-   after about a minute.
-7. In each region's PowerSchool, Data and Reporting, Imports, Quick Import.
-   Choose the **Students** table, **LF** as the end-of-line marker, and the
-   matching TSV. Confirm the column names, tick to exclude the first row, and
-   choose the update-the-student's-record option.
-8. PowerSchool lists the students it changed. Anything in red is an error;
-   Walters owns resolving those.
-
-**Switch PowerSchool instances between the Newark and Camden files.** Importing
-a region's file into the other instance is the failure mode this procedure is
-most prone to.
+A portfolio appeal is pathway code `N`, granted by NJDOE in one decision PDF per
+region. Converting the PDFs into PowerSchool import files, and checking the
+import landed:
+[references/portfolio-appeals.md](references/portfolio-appeals.md).
 
 ---
 

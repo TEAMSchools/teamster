@@ -107,6 +107,13 @@ deployments. Developers use `<repo-root>/.dbt/profiles.yml` (not
   `JOBS_BY_PROJECT` (`state=DONE`, `error_result IS NULL`) before treating it as
   real. The Dagster run-retry absorbs it.
 
+## No seeds
+
+dbt seeds are forbidden. Every project sets `seed-paths: []`, so a CSV dropped
+into `seeds/` is never loaded and a `ref()` to it fails at parse. Hand-kept
+lookup data lives in a Google Sheet, read through a `sources-external.yml` entry
+and a `stg_google_sheets__*` model. Never put a path back in `seed-paths`.
+
 ## Model Conventions
 
 Conventions apply to **every** dbt project in this directory and load as

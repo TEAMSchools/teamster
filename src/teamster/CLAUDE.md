@@ -90,6 +90,11 @@ Resources are defined in two places:
   kipptaf defines ADP WFN, Airbyte, Coupa, LDAP, Tableau, etc.). Only exists
   when a code location needs resources beyond the shared set.
 
+Declare credential fields (secrets, passwords, tokens, API keys, OAuth client
+ids) as `name: str = Field(repr=False)` so tracebacks and log lines that print
+the resource omit them. `SecretStr` fails at class definition on a
+`ConfigurableResource` (`DagsterInvalidPythonicConfigDefinitionError`).
+
 **`EnvVar`-backed resource config resolves in TWO places** under
 `k8s_job_executor`: execution-plan build (code server) AND step-pod resource
 init (run pod). A field like `password=EnvVar("PS_SSH_PASSWORD")` needs that var

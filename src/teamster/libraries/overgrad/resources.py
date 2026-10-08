@@ -2,7 +2,7 @@ import time
 
 from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
 from dagster_shared import check
-from pydantic import PrivateAttr
+from pydantic import Field, PrivateAttr
 from requests import Response, Session
 from requests.exceptions import HTTPError
 from tenacity import (
@@ -14,7 +14,7 @@ from tenacity import (
 
 
 class OvergradResource(ConfigurableResource):
-    api_key: str
+    api_key: str = Field(repr=False)
     api_version: str = "v1"
     page_limit: int = 20
     request_timeout: float = 60.0

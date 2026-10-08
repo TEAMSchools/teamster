@@ -44,37 +44,40 @@
 with
     pearson_scored as (
         select
-            localstudentidentifier as student_number,
-            academic_year,
-            assessment_name,
-            subject,
-            test_grade,
-            testscalescore as scale_score,
-            studenttestuuid,
-        from {{ ref("int_pearson__all_assessments") }}
+            pa.assessment_name,
+            pa.subject,
+            pa.test_grade,
+            pa.testscalescore as scale_score,
+            pa.studenttestuuid,
+
+            sy.student_number,
+            sy.academic_year,
+        from {{ ref("int_pearson__all_assessments") }} as pa
+        inner join
+            {{ ref("int_ignite__student_years") }} as sy
+            on pa.localstudentidentifier = sy.student_number
+            and pa.academic_year = sy.academic_year
         where
-            academic_year in ({{ var("ignite_academic_years") | join(", ") }})
-            and subject in (
+            pa.subject in (
                 'Mathematics',
                 'Algebra I',
                 'Algebra II',
                 'Geometry',
                 'English Language Arts'
             )
-            and localstudentidentifier is not null
     ),
 
     pearson_accommodations as (
         select
-            studenttestuuid,
+            nj.studenttestuuid,
 
             case
                 when
                     {%- for col in pearson_accommodation_columns %}
-                        coalesce({{ col }}, 'N') != 'N' or
+                        coalesce(nj.{{ col }}, 'N') != 'N' or
                     {%- endfor %}
                     {%- for col in pearson_accommodation_columns_numeric %}
-                        coalesce({{ col }}, 0) != 0
+                        coalesce(nj.{{ col }}, 0) != 0
                         {%- if not loop.last %} or {% endif %}
                     {%- endfor %}
                 then 1
@@ -84,14 +87,14 @@ with
             case
                 when
                     {%- for col in pearson_exemption_columns %}
-                        coalesce({{ col }}, 'N') != 'N'
+                        coalesce(nj.{{ col }}, 'N') != 'N'
                         {%- if not loop.last %} or {% endif %}
                     {%- endfor %}
                 then 1
                 else 0
             end as exemption,
-        from {{ ref("stg_pearson__njsla") }}
-        where academic_year in ({{ var("ignite_academic_years") | join(", ") }})
+        from {{ ref("stg_pearson__njsla") }} as nj
+        inner join pearson_scored as ps on nj.studenttestuuid = ps.studenttestuuid
     ),
 
     pearson as (
@@ -128,26 +131,28 @@ with
      not this one. This affects phase 2 only -- phase 1 is the Pearson year. */
     cambium as (
         select
-            student_number,
-            academic_year,
-            assessment_name,
-            aligned_subject as subject,
-            test_grade,
-            scale_score,
+            ca.student_number,
+            ca.academic_year,
+            ca.assessment_name,
+            ca.aligned_subject as subject,
+            ca.test_grade,
+            ca.scale_score,
 
             cast(null as int64) as accom,
             cast(null as int64) as exemption,
-        from {{ ref("int_cambium__all_assessments") }}
+        from {{ ref("int_cambium__all_assessments") }} as ca
+        inner join
+            {{ ref("int_ignite__student_years") }} as sy
+            on ca.student_number = sy.student_number
+            and ca.academic_year = sy.academic_year
         where
-            academic_year in ({{ var("ignite_academic_years") | join(", ") }})
-            and aligned_subject in (
+            ca.aligned_subject in (
                 'Mathematics',
                 'Algebra I',
                 'Algebra II',
                 'Geometry',
                 'English Language Arts'
             )
-            and student_number is not null
     ),
 
     -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below

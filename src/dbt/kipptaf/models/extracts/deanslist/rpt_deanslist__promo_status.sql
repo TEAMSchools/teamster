@@ -58,15 +58,17 @@ select
         p.academic_status
     ) as promo_status_grades,
     case
-        when co.region in ('Newark', 'Camden') and p.overall_status = 'Off-Track'
+        when
+            co.region in ('Newark', 'Camden', 'Paterson')
+            and p.overall_status = 'Off-Track'
         then 'At-Risk for Retention'
         when
-            co.region in ('Newark', 'Camden')
+            co.region in ('Newark', 'Camden', 'Paterson')
             and p.academic_status = 'Off-Track'
             and co.grade_level < 9
         then 'Off-Track: 2+ Grade Levels Below'
         when
-            co.region in ('Newark', 'Camden')
+            co.region in ('Newark', 'Camden', 'Paterson')
             and p.attendance_status = 'Off-Track'
             and co.grade_level < 9
         then 'Off-Track: Excessive Absences'
@@ -74,10 +76,10 @@ select
     end as promo_status_overall,
 
     case
-        when co.grade_level < 2
+        when co.grade_level < 3
         then p.academic_status
         when
-            co.grade_level > 1
+            co.grade_level > 2
             and (
                 p.iready_reading_recent
                 in ('2 Grade Levels Below', '3 or More Grade Levels Below')
@@ -89,7 +91,7 @@ select
 
     if(
         p.iready_math_recent in ('2 Grade Levels Below', '3 or More Grade Levels Below')
-        or p.iready_reading_recent is null,
+        or p.iready_math_recent is null,
         'Off-Track',
         'On-Track'
     ) as promo_status_math,

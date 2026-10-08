@@ -159,6 +159,13 @@ models:
         config:
           meta:
             contains_pii: true
+      - name: is_hs_honors_program
+        data_type: boolean
+        description:
+          Passthrough from `rpt_tableau__gpa_cumulative_year`, unchanged.
+        config:
+          meta:
+            contains_pii: true
       - name: is_retained_year
         data_type: boolean
         description:

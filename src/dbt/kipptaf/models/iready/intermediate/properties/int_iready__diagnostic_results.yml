@@ -31,9 +31,9 @@ models:
           meta:
             contains_pii: true
         description: >-
-          Network student number. Miami rows through SY2025 carry the bare
-          pre-Focus number in the source; they are brought onto the
-          8400-prefixed Focus student number here.
+          Network student number. Miami rows with academic_year_int 2025 and
+          earlier carry the bare pre-Focus number in the source; they are
+          brought onto the 8400-prefixed Focus student number here.
       - name: _dbt_source_relation
         data_type: string
         description: >-

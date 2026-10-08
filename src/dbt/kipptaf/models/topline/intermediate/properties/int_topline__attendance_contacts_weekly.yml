@@ -1,11 +1,12 @@
 models:
   - name: int_topline__attendance_contacts_weekly
     config:
+      enabled: false
       materialized: table
       meta:
         dagster:
-          # table + nightly cron flattens the ~660-stage view-inlined plan of
+          # table + cron flattens the deep view-inlined plan of
           # int_topline__student_metrics without eager rebuilds; shares its
-          # midnight tick (deps-in-progress guard serializes). Refs #4153
+          # tick (deps-in-progress guard serializes). Refs #4153
           automation_condition:
-            cron_schedule: 0 0 * * *
+            cron_schedule: 30 0 * * *

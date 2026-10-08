@@ -118,14 +118,21 @@ not of a shared sensor.
 Postgres `numeric` with no precision/scale reflects as `precision=None` in
 SQLAlchemy. DLT defaults to `decimal128(38, 9)`, which truncates values with >9
 decimal places. `unbounded_numeric_adapter` in `illuminate/assets.py` handles
-this via `type_adapter_callback`, widening to `decimal128(38, 18)`.
+this via `type_adapter_callback`, widening to `decimal128(38, 18)`. It returns
+`Float` (`real` / `double precision`) untouched, so those land as `FLOAT64`.
+Under SQLAlchemy 2.0, `Float` subclassed `Numeric` and an unguarded
+`isinstance(col_type, Numeric)` check widened floats to `BIGNUMERIC` too; 2.1
+split the two. Handle `Float` explicitly in any numeric adapter, either passing
+it through (Illuminate, Focus) or converting it (`oracle_number_adapter` in
+PowerSchool). Never rely on `isinstance(col_type, Numeric)` to catch or skip it.
 
 **BigQuery type mapping**: `Numeric(38, 18)` maps to `BIGNUMERIC` (scale > 9),
 not `NUMERIC`. Fix pattern: cast at the dbt staging layer
 (`cast(col as numeric)`) so contracts and downstream models stay on `numeric`.
-If the adapter's scale changes, any existing BQ table with a conflicting column
-type must be dropped manually — `replace` write disposition does not allow type
-changes on existing tables.
+Float columns are outside this pattern: they stay `float64` in staging
+contracts. If the adapter's scale changes, any existing BQ table with a
+conflicting column type must be dropped manually — `replace` write disposition
+does not allow type changes on existing tables.
 
 ### `replace` write-disposition + runtime subsetting
 
