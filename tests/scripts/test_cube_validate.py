@@ -212,3 +212,144 @@ def test_truth_sql_total_has_no_group_by():
         "t", c["rows"][0]["metrics"], [], c["dimensions"], [], WINDOW, "count(1)"
     )
     assert "group by" not in sql
+
+
+# ---------------------------------------------------------------- Task 3: comparison
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        (None, "∅"),
+        ("2026-09-01T00:00:00.000", "2026-09-01"),
+        (dt.date(2026, 9, 1), "2026-09-01"),
+        ("5", "5"),
+        (5, "5"),
+        (5.0, "5"),
+        ("5.000", "5"),
+        (True, "true"),
+        ("False", "false"),
+        (" Newark ", "Newark"),
+    ],
+)
+def test_norm_key_(value, expected):
+    assert cv.norm_key(value) == expected
+
+
+def test_count_must_match_exactly():
+    cells = cv.compare("count", {("A",): 10.0}, {("A",): (11.0, 50)})
+    assert [c.ok for c in cells] == [False]
+    assert cells[0].delta == 1.0
+
+
+def test_count_missing_on_one_side_counts_as_zero():
+    cells = cv.compare("count", {("A",): 0.0}, {})
+    assert cells[0].ok
+
+
+def test_count_cell_only_in_warehouse_fails():
+    # The #5692 shape: the warehouse has rows Cube never returns.
+    cells = cv.compare("count", {}, {("HS",): (40.0, 40)})
+    assert not cells[0].ok
+    assert cells[0].cube == 0.0
+
+
+def test_rate_tolerance_boundary():
+    ok, bad = cv.compare(
+        "rate", {("A",): 0.901, ("B",): 0.9011}, {("A",): (0.9, 50), ("B",): (0.9, 50)}
+    )
+    assert ok.ok and not bad.ok
+
+
+def test_rate_nulls():
+    cells = cv.compare(
+        "rate", {("A",): None, ("B",): 0.5}, {("A",): (None, 0), ("B",): (None, 0)}
+    )
+    assert [c.ok for c in cells] == [True, False]
+
+
+def test_cube_and_truth_cells_join_on_normalized_keys():
+    month = cv.Dim("month", "attendance_date", "x", "month")
+    region = cv.Dim("region", "regions_region_name", "region")
+    cube = cv.cube_cells(
+        [
+            {
+                "v.regions_region_name": "Newark",
+                "v.attendance_date.month": "2026-09-01T00:00:00.000",
+                "v.avg_daily_attendance": "0.9",
+            }
+        ],
+        "v",
+        [region, month],
+        "avg_daily_attendance",
+    )
+    truth = cv.truth_cells(
+        [
+            {
+                "g0": "Newark",
+                "g1": dt.date(2026, 9, 1),
+                "m0_num": 9,
+                "m0_den": 10,
+                "n_students": 12,
+            }
+        ],
+        2,
+        0,
+        "rate",
+    )
+    assert cube == {("Newark", "2026-09-01"): 0.9}
+    assert truth == {("Newark", "2026-09-01"): (0.9, 12)}
+    assert [c.ok for c in cv.compare("rate", cube, truth)] == [True]
+
+
+def test_rate_with_zero_denominator_is_null():
+    truth = cv.truth_cells([{"m0_num": 0, "m0_den": 0, "n_students": 3}], 0, 0, "rate")
+    assert truth == {(): (None, 3)}
+
+
+def test_cancelling_errors_fail_the_row():
+    # Region total matches; two schools inside it are off in opposite directions.
+    region = cv.summarize(
+        cv.compare("count", {("N",): 20.0}, {("N",): (20.0, 200)}), "count"
+    )
+    school = cv.summarize(
+        cv.compare(
+            "count",
+            {("N", "B"): 15.0, ("N", "C"): 5.0},
+            {("N", "B"): (12.0, 120), ("N", "C"): (8.0, 80)},
+        ),
+        "count",
+    )
+    grains = [
+        {"grain": ["region"], "status": "fail" if region["bad"] else "pass"},
+        {"grain": ["region", "school"], "status": "fail" if school["bad"] else "pass"},
+    ]
+    assert region["bad"] == 0 and school["bad"] == 2
+    assert cv.row_verdict(grains) == "fail"
+
+
+def test_summarize_orders_worst_first_and_caps_at_five():
+    cube = {(str(i),): float(i) for i in range(8)}
+    truth = {(str(i),): (0.0, 50) for i in range(8)}
+    s = cv.summarize(cv.compare("count", cube, truth), "count")
+    assert s["cells"] == 8 and s["bad"] == 7
+    assert [w["key"] for w in s["worst"]] == [["7"], ["6"], ["5"], ["4"], ["3"]]
+
+
+@pytest.mark.parametrize(
+    ("statuses", "verdict"),
+    [
+        (["pass", "pass"], "pass"),
+        (["pass", "fail", "error"], "fail"),
+        (["pass", "error"], "incomplete"),
+        (["pass", "not_comparable"], "pass"),
+        (["not_comparable"], "incomplete"),
+    ],
+)
+def test_row_verdict(statuses, verdict):
+    assert cv.row_verdict([{"status": s} for s in statuses]) == verdict
+
+
+def test_rate_with_null_numerator_is_zero():
+    truth = cv.truth_cells(
+        [{"m0_num": None, "m0_den": 10, "n_students": 3}], 0, 0, "rate"
+    )
+    assert truth == {(): (0.0, 3)}

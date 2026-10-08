@@ -287,6 +287,118 @@ def truth_sql(table, metrics, grain, dims, hard_filters, window, students_sql) -
     return sql
 
 
+# ---------------------------------------------------------------- comparison
+SMALL_CELL = 10
+RATE_TOLERANCE = 0.001
+_ISO_DATE = re.compile(r"^(\d{4}-\d{2}-\d{2})[T ]")
+_WHOLE_FLOAT = re.compile(r"^-?\d+\.0+$")
+
+
+def norm_key(v) -> str:
+    """One spelling per dimension value, so Cube strings join BigQuery types."""
+    if v is None:
+        return "∅"
+    if isinstance(v, bool):
+        return str(v).lower()
+    if isinstance(v, dt.date):
+        return v.isoformat()[:10]
+    if isinstance(v, float) and v.is_integer():
+        return str(int(v))
+    s = str(v).strip()
+    if m := _ISO_DATE.match(s):
+        return m.group(1)
+    if _WHOLE_FLOAT.match(s):
+        return s.split(".")[0]
+    if s in ("True", "False"):
+        return s.lower()
+    return s
+
+
+def _num(v) -> float | None:
+    return None if v is None or v == "" else float(v)
+
+
+@dataclass
+class Cell:
+    key: tuple[str, ...]
+    cube: float | None
+    truth: float | None
+    n_students: int | None
+    ok: bool
+
+    @property
+    def delta(self) -> float:
+        if self.cube is None or self.truth is None:
+            return float("inf")
+        return abs(self.cube - self.truth)
+
+
+def cube_cells(rows, view, grain_dims, metric) -> dict:
+    keys = [cube_key(view, d) for d in grain_dims]
+    return {
+        tuple(norm_key(r.get(k)) for k in keys): _num(r.get(f"{view}.{metric}"))
+        for r in rows
+    }
+
+
+def truth_cells(rows, n_grain, i, kind) -> dict:
+    out = {}
+    for r in rows:
+        key = tuple(norm_key(r[f"g{j}"]) for j in range(n_grain))
+        if kind == "count":
+            v = _num(r[f"m{i}"])
+        else:
+            num, den = _num(r[f"m{i}_num"]), _num(r[f"m{i}_den"])
+            v = None if not den else (num or 0.0) / den
+        n = r.get("n_students")
+        out[key] = (v, None if n is None else int(n))
+    return out
+
+
+def compare(kind, cube, truth) -> list[Cell]:
+    cells = []
+    for key in sorted(set(cube) | set(truth)):
+        c = cube.get(key)
+        t, n = truth.get(key, (None, None))
+        if kind == "count":
+            # No row on a side means nothing to count there: compare as 0.
+            c, t = c or 0.0, t or 0.0
+            ok = abs(c - t) < 1e-9
+        else:
+            ok = (c is None and t is None) or (
+                c is not None and t is not None and abs(c - t) <= RATE_TOLERANCE + 1e-12
+            )
+        cells.append(Cell(key, c, t, n, ok))
+    return cells
+
+
+def summarize(cells, kind) -> dict:
+    bad = sorted((c for c in cells if not c.ok), key=lambda c: -c.delta)
+    return {
+        "cells": len(cells),
+        "bad": len(bad),
+        "worst": [
+            {
+                "key": list(c.key),
+                "cube": c.cube,
+                "truth": c.truth,
+                "n_students": c.n_students,
+                "kind": kind,
+            }
+            for c in bad[:5]
+        ],
+    }
+
+
+def row_verdict(grains) -> str:
+    statuses = [g["status"] for g in grains]
+    if "fail" in statuses:
+        return "fail"
+    if "error" in statuses or "pass" not in statuses:
+        return "incomplete"
+    return "pass"
+
+
 def _grains_command(a) -> int:
     sheets = parse_twb(a.twb, a.dashboard)
     if a.measure:
