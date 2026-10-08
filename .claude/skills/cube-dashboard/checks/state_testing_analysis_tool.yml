@@ -1,0 +1,104 @@
+# Validation checks for the State Testing Analysis Tool (STAT; Tableau workbook
+# 31b6a4a9-e0ca-479b-8f44-0daaa52e109b). Run with the cube-dashboard skill.
+# Every metric's SQL reproduces the Tableau formula on the dashboard's own extract.
+# Grains are the region / school / test / discipline cuts the Overview,
+# Demographics and Roster sheets draw; STAT's many selector shelves are
+# dashboard controls and are not grains.
+dashboard: state_testing_analysis_tool
+task_gid: "1213823789082035"
+# Truth side: the dashboard's own extract (the comps datasource is a separate one).
+extract:
+  workbook_luid: 31b6a4a9-e0ca-479b-8f44-0daaa52e109b
+  datasource: rpt_tableau__state_assessments_dashboard (kipptaf_tableau)
+cube_source_table: teamster-332318.kipptaf_marts.fct_assessment_scores_enrollment_scoped
+view: student_assessment_scores_view
+
+# State tests are scored by year: 2025 is the 2025-26 school year (spring 2026).
+window:
+  academic_years: [2025]
+
+dimensions:
+  # The extract stores academic_year as text.
+  academic_year: { cube: academic_year, sql: cast(academic_year as int64) }
+  region: { cube: region_name, sql: region }
+  school: { cube: abbreviation, sql: school }
+  test_code: { cube: module_code, sql: test_code }
+  # NJ: Spring / Fall; Florida: the FAST windows PM1-PM3.
+  admin: { cube: administration_period, sql: admin }
+  # The test's subject, not the course discipline: a score resolved to a
+  # homeroom section has no course discipline. Cube names the high-school math
+  # tests by course; the dashboard files them under Math.
+  discipline:
+    cube: academic_subject
+    sql: >-
+      case when test_code = 'ALG01' then 'Algebra I' when test_code = 'GEO01'
+      then 'Geometry' when discipline = 'ELA' then 'English Language Arts' when
+      discipline = 'Math' then 'Mathematics' else discipline end
+  grade_level: { cube: grade_level, sql: grade_level }
+  gender: { cube: gender_identity, sql: gender }
+
+hard_filters:
+  - { dim: region, values: [Camden, Miami, Newark, Paterson] }
+  # 26 sheets pin season = Spring, which is admin Spring in NJ and PM3 in Miami.
+  - { dim: admin, values: [Spring, PM3] }
+
+# Cube side: state assessments only, one row per score.
+cube_filters:
+  - { member: assessment_type, operator: startsWith, values: [state_] }
+  - { member: response_type, operator: equals, values: [overall] }
+# Extract side: official scores only; Cube carries no preliminary rows.
+truth_filters:
+  - results_type = 'Actual'
+
+rows:
+  - row_gid: "1215831548839997"
+    name: "% Proficient (is_proficient rate)"
+    # Tableau: {INCLUDE academic_year: COUNTD(IF is_proficient THEN student_number)}
+    # / COUNTD(student_number): distinct students, not scores.
+    metrics:
+      - cube: pct_proficient
+        kind: rate
+        diagnose_by: { cube: module_code, sql: test_code }
+        num: count(distinct if(is_proficient, student_number, null))
+        den: count(distinct student_number)
+    grains: &grains
+      - []
+      - [region]
+      - [region, school]
+      - [test_code]
+      - [test_code, admin]
+      - [region, test_code]
+      - [region, test_code, admin]
+      - [region, school, test_code]
+      - [region, school, test_code, admin]
+      - [discipline]
+      - [region, discipline]
+      - [region, school, discipline]
+      - [region, test_code, grade_level]
+      - [region, test_code, gender]
+  - row_gid: "1219087671048617"
+    name: Count of students tested
+    # Tableau: COUNTD(student_number).
+    metrics:
+      - cube: count_students
+        kind: count
+        diagnose_by: { cube: module_code, sql: test_code }
+        sql: count(distinct student_number)
+    grains: *grains
+  - row_gid: "1219284449093357"
+    name: Scale score
+    # Tableau shows each student's score on the roster; compared here as the
+    # average within a test, the only grain where scale scores share a scale.
+    metrics:
+      - cube: avg_scale_score
+        kind: average
+        num: sum(score)
+        den: count(score)
+    grains:
+      - [test_code]
+      - [test_code, admin]
+      - [region, test_code]
+      - [region, school, test_code]
+      - [region, school, test_code, admin]
+# Not checked: "State (NJ/FL derived from region)" (1219284586640184) is a
+# label with no number; Cube's regions.state carries it.

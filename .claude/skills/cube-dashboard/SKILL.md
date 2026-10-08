@@ -104,11 +104,13 @@ def test_run() -> None:
    under the metric's `missing_members:` and add the same SQL without it as
    `sql_without` (or `num_without`/`den_without`). A cell Cube matches only
    without it is reported as explained by that member, not as a bug.
-6. `count` for sums and distinct counts, `rate` with `num`/`den` for averages.
-   Give a metric `diagnose_by: {cube, sql}` when one field explains most
-   definition gaps (the attendance code for attendance counts), and describe
-   each missing member under the file's `members:` (`what`, `lives_in`,
-   `suggested_edit`) so the digest can say what to add.
+6. `count` for sums and distinct counts, `rate` with `num`/`den` for shares
+   (within 0.1 point), `average` with `num`/`den` for a mean in its own units,
+   such as a scale score (within 0.1 unit). Give a metric
+   `diagnose_by: {cube, sql}` when one field explains most definition gaps (the
+   attendance code for attendance counts), and describe each missing member
+   under the file's `members:` (`what`, `lives_in`, `suggested_edit`) so the
+   digest can say what to add.
 7. Check the file loads (`load_checks`), then run the new row alone
    (`--rows <gid>`) so its SQL runs once against the extract.
 

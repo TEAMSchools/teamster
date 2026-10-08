@@ -259,6 +259,19 @@ def test_rate_tolerance_boundary():
     assert ok.ok and not bad.ok
 
 
+def test_average_tolerance_is_a_tenth_of_a_point():
+    ok, bad = cv.compare(
+        "average",
+        {("A",): 1488.6, ("B",): 1488.75},
+        {("A",): (1488.65, 50), ("B",): (1488.6, 50)},
+    )
+    assert ok.ok and not bad.ok
+
+
+def test_average_prints_as_a_number():
+    assert cv._fmt(1487.538, "average") == "1,487.5"
+
+
 def test_rate_nulls():
     cells = cv.compare(
         "rate", {("A",): None, ("B",): 0.5}, {("A",): (None, 0), ("B",): (None, 0)}
@@ -1145,3 +1158,14 @@ def test_year_window_labels_the_run(tmp_path):
     c = cv.load_checks(_write_variant(tmp_path, _year_window))
     result = cv.run_dashboard(c, FakeCube(), FakeBQ(), TODAY)
     assert result["window"] == ["2024-25", "2025-26"]
+
+
+def test_one_year_window_reads_as_that_year(tmp_path):
+    def one_year(d):
+        _year_window(d)
+        d["window"] = {"academic_years": [2025]}
+
+    c = cv.load_checks(_write_variant(tmp_path, one_year))
+    result = cv.run_dashboard(c, FakeCube(), FakeBQ(), TODAY)
+    assert "Window: 2025-26." in cv.digest_markdown(result, c, {})
+    assert "window 2025-26." in cv.report_markdown(result)

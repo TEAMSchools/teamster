@@ -153,7 +153,8 @@ def propose_grains(sheets: list[Sheet], measure: str) -> list[list[str]]:
 
 # ---------------------------------------------------------------- checks files and queries
 CUBE_LIMIT = 50_000
-KINDS = {"count", "rate"}
+# An average is a rate on its own scale (a scale score): compared in its units.
+KINDS = {"count", "rate", "average"}
 
 
 class CheckError(ValueError):
@@ -393,7 +394,10 @@ def truth_sql(
 
 # ---------------------------------------------------------------- comparison
 SMALL_CELL = 10
-RATE_TOLERANCE = 0.001
+# Rates within 0.1 percentage point; averages within 0.1 of their units.
+TOLERANCE = {"rate": 0.001, "average": 0.1}
+# The smallest gap that shows at display precision.
+SHOWN = {"rate": 0.0005, "average": 0.05, "count": 0.5}
 _ISO_DATE = re.compile(r"^(\d{4}-\d{2}-\d{2})[T ]")
 _WHOLE_FLOAT = re.compile(r"^-?\d+\.0+$")
 
@@ -465,7 +469,7 @@ def _matches(kind, c, t) -> bool:
         # No row on a side means nothing to count there: compare as 0.
         return abs((c or 0.0) - (t or 0.0)) < 1e-9
     return (c is None and t is None) or (
-        c is not None and t is not None and abs(c - t) <= RATE_TOLERANCE + 1e-12
+        c is not None and t is not None and abs(c - t) <= TOLERANCE[kind] + 1e-12
     )
 
 
@@ -1059,7 +1063,7 @@ def run_dashboard(
                 for m in row["metrics"]:
                     only = ms[m["cube"]].get("only") or {}
                     w, t = only.get("without"), only.get("truth")
-                    shown = 0.0005 if m["kind"] == "rate" else 0.5
+                    shown = SHOWN[m["kind"]]
                     # At the total, a member whose logic moves the dashboard's number
                     # causes part of the gap even when no cell is explained by it alone.
                     moves = (
@@ -1114,7 +1118,14 @@ def run_dashboard(
 def _fmt(v, kind) -> str:
     if v is None:
         return "none"
-    return f"{v * 100:.1f}%" if kind == "rate" else f"{v:,.0f}"
+    if kind == "rate":
+        return f"{v * 100:.1f}%"
+    return f"{v:,.1f}" if kind == "average" else f"{v:,.0f}"
+
+
+def _window_text(window) -> str:
+    start, end = window
+    return start if start == end else f"{start} to {end}"
 
 
 def _label(grain) -> str:
@@ -1135,12 +1146,12 @@ def _total_line(s_: dict, kind: str, members: list[str]) -> list[str]:
         lines = [f"- Total matches: Cube {c}, Tableau {t}."]
     w, truth = only.get("without"), only.get("truth")
     # A share that rounds to nothing at display precision is noise, not a cause.
-    shown = 0.0005 if kind == "rate" else 0.5
+    shown = SHOWN[kind]
     if members and w is not None and truth is not None and abs(w - truth) >= shown:
         gap = (
             f"{abs(w - truth) * 100:.1f} points"
             if kind == "rate"
-            else f"{abs(w - truth):,.0f}"
+            else _fmt(abs(w - truth), kind)
         )
         lines.append(
             f"- {', '.join(members)} accounts for {gap} (Tableau {t} with it, "
@@ -1242,7 +1253,7 @@ def digest_markdown(result, checks, cube_defs) -> str:
     if snaps := result.get("snapshots"):
         out.append(f"Snapshots: extract {snaps['extract']}, Cube {snaps['cube']}.")
     out += [
-        f"Window: {result['window'][0]} to {result['window'][1]}. Rows: "
+        f"Window: {_window_text(result['window'])}. Rows: "
         + ", ".join(f"{n} {v.replace('_', ' ')}" for v, n in sorted(verdicts.items()))
         + ".",
         "",
@@ -1364,7 +1375,7 @@ def report_markdown(result) -> str:
     out = [
         f"# Cube vs Tableau: {result['dashboard']}",
         "",
-        f"Run {result['run_date']}, window {result['window'][0]} to {result['window'][1]}.",
+        f"Run {result['run_date']}, window {_window_text(result['window'])}.",
         "",
         "Snapshots: extract {extract}, Cube {cube}.".format(
             **(result.get("snapshots") or {"extract": "n/a", "cube": "n/a"})
