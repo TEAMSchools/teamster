@@ -860,3 +860,62 @@ def test_retry_gives_up_after_its_attempts():
 
     with pytest.raises(RuntimeError, match="401002"):
         cv.retry(broken, attempts=2, sleep=lambda _: None)
+
+
+# ---------------------------------------------------------------- final-review fixes
+class EmptyBQ(FakeBQ):
+    """An extract with nothing in the window: zero students, no grouped rows."""
+
+    def __call__(self, sql):
+        rows = super().__call__(sql)
+        if " as m0" not in sql and " as m0_num" not in sql:
+            return rows  # the scope guard still sees students
+        if " as g0" not in sql:
+            return [dict(rows[0], n_students=0, m0=None, m1_num=None, m1_den=None)]
+        return []
+
+
+def test_empty_truth_is_incomplete_never_pass():
+    result = cv.run_dashboard(_checks(), FakeCube(), EmptyBQ(), TODAY)
+    for row in result["rows"].values():
+        assert row["verdict"] == "incomplete"
+    total = result["rows"]["1"]["grains"][0]
+    assert total["status"] == "error" and "no rows" in total["error"]
+
+
+def test_extract_refresh_time_reads_the_datasources_update_time():
+    assert cv.extract_refresh_time(FIX / "mini.twb", "rpt_demo") == dt.datetime(
+        2026, 10, 8, 10, 28, 12, tzinfo=dt.UTC
+    )
+
+
+def test_load_checks_rejects_one_member_with_two_definitions(tmp_path):
+    def mutate(d):
+        d["rows"].append(
+            {
+                "row_gid": "3",
+                "name": "Tardy again",
+                "metrics": [
+                    {
+                        "cube": "count_tardy_days",
+                        "kind": "count",
+                        "sql": "sum(is_tardy) * 2",
+                    }
+                ],
+                "grains": [[]],
+            }
+        )
+
+    with pytest.raises(cv.CheckError, match="count_tardy_days"):
+        cv.load_checks(_write_variant(tmp_path, mutate))
+
+
+def test_a_failing_metric_only_fails_its_own_rows():
+    # ADA's numerator SQL errors; # Tardy shares the total grain and must still pass.
+    result = cv.run_dashboard(
+        _checks(), FakeCube(), FakeBQ(fail_on="sum(is_present)"), TODAY
+    )
+    tardy, ada = result["rows"]["1"], result["rows"]["2"]
+    assert tardy["grains"][0]["status"] == "pass"
+    assert ada["grains"][0]["status"] == "error"
+    assert ada["verdict"] == "incomplete"

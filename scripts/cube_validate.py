@@ -244,6 +244,15 @@ def load_checks(path) -> dict:
                 )
             if sum(1 for n in g if dims[n].granularity) > 1:
                 raise CheckError(f"{where}: grain {g} has more than one date part")
+    seen: dict[str, dict] = {}
+    for row in data["rows"]:
+        for m in row["metrics"]:
+            first = seen.setdefault(m["cube"], m)
+            if first != m:
+                raise CheckError(
+                    f"{path}: metric {m['cube']} is defined twice with different "
+                    "SQL; rows that share a Cube member must share its definition"
+                )
     data["dimensions"] = dims
     # Cube-side only: what the dashboard's table already excludes (e.g. break days).
     data.setdefault("cube_filters", [])
@@ -540,8 +549,7 @@ class TimingError(RuntimeError):
     """The extract and the Cube fact are snapshots from different times."""
 
 
-def extract_file_name(twb, datasource: str) -> str:
-    """The .hyper file name the workbook's datasource extract is stored under."""
+def _extract_connection(twb, datasource: str):
     root = SafeET.parse(twb).getroot()
     if root is None:
         raise ValueError(f"{twb}: empty workbook")
@@ -550,8 +558,21 @@ def extract_file_name(twb, datasource: str) -> str:
             continue
         for c in d.findall("extract/connection"):
             if c.get("class") == "hyper" and c.get("dbname"):
-                return Path(_attr(c, "dbname")).name
+                return c
     raise CheckError(f"{twb}: no extract for datasource '{datasource}'")
+
+
+def extract_file_name(twb, datasource: str) -> str:
+    """The .hyper file name the workbook's datasource extract is stored under."""
+    return Path(_attr(_extract_connection(twb, datasource), "dbname")).name
+
+
+def extract_refresh_time(twb, datasource: str) -> dt.datetime | None:
+    """When this datasource's extract last refreshed (Tableau stores it in UTC)."""
+    raw = _attr(_extract_connection(twb, datasource), "update-time")
+    if not raw:
+        return None
+    return dt.datetime.strptime(raw, "%m/%d/%Y %I:%M:%S %p").replace(tzinfo=dt.UTC)
 
 
 def to_hyper_sql(sql: str) -> str:
@@ -644,6 +665,10 @@ def download_extract(
         member = next(n for n in z.namelist() if Path(n).name == name)
         hyper = out_dir / name
         hyper.write_bytes(z.read(member))
+    # The datasource's own refresh time; the workbook's also moves on republish.
+    refreshed_at = (
+        extract_refresh_time(out_dir / "workbook.twb", datasource) or refreshed_at
+    )
     if refreshed_at is None:
         raise TimingError(f"Tableau returned no refresh time for workbook {luid}")
     return hyper, refreshed_at
@@ -762,11 +787,12 @@ def run_dashboard(
             outcomes[(view, table, g)] = {"status": "not_comparable"}
             continue
         print(step, file=sys.stderr, flush=True)
-        try:
+
+        def compare_job(ms, view=view, g=g, grain=grain):
             crows, preaggs = cube_load(
                 cube_query(
                     view,
-                    [m["cube"] for m in metrics],
+                    [m["cube"] for m in ms],
                     list(g),
                     dims,
                     hard,
@@ -776,31 +802,54 @@ def run_dashboard(
             )
             trows = bq(
                 truth_sql(
-                    table, metrics, list(g), dims, hard, window, checks["students_sql"]
+                    EXTRACT_TABLE,
+                    ms,
+                    list(g),
+                    dims,
+                    hard,
+                    window,
+                    checks["students_sql"],
                 )
             )
-        except Exception as e:  # noqa: BLE001 - any failure leaves this grain incomplete
-            outcomes[(view, table, g)] = {
-                "status": "error",
-                "error": f"{type(e).__name__}: {e}"[:300],
-            }
-            continue
-        summaries = {}
-        for i, m in enumerate(metrics):
-            cells = compare(
-                m["kind"],
-                cube_cells(crows, view, grain, m["cube"]),
-                truth_cells(trows, len(g), i, m["kind"]),
-            )
-            if m.get("missing_members"):
-                explain(
-                    cells, m["kind"], truth_cells(trows, len(g), i, m["kind"], "_alt")
+            if not trows or (not g and not trows[0].get("n_students")):
+                # Nothing to compare is never a pass (an empty window or extract).
+                raise ValueError("the extract has no rows for this grain in the window")
+            summaries = {}
+            for i, m in enumerate(ms):
+                cells = compare(
+                    m["kind"],
+                    cube_cells(crows, view, grain, m["cube"]),
+                    truth_cells(trows, len(g), i, m["kind"]),
                 )
-            summaries[m["cube"]] = summarize(cells, m["kind"])
+                if m.get("missing_members"):
+                    explain(
+                        cells,
+                        m["kind"],
+                        truth_cells(trows, len(g), i, m["kind"], "_alt"),
+                    )
+                summaries[m["cube"]] = summarize(cells, m["kind"])
+            return preaggs, summaries
+
+        summaries, errors, preaggs = {}, {}, set()
+        try:
+            p_aggs, summaries = compare_job(metrics)
+            preaggs |= set(p_aggs)
+        except Exception as e:  # noqa: BLE001 - retried per metric below
+            # One bad metric must not blank every row on this grain: retry each alone.
+            for m in metrics if len(metrics) > 1 else []:
+                try:
+                    p_aggs, one = compare_job([m])
+                    summaries.update(one)
+                    preaggs |= set(p_aggs)
+                except Exception as e1:  # noqa: BLE001 - recorded on the metric's rows
+                    errors[m["cube"]] = f"{type(e1).__name__}: {e1}"[:300]
+            if len(metrics) == 1:
+                errors[metrics[0]["cube"]] = f"{type(e).__name__}: {e}"[:300]
         outcomes[(view, table, g)] = {
             "status": "ok",
-            "pre_aggregations": preaggs,
+            "pre_aggregations": sorted(preaggs),
             "metrics": summaries,
+            "errors": errors,
         }
 
     for row in selected:
@@ -816,7 +865,14 @@ def run_dashboard(
                 for name in g:
                     if dims[name].cube is None and not dims[name].tableau_only:
                         _missing(missing, name)["blocks_grains"].append(_label(g))
-            if o["status"] == "ok":
+            errs = [
+                o["errors"][m["cube"]]
+                for m in row["metrics"]
+                if m["cube"] in o.get("errors", {})
+            ]
+            if errs:
+                entry.update(status="error", error=errs[0])
+            elif o["status"] == "ok":
                 ms = {m["cube"]: o["metrics"][m["cube"]] for m in row["metrics"]}
                 bad = sum(s["bad"] for s in ms.values())
                 explained = sum(s["explained"] for s in ms.values())

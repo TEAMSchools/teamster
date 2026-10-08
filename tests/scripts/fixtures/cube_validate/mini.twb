@@ -3,7 +3,7 @@
   <datasources>
     <datasource caption='rpt_demo (kipptaf_tableau)' name='federated.abc'>
       <extract enabled='true'>
-        <connection class='hyper' dbname='extract/aa/{X}/federated_abc.hyper' />
+        <connection class='hyper' dbname='extract/aa/{X}/federated_abc.hyper' update-time='10/08/2026 10:28:12 AM' />
       </extract>
       <column caption='# Tardy' datatype='integer' name='[Calculation_1]' role='measure' type='quantitative'>
         <calculation class='tableau' formula="IIF([att_code] = 'T', 1, 0)" />
