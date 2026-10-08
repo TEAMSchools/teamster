@@ -80,6 +80,9 @@ def _prefix_layer(name: str) -> str:
 def _key(node: dict) -> str:
     if node["resource_type"] == "source":
         return f"source.{node['source_name']}.{node['name']}"
+    if node["resource_type"] == "exposure":
+        # Exposures often share a name with the rpt_ model they read.
+        return f"exposure.{node['name']}"
     return f"{node['package_name']}.{node['name']}"
 
 
@@ -492,10 +495,9 @@ def main(argv: list[str] | None = None) -> int:
 
 
 def _exempt_rules(manifest: dict, key: str) -> dict:
-    package, _, name = key.partition(".")
     for coll in ("nodes", "exposures"):
         for n in manifest.get(coll, {}).values():
-            if n.get("package_name") == package and n.get("name") == name:
+            if _key(n) == key:
                 return n.get("config", {}).get("meta", {}).get("standard_exempt") or {}
     return {}
 

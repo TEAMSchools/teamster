@@ -274,7 +274,7 @@ def test_disabled_model_is_skipped() -> None:
 
 def test_tableau_exposure_on_int_is_a8() -> None:
     assert violations(exposure("tableau_x", [uid(INT_STU)])) == [
-        ("kipptaf.tableau_x", "A8", "kipptaf.int_students__students")
+        ("exposure.tableau_x", "A8", "kipptaf.int_students__students")
     ]
 
 
@@ -283,7 +283,7 @@ def test_cube_exposure_on_rpt_is_a8() -> None:
         "cube_semantic_layer", [uid(DIM), uid(RPT)], kinds=("semanticmodel", "cube")
     )
     assert violations(cube) == [
-        ("kipptaf.cube_semantic_layer", "A8", "kipptaf.rpt_tableau__x")
+        ("exposure.cube_semantic_layer", "A8", "kipptaf.rpt_tableau__x")
     ]
 
 
@@ -565,3 +565,13 @@ def test_parse_diff_scopes_to_project() -> None:
     changed, added = mod.parse_diff(DIFF, "src/dbt/kipptaf")
     assert changed == {"models/a.sql": {4, 5, 12}, "models/new.sql": {1, 2}}
     assert added == {"models/new.sql"}
+
+
+def test_exposure_named_like_its_rpt_reads_its_own_exemption() -> None:
+    rpt = model("rpt_gsheets__x", "models/extracts/google/sheets/b.sql", [])
+    rpt["config"]["meta"] = {"standard_exempt": {"A1": "model"}}
+    exp = exposure("rpt_gsheets__x", [uid(rpt)])
+    exp["config"]["meta"]["standard_exempt"] = {"A8": "exposure"}
+    m = manifest(rpt, exp)
+    assert mod._exempt_rules(m, "exposure.rpt_gsheets__x") == {"A8": "exposure"}
+    assert mod._exempt_rules(m, "kipptaf.rpt_gsheets__x") == {"A1": "model"}
