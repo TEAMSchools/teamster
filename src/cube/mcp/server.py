@@ -353,9 +353,14 @@ def _filter_members(filters: Any) -> Iterator[str]:
 def _members_referenced(query: dict[str, Any]) -> list[str]:
     """Every member a Cube query names, sorted and unique. Names only."""
     members: set[str] = set()
+    # Cube rejects a non-list member field, but its call still needs a record:
+    # skip the field rather than iterate a string or raise on a number.
     for key in ("measures", "dimensions", "segments"):
-        members.update(m for m in query.get(key) or [] if isinstance(m, str))
-    for time_dimension in query.get("timeDimensions") or []:
+        values = query.get(key)
+        if isinstance(values, list):
+            members.update(m for m in values if isinstance(m, str))
+    time_dimensions = query.get("timeDimensions")
+    for time_dimension in time_dimensions if isinstance(time_dimensions, list) else []:
         if isinstance(time_dimension, dict) and isinstance(
             time_dimension.get("dimension"), str
         ):
@@ -576,7 +581,12 @@ async def _recorded(
     try:
         yield record
     except BaseException as exc:
-        record.error = str(exc) or type(exc).__name__
+        # A client disconnect or client-side timeout cancels the call with a
+        # message that embeds a memory address; a fixed one keeps it countable.
+        if isinstance(exc, asyncio.CancelledError):
+            record.error = "cancelled"
+        else:
+            record.error = str(exc) or type(exc).__name__
         raise
     finally:
         _current_call.reset(token)

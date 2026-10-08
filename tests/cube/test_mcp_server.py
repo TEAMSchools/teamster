@@ -1212,3 +1212,48 @@ def test_tool_schemas_expose_the_new_optional_parameters(
         signature = inspect.signature(getattr(server, name))
         for param in params:
             assert signature.parameters[param].default is None
+
+
+def test_malformed_query_still_writes_its_record(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    server = _stdio_server(monkeypatch, tmp_path)
+
+    async def failing_request(*args: object, **kwargs: object) -> dict[str, Any]:
+        del args, kwargs
+        raise RuntimeError("Cube POST /load 400: bad query")
+
+    monkeypatch.setattr(server, "_request", failing_request)
+    for bad in (
+        {"measures": 5},
+        {"dimensions": True},
+        {"timeDimensions": 1},
+        {"measures": "v.x"},
+    ):
+        with pytest.raises(RuntimeError):
+            asyncio.run(server.load(MagicMock(), bad))
+        [record] = _call_records(capsys)
+        assert record["outcome"] == "error"
+        # A non-list member field is skipped, never iterated character by
+        # character.
+        assert record["members_referenced"] is None
+
+
+def test_cancelled_call_logs_a_stable_message(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    server = _stdio_server(monkeypatch, tmp_path)
+
+    async def run() -> None:
+        async with server._recorded(MagicMock(), "load", session_id=None, query={}):
+            raise asyncio.CancelledError("Cancelled by cancel scope 7f0011223344")
+
+    with pytest.raises(asyncio.CancelledError):
+        asyncio.run(run())
+    [record] = _call_records(capsys)
+    assert record["outcome"] == "error"
+    assert record["error_message"] == "cancelled"
