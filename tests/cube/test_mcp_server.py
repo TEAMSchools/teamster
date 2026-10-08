@@ -516,3 +516,164 @@ def test_load_and_sql_send_utc_timezone_by_default(
         server.load(ctx, {"measures": ["x.count"], "timezone": "America/New_York"})
     )
     assert sent[2]["json"]["query"]["timezone"] == "America/New_York"
+
+
+def test_clip_cuts_long_text_and_passes_none(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    server = _load_server(monkeypatch)
+    assert server._clip(None) is None
+    assert server._clip("short") == "short"
+    assert len(server._clip("x" * 20_000)) == server.CALL_RECORD_TEXT_LIMIT
+
+
+def test_resolve_session_id_mints_when_missing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import uuid
+
+    server = _load_server(monkeypatch)
+    for raw in (None, "", "   "):
+        session_id, minted = server._resolve_session_id(raw)
+        assert minted is True
+        assert str(uuid.UUID(session_id)) == session_id
+
+
+def test_resolve_session_id_reuses_and_normalizes_a_valid_uuid(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    server = _load_server(monkeypatch)
+    canonical = "1b4e28ba-2fa1-11d2-883f-0016d3cca427"
+    for raw in (canonical, canonical.upper(), "{" + canonical + "}", f" {canonical} "):
+        assert server._resolve_session_id(raw) == (canonical, False)
+
+
+def test_resolve_session_id_replaces_a_non_uuid(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    server = _load_server(monkeypatch)
+    session_id, minted = server._resolve_session_id("Student A's session")
+    assert minted is True
+    assert "Student" not in session_id
+
+
+def test_members_referenced_walks_every_query_part(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    server = _load_server(monkeypatch)
+    query = {
+        "measures": ["v.count_students"],
+        "dimensions": ["v.school_name"],
+        "segments": ["v.active"],
+        "timeDimensions": [{"dimension": "v.dates_date_day", "granularity": "month"}],
+        "filters": [
+            {"member": "v.region", "operator": "equals", "values": ["Newark"]},
+            {
+                "or": [
+                    {"member": "v.grade", "operator": "equals", "values": ["9"]},
+                    {"and": [{"dimension": "v.is_iep", "operator": "set"}]},
+                ]
+            },
+        ],
+        "order": {"v.count_students": "desc"},
+    }
+    assert server._members_referenced(query) == [
+        "v.active",
+        "v.count_students",
+        "v.dates_date_day",
+        "v.grade",
+        "v.is_iep",
+        "v.region",
+        "v.school_name",
+    ]
+    # Filter VALUES never appear: only member names.
+    assert "Newark" not in server._members_referenced(query)
+
+
+def test_members_referenced_accepts_list_form_order_and_skips_junk(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    server = _load_server(monkeypatch)
+    query = {
+        "measures": ["a.x", 7],
+        "order": [["b.y", "asc"], "not-a-pair", []],
+        "filters": ["not-a-dict"],
+        "timeDimensions": [{"granularity": "day"}],
+    }
+    assert server._members_referenced(query) == ["a.x", "b.y"]
+    assert server._members_referenced({}) == []
+
+
+def test_views_referenced_takes_the_text_before_the_first_dot(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    server = _load_server(monkeypatch)
+    assert server._views_referenced(["b.y", "a.x", "a.z", "bare"]) == ["a", "b", "bare"]
+
+
+def test_load_summary_reads_the_load_response_fields(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    server = _load_server(monkeypatch)
+    payload = {
+        "data": [{"v.count": "1"}, {"v.count": "2"}],
+        "external": True,
+        "usedPreAggregations": {
+            "prod_pre_aggregations.v_rollup_abc123": {
+                "preAggregationId": "v.rollup",
+                "targetTableName": "prod_pre_aggregations.v_rollup_abc123",
+            }
+        },
+        "lastRefreshTime": "2026-10-08T03:00:00.000Z",
+    }
+    assert server._load_summary(payload) == {
+        "external": True,
+        "used_pre_aggregations": ["v.rollup"],
+        "last_refresh_time": "2026-10-08T03:00:00.000Z",
+        "row_count": 2,
+    }
+
+
+def test_load_summary_tolerates_missing_and_odd_fields(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    server = _load_server(monkeypatch)
+    assert server._load_summary({"data": []}) == {
+        "external": None,
+        "used_pre_aggregations": [],
+        "last_refresh_time": None,
+        "row_count": 0,
+    }
+    # An entry without preAggregationId falls back to its key.
+    odd = {"data": [], "usedPreAggregations": {"some_table": "not-a-dict"}}
+    assert server._load_summary(odd)["used_pre_aggregations"] == ["some_table"]
+    assert (
+        server._load_summary({"usedPreAggregations": []})["used_pre_aggregations"] == []
+    )
+
+
+def test_load_summary_combines_a_multi_query_response(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    server = _load_server(monkeypatch)
+    payload = {
+        "results": [
+            {
+                "data": [{"a": 1}],
+                "external": True,
+                "lastRefreshTime": "2026-10-08T03:00:00Z",
+            },
+            {
+                "data": [{"a": 2}, {"a": 3}],
+                "external": False,
+                "lastRefreshTime": "2026-10-07T03:00:00Z",
+            },
+            "not-a-dict",
+        ]
+    }
+    summary = server._load_summary(payload)
+    assert summary["row_count"] == 3
+    # Served by a pre-aggregation only if every part was.
+    assert summary["external"] is False
+    # The stalest refresh time: how old the oldest part of the answer is.
+    assert summary["last_refresh_time"] == "2026-10-07T03:00:00Z"

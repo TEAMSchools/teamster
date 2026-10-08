@@ -27,11 +27,13 @@ Tools:
 """
 
 import asyncio
+import contextlib
 import hashlib
 import json
 import os
 import time
-from collections.abc import AsyncIterator
+import uuid
+from collections.abc import AsyncIterator, Iterator
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
@@ -288,6 +290,110 @@ def _with_default_timezone(query: dict[str, Any]) -> dict[str, Any]:
     if query.get("timezone"):
         return query
     return {**query, "timezone": DEFAULT_QUERY_TIMEZONE}
+
+
+# Call record: 1 JSON line per tool call, written to stderr for Cloud Logging.
+# Design and the sink that routes it to BigQuery: Refs #5613.
+CALL_RECORD_TEXT_LIMIT = 10_000
+
+
+def _clip(text: str | None) -> str | None:
+    """Cut a text field so 1 record stays far under Cloud Logging's 256 KB
+    entry limit."""
+    if text is None:
+        return None
+    return text[:CALL_RECORD_TEXT_LIMIT]
+
+
+def _resolve_session_id(raw: str | None) -> tuple[str, bool]:
+    """Return `(session_id, minted)`. A value that is not a UUID is replaced
+    and never echoed, so free text a model passes here never reaches the log."""
+    with contextlib.suppress(ValueError):
+        return str(uuid.UUID((raw or "").strip())), False
+    return str(uuid.uuid4()), True
+
+
+def _filter_members(filters: Any) -> Iterator[str]:
+    """Yield the member of every filter, walking nested `and`/`or` groups.
+    Filter values are never read."""
+    if not isinstance(filters, list):
+        return
+    for item in filters:
+        if not isinstance(item, dict):
+            continue
+        for group in ("and", "or"):
+            yield from _filter_members(item.get(group))
+        member = item.get("member") or item.get("dimension")
+        if isinstance(member, str):
+            yield member
+
+
+def _members_referenced(query: dict[str, Any]) -> list[str]:
+    """Every member a Cube query names, sorted and unique. Names only."""
+    members: set[str] = set()
+    for key in ("measures", "dimensions", "segments"):
+        members.update(m for m in query.get(key) or [] if isinstance(m, str))
+    for time_dimension in query.get("timeDimensions") or []:
+        if isinstance(time_dimension, dict) and isinstance(
+            time_dimension.get("dimension"), str
+        ):
+            members.add(time_dimension["dimension"])
+    members.update(_filter_members(query.get("filters")))
+    order = query.get("order")
+    if isinstance(order, dict):
+        members.update(k for k in order if isinstance(k, str))
+    elif isinstance(order, list):
+        members.update(
+            pair[0]
+            for pair in order
+            if isinstance(pair, (list, tuple)) and pair and isinstance(pair[0], str)
+        )
+    return sorted(members)
+
+
+def _views_referenced(members: list[str]) -> list[str]:
+    return sorted({m.split(".", 1)[0] for m in members})
+
+
+def _load_summary(payload: dict[str, Any]) -> dict[str, Any]:
+    """Pull the pre-aggregation and size fields out of a `/v1/load` response.
+    A multi-query response (`results`) is summarized across its parts: served
+    by a pre-aggregation only if every part was, refreshed as of its stalest
+    part. Rows are counted, never copied."""
+    results = payload.get("results")
+    parts = (
+        [r for r in results if isinstance(r, dict)]
+        if isinstance(results, list)
+        else [payload]
+    )
+    externals = [p["external"] for p in parts if isinstance(p.get("external"), bool)]
+    used: set[str] = set()
+    for part in parts:
+        entries = part.get("usedPreAggregations")
+        if not isinstance(entries, dict):
+            continue
+        for table_name, info in entries.items():
+            # The id is stable; the table name carries a hash that changes on
+            # every rebuild.
+            pre_aggregation_id = (
+                info.get("preAggregationId") if isinstance(info, dict) else None
+            )
+            used.add(
+                pre_aggregation_id
+                if isinstance(pre_aggregation_id, str)
+                else table_name
+            )
+    refresh_times = [
+        p["lastRefreshTime"] for p in parts if isinstance(p.get("lastRefreshTime"), str)
+    ]
+    return {
+        "external": all(externals) if externals else None,
+        "used_pre_aggregations": sorted(used),
+        "last_refresh_time": min(refresh_times) if refresh_times else None,
+        "row_count": sum(
+            len(p["data"]) for p in parts if isinstance(p.get("data"), list)
+        ),
+    }
 
 
 def _meta_scope_key(views: list[str] | None) -> str:
