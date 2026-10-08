@@ -1,0 +1,411 @@
+# Validation checks for the Attendance Dashboard (Tableau workbook
+# 87c13e78-a912-40a4-95dd-33248fc1cbd3). Run with the cube-dashboard skill.
+# Every metric's SQL reproduces the Tableau formula on the dashboard's own table.
+# Grains come from `cube_validate.py grains` over the workbook's published
+# dashboards; a grain with a no-Cube-member dimension is also checked without it.
+dashboard: attendance_dashboard
+task_gid: "1213823788919470"
+workbook_luid: 87c13e78-a912-40a4-95dd-33248fc1cbd3
+table: teamster-332318.kipptaf_tableau.rpt_tableau__attendance_dashboard
+view: student_attendance_enrollment_daily_view
+
+dimensions:
+  date: { cube: attendance_date, sql: calendardate }
+  day: { cube: attendance_date, granularity: day, sql: calendardate }
+  month:
+    {
+      cube: attendance_date,
+      granularity: month,
+      sql: "date_trunc(calendardate, month)",
+    }
+  academic_year: { cube: dates_academic_year, sql: academic_year }
+  region: { cube: regions_region_name, sql: region }
+  school: { cube: locations_abbreviation, sql: school_abbreviation }
+  grade_level: { cube: grade_level, sql: grade_level }
+  term: { cube: terms_term_name, sql: term }
+  school_level: { cube: locations_grade_band, sql: school_level }
+  # Tableau shows three IEP statuses; Cube has a boolean, so both sides group by it.
+  iep: { cube: is_iep, sql: iep_status != 'No IEP' }
+  gender: { cube: gender_identity, sql: gender }
+  # Same decode as dim_students.race.
+  ethnicity:
+    cube: race
+    sql: >-
+      case ethnicity when 'B' then 'Black/African American' when 'H' then
+      'Hispanic or Latino' when 'T' then 'Two or More Races' when 'W' then
+      'White' when 'I' then 'American Indian or Alaska Native' when 'A' then
+      'Asian' when 'P' then 'Native Hawaiian or Other Pacific Islander' when 'N'
+      then 'Not Hispanic or Latino' else 'Not Listed' end
+  # Cube's is_ell is false when no ELL span exists; a null lep_status means the same.
+  ell: { cube: is_ell, sql: "coalesce(lep_status, false)" }
+  # No Cube member: grains using these are reported as not comparable.
+  homeroom:
+    { cube: null, sql: "if(school_level = 'HS', teacher_name, section_number)" }
+  teacher_name: { cube: null, sql: teacher_name }
+  team: { cube: null, sql: team }
+  enroll_status: { cube: null, sql: enroll_status }
+  schoolid: { cube: null, sql: schoolid }
+  is_truant_current: { cube: null, sql: is_truant }
+  c_504_status: { cube: null, sql: c_504_status }
+  is_counselingservices: { cube: null, sql: is_counselingservices }
+  nj_overall_student_tier: { cube: null, sql: nj_overall_student_tier }
+  is_self_contained: { cube: null, sql: is_self_contained }
+  ms_attended: { cube: null, sql: ms_attended }
+  grouping: { cube: null, sql: region }
+  view_by: { cube: null, sql: calendardate }
+  region_filter: { cube: null, sql: region }
+  student: { cube: null, sql: student_number }
+
+# Every NJ tab hard-codes these three regions (Miami - NSLP is Miami-only).
+hard_filters:
+  - { dim: region, values: [Camden, Newark, Paterson] }
+
+rows:
+  - row_gid: "1219087795895880"
+    name: "% On-Time (standalone)"
+    # Tableau: AVG(ABS((IF is_present = 0 THEN NULL ELSE Is Tardy END) - 1)); Is Tardy uses the Att Code group's Tardy bin.
+    metrics:
+      - cube: pct_ontime
+        kind: rate
+        num:
+          sum(if(is_present = 0, null, if(att_code in ('ET', 'T', 'T10', 'TLE'),
+          0, 1)))
+        den: countif(is_present != 0)
+    grains:
+      - []
+      - [grade_level]
+      - [grade_level, month]
+      - [grade_level, is_truant_current]
+      - [grade_level, academic_year]
+      - [grade_level, day]
+      - [grade_level, enroll_status]
+      - [grade_level, iep]
+      - [grade_level, region]
+      - [grade_level, school]
+      - [grade_level, schoolid]
+      - [grade_level, term]
+      - [region, academic_year]
+      - [region, academic_year, month]
+      - [region, academic_year, grouping]
+      - [region, academic_year, c_504_status]
+      - [region, academic_year, enroll_status]
+      - [region, academic_year, ethnicity]
+      - [region, academic_year, gender]
+      - [region, academic_year, grade_level]
+      - [region, academic_year, iep]
+      - [region, academic_year, is_counselingservices]
+      - [region, academic_year, ell]
+      - [region, academic_year, school]
+      - [region, academic_year, term]
+      - [view_by, grouping]
+      - [view_by, grouping, month]
+      - [month]
+      - [view_by, grouping, academic_year]
+      - [academic_year]
+      - [view_by, grouping, c_504_status]
+      - [view_by, grouping, day]
+      - [day]
+      - [view_by, grouping, enroll_status]
+      - [view_by, grouping, ethnicity]
+      - [ethnicity]
+      - [view_by, grouping, gender]
+      - [gender]
+      - [view_by, grouping, grade_level]
+      - [view_by, grouping, iep]
+      - [iep]
+      - [view_by, grouping, is_counselingservices]
+      - [view_by, grouping, ell]
+      - [ell]
+      - [view_by, grouping, region]
+      - [region]
+      - [view_by, grouping, school]
+      - [school]
+      - [view_by, grouping, term]
+      - [term]
+      - [school, grade_level]
+      - [school, grade_level, month]
+      - [school, grade_level, academic_year]
+      - [school, grade_level, c_504_status]
+      - [school, grade_level, day]
+      - [school, grade_level, enroll_status]
+      - [school, grade_level, ethnicity]
+      - [school, grade_level, gender]
+      - [school, grade_level, iep]
+      - [school, grade_level, is_counselingservices]
+      - [school, grade_level, ell]
+      - [school, grade_level, ms_attended]
+      - [school, grade_level, nj_overall_student_tier]
+      - [school, grade_level, region]
+      - [school, grade_level, schoolid]
+      - [school, grade_level, term]
+      - [school, grade_level, school_level]
+      - [region, grade_level]
+      - [region, grade_level, month]
+      - [region, grade_level, region_filter]
+      - [region, grade_level, academic_year]
+      - [region, grade_level, c_504_status]
+      - [region, grade_level, day]
+      - [region, grade_level, enroll_status]
+      - [region, grade_level, ethnicity]
+      - [region, grade_level, gender]
+      - [region, grade_level, iep]
+      - [region, grade_level, is_counselingservices]
+      - [region, grade_level, is_self_contained]
+      - [region, grade_level, ell]
+      - [region, grade_level, ms_attended]
+      - [region, grade_level, nj_overall_student_tier]
+      - [region, grade_level, school]
+      - [region, grade_level, school_level]
+      - [region, grade_level, schoolid]
+      - [region, grade_level, term]
+  - row_gid: "1214703929266204"
+    name: "# Tardy"
+    # Tableau: SUM(IIF([Att Code (group)] = 'Tardy', 1, 0)) on Student - Team Counts, whose Exclude HRs filter drops rows with no homeroom.
+    metrics:
+      - cube: count_tardy_days
+        kind: count
+        sql:
+          countif(att_code in ('ET', 'T', 'T10', 'TLE') and
+          coalesce(if(school_level = 'HS', teacher_name, section_number),
+          'NotHere') != 'NotHere')
+        # Cube has no homeroom member, so it cannot apply the Exclude HRs filter.
+        missing_members: [homeroom]
+        sql_without: countif(att_code in ('ET', 'T', 'T10', 'TLE'))
+    grains:
+      - []
+      - [homeroom, term]
+      - [term]
+      - [homeroom, term, month]
+      - [term, month]
+      - [homeroom, term, is_truant_current]
+      - [homeroom, term, academic_year]
+      - [term, academic_year]
+      - [homeroom, term, day]
+      - [term, day]
+      - [homeroom, term, enroll_status]
+      - [homeroom, term, grade_level]
+      - [term, grade_level]
+      - [homeroom, term, iep]
+      - [term, iep]
+      - [homeroom, term, region]
+      - [term, region]
+      - [homeroom, term, school]
+      - [term, school]
+      - [homeroom, term, schoolid]
+  - row_gid: "1219285941351457"
+    name: "# Absences"
+    # Tableau: SUM(IIF([Att Code (group)] = 'Absent', 1, 0)) on Student - Team Counts, whose Exclude HRs filter drops rows with no homeroom.
+    metrics:
+      - cube: count_absent_days
+        kind: count
+        sql:
+          countif(att_code in ('A', 'A-E', 'AD', 'D', 'X') and
+          coalesce(if(school_level = 'HS', teacher_name, section_number),
+          'NotHere') != 'NotHere')
+        # Cube has no homeroom member, so it cannot apply the Exclude HRs filter.
+        missing_members: [homeroom]
+        sql_without: countif(att_code in ('A', 'A-E', 'AD', 'D', 'X'))
+    grains:
+      - []
+      - [homeroom, term]
+      - [term]
+      - [homeroom, term, month]
+      - [term, month]
+      - [homeroom, term, is_truant_current]
+      - [homeroom, term, academic_year]
+      - [term, academic_year]
+      - [homeroom, term, day]
+      - [term, day]
+      - [homeroom, term, enroll_status]
+      - [homeroom, term, grade_level]
+      - [term, grade_level]
+      - [homeroom, term, iep]
+      - [term, iep]
+      - [homeroom, term, region]
+      - [term, region]
+      - [homeroom, term, school]
+      - [term, school]
+      - [homeroom, term, schoolid]
+  - row_gid: "1214075610424640"
+    name: ADA / Is Present (standalone)
+    # Tableau: AVG(is_present); every rpt_ row is a full-membership day with recorded attendance.
+    metrics:
+      - cube: avg_daily_attendance
+        kind: rate
+        num: sum(is_present)
+        den: count(*)
+    grains:
+      - []
+      - [grade_level]
+      - [grade_level, month]
+      - [grade_level, is_truant_current]
+      - [grade_level, academic_year]
+      - [grade_level, day]
+      - [grade_level, enroll_status]
+      - [grade_level, iep]
+      - [grade_level, region]
+      - [grade_level, school]
+      - [grade_level, schoolid]
+      - [grade_level, term]
+      - [grade_level, homeroom]
+      - [grade_level, homeroom, month]
+      - [grade_level, homeroom, is_truant_current]
+      - [grade_level, homeroom, academic_year]
+      - [grade_level, homeroom, day]
+      - [grade_level, homeroom, enroll_status]
+      - [grade_level, homeroom, iep]
+      - [grade_level, homeroom, region]
+      - [grade_level, homeroom, school]
+      - [grade_level, homeroom, schoolid]
+      - [grade_level, homeroom, teacher_name]
+      - [grade_level, homeroom, term]
+      - [region, academic_year]
+      - [region, academic_year, month]
+      - [region, academic_year, grouping]
+      - [region, academic_year, c_504_status]
+      - [region, academic_year, enroll_status]
+      - [region, academic_year, ethnicity]
+      - [region, academic_year, gender]
+      - [region, academic_year, grade_level]
+      - [region, academic_year, iep]
+      - [region, academic_year, is_counselingservices]
+      - [region, academic_year, ell]
+      - [region, academic_year, school]
+      - [region, academic_year, term]
+      - [view_by, grouping]
+      - [view_by, grouping, month]
+      - [month]
+      - [view_by, grouping, academic_year]
+      - [academic_year]
+      - [view_by, grouping, c_504_status]
+      - [view_by, grouping, day]
+      - [day]
+      - [view_by, grouping, enroll_status]
+      - [view_by, grouping, ethnicity]
+      - [ethnicity]
+      - [view_by, grouping, gender]
+      - [gender]
+      - [view_by, grouping, grade_level]
+      - [view_by, grouping, iep]
+      - [iep]
+      - [view_by, grouping, is_counselingservices]
+      - [view_by, grouping, ell]
+      - [ell]
+      - [view_by, grouping, region]
+      - [region]
+      - [view_by, grouping, school]
+      - [school]
+      - [view_by, grouping, term]
+      - [term]
+      - [school, grade_level]
+      - [school, grade_level, month]
+      - [school, grade_level, academic_year]
+      - [school, grade_level, c_504_status]
+      - [school, grade_level, day]
+      - [school, grade_level, enroll_status]
+      - [school, grade_level, ethnicity]
+      - [school, grade_level, gender]
+      - [school, grade_level, iep]
+      - [school, grade_level, is_counselingservices]
+      - [school, grade_level, ell]
+      - [school, grade_level, ms_attended]
+      - [school, grade_level, nj_overall_student_tier]
+      - [school, grade_level, region]
+      - [school, grade_level, schoolid]
+      - [school, grade_level, term]
+      - [school, grade_level, school_level]
+      - [region, grade_level]
+      - [region, grade_level, month]
+      - [region, grade_level, region_filter]
+      - [region, grade_level, academic_year]
+      - [region, grade_level, c_504_status]
+      - [region, grade_level, day]
+      - [region, grade_level, enroll_status]
+      - [region, grade_level, ethnicity]
+      - [region, grade_level, gender]
+      - [region, grade_level, iep]
+      - [region, grade_level, is_counselingservices]
+      - [region, grade_level, is_self_contained]
+      - [region, grade_level, ell]
+      - [region, grade_level, ms_attended]
+      - [region, grade_level, nj_overall_student_tier]
+      - [region, grade_level, school]
+      - [region, grade_level, school_level]
+      - [region, grade_level, schoolid]
+      - [region, grade_level, term]
+  - row_gid: "1219285655850612"
+    name: CountD Student Number (headcount)
+    # Tableau: COUNTD(student_number) in the Y1 ADA tooltips.
+    metrics:
+      - cube: count_students
+        kind: count
+        sql: count(distinct student_number)
+    grains:
+      - []
+      - [school, grade_level]
+      - [school, grade_level, month]
+      - [school, grade_level, academic_year]
+      - [school, grade_level, c_504_status]
+      - [school, grade_level, day]
+      - [school, grade_level, enroll_status]
+      - [school, grade_level, ethnicity]
+      - [school, grade_level, gender]
+      - [school, grade_level, iep]
+      - [school, grade_level, is_counselingservices]
+      - [school, grade_level, ell]
+      - [school, grade_level, ms_attended]
+      - [school, grade_level, nj_overall_student_tier]
+      - [school, grade_level, region]
+      - [school, grade_level, schoolid]
+      - [school, grade_level, term]
+      - [school, grade_level, school_level]
+      - [region, grade_level]
+      - [region, grade_level, month]
+      - [region, grade_level, region_filter]
+      - [region, grade_level, academic_year]
+      - [region, grade_level, c_504_status]
+      - [region, grade_level, day]
+      - [region, grade_level, enroll_status]
+      - [region, grade_level, ethnicity]
+      - [region, grade_level, gender]
+      - [region, grade_level, iep]
+      - [region, grade_level, is_counselingservices]
+      - [region, grade_level, is_self_contained]
+      - [region, grade_level, ell]
+      - [region, grade_level, ms_attended]
+      - [region, grade_level, nj_overall_student_tier]
+      - [region, grade_level, school]
+      - [region, grade_level, school_level]
+      - [region, grade_level, schoolid]
+      - [region, grade_level, term]
+  - row_gid: "1219285583802448"
+    name: Membershipvalue
+    # Tableau: SUM(membershipvalue) on Student - Attendance Roster.
+    metrics:
+      - cube: count_membership_days
+        kind: count
+        sql: sum(membershipvalue)
+    grains:
+      - []
+      - [student, grade_level, team, teacher_name]
+      - [grade_level]
+      - [student, grade_level, team, teacher_name, month]
+      - [grade_level, month]
+      - [student, grade_level, team, teacher_name, is_truant_current]
+      - [student, grade_level, team, teacher_name, homeroom]
+      - [student, grade_level, team, teacher_name, academic_year]
+      - [grade_level, academic_year]
+      - [student, grade_level, team, teacher_name, day]
+      - [grade_level, day]
+      - [student, grade_level, team, teacher_name, enroll_status]
+      - [student, grade_level, team, teacher_name, iep]
+      - [grade_level, iep]
+      - [student, grade_level, team, teacher_name, is_counselingservices]
+      - [student, grade_level, team, teacher_name, nj_overall_student_tier]
+      - [student, grade_level, team, teacher_name, region]
+      - [grade_level, region]
+      - [student, grade_level, team, teacher_name, school]
+      - [grade_level, school]
+      - [student, grade_level, team, teacher_name, schoolid]
+      - [student, grade_level, team, teacher_name, term]
+      - [grade_level, term]
