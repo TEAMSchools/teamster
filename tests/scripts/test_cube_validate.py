@@ -579,7 +579,7 @@ def test_write_outputs_comments_report_and_latest_merge(tmp_path):
         "Worst: count_tardy_days at region x school, Newark / B: Cube 15, Tableau 12."
         in comment
     )
-    assert "Missing Cube members: team (blocks region x team)." in comment
+    assert "Missing Cube members: team (blocks 1 grain)." in comment
 
 
 def test_comment_hides_small_cells():
@@ -697,10 +697,7 @@ def test_run_dashboard_flags_missing_members(tmp_path):
         comment.splitlines()[0] == "Cube vs Tableau check, 2026-10-08: MISSING MEMBER"
     )
     assert "0 out of tolerance, 2 explained by missing Cube members." in comment
-    assert (
-        "Missing Cube members: team (explains 2 cells; blocks region x team)."
-        in comment
-    )
+    assert "Missing Cube members: team (explains 2 cells; blocks 1 grain)." in comment
     latest = json.loads((tmp_path / "out" / "latest.json").read_text())
     assert latest["rows"]["1"]["missing_members"] == ["team"]
 
@@ -727,3 +724,43 @@ def test_cube_filters_apply_to_cube_queries_only(tmp_path):
             "operator": "equals",
             "values": ["true"],
         } in q["filters"]
+
+
+def test_tableau_only_dims_are_not_missing_members(tmp_path):
+    def mutate(d):
+        d["dimensions"]["team"]["tableau_only"] = True
+
+    c = cv.load_checks(_write_variant(tmp_path, mutate))
+    result = cv.run_dashboard(c, FakeCube(), FakeBQ(), TODAY)
+    tardy = result["rows"]["1"]
+    assert tardy["grains"][3]["status"] == "not_comparable"
+    assert "team" not in tardy["missing_members"]
+
+
+def test_comment_worst_prefers_cells_big_enough_to_report():
+    def grain(key, cube, truth, n):
+        w = {
+            "key": [key],
+            "cube": cube,
+            "truth": truth,
+            "n_students": n,
+            "kind": "count",
+        }
+        return {
+            "grain": ["school"],
+            "status": "fail",
+            "cells": 1,
+            "bad": 1,
+            "explained": 0,
+            "metrics": {"m": {"worst": [w]}},
+        }
+
+    row = {
+        "verdict": "fail",
+        "grains": [grain("Tiny", 0.0, 9.0, 2), grain("Big", 100.0, 104.0, 300)],
+        "missing_members": {},
+    }
+    text = cv.comment_text(
+        row, {"run_date": "2026-10-08", "window": ["a", "b"]}, Path("r.md")
+    )
+    assert "Worst: m at school, Big: Cube 100, Tableau 104." in text

@@ -166,6 +166,7 @@ class Dim:
     cube: str | None  # None: no Cube member, so grains using it are not comparable
     sql: str
     granularity: str | None = None
+    tableau_only: bool = False  # a dashboard control, not data: never a missing member
 
 
 def load_checks(path) -> dict:
@@ -174,7 +175,13 @@ def load_checks(path) -> dict:
         if key not in data:
             raise CheckError(f"{path}: missing '{key}'")
     dims = {
-        n: Dim(n, d.get("cube"), d["sql"], d.get("granularity"))
+        n: Dim(
+            n,
+            d.get("cube"),
+            d["sql"],
+            d.get("granularity"),
+            bool(d.get("tableau_only")),
+        )
         for n, d in data["dimensions"].items()
     }
     if "date" not in dims or not dims["date"].cube:
@@ -640,7 +647,7 @@ def run_dashboard(checks, cube_load, bq, today, rows=None, scope_only=False) -> 
                 entry["error"] = o["error"]
             if o["status"] == "not_comparable":
                 for name in g:
-                    if dims[name].cube is None:
+                    if dims[name].cube is None and not dims[name].tableau_only:
                         _missing(missing, name)["blocks_grains"].append(_label(g))
             if o["status"] == "ok":
                 ms = {m["cube"]: o["metrics"][m["cube"]] for m in row["metrics"]}
@@ -693,14 +700,17 @@ def _where(grain, key) -> str:
 _COMPARED = ("pass", "fail", "missing_member")
 
 
-def _missing_text(missing: dict) -> str:
+def _missing_text(missing: dict, full: bool = False) -> str:
     parts = []
     for name, m in missing.items():
         bits = []
         if m["explains_cells"]:
             bits.append(f"explains {m['explains_cells']} cells")
-        if m["blocks_grains"]:
+        n = len(m["blocks_grains"])
+        if n and full:
             bits.append(f"blocks {', '.join(m['blocks_grains'])}")
+        elif n:
+            bits.append(f"blocks {n} grain{'' if n == 1 else 's'}")
         parts.append(f"{name} ({'; '.join(bits)})")
     return ", ".join(parts)
 
@@ -726,8 +736,10 @@ def comment_text(row, result, report_path) -> str:
                     if c["cube"] is None or c["truth"] is None
                     else abs(c["cube"] - c["truth"])
                 )
-                if worst is None or d > worst[0]:
-                    worst = (d, g["grain"], metric, c)
+                # A cell big enough to report beats a bigger gap in a tiny one.
+                rank = ((c["n_students"] or 0) >= SMALL_CELL, d)
+                if worst is None or rank > worst[0]:
+                    worst = (rank, g["grain"], metric, c)
     if worst:
         _, grain, metric, c = worst
         if c["n_students"] is None or c["n_students"] < SMALL_CELL:
@@ -761,7 +773,7 @@ def report_markdown(result) -> str:
         out += [f"## {row['name']} ({gid}): {row['verdict']}", ""]
         if row.get("missing_members"):
             out += [
-                f"Missing Cube members: {_missing_text(row['missing_members'])}.",
+                f"Missing Cube members: {_missing_text(row['missing_members'], full=True)}.",
                 "",
             ]
         for g in row["grains"]:

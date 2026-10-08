@@ -58,9 +58,10 @@ dimensions:
   nj_overall_student_tier: { cube: null, sql: nj_overall_student_tier }
   is_self_contained: { cube: null, sql: is_self_contained }
   ms_attended: { cube: null, sql: ms_attended }
-  grouping: { cube: null, sql: region }
-  view_by: { cube: null, sql: calendardate }
-  region_filter: { cube: null, sql: region }
+  # Dashboard controls (Group By, Day/Week toggle, region filter calc), not data.
+  grouping: { cube: null, sql: region, tableau_only: true }
+  view_by: { cube: null, sql: calendardate, tableau_only: true }
+  region_filter: { cube: null, sql: region, tableau_only: true }
   student: { cube: null, sql: student_number }
 
 # Every NJ tab hard-codes these three regions (Miami - NSLP is Miami-only).
