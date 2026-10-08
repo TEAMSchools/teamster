@@ -16,8 +16,9 @@ The workbook has two halves:
 
 - **Academic health (this page).** Landing Page, Academic Health Home, Academic
   Health Schools, and Cumulative GPA Monitor. They read GPA and course grades.
-- **Gradebook health.** Gradebook School Rollup and Gradebook Teacher View. They
-  read `rpt_tableau__gradebook_audit` and are covered on the
+- **Gradebook health.** Gradebook School Rollup and Gradebook Teacher View read
+  `rpt_tableau__gradebook_audit`. The elementary comments view reads
+  `rpt_tableau__gradebook_es_comments`. All three are covered on the
   [Gradebook Audit Data Model](gradebook-audit-data-model.md) page.
 
 It is declared in dbt as the exposure `academic_gradebook_health_suite`, and
@@ -703,11 +704,10 @@ of 0% gets the label. Other failing Y1 grades read `F`. Failure counts match
 ## The Gradebook and GPA Dashboard
 
 The older Tableau workbook, exposure `gradebook_and_gpa_dashboard`, reads
-`rpt_tableau__gradebook_gpa`, `rpt_tableau__gradebook_gpa_cumulative`, and
-`rpt_tableau__gradebook_es_comments`. The Health Suite replaced it. Dagster no
-longer refreshes its extracts: the exposure carries no refresh schedule. Anthony
-Walters decides when to retire it; retiring a model here means disabling it,
-never deleting it.
+`rpt_tableau__gradebook_gpa` and `rpt_tableau__gradebook_gpa_cumulative`. The
+Health Suite replaced it. Dagster no longer refreshes its extracts: the exposure
+carries no refresh schedule. Anthony Walters decides when to retire it; retiring
+a model here means disabling it, never deleting it.
 
 ## Yearly upkeep
 
