@@ -34,14 +34,18 @@ explain and the grains they block, so the user knows what to add.
    before running.
 3. Run. Write `tests/test_zz_cube_dashboard_run.py` (template below), run
    `uv run pytest tests/test_zz_cube_dashboard_run.py -s -q --tb=short`, then
-   delete it. First run with `--scope-only`; a `ScopeError` means the Cube
-   identity sees less than the dashboard, so stop and tell the user.
+   delete it. The run downloads the workbook with its extracts and compares Cube
+   with the dashboard's own extract, not the live warehouse view. First run with
+   `--scope-only`. A `ScopeError` means the Cube identity sees less than the
+   dashboard; a `TimingError` means the extract and the Cube fact are more than
+   an hour apart (one of them did not refresh). Stop and tell the user either
+   way.
 4. Renders. For each tab in the entries' `renders:`, call
    `mcp__tableau__get-view-image` once per region (`viewFilters` set to that
    region) and at the worst failing cells. Compare the visible numbers to the
-   report. A render that disagrees with the warehouse SQL means the SQL is
-   wrong: mark the row `incomplete` in your summary and fix the entry before
-   posting anything.
+   report. A render that disagrees with the check SQL means the SQL is wrong:
+   mark the row `incomplete` in your summary and fix the entry before posting
+   anything.
 5. Review. Summarize the verdicts for the user: rows that fail, the worst cell
    for each, the missing Cube members per row, any grain errors, any
    pre-aggregations on failed grains (a stale rollup is a different fix from a
@@ -57,8 +61,7 @@ explain and the grains they block, so the user knows what to add.
 Run template:
 
 ```python
-import importlib.util
-import sys
+import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -67,11 +70,11 @@ EXTRA: list[str] = []  # e.g. ["--scope-only"] or ["--rows", "<gid>"]
 
 
 def test_run() -> None:
-    spec = importlib.util.spec_from_file_location("cube_validate", ROOT / "scripts/cube_validate.py")
-    mod = importlib.util.module_from_spec(spec)
-    sys.modules["cube_validate"] = mod
-    spec.loader.exec_module(mod)
-    print("exit", mod.main(["run", str(CHECKS), "--as", "<network-scoped email>", *EXTRA]))
+    # The pytest fixture loads the secrets; the child process inherits them.
+    # tableauhyperapi reads the extract and is not a project dependency.
+    cmd = ["uv", "run", "--with", "tableauhyperapi", "scripts/cube_validate.py", "run"]
+    cmd += [str(CHECKS), "--as", "<network-scoped email>", *EXTRA]
+    print("exit", subprocess.run(cmd, cwd=ROOT).returncode)
 ```
 
 ## Author a check entry
@@ -82,10 +85,12 @@ def test_run() -> None:
 2. Run `uv run scripts/cube_validate.py grains <twb> --dashboard "<view>" ...`
    with every published view name from `mcp__tableau__get-workbook`, then again
    with `--measure "<caption>"`. Keep its `grains` and each sheet's `formula`.
-3. Translate the formula to SQL on the dashboard's `rpt_tableau__*` table.
-   Resolve groups (`categorical-bin` columns in the `.twb`) and parameters.
-   Match what the dashboard counts, not what the Cube measure counts; comment on
-   any deliberate difference.
+3. Translate the formula to BigQuery-dialect SQL over the extract's columns,
+   which carry the same names as the `rpt_tableau__*` model behind the
+   datasource; the run translates it to Hyper's dialect. Resolve groups
+   (`categorical-bin` columns in the `.twb`) and parameters. Match what the
+   dashboard counts, not what the Cube measure counts; comment on any deliberate
+   difference.
 4. Map every grain dimension in `dimensions:`; one with no Cube member gets
    `cube: null`. Its grains are not comparable, and the dimension is listed as a
    missing member. Also list each such grain without that dimension: the sheet's
@@ -95,8 +100,8 @@ def test_run() -> None:
    `sql_without` (or `num_without`/`den_without`). A cell Cube matches only
    without it is reported as explained by that member, not as a bug.
 6. `count` for sums and distinct counts, `rate` with `num`/`den` for averages.
-7. Check the file loads (`load_checks`) and each total-grain SQL runs once in
-   BigQuery.
+7. Check the file loads (`load_checks`), then run the new row alone
+   (`--rows <gid>`) so its SQL runs once against the extract.
 
 ## Rules
 

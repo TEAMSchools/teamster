@@ -764,3 +764,78 @@ def test_comment_worst_prefers_cells_big_enough_to_report():
         row, {"run_date": "2026-10-08", "window": ["a", "b"]}, Path("r.md")
     )
     assert "Worst: m at school, Big: Cube 100, Tableau 104." in text
+
+
+# ---------------------------------------------------------------- extract as the truth side
+def test_load_checks_requires_extract_and_cube_source_table(tmp_path):
+    with pytest.raises(cv.CheckError, match="extract"):
+        cv.load_checks(_write_variant(tmp_path, lambda d: d.pop("extract")))
+    with pytest.raises(cv.CheckError, match="cube_source_table"):
+        cv.load_checks(_write_variant(tmp_path, lambda d: d.pop("cube_source_table")))
+
+
+def test_extract_file_name_for_datasource():
+    assert cv.extract_file_name(FIX / "mini.twb", "rpt_demo") == "federated_abc.hyper"
+    with pytest.raises(cv.CheckError, match="no extract"):
+        cv.extract_file_name(FIX / "mini.twb", "nope")
+
+
+def test_to_hyper_sql_translates_and_names_the_extract_table():
+    c = _checks()
+    metrics = c["rows"][0]["metrics"] + c["rows"][1]["metrics"]
+    sql = cv.truth_sql(
+        cv.EXTRACT_TABLE,
+        metrics,
+        ["region", "month"],
+        c["dimensions"],
+        c["hard_filters"],
+        WINDOW,
+        c["students_sql"],
+    )
+    hyper = cv.to_hyper_sql(sql)
+    assert '"Extract"."Extract"' in hyper
+    assert "`" not in hyper
+    assert "date_trunc('month', calendardate)" in hyper.lower()
+
+
+def test_py_value_converts_hyper_dates():
+    class HyperDate:
+        def to_date(self):
+            return dt.date(2026, 9, 1)
+
+    assert cv._py_value(HyperDate()) == dt.date(2026, 9, 1)
+    assert cv._py_value(5) == 5
+
+
+def test_timing_guard():
+    extract_at = dt.datetime(2026, 10, 8, 10, 28, tzinfo=dt.UTC)
+    cv.timing_guard(extract_at, dt.datetime(2026, 10, 8, 10, 12, tzinfo=dt.UTC))
+    with pytest.raises(cv.TimingError, match="Cube fact was built"):
+        cv.timing_guard(extract_at, extract_at - dt.timedelta(hours=3))
+    with pytest.raises(cv.TimingError, match="extract was refreshed"):
+        cv.timing_guard(extract_at, extract_at + dt.timedelta(hours=3))
+
+
+def test_snapshot_date_is_local():
+    assert cv.snapshot_date(dt.datetime(2026, 10, 8, 3, 0, tzinfo=dt.UTC)) == dt.date(
+        2026, 10, 7
+    )
+
+
+def test_cube_built_at_reads_tables_metadata():
+    seen = []
+
+    def bq(sql):
+        seen.append(sql)
+        return [{"last_modified_time": 1791462720000}]
+
+    built = cv.cube_built_at("proj.marts.fct_demo", bq)
+    assert built == dt.datetime.fromtimestamp(1791462720, dt.UTC)
+    assert "`proj.marts.__TABLES__`" in seen[0] and "table_id = 'fct_demo'" in seen[0]
+
+
+def test_comment_names_the_snapshots():
+    snaps = {"extract": "2026-10-08 06:28 ET", "cube": "2026-10-08 06:12 ET"}
+    result = cv.run_dashboard(_checks(), FakeCube(), FakeBQ(), TODAY, snapshots=snaps)
+    text = cv.comment_text(result["rows"]["2"], result, Path("r.md"))
+    assert "Snapshots: extract 2026-10-08 06:28 ET, Cube 2026-10-08 06:12 ET." in text

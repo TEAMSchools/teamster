@@ -5,8 +5,12 @@
 # dashboards; a grain with a no-Cube-member dimension is also checked without it.
 dashboard: attendance_dashboard
 task_gid: "1213823788919470"
-workbook_luid: 87c13e78-a912-40a4-95dd-33248fc1cbd3
-table: teamster-332318.kipptaf_tableau.rpt_tableau__attendance_dashboard
+# Truth side: the dashboard's own extract of this datasource, not the live view.
+extract:
+  workbook_luid: 87c13e78-a912-40a4-95dd-33248fc1cbd3
+  datasource: rpt_tableau__attendance_dashboard
+# The fact the view reads; its build time is checked against the extract's refresh.
+cube_source_table: teamster-332318.kipptaf_marts.fct_student_attendance_enrollment_daily
 view: student_attendance_enrollment_daily_view
 
 dimensions:
@@ -62,7 +66,8 @@ dimensions:
   grouping: { cube: null, sql: region, tableau_only: true }
   view_by: { cube: null, sql: calendardate, tableau_only: true }
   region_filter: { cube: null, sql: region, tableau_only: true }
-  student: { cube: null, sql: student_number }
+  # Student-level roster grain: never compared, on purpose (student ids are PII).
+  student: { cube: null, sql: student_number, tableau_only: true }
 
 # Every NJ tab hard-codes these three regions (Miami - NSLP is Miami-only).
 hard_filters:

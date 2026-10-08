@@ -251,3 +251,26 @@ added, rather than reading as a bug.
 - `sync.py` reopens a `missing_member` row: it unticks it, tags it
   `cube-partial`, and never auto-ticks it while `latest.json` says so. `fail`
   keeps the `mismatch` tag and stays done.
+
+## Revision 2026-10-08: compare against the dashboard's extract
+
+Reverses the "Tableau side" decision above, at the user's request, after the
+Attendance pilot. The warehouse `rpt_tableau__*` model is a live view, while
+Cube reads a fact table built once each morning and the dashboard serves an
+extract refreshed soon after. Comparing Cube with the live view mixed real gaps
+with attendance corrections entered since the morning build (`# Absences` moved
+by 30 between two runs an hour apart).
+
+- The truth side is the dashboard's own extract: the run downloads the workbook
+  with its extracts, unpacks the named datasource's `.hyper` file, and runs each
+  grain's SQL there. Check SQL stays in BigQuery dialect; `sqlglot` translates
+  it to Hyper's PostgreSQL dialect.
+- A timing guard reads the extract's refresh time (the workbook's `updated_at`)
+  and the Cube fact's build time (`cube_source_table` in BigQuery `__TABLES__`)
+  and stops when they are more than 60 minutes apart. Both times appear in the
+  report and in every comment.
+- The window ends the day before the extract refresh, in local time.
+- The checks file names `extract: {workbook_luid, datasource}` and
+  `cube_source_table` instead of `table`. The warehouse path is removed.
+- `tableauhyperapi` is not a project dependency; the run adds it with
+  `uv run --with tableauhyperapi`.

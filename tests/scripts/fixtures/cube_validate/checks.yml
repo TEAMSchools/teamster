@@ -1,6 +1,7 @@
 dashboard: demo_dashboard
 task_gid: "100"
-table: proj.ds.rpt_demo
+extract: { workbook_luid: wb-1, datasource: rpt_demo }
+cube_source_table: proj.marts.fct_demo
 view: demo_view
 dimensions:
   date: { cube: attendance_date, sql: calendardate }

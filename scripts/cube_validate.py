@@ -171,9 +171,19 @@ class Dim:
 
 def load_checks(path) -> dict:
     data = yaml.safe_load(Path(path).read_text())
-    for key in ("dashboard", "table", "view", "dimensions", "rows"):
+    for key in (
+        "dashboard",
+        "extract",
+        "cube_source_table",
+        "view",
+        "dimensions",
+        "rows",
+    ):
         if key not in data:
             raise CheckError(f"{path}: missing '{key}'")
+    for key in ("workbook_luid", "datasource"):
+        if not data["extract"].get(key):
+            raise CheckError(f"{path}: extract needs '{key}'")
     dims = {
         n: Dim(
             n,
@@ -519,6 +529,144 @@ def bigquery_rows(sql: str) -> list[dict]:
     ]
 
 
+# ---------------------------------------------------------------- the dashboard's extract
+EXTRACT_TABLE = "EXTRACT_TABLE"  # truth_sql's table; to_hyper_sql names the extract's
+LOCAL_TZ = "America/New_York"
+MAX_SNAPSHOT_GAP = dt.timedelta(minutes=60)
+SCRATCH = Path(__file__).resolve().parents[1] / ".claude" / "scratch" / "cube-dashboard"
+
+
+class TimingError(RuntimeError):
+    """The extract and the Cube fact are snapshots from different times."""
+
+
+def extract_file_name(twb, datasource: str) -> str:
+    """The .hyper file name the workbook's datasource extract is stored under."""
+    root = SafeET.parse(twb).getroot()
+    if root is None:
+        raise ValueError(f"{twb}: empty workbook")
+    for d in root.findall("datasources/datasource"):
+        if not _attr(d, "caption").startswith(datasource):
+            continue
+        for c in d.findall("extract/connection"):
+            if c.get("class") == "hyper" and c.get("dbname"):
+                return Path(_attr(c, "dbname")).name
+    raise CheckError(f"{twb}: no extract for datasource '{datasource}'")
+
+
+def to_hyper_sql(sql: str) -> str:
+    """Translate check SQL from BigQuery to Hyper's PostgreSQL dialect."""
+    import sqlglot
+
+    out = sqlglot.transpile(sql, read="bigquery", write="postgres")[0]
+    return out.replace(f'"{EXTRACT_TABLE}"', '"Extract"."Extract"')
+
+
+def _py_value(v):
+    for attr in ("to_datetime", "to_date"):
+        if hasattr(v, attr):
+            return getattr(v, attr)()
+    return v
+
+
+class ExtractSource:
+    """Runs check SQL against one .hyper file; use as a context manager."""
+
+    def __init__(self, path: Path):
+        self.path = path
+
+    def __enter__(self):
+        # trunk-ignore(pyright/reportMissingImports): added per run with uv run --with
+        from tableauhyperapi import Connection, HyperProcess, Telemetry
+
+        self._hp = HyperProcess(Telemetry.DO_NOT_SEND_USAGE_DATA_TO_TABLEAU)
+        self._con = Connection(self._hp.endpoint, str(self.path))
+        return self
+
+    def __exit__(self, *exc):
+        self._con.close()
+        self._hp.close()
+
+    def __call__(self, sql: str) -> list[dict]:
+        with self._con.execute_query(to_hyper_sql(sql)) as result:
+            names = [c.name.unescaped for c in result.schema.columns]
+            return [
+                {n: _py_value(v) for n, v in zip(names, row, strict=True)}
+                for row in result
+            ]
+
+
+def download_extract(
+    luid: str, datasource: str, out_dir: Path
+) -> tuple[Path, dt.datetime]:
+    """Download the workbook with extracts; return the datasource's .hyper and refresh time."""
+    import zipfile
+
+    import tableauserverclient as tsc
+
+    out_dir.mkdir(parents=True, exist_ok=True)
+    auth = tsc.PersonalAccessTokenAuth(
+        token_name=os.environ["TABLEAU_TOKEN_NAME"],
+        personal_access_token=os.environ["TABLEAU_PERSONAL_ACCESS_TOKEN"],
+        site_id=os.environ["TABLEAU_SITE_ID"],
+    )
+    server = tsc.Server(os.environ["TABLEAU_SERVER_ADDRESS"], use_server_version=True)
+    with server.auth.sign_in(auth):
+        refreshed_at = server.workbooks.get_by_id(luid).updated_at
+        # tableauserverclient appends the extension: pass the stem.
+        twbx = Path(
+            server.workbooks.download(
+                luid, filepath=str(out_dir / "workbook"), include_extract=True
+            )
+        )
+    with zipfile.ZipFile(twbx) as z:
+        twb = next(n for n in z.namelist() if n.endswith(".twb"))
+        (out_dir / "workbook.twb").write_bytes(z.read(twb))
+        name = extract_file_name(out_dir / "workbook.twb", datasource)
+        member = next(n for n in z.namelist() if Path(n).name == name)
+        hyper = out_dir / name
+        hyper.write_bytes(z.read(member))
+    if refreshed_at is None:
+        raise TimingError(f"Tableau returned no refresh time for workbook {luid}")
+    return hyper, refreshed_at
+
+
+def cube_built_at(table: str, bq) -> dt.datetime:
+    """When the Cube fact table was last rebuilt, from BigQuery's table metadata."""
+    dataset, name = table.rsplit(".", 1)
+    rows = bq(
+        # trunk-ignore(bandit/B608): the table name comes from a reviewed checks file
+        f"select last_modified_time from `{dataset}.__TABLES__` where table_id = '{name}'"
+    )
+    return dt.datetime.fromtimestamp(int(rows[0]["last_modified_time"]) / 1000, dt.UTC)
+
+
+def _local(ts: dt.datetime) -> str:
+    from zoneinfo import ZoneInfo
+
+    return ts.astimezone(ZoneInfo(LOCAL_TZ)).strftime("%Y-%m-%d %H:%M ET")
+
+
+def snapshot_date(ts: dt.datetime) -> dt.date:
+    from zoneinfo import ZoneInfo
+
+    return ts.astimezone(ZoneInfo(LOCAL_TZ)).date()
+
+
+def timing_guard(extract_at: dt.datetime, cube_at: dt.datetime) -> None:
+    gap = extract_at - cube_at
+    if gap > MAX_SNAPSHOT_GAP:
+        raise TimingError(
+            f"The Cube fact was built {_local(cube_at)}, {gap} before the extract was "
+            f"refreshed {_local(extract_at)}. Rerun after Cube's next build."
+        )
+    if -gap > MAX_SNAPSHOT_GAP:
+        raise TimingError(
+            f"The extract was refreshed {_local(extract_at)}, {-gap} before the Cube fact "
+            f"was built {_local(cube_at)}. Rerun after the extract's next refresh."
+        )
+
+
 # ---------------------------------------------------------------- run
 def _missing(missing: dict, name: str) -> dict:
     return missing.setdefault(name, {"explains_cells": 0, "blocks_grains": []})
@@ -549,9 +697,7 @@ def scope_guard(checks, cube_load, bq, window) -> None:
         for r in rows
     }
     for r in bq(
-        truth_sql(
-            checks["table"], [], [name], dims, hard, window, checks["students_sql"]
-        )
+        truth_sql(EXTRACT_TABLE, [], [name], dims, hard, window, checks["students_sql"])
     ):
         value, n = norm_key(r["g0"]), r["n_students"]
         if n and not seen.get(value):
@@ -562,7 +708,9 @@ def scope_guard(checks, cube_load, bq, window) -> None:
             )
 
 
-def run_dashboard(checks, cube_load, bq, today, rows=None, scope_only=False) -> dict:
+def run_dashboard(
+    checks, cube_load, bq, today, rows=None, scope_only=False, snapshots=None
+) -> dict:
     window = academic_window(today)
     dims, hard = checks["dimensions"], checks["hard_filters"]
     scope_guard(checks, cube_load, bq, window)
@@ -570,6 +718,7 @@ def run_dashboard(checks, cube_load, bq, today, rows=None, scope_only=False) -> 
         "dashboard": checks["dashboard"],
         "window": [window[0].isoformat(), window[1].isoformat()],
         "run_date": today.isoformat(),
+        "snapshots": snapshots or {},
         "rows": {},
     }
     if scope_only:
@@ -579,7 +728,7 @@ def run_dashboard(checks, cube_load, bq, today, rows=None, scope_only=False) -> 
     # One Cube query and one SQL query per (view, table, grain), carrying every metric.
     jobs: dict[tuple, list[dict]] = {}
     for row in selected:
-        where = (row.get("view", checks["view"]), row.get("table", checks["table"]))
+        where = (row.get("view", checks["view"]), EXTRACT_TABLE)
         for g in row["grains"]:
             metrics = jobs.setdefault((*where, tuple(g)), [])
             for m in row["metrics"]:
@@ -637,7 +786,7 @@ def run_dashboard(checks, cube_load, bq, today, rows=None, scope_only=False) -> 
         }
 
     for row in selected:
-        where = (row.get("view", checks["view"]), row.get("table", checks["table"]))
+        where = (row.get("view", checks["view"]), EXTRACT_TABLE)
         grains = []
         missing: dict[str, dict] = {}
         for g in row["grains"]:
@@ -727,6 +876,8 @@ def comment_text(row, result, report_path) -> str:
         f"{sum(g['bad'] for g in compared)} out of tolerance"
         + (f", {explained} explained by missing Cube members." if explained else "."),
     ]
+    if snaps := result.get("snapshots"):
+        lines.append(f"Snapshots: extract {snaps['extract']}, Cube {snaps['cube']}.")
     worst = None
     for g in compared:
         for metric, s in g["metrics"].items():
@@ -767,6 +918,10 @@ def report_markdown(result) -> str:
         f"# Cube vs Tableau: {result['dashboard']}",
         "",
         f"Run {result['run_date']}, window {result['window'][0]} to {result['window'][1]}.",
+        "",
+        "Snapshots: extract {extract}, Cube {cube}.".format(
+            **(result.get("snapshots") or {"extract": "n/a", "cube": "n/a"})
+        ),
         "",
     ]
     for gid, row in result["rows"].items():
@@ -841,14 +996,27 @@ def _run_command(a) -> int:
         )
     checks = load_checks(a.checks)
     cube = CubeClient(a.cube_url, secret, _user_email(a.email))
-    result = run_dashboard(
-        checks,
-        cube.load,
-        bigquery_rows,
-        dt.date.today(),
-        rows=set(a.rows.split(",")) if a.rows else None,
-        scope_only=a.scope_only,
+    print("downloading the workbook extract", file=sys.stderr, flush=True)
+    hyper, extract_at = download_extract(
+        checks["extract"]["workbook_luid"],
+        checks["extract"]["datasource"],
+        SCRATCH / checks["dashboard"],
     )
+    cube_at = cube_built_at(checks["cube_source_table"], bigquery_rows)
+    try:
+        timing_guard(extract_at, cube_at)
+        with ExtractSource(hyper) as truth:
+            result = run_dashboard(
+                checks,
+                cube.load,
+                truth,
+                snapshot_date(extract_at),
+                rows=set(a.rows.split(",")) if a.rows else None,
+                scope_only=a.scope_only,
+                snapshots={"extract": _local(extract_at), "cube": _local(cube_at)},
+            )
+    except (TimingError, ScopeError) as e:
+        sys.exit(str(e))
     if a.scope_only:
         print("scope ok")
         return 0
