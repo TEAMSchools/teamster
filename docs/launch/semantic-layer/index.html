@@ -1015,15 +1015,31 @@
     <!-- Data is refreshed every 4 hours by a GitHub Action in
          cristinabaldor/semantic-layer-dashboard, which reads Asana. Moving that
          refresh into this repo is tracked in TEAMSchools/teamster#5794. -->
-    <script src="https://cristinabaldor.github.io/semantic-layer-dashboard/data.js"></script>
-    <script>
-      (() => {
-        if (typeof DATA === "undefined" || !DATA.dashboards) {
-          document.getElementById("main").innerHTML =
-            '<div class="empty"><b>The status data didn’t load</b>Try again in a few minutes.</div>';
-          return;
-        }
+    <script type="module">
+      // data.js is `const DATA = {...};`. Fetch it as text and parse the object
+      // as JSON so nothing in a file from outside this repo runs on this site.
+      // The generator must keep writing a single JSON object literal.
+      const DATA_URL =
+        "https://cristinabaldor.github.io/semantic-layer-dashboard/data.js";
 
+      try {
+        const res = await fetch(DATA_URL);
+        if (!res.ok) throw new Error(`data.js returned HTTP ${res.status}`);
+        const text = await res.text();
+        render(
+          JSON.parse(text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1)),
+        );
+      } catch (err) {
+        console.error(err);
+        document
+          .querySelectorAll(".flows, #kpis, .toolbar")
+          .forEach((el) => (el.hidden = true));
+        document.getElementById("mastmeta").textContent = "";
+        document.getElementById("main").innerHTML =
+          '<div class="empty"><b>The status data didn’t load</b>Try again in a few minutes.</div>';
+      }
+
+      function render(DATA) {
         const STATUS = {
           ready: "Ready in Cube",
           cube_work: "Needs Cube work",
@@ -1100,7 +1116,8 @@
             };
           if (!d.has_checklist || d.stage === 0)
             return { key: "not", label: "Not started", cls: "" };
-          return { key: "prog", label: STEPS[d.stage - 1], cls: "" };
+          // stage = furthest checklist step ticked, so name it as done.
+          return { key: "prog", label: `${STEPS[d.stage - 1]} ✓`, cls: "" };
         }
 
         // ── Building blocks ──────────────────────────────────────────
@@ -1174,9 +1191,10 @@
           const dm = tally(ds.flatMap((d) => d.dimensions));
           const done = ds.filter((d) => d.transitioned).length;
           const started = ds.filter((d) => stageInfo(d).key === "prog").length;
-          const today = new Date().toISOString().slice(0, 10);
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
           const next = DATA.milestones
-            .filter((x) => !x.done && x.due && x.due >= today)
+            .filter((x) => !x.done && x.due && parseDate(x.due) >= today)
             .sort((a, b) => a.due.localeCompare(b.due))[0];
           const unsched = DATA.milestones.filter(
             (x) => !x.done && !x.due,
@@ -1187,10 +1205,10 @@
               <div class="kpi-foot">${started} in progress · ${ds.length - done - started} not started</div></div>
             <div class="kpi"><span class="eyebrow">Metrics ready in Cube</span>
               <div class="kpi-value">${m.ready} <small>of ${m.total}</small></div>
-              ${bar(m, "metrics")}<div class="kpi-foot">A number a dashboard calculates, like attendance rate or % proficient</div></div>
+              ${bar(m, "metrics")}<div class="kpi-foot">A number a dashboard calculates, like attendance rate or % proficient. Counted once for each dashboard that uses it.</div></div>
             <div class="kpi"><span class="eyebrow">Dimensions ready in Cube</span>
               <div class="kpi-value">${dm.ready} <small>of ${dm.total}</small></div>
-              ${bar(dm, "dimensions")}<div class="kpi-foot">What you filter or slice a metric by, like school or grade level</div></div>
+              ${bar(dm, "dimensions")}<div class="kpi-foot">What you filter or slice a metric by, like school or grade level. Counted once for each dashboard that uses it.</div></div>
             <div class="kpi"><span class="eyebrow">Next milestone</span>
               ${next ? `<div class="kpi-ms">${esc(next.code)} ${esc(next.name)}</div><div class="kpi-foot">Due ${fmtDate(next.due)}</div>` : `<div class="kpi-ms muted">None scheduled</div>`}
               <div class="kpi-foot">${unsched} open milestones have no due date yet</div></div>`;
@@ -1385,7 +1403,13 @@
             hour: "numeric",
             minute: "2-digit",
           });
-        $("#legend").innerHTML = ["ready", "cube_work", "data_work", "unset"]
+        $("#legend").innerHTML = [
+          "ready",
+          "cube_work",
+          "data_work",
+          "unset",
+          "tableau_only",
+        ]
           .map((k) => `<span><i class="sw-${k}"></i>${STATUS[k]}</span>`)
           .join("");
         $("#flow-steps").innerHTML = STEPS.map((s, i) =>
@@ -1414,7 +1438,7 @@
         } else {
           $("#pl-section").hidden = true;
         }
-      })();
+      }
     </script>
   </body>
 </html>
