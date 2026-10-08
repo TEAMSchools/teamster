@@ -74,14 +74,23 @@ class _TracingPipeline:
 
     def sync_destination(self) -> None:
         get_resolved_traces().log(
-            ResolvedValueTrace("key", "value", None, str, (), "test", None)  # type: ignore[arg-type]
+            ResolvedValueTrace(
+                key="key",
+                value="value",
+                default_value=None,
+                hint=str,
+                sections=(),
+                provider_name="test",
+                config=None,  # type: ignore[arg-type]
+            )
         )
 
 
-def test_sensor_clears_dlt_config_traces(tmp_path: Path):
-    """dlt clears its process-global trace log only at the end of a traced
+def test_sensor_does_not_accumulate_dlt_config_traces(tmp_path: Path):
+    """dlt clears its per-thread trace log only at the end of a traced
     pipeline step, which a sensor tick never runs; each logged trace pins that
-    tick's whole pipeline, so the long-lived code server grows until OOM."""
+    tick's whole pipeline, so without a per-tick clear the long-lived code
+    server grows until OOM."""
     url = f"sqlite:///{tmp_path / 'ps.db'}"
     engine = sa.create_engine(url)
     with engine.begin() as conn:
@@ -96,8 +105,6 @@ def test_sensor_clears_dlt_config_traces(tmp_path: Path):
             "kipppaterson__powerschool__dlt__nightly_asset_job_schedule"
         ),
     )
-
-    get_resolved_traces().clear()
 
     with (
         instance_for_test() as instance,
@@ -122,6 +129,8 @@ def test_sensor_clears_dlt_config_traces(tmp_path: Path):
                 return_value={"gen": {"count": 0, "max_cursor": None}},
             ),
         ):
-            sensor_def(context)
+            for _ in range(3):
+                sensor_def(context)
 
-    assert get_resolved_traces().all_traces == []
+    # the start-of-tick clear leaves only the latest tick's traces
+    assert len(get_resolved_traces().all_traces) == 1

@@ -198,19 +198,26 @@ class _TracingPipeline(_FakePipeline):
 
     def sync_destination(self) -> None:
         get_resolved_traces().log(
-            ResolvedValueTrace("key", "value", None, str, (), "test", None)  # type: ignore[arg-type]
+            ResolvedValueTrace(
+                key="key",
+                value="value",
+                default_value=None,
+                hint=str,
+                sections=(),
+                provider_name="test",
+                config=None,  # type: ignore[arg-type]
+            )
         )
 
 
-def test_sensor_clears_dlt_config_traces(tmp_path: Path) -> None:
-    """dlt clears its process-global trace log only at the end of a traced
+def test_sensor_does_not_accumulate_dlt_config_traces(tmp_path: Path) -> None:
+    """dlt clears its per-thread trace log only at the end of a traced
     pipeline step, which a sensor tick never runs; each logged trace pins that
-    tick's whole pipeline, so the long-lived code server grows until OOM."""
+    tick's whole pipeline, so without a per-tick clear the long-lived code
+    server grows until OOM."""
     url = _seed_sqlite(tmp_path)
     tables = [ProbeTable(name="students", cursor_column="updated_at")]
     sensor_def = _build_sensor(tables, url)
-
-    get_resolved_traces().clear()
 
     with instance_for_test() as instance:
         context = build_sensor_context(instance=instance, sensor_name=sensor_def.name)
@@ -227,9 +234,11 @@ def test_sensor_clears_dlt_config_traces(tmp_path: Path) -> None:
                 return_value=_probe_all(url, tables),
             ),
         ):
-            sensor_def(context)
+            for _ in range(3):
+                sensor_def(context)
 
-    assert get_resolved_traces().all_traces == []
+    # the start-of-tick clear leaves only the latest tick's traces
+    assert len(get_resolved_traces().all_traces) == 1
 
 
 def test_sensor_requests_only_drifted_tables(tmp_path: Path) -> None:
