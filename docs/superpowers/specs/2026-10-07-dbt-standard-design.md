@@ -216,12 +216,28 @@ unchanged models.
    Existing marts adopt the macro when touched.
 3. sqlfluff config and the banned-syntax linter block.
 4. Manifest check, its workflow, domain-folder tags, and the baseline file.
+   Group the initial violations into backlog issues and add them to the project
+   board.
 5. claude-review prompt.
 
-Baseline ratchet: the first run of the manifest check writes today's edge
-violations to a checked-in baseline file. CI fails on a violation missing from
-the file, and on a baseline line whose violation is gone, so the list only
-shrinks. Style rules stay touched-code-only.
+### Backlog: baseline ratchet with issues
+
+The standard does not apply retroactively. Nothing forces a fix to an existing
+violation, and editing an old model for another reason does not require one.
+
+- The first run of the manifest check writes today's edge violations to a
+  checked-in baseline file. CI fails on a violation missing from the file, and
+  on a baseline line whose violation is gone, so the list only shrinks.
+- Every baseline line names an issue (`rpt_tableau__x  A4  #NNNN`). CI fails a
+  line without one.
+- Issues group violations by fix, not 1 issue per violation. Most `rpt_` →
+  `stg_` reads cluster around a missing mart, so 1 "build `fct_x`" issue clears
+  many lines. The issues go on the project board for prioritization.
+- The PR that fixes a group removes its lines and closes the issue with
+  `Closes #N`, so the file and the board stay in sync.
+- CI reads only the file, never the GitHub API: no network dependency, and every
+  exemption change goes through a reviewed PR.
+- Style rules stay touched-code-only.
 
 After about 2 months, list the most-used `standard_exempt` entries and
 `trunk-ignore`s. A rule that keeps getting exempted gets a rule-change PR.
@@ -238,3 +254,5 @@ After about 2 months, list the most-used `standard_exempt` entries and
 - ST05 `both` leaves the blessed `(select min(x) from unnest([...]))` form
   alone.
 - `dbt parse` runs in a GitHub Action without warehouse credentials.
+- Trunk reports only issues on changed lines (hold-the-line), so a new lint rule
+  does not flag untouched lines in an edited file.
