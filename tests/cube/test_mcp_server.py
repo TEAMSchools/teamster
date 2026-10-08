@@ -234,7 +234,7 @@ def test_meta_cache_corruption_deletes_cache_file_and_refetches(
     ctx = MagicMock()
     result = asyncio.run(server.meta(ctx))
 
-    assert result == {"cubes": []}
+    assert result["cubes"] == []
     # Fresh cache was written (replacing the corrupt one).
     assert cache_path.exists()
     cached = json.loads(cache_path.read_text(encoding="utf-8"))
@@ -264,13 +264,13 @@ def test_meta_in_memory_cache_skips_disk_read_on_repeat_calls(
     ctx = MagicMock()
     first = asyncio.run(server.meta(ctx))
     second = asyncio.run(server.meta(ctx))
-    assert first == second == {"cubes": [{"name": "x"}]}
+    assert first["cubes"] == second["cubes"] == [{"name": "x"}]
     # Cold call hit /meta once; second call served from memory.
     assert call_count == 1
     # Delete disk cache to prove the second hit didn't read from disk.
     server._meta_cache_path("engineer@apps.teamschools.org", "all").unlink()
     third = asyncio.run(server.meta(ctx))
-    assert third == {"cubes": [{"name": "x"}]}
+    assert third["cubes"] == [{"name": "x"}]
     assert call_count == 1
 
 
@@ -1000,3 +1000,215 @@ def test_request_without_a_recorded_call_sends_no_request_id(
     monkeypatch.setattr(server, "client", fake)
     asyncio.run(server._request("GET", "/meta", email="engineer@apps.teamschools.org"))
     assert "x-request-id" not in fake.sent_headers[0]
+
+
+def _fake_cube(
+    server: ModuleType, monkeypatch: pytest.MonkeyPatch, body: dict[str, Any]
+) -> None:
+    async def fake_request(*args: object, **kwargs: object) -> dict[str, Any]:
+        del args, kwargs
+        return body
+
+    monkeypatch.setattr(server, "_request", fake_request)
+
+
+def test_each_tool_logs_one_allowlisted_record(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    server = _stdio_server(monkeypatch, tmp_path)
+    _fake_cube(
+        server, monkeypatch, {"data": [{"v.count": "1"}], "cubes": [], "sql": {}}
+    )
+    ctx = MagicMock()
+    asyncio.run(server.meta(ctx))
+    asyncio.run(server.load(ctx, {"measures": ["v.count"]}))
+    asyncio.run(server.sql(ctx, {"measures": ["v.count"]}))
+    records = _call_records(capsys)
+    assert [r["tool"] for r in records] == ["meta", "load", "sql"]
+    for record in records:
+        assert set(record) - CALL_RECORD_ENVELOPE == set(server.CALL_RECORD_FIELDS)
+        assert record["outcome"] == "ok"
+        assert record["email"] == "engineer@apps.teamschools.org"
+
+
+def test_load_logs_empty_and_the_query_sent(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    server = _stdio_server(monkeypatch, tmp_path)
+    _fake_cube(server, monkeypatch, {"data": []})
+    asyncio.run(server.load(MagicMock(), {"measures": ["v.count"]}))
+    [record] = _call_records(capsys)
+    assert record["outcome"] == "empty"
+    assert record["row_count"] == 0
+    # The logged query is the one sent, UTC default included.
+    assert json.loads(record["query_json"])["timezone"] == "UTC"
+
+
+def test_load_never_logs_response_rows(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    server = _stdio_server(monkeypatch, tmp_path, CUBE_MCP_LOG_FREE_TEXT="true")
+    marker = "ROW-MARKER-7f3c"
+    _fake_cube(
+        server,
+        monkeypatch,
+        {"data": [{"v.full_name": marker}, {"v.full_name": marker}]},
+    )
+    asyncio.run(server.load(MagicMock(), {"dimensions": ["v.full_name"]}))
+    err = capsys.readouterr().err
+    assert marker not in err
+    [record] = [
+        json.loads(line) for line in err.splitlines() if "cube_mcp_call" in line
+    ]
+    assert record["row_count"] == 2
+
+
+def test_tools_return_and_reuse_a_session_id(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    server = _stdio_server(monkeypatch, tmp_path)
+    _fake_cube(server, monkeypatch, {"data": [], "cubes": []})
+    ctx = MagicMock()
+    first = asyncio.run(server.meta(ctx))
+    second = asyncio.run(
+        server.load(ctx, {"measures": ["v.count"]}, session_id=first["session_id"])
+    )
+    assert second["session_id"] == first["session_id"]
+    records = _call_records(capsys)
+    assert [r["session_id_minted"] for r in records] == [True, False]
+    assert records[0]["session_id"] == records[1]["session_id"]
+
+
+def test_invalid_session_id_is_never_logged(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    server = _stdio_server(monkeypatch, tmp_path)
+    _fake_cube(server, monkeypatch, {"data": []})
+    junk = "Student A asked about attendance"
+    result = asyncio.run(
+        server.load(MagicMock(), {"measures": ["v.count"]}, session_id=junk)
+    )
+    assert result["session_id"] != junk
+    assert junk not in capsys.readouterr().err
+
+
+def test_meta_cache_never_holds_a_session_id(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    server = _stdio_server(monkeypatch, tmp_path)
+    _fake_cube(server, monkeypatch, {"cubes": [{"name": "v"}]})
+    ctx = MagicMock()
+    first = asyncio.run(server.meta(ctx))
+    second = asyncio.run(server.meta(ctx, views=["v"]))
+    third = asyncio.run(server.meta(ctx))
+    assert len({first["session_id"], second["session_id"], third["session_id"]}) == 3
+    for (_email, _scope), (_expires, payload) in server._meta_memory_cache.items():
+        assert "session_id" not in payload
+    for cache_file in tmp_path.glob("cube-meta-*.json"):
+        assert (
+            "session_id"
+            not in json.loads(cache_file.read_text(encoding="utf-8"))["payload"]
+        )
+
+
+def test_question_and_assumptions_follow_the_switch(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    for switch, expect_text in (("false", False), ("true", True)):
+        server = _stdio_server(monkeypatch, tmp_path, CUBE_MCP_LOG_FREE_TEXT=switch)
+        _fake_cube(server, monkeypatch, {"data": []})
+        asyncio.run(
+            server.load(
+                MagicMock(),
+                {"measures": ["v.count"]},
+                question="How many?",
+                assumptions="This year",
+            )
+        )
+        [record] = _call_records(capsys)
+        assert record["question_provided"] is True
+        assert (record["question"] == "How many?") is expect_text
+        assert (record["assumptions"] == "This year") is expect_text
+
+
+def test_error_before_email_is_recorded_and_reraised(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    server = _stdio_server(monkeypatch, tmp_path)
+    missing = server.MissingUserEmailError("no email")
+
+    async def no_email(_ctx: object) -> str:
+        raise missing
+
+    monkeypatch.setattr(server, "_get_user_email", no_email)
+    with pytest.raises(server.MissingUserEmailError) as caught:
+        asyncio.run(server.sql(MagicMock(), {"measures": ["v.count"]}))
+    assert caught.value is missing
+    [record] = _call_records(capsys)
+    assert record["email"] is None
+    assert record["outcome"] == "error"
+    assert record["error_message"] == "no email"
+
+
+def test_cube_error_is_recorded_and_reraised(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    server = _stdio_server(monkeypatch, tmp_path)
+
+    async def failing_request(*args: object, **kwargs: object) -> dict[str, Any]:
+        del args, kwargs
+        raise RuntimeError("Cube POST /load 400: Unknown member v.nope")
+
+    monkeypatch.setattr(server, "_request", failing_request)
+    with pytest.raises(RuntimeError, match="Unknown member"):
+        asyncio.run(server.load(MagicMock(), {"measures": ["v.nope"]}))
+    [record] = _call_records(capsys)
+    assert record["outcome"] == "error"
+    assert record["members_referenced"] == ["v.nope"]
+
+
+def test_tool_returns_result_when_emit_raises(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    server = _stdio_server(monkeypatch, tmp_path)
+    _fake_cube(server, monkeypatch, {"data": [{"v.count": "3"}]})
+
+    def broken_print(*args: object, **kwargs: object) -> None:
+        raise OSError("stderr closed")
+
+    monkeypatch.setattr("builtins.print", broken_print)
+    result = asyncio.run(server.load(MagicMock(), {"measures": ["v.count"]}))
+    assert result["data"] == [{"v.count": "3"}]
+
+
+def test_tool_schemas_expose_the_new_optional_parameters(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import inspect
+
+    server = _load_server(monkeypatch)
+    expected = {
+        "meta": {"session_id"},
+        "load": {"question", "session_id", "assumptions"},
+        "sql": {"question", "session_id"},
+    }
+    for name, params in expected.items():
+        signature = inspect.signature(getattr(server, name))
+        for param in params:
+            assert signature.parameters[param].default is None

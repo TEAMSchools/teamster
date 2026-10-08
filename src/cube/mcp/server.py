@@ -653,11 +653,36 @@ async def _fetch_full_meta(email: str, force_refresh: bool) -> dict[str, Any]:
     return payload
 
 
+async def _meta_payload(
+    email: str, views: list[str] | None, force_refresh: bool
+) -> dict[str, Any]:
+    """The `meta` catalog for `email`, filtered to `views` when given, served
+    from cache when fresh."""
+    scope = _meta_scope_key(views)
+    if scope == "all":
+        return await _fetch_full_meta(email, force_refresh)
+
+    cached = _read_meta_cache(email, scope, force_refresh)
+    if cached is not None:
+        return cached
+    full_payload = await _fetch_full_meta(email, force_refresh)
+    wanted = set(views or [])
+    payload = {
+        **full_payload,
+        "cubes": [
+            dict(c) for c in full_payload.get("cubes", []) if c.get("name") in wanted
+        ],
+    }
+    _write_meta_cache(email, scope, payload)
+    return payload
+
+
 @mcp.tool()
 async def meta(
     ctx: Context,
     views: list[str] | None = None,
     force_refresh: bool = False,
+    session_id: str | None = None,
 ) -> dict[str, Any]:
     """Discover available KIPP TEAM & Family data: students, attendance, grades,
     assessments, enrollment, demographics, staff, schools, regions, terms.
@@ -706,34 +731,30 @@ async def meta(
     (not an error) — see the `load` tool's grain rule before dropping a
     dimension.
 
+    Session: every cube response carries a `session_id`. Pass it back as
+    `session_id` on every later cube call in this conversation.
+
     Cached per (email, requested scope) for one hour (in-memory, with disk
     fallback across process restarts) — a filtered call never reads or writes
     the full-catalog cache entry, or another view-set's, though it does reuse
     the full catalog's cached fetch to build its filtered result. Pass
     `force_refresh=True` after a model deploy.
     """
-    email = await _get_user_email(ctx)
-    scope = _meta_scope_key(views)
-    if scope == "all":
-        return await _fetch_full_meta(email, force_refresh)
-
-    cached = _read_meta_cache(email, scope, force_refresh)
-    if cached is not None:
-        return cached
-    full_payload = await _fetch_full_meta(email, force_refresh)
-    wanted = set(views or [])
-    payload = {
-        **full_payload,
-        "cubes": [
-            dict(c) for c in full_payload.get("cubes", []) if c.get("name") in wanted
-        ],
-    }
-    _write_meta_cache(email, scope, payload)
-    return payload
+    async with _recorded(ctx, "meta", session_id=session_id, views=views) as record:
+        record.email = await _get_user_email(ctx)
+        payload = await _meta_payload(record.email, views, force_refresh)
+    # A copy: the cached payload is shared by every caller for an hour.
+    return {**payload, "session_id": record.session_id}
 
 
 @mcp.tool()
-async def load(ctx: Context, query: dict[str, Any]) -> dict[str, Any]:
+async def load(
+    ctx: Context,
+    query: dict[str, Any],
+    question: str | None = None,
+    session_id: str | None = None,
+    assumptions: str | None = None,
+) -> dict[str, Any]:
     """Answer analytics questions about KIPP TEAM & Family — student
     attendance, grades, GPA, assessments, enrollment, demographics, discipline,
     staff rosters, school and regional metrics, KPIs, year-over-year trends.
@@ -812,19 +833,37 @@ async def load(ctx: Context, query: dict[str, Any]) -> dict[str, Any]:
 
     Queries default to timezone UTC (mart dates are date-grain UTC); pass an
     explicit `timezone` only when wall-clock conversion is intended.
+
+    Every call is recorded for the data team, never with the result rows. Pass
+    `question`: the person's question, verbatim, and the same text on every
+    call made for it. If an earlier cube response in this conversation gave you
+    a `session_id`, pass it. Pass `assumptions`: the interpretive choices you
+    made turning the question into this query.
     """
-    email = await _get_user_email(ctx)
-    return await _request(
-        "POST",
-        "/load",
-        json={"query": _with_default_timezone(query)},
-        email=email,
-        poll=True,
-    )
+    sent = _with_default_timezone(query)
+    async with _recorded(
+        ctx,
+        "load",
+        session_id=session_id,
+        question=question,
+        assumptions=assumptions,
+        query=sent,
+    ) as record:
+        record.email = await _get_user_email(ctx)
+        result = await _request(
+            "POST", "/load", json={"query": sent}, email=record.email, poll=True
+        )
+        record.result = result
+    return {**result, "session_id": record.session_id}
 
 
 @mcp.tool()
-async def sql(ctx: Context, query: dict[str, Any]) -> dict[str, Any]:
+async def sql(
+    ctx: Context,
+    query: dict[str, Any],
+    question: str | None = None,
+    session_id: str | None = None,
+) -> dict[str, Any]:
     """Inspect the BigQuery SQL Cube would generate for a KIPP TEAM & Family
     analytics query, without running it. Useful for debugging query shape,
     verifying access policies, or reviewing the compiled SQL before `load`.
@@ -840,14 +879,21 @@ async def sql(ctx: Context, query: dict[str, Any]) -> dict[str, Any]:
 
     Queries default to timezone UTC (mart dates are date-grain UTC); pass an
     explicit `timezone` only when wall-clock conversion is intended.
+
+    Every call is recorded for the data team. Pass `question`: the person's
+    question, verbatim, and the same text on every call made for it. If an
+    earlier cube response in this conversation gave you a `session_id`, pass
+    it.
     """
-    email = await _get_user_email(ctx)
-    return await _request(
-        "GET",
-        "/sql",
-        params={"query": json.dumps(_with_default_timezone(query))},
-        email=email,
-    )
+    sent = _with_default_timezone(query)
+    async with _recorded(
+        ctx, "sql", session_id=session_id, question=question, query=sent
+    ) as record:
+        record.email = await _get_user_email(ctx)
+        result = await _request(
+            "GET", "/sql", params={"query": json.dumps(sent)}, email=record.email
+        )
+    return {**result, "session_id": record.session_id}
 
 
 def main() -> None:
