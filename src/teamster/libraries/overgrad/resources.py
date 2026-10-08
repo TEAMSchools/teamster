@@ -63,15 +63,21 @@ class OvergradResource(ConfigurableResource):
     def list(self, path: str, *args: str, **kwargs) -> list[dict]:
         kwargs["params"] = {"limit": self.page_limit}
 
+        url = self._get_url(path, *args)
+
+        # no per-page logging: each Dagster log call is a synchronous event write,
+        # and hundreds of pages turn slow writes into a max_runtime timeout
         page = 1
         data = []
         while True:
             kwargs["params"].update({"page": page})
 
-            response_json: dict = self.get(path, *args, **kwargs).json()
+            response_json: dict = self._request(method="GET", url=url, **kwargs).json()
 
             data.extend(response_json.pop("data"))
-            self._log.debug(response_json)
+
+            if page == 1:
+                self._log.info(f"GET: {url} {response_json}")
 
             if page == response_json["total_pages"]:
                 break
