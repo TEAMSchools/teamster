@@ -23,8 +23,10 @@ not appear in site navigation.
 - `pymdownx.keys` — keyboard key rendering (`++ctrl+s++`)
 - `pymdownx.snippets` — `--8<-- "<path>:<section>"` includes a marked section of
   a repo file (base path is the repo root). `reference/dbt-conventions.md` is
-  built this way from `.claude/rules/dbt-*.md`; edit the rule file, not the
-  page.
+  built from the marked sections of `dbt-architecture.md`, `dbt-marts.md`, and
+  `dbt-sql.md`. Edit those for rule text; the page's _Reference_ section is
+  page-local. A new snippet source also goes in `mkdocs-gh-deploy.yaml`
+  `paths:`.
 - `pymdownx.tasklist` — checkbox task lists
 - `pymdownx.emoji` — Material emoji shortcodes
 - `attr_list` — HTML attributes on Markdown elements

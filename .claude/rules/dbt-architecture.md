@@ -32,14 +32,14 @@ kipptaf extracts. Cross-region business logic lives only in kipptaf.
 
 ### Allowed edges
 
-| Model         | May read                                                                                   |
-| ------------- | ------------------------------------------------------------------------------------------ |
-| `stg_`        | `source()`                                                                                 |
-| Source `int_` | `stg_` and source `int_` in the same source folder; `source()` for district union wrappers |
-| Domain `int_` | `stg_`, any source `int_`, domain `int_`, `snapshot_`                                      |
-| Marts         | Domain `int_`, other marts                                                                 |
-| `rpt_`        | Marts, domain `int_`                                                                       |
-| Exposures     | `rpt_`, marts; Cube reads marts only                                                       |
+| Model         | May read                                                                                                |
+| ------------- | ------------------------------------------------------------------------------------------------------- |
+| `stg_`        | `source()`                                                                                              |
+| Source `int_` | `stg_` and source `int_` in the same source folder; `source()` for district union wrappers              |
+| Domain `int_` | `stg_`, any source `int_`, domain `int_`, `snapshot_`                                                   |
+| Marts         | Domain `int_`, other marts                                                                              |
+| `rpt_`        | Marts, domain `int_`; in a district project, its kipptaf `rpt_` through `source("kipptaf_extracts", …)` |
+| Exposures     | `rpt_`, marts; Cube reads marts only                                                                    |
 
 `base_` models count as domain `int_` until
 [#2541](https://github.com/TEAMSchools/teamster/issues/2541) renames them.
@@ -49,7 +49,8 @@ kipptaf extracts. Cross-region business logic lives only in kipptaf.
 #### A1. Read only the layers your layer allows
 
 A model reads only what the _Allowed edges_ table lists for its layer. An `rpt_`
-never reads another `rpt_`.
+never reads another `rpt_`, except a district wrapper over its kipptaf
+counterpart.
 
 - Why: when every layer reads from its own place, logic has 1 home and a
   reviewer knows where to look for it.
@@ -131,7 +132,7 @@ key in a mart only through that macro, never with a direct
 - Good: `{{ student_key("s.student_number") }} as student_key`.
 - Bad:
   `{{ dbt_utils.generate_surrogate_key(["s.student_number"]) }} as student_key`.
-- Enforced by: `dbt-layer-check` (touched marts).
+- Enforced by: `dbt-layer-check` (lines the PR changes).
 
 #### A8. Exposures read only `rpt_` and marts
 
@@ -148,7 +149,7 @@ A tool reads an `rpt_` or a mart. Cube reads marts only.
 - Why: the column list is the consumer's contract; a star hides it.
 - Good: `select student_key, academic_year, … from final`.
 - Bad: `select * from final`.
-- Enforced by: `dbt-layer-check` (touched models).
+- Enforced by: `dbt-layer-check` (lines the PR changes).
 
 #### A10. Join unioned regional models on `_dbt_source_project`
 

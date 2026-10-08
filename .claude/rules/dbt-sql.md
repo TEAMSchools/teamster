@@ -301,12 +301,13 @@ validation/profiling goes through BigQuery MCP, not `dbt show`.
 - S12: name the partition key on the annotation when the `select` list does not
   make it obvious. Never `distinct` when a projected column varies within the
   partition (`min()`, `first_value()`) — use `dbt_utils.deduplicate()` (see _Row
-  picking, dedup & surrogate keys_) with a `-- TODO:` naming the upstream fix.
-  When the upstream already numbers rows at the grain you want (`rn_year` on the
-  enrollment models; check the model's `rn_*` columns first), filter on that
-  column instead of `distinct`, even if you select only key columns. Once a
-  non-key column is added, a `distinct` returns one row per stint again, and a
-  later dedup on the old key then picks among them unpredictably.
+  picking, dedup & surrogate keys_) in `stg_`/source `int_` (A5); further down,
+  fix the grain upstream instead. When the upstream already numbers rows at the
+  grain you want (`rn_year` on the enrollment models; check the model's `rn_*`
+  columns first), filter on that column instead of `distinct`, even if you
+  select only key columns. Once a non-key column is added, a `distinct` returns
+  one row per stint again, and a later dedup on the old key then picks among
+  them unpredictably.
 - S10: expressions that inherently combine columns from both join sides
   (`st_distance(a.geo, b.geo)`, `st_dwithin(...)`) cannot be hoisted and are
   allowed. Column-to-column inequality comparisons (half-open date-range joins)

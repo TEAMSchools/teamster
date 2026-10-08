@@ -1,17 +1,13 @@
 # CLAUDE.md — `marts/`
 
-Dimensional marts (star schema) consumed by Cube, Tableau, and `rpt_` models.
-Layers and allowed edges: `.claude/rules/dbt-architecture.md`. Intra-mart refs
-are permitted (e.g. `bridge_survey_expectations → dim_surveys`,
-`fct_staff_attrition → dim_staff_status`). When renaming a mart column, grep
-`ref(...)` within `marts/` too — not just outside.
+Layers and allowed edges: `.claude/rules/dbt-architecture.md`. When renaming a
+mart column, grep `ref(...)` within `marts/` too — not just outside.
 
-**Bridge models (`bridge_*`)** are factless facts that link two or more
-dimensions via a many-to-many relationship and carry no measures. They live in
-`marts/bridges/`. Naming follows `bridge_<entity>_<entity>` or
-`bridge_<concept>` when the linked entities are obvious from context. Like dims
-and facts, bridges need a uniqueness test on their PK and follow the
-strict-chain rule — no diamond paths to a shared ancestor dim.
+Bridge models live in `marts/bridges/`. Naming follows
+`bridge_<entity>_<entity>` or `bridge_<concept>` when the linked entities are
+obvious from context. Like dims and facts, bridges need a uniqueness test on
+their PK and follow the strict-chain rule — no diamond paths to a shared
+ancestor dim.
 
 The column-naming rubric (R1-R4, R6-R10), degenerate-dim rule, plumbing
 definition, strict-chain traversal, and PK/FK/date column shapes live in
@@ -35,9 +31,10 @@ split per-bucket when the action is one sheet-editing session.
 Run before posting the final PR comment on any marts PR (spec, bugfix,
 refactor):
 
-- Scan touched models for diamond paths (_Strict-chain traversal_ in
-  `.claude/rules/dbt-marts.md`).
-- Scan touched models for column-naming rubric violations (R1-R4, R6-R10).
+- Scan the lines the PR adds or changes for diamond paths (_Strict-chain
+  traversal_ in `.claude/rules/dbt-marts.md`).
+- Scan the lines the PR adds or changes for column-naming rubric violations
+  (R1-R4, R6-R10).
 - Pull marts-model warnings from the latest CI run
   (`mcp__dbt__get_job_run_error` with `warning_only=true`). For each, search
   open issues by model name + FK target. Bucket orphans (by region, source,
