@@ -50,10 +50,9 @@ guarantees the parent row exists, use INNER JOIN. LEFT JOIN silently produces
 null hash inputs that surrogate-key into placeholder hashes — orphans surface
 only at `relationships` test runtime, not at compile.
 
-A dedupe on such a join can qualify for the A5 exception (e.g. duplicate stints
-sharing the key's only input). Confirm the duplicate output rows are identical
-across every column first; a genuine ambiguity produces differing rows and must
-still fail the PK test.
+If the parent has more rows than the key needs (e.g. several stints per
+student), project it to the hash inputs with a grain-projection `distinct` in a
+CTE before the join (S12), rather than deduping the output (A5).
 
 ## BigQuery reserved identifiers
 

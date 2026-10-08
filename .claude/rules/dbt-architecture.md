@@ -109,10 +109,6 @@ adding a sibling.
 
 #### A5. Dedup only in `stg_` or source `int_`
 
-Exception: a mart dedupe whose duplicate rows are identical in every column
-(duplicate parents that yield the same key hash). Annotate it
-`-- A5 exception: identical-hash duplicates`.
-
 - Why: a dedup further down hides an upstream bug instead of fixing it.
 - Good: `dbt_utils.deduplicate` in a staging model over a source that resends
   rows.

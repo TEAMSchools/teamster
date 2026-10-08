@@ -279,3 +279,34 @@ baseline already exempts edges the model had before.
 The mart rubric (R1-R4, R6-R10) moved from `dbt-architecture.md` into
 `.claude/rules/dbt-marts.md`, scoped to kipptaf `models/marts/`. R5 is retired
 and its number left unused.
+
+## Revision 2026-10-08: layer edges from PR 1 review
+
+Review of PR 1 found real models that the section 2 edges would flag even though
+they follow the intended design. The published rules now differ from section 2
+as follows, and PR 2's manifest check builds from this list.
+
+- Source `int_` may also read a `snapshot_` of a model in its own source folder
+  (`int_powerschool__gpa_term_lookback`).
+- A district `rpt_` may read its kipptaf counterpart through
+  `source("kipptaf_extracts", …)`; this is the 1 allowed `rpt_` → `rpt_` edge.
+  District wrappers are no longer called thin.
+- A district wrapper that reconciles against its target system (kippmiami
+  `rpt_focus__*`) may also read that system's `stg_`.
+- `base_` models are classified like any `int_`, not as domain. Most kipptaf
+  `base_` models sit in source folders and read 1 system, so they are source
+  `int_`. About 49 existing mart and `rpt_` reads of them go to the baseline,
+  and a new mart read of a `base_` model fails the check until #2541 moves the
+  model.
+- Until the domain tags land, a kipptaf `int_` counts as domain when its
+  top-level folder is not named for a source system, or when it reads more than
+  1 source system. A Google Sheets config input does not count as a second
+  system. When PR 2 tags the folders, it decides whether the check keeps the
+  "more than 1 source system" clause: without it, cross-source models in source
+  folders (`int_kippadb__roster`) become source-tier and their readers join the
+  baseline.
+- A5 has no exception. A mart join that fans out because the parent has more
+  rows than the key needs projects the parent to the hash inputs before the join
+  (S12) rather than deduping the output.
+- A7 applies only to entities with a key macro. PR 2 applies it to every entity
+  it writes a macro for.
