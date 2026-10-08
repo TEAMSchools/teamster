@@ -113,6 +113,13 @@ resource, focus a plain Postgres URL. Do not merge them into a generic sensor
 factory; `illuminate/` (#4446) is the third intended consumer of the helpers,
 not of a shared sensor.
 
+Any dlt call in a code-server process outside a traced pipeline step
+(`sync_destination()`, `resolve_configuration()`) must start with
+`get_resolved_traces().clear()`, as both intraday sensors do. dlt empties that
+per-thread config-trace log only when a traced step ends, and each entry pins
+its pipeline, so a sensor without the clear grows the code server until it is
+OOM-killed.
+
 ### Illuminate: unbounded Postgres `numeric`
 
 Postgres `numeric` with no precision/scale reflects as `precision=None` in

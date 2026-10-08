@@ -244,4 +244,6 @@ class NJGPA(DistrictSummativeRecordFile):
 
 
 class NJSLA(DistrictSummativeRecordFile):
-    pass
+    # Stamped by build_sftp_folder_asset, which reads the NJSLA and EOC files
+    # into one asset; stg_cambium__njsla keeps the newest copy of each test.
+    source_file_modified_timestamp: int | None = None
