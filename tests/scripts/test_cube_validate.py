@@ -353,3 +353,267 @@ def test_rate_with_null_numerator_is_zero():
         [{"m0_num": None, "m0_den": 10, "n_students": 3}], 0, 0, "rate"
     )
     assert truth == {(): (0.0, 3)}
+
+
+# ---------------------------------------------------------------- Task 4: run and outputs
+TODAY = dt.date(2026, 10, 8)
+SECRET = "x" * 32  # PyJWT warns on HS256 keys under 32 bytes
+
+
+class FakeCube:
+    """Answers by the shape of the Cube query; records every query."""
+
+    def __init__(self, scope=None):
+        self.queries = []
+        self.scope = scope or {"Camden": "100", "Newark": "200"}
+
+    def __call__(self, q):
+        self.queries.append(q)
+        v = "demo_view"
+        if q["measures"] == [f"{v}.count_students"]:
+            return [
+                {f"{v}.regions_region_name": r, f"{v}.count_students": n}
+                for r, n in self.scope.items()
+            ], []
+        dims = q["dimensions"]
+        gran = q["timeDimensions"][0].get("granularity")
+        if not dims:
+            return [
+                {f"{v}.count_tardy_days": "30", f"{v}.avg_daily_attendance": "0.9"}
+            ], ["main_rollup"]
+        if gran == "month":
+            return [
+                {
+                    f"{v}.regions_region_name": "Camden",
+                    f"{v}.attendance_date.month": "2026-09-01T00:00:00.000",
+                    f"{v}.avg_daily_attendance": "0.9",
+                }
+            ], []
+        if len(dims) == 1:
+            return [
+                {f"{v}.regions_region_name": "Camden", f"{v}.count_tardy_days": "10"},
+                {f"{v}.regions_region_name": "Newark", f"{v}.count_tardy_days": "20"},
+            ], []
+        return [
+            {
+                f"{v}.regions_region_name": "Camden",
+                f"{v}.locations_abbreviation": "A",
+                f"{v}.count_tardy_days": "10",
+            },
+            {
+                f"{v}.regions_region_name": "Newark",
+                f"{v}.locations_abbreviation": "B",
+                f"{v}.count_tardy_days": "15",
+            },
+            {
+                f"{v}.regions_region_name": "Newark",
+                f"{v}.locations_abbreviation": "C",
+                f"{v}.count_tardy_days": "5",
+            },
+        ], []
+
+
+class FakeBQ:
+    def __init__(self, fail_on=None, scope=None):
+        self.fail_on = fail_on
+        self.scope = scope or [
+            {"g0": "Camden", "n_students": 100},
+            {"g0": "Newark", "n_students": 200},
+        ]
+
+    def __call__(self, sql):
+        if self.fail_on and self.fail_on in sql:
+            raise RuntimeError("boom")
+        if " as m0" not in sql and " as m0_num" not in sql:
+            return self.scope
+        if " as g0" not in sql:
+            if " as m0_num" in sql:  # ADA alone (rows filter)
+                return [{"m0_num": 90, "m0_den": 100, "n_students": 300}]
+            return [{"m0": 30, "m1_num": 90, "m1_den": 100, "n_students": 300}]
+        if "date_trunc" in sql:
+            return [
+                {
+                    "g0": "Camden",
+                    "g1": dt.date(2026, 9, 1),
+                    "m0_num": 45,
+                    "m0_den": 50,
+                    "n_students": 100,
+                }
+            ]
+        if " as g1" not in sql:
+            return [
+                {"g0": "Camden", "m0": 10, "n_students": 100},
+                {"g0": "Newark", "m0": 20, "n_students": 200},
+            ]
+        return [
+            {"g0": "Camden", "g1": "A", "m0": 10, "n_students": 100},
+            {"g0": "Newark", "g1": "B", "m0": 12, "n_students": 120},
+            {"g0": "Newark", "g1": "C", "m0": 8, "n_students": 80},
+        ]
+
+
+def test_run_dashboard_verdicts_and_one_query_per_grain():
+    cube = FakeCube()
+    result = cv.run_dashboard(_checks(), cube, FakeBQ(), TODAY)
+    tardy, ada = result["rows"]["1"], result["rows"]["2"]
+    assert tardy["verdict"] == "fail"
+    assert [g["status"] for g in tardy["grains"]] == [
+        "pass",
+        "pass",
+        "fail",
+        "not_comparable",
+    ]
+    assert ada["verdict"] == "pass"
+    # scope guard + total (shared by both rows) + region + region x school + region x month
+    assert len(cube.queries) == 5
+    assert tardy["grains"][0]["pre_aggregations"] == ["main_rollup"]
+    assert result["window"] == ["2026-07-01", "2026-10-07"]
+
+
+def test_run_dashboard_grain_error_makes_row_incomplete():
+    result = cv.run_dashboard(
+        _checks(), FakeCube(), FakeBQ(fail_on="date_trunc"), TODAY
+    )
+    ada = result["rows"]["2"]
+    assert ada["verdict"] == "incomplete"
+    assert ada["grains"][1]["status"] == "error"
+    assert "RuntimeError: boom" in ada["grains"][1]["error"]
+
+
+def test_run_dashboard_rows_filter():
+    result = cv.run_dashboard(_checks(), FakeCube(), FakeBQ(), TODAY, rows={"2"})
+    assert list(result["rows"]) == ["2"]
+
+
+def test_scope_guard_stops_when_cube_misses_a_region_the_warehouse_has():
+    with pytest.raises(cv.ScopeError, match="region=Newark"):
+        cv.run_dashboard(_checks(), FakeCube(scope={"Camden": "100"}), FakeBQ(), TODAY)
+
+
+def test_scope_guard_allows_a_region_with_no_data_anywhere():
+    bq = FakeBQ(scope=[{"g0": "Camden", "n_students": 100}])
+    result = cv.run_dashboard(
+        _checks(), FakeCube(scope={"Camden": "100"}), bq, TODAY, scope_only=True
+    )
+    assert result["rows"] == {}
+
+
+class FakeResponse:
+    def __init__(self, body, status=200):
+        self.body, self.status_code = body, status
+
+    def json(self):
+        return self.body
+
+
+class FakeHttp:
+    def __init__(self, bodies):
+        self.bodies, self.calls = list(bodies), []
+
+    def post(self, url, json, headers):
+        self.calls.append((url, json, headers))
+        return FakeResponse(self.bodies.pop(0))
+
+
+def test_cube_client_polls_continue_wait_and_sends_raw_token():
+    http = FakeHttp(
+        [
+            {"error": "Continue wait"},
+            {"data": [{"a": "1"}], "usedPreAggregations": {"r1": {}}},
+        ]
+    )
+    client = cv.CubeClient(
+        "https://cube/api/", SECRET, "me@example.org", http=http, sleep=lambda _: None
+    )
+    rows, preaggs = client.load({"measures": []})
+    assert rows == [{"a": "1"}] and preaggs == ["r1"]
+    url, body, headers = http.calls[0]
+    assert url == "https://cube/api/load" and body == {"query": {"measures": []}}
+    assert not headers["Authorization"].startswith("Bearer")
+
+
+def test_cube_client_row_limit_errors():
+    http = FakeHttp([{"data": [{}] * cv.CUBE_LIMIT}])
+    client = cv.CubeClient("u", SECRET, "e", http=http, sleep=lambda _: None)
+    with pytest.raises(cv.CubeError, match="row limit"):
+        client.load({})
+
+
+def test_cube_client_error_body_raises():
+    client = cv.CubeClient(
+        "u", SECRET, "e", http=FakeHttp([{"error": "bad member"}]), sleep=lambda _: None
+    )
+    with pytest.raises(cv.CubeError, match="bad member"):
+        client.load({})
+
+
+def test_write_outputs_comments_report_and_latest_merge(tmp_path):
+    (tmp_path / "latest.json").write_text(
+        json.dumps(
+            {
+                "rows": {
+                    "999": {
+                        "verdict": "pass",
+                        "date": "2026-10-01",
+                        "dashboard": "other",
+                        "name": "x",
+                    }
+                }
+            }
+        )
+    )
+    result = cv.run_dashboard(_checks(), FakeCube(), FakeBQ(), TODAY)
+    report = cv.write_outputs(result, tmp_path)
+    latest = json.loads((tmp_path / "latest.json").read_text())
+    assert set(latest["rows"]) == {"999", "1", "2"}
+    assert latest["rows"]["1"]["verdict"] == "fail"
+    assert report == tmp_path / "2026-10-08-demo_dashboard.md"
+    assert (tmp_path / "2026-10-08-demo_dashboard.json").exists()
+    comment = result["rows"]["1"]["comment"]
+    assert comment.splitlines()[0] == "Cube vs Tableau check, 2026-10-08: FAIL"
+    assert (
+        "Window: 2026-07-01 to 2026-10-07. 3 grains, 6 cells, 2 out of tolerance."
+        in comment
+    )
+    assert (
+        "Worst: count_tardy_days at region x school, Newark / B: Cube 15, Tableau 12."
+        in comment
+    )
+    assert "Not comparable: region x team (no Cube member)." in comment
+
+
+def test_comment_hides_small_cells():
+    row = {
+        "verdict": "fail",
+        "grains": [
+            {
+                "grain": ["school"],
+                "status": "fail",
+                "cells": 1,
+                "bad": 1,
+                "metrics": {
+                    "count_tardy_days": {
+                        "worst": [
+                            {
+                                "key": ["A"],
+                                "cube": 3.0,
+                                "truth": 4.0,
+                                "n_students": 6,
+                                "kind": "count",
+                            }
+                        ]
+                    }
+                },
+            }
+        ],
+    }
+    text = cv.comment_text(
+        row, {"run_date": "2026-10-08", "window": ["a", "b"]}, Path("r.md")
+    )
+    assert "small cell" in text and "Cube 3" not in text
+
+
+def test_run_cli_requires_the_secret(monkeypatch):
+    monkeypatch.delenv("CUBE_API_SECRET", raising=False)
+    with pytest.raises(SystemExit, match="CUBE_API_SECRET"):
+        cv.main(["run", str(FIX / "checks.yml")])

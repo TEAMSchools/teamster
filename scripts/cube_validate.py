@@ -13,8 +13,10 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import json
+import os
 import re
 import sys
+import time
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -399,6 +401,345 @@ def row_verdict(grains) -> str:
     return "pass"
 
 
+# ---------------------------------------------------------------- clients
+DEFAULT_CUBE_URL = (
+    "https://safe-hollsopple.gcp-us-central1.cubecloudapp.dev/cubejs-api/v1"
+)
+USER_EMAIL_CACHE = Path.home() / ".config" / "teamster" / "cube-user-email"
+DEFAULT_OUT = Path.home() / "asana-sync" / "validation"
+BQ_PROJECT = "teamster-332318"
+
+
+class CubeError(RuntimeError):
+    """Cube returned an error, or a result that cannot be compared."""
+
+
+class ScopeError(RuntimeError):
+    """The Cube identity sees less than the dashboard does."""
+
+
+class CubeClient:
+    def __init__(self, url, secret, email, http=None, sleep=time.sleep):
+        import httpx
+
+        self.url, self.secret, self.email = url.rstrip("/"), secret, email
+        self.http = http or httpx.Client(timeout=60)
+        self.sleep = sleep
+
+    def _token(self) -> str:
+        import jwt
+
+        now = int(time.time())
+        # cube.js checks maxAge from `iat`, so it must be present.
+        return jwt.encode(
+            {"email": self.email, "iat": now, "exp": now + 300},
+            self.secret,
+            algorithm="HS256",
+        )
+
+    def load(self, query) -> tuple[list[dict], list[str]]:
+        for _ in range(120):
+            r = self.http.post(
+                f"{self.url}/load",
+                json={"query": query},
+                headers={"Authorization": self._token()},
+            )
+            try:
+                body = r.json()
+            except ValueError as e:
+                raise CubeError(f"HTTP {r.status_code}: response is not JSON") from e
+            if body.get("error") == "Continue wait":
+                self.sleep(1)
+                continue
+            if r.status_code >= 400 or "error" in body:
+                raise CubeError(str(body.get("error") or f"HTTP {r.status_code}")[:300])
+            rows = body.get("data", [])
+            if len(rows) >= CUBE_LIMIT:
+                raise CubeError(
+                    f"result hit the {CUBE_LIMIT}-row limit; this grain is too fine"
+                )
+            return rows, sorted((body.get("usedPreAggregations") or {}).keys())
+        raise CubeError("gave up after 120 'Continue wait' responses")
+
+
+def bigquery_rows(sql: str) -> list[dict]:
+    from google.cloud import bigquery
+
+    return [
+        dict(r.items()) for r in bigquery.Client(project=BQ_PROJECT).query(sql).result()
+    ]
+
+
+# ---------------------------------------------------------------- run
+def scope_guard(checks, cube_load, bq, window) -> None:
+    """Stop when Cube sees none of a hard-filter value the warehouse has students for."""
+    if not checks["hard_filters"]:
+        return
+    view, dims, hard = checks["view"], checks["dimensions"], checks["hard_filters"]
+    name = hard[0]["dim"]
+    rows, _ = cube_load(
+        cube_query(view, [checks["scope_measure"]], [name], dims, hard, window)
+    )
+    seen = {
+        norm_key(r.get(cube_key(view, dims[name]))): _num(
+            r.get(f"{view}.{checks['scope_measure']}")
+        )
+        or 0
+        for r in rows
+    }
+    for r in bq(
+        truth_sql(
+            checks["table"], [], [name], dims, hard, window, checks["students_sql"]
+        )
+    ):
+        value, n = norm_key(r["g0"]), r["n_students"]
+        if n and not seen.get(value):
+            raise ScopeError(
+                f"Cube returned no {checks['scope_measure']} for {name}={value}, but the "
+                f"warehouse has {n} students. The Cube identity's scope is narrower than "
+                "the dashboard's; rerun as a network-scoped user."
+            )
+
+
+def run_dashboard(checks, cube_load, bq, today, rows=None, scope_only=False) -> dict:
+    window = academic_window(today)
+    dims, hard = checks["dimensions"], checks["hard_filters"]
+    scope_guard(checks, cube_load, bq, window)
+    result = {
+        "dashboard": checks["dashboard"],
+        "window": [window[0].isoformat(), window[1].isoformat()],
+        "run_date": today.isoformat(),
+        "rows": {},
+    }
+    if scope_only:
+        return result
+    selected = [r for r in checks["rows"] if rows is None or str(r["row_gid"]) in rows]
+
+    # One Cube query and one SQL query per (view, table, grain), carrying every metric.
+    jobs: dict[tuple, list[dict]] = {}
+    for row in selected:
+        where = (row.get("view", checks["view"]), row.get("table", checks["table"]))
+        for g in row["grains"]:
+            metrics = jobs.setdefault((*where, tuple(g)), [])
+            for m in row["metrics"]:
+                if m["cube"] not in [x["cube"] for x in metrics]:
+                    metrics.append(m)
+
+    outcomes = {}
+    for (view, table, g), metrics in jobs.items():
+        grain = [dims[n] for n in g]
+        if any(d.cube is None for d in grain):
+            outcomes[(view, table, g)] = {"status": "not_comparable"}
+            continue
+        try:
+            crows, preaggs = cube_load(
+                cube_query(
+                    view, [m["cube"] for m in metrics], list(g), dims, hard, window
+                )
+            )
+            trows = bq(
+                truth_sql(
+                    table, metrics, list(g), dims, hard, window, checks["students_sql"]
+                )
+            )
+        except Exception as e:  # noqa: BLE001 - any failure leaves this grain incomplete
+            outcomes[(view, table, g)] = {
+                "status": "error",
+                "error": f"{type(e).__name__}: {e}"[:300],
+            }
+            continue
+        outcomes[(view, table, g)] = {
+            "status": "ok",
+            "pre_aggregations": preaggs,
+            "metrics": {
+                m["cube"]: summarize(
+                    compare(
+                        m["kind"],
+                        cube_cells(crows, view, grain, m["cube"]),
+                        truth_cells(trows, len(g), i, m["kind"]),
+                    ),
+                    m["kind"],
+                )
+                for i, m in enumerate(metrics)
+            },
+        }
+
+    for row in selected:
+        where = (row.get("view", checks["view"]), row.get("table", checks["table"]))
+        grains = []
+        for g in row["grains"]:
+            o = outcomes[(*where, tuple(g))]
+            entry = {"grain": list(g), "status": o["status"]}
+            if o["status"] == "error":
+                entry["error"] = o["error"]
+            if o["status"] == "ok":
+                ms = {m["cube"]: o["metrics"][m["cube"]] for m in row["metrics"]}
+                bad = sum(s["bad"] for s in ms.values())
+                entry.update(
+                    status="fail" if bad else "pass",
+                    cells=sum(s["cells"] for s in ms.values()),
+                    bad=bad,
+                    metrics=ms,
+                    pre_aggregations=o["pre_aggregations"],
+                )
+            grains.append(entry)
+        result["rows"][str(row["row_gid"])] = {
+            "name": row["name"],
+            "verdict": row_verdict(grains),
+            "grains": grains,
+        }
+    return result
+
+
+# ---------------------------------------------------------------- outputs
+def _fmt(v, kind) -> str:
+    if v is None:
+        return "none"
+    return f"{v * 100:.1f}%" if kind == "rate" else f"{v:,.0f}"
+
+
+def _label(grain) -> str:
+    return " x ".join(grain) or "total"
+
+
+def _where(grain, key) -> str:
+    return f"{_label(grain)}, {' / '.join(key) or 'all'}"
+
+
+def comment_text(row, result, report_path) -> str:
+    grains = row["grains"]
+    compared = [g for g in grains if g["status"] in ("pass", "fail")]
+    lines = [
+        f"Cube vs Tableau check, {result['run_date']}: {row['verdict'].upper()}",
+        f"Window: {result['window'][0]} to {result['window'][1]}. {len(compared)} grains, "
+        f"{sum(g['cells'] for g in compared)} cells, "
+        f"{sum(g['bad'] for g in compared)} out of tolerance.",
+    ]
+    worst = None
+    for g in compared:
+        for metric, s in g["metrics"].items():
+            for c in s["worst"][:1]:
+                d = (
+                    float("inf")
+                    if c["cube"] is None or c["truth"] is None
+                    else abs(c["cube"] - c["truth"])
+                )
+                if worst is None or d > worst[0]:
+                    worst = (d, g["grain"], metric, c)
+    if worst:
+        _, grain, metric, c = worst
+        if c["n_students"] is None or c["n_students"] < SMALL_CELL:
+            lines.append(
+                f"Worst: {metric} at {_where(grain, c['key'])}: small cell, values in the report."
+            )
+        else:
+            lines.append(
+                f"Worst: {metric} at {_where(grain, c['key'])}: "
+                f"Cube {_fmt(c['cube'], c['kind'])}, Tableau {_fmt(c['truth'], c['kind'])}."
+            )
+    not_comparable = [
+        _label(g["grain"]) for g in grains if g["status"] == "not_comparable"
+    ]
+    if not_comparable:
+        lines.append(f"Not comparable: {', '.join(not_comparable)} (no Cube member).")
+    lines += [
+        f"Error at {_label(g['grain'])}: {g['error']}"
+        for g in grains
+        if g["status"] == "error"
+    ]
+    lines.append(f"Report: {report_path}")
+    return "\n".join(lines)
+
+
+def report_markdown(result) -> str:
+    out = [
+        f"# Cube vs Tableau: {result['dashboard']}",
+        "",
+        f"Run {result['run_date']}, window {result['window'][0]} to {result['window'][1]}.",
+        "",
+    ]
+    for gid, row in result["rows"].items():
+        out += [f"## {row['name']} ({gid}): {row['verdict']}", ""]
+        for g in row["grains"]:
+            line = f"- {_label(g['grain'])}: {g['status']}"
+            if g["status"] in ("pass", "fail"):
+                line += f", {g['bad']} of {g['cells']} cells out of tolerance"
+                if g["pre_aggregations"]:
+                    line += f" (pre-aggregations: {', '.join(g['pre_aggregations'])})"
+            if g["status"] == "error":
+                line += f": {g['error']}"
+            out.append(line)
+            for metric, s in g.get("metrics", {}).items():
+                for c in s["worst"]:
+                    n = c["n_students"] if c["n_students"] is not None else "n/a"
+                    out.append(
+                        f"  - {metric} {' / '.join(c['key']) or 'all'}: "
+                        f"Cube {_fmt(c['cube'], c['kind'])}, Tableau {_fmt(c['truth'], c['kind'])}, "
+                        f"students {n}"
+                    )
+        out.append("")
+    return "\n".join(out)
+
+
+def write_outputs(result, out_dir: Path) -> Path:
+    out_dir.mkdir(parents=True, exist_ok=True)
+    stem = f"{result['run_date']}-{result['dashboard']}"
+    report = out_dir / f"{stem}.md"
+    for row in result["rows"].values():
+        row["comment"] = comment_text(row, result, report)
+    report.write_text(report_markdown(result))
+    (out_dir / f"{stem}.json").write_text(json.dumps(result, indent=2, default=str))
+    latest_path = out_dir / "latest.json"
+    latest = (
+        json.loads(latest_path.read_text()) if latest_path.exists() else {"rows": {}}
+    )
+    for gid, row in result["rows"].items():
+        latest["rows"][gid] = {
+            "verdict": row["verdict"],
+            "date": result["run_date"],
+            "dashboard": result["dashboard"],
+            "name": row["name"],
+        }
+    latest_path.write_text(json.dumps(latest, indent=2))
+    return report
+
+
+def _user_email(given: str | None) -> str:
+    email = (given or os.environ.get("CUBE_USER_EMAIL", "")).strip()
+    if not email and USER_EMAIL_CACHE.exists():
+        email = USER_EMAIL_CACHE.read_text().strip()
+    if not email:
+        sys.exit("No Cube identity: pass --as <email> or set CUBE_USER_EMAIL.")
+    return email
+
+
+def _run_command(a) -> int:
+    secret = os.environ.get("CUBE_API_SECRET", "")
+    if not secret:
+        sys.exit(
+            "CUBE_API_SECRET is not set: run this inside a throwaway pytest "
+            "(see .claude/skills/cube-dashboard/SKILL.md)."
+        )
+    checks = load_checks(a.checks)
+    cube = CubeClient(a.cube_url, secret, _user_email(a.email))
+    result = run_dashboard(
+        checks,
+        cube.load,
+        bigquery_rows,
+        dt.date.today(),
+        rows=set(a.rows.split(",")) if a.rows else None,
+        scope_only=a.scope_only,
+    )
+    if a.scope_only:
+        print("scope ok")
+        return 0
+    report = write_outputs(result, a.out)
+    for gid, row in result["rows"].items():
+        print(f"{row['verdict']:<10} {gid} {row['name']}")
+    print(f"report: {report}")
+    return 0 if all(r["verdict"] == "pass" for r in result["rows"].values()) else 1
+
+
 def _grains_command(a) -> int:
     sheets = parse_twb(a.twb, a.dashboard)
     if a.measure:
@@ -421,8 +762,17 @@ def main(argv: list[str] | None = None) -> int:
     g.add_argument("twb")
     g.add_argument("--dashboard", action="append", required=True)
     g.add_argument("--measure")
+    r = sub.add_parser("run", help="compare Cube with the warehouse for a checks file")
+    r.add_argument("checks")
+    r.add_argument("--rows", help="comma-separated Asana row gids (default: all)")
+    r.add_argument("--scope-only", action="store_true", help="run only the scope guard")
+    r.add_argument(
+        "--as", dest="email", help="Cube identity (default: CUBE_USER_EMAIL)"
+    )
+    r.add_argument("--cube-url", default=DEFAULT_CUBE_URL)
+    r.add_argument("--out", type=Path, default=DEFAULT_OUT)
     a = p.parse_args(argv)
-    return _grains_command(a)
+    return _grains_command(a) if a.cmd == "grains" else _run_command(a)
 
 
 if __name__ == "__main__":
