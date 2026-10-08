@@ -1,5 +1,10 @@
 models:
   - name: int_illuminate__assessments
+    description: >-
+      One row per non-deleted Illuminate assessment, with its creator, its
+      performance band set description, and decoded scope and subject area.
+      Inner joins to users and performance band sets drop assessments whose
+      creator or (non-deleted) band set is missing.
     data_tests:
       # Source `academic_year` (year of June end) sometimes disagrees with the
       # AY derived from `administered_at`. Caused by "Copy of …" duplication in
@@ -19,6 +24,9 @@ models:
     columns:
       - name: assessment_id
         data_type: int64
+        description: Illuminate assessment id. One row per value.
+        data_tests:
+          - unique
       - name: title
         data_type: string
       - name: description
@@ -39,6 +47,9 @@ models:
         data_type: int64
       - name: academic_year
         data_type: int64
+        description: >-
+          Academic year as Illuminate stores it, the calendar year in which the
+          school year ends in June.
       - name: local_assessment_id
         data_type: string
       - name: intel_assess_guid
@@ -75,21 +86,36 @@ models:
         data_type: int64
       - name: creator_local_user_id
         data_type: string
+        description:
+          Local user id of the staff member who created the assessment.
       - name: creator_username
         data_type: string
+        description: Illuminate username of the assessment creator.
       - name: creator_first_name
         data_type: string
+        description: First name of the assessment creator.
       - name: creator_last_name
         data_type: string
+        description: Last name of the assessment creator.
       - name: creator_email_1
         data_type: string
+        description: Primary email of the assessment creator.
       - name: performance_band_set_description
         data_type: string
+        description: Description of the assessment's performance band set.
       - name: scope
         data_type: string
-        description: Conditional on code_translation, is_grade_k_1.
+        description: >-
+          Decoded DnA scope for code_scope_id. Cumulative Review Quizzes and
+          Cold Read Quizzes are relabeled Checkpoint when is_grade_k_1 is true.
+          Null when the scope code does not resolve.
       - name: subject_area
         data_type: string
+        description: >-
+          Decoded DnA subject area for code_subject_area_id. Null when the code
+          does not resolve.
       - name: academic_year_clean
         data_type: int64
-        description: Derived from academic_year.
+        description: >-
+          academic_year minus 1, the calendar year in which the school year
+          starts.

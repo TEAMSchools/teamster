@@ -411,56 +411,53 @@ cubes:
         public: true
 
     pre_aggregations:
-      # Rollup on the additive proficiency primitives for the standard-level
-      # proficiency-by-demographic hot path. Includes the RLS scoping keys
-      # (locations.region_key / locations.abbreviation) so region/school viewers
-      # hit the rollup rather than falling back to the fact. Also includes the
-      # lead teacher (key + name) so "proficiency by teacher" queries — grouped
-      # by lead_teacher_staff_key or staff_lead_teacher.full_name — hit the
-      # rollup. A rollup only serves a query whose grouped members are all in
-      # it, so the name must be here (and exposed on the view) or a name-grouped
-      # query falls back to the fact. The key adds cardinality; the name is 1:1
-      # with the key (adds width, not rows).
+      # Rollup on the additive proficiency primitives. A rollup serves a query
+      # only when it carries every member the query filters or groups on, so
+      # each dimension below is one real queries use (#5557), and the RLS
+      # scoping keys (region_key, abbreviation) are here so region and school
+      # viewers hit it. Add a dimension only if it adds few rows at this grain;
+      # one determined by a member already here adds width, not rows.
       - name: proficiency_rollup
         measures:
           # All three nested counts plus the proficient sum, so every rate the
-          # view exposes is servable here. A rollup only serves a query whose
-          # every referenced member is in it: without count_scored every
-          # pct_proficient query falls back to the fact, and without
-          # count_taken every pct_taken query does.
+          # view exposes is servable: without count_scored every pct_proficient
+          # query falls back to the fact, and without count_taken every
+          # pct_taken query does.
           - student_assessment_scores.count_assigned
           - student_assessment_scores.count_taken
           - student_assessment_scores.count_scored
           - student_assessment_scores._sum_proficient
         dimensions:
           - dates.academic_year
+          # Derived from academic_year. The view's descriptions make it the
+          # canonical year filter (#5402).
+          - dates.academic_year_label
           - student_assessments.module_code
-          # module_type is functionally determined by module_code above, so it
-          # adds no rollup rows; it lets queries filter by the coarser
-          # QA / MQQ / CRQ grouping.
+          # module_type is determined by module_code above; it lets queries
+          # filter by the coarser QA / MQQ / CRQ grouping.
           - student_assessments.module_type
+          # assessment_type (the source picker: dibels, illuminate,
+          # state_nj_njsla...) and title are nearly determined by the module,
+          # subject and administration already here.
+          - student_assessments.assessment_type
+          - student_assessments.title
           - student_assessments.academic_subject
           - student_assessments.grade_level_tested
           - student_assessment_administrations.administration_period
           - student_assessment_scores.response_type_code
-          # response_type is effectively determined by response_type_code
-          # above, so it adds no meaningful cardinality.
-          # response_type_description is NOT: the code is null on the
-          # Illuminate group rows where the description is populated, so many
-          # descriptions share one null code. Measure that cost at THIS grain
-          # before acting on it — on the code/description pair alone the
-          # multiplier looks several times larger than it is across the
-          # rollup's full dimension set, where teacher, school, race, grade and
-          # module already separate most of the rows. It measured small enough
-          # to ignore, and it serves the standard-level cut the working group
-          # runs (filter response_type = 'standard', break out by
-          # response_type_description — the IEP-vs-gen-ed-by-standard pilot
-          # pattern, WG 2026-07-02). A rollup only serves a query whose every
-          # member it carries, so dropping it would push that cut back to the
-          # fact. To re-measure: count distinct combinations of this
-          # pre-aggregation's dimension list with and without the description.
+          # response_type is determined by response_type_code above.
+          # response_type_description is not: the code is null on the
+          # Illuminate group rows where the description is populated. Measure
+          # its row cost across this whole dimension list, not on the
+          # code/description pair alone, which overstates it. It serves the
+          # standard-level cut (filter response_type = 'standard', break out
+          # by response_type_description).
           - student_assessment_scores.response_type
           - student_assessment_scores.response_type_description
+          # enrollment_resolution serves the subject_section-only cut.
+          # proficiency_level and is_mastery multiply rows and stay out
+          # (measurements on #5557).
+          - student_assessment_scores.enrollment_resolution
           - students.race
           - students.gender_identity
           - student_school_enrollments.grade_level
@@ -469,47 +466,56 @@ cubes:
           - student_enrollment_status.is_iep
           - locations.region_key
           - locations.abbreviation
-          # region_name is functionally determined by region_key above (zero
-          # added rows) — supports region-name filter phrasing (e.g. "Newark").
+          # region_name is determined by region_key above; it supports
+          # region-name filters ("Newark").
           - regions.region_name
-          # lead teacher (key + name) so proficiency-by-teacher queries hit the
-          # rollup rather than the ~14.2M-row fact; the key adds cardinality,
-          # the name is 1:1 with the key (width, not rows).
+          # Lead teacher key + name, for proficiency-by-teacher queries. The
+          # name is 1:1 with the key and must also be exposed on the view, or a
+          # name-grouped query falls back to the fact.
           - student_section_enrollments.lead_teacher_staff_key
           - staff_lead_teacher.full_name
-        # Partitioned refresh: without a time_dimension, Cube rebuilds this
-        # entire rollup from the ~14.2M-row fact on every refresh_key check,
-        # regardless of what changed. dates.date_day (via
-        # student_assessment_scores -> dates, keyed on assessment_date_key), not
-        # the cube's own date_taken, is the time anchor — date_taken is
-        # documented above as corrupt for a small share of rows, whereas
-        # assessment_date_key is the administration date where present, else the
-        # test date. Year partitioning (not day/month) matches how corrections
-        # actually land: restatements replace a whole academic year at a time,
-        # so a correction only invalidates the partition(s) touching that year,
-        # not the full history.
-        # State/vendor administrations are diagnostic windows, not single days,
-        # so one straddling July 1 lands its scores across two academic_year
-        # partitions here, by each score's own test date. That is correct
-        # per-score attribution, not a fan-out: 0 state administrations split
-        # today, only a handful of iReady/DIBELS windows do (#4546 finding 3).
+        # Partitioned build: Cube builds each yearly partition as its own job,
+        # in parallel, so a refresh takes one partition's build time. It does
+        # not limit what a refresh rebuilds: the refresh_key below has one value
+        # for every partition, so a change rebuilds all of them, and each scans
+        # the whole fact because the partition filter sits on joined dim_dates
+        # (#5557). The anchor is dates.date_day, keyed on assessment_date_key
+        # (the administration date where present, else the test date), not the
+        # cube's own date_taken, which is corrupt for a small share of rows.
+        # Partitions are calendar years, so a state or vendor window that
+        # straddles January 1 splits its scores across two partitions by each
+        # score's anchor date: correct per-score attribution, not a fan-out
+        # (#4546).
         time_dimension: dates.date_day
         granularity: year
         partition_granularity: year
-        # Bound the build range to real assessment history. Without this, Cube
-        # derives the range from the time_dimension's min/max — and
-        # dates.date_day resolves through dim_dates, whose calendar spine runs
-        # to 9999, so the scheduled-refresh worker enumerates ~8,000 empty
-        # yearly partitions (this is why #4460 was reverted). Floor is set below
-        # the earliest assessment_date_key carrying a score (2015-08-14, verified
-        # 2026-07-20 -- vendor test dates are all later, so the coalesced key's
-        # min is unchanged from the administration-date min); the end tracks
-        # today. Yields ~12 partitions. Rows outside [floor, today] fall back to
-        # the fact (currently none); state and vendor scores now fall in range,
-        # so they are covered by this rollup too.
+        # Serve a date range only when it aligns with the year grain. Cube's
+        # default (true, via
+        # CUBEJS_PRE_AGGREGATIONS_ALLOW_NON_STRICT_DATE_RANGE_MATCH) compares
+        # any range to each row's January 1 bucket, so a Sep-Oct range returns
+        # 0 rows and a July-June school year the wrong calendar year (#5744).
+        # Misaligned ranges read the fact; academic_year filters and
+        # January-to-December ranges hit the rollup.
+        allow_non_strict_date_range_match: false
+        # Bound the build range to real assessment history. Without it, Cube
+        # derives the range from the time_dimension, and dates.date_day resolves
+        # through dim_dates, whose calendar spine runs to 9999, so the refresh
+        # worker enumerates thousands of empty yearly partitions (#4460). The
+        # floor sits below the earliest assessment_date_key carrying a score;
+        # rows outside [floor, today] fall back to the fact.
         build_range_start:
           sql: SELECT DATE('2015-07-01')
         build_range_end:
           sql: SELECT CURRENT_DATE('America/New_York')
+        # Rebuild when the fact rebuilds (a full CREATE OR REPLACE, several
+        # times a day) rather than on a fixed timer. Cube runs this metadata
+        # query (0 bytes billed) every 30 minutes, so answers trail the fact by
+        # at most the interval plus one build. last_modified_time also moves on
+        # metadata-only changes (descriptions, labels), and would move on every
+        # load if the fact became incremental; each triggers a full rebuild.
+        # test_refresh_key_sql_names_its_cubes_table guards the table name.
         refresh_key:
-          every: 1 day
+          every: 30 minute
+          sql: >-
+            SELECT last_modified_time FROM kipptaf_marts.__TABLES__ WHERE
+            table_id = 'fct_assessment_scores_enrollment_scoped'

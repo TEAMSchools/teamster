@@ -754,6 +754,7 @@ exposures:
     depends_on:
       - ref("rpt_tableau__topline_cascade_dashboard")
     config:
+      enabled: false
       meta:
         dagster:
           kinds:

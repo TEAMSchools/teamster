@@ -39,6 +39,10 @@ with
             lag(surrogate_key, 1, '') over (
                 partition by associate_oid order by effective_date_start asc
             ) as surrogate_key_lag,
+
+            max(effective_date_start) over (
+                partition by associate_oid
+            ) as last_seen_partition_date,
         from workers
     ),
 
@@ -46,6 +50,7 @@ with
         select
             associate_oid,
             effective_date_start,
+            last_seen_partition_date,
 
             worker_id.idvalue as worker_id__id_value,
 

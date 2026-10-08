@@ -1,50 +1,100 @@
 models:
   - name: int_illuminate__agg_student_responses
+    description: >-
+      Student assessment scores at three levels, unioned into one shape —
+      overall, per standard, and per reporting group. One row per student
+      assessment sitting per response_type per response_type_id. The inner join
+      to students_assessments keeps only the sitting that staging retains for
+      each student and assessment. All three staging sources keep only rows with
+      points_possible above zero.
+    config:
+      meta:
+        contains_pii: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_assessment_id
+              - response_type
+              - response_type_id
     columns:
       - name: student_assessment_id
         data_type: int64
+        description:
+          The student's assessment sitting, from students_assessments.
       - name: student_id
         data_type: int64
+        description: Illuminate student id.
       - name: assessment_id
         data_type: int64
+        description: Illuminate assessment id.
       - name: date_taken
         data_type: date
+        description: Date the student took the assessment.
       - name: created_at
         data_type: timestamp
+        description: When the assessment sitting record was created.
       - name: updated_at
         data_type: timestamp
+        description: When the assessment sitting record was last updated.
       - name: version_id
         data_type: int64
+        description: Assessment version of the sitting.
       - name: mastered
         data_type: boolean
+        description:
+          Whether the student mastered this overall, standard, or group.
       - name: percent_correct
         data_type: numeric
+        description: Percent correct as Illuminate reports it.
       - name: number_of_questions
         data_type: int64
+        description: Number of questions in this overall, standard, or group.
       - name: answered
         data_type: int64
+        description: Number of questions the student answered.
       - name: performance_band_id
         data_type: int64
+        description: Performance band the score falls in.
       - name: performance_band_level
         data_type: int64
+        description: Level number of that performance band.
       - name: performance_band_set_id
         data_type: int64
+        description: >-
+          Performance band set the assessment assigns to this standard or
+          reporting group. Null on overall rows, whose source has no such
+          column.
       - name: response_type_code
         data_type: string
+        description: Standard custom code. Populated on standard rows only.
       - name: response_type_root_description
         data_type: string
+        description: >-
+          Description of the standard's root (top-level) standard. Populated on
+          standard rows only.
       - name: response_type
         data_type: string
-        description: Derived from _dbt_source_relation.
+        description: >-
+          overall, standard, or group — the suffix of the unioned relation name
+          each row came from.
       - name: response_type_id
         data_type: int64
-        description: First non-null of standard_id, reporting_group_id.
+        description: >-
+          standard_id on standard rows, reporting_group_id on group rows, and -1
+          on overall rows.
       - name: response_type_description
         data_type: string
-        description: First non-null of standard_description, label.
+        description: >-
+          Standard description on standard rows, reporting group label on group
+          rows. Null on overall rows.
       - name: points_possible
         data_type: numeric
-        description: First non-null of points_possible, raw_score_possible.
+        description: >-
+          First non-null of points_possible, raw_score_possible
+          (raw_score_possible exists on group rows only).
       - name: points
         data_type: numeric
-        description: First non-null of points, raw_score.
+        description: >-
+          First non-null of points, raw_score (raw_score exists on group rows
+          only).

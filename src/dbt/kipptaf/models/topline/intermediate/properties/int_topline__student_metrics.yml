@@ -1,6 +1,7 @@
 models:
   - name: int_topline__student_metrics
     config:
+      enabled: false
       materialized: table
       meta:
         dagster:

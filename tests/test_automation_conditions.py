@@ -1236,13 +1236,13 @@ class TestKipptafChainTopologies:
         self, translator, nodes_by_name
     ):
         """Real topology: stg_renlearn__star (table) →
-        int_topline__star_assessment_weekly (table).
+        int_assessments__benchmark_scores (table).
 
         Downstream table should be requested when upstream table is updated.
         """
         upstream_props = self._get_node(nodes_by_name, "stg_renlearn__star")
         downstream_props = self._get_node(
-            nodes_by_name, "int_topline__star_assessment_weekly"
+            nodes_by_name, "int_assessments__benchmark_scores"
         )
 
         @asset(
@@ -1253,16 +1253,16 @@ class TestKipptafChainTopologies:
             return 1
 
         @asset(
-            key=["kipptaf", "int_topline__star_assessment_weekly"],
+            key=["kipptaf", "int_assessments__benchmark_scores"],
             deps=[stg_renlearn__star],
             automation_condition=translator.get_automation_condition(downstream_props),
             tags=translator.get_tags(downstream_props),
         )
-        def int_topline__star_assessment_weekly():
+        def int_assessments__benchmark_scores():
             return 2
 
         instance = DagsterInstance.ephemeral()
-        all_assets = [stg_renlearn__star, int_topline__star_assessment_weekly]
+        all_assets = [stg_renlearn__star, int_assessments__benchmark_scores]
         defs = Definitions(assets=all_assets)
 
         materialize(assets=all_assets, instance=instance)
@@ -1278,58 +1278,54 @@ class TestKipptafChainTopologies:
         )
         assert (
             result.get_num_requested(
-                AssetKey(["kipptaf", "int_topline__star_assessment_weekly"])
+                AssetKey(["kipptaf", "int_assessments__benchmark_scores"])
             )
             == 1
         )
 
     def test_kipptaf_table_view_table_chain(self, translator, nodes_by_name):
-        """Real topology: int_extracts__student_enrollments_subjects (table) →
-        int_extracts__student_enrollments_subjects_weeks (view) →
-        int_topline__star_assessment_weekly (table).
+        """Real topology: stg_kippadb__standardized_test (table) →
+        int_kippadb__standardized_test (view) →
+        int_kippadb__standardized_test_unpivot (table).
 
         View should NOT be requested; downstream table SHOULD be requested.
         """
-        source_props = self._get_node(
-            nodes_by_name, "int_extracts__student_enrollments_subjects"
-        )
-        view_props = self._get_node(
-            nodes_by_name, "int_extracts__student_enrollments_subjects_weeks"
-        )
+        source_props = self._get_node(nodes_by_name, "stg_kippadb__standardized_test")
+        view_props = self._get_node(nodes_by_name, "int_kippadb__standardized_test")
         target_props = self._get_node(
-            nodes_by_name, "int_topline__star_assessment_weekly"
+            nodes_by_name, "int_kippadb__standardized_test_unpivot"
         )
 
         @asset(
-            key=["kipptaf", "int_extracts__student_enrollments_subjects"],
+            key=["kipptaf", "stg_kippadb__standardized_test"],
             tags=translator.get_tags(source_props),
         )
-        def int_extracts__student_enrollments_subjects():
+        def stg_kippadb__standardized_test():
             return 1
 
         @asset(
-            key=["kipptaf", "int_extracts__student_enrollments_subjects_weeks"],
-            deps=[int_extracts__student_enrollments_subjects],
+            key=["kipptaf", "int_kippadb__standardized_test"],
+            deps=[stg_kippadb__standardized_test],
             automation_condition=translator.get_automation_condition(view_props),
             tags=translator.get_tags(view_props),
         )
-        def int_extracts__student_enrollments_subjects_weeks():
+        def int_kippadb__standardized_test():
             return 2
 
         @asset(
-            key=["kipptaf", "int_topline__star_assessment_weekly"],
-            deps=[int_extracts__student_enrollments_subjects_weeks],
+            key=["kipptaf", "int_kippadb__standardized_test_unpivot"],
+            deps=[int_kippadb__standardized_test],
             automation_condition=translator.get_automation_condition(target_props),
             tags=translator.get_tags(target_props),
         )
-        def int_topline__star_assessment_weekly():
+        def int_kippadb__standardized_test_unpivot():
             return 3
 
         instance = DagsterInstance.ephemeral()
         all_assets = [
-            int_extracts__student_enrollments_subjects,
-            int_extracts__student_enrollments_subjects_weeks,
-            int_topline__star_assessment_weekly,
+            stg_kippadb__standardized_test,
+            int_kippadb__standardized_test,
+            int_kippadb__standardized_test_unpivot,
         ]
         defs = Definitions(assets=all_assets)
 
@@ -1338,85 +1334,85 @@ class TestKipptafChainTopologies:
         assert result.total_requested == 0
 
         materialize(
-            assets=[int_extracts__student_enrollments_subjects],
+            assets=[stg_kippadb__standardized_test],
             instance=instance,
-            selection=[int_extracts__student_enrollments_subjects],
+            selection=[stg_kippadb__standardized_test],
         )
         result = evaluate_automation_conditions(
             defs=defs, instance=instance, cursor=result.cursor
         )
         assert (
             result.get_num_requested(
-                AssetKey(
-                    ["kipptaf", "int_extracts__student_enrollments_subjects_weeks"]
-                )
+                AssetKey(["kipptaf", "int_kippadb__standardized_test"])
             )
             == 0
         )
         assert (
             result.get_num_requested(
-                AssetKey(["kipptaf", "int_topline__star_assessment_weekly"])
+                AssetKey(["kipptaf", "int_kippadb__standardized_test_unpivot"])
             )
             == 1
         )
 
     def test_kipptaf_double_view_chain(self, translator, nodes_by_name):
-        """Real topology: int_extracts__student_enrollments_subjects (table) →
-        int_students__dibels_participation_roster (view) →
-        int_amplify__pm_met_criteria (view) →
-        int_topline__dibels_pm_weekly (table).
+        """Real topology: stg_google_sheets__reporting__terms (table) →
+        int_google_sheets__dibels_expected_assessments (view) →
+        int_amplify__all_assessments (view) →
+        int_assessments__benchmark_scores (table).
 
         Both views should NOT be requested; target table SHOULD be requested.
         """
         source_props = self._get_node(
-            nodes_by_name, "int_extracts__student_enrollments_subjects"
+            nodes_by_name, "stg_google_sheets__reporting__terms"
         )
         view_a_props = self._get_node(
-            nodes_by_name, "int_students__dibels_participation_roster"
+            nodes_by_name, "int_google_sheets__dibels_expected_assessments"
         )
-        view_b_props = self._get_node(nodes_by_name, "int_amplify__pm_met_criteria")
-        target_props = self._get_node(nodes_by_name, "int_topline__dibels_pm_weekly")
+        view_b_props = self._get_node(nodes_by_name, "int_amplify__all_assessments")
+        target_props = self._get_node(
+            nodes_by_name, "int_assessments__benchmark_scores"
+        )
 
         @asset(
-            key=["kipptaf", "int_extracts__student_enrollments_subjects"],
+            key=["kipptaf", "stg_google_sheets__reporting__terms"],
             tags=translator.get_tags(source_props),
         )
-        def int_extracts__student_enrollments_subjects():
+        def stg_google_sheets__reporting__terms():
             return 1
 
         @asset(
-            key=["kipptaf", "int_students__dibels_participation_roster"],
-            deps=[int_extracts__student_enrollments_subjects],
+            key=["kipptaf", "int_google_sheets__dibels_expected_assessments"],
+            deps=[stg_google_sheets__reporting__terms],
             automation_condition=translator.get_automation_condition(view_a_props),
             tags=translator.get_tags(view_a_props),
         )
-        def int_students__dibels_participation_roster():
+        def int_google_sheets__dibels_expected_assessments():
             return 2
 
         @asset(
-            key=["kipptaf", "int_amplify__pm_met_criteria"],
-            deps=[int_students__dibels_participation_roster],
+            key=["kipptaf", "int_amplify__all_assessments"],
+            deps=[int_google_sheets__dibels_expected_assessments],
             automation_condition=translator.get_automation_condition(view_b_props),
             tags=translator.get_tags(view_b_props),
         )
-        def int_amplify__pm_met_criteria():
+        def int_amplify__all_assessments():
             return 3
 
         @asset(
-            key=["kipptaf", "int_topline__dibels_pm_weekly"],
-            deps=[int_amplify__pm_met_criteria],
+            key=["kipptaf", "int_assessments__benchmark_scores"],
+            deps=[int_amplify__all_assessments],
             automation_condition=translator.get_automation_condition(target_props),
             tags=translator.get_tags(target_props),
         )
-        def int_topline__dibels_pm_weekly():
+        def int_assessments__benchmark_scores():
             return 4
 
         instance = DagsterInstance.ephemeral()
         all_assets = [
-            int_extracts__student_enrollments_subjects,
-            int_students__dibels_participation_roster,
-            int_amplify__pm_met_criteria,
-            int_topline__dibels_pm_weekly,
+            stg_google_sheets__reporting__terms,
+            int_google_sheets__dibels_expected_assessments,
+            int_amplify__all_assessments,
+            int_assessments__benchmark_scores,
         ]
         defs = Definitions(assets=all_assets)
 
@@ -1424,9 +1420,9 @@ class TestKipptafChainTopologies:
         result = evaluate_automation_conditions(defs=defs, instance=instance)
 
         materialize(
-            assets=[int_extracts__student_enrollments_subjects],
+            assets=[stg_google_sheets__reporting__terms],
             instance=instance,
-            selection=[int_extracts__student_enrollments_subjects],
+            selection=[stg_google_sheets__reporting__terms],
         )
         result = evaluate_automation_conditions(
             defs=defs, instance=instance, cursor=result.cursor
@@ -1434,19 +1430,19 @@ class TestKipptafChainTopologies:
 
         assert (
             result.get_num_requested(
-                AssetKey(["kipptaf", "int_students__dibels_participation_roster"])
+                AssetKey(["kipptaf", "int_google_sheets__dibels_expected_assessments"])
             )
             == 0
         )
         assert (
             result.get_num_requested(
-                AssetKey(["kipptaf", "int_amplify__pm_met_criteria"])
+                AssetKey(["kipptaf", "int_amplify__all_assessments"])
             )
             == 0
         )
         assert (
             result.get_num_requested(
-                AssetKey(["kipptaf", "int_topline__dibels_pm_weekly"])
+                AssetKey(["kipptaf", "int_assessments__benchmark_scores"])
             )
             == 1
         )
@@ -1454,65 +1450,61 @@ class TestKipptafChainTopologies:
     def test_kipptaf_update_propagates_through_view_between_tables(
         self, translator, nodes_by_name
     ):
-        """Real topology: stg_powerschool__terms (table) →
-        int_extracts__student_enrollments_subjects (table) →
-        int_extracts__student_enrollments_subjects_weeks (view) →
-        int_topline__star_assessment_weekly (table).
+        """Real topology: stg_google_forms__responses (table) →
+        int_google_forms__form_responses (table) →
+        int_surveys__staff_information_survey_pivot (view) →
+        int_people__staff_roster_history (table).
 
         When source table is updated, middle table and downstream table should
         be requested; view should NOT be requested.
         """
-        source_props = self._get_node(nodes_by_name, "stg_powerschool__terms")
-        middle_props = self._get_node(
-            nodes_by_name, "int_extracts__student_enrollments_subjects"
-        )
+        source_props = self._get_node(nodes_by_name, "stg_google_forms__responses")
+        middle_props = self._get_node(nodes_by_name, "int_google_forms__form_responses")
         view_props = self._get_node(
-            nodes_by_name, "int_extracts__student_enrollments_subjects_weeks"
+            nodes_by_name, "int_surveys__staff_information_survey_pivot"
         )
-        target_props = self._get_node(
-            nodes_by_name, "int_topline__star_assessment_weekly"
-        )
+        target_props = self._get_node(nodes_by_name, "int_people__staff_roster_history")
 
         @asset(
-            key=["kipptaf", "stg_powerschool__terms"],
+            key=["kipptaf", "stg_google_forms__responses"],
             tags=translator.get_tags(source_props),
         )
-        def stg_powerschool__terms():
+        def stg_google_forms__responses():
             return 1
 
         @asset(
-            key=["kipptaf", "int_extracts__student_enrollments_subjects"],
-            deps=[stg_powerschool__terms],
+            key=["kipptaf", "int_google_forms__form_responses"],
+            deps=[stg_google_forms__responses],
             automation_condition=translator.get_automation_condition(middle_props),
             tags=translator.get_tags(middle_props),
         )
-        def int_extracts__student_enrollments_subjects():
+        def int_google_forms__form_responses():
             return 2
 
         @asset(
-            key=["kipptaf", "int_extracts__student_enrollments_subjects_weeks"],
-            deps=[int_extracts__student_enrollments_subjects],
+            key=["kipptaf", "int_surveys__staff_information_survey_pivot"],
+            deps=[int_google_forms__form_responses],
             automation_condition=translator.get_automation_condition(view_props),
             tags=translator.get_tags(view_props),
         )
-        def int_extracts__student_enrollments_subjects_weeks():
+        def int_surveys__staff_information_survey_pivot():
             return 3
 
         @asset(
-            key=["kipptaf", "int_topline__star_assessment_weekly"],
-            deps=[int_extracts__student_enrollments_subjects_weeks],
+            key=["kipptaf", "int_people__staff_roster_history"],
+            deps=[int_surveys__staff_information_survey_pivot],
             automation_condition=translator.get_automation_condition(target_props),
             tags=translator.get_tags(target_props),
         )
-        def int_topline__star_assessment_weekly():
+        def int_people__staff_roster_history():
             return 4
 
         instance = DagsterInstance.ephemeral()
         all_assets = [
-            stg_powerschool__terms,
-            int_extracts__student_enrollments_subjects,
-            int_extracts__student_enrollments_subjects_weeks,
-            int_topline__star_assessment_weekly,
+            stg_google_forms__responses,
+            int_google_forms__form_responses,
+            int_surveys__staff_information_survey_pivot,
+            int_people__staff_roster_history,
         ]
         defs = Definitions(assets=all_assets)
 
@@ -1521,9 +1513,9 @@ class TestKipptafChainTopologies:
         assert result.total_requested == 0
 
         materialize(
-            assets=[stg_powerschool__terms],
+            assets=[stg_google_forms__responses],
             instance=instance,
-            selection=[stg_powerschool__terms],
+            selection=[stg_google_forms__responses],
         )
         result = evaluate_automation_conditions(
             defs=defs, instance=instance, cursor=result.cursor
@@ -1531,21 +1523,19 @@ class TestKipptafChainTopologies:
 
         assert (
             result.get_num_requested(
-                AssetKey(["kipptaf", "int_extracts__student_enrollments_subjects"])
+                AssetKey(["kipptaf", "int_google_forms__form_responses"])
             )
             == 1
         )
         assert (
             result.get_num_requested(
-                AssetKey(
-                    ["kipptaf", "int_extracts__student_enrollments_subjects_weeks"]
-                )
+                AssetKey(["kipptaf", "int_surveys__staff_information_survey_pivot"])
             )
             == 0
         )
         assert (
             result.get_num_requested(
-                AssetKey(["kipptaf", "int_topline__star_assessment_weekly"])
+                AssetKey(["kipptaf", "int_people__staff_roster_history"])
             )
             == 1
         )

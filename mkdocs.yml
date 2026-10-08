@@ -77,6 +77,7 @@ nav:
       - Gradebook Audit Data Model: models/gradebook-audit-data-model.md
       - CSGF Data Model: models/csgf-data-model.md
       - CRDC Data Model: models/crdc-data-model.md
+      - DDI Stack Data Model: models/ddi-stack-data-model.md
       - HS Early Warning Data Model: models/hs-early-warning-data-model.md
       - DIBELS Dashboard Data Model: models/dibels-dashboard-data-model.md
       - STAT Dashboard Data Model: models/stat-dashboard-data-model.md

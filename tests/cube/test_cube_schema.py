@@ -167,6 +167,44 @@ def test_pre_aggregation_covers_row_level_scoping_members() -> None:
     )
 
 
+def test_coarse_grain_pre_aggregations_require_aligned_date_ranges() -> None:
+    # Cube defaults allow_non_strict_date_range_match to true for any rollup
+    # with a time_dimension. Above day grain that lets the rollup serve a date
+    # range that does not align with its buckets, and it returns wrong rows
+    # with no error (#5744: 0 rows for Sep-Oct from a year-grain rollup).
+    offenders = [
+        f"{cube}.{pre_agg['name']}"
+        for cube, pre_aggs in _pre_aggregations_by_root_cube().items()
+        for pre_agg in pre_aggs
+        if pre_agg.get("time_dimension")
+        and pre_agg.get("granularity", "day") != "day"
+        and pre_agg.get("allow_non_strict_date_range_match") is not False
+    ]
+    assert not offenders, (
+        "set allow_non_strict_date_range_match: false on these rollups:\n"
+        + "\n".join(offenders)
+    )
+
+
+def test_refresh_key_sql_names_its_cubes_table() -> None:
+    # A refresh_key sql that reads table metadata repeats the cube's table name
+    # as a string. Rename the table and update sql_table but not that string,
+    # and the metadata query returns no rows, its value never changes, and the
+    # rollup silently stops refreshing.
+    offenders = []
+    for path in CUBE_MODEL_DIR.rglob("cubes/**/*.yml"):
+        doc = yaml.safe_load(path.read_text()) or {}
+        for cube in doc.get("cubes", []) or []:
+            table = (cube.get("sql_table") or "").split(".")[-1]
+            for pre_agg in cube.get("pre_aggregations", []) or []:
+                sql = (pre_agg.get("refresh_key") or {}).get("sql")
+                if sql and table not in sql:
+                    offenders.append(f"{path}: {cube['name']}.{pre_agg['name']}")
+    assert not offenders, (
+        "refresh_key sql does not name its cube's sql_table:\n" + "\n".join(offenders)
+    )
+
+
 def test_row_level_filter_members_are_exposed_by_their_view() -> None:
     # A row_level filter naming a member the view doesn't (or no longer)
     # expose compiles fine but silently never matches -- Cube has no

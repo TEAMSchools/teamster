@@ -146,17 +146,9 @@ empty expansion still compiles clean.
 
 ### Comments and descriptions
 
-- One content test for SQL comments, YAML comments, and `description:` alike.
-  Keep the constraint and the why a future editor needs. Cut values another file
-  owns and point to that file instead (`dlt/<source>/schedules.py`, an exposure,
-  the model whose cron tick you share). Cut one-off measurements (GiB, row or
-  rebuild counts) and history; those go in the commit and PR. A `Refs #N`
-  pointer may stay in a comment, never a description. Where each kind of note
-  goes: `.claude/rules/dbt-sql.md` and _YAML conventions_ in
-  `.claude/rules/dbt-yaml.md`.
-- Editing inside a comment or description brings that whole block up to the
-  test. Sweep the rest of the file only when asked: a `.sql` comment edit marks
-  the model `state:modified` and widens CI's rebuild.
+The content test is in `.claude/rules/comments.md`. dbt-specific: a `.sql`
+comment edit marks the model `state:modified` and widens CI's rebuild, so sweep
+comments beyond the block you are editing only when asked.
 
 ### Per-layer requirements
 

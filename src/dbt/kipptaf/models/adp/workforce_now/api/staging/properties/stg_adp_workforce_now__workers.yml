@@ -16,7 +16,8 @@ models:
       without a terminated status row, so its final record stays open at
       9999-12-31 with is_current_record true indefinitely. That ghost flows
       downstream into stg_people__employee_numbers, int_people__staff_roster,
-      and the rpt_idauto__staff_roster login feed.
+      and the rpt_idauto__staff_roster login feed. The
+      stg_adp_workforce_now__workers__ghost_open_records test flags them.
     columns:
       - name: associate_oid
         data_type: string
@@ -31,6 +32,13 @@ models:
           `worker_id__id_value`.
       - name: effective_date_start
         data_type: date
+      - name: last_seen_partition_date
+        data_type: date
+        description: >-
+          Latest daily workers partition (asOfDate snapshot) containing this
+          associate_oid, constant across the associate's rows. Terminated
+          workers stay in every snapshot, so a value older than the newest
+          partitions means ADP deleted or merged the record.
       - name: worker_id__id_value
         data_type: string
         description: >-

@@ -1,6 +1,7 @@
 models:
   - name: int_topline__student_retention_weekly_aggregations
     config:
+      enabled: false
       materialized: table
       meta:
         dagster:

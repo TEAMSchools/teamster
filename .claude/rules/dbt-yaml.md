@@ -392,8 +392,8 @@ the normalized value its sibling scalar columns assert.
   — verify every paste against the current source.
 - All new or modified models require `description:` on the model and every
   column. Profile staging data via BigQuery MCP; infer downstream from parents.
-  Describe calculated fields by logic. Content test: _Comments and descriptions_
-  in `.claude/rules/dbt-models.md`.
+  Describe calculated fields by logic. Content test:
+  `.claude/rules/comments.md`.
 - Columns with **per-column** `data_tests:` must be sorted to the top of the
   `columns:` list for visibility — including after a change that strips a
   column's last test. Reorder freely under `contract: enforced`: BigQuery

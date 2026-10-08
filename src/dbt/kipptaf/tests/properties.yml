@@ -1145,3 +1145,24 @@ data_tests:
         dagster:
           ref:
             name: int_extracts__student_enrollments
+  - name: stg_adp_workforce_now__workers__ghost_open_records
+    description: >-
+      Flags associates whose open (9999-12-31) record comes from a workers
+      partition older than the second-newest one. Terminated workers stay in
+      every asOfDate snapshot, so the newest partition holds every associate,
+      and dropping out of the newest two means ADP hard-deleted or merged the
+      record. One day of slack absorbs a single missed or partial nightly pull.
+      A burst of hits points to two bad pulls in a row, not ghosts; re-pull the
+      newest partitions before rematerializing per associate. The nightly
+      schedule re-pulls only a rolling window, so a deletion never reaches older
+      partitions on its own. On a hit, rematerialize the ADP workers partitions
+      spanning the associate's active dates (through last_seen_partition_date);
+      the re-pull drops the record and the downstream tables rebuild. Warn
+      rather than error so a ghost does not stop the staging build and every ADP
+      consumer behind it.
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: stg_adp_workforce_now__workers

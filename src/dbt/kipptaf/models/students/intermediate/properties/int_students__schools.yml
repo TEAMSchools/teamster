@@ -18,6 +18,8 @@ models:
             combination_of_columns:
               - school_number
               - _dbt_source_project
+          config:
+            severity: error
     columns:
       - name: school_number
         description: Canonical network school number.

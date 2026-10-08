@@ -12,6 +12,7 @@ models:
       per test type. Only student-weeks with a recorded score appear. Feeds
       int_topline__student_metrics.
     config:
+      enabled: false
       materialized: table
       meta:
         dagster:
@@ -29,6 +30,7 @@ models:
               - week_start_monday
               - test_type
           config:
+            enabled: false
             severity: error
     columns:
       - name: student_number
