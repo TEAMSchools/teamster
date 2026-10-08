@@ -53,9 +53,11 @@ dimensions:
   # No Cube member: grains using these are reported as not comparable.
   homeroom:
     { cube: null, sql: "if(school_level = 'HS', teacher_name, section_number)" }
-  teacher_name: { cube: null, sql: teacher_name }
+  # 415 of 419 dashboard advisor names match dim_staff.full_name exactly (2026-10-08).
+  teacher_name: { cube: staff_homeroom_teacher_full_name, sql: teacher_name }
   team: { cube: null, sql: team }
-  schoolid: { cube: null, sql: schoolid }
+  # The PowerSchool school id: the same cut as school, so never compared on its own.
+  schoolid: { cube: null, sql: schoolid, tableau_only: true }
   is_truant_current: { cube: null, sql: is_truant }
   c_504_status: { cube: null, sql: c_504_status }
   is_counselingservices: { cube: null, sql: is_counselingservices }
