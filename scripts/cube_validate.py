@@ -272,27 +272,173 @@ def _sheet_tokens(w: ET.Element) -> list[tuple[str, str]]:
     return _TOKEN.findall(" ".join(parts))
 
 
+def _filter_detail(f: ET.Element) -> dict | None:
+    """What a filter keeps, or None for an all-values quick filter."""
+    gfs = list(f.iter("groupfilter"))
+    members = [
+        _tableau_value(_attr(g, "member"))
+        for g in gfs
+        if _attr(g, "function") == "member"
+    ]
+    exclude = any(
+        _attr(g, "function") == "except"
+        or g.get(f"{_USER}ui-enumeration") == "exclusive"
+        for g in gfs
+    )
+    rng = {k: f.findtext(k) for k in ("min", "max") if f.find(k) is not None}
+    context = _attr(f, "context") == "true"
+    if not (members or rng or context or _attr(f, "class") == "relative-date"):
+        return None
+    return {
+        "mode": "exclude" if exclude else "include",
+        "members": members,
+        "nulls": None in members,
+        "range": rng,
+        "context": context,
+        "class": _attr(f, "class"),
+    }
+
+
+def _set_construct(book: _Workbook, ds: str, name: str) -> Construct | None:
+    """A set or user filter used on the sheet; action and tooltip groups are not."""
+    g = book.groups.get((ds, f"[{name}]"))
+    if g is None or name.startswith(_IGNORED_GROUPS):
+        return None
+    caption = _attr(g, "caption") or name
+    gfs = list(g.iter("groupfilter"))
+    exprs = [_attr(x, "expression") for x in gfs if x.get("expression")]
+    if g.get(f"{_USER}ui-builder") == "identity-set" or any(
+        _VIEWER.search(e) for e in exprs
+    ):
+        return Construct(
+            "viewer_function", caption, detail={"set": name, "expressions": exprs}
+        )
+    return Construct(
+        "set",
+        caption,
+        detail={
+            "mode": "exclude"
+            if any(_attr(x, "function") == "except" for x in gfs)
+            else "include",
+            "members": [
+                _tableau_value(_attr(x, "member"))
+                for x in gfs
+                if _attr(x, "function") == "member"
+            ],
+            "of": next(
+                (_attr(x, "level").strip("[]") for x in gfs if x.get("level")), None
+            ),
+        },
+    )
+
+
+def _measure_aliases(book: _Workbook, w: ET.Element, columns) -> dict[str, str]:
+    """Measures this sheet shows through Measure Names under another name."""
+    out = {}
+    for f in w.iter("filter"):
+        if not _attr(f, "column").endswith("[:Measure Names]"):
+            continue
+        for g in f.iter("groupfilter"):
+            member = _attr(g, "member").strip('"')
+            for ds, inner in _TOKEN.findall(member):
+                alias = book.mn_aliases.get((ds, member))
+                caption = _classify(ds, inner, columns)[1]
+                if alias and alias != caption:
+                    out[alias] = caption
+    return out
+
+
 def _sheet_constructs(book: _Workbook, w: ET.Element, columns) -> list[Construct]:
+    """Every construct that can change what this sheet shows."""
     found: dict[str, Construct] = {}
+
+    def add(c: Construct | None) -> None:
+        if c is not None:
+            found.setdefault(c.key, c)
+
+    tokens = _sheet_tokens(w)
+    instances = {_attr(ci, "name"): ci for ci in w.iter("column-instance")}
     by_ds: dict[str, list[str]] = {}
-    for ds, inner in _sheet_tokens(w):
+    for ds, inner in tokens:
+        add(_set_construct(book, ds, inner))
         m = _INSTANCE.match(inner)
         if not m:
             continue
         deriv, fld, _ = m.groups()
+        add(_set_construct(book, ds, fld))
         wrapped = _NESTED.match(fld)
         if wrapped and wrapped.group(1) in _MEASURE_DERIVATIONS:
             fld = wrapped.group(2)
+            ci = instances.get(f"[{inner}]")
+            tc = ci.find("table-calc") if ci is not None else None
+            quick = _attr(tc, "type") if tc is not None else deriv
+            add(
+                Construct(
+                    "table_calc",
+                    _classify(ds, inner, columns)[1],
+                    detail={"quick": quick or deriv},
+                )
+            )
         by_ds.setdefault(ds, []).append(f"[{fld}]")
         start = _fiscal_start(book, ds, f"[{fld}]")
         if deriv in ("yr", "tyr", "qr", "tqr") and start:
+            add(
+                Construct(
+                    "fiscal_year",
+                    _classify(ds, inner, columns)[1],
+                    detail={"start_month": start},
+                )
+            )
+    for f in w.iter("filter"):
+        if _attr(f, "column").endswith("[:Measure Names]"):
+            continue
+        for ds, inner in _TOKEN.findall(_attr(f, "column")):
+            if (ds, f"[{inner}]") in book.groups:
+                continue  # a set: added from the tokens above
             label = _classify(ds, inner, columns)[1]
-            c = Construct("fiscal_year", label, detail={"start_month": start})
-            found.setdefault(c.key, c)
+            if any(_attr(g, "function") == "end" for g in f.iter("groupfilter")):
+                add(Construct("top_n", label))
+            elif detail := _filter_detail(f):
+                add(Construct("filter", label, detail=detail))
+    sub = w.find("table/subtotals")
+    # Plain subtotals become grains; any other setting needs a person to read it.
+    if sub is not None and (sub.attrib or any(c.tag != "column" for c in sub)):
+        add(
+            Construct(
+                "total",
+                "subtotals",
+                detail={
+                    "attributes": dict(sub.attrib),
+                    "children": [c.tag for c in sub],
+                },
+            )
+        )
+    used = list(
+        dict.fromkeys(
+            [ds for ds, _ in tokens]
+            + [_attr(d, "datasource") for d in w.iter("datasource-dependencies")]
+        )
+    )
+    used = [ds for ds in used if ds and ds != "Parameters"]
+    for ds in used:
+        if used and ds != used[0]:
+            add(Construct("blend", book.ds_caption.get(ds, ds)))
+        for f in book.source_filters.get(ds, []):
+            for fds, inner in _TOKEN.findall(_attr(f, "column")):
+                label = _classify(fds, inner, columns)[1]
+                add(
+                    Construct(
+                        "source_filter",
+                        f"{book.ds_caption.get(ds, ds)}: {label}",
+                        detail=_filter_detail(f) or {},
+                    )
+                )
+    for alias, caption in _measure_aliases(book, w, columns).items():
+        add(Construct("alias", alias, detail={"field": caption}))
     for ds, names in by_ds.items():
         for n in book.closure(ds, names):
             for c in _field_constructs(book, ds, n):
-                found.setdefault(c.key, c)
+                add(c)
     return list(found.values())
 
 
@@ -419,6 +565,7 @@ def parse_twb(path: str | Path, dashboards: list[str]) -> list[Sheet]:
                 target = s.filter_dims if kind == "dim" else s.other_filters
                 if label not in target and label not in s.shelf_dims:
                     target.append(label)
+        s.measure_aliases = _measure_aliases(book, w, columns)
         s.constructs = _sheet_constructs(book, w, columns)
         sheets.append(s)
     return sheets

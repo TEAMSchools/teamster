@@ -1241,3 +1241,46 @@ def test_unexpandable_parameter_field_is_a_construct():
     keys = _keys(_sheet("Levels"))
     assert "parameter: Odd Column" in keys
     assert "parameter: Level Column" not in keys
+
+
+def test_filters_carry_their_mode():
+    cs = {c.key: c for c in _sheet("Codes").constructs}
+    assert cs["filter: att_code"].detail["mode"] == "exclude"
+    assert cs["filter: att_code"].detail["nulls"] is True
+    assert cs["filter: Permissions"].detail["context"] is True
+    # An all-values quick filter is the viewer's control, not a construct.
+    assert "filter: gender" not in cs
+
+
+def test_sets_and_user_filters():
+    cs = {c.key: c for c in _sheet("Codes").constructs}
+    assert cs["set: Exclude OD"].detail == {
+        "mode": "exclude",
+        "members": ["OD"],
+        "of": "school_level",
+    }
+    assert "viewer_function: User Filter 1" in cs
+
+
+def test_quick_table_calc_top_n_range_filter_and_blend():
+    shares = {c.key: c for c in _sheet("Shares").constructs}
+    assert shares["table_calc: # Absent"].detail == {"quick": "PctTotal"}
+    bins = {c.key: c for c in _sheet("Bins").constructs}
+    assert {"top_n: region", "filter: score", "blend: other"} <= set(bins)
+    assert bins["filter: score"].detail["range"] == {"min": "10"}
+
+
+def test_source_filters_reach_every_sheet_on_the_datasource():
+    key = "source_filter: rpt_demo (kipptaf_tableau): region_type"
+    for name in ("Codes", "Geo", "Levels", "Shares", "Bins", "Shown"):
+        assert key in _keys(_sheet(name))
+
+
+def test_measure_names_alias_is_a_construct():
+    shown = _sheet("Shown")
+    assert shown.measure_aliases == {"Absences Shown": "# Absent"}
+    assert "alias: Absences Shown" in _keys(shown)
+
+
+def test_plain_subtotals_are_grains_not_constructs():
+    assert not any(c.kind == "total" for c in _sheet("Geo").constructs)
