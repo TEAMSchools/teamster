@@ -274,3 +274,22 @@ by 30 between two runs an hour apart).
   `cube_source_table` instead of `table`. The warehouse path is removed.
 - `tableauhyperapi` is not a project dependency; the run adds it with
   `uv run --with tableauhyperapi`.
+
+## Revision 2026-10-08: a fix digest instead of long comments
+
+Requested by the user after reading the first comments: an analyst and Claude
+must be able to take a validation result and know what to edit in a cube or a
+model.
+
+- Each run writes `<date>-<dashboard>-fixes.md`. "Add to Cube" lists each
+  missing member that explains gaps, merged across rows, with what it is, where
+  it lives and a suggested edit, from the checks file's `members:` notes.
+  Dimensions that only block grains follow as a lower-priority list.
+  "Investigate" lists each row's gaps nothing explains: the total, the worst
+  grain, a breakdown by the metric's `diagnose_by` field (run on the SQL without
+  the missing members' logic), and the dashboard and Cube definitions side by
+  side, including the measures a derived Cube measure uses.
+- Each fix becomes one Asana task (a column addition on its table task, or a
+  "Decide:" task for a definition mismatch), linked as a blocker of the rows it
+  affects. The digest is posted once on the dashboard's task; each row's comment
+  shrinks to its verdict and links to its fix tasks.
