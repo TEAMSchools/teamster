@@ -389,6 +389,11 @@ class FakeCube:
                     f"{v}.avg_daily_attendance": "0.9",
                 }
             ], []
+        if dims == [f"{v}.attendance_code"]:
+            return [
+                {f"{v}.attendance_code": "T", f"{v}.count_tardy_days": "25"},
+                {f"{v}.attendance_code": "TD", f"{v}.count_tardy_days": "5"},
+            ], []
         if len(dims) == 1:
             return [
                 {f"{v}.regions_region_name": "Camden", f"{v}.count_tardy_days": "10"},
@@ -424,6 +429,11 @@ class FakeBQ:
     def __call__(self, sql):
         if self.fail_on and self.fail_on in sql:
             raise RuntimeError("boom")
+        if "att_code as g0" in sql:
+            return [
+                {"g0": "T", "m0": 25, "n_students": 50},
+                {"g0": "TD", "m0": 0, "n_students": 12},
+            ]
         if " as m0" not in sql and " as m0_num" not in sql:
             return self.scope
         if " as g0" not in sql:
@@ -547,72 +557,6 @@ def test_cube_client_error_body_raises():
         client.load({})
 
 
-def test_write_outputs_comments_report_and_latest_merge(tmp_path):
-    (tmp_path / "latest.json").write_text(
-        json.dumps(
-            {
-                "rows": {
-                    "999": {
-                        "verdict": "pass",
-                        "date": "2026-10-01",
-                        "dashboard": "other",
-                        "name": "x",
-                    }
-                }
-            }
-        )
-    )
-    result = cv.run_dashboard(_checks(), FakeCube(), FakeBQ(), TODAY)
-    report = cv.write_outputs(result, tmp_path)
-    latest = json.loads((tmp_path / "latest.json").read_text())
-    assert set(latest["rows"]) == {"999", "1", "2"}
-    assert latest["rows"]["1"]["verdict"] == "fail"
-    assert report == tmp_path / "2026-10-08-demo_dashboard.md"
-    assert (tmp_path / "2026-10-08-demo_dashboard.json").exists()
-    comment = result["rows"]["1"]["comment"]
-    assert comment.splitlines()[0] == "Cube vs Tableau check, 2026-10-08: FAIL"
-    assert (
-        "Window: 2026-07-01 to 2026-10-07. 3 grains, 6 cells, 2 out of tolerance."
-        in comment
-    )
-    assert (
-        "Worst: count_tardy_days at region x school, Newark / B: Cube 15, Tableau 12."
-        in comment
-    )
-    assert "Missing Cube members: team (blocks 1 grain)." in comment
-
-
-def test_comment_hides_small_cells():
-    row = {
-        "verdict": "fail",
-        "grains": [
-            {
-                "grain": ["school"],
-                "status": "fail",
-                "cells": 1,
-                "bad": 1,
-                "metrics": {
-                    "count_tardy_days": {
-                        "worst": [
-                            {
-                                "key": ["A"],
-                                "cube": 3.0,
-                                "truth": 4.0,
-                                "n_students": 6,
-                                "kind": "count",
-                            }
-                        ]
-                    }
-                },
-            }
-        ],
-    }
-    text = cv.comment_text(
-        row, {"run_date": "2026-10-08", "window": ["a", "b"]}, Path("r.md")
-    )
-    assert "small cell" in text and "Cube 3" not in text
-
-
 def test_run_cli_requires_the_secret(monkeypatch):
     monkeypatch.delenv("CUBE_API_SECRET", raising=False)
     with pytest.raises(SystemExit, match="CUBE_API_SECRET"):
@@ -677,31 +621,6 @@ class AltBQ(FakeBQ):
         return [dict(r, m0_alt=alt.get(str(r.get("g1")), r.get("m0"))) for r in rows]
 
 
-def test_run_dashboard_flags_missing_members(tmp_path):
-    checks = cv.load_checks(_write_variant(tmp_path, _add_missing_member))
-    result = cv.run_dashboard(checks, FakeCube(), AltBQ(), TODAY)
-    tardy = result["rows"]["1"]
-    assert [g["status"] for g in tardy["grains"]] == [
-        "pass",
-        "pass",
-        "missing_member",
-        "not_comparable",
-    ]
-    assert tardy["verdict"] == "missing_member"
-    assert tardy["missing_members"] == {
-        "team": {"explains_cells": 2, "blocks_grains": ["region x team"]}
-    }
-    cv.write_outputs(result, tmp_path / "out")
-    comment = tardy["comment"]
-    assert (
-        comment.splitlines()[0] == "Cube vs Tableau check, 2026-10-08: MISSING MEMBER"
-    )
-    assert "0 out of tolerance, 2 explained by missing Cube members." in comment
-    assert "Missing Cube members: team (explains 2 cells; blocks 1 grain)." in comment
-    latest = json.loads((tmp_path / "out" / "latest.json").read_text())
-    assert latest["rows"]["1"]["missing_members"] == ["team"]
-
-
 def test_run_dashboard_prints_progress_per_query(capsys):
     cv.run_dashboard(_checks(), FakeCube(), FakeBQ(), TODAY)
     err = capsys.readouterr().err
@@ -735,35 +654,6 @@ def test_tableau_only_dims_are_not_missing_members(tmp_path):
     tardy = result["rows"]["1"]
     assert tardy["grains"][3]["status"] == "not_comparable"
     assert "team" not in tardy["missing_members"]
-
-
-def test_comment_worst_prefers_cells_big_enough_to_report():
-    def grain(key, cube, truth, n):
-        w = {
-            "key": [key],
-            "cube": cube,
-            "truth": truth,
-            "n_students": n,
-            "kind": "count",
-        }
-        return {
-            "grain": ["school"],
-            "status": "fail",
-            "cells": 1,
-            "bad": 1,
-            "explained": 0,
-            "metrics": {"m": {"worst": [w]}},
-        }
-
-    row = {
-        "verdict": "fail",
-        "grains": [grain("Tiny", 0.0, 9.0, 2), grain("Big", 100.0, 104.0, 300)],
-        "missing_members": {},
-    }
-    text = cv.comment_text(
-        row, {"run_date": "2026-10-08", "window": ["a", "b"]}, Path("r.md")
-    )
-    assert "Worst: m at school, Big: Cube 100, Tableau 104." in text
 
 
 # ---------------------------------------------------------------- extract as the truth side
@@ -832,13 +722,6 @@ def test_cube_built_at_reads_tables_metadata():
     built = cv.cube_built_at("proj.marts.fct_demo", bq)
     assert built == dt.datetime.fromtimestamp(1791462720, dt.UTC)
     assert "`proj.marts.__TABLES__`" in seen[0] and "table_id = 'fct_demo'" in seen[0]
-
-
-def test_comment_names_the_snapshots():
-    snaps = {"extract": "2026-10-08 06:28 ET", "cube": "2026-10-08 06:12 ET"}
-    result = cv.run_dashboard(_checks(), FakeCube(), FakeBQ(), TODAY, snapshots=snaps)
-    text = cv.comment_text(result["rows"]["2"], result, Path("r.md"))
-    assert "Snapshots: extract 2026-10-08 06:28 ET, Cube 2026-10-08 06:12 ET." in text
 
 
 def test_retry_recovers_from_a_transient_failure():
@@ -919,3 +802,178 @@ def test_a_failing_metric_only_fails_its_own_rows():
     assert tardy["grains"][0]["status"] == "pass"
     assert ada["grains"][0]["status"] == "error"
     assert ada["verdict"] == "incomplete"
+
+
+# ---------------------------------------------------------------- the fix digest
+SNAPS = {"extract": "2026-10-08 06:28 ET", "cube": "2026-10-08 06:12 ET"}
+
+
+def _diagnosed(d):
+    d["rows"][0]["metrics"][0]["diagnose_by"] = {
+        "cube": "attendance_code",
+        "sql": "att_code",
+    }
+
+
+def test_load_checks_diagnose_by_needs_cube_and_sql(tmp_path):
+    def mutate(d):
+        d["rows"][0]["metrics"][0]["diagnose_by"] = {"cube": "attendance_code"}
+
+    with pytest.raises(cv.CheckError, match="diagnose_by"):
+        cv.load_checks(_write_variant(tmp_path, mutate))
+
+
+def test_failing_rows_get_a_breakdown_by_the_diagnostic_field(tmp_path):
+    checks = cv.load_checks(_write_variant(tmp_path, _diagnosed))
+    result = cv.run_dashboard(checks, FakeCube(), FakeBQ(), TODAY)
+    diag = result["rows"]["1"]["diagnosis"]["count_tardy_days"]
+    assert diag["by"] == "attendance_code"
+    assert diag["cells"] == [
+        {"value": "TD", "cube": 5.0, "truth": 0.0, "n_students": 12}
+    ]
+    assert "diagnosis" not in result["rows"]["2"]  # ADA passes: nothing to diagnose
+
+
+def test_cube_definition_reads_the_measure_from_cube_yaml():
+    d = cv.cube_definition("count_tardy_days", "demo_view", FIX / "cubes")
+    assert d == {
+        "cube": "demo",
+        "sql": "is_tardy",
+        "type": "sum",
+        "filters": ["{CUBE}.membership_value = 1"],
+    }
+    assert cv.cube_definition("nope", "demo_view", FIX / "cubes") is None
+
+
+def test_comment_is_three_lines_pointing_at_the_digest():
+    result = cv.run_dashboard(_checks(), FakeCube(), FakeBQ(), TODAY, snapshots=SNAPS)
+    text = cv.comment_text(result["rows"]["1"], result)
+    assert text.splitlines() == [
+        "Cube vs Tableau check, 2026-10-08: FAIL (extract 2026-10-08 06:28 ET, Cube 2026-10-08 06:12 ET)",
+        "Investigate: 2 cells across 1 grain; details in the demo_dashboard fix digest.",
+    ]
+    assert cv.comment_text(result["rows"]["2"], result).splitlines()[1] == (
+        "Every compared cell matches."
+    )
+
+
+def test_comment_names_members_to_add(tmp_path):
+    checks = cv.load_checks(_write_variant(tmp_path, _add_missing_member))
+    result = cv.run_dashboard(checks, FakeCube(), AltBQ(), TODAY)
+    text = cv.comment_text(result["rows"]["1"], result)
+    assert text.splitlines()[1:] == [
+        "Add to Cube: team (2 cells).",
+        "Nothing else to investigate.",
+    ]
+
+
+def test_digest_lists_members_to_add_and_gaps_to_investigate(tmp_path):
+    def mutate(d):
+        _add_missing_member(d)
+        d["members"] = {
+            "team": {
+                "what": "Homeroom team name",
+                "lives_in": "rpt_demo.team",
+                "suggested_edit": "Add team to the enrollment dim",
+            }
+        }
+        d["rows"][1]["metrics"][0]["diagnose_by"] = {
+            "cube": "attendance_code",
+            "sql": "att_code",
+        }
+
+    checks = cv.load_checks(_write_variant(tmp_path, mutate))
+    result = cv.run_dashboard(checks, FakeCube(), AltBQ(), TODAY, snapshots=SNAPS)
+    defs = {
+        "count_tardy_days": {
+            "cube": "demo",
+            "sql": "is_tardy",
+            "type": "sum",
+            "filters": [],
+        }
+    }
+    md = cv.digest_markdown(result, checks, defs)
+    assert "## Add to Cube" in md
+    assert "### team: explains 2 cells in 1 row (# Tardy)" in md
+    assert "- What: Homeroom team name" in md
+    assert "- Suggested edit: Add team to the enrollment dim" in md
+    assert (
+        "- Dashboard logic: `countif(att_code = 'T')` without it, `sum(is_tardy)` with it"
+        in md
+    )
+    assert "## Investigate" in md
+    assert "Nothing unexplained." in md  # every gap here is explained by team
+
+
+def test_digest_investigate_shows_gap_breakdown_and_both_definitions(tmp_path):
+    checks = cv.load_checks(_write_variant(tmp_path, _diagnosed))
+    result = cv.run_dashboard(checks, FakeCube(), FakeBQ(), TODAY, snapshots=SNAPS)
+    defs = {
+        "count_tardy_days": {
+            "cube": "demo",
+            "sql": "is_tardy",
+            "type": "sum",
+            "filters": ["{CUBE}.membership_value = 1"],
+        }
+    }
+    md = cv.digest_markdown(result, checks, defs)
+    assert "### # Tardy (1): 2 of 6 cells out of tolerance" in md
+    assert "- Total matches: Cube 30, Tableau 30." in md
+    assert (
+        "- Worst grain: region x school, 2 cells; Newark / B: Cube 15, Tableau 12."
+        in md
+    )
+    assert "- By attendance_code: TD Cube 5, Tableau 0." in md
+    assert "- Dashboard: count_tardy_days = `sum(is_tardy)`" in md
+    assert (
+        "- Cube: count_tardy_days = sum of `is_tardy` where `{CUBE}.membership_value = 1`"
+        in md
+    )
+
+
+def test_digest_hides_small_cells():
+    result = cv.run_dashboard(_checks(), FakeCube(), SmallBQ(), TODAY)
+    md = cv.digest_markdown(result, _checks(), {})
+    assert "small cell" in md
+    assert "Cube 15" not in md
+
+
+class SmallBQ(FakeBQ):
+    """The school grain's cells hold fewer than 10 students each."""
+
+    def __call__(self, sql):
+        rows = super().__call__(sql)
+        if " as g1" in sql and "date_trunc" not in sql:
+            return [dict(r, n_students=4) for r in rows]
+        return rows
+
+
+def test_write_outputs_writes_the_digest_and_merges_latest(tmp_path):
+    (tmp_path / "latest.json").write_text(
+        json.dumps(
+            {
+                "rows": {
+                    "999": {
+                        "verdict": "pass",
+                        "date": "2026-10-01",
+                        "dashboard": "other",
+                        "name": "x",
+                    }
+                }
+            }
+        )
+    )
+    result = cv.run_dashboard(_checks(), FakeCube(), FakeBQ(), TODAY)
+    report = cv.write_outputs(result, tmp_path, _checks(), {})
+    latest = json.loads((tmp_path / "latest.json").read_text())
+    assert set(latest["rows"]) == {"999", "1", "2"}
+    assert latest["rows"]["1"]["verdict"] == "fail"
+    assert report == tmp_path / "2026-10-08-demo_dashboard.md"
+    assert (tmp_path / "2026-10-08-demo_dashboard.json").exists()
+    assert (
+        "## Investigate"
+        in (tmp_path / "2026-10-08-demo_dashboard-fixes.md").read_text()
+    )
+    assert result["rows"]["1"]["comment"].startswith(
+        "Cube vs Tableau check, 2026-10-08: FAIL"
+    )

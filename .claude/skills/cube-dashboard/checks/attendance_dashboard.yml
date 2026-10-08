@@ -73,6 +73,34 @@ dimensions:
 hard_filters:
   - { dim: region, values: [Camden, Newark, Paterson] }
 
+# What each missing member is and where to add it; the fix digest prints these.
+members:
+  out_of_district:
+    what: >-
+      Students placed out of district (school_level = 'OD'), which the
+      Attendance Metric sheets drop through the School Level - OOD Filter Set.
+    lives_in: >-
+      rpt_tableau__attendance_dashboard.school_level, passed through
+      int_extracts__student_enrollments from the enrollment base model;
+      dim_student_enrollments does not carry it.
+    suggested_edit: >-
+      Add school_level (or an is_out_of_district flag) to
+      dim_student_enrollments, expose it on the student_school_enrollments cube,
+      and filter or segment it on the attendance views.
+  homeroom:
+    what: >-
+      The homeroom a student belongs to: the advisor's name in high school, the
+      homeroom section below it. Student - Team Counts groups by it and its
+      Exclude HRs filter drops students with none.
+    lives_in: >-
+      rpt_tableau__attendance_dashboard.teacher_name / section_number
+      (int_extracts__student_enrollments.advisor_lastfirst /
+      advisory_section_number).
+    suggested_edit: >-
+      Cube already joins the homeroom teacher through student_homeroom_section;
+      expose the homeroom section number there and add a homeroom dimension
+      matching the dashboard's high-school / lower-school rule.
+
 # The rpt_ table holds school days only (membershipvalue = 1); Cube's fact also
 # carries break days, which count_students would count at a day grain.
 cube_filters:
@@ -85,6 +113,7 @@ rows:
     metrics:
       - cube: pct_ontime
         kind: rate
+        diagnose_by: { cube: attendance_code, sql: att_code }
         num:
           sum(if(school_level = 'OD' or is_present = 0, null, if(att_code in
           ('ET', 'T', 'T10', 'TLE'), 0, 1)))
@@ -189,6 +218,7 @@ rows:
     metrics:
       - cube: count_tardy_days
         kind: count
+        diagnose_by: { cube: attendance_code, sql: att_code }
         sql:
           countif(att_code in ('ET', 'T', 'T10', 'TLE') and
           coalesce(if(school_level = 'HS', teacher_name, section_number),
@@ -223,6 +253,7 @@ rows:
     metrics:
       - cube: count_absent_days
         kind: count
+        diagnose_by: { cube: attendance_code, sql: att_code }
         sql:
           countif(att_code in ('A', 'A-E', 'AD', 'D', 'X') and
           coalesce(if(school_level = 'HS', teacher_name, section_number),
@@ -257,6 +288,7 @@ rows:
     metrics:
       - cube: avg_daily_attendance
         kind: rate
+        diagnose_by: { cube: attendance_code, sql: att_code }
         num: sum(if(school_level != 'OD', is_present, 0))
         den: countif(school_level != 'OD')
         # The Attendance Metric sheets drop out-of-district students (School Level -

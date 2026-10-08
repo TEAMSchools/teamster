@@ -224,6 +224,13 @@ def load_checks(path) -> dict:
                 raise CheckError(
                     f"{where}: metric {m.get('cube')} is missing {missing}"
                 )
+            diag = m.get("diagnose_by")
+            if diag is not None and not (
+                isinstance(diag, dict) and diag.get("cube") and diag.get("sql")
+            ):
+                raise CheckError(
+                    f"{where}: metric {m.get('cube')}: diagnose_by needs cube and sql"
+                )
             if m.get("missing_members"):
                 need = (
                     ("sql_without",)
@@ -443,6 +450,11 @@ def summarize(cells, kind) -> dict:
         "cells": len(cells),
         "bad": len(bad),
         "explained": sum(1 for c in cells if c.explained),
+        "only": (
+            {"cube": cells[0].cube, "truth": cells[0].truth}
+            if len(cells) == 1
+            else None
+        ),
         "worst": [
             {
                 "key": list(c.key),
@@ -684,6 +696,29 @@ def cube_built_at(table: str, bq) -> dt.datetime:
     return dt.datetime.fromtimestamp(int(rows[0]["last_modified_time"]) / 1000, dt.UTC)
 
 
+MODEL_DIR = Path(__file__).resolve().parents[1] / "src" / "cube" / "model" / "cubes"
+
+
+def cube_definition(member: str, view: str, model_dir: Path = MODEL_DIR) -> dict | None:
+    """A Cube measure's sql, type and filters, read from the cube YAML files."""
+    found = []
+    for f in sorted(Path(model_dir).rglob("*.yml")):
+        for cube in (yaml.safe_load(f.read_text()) or {}).get("cubes", []):
+            for m in cube.get("measures", []):
+                if m.get("name") == member:
+                    found.append(
+                        {
+                            "cube": cube["name"],
+                            "sql": str(m.get("sql", "")),
+                            "type": m.get("type", ""),
+                            "filters": [x["sql"] for x in m.get("filters", [])],
+                        }
+                    )
+    # Several cubes can share a measure name: prefer the one the view is named for.
+    found.sort(key=lambda d: not view.startswith(d["cube"]))
+    return found[0] if found else None
+
+
 def _local(ts: dt.datetime) -> str:
     from zoneinfo import ZoneInfo
 
@@ -713,6 +748,60 @@ def timing_guard(extract_at: dt.datetime, cube_at: dt.datetime) -> None:
 # ---------------------------------------------------------------- run
 def _missing(missing: dict, name: str) -> dict:
     return missing.setdefault(name, {"explains_cells": 0, "blocks_grains": []})
+
+
+def _diagnose(checks, cube_load, bq, window, view, metric) -> dict:
+    """Break a failing metric's total down by its diagnostic field."""
+    by = metric["diagnose_by"]
+    dims = {**checks["dimensions"], "_by": Dim("_by", by["cube"], by["sql"])}
+    hard = checks["hard_filters"]
+    try:
+        crows, _ = cube_load(
+            cube_query(
+                view,
+                [metric["cube"]],
+                ["_by"],
+                dims,
+                hard,
+                window,
+                checks["cube_filters"],
+            )
+        )
+        trows = bq(
+            truth_sql(
+                EXTRACT_TABLE,
+                [metric],
+                ["_by"],
+                dims,
+                hard,
+                window,
+                checks["students_sql"],
+            )
+        )
+    except Exception as e:  # noqa: BLE001 - a missing breakdown never changes the verdict
+        return {
+            "by": by["cube"],
+            "cells": [],
+            "error": f"{type(e).__name__}: {e}"[:300],
+        }
+    cells = compare(
+        metric["kind"],
+        cube_cells(crows, view, [dims["_by"]], metric["cube"]),
+        truth_cells(trows, 1, 0, metric["kind"]),
+    )
+    bad = sorted((c for c in cells if not c.ok), key=lambda c: -c.delta)
+    return {
+        "by": by["cube"],
+        "cells": [
+            {
+                "value": c.key[0],
+                "cube": c.cube,
+                "truth": c.truth,
+                "n_students": c.n_students,
+            }
+            for c in bad[:10]
+        ],
+    }
 
 
 def scope_guard(checks, cube_load, bq, window) -> None:
@@ -892,10 +981,24 @@ def run_dashboard(
                     pre_aggregations=o["pre_aggregations"],
                 )
             grains.append(entry)
+        diagnosis = {}
+        failing = {
+            m
+            for g in grains
+            if g["status"] == "fail"
+            for m, s in g["metrics"].items()
+            if s["bad"]
+        }
+        for m in row["metrics"]:
+            if m.get("diagnose_by") and m["cube"] in failing:
+                diagnosis[m["cube"]] = _diagnose(
+                    checks, cube_load, bq, window, where[0], m
+                )
         result["rows"][str(row["row_gid"])] = {
             "name": row["name"],
             "verdict": row_verdict(grains),
             "grains": grains,
+            **({"diagnosis": diagnosis} if diagnosis else {}),
             "missing_members": {
                 k: v
                 for k, v in missing.items()
@@ -938,53 +1041,202 @@ def _missing_text(missing: dict, full: bool = False) -> str:
     return ", ".join(parts)
 
 
-def comment_text(row, result, report_path) -> str:
+def _plural(n: int, word: str) -> str:
+    return f"{n} {word}{'' if n == 1 else 's'}"
+
+
+def comment_text(row, result) -> str:
+    """Three lines for Asana: verdict, members to add, what is left to investigate."""
     grains = row["grains"]
     compared = [g for g in grains if g["status"] in _COMPARED]
-    explained = sum(g.get("explained", 0) for g in compared)
-    verdict = row["verdict"].replace("_", " ").upper()
-    lines = [
-        f"Cube vs Tableau check, {result['run_date']}: {verdict}",
-        f"Window: {result['window'][0]} to {result['window'][1]}. {len(compared)} grains, "
-        f"{sum(g['cells'] for g in compared)} cells, "
-        f"{sum(g['bad'] for g in compared)} out of tolerance"
-        + (f", {explained} explained by missing Cube members." if explained else "."),
-    ]
+    bad = sum(g["bad"] for g in compared)
+    first = f"Cube vs Tableau check, {result['run_date']}: {row['verdict'].replace('_', ' ').upper()}"
     if snaps := result.get("snapshots"):
-        lines.append(f"Snapshots: extract {snaps['extract']}, Cube {snaps['cube']}.")
-    worst = None
-    for g in compared:
-        for metric, s in g["metrics"].items():
-            for c in s["worst"][:1]:
-                d = (
-                    float("inf")
-                    if c["cube"] is None or c["truth"] is None
-                    else abs(c["cube"] - c["truth"])
-                )
-                # A cell big enough to report beats a bigger gap in a tiny one.
-                rank = ((c["n_students"] or 0) >= SMALL_CELL, d)
-                if worst is None or rank > worst[0]:
-                    worst = (rank, g["grain"], metric, c)
-    if worst:
-        _, grain, metric, c = worst
-        if c["n_students"] is None or c["n_students"] < SMALL_CELL:
-            lines.append(
-                f"Worst: {metric} at {_where(grain, c['key'])}: small cell, values in the report."
-            )
-        else:
-            lines.append(
-                f"Worst: {metric} at {_where(grain, c['key'])}: "
-                f"Cube {_fmt(c['cube'], c['kind'])}, Tableau {_fmt(c['truth'], c['kind'])}."
-            )
-    if row.get("missing_members"):
-        lines.append(f"Missing Cube members: {_missing_text(row['missing_members'])}.")
-    lines += [
-        f"Error at {_label(g['grain'])}: {g['error']}"
-        for g in grains
-        if g["status"] == "error"
+        first += f" (extract {snaps['extract']}, Cube {snaps['cube']})"
+    lines = [first]
+    add = [
+        f"{name} ({m['explains_cells']} cells)"
+        for name, m in row.get("missing_members", {}).items()
+        if m["explains_cells"]
     ]
-    lines.append(f"Report: {report_path}")
+    if add:
+        lines.append(f"Add to Cube: {', '.join(add)}.")
+    if bad:
+        n = sum(1 for g in compared if g["bad"])
+        lines.append(
+            f"Investigate: {bad} cells across {_plural(n, 'grain')}; details in the "
+            f"{result['dashboard']} fix digest."
+        )
+    elif row["verdict"] == "missing_member":
+        lines.append("Nothing else to investigate.")
+    elif row["verdict"] == "pass":
+        lines.append("Every compared cell matches.")
+    errors = [g for g in grains if g["status"] == "error"]
+    if errors:
+        lines.append(
+            f"Could not compare {_plural(len(errors), 'grain')}: {errors[0]['error']}"
+        )
     return "\n".join(lines)
+
+
+def _cell_text(c: dict, kind: str) -> str:
+    if c["n_students"] is None or c["n_students"] < SMALL_CELL:
+        return "small cell"
+    return f"Cube {_fmt(c['cube'], kind)}, Tableau {_fmt(c['truth'], kind)}"
+
+
+def _metric_sql(m: dict, without: bool = False) -> str:
+    suffix = "_without" if without else ""
+    if m["kind"] == "count":
+        return f"`{m['sql' + suffix]}`"
+    return f"`{m['num' + suffix]}` / `{m['den' + suffix]}`"
+
+
+def _cube_text(name: str, d: dict | None) -> str:
+    if not d:
+        return f"{name}: definition not found under src/cube/model"
+    where = " and ".join(f"`{f}`" for f in d["filters"])
+    return f"{name} = {d['type']} of `{d['sql']}`" + (
+        f" where {where}" if where else ""
+    )
+
+
+def digest_markdown(result, checks, cube_defs) -> str:
+    """The fix list: members to add to Cube, then gaps nothing explains."""
+    checks = checks or {"rows": [], "dimensions": {}}
+    defs = {str(r["row_gid"]): r for r in checks["rows"]}
+    members_doc = checks.get("members") or {}
+    rows = result["rows"]
+    verdicts = {}
+    for row in rows.values():
+        verdicts[row["verdict"]] = verdicts.get(row["verdict"], 0) + 1
+    out = [f"# {result['dashboard']}: Cube fix digest, {result['run_date']}", ""]
+    if snaps := result.get("snapshots"):
+        out.append(f"Snapshots: extract {snaps['extract']}, Cube {snaps['cube']}.")
+    out += [
+        f"Window: {result['window'][0]} to {result['window'][1]}. Rows: "
+        + ", ".join(f"{n} {v.replace('_', ' ')}" for v, n in sorted(verdicts.items()))
+        + ".",
+        "",
+        "## Add to Cube",
+        "",
+    ]
+    adds: dict[str, dict] = {}
+    blocked: dict[str, dict] = {}
+    for gid, row in rows.items():
+        for name, m in row.get("missing_members", {}).items():
+            if m["explains_cells"]:
+                a = adds.setdefault(name, {"cells": 0, "rows": []})
+                a["cells"] += m["explains_cells"]
+                a["rows"].append(gid)
+            if m["blocks_grains"]:
+                b = blocked.setdefault(name, {"grains": 0, "rows": 0})
+                b["grains"] += len(m["blocks_grains"])
+                b["rows"] += 1
+    if not adds:
+        out += ["No missing member explains a gap.", ""]
+    for name, a in sorted(adds.items(), key=lambda kv: -kv[1]["cells"]):
+        names = ", ".join(rows[g]["name"] for g in a["rows"])
+        out.append(
+            f"### {name}: explains {a['cells']} cells in {_plural(len(a['rows']), 'row')} ({names})"
+        )
+        doc = members_doc.get(name, {})
+        for key, label in (
+            ("what", "What"),
+            ("lives_in", "Lives in"),
+            ("suggested_edit", "Suggested edit"),
+        ):
+            if doc.get(key):
+                out.append(f"- {label}: {doc[key]}")
+        for g in a["rows"]:
+            for m in defs.get(g, {}).get("metrics", []):
+                if name in m.get("missing_members", []):
+                    out.append(
+                        f"- Dashboard logic: {_metric_sql(m, without=True)} without it, "
+                        f"{_metric_sql(m)} with it"
+                    )
+                    break
+            else:
+                continue
+            break
+        out.append("")
+    if blocked:
+        out += ["### Dimensions the dashboard slices by that Cube lacks", ""]
+        for name, b in sorted(blocked.items(), key=lambda kv: -kv[1]["grains"]):
+            dim = checks["dimensions"].get(name)
+            col = f"; dashboard field `{dim.sql}`" if dim else ""
+            out.append(
+                f"- {name}: blocks {_plural(b['grains'], 'grain')} in {_plural(b['rows'], 'row')}{col}"
+            )
+        out.append("")
+    out += ["## Investigate", ""]
+    any_gap = False
+    for gid, row in rows.items():
+        compared = [g for g in row["grains"] if g["status"] in _COMPARED]
+        bad = sum(g["bad"] for g in compared)
+        if not bad:
+            continue
+        any_gap = True
+        cells = sum(g["cells"] for g in compared)
+        out.append(
+            f"### {row['name']} ({gid}): {bad} of {cells} cells out of tolerance"
+        )
+        for m, s_ in next(
+            (g["metrics"] for g in compared if g["grain"] == []), {}
+        ).items():
+            kind = (
+                s_["worst"][0]["kind"]
+                if s_["worst"]
+                else next(
+                    (
+                        x["kind"]
+                        for x in defs.get(gid, {}).get("metrics", [])
+                        if x["cube"] == m
+                    ),
+                    "count",
+                )
+            )
+            only = s_.get("only") or {}
+            verb = "differs" if s_["bad"] else "matches"
+            out.append(
+                f"- Total {verb}: Cube {_fmt(only.get('cube'), kind)}, Tableau {_fmt(only.get('truth'), kind)}."
+            )
+        worst_grain = max((g for g in compared if g["bad"]), key=lambda g: g["bad"])
+        for s_ in worst_grain["metrics"].values():
+            if s_["bad"]:
+                c = s_["worst"][0]
+                out.append(
+                    f"- Worst grain: {_label(worst_grain['grain'])}, {_plural(s_['bad'], 'cell')}; "
+                    f"{' / '.join(c['key']) or 'all'}: {_cell_text(c, c['kind'])}."
+                )
+                break
+        for m, d in row.get("diagnosis", {}).items():
+            kind = next(
+                (
+                    x["kind"]
+                    for x in defs.get(gid, {}).get("metrics", [])
+                    if x["cube"] == m
+                ),
+                "count",
+            )
+            if d.get("error"):
+                out.append(f"- By {d['by']}: could not break down ({d['error']}).")
+            elif d["cells"]:
+                parts = "; ".join(
+                    f"{c['value']} {_cell_text(c, kind)}" for c in d["cells"]
+                )
+                out.append(f"- By {d['by']}: {parts}.")
+            else:
+                out.append(f"- By {d['by']}: no value differs at the total.")
+        for m in defs.get(gid, {}).get("metrics", []):
+            out.append(f"- Dashboard: {m['cube']} = {_metric_sql(m)}")
+            out.append(
+                f"- Cube: {_cube_text(m['cube'], (cube_defs or {}).get(m['cube']))}"
+            )
+        out.append("")
+    if not any_gap:
+        out += ["Nothing unexplained.", ""]
+    return "\n".join(out)
 
 
 def report_markdown(result) -> str:
@@ -1028,12 +1280,15 @@ def report_markdown(result) -> str:
     return "\n".join(out)
 
 
-def write_outputs(result, out_dir: Path) -> Path:
+def write_outputs(result, out_dir: Path, checks=None, cube_defs=None) -> Path:
     out_dir.mkdir(parents=True, exist_ok=True)
     stem = f"{result['run_date']}-{result['dashboard']}"
     report = out_dir / f"{stem}.md"
     for row in result["rows"].values():
-        row["comment"] = comment_text(row, result, report)
+        row["comment"] = comment_text(row, result)
+    (out_dir / f"{stem}-fixes.md").write_text(
+        digest_markdown(result, checks, cube_defs)
+    )
     report.write_text(report_markdown(result))
     (out_dir / f"{stem}.json").write_text(json.dumps(result, indent=2, default=str))
     latest_path = out_dir / "latest.json"
@@ -1094,7 +1349,13 @@ def _run_command(a) -> int:
     if a.scope_only:
         print("scope ok")
         return 0
-    report = write_outputs(result, a.out)
+    cube_defs = {
+        m["cube"]: cube_definition(m["cube"], r.get("view", checks["view"]))
+        for r in checks["rows"]
+        for m in r["metrics"]
+    }
+    report = write_outputs(result, a.out, checks, cube_defs)
+    print(f"digest: {a.out / (report.stem + '-fixes.md')}")
     for gid, row in result["rows"].items():
         print(f"{row['verdict']:<10} {gid} {row['name']}")
     print(f"report: {report}")

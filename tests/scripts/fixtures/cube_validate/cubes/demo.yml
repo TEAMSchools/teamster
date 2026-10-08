@@ -1,0 +1,15 @@
+cubes:
+  - name: demo
+    sql_table: proj.marts.fct_demo
+    measures:
+      - name: count_tardy_days
+        sql: is_tardy
+        type: sum
+        filters:
+          - sql: "{CUBE}.membership_value = 1"
+  - name: other
+    sql_table: proj.marts.fct_other
+    measures:
+      - name: count_other
+        sql: "1"
+        type: count

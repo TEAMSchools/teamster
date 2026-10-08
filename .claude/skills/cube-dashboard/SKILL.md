@@ -46,12 +46,17 @@ explain and the grains they block, so the user knows what to add.
    report. A render that disagrees with the check SQL means the SQL is wrong:
    mark the row `incomplete` in your summary and fix the entry before posting
    anything.
-5. Review. Summarize the verdicts for the user: rows that fail, the worst cell
-   for each, the missing Cube members per row, any grain errors, any
-   pre-aggregations on failed grains (a stale rollup is a different fix from a
-   mart gap).
-6. Post. After the user agrees, post each row's `comment` from
-   `~/asana-sync/validation/<date>-<dashboard>.json` verbatim with
+5. Review. Walk the user through
+   `~/asana-sync/validation/<date>-<dashboard>-fixes.md`, the fix digest. "Add
+   to Cube" lists each missing member that explains gaps, merged across rows,
+   with what it is, where it lives and the suggested edit. "Investigate" lists
+   each row's gaps nothing explains, with the breakdown by its `diagnose_by`
+   field and the dashboard and Cube definitions side by side: enough to name the
+   cube or model edit. Note any pre-aggregations on failed grains (a stale
+   rollup is a different fix from a mart gap).
+6. Post. After the user agrees, post the digest once on the dashboard's Asana
+   task, then each row's three-line `comment` from
+   `~/asana-sync/validation/<date>-<dashboard>.json` verbatim, both with
    `mcp__claude_ai_Asana__add_comment`.
 7. Tags. Tell the user to run `~/asana-sync/sync.py` (preview, then `--apply`).
    It reads `latest.json`: `fail` rows get the `mismatch` tag, and
@@ -100,6 +105,10 @@ def test_run() -> None:
    `sql_without` (or `num_without`/`den_without`). A cell Cube matches only
    without it is reported as explained by that member, not as a bug.
 6. `count` for sums and distinct counts, `rate` with `num`/`den` for averages.
+   Give a metric `diagnose_by: {cube, sql}` when one field explains most
+   definition gaps (the attendance code for attendance counts), and describe
+   each missing member under the file's `members:` (`what`, `lives_in`,
+   `suggested_edit`) so the digest can say what to add.
 7. Check the file loads (`load_checks`), then run the new row alone
    (`--rows <gid>`) so its SQL runs once against the extract.
 
