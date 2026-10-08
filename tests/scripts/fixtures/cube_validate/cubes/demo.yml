@@ -7,6 +7,12 @@ cubes:
         type: sum
         filters:
           - sql: "{CUBE}.membership_value = 1"
+      - name: pct_late
+        sql: "1.0 * {count_tardy_days} / NULLIF({count_days}, 0)"
+        type: number
+      - name: count_days
+        sql: "1"
+        type: sum
   - name: other
     sql_table: proj.marts.fct_other
     measures:

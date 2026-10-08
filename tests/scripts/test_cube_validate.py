@@ -977,3 +977,72 @@ def test_write_outputs_writes_the_digest_and_merges_latest(tmp_path):
     assert result["rows"]["1"]["comment"].startswith(
         "Cube vs Tableau check, 2026-10-08: FAIL"
     )
+
+
+def test_cube_definition_lists_the_measures_a_derived_measure_uses():
+    d = cv.cube_definition("pct_late", "demo_view", FIX / "cubes")
+    assert [r["name"] for r in d["refs"]] == ["count_tardy_days", "count_days"]
+    assert d["refs"][0]["filters"] == ["{CUBE}.membership_value = 1"]
+
+
+def test_digest_expands_derived_cube_measures(tmp_path):
+    checks = cv.load_checks(_write_variant(tmp_path, _diagnosed))
+    result = cv.run_dashboard(checks, FakeCube(), FakeBQ(), TODAY)
+    defs = {
+        "count_tardy_days": cv.cube_definition("pct_late", "demo_view", FIX / "cubes")
+    }
+    md = cv.digest_markdown(result, checks, defs)
+    assert (
+        "  - uses count_tardy_days = sum of `is_tardy` where `{CUBE}.membership_value = 1`"
+        in md
+    )
+
+
+def test_total_line_says_when_a_missing_member_explains_the_gap():
+    s_ = {
+        "bad": 0,
+        "explained": 1,
+        "worst": [],
+        "only": {"cube": 9709.0, "truth": 9692.0, "without": 9709.0},
+    }
+    assert cv._total_line(s_, "count", ["out_of_district"]) == [
+        "- Total differs, explained by out_of_district: Cube 9,709, Tableau 9,692.",
+        "- out_of_district accounts for 17 (Tableau 9,692 with it, 9,709 without it).",
+    ]
+    s_ = {"bad": 0, "explained": 0, "worst": [], "only": {"cube": 30.0, "truth": 30.0}}
+    assert cv._total_line(s_, "count", []) == ["- Total matches: Cube 30, Tableau 30."]
+
+
+class PartialAltBQ(FakeBQ):
+    """The without-variant explains school B but not C, so a gap stays to diagnose."""
+
+    sqls: list
+
+    def __init__(self):
+        super().__init__()
+        self.sqls = []
+
+    def __call__(self, sql):
+        self.sqls.append(sql)
+        rows = super().__call__(sql)
+        if " as m0_alt" not in sql:
+            return rows
+        alt = {"B": 15, "C": 6}
+        return [dict(r, m0_alt=alt.get(str(r.get("g1")), r.get("m0"))) for r in rows]
+
+
+def test_diagnosis_runs_without_the_missing_members_logic(tmp_path):
+    def mutate(d):
+        _add_missing_member(d)
+        _diagnosed(d)
+
+    checks = cv.load_checks(_write_variant(tmp_path, mutate))
+    bq = PartialAltBQ()
+    result = cv.run_dashboard(checks, FakeCube(), bq, TODAY)
+    assert result["rows"]["1"]["verdict"] == "fail"
+    diag_sql = [q for q in bq.sqls if "att_code as g0" in q]
+    assert len(diag_sql) == 1
+    assert "countif(att_code = 'T') as m0" in diag_sql[0]
+    assert (
+        result["rows"]["1"]["diagnosis"]["count_tardy_days"]["basis"] == "without team"
+    )

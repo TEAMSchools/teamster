@@ -442,19 +442,20 @@ def explain(cells, kind, without) -> None:
             c.explained = _matches(kind, c.cube, without.get(c.key, (None, None))[0])
 
 
-def summarize(cells, kind) -> dict:
+def summarize(cells, kind, without=None) -> dict:
     bad = sorted(
         (c for c in cells if not c.ok and not c.explained), key=lambda c: -c.delta
     )
+    only = None
+    if len(cells) == 1:
+        only = {"cube": cells[0].cube, "truth": cells[0].truth}
+        if without is not None:
+            only["without"] = without.get(cells[0].key, (None, None))[0]
     return {
         "cells": len(cells),
         "bad": len(bad),
         "explained": sum(1 for c in cells if c.explained),
-        "only": (
-            {"cube": cells[0].cube, "truth": cells[0].truth}
-            if len(cells) == 1
-            else None
-        ),
+        "only": only,
         "worst": [
             {
                 "key": list(c.key),
@@ -701,19 +702,30 @@ MODEL_DIR = Path(__file__).resolve().parents[1] / "src" / "cube" / "model" / "cu
 
 def cube_definition(member: str, view: str, model_dir: Path = MODEL_DIR) -> dict | None:
     """A Cube measure's sql, type and filters, read from the cube YAML files."""
+
+    def describe(m: dict) -> dict:
+        return {
+            "sql": str(m.get("sql", "")),
+            "type": m.get("type", ""),
+            "filters": [x["sql"] for x in m.get("filters", [])],
+        }
+
     found = []
     for f in sorted(Path(model_dir).rglob("*.yml")):
         for cube in (yaml.safe_load(f.read_text()) or {}).get("cubes", []):
-            for m in cube.get("measures", []):
-                if m.get("name") == member:
-                    found.append(
-                        {
-                            "cube": cube["name"],
-                            "sql": str(m.get("sql", "")),
-                            "type": m.get("type", ""),
-                            "filters": [x["sql"] for x in m.get("filters", [])],
-                        }
-                    )
+            measures = {m.get("name"): m for m in cube.get("measures", [])}
+            if member not in measures:
+                continue
+            d = {"cube": cube["name"], **describe(measures[member])}
+            # A derived measure's fix usually lands in a measure it uses.
+            refs = [
+                {"name": n, **describe(measures[n])}
+                for n in dict.fromkeys(re.findall(r"\{(\w+)\}", d["sql"]))
+                if n in measures
+            ]
+            if refs:
+                d["refs"] = refs
+            found.append(d)
     # Several cubes can share a measure name: prefer the one the view is named for.
     found.sort(key=lambda d: not view.startswith(d["cube"]))
     return found[0] if found else None
@@ -751,8 +763,20 @@ def _missing(missing: dict, name: str) -> dict:
 
 
 def _diagnose(checks, cube_load, bq, window, view, metric) -> dict:
-    """Break a failing metric's total down by its diagnostic field."""
+    """Break a failing metric's total down by its diagnostic field.
+
+    A metric with missing members is broken down on its SQL without them, so the
+    breakdown shows only the gaps the missing members do not explain.
+    """
     by = metric["diagnose_by"]
+    basis = None
+    if metric.get("missing_members"):
+        basis = f"without {', '.join(metric['missing_members'])}"
+        keys = ("sql",) if metric["kind"] == "count" else ("num", "den")
+        metric = {
+            **{k: v for k, v in metric.items() if k != "missing_members"},
+            **{k: metric[f"{k}_without"] for k in keys},
+        }
     dims = {**checks["dimensions"], "_by": Dim("_by", by["cube"], by["sql"])}
     hard = checks["hard_filters"]
     try:
@@ -781,6 +805,7 @@ def _diagnose(checks, cube_load, bq, window, view, metric) -> dict:
     except Exception as e:  # noqa: BLE001 - a missing breakdown never changes the verdict
         return {
             "by": by["cube"],
+            "basis": basis,
             "cells": [],
             "error": f"{type(e).__name__}: {e}"[:300],
         }
@@ -792,6 +817,7 @@ def _diagnose(checks, cube_load, bq, window, view, metric) -> dict:
     bad = sorted((c for c in cells if not c.ok), key=lambda c: -c.delta)
     return {
         "by": by["cube"],
+        "basis": basis,
         "cells": [
             {
                 "value": c.key[0],
@@ -910,13 +936,11 @@ def run_dashboard(
                     cube_cells(crows, view, grain, m["cube"]),
                     truth_cells(trows, len(g), i, m["kind"]),
                 )
+                alt = None
                 if m.get("missing_members"):
-                    explain(
-                        cells,
-                        m["kind"],
-                        truth_cells(trows, len(g), i, m["kind"], "_alt"),
-                    )
-                summaries[m["cube"]] = summarize(cells, m["kind"])
+                    alt = truth_cells(trows, len(g), i, m["kind"], "_alt")
+                    explain(cells, m["kind"], alt)
+                summaries[m["cube"]] = summarize(cells, m["kind"], alt)
             return preaggs, summaries
 
         summaries, errors, preaggs = {}, {}, set()
@@ -1019,8 +1043,30 @@ def _label(grain) -> str:
     return " x ".join(grain) or "total"
 
 
-def _where(grain, key) -> str:
-    return f"{_label(grain)}, {' / '.join(key) or 'all'}"
+def _total_line(s_: dict, kind: str, members: list[str]) -> list[str]:
+    """The total grain's line, and how much of it the missing members account for."""
+    only = s_.get("only") or {}
+    c, t = _fmt(only.get("cube"), kind), _fmt(only.get("truth"), kind)
+    if s_["bad"]:
+        lines = [f"- Total differs: Cube {c}, Tableau {t}."]
+    elif s_["explained"]:
+        lines = [
+            f"- Total differs, explained by {', '.join(members)}: Cube {c}, Tableau {t}."
+        ]
+    else:
+        lines = [f"- Total matches: Cube {c}, Tableau {t}."]
+    w, truth = only.get("without"), only.get("truth")
+    if members and w is not None and truth is not None and w != truth:
+        gap = (
+            f"{abs(w - truth) * 100:.1f} points"
+            if kind == "rate"
+            else f"{abs(w - truth):,.0f}"
+        )
+        lines.append(
+            f"- {', '.join(members)} accounts for {gap} (Tableau {t} with it, "
+            f"{_fmt(w, kind)} without it)."
+        )
+    return lines
 
 
 _COMPARED = ("pass", "fail", "missing_member")
@@ -1184,22 +1230,12 @@ def digest_markdown(result, checks, cube_defs) -> str:
         for m, s_ in next(
             (g["metrics"] for g in compared if g["grain"] == []), {}
         ).items():
-            kind = (
-                s_["worst"][0]["kind"]
-                if s_["worst"]
-                else next(
-                    (
-                        x["kind"]
-                        for x in defs.get(gid, {}).get("metrics", [])
-                        if x["cube"] == m
-                    ),
-                    "count",
-                )
+            mdef = next(
+                (x for x in defs.get(gid, {}).get("metrics", []) if x["cube"] == m),
+                {},
             )
-            only = s_.get("only") or {}
-            verb = "differs" if s_["bad"] else "matches"
-            out.append(
-                f"- Total {verb}: Cube {_fmt(only.get('cube'), kind)}, Tableau {_fmt(only.get('truth'), kind)}."
+            out += _total_line(
+                s_, mdef.get("kind", "count"), mdef.get("missing_members", [])
             )
         worst_grain = max((g for g in compared if g["bad"]), key=lambda g: g["bad"])
         for s_ in worst_grain["metrics"].values():
@@ -1219,20 +1255,22 @@ def digest_markdown(result, checks, cube_defs) -> str:
                 ),
                 "count",
             )
+            label = d["by"] + (f" ({d['basis']})" if d.get("basis") else "")
             if d.get("error"):
-                out.append(f"- By {d['by']}: could not break down ({d['error']}).")
+                out.append(f"- By {label}: could not break down ({d['error']}).")
             elif d["cells"]:
                 parts = "; ".join(
                     f"{c['value']} {_cell_text(c, kind)}" for c in d["cells"]
                 )
-                out.append(f"- By {d['by']}: {parts}.")
+                out.append(f"- By {label}: {parts}.")
             else:
-                out.append(f"- By {d['by']}: no value differs at the total.")
+                out.append(f"- By {label}: no value differs at the total.")
         for m in defs.get(gid, {}).get("metrics", []):
             out.append(f"- Dashboard: {m['cube']} = {_metric_sql(m)}")
-            out.append(
-                f"- Cube: {_cube_text(m['cube'], (cube_defs or {}).get(m['cube']))}"
-            )
+            cdef = (cube_defs or {}).get(m["cube"])
+            out.append(f"- Cube: {_cube_text(m['cube'], cdef)}")
+            for r in (cdef or {}).get("refs", []):
+                out.append(f"  - uses {_cube_text(r['name'], r)}")
         out.append("")
     if not any_gap:
         out += ["Nothing unexplained.", ""]
