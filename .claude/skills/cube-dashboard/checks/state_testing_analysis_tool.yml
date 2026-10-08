@@ -34,6 +34,9 @@ dimensions:
       case when test_code = 'ALG01' then 'Algebra I' when test_code = 'GEO01'
       then 'Geometry' when discipline = 'ELA' then 'English Language Arts' when
       discipline = 'Math' then 'Mathematics' else discipline end
+  # The dashboard's own discipline, Math including Algebra I and Geometry.
+  # No Cube member groups the tests this way.
+  dashboard_discipline: { cube: null, sql: discipline }
   grade_level: { cube: grade_level, sql: grade_level }
   gender: { cube: gender_identity, sql: gender }
 
@@ -61,7 +64,34 @@ rows:
         diagnose_by: { cube: module_code, sql: test_code }
         num: count(distinct if(is_proficient, student_number, null))
         den: count(distinct student_number)
-    grains: &grains
+    # No sheet shows % Proficient across disciplines, where the dashboard's
+    # student-weighted rate and Cube's score-weighted rate part ways. Whether a
+    # cross-test share counts records or students is an open network question.
+    grains:
+      - [test_code]
+      - [test_code, admin]
+      - [region, test_code]
+      - [region, test_code, admin]
+      - [region, school, test_code]
+      - [region, school, test_code, admin]
+      - [discipline]
+      - [region, discipline]
+      - [region, school, discipline]
+      - [dashboard_discipline]
+      - [region, dashboard_discipline]
+      - [region, school, dashboard_discipline]
+      - [region, test_code, grade_level]
+      - [region, test_code, gender]
+  - row_gid: "1219087671048617"
+    name: Count of students tested
+    # Tableau: COUNTD(student_number).
+    metrics:
+      - cube: count_students
+        kind: count
+        diagnose_by: { cube: module_code, sql: test_code }
+        sql: count(distinct student_number)
+    # Cube's count_students is distinct students too, so totals compare.
+    grains:
       - []
       - [region]
       - [region, school]
@@ -74,17 +104,11 @@ rows:
       - [discipline]
       - [region, discipline]
       - [region, school, discipline]
+      - [dashboard_discipline]
+      - [region, dashboard_discipline]
+      - [region, school, dashboard_discipline]
       - [region, test_code, grade_level]
       - [region, test_code, gender]
-  - row_gid: "1219087671048617"
-    name: Count of students tested
-    # Tableau: COUNTD(student_number).
-    metrics:
-      - cube: count_students
-        kind: count
-        diagnose_by: { cube: module_code, sql: test_code }
-        sql: count(distinct student_number)
-    grains: *grains
   - row_gid: "1219284449093357"
     name: Scale score
     # Tableau shows each student's score on the roster; compared here as the
@@ -102,3 +126,17 @@ rows:
       - [region, school, test_code, admin]
 # Not checked: "State (NJ/FL derived from region)" (1219284586640184) is a
 # label with no number; Cube's regions.state carries it.
+
+members:
+  dashboard_discipline:
+    what: >-
+      The dashboard's discipline: Math holds the grade-level tests plus Algebra
+      I (ALG01) and Geometry (GEO01).
+    lives_in: >-
+      The extract's discipline field. Cube has academic_subject, which names
+      Algebra I and Geometry separately, and courses.discipline, which comes
+      from the score's section and is empty for homeroom-resolved scores.
+    suggested_edit: >-
+      Settle which subjects count as math (an open network question in the
+      assessment orchestrator), then add that test-level discipline to
+      dim_assessments and expose it on student_assessment_scores_view.
