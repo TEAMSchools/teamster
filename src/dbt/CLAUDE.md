@@ -123,6 +123,10 @@ path-scoped rules on the first read of a matching file:
   picking and surrogate keys, date-range joins, formatting.
 - `.claude/rules/dbt-yaml.md` (`*.yml`): properties, sources, external tables,
   test config, unit-test fixtures, YAML conventions.
+- `.claude/rules/dbt-architecture.md` (`models/**`): layers, allowed edges,
+  intermediate kinds, and keys (rules A1-A11).
+- `.claude/rules/dbt-marts.md` (kipptaf `models/marts/**`): mart column naming,
+  strict-chain traversal, and PK/FK shapes (rubric R1-R4, R6-R10).
 - `.claude/rules/dbt-models.md` (`models/**`, `tests/**`): per-layer
   requirements, moving and retiring models, materialization changes,
   cross-project column changes.

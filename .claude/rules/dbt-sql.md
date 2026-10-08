@@ -6,17 +6,86 @@ paths:
 # dbt SQL conventions
 
 Loads on the first read of a `.sql` file under `src/dbt/`. Applies to every dbt
-project in the repo. Project-level and cross-cutting rules: `src/dbt/CLAUDE.md`
-and `.claude/rules/dbt-models.md`. Sections run from the rules every model hits
-(column order, structure) to the traps that fire on one construct (BigQuery
-syntax, sqlfluff rules).
+project in the repo. The section between the snippet markers is the published
+standard (`docs/reference/dbt-conventions.md` includes it); cite rules by ID in
+reviews. Everything after it is detail and traps for Claude. Architecture rules:
+`.claude/rules/dbt-architecture.md`. Project-level rules: `src/dbt/CLAUDE.md`
+and `.claude/rules/dbt-models.md`.
 
-## Column order in a SELECT (sqlfluff ST06)
+<!-- --8<-- [start:sql-style] -->
 
-Columns within a SELECT **must** follow this order — no interleaving:
+## SQL style
 
-1. Column enumerations (plain refs), grouped by source table in join order,
-   separated by a blank line between each table's group
+Our base is dbt Labs'
+[How we style our SQL](https://docs.getdbt.com/best-practices/how-we-style/2-how-we-style-our-sql):
+lowercase, trailing commas, explicit `inner join` / `left join`, and CTEs over
+subqueries. sqlfmt and sqlfluff (`.trunk/config/.sqlfluff`) enforce the
+formatting. The rules below are where we add to or differ from that guide.
+
+### Where we differ from dbt Labs
+
+| Rule                             | dbt Labs                | Us                   | Why                                                      |
+| -------------------------------- | ----------------------- | -------------------- | -------------------------------------------------------- |
+| Import CTEs                      | Recommended             | Banned (S4)          | A CTE with no logic; `ref()` in `from` reads the same    |
+| `qualify`                        | Allowed                 | Banned (S1)          | Not ANSI SQL; a ranked column plus `where` does the same |
+| `group by 1, 2` / `group by all` | Prefers `group by 1, 2` | Banned (S1, S2)      | Both break silently when the select list changes         |
+| Table aliases                    | Full names, no initials | Short initials (S16) | The repo norm; unique in the query                       |
+
+### Rules
+
+Common remedy for S3, S8, S9, and S10: derive the expression as a named column
+in an upstream CTE, then reference the plain column.
+
+#### S1. ANSI SQL or a dbt macro first
+
+Use BigQuery-only syntax only when it does something standard SQL cannot.
+`qualify`, `group by all`, and `union all corresponding` never pass that test.
+
+- Why: standard SQL reads the same to everyone and ports between engines.
+- Good: `row_number() over (...) as rn` in 1 CTE, `where rn = 1` in the next.
+- Bad: `qualify row_number() over (...) = 1`.
+- Enforced by: `sql-banned-syntax`.
+
+#### S2. Name every `group by` column
+
+- Why: positional grouping breaks silently when the select list is reordered.
+- Good: `group by student_number, academic_year`.
+- Bad: `group by 1, 2`.
+- Enforced by: review.
+
+#### S3. No subqueries against tables or CTEs
+
+Write a CTE and join it. The 1 exception is a scalar aggregate over `unnest` of
+an array, which is row-local.
+
+- Why: a CTE has a name and can be read and tested on its own.
+- Good: `(select min(x) from unnest([d1, d2, d3]) as x) as earliest_date`.
+- Bad: `where student_number in (select student_number from enrolled)`.
+- Enforced by: review.
+
+#### S4. No pass-through import CTEs
+
+Reference `ref()` and `source()` directly in `from` and `join`. Every CTE does
+real work.
+
+- Why: a CTE that only renames a ref adds a hop and no logic.
+- Good: `from {{ ref("stg_powerschool__students") }} as s`.
+- Bad: `students as (select * from {{ ref("stg_powerschool__students") }})`.
+- Enforced by: review.
+
+#### S5. No `order by` in models
+
+- Why: ordering belongs to the tool that displays the data.
+- Good: no `order by` in the final select.
+- Bad: `order by student_number` at the end of a model.
+- Enforced by: review.
+
+#### S6. Order the select list by complexity
+
+Our house order, with no interleaving:
+
+1. Plain columns, grouped by source table in join order, with a blank line
+   between tables
 2. Constants and literals
 3. Simple functions (`coalesce(...)`, simple `if(...)`)
 4. Nested functions
@@ -24,24 +93,156 @@ Columns within a SELECT **must** follow this order — no interleaving:
 6. Case statements
 7. Window functions (`row_number() over (...)`)
 
-When a SELECT reads from a single table/CTE, do not prefix columns with the
-alias.
+When a select reads from 1 table or CTE, do not prefix columns with an alias.
 
-- **sqlfluff ST06 buckets `cast()` as a SIMPLE target**, not a calculation. A
-  `cast(...) as x` placed after `date(...)` / `regexp_extract(...)` in the same
-  select list fails ST06. Put every `cast()` after the plain column refs and
-  before any other function call.
-- **Deleting `{#- ... #}` blocks can newly expose ST06** on adjacent code that
-  main passes — sqlfluff skips rules near templated slices. If fixing ST06 would
-  reorder a contract/sheet-fixed column list, suppress with the repo-standard
-  `trunk-ignore(sqlfluff/ST06)` instead.
+- Why: a reader finds the plain columns first and the logic last.
+- Good: plain columns, then `coalesce(...)`, then `case ... end`.
+- Bad: a `case` between 2 plain columns.
+- Enforced by: review.
 
-## Structure rules
+#### S7. sqlfluff ST06 select order
 
-`sqlfmt` / `sqlfluff` enforce formatting (see _sqlfluff rule traps_ below); the
-rules here enforce reviewability. Common remedy for the restructure
-prohibitions: derive the expression as a **named column in an upstream CTE**,
-then reference the plain column.
+sqlfluff's own rule, separate from S6: wildcards, then plain columns, then
+calculations. It treats `cast()` as a plain column.
+
+- Why: lint consistency.
+- Good: `cast(x as int64) as x` before `date(y) as y_date`.
+- Bad: `date(y) as y_date` before `cast(x as int64) as x`.
+- Enforced by: sqlfluff ST06.
+
+#### S8. At most 1 level of function nesting
+
+Aggregates passed as direct arguments do not count.
+
+- Why: nested calls hide intermediate values a reader needs to check.
+- Good: `if(coalesce(x, y) > 0, 'a', 'b')`;
+  `round(safe_divide(sum(a), sum(b)), 2)`.
+- Bad: `if(coalesce(cast(x as int64), 0) > 0, 'a', 'b')`.
+- Enforced by: review.
+
+#### S9. Cast early, once, with an alias
+
+Cast in staging or where the raw value first appears, as a named column. Never
+nest `cast()` inside another function.
+
+- Why: 1 typed column downstream; an unaliased `cast()` is named `f0_` by
+  BigQuery.
+- Good: `cast(student_id as string) as student_id` in staging.
+- Bad: `date(cast(entry_ts as timestamp))` in a mart.
+- Enforced by: review.
+
+#### S10. No calculations on table columns in `where` or 1-sided in `on`
+
+Precompute them as named columns upstream. Literals, `{{ var(...) }}`, and
+`current_date(...)` on the other side are fine; so are expressions that combine
+both join sides.
+
+- Why: the filter or join reads as plain columns, and the derived value can be
+  tested.
+- Good: `where is_enrolled`.
+- Bad: `where date_diff(exit_date, entry_date, day) > 0`.
+- Enforced by: review.
+
+#### S11. Row filters on the preserved table go in `where`
+
+For a `left join`, a filter in `on` keeps non-matching rows. Exception: a
+`full join` condition on 1 side stays in `on`.
+
+- Why: `on` decides matches; `where` decides rows.
+- Good: `left join t on a.id = t.id where a.is_active`.
+- Bad: `left join t on a.id = t.id and a.is_active`.
+- Enforced by: review.
+
+#### S12. `distinct` only for grain projection
+
+Use `distinct` for a grouping with no aggregate, or when every column is fixed
+by the partition key; annotate it `grain projection, not dup-masking`. Never use
+it to hide duplicates.
+
+- Why: a masking `distinct` hides which row was meant.
+- Good: `select distinct student_number, academic_year` with the annotation.
+- Bad: `select distinct *` after a join that fans out.
+- Enforced by: review.
+
+#### S13. Half-open intervals for date ranges that touch
+
+When ranges can share a boundary date, use `>=` start and `<` end, not
+`between`.
+
+- Why: `between` matches both ranges on the shared date and fans out.
+- Good: `enr.entrydate <= cc.dateenrolled and enr.exitdate > cc.dateenrolled`.
+- Bad: `cc.dateenrolled between enr.entrydate and enr.exitdate` across
+  enrollment stints.
+- Enforced by: review.
+
+#### S14. Booleans are `is_` / `has_` columns
+
+Convert to `Y`/`N` text only inside an `rpt_` whose tool needs it. A fact's
+countable flags may be `int64` 0/1 instead (mart rubric R3).
+
+- Why: a boolean filters and aggregates directly.
+- Good: `is_enrolled` (`bool`).
+- Bad: `enrolled_flag` with values `'Y'` / `'N'` in an intermediate.
+- Enforced by: review.
+
+#### S15. `if()` for 1 condition, `case` for 2 or more
+
+- Why: each form reads best at its own size.
+- Good: `if(score >= 70, 'pass', 'fail')`.
+- Bad: nested `if(a, 'x', if(b, 'y', 'z'))`.
+- Enforced by: review.
+
+#### S16. Short table aliases, unique in the query
+
+Derive them from the model name.
+
+- Why: short aliases keep joins readable; the repo already uses them.
+- Good: `int_extracts__student_enrollments as e`.
+- Bad: `as t1`, or 2 tables both aliased `s`.
+- Enforced by: review.
+
+#### S17. `union all` branches list the same columns in the same order
+
+Pad a missing column with `cast(null as <type>) as <col>`.
+
+- Why: BigQuery matches branches by position; 2 same-typed columns can swap
+  silently.
+- Good: each branch selects `student_number, academic_year, score`.
+- Bad: `select * from a union all select * from b`.
+- Enforced by: review.
+
+#### S18. Comments say only what the line cannot show
+
+Rationale and background go in the model's YAML `description:`.
+
+- Why: SQL comments drift; YAML descriptions are published with the model.
+- Good: `-- source resends rows on retry`.
+- Bad: a paragraph explaining what the model is for.
+- Enforced by: review.
+
+### Review rubric
+
+Reviewers, human or Claude, check these and cite the rule ID:
+
+1. Grain has a uniqueness test, and 1 model owns it (A4).
+2. Dedup sits in the right layer; `distinct` is not masking duplicates (A5,
+   S12).
+3. The model sits in the right layer and is the right kind (A1, A3).
+4. An `rpt_` reads a mart when 1 exists (A2).
+5. Join types are right; filters sit in `on` or `where` correctly (S10, S11).
+6. Date-range joins are half-open where ranges touch (S13).
+7. Nested logic is split into named columns past 1 level (S8, S9).
+8. Comments say only what the line cannot show (S18).
+
+<!-- --8<-- [end:sql-style] -->
+
+## Rule details and traps
+
+Claude-only. Bullets expand the rules above; the rule ID leads where 1 applies.
+
+Apply the S rules only to lines you add or change. An old violation elsewhere in
+the file is not yours to fix, and never propose a sweep of untouched models,
+macros, or tests.
 
 The `dbt:using-dbt-for-analytics-engineering` skill's process guidance (plan
 backwards, validate results) applies here, but where it conflicts, this file
@@ -50,123 +251,86 @@ wins: its test-tiering advice ("avoid liberal `not_null` /
 `config.where`-scoped warn tests, its example SQL is non-BigQuery dialect, and
 validation/profiling goes through BigQuery MCP, not `dbt show`.
 
-- **ANSI SQL or a dbt macro first; BigQuery syntax only where it adds
-  capability.** When standard SQL or an installed macro produces the same
-  result, use it. Reach for a BigQuery-only form (`select * except`) only when
-  it does something the standard form cannot. `qualify`, `group by all` and
-  `full union all corresponding` never pass that test and are banned outright
-  below.
-- **Before writing or editing any inline SQL comment, stop and ask: would this
-  survive as a properties.yml `description:` instead?** A comment explaining
-  rationale, background, or what/why a model computes belongs in the properties
-  file (see _YAML conventions_ in `.claude/rules/dbt-yaml.md`) — not the SQL,
-  even mid-edit on a `.sql` file where the note feels like natural momentum. The
-  file being open is not evidence it's the right place. Keep inline SQL comments
-  to what a reader of that exact line cannot see — a non-obvious fallback, why a
-  filter exists. The repo's existing multi-paragraph SQL comments are not a
+### ST06 traps (S7)
+
+- sqlfluff ST06 buckets `cast()` as a simple target, not a calculation. A
+  `cast(...) as x` placed after `date(...)` / `regexp_extract(...)` in the same
+  select list fails ST06. Put every `cast()` after the plain column refs and
+  before any other function call. S6 still applies to the rest of the list.
+- Deleting `{#- ... #}` blocks can newly expose ST06 on adjacent code that main
+  passes — sqlfluff skips rules near templated slices. If fixing ST06 would
+  reorder a contract/sheet-fixed column list, suppress with the repo-standard
+  `trunk-ignore(sqlfluff/ST06)` instead.
+
+### Structure details
+
+- S1: `select * except` is the kind of BigQuery-only form that passes, because
+  standard SQL has no equivalent.
+- S18: before writing or editing any inline SQL comment, ask whether it would
+  survive as a properties.yml `description:` instead (see _YAML conventions_ in
+  `.claude/rules/dbt-yaml.md`). The file being open is not evidence it's the
+  right place, and the repo's existing multi-paragraph SQL comments are not a
   precedent to extend. Carve-out: TODOs, tracking-issue refs, and migration
   plumbing stay inline at the derivation site — a defect belongs in the code,
   not the metadata.
-- **Max 1 level of function nesting.** `if(coalesce(x, y) > 0, 'a', 'b')` is at
-  the limit; anything deeper gets split into a CTE. Aggregates as direct
-  function arguments don't count toward depth —
-  `round(safe_divide(sum(a), sum(b)), 2)` is fine.
-- **Cast early, once.** `cast()` belongs in staging, or at the earliest point
-  where the raw value first appears, as a named column. Downstream expressions
-  operate on already-typed columns — never nest `cast()` inside another
-  function.
-- **`cast(col as type)` needs an explicit alias** — unaliased, BigQuery names
-  the column `f0_`, not `col`, so a contracted / explicitly-projected `select`
-  gets the wrong column name and fails. Write `cast(col as type) as col`; the
-  matching alias on a function-wrapped expression is NOT an AL09 self-alias
-  (it's the repo norm).
-- **No subqueries against tables or CTEs** — no `in (select ...)`, scalar
-  lookups, or correlated subqueries; restructure as a CTE and join it.
-  Carve-out: a scalar _aggregate_ over `unnest` of an array
-  (`(select min(x) from unnest([...]))`) is row-local and allowed — this is the
-  ONLY blessed `unnest` subquery form. An `order by ... limit 1` pick over
-  `unnest` is NOT allowed (it violates No `ORDER BY`); for a priority pick over
-  a fixed candidate set, use `coalesce(if(cond, a, null), ..., a, ...)`, which
-  returns the first non-null in priority order with no subquery.
-- **Least/earliest of N nullable columns**:
+- S9: the matching alias on a function-wrapped expression
+  (`cast(col as type) as col`) is NOT an AL09 self-alias; it's the repo norm.
+  Unaliased, a contracted / explicitly-projected `select` gets `f0_` and fails.
+- S3: the scalar aggregate over `unnest` is the ONLY blessed `unnest` subquery
+  form. An `order by ... limit 1` pick over `unnest` is NOT allowed (S5); for a
+  priority pick over a fixed candidate set, use
+  `coalesce(if(cond, a, null), ..., a, ...)`, which returns the first non-null
+  in priority order with no subquery.
+- S3: least/earliest of N nullable columns is
   `(select min(x) from unnest([c1, c2, ...]) as x)` — aggregate `min` ignores
   NULLs, unlike `least()` (which returns NULL if any arg is NULL). Avoids the
   nested `coalesce(..., sentinel)` + outer-guard pyramid. sqlfluff CV03 wants a
   trailing comma on the inner `select min(x),`; the `unnest([...])` array
   literal must NOT have one (BigQuery rejects a trailing comma in an array).
-- **No `ORDER BY`** — ordering belongs in the reporting layer, not dbt models;
-  this includes `order by ... limit 1` as a single-row pick inside a scalar
+- S5: includes `order by ... limit 1` as a single-row pick inside a scalar
   subquery (express a pick with `coalesce`/`if` or a ranked column filtered by
-  `WHERE`). Exempt: macro-generated ordering (`dbt_utils.deduplicate` emits
+  `where`). Exempt: macro-generated ordering (`dbt_utils.deduplicate` emits
   `array_agg(... order by ... limit 1)`) and `array(select ... order by ...)`
   element ordering.
-- **No `QUALIFY`.** Compute the window function as a named column in a CTE and
-  filter it with `WHERE` in the next CTE.
-- **No lateral column aliases.** BigQuery rejects a `SELECT`-list alias
-  referenced by another item in the same list —
+- No lateral column aliases. BigQuery rejects a `select`-list alias referenced
+  by another item in the same list —
   `select 1 as a, case when a = 1 then 'x' end as b` fails
   `Unrecognized name: a`. It works in Snowflake/DuckDB, so a reviewer may
-  propose it to de-duplicate two `CASE`s that share predicates; hoist to a CTE
+  propose it to de-duplicate two `case`s that share predicates; hoist to a CTE
   or keep the duplication.
-- **No `GROUP BY ALL`, and no positional `GROUP BY`** — list grouping columns
-  explicitly by name. Both `GROUP BY ALL` and `GROUP BY 1, 2, 3` break silently
-  when upstream columns change or the SELECT list is reordered.
-- **`DISTINCT` — grain projection only, never dup-masking.** Use `DISTINCT` for
-  a `GROUP BY` with no aggregation, and for pure grain projection (every
-  projected column is functionally determined by the partition key, so
-  byte-identical tuples coalesce). Annotate the latter with the one-line
-  `grain projection, not dup-masking` — the annotation is what tells a reviewer
-  the `DISTINCT` is deliberate rather than a fan-out mask or a wrong-grain
-  source, so it is required. Name the partition key on the same comment when the
-  `SELECT` list does not make it obvious. NEVER `SELECT DISTINCT` or
-  `qualify row_number() over (...) = 1` to mask upstream duplicates, and never
-  `DISTINCT` when a projected column varies within the partition (`min()`,
-  `first_value()`) — use `dbt_utils.deduplicate()` (see _Row picking, dedup &
-  surrogate keys_) with a `-- TODO:` naming the upstream fix. When the upstream
-  already numbers rows at the grain you want (`rn_year` on the enrollment
-  models; check the model's `rn_*` columns first), filter on that column instead
-  of `DISTINCT`, even if you select only key columns. The `DISTINCT` hides which
-  row was meant. Once a non-key column is added it returns one row per stint
-  again, and a later dedup on the old key then picks among them unpredictably.
-- **No one-sided calculations in join predicates.** Any expression computable
-  from a single table's columns is precomputed as a named column upstream — `ON`
-  matches plain columns. Expressions that inherently combine columns from both
-  sides (`st_distance(a.geo, b.geo)`, `st_dwithin(...)`) are allowed — they
-  cannot be hoisted. Column-to-column inequality comparisons (half-open
-  date-range joins) are comparisons, not calculations.
-- **No row-level calculations in `WHERE`.** No functions applied to table
-  columns — precompute as a named column. Row-independent expressions on the
-  other side of the comparison (`current_date(...)`, `{{ var(...) }}`, literals)
-  are fine.
-- **`ON` vs `WHERE`** — row filters on the preserved table belong in `WHERE`,
-  not `ON`. For `LEFT JOIN`, a filter in `ON` preserves non-matching rows.
-  Exception: `FULL JOIN` conditions referencing one side stay in `ON` — moving
-  them to `WHERE` collapses the join to an inner.
-- **No pass-through "import" CTEs.** Don't open a model with
-  `orders as (select * from {{ ref("...") }})` aliases — reference the
-  ref/source directly in `FROM`/`JOIN`. Every CTE must do real work (filter,
-  derive, aggregate, shape a `dbt_utils.deduplicate` input). Exception: the
-  same-name whole-row-STRUCT collision (see _BigQuery syntax traps_), which
-  _requires_ reading through a `source` CTE. Existing models with import CTEs
-  don't need a sweep — drop them opportunistically when editing the model
-  anyway.
-- **Pre-compute `lag()` / `format()` inputs in the source CTE** so the
-  comparison CTE compares plain columns. Avoids duplicating the expression
-  inside `lag(expr)` and the bare-column reference.
-- **Soft-delete filters**: Apply in the **staging model**, not in downstream
-  `ON` clauses. Deleted rows should never reach intermediate or mart models.
-  Omit columns whose value is predetermined by the WHERE filter (e.g.,
-  `deleted_at` after `WHERE deleted_at IS NULL`) — they add no signal.
-- **SFTP `source_file_name`**: drop in the staging model with
+- S12: name the partition key on the annotation when the `select` list does not
+  make it obvious. Never `distinct` when a projected column varies within the
+  partition (`min()`, `first_value()`) — use `dbt_utils.deduplicate()` (see _Row
+  picking, dedup & surrogate keys_) in `stg_`/source `int_` (A5); further down,
+  fix the grain upstream instead. When the upstream already numbers rows at the
+  grain you want (`rn_year` on the enrollment models; check the model's `rn_*`
+  columns first), filter on that column instead of `distinct`, even if you
+  select only key columns. Once a non-key column is added, a `distinct` returns
+  one row per stint again, and a later dedup on the old key then picks among
+  them unpredictably.
+- S10: expressions that inherently combine columns from both join sides
+  (`st_distance(a.geo, b.geo)`, `st_dwithin(...)`) cannot be hoisted and are
+  allowed. Column-to-column inequality comparisons (half-open date-range joins)
+  are comparisons, not calculations.
+- S4: exception — the same-name whole-row-STRUCT collision (see _BigQuery syntax
+  traps_) _requires_ reading through a `source` CTE.
+- Pre-compute `lag()` / `format()` inputs in the source CTE so the comparison
+  CTE compares plain columns. Avoids duplicating the expression inside
+  `lag(expr)` and the bare-column reference.
+- Soft-delete filters: apply in the staging model, not in downstream `on`
+  clauses. Deleted rows should never reach intermediate or mart models. Omit
+  columns whose value is predetermined by the `where` filter (e.g., `deleted_at`
+  after `where deleted_at is null`) — they add no signal.
+- SFTP `source_file_name`: drop in the staging model with
   `select * except (source_file_name)` — the SFTP IO adds it to every row
   (`core/utils/functions.py`); a contracted `stg_*` that doesn't except it fails
   the contract on the next re-pull after the ingestion change.
-- **Google Sheets external-table case**: `select *,` in a staging model inherits
-  the sheet header case (often PascalCase). Contract-enforced YAML column names
-  must match that case, or use explicit `<raw> as <renamed>` aliasing in the
-  staging SQL. Don't rename columns in `sources-external.yml` just to normalize
-  case — that rebuilds the external table and forces sheet-header coordination.
-- **Timezone-aware today**:
+- Google Sheets external-table case: `select *,` in a staging model inherits the
+  sheet header case (often PascalCase). Contract-enforced YAML column names must
+  match that case, or use explicit `<raw> as <renamed>` aliasing in the staging
+  SQL. Don't rename columns in `sources-external.yml` just to normalize case —
+  that rebuilds the external table and forces sheet-header coordination.
+- Timezone-aware today:
 
   ```sql
   current_date('{{ var("local_timezone") }}')
@@ -174,9 +338,8 @@ validation/profiling goes through BigQuery MCP, not `dbt show`.
 
 ## `select *` and UNION branches
 
-- **No `SELECT *` in final `SELECT` of `rpt_`/mart models** — list columns
-  explicitly. Get the authoritative column list via
-  `INFORMATION_SCHEMA.COLUMNS`:
+- No `select *` in the final `select` of `rpt_`/mart models (A9). Get the
+  authoritative column list via `INFORMATION_SCHEMA.COLUMNS`:
 
   ```sql
   select column_name
@@ -185,48 +348,34 @@ validation/profiling goes through BigQuery MCP, not `dbt show`.
   order by ordinal_position
   ```
 
-- **`select *` inside UNION ALL CTEs trips CV03**: sqlfluff requires a trailing
-  comma after the last column, but `select *` has nothing to trail. Enumerate
-  columns explicitly in each UNION branch. Enumerating is also the correctness
-  fix, not just the lint fix — BigQuery matches UNION ALL branches by POSITION,
-  so two `select *` branches whose column order differs bind the wrong columns
-  to each other (a type mismatch fails loudly; two same-typed columns swap
-  silently). In a VIEW model, enumerating is also what lets an upstream column
-  add reach the view at all: BigQuery fixes a view's column list when the view
-  is created, and Dagster rebuilds a view only on `code_version_changed`, which
-  hashes the model's raw SQL. A `select *` view never picks up a column an
-  upstream adds, because its own raw SQL never changes. Enumerating makes the
-  column add an edit to the view's own SQL, so it recompiles on deploy.
-  2026-09-09: `kipptaf_powerschool.int_powerschool__gpa_term` compiled with
-  `cast(null as INT64) as students_student_number` for 3 regions and stayed that
-  way until a manual materialization.
-- **No `full union all corresponding`.** Join UNION branches with a positional
-  `union all` that enumerates the same columns in the same order in every
-  branch. Pad a column one branch lacks with `cast(null as <type>) as <col>`.
-  Branches that differ in shape or column set are not an exception; the padding
-  is the remedy. Existing models that use it don't need a sweep — convert them
-  when editing the model anyway.
-- **A standalone `select *` takes a trailing comma** (`select *,`) to satisfy
+- S17: `select *` inside UNION ALL CTEs also trips CV03 — sqlfluff requires a
+  trailing comma after the last column, but `select *` has nothing to trail. In
+  a VIEW model, enumerating is also what lets an upstream column add reach the
+  view at all: BigQuery fixes a view's column list when the view is created, and
+  Dagster rebuilds a view only on `code_version_changed`, which hashes the
+  model's raw SQL. A `select *` view never picks up a column an upstream adds,
+  because its own raw SQL never changes. Enumerating makes the column add an
+  edit to the view's own SQL, so it recompiles on deploy.
+- A standalone `select *` takes a trailing comma (`select *,`) to satisfy
   sqlfluff CV03 (e.g. `stg_overgrad__schools.sql`; a `source` CTE) — distinct
   from the UNION-ALL case above, which must enumerate columns.
-- **`select * replace (...)` only for simple conversions.** A column that is
+- `select * replace (...)` only for simple conversions. A column that is
   excepted from `*` and re-added under its own name as a plain `cast`,
   `safe_cast`, or `parse_date` goes in `replace`. Anything that branches or
   merges — `coalesce`, `if`, `case` — stays as `except` plus an explicit re-add,
   so the logic reads in the select list rather than inside the star. Renamed or
   merged-away columns stay in `except`; both clauses can sit on one `*`.
-- **DATE literal across UNION ALL branches needs explicit cast**: BQ coerces
+- DATE literal across UNION ALL branches needs explicit cast: BQ coerces
   `'9999-12-31'` to DATE inside `coalesce(date_col, ...)` but NOT across UNION
   ALL branches when one side is CTE-typed STRING. Use
   `cast('9999-12-31' as date)`. Avoid the `date '9999-12-31'` typed-literal
   form.
 
-## Date-range joins
+## Date-range joins (S13)
 
-Use half-open intervals when joining a point date to intervals that can **abut
-or overlap**. Consecutive student enrollment stints share a boundary date (a
-stint's `exitdate` equals the next stint's `entrydate`), so `BETWEEN` matches
-both and fans out:
+Consecutive student enrollment stints share a boundary date (a stint's
+`exitdate` equals the next stint's `entrydate`), so `between` matches both and
+fans out:
 
 ```sql
 -- wrong: matches both stints on the shared boundary
@@ -237,8 +386,8 @@ and enr.entrydate <= cc.dateenrolled
 and enr.exitdate > cc.dateenrolled
 ```
 
-`BETWEEN` is fine — and is the repo norm — for joins to **non-overlapping,
-non-abutting** windows (calendar weeks, reporting terms, topline period rows),
+`between` is fine — and is the repo norm — for joins to non-overlapping,
+non-abutting windows (calendar weeks, reporting terms, topline period rows),
 where a point date matches at most one interval.
 
 ## Row picking, dedup & surrogate keys
@@ -311,33 +460,16 @@ partition key. That packs the whole row into a struct, inflates the input
 shuffle, and pushes the aggregate past BigQuery's single-round-shuffle threshold
 — so the plan gains `Repartition` stages that a window function never emits.
 
-Do not re-derive the width hypothesis. Measured on prod tables, macro against
-ranked column, output byte-identical in every pair (#5252):
+Do not re-derive this: the ranked form was faster at every size measured, and
+the ~1M-row threshold below is interpolated, not a measured inflection point
+(evidence: #5252). Below it the saving doesn't repay the extra CTE.
 
-|  Rows | Bytes/row | Macro / ranked slot time | Macro / ranked shuffle |
-| ----: | --------: | -----------------------: | ---------------------: |
-| 44.5M |       241 |                     6.6x |                   5.4x |
-| 4.16M |        56 |                     4.6x |                   7.1x |
-|  125k |      3629 |                     2.2x |                   1.7x |
-|   18k |       195 |                     2.5x |         below 0.02 GiB |
-
-**The ranked form never lost at any size tested** — the widest table (125k
-bytes/row) shows the smallest penalty, which is the evidence for the row-width
-conclusion. But the numbers are NOT monotonic in row count (18k shows 2.5x, 125k
-shows 2.2x), and there is no measurement between 125k and 4.16M rows — the ~1M
-threshold below is interpolated across that 33x gap, not a measured inflection
-point. Below about 1M rows the ranked form still wins on every measurement, but
-the absolute saving is small enough that it doesn't repay the extra CTE.
-
-**The default stays `dbt_utils.deduplicate()`** — it is one call, and `QUALIFY`
-is banned here, so the window form always costs an extra CTE plus an `rn`
-column. Switch to the ranked-column form only when BOTH hold: the dedup input
-exceeds about 1M rows, AND the model costs at least 1 slot hour in the 7-day
-prod ranking. #5252 applied this gate across 116 `dbt_utils.deduplicate` callers
-and rewrote only 4 that cleared both bars — the rest were deliberately left on
-the macro. A caller that doesn't clear both bars stays on
-`dbt_utils.deduplicate()`; this is not license for a repo-wide sweep of the
-remaining callers.
+The default stays `dbt_utils.deduplicate()` — it is one call, and `qualify` is
+banned (S1), so the window form always costs an extra CTE plus an `rn` column.
+Switch to the ranked-column form only when BOTH hold: the dedup input exceeds
+about 1M rows, AND the model costs at least 1 slot hour in the 7-day prod
+ranking. A caller that doesn't clear both bars stays on
+`dbt_utils.deduplicate()`; this is not license for a repo-wide sweep.
 
 ```sql
 with
@@ -362,7 +494,7 @@ needed. When `<input>` IS a `UNION ALL`, the window must sit in a separate CTE
 (named `<input>_ranked`) that reads the whole union — ranking inside each union
 branch separately ranks per-branch and breaks the tie-break.
 
-Two traps when converting:
+Three traps when converting:
 
 - A filter that ran AFTER the macro (a soft-delete predicate, typically) shares
   the `WHERE` with `rn = 1`. It must not sit in the CTE that computes `rn` — the
@@ -440,8 +572,8 @@ the same partition.
 ## sqlfluff rule traps
 
 All SQL follows `.trunk/config/.sqlfluff` (BigQuery dialect), enforced by CI —
-**do not flag code that already follows it.** ST06 and CV03 are covered in their
-own sections above.
+**do not flag code that already follows it.** ST06 traps are under _ST06 traps
+(S7)_; CV03 is under _`select *` and UNION branches_.
 
 - **sqlfluff ST09 (join order)**: ON-clause predicates list the
   earlier-referenced table on the left, including predicates inside a current

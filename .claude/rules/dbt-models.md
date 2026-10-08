@@ -154,27 +154,27 @@ comments beyond the block you are editing only when asked.
 
 **All staging models must**:
 
-1. Have `contract: enforced: true` (set at directory level in `dbt_project.yml`)
+1. Have `contract: enforced: true` (set at directory level in `dbt_project.yml`,
+   except kipptaf union views below)
 2. Have a uniqueness test — either `unique:` on a single column or
    `dbt_utils.unique_combination_of_columns`
 
 **All intermediate models must**:
 
 1. Have a uniqueness test
-2. Not be consumed directly by external tools or reports — a reporting view
-   (`rpt_*`) must always sit between an intermediate model and an external
-   consumer, buffering external dependencies from internal schema evolution
 
 **All `rpt_`, `dim_*`, and `fct_*` models must**:
 
 1. Have `contract: enforced: true`
 2. Have a uniqueness test
 
-**Exception** — thin cross-project wrapper `rpt_` models (a district
-`rpt_powerschool__autocomm_*` or other `extracts/` wrapper sourcing
-`kipptaf_extracts`) are contract-columns-only: NO uniqueness test or
-descriptions, which live on the kipptaf source view. See `kipptaf/CLAUDE.md` →
-`extracts/powerschool/` special case before adding either.
+**Exceptions** — a kipptaf `stg_` union view over district staging, and a thin
+cross-project wrapper `rpt_` (a district `rpt_powerschool__autocomm_*` or other
+`extracts/` wrapper sourcing `kipptaf_extracts`), carry NO uniqueness test; it
+lives on the model they wrap. The district wrapper is contract-columns-only (no
+descriptions); a union view enforces a contract only where its own properties
+file sets it. See `kipptaf/CLAUDE.md` → `extracts/powerschool/` special case and
+_kipptaf-level `stg_*` union views_ before adding either.
 
 ### Retiring a crosswalk or lookup as redundant
 
