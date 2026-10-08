@@ -1546,3 +1546,25 @@ def test_rule_groups_are_listed_as_decisions(tmp_path):
     digest = cv.digest_markdown(result, checks, {})
     assert "### Definitions to decide" in digest
     assert "- code_group: blocks 1 grain in 1 row" in digest
+
+
+def test_grains_cli_lists_constructs_with_dimension_snippets(capsys):
+    twb = str(FIX / "constructs.twb")
+    assert (
+        cv.main(["grains", twb, "--dashboard", "Main", "--measure", "Absences Shown"])
+        == 0
+    )
+    out = json.loads(capsys.readouterr().out)
+    assert out["resolves_to"] == ["# Absent"]
+    assert cv.main(["grains", twb, "--dashboard", "Main", "--measure", "# Absent"]) == 0
+    out = json.loads(capsys.readouterr().out)
+    group = next(c for c in out["constructs"] if c["key"] == "group: Code Group")
+    assert group["sheets"] == ["Codes"]
+    assert group["dimension"] == {
+        "group": {
+            "of": "att_code",
+            "bins": {"Absent": ["A", "AD"], "Present": [None, "P"]},
+        },
+        "kind": "relabel or rule: decide",
+        "cube": None,
+    }

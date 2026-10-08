@@ -2230,14 +2230,41 @@ def _run_command(a) -> int:
     return 0 if all(r["verdict"] == "pass" for r in result["rows"].values()) else 1
 
 
+def _snippet(c: Construct) -> dict:
+    """A checks-file dimension to paste for a group or bin on a plain column."""
+    d = c.detail
+    if c.kind == "group" and d.get("of"):
+        return {
+            "dimension": {
+                "group": {"of": d["of"], "bins": d["bins"]},
+                "kind": "relabel or rule: decide",
+                "cube": None,
+            }
+        }
+    if c.kind == "bin" and d.get("of"):
+        return {"dimension": {"bin": {"of": d["of"], "size": d["size"]}, "cube": None}}
+    return {}
+
+
 def _grains_command(a) -> int:
     sheets = parse_twb(a.twb, a.dashboard)
     if a.measure:
-        using = [s for s in sheets if a.measure in s.measures]
+        using = [
+            s
+            for s in sheets
+            if a.measure in s.measures or a.measure in s.measure_aliases
+        ]
         out = {
             "measure": a.measure,
+            "resolves_to": sorted(
+                {s.measure_aliases.get(a.measure, a.measure) for s in using}
+            ),
             "sheets": [asdict(s) for s in using],
             "grains": propose_grains(sheets, a.measure),
+            "constructs": [
+                dict(asdict(c), key=c.key, **_snippet(c))
+                for c in merge_constructs(using)
+            ],
         }
     else:
         out = {"sheets": [asdict(s) for s in sheets]}
