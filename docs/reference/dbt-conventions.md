@@ -28,9 +28,11 @@ in a model are left alone, and existing models are not swept.
   deliberate.
 - Every model has a uniqueness test: a single-column `unique:` test or
   `dbt_utils.unique_combination_of_columns` for a composite key.
-- Exceptions: a kipptaf `stg_` union view over district staging, and a district
-  `rpt_` wrapper over a kipptaf extract. Their contract and uniqueness test live
-  on the model they wrap.
+- Exceptions: a kipptaf `stg_` union view over district staging, and a thin
+  district `rpt_` wrapper over a kipptaf extract, carry no uniqueness test; it
+  lives on the model they wrap. The district wrapper still enforces its
+  contract, and a kipptaf union view enforces one only where its own properties
+  file sets it.
 
 ### Region labels
 

@@ -30,8 +30,9 @@ Source packages hold `stg_` and source `int_` only. District projects hold
 package config, district-only source models, and `rpt_` wrappers over kipptaf
 extracts. Cross-region business logic lives only in kipptaf.
 
-Until the domain tags land, a kipptaf `int_` that reads more than 1 source
-system counts as domain `int_`.
+Until the domain tags land, a kipptaf `int_` counts as domain `int_` when it
+sits in a folder not named for a source system (`students/`, `people/`,
+`topline/`), or when it reads more than 1 source system.
 
 ### Allowed edges
 
@@ -189,7 +190,6 @@ PR.
   sweep of untouched models. An existing A1, A2, or A8 edge is known backlog,
   not a finding.
 - Key macros live in `src/dbt/kipptaf/macros/`; an entity with none yet uses
-  `generate_surrogate_key` (see PK shapes in `.claude/rules/dbt-marts.md`).
-
+  `generate_surrogate_key`.
 - Mart column naming, strict-chain traversal, and PK/FK shapes:
   `.claude/rules/dbt-marts.md` (loads under kipptaf `models/marts/`).

@@ -73,9 +73,9 @@ SELECT.
 
 ### Strict-chain traversal
 
-Facts and child dims FK to their direct parent(s) only; deeper dimensional
-context is reached by traversing the FK chain, not by denormalizing it into the
-row.
+Facts, bridges, and child dims FK to their direct parent(s) only; deeper
+dimensional context is reached by traversing the FK chain, not by denormalizing
+it into the row.
 
 - No diamond paths. A fact should never have two FK routes to the same ultimate
   dim. If a fact needs attributes of a deep dim (e.g. `dim_regions` from a staff

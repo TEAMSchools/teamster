@@ -1,13 +1,10 @@
 # CLAUDE.md — `marts/`
 
-Layers and allowed edges: `.claude/rules/dbt-architecture.md`. When renaming a
-mart column, grep `ref(...)` within `marts/` too — not just outside.
+When renaming a mart column, grep `ref(...)` within `marts/` too — not just
+outside.
 
-Bridge models live in `marts/bridges/`. Naming follows
-`bridge_<entity>_<entity>` or `bridge_<concept>` when the linked entities are
-obvious from context. Like dims and facts, bridges need a uniqueness test on
-their PK and follow the strict-chain rule — no diamond paths to a shared
-ancestor dim.
+Bridge models live in `marts/bridges/`, named `bridge_<entity>_<entity>`, or
+`bridge_<concept>` when the linked entities are obvious.
 
 The column-naming rubric (R1-R4, R6-R10), degenerate-dim rule, plumbing
 definition, strict-chain traversal, and PK/FK/date column shapes live in
