@@ -26,7 +26,137 @@ This PR builds the capture only: the server change, the Dagster asset and the
 dbt staging model. The analysis built on it is described in
 [Deferred](#deferred-to-the-analysis-pr) and ships in a later PR.
 
+## Revision 2026-10-08: engineering review
+
+Bini's
+[engineering review](https://github.com/TEAMSchools/teamster/issues/5613#issuecomment-6045255853)
+changed the design. Where this section and a later one disagree, this section
+wins.
+
+### What changed
+
+1. **Write path: a Cloud Logging sink to BigQuery, not the Dagster pull.**
+   [Section 2](#2-dagster-asset) is dropped: no `CloudLoggingResource`, no
+   `google-cloud-logging` dependency, no asset, Avro schema or external table,
+   and no 30-day loss ceiling.
+2. **The free-text switch covers `question` and `assumptions` only, and is off
+   by default.** `query_json` and `error_message` always log.
+3. **Retention: a partition expiration on the raw table**, not keep-forever.
+   People Operations and legal pick the number; 730 days until they do.
+4. **Each log line carries `"severity": "INFO"`**, so Cloud Logging never infers
+   a severity from the stream and these records never read as errors.
+5. **New field `question_provided`** (bool): true when the call passed a
+   non-empty `question`. It is PII-free, so the model's fill rate is measurable
+   while the switch is off.
+6. **2 PRs, not 1.** The sink creates its table on the first routed entry, and
+   entries exist only after the server change deploys. PR 1 ships the server,
+   tests, deploy workflow and sink guide. PR 2 ships the dbt source and staging
+   model once rows exist.
+
+### Free text
+
+| Field           | Logged                                  | Why                                                                                                                                               |
+| --------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `question`      | Only with `CUBE_MCP_LOG_FREE_TEXT=true` | Staff can type circumstances that exist nowhere else in the warehouse (a discipline, health or family detail): tier 2 free text in `ferpa-pii.md` |
+| `assumptions`   | Only with `CUBE_MCP_LOG_FREE_TEXT=true` | Model-written free text that can repeat what the person typed                                                                                     |
+| `query_json`    | Always                                  | Repeats filter values the warehouse already holds. The detectors run on it                                                                        |
+| `error_message` | Always                                  | Can echo a filter value back; same reasoning as `query_json`                                                                                      |
+
+All 4 keep `contains_pii: true` in dbt: a `student_number` in a filter is still
+a tier-1 identifier.
+
+The `question` and `assumptions` tool parameters stay on the tools while the
+switch is off. Turning it on is then a deploy setting with no connector refresh,
+and `question_provided` has been measuring compliance the whole time.
+
+- **Deploy**: `.github/workflows/deploy-cube-mcp.yaml` sets
+  `CUBE_MCP_LOG_FREE_TEXT=false` explicitly, so turning it on is a 1-line diff
+  whose PR carries the People Operations approval. The code default is also
+  `false`.
+- **Unit test 7** becomes: with the switch unset or `false`, `question` and
+  `assumptions` are empty and `query_json` and `error_message` are populated;
+  with `true`, all 4 are populated.
+
+### Sink
+
+Setup commands go in a new section of `docs/guides/cube.md`. A person with admin
+on both projects runs them once; nothing is in code.
+
+1. Create dataset `cube_mcp_logs` in `teamster-332318` with a default partition
+   expiration of 730 days. A dedicated dataset keeps the expiration off every
+   other table, and lets access be narrowed later without moving dbt models.
+2. Create a sink in `teamster-mcp` with the filter from section 2, destination
+   `cube_mcp_logs`, and `--use-partitioned-tables`. The sink writes table
+   `run_googleapis_com_stderr`, partitioned by day on `timestamp`.
+3. Grant the sink's writer identity `roles/bigquery.dataEditor` on
+   `cube_mcp_logs`.
+
+Create the sink before PR 1 deploys. A sink routes only entries written after it
+exists, so anything earlier stays in `_Default` and expires in 30 days.
+
+How the sink shapes the table, and what the writer does about it:
+
+- Fields land under a `jsonPayload` record. Each column's type comes from the
+  first entry that carries the field, and new fields add columns.
+- An entry whose value does not match an existing column's type is not written.
+  So the writer keeps each field's JSON type fixed: `null` when absent, never
+  `""` where the column holds a number or an array. `query_json` stays a JSON
+  string.
+- JSON numbers arrive as FLOAT64, because Cloud Logging stores `jsonPayload` as
+  a protobuf `Struct`, which has 1 number type. Staging casts `row_count` and
+  `latency_ms` to INT64.
+- Cloud Run moves `severity` to the entry's own `severity` and strips it from
+  `jsonPayload`, so it never becomes a column.
+- Check during setup whether `ts` and `last_refresh_time` land as STRING or
+  TIMESTAMP. Staging casts both either way.
+
+### dbt (PR 2), replacing section 3's source
+
+- **Source**: `src/dbt/kipptaf/models/cube/sources-bigquery.yml`, source `cube`,
+  schema `cube_mcp_logs`, table `run_googleapis_com_stderr`. A plain schema with
+  no target prefix, per the BigQuery-native convention, so dev and CI read the
+  prod table.
+- **Staging**: `stg_cube__mcp_calls` selects from `jsonPayload` and casts every
+  column to its final type. Tests and PII tags as in section 3, plus
+  `question_provided`.
+- **Schedule**: `meta.dagster.automation_condition.cron_schedule: 0 3 * * *`.
+  Dagster sees the sink table as an external source that never materializes, so
+  the default table condition's upstream-updated trigger never fires and the
+  model would build once and go stale.
+- **Alarm**: `dbt_utils.recency` on `ts`, day interval 4, `severity: warn`. 4
+  days keeps a weekend with no agent traffic quiet; a school break will warn,
+  which is acceptable.
+- **Expiration flows through.** Staging is a full rebuild, so rows the raw table
+  expires leave staging on the next run.
+
+### Open questions after review
+
+Settled: question 4 (sink), question 5 (`_Default` is fine; `teamster-mcp` log
+access is no broader than the dataset's), question 6 (existing access is fine).
+
+1. **Retention days** (People Operations and legal). Default 730.
+2. **Sign-off on question text** (Walters and People Operations). It now gates
+   turning on the switch, not the merge.
+3. **Legal classification** of the log. Ask before the switch turns on.
+4. **Bini**: confirm `query_json` and `error_message` log unconditionally. The
+   review implies it for `query_json` and does not mention `error_message`.
+
+Questions 7 to 9 below are unchanged.
+
+### Deferred work while the switch is off
+
+- **Retry chains** group on `session_id` plus overlapping `members_referenced`
+  inside about 5 minutes, instead of similar question text. They detect a
+  rephrase but cannot show what the person asked.
+- **Error analysis** (reading sessions by hand) and **retiring the Assessment
+  Project's session log** both need `question`, so they wait for the sign-off.
+- **Detectors, the pre-aggregation hit rate, coverage gaps and unused members**
+  need no free text and proceed on the original schedule.
+
 ## Open questions for review
+
+Superseded in part: see
+[Open questions after review](#open-questions-after-review).
 
 Reviewers: Bini (engineering), Walters and People Operations (privacy and
 retention). Each item says what is decided by default if nobody objects.
@@ -73,7 +203,8 @@ retention). Each item says what is decided by default if nobody objects.
 
 ## Decisions
 
-Settled during design on 2026-10-01.
+Settled during design on 2026-10-01. The switch and write-path decisions below
+changed in the [2026-10-08 revision](#revision-2026-10-08-engineering-review).
 
 - **Phase 1 and phase 2 of the issue ship together.** Question text and
   `query_json` are captured from the start.
@@ -205,6 +336,9 @@ Both show as a second minted id minutes after the first.
 
 ### 2. Dagster asset
 
+Dropped in the [2026-10-08 revision](#sink). The log filter below is reused by
+the sink.
+
 Follows the library plus code-location split, modeled on `knowbe4`.
 
 #### Files
@@ -246,6 +380,9 @@ Follows the library plus code-location split, modeled on `knowbe4`.
   `teamster-mcp`. A person grants this; it is not in code.
 
 ### 3. dbt
+
+The source moved to a BigQuery-native table in the
+[2026-10-08 revision](#dbt-pr-2-replacing-section-3s-source).
 
 **Source**: `src/dbt/kipptaf/models/cube/sources-external.yml`
 
