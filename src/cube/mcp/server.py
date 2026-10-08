@@ -275,24 +275,34 @@ async def _request(
 ) -> dict[str, Any]:
     if client is None:
         raise RuntimeError("_request called before the server lifespan started")
+    call = _current_call.get()
     headers = {"Authorization": _mint_token(email)}
+    if call is not None:
+        # Cube stamps this onto the BigQuery job as the `cube_request_id`
+        # label, which joins a call record to its job's cost and SQL.
+        headers["x-request-id"] = call.cube_request_id
     deadline = time.monotonic() + TIMEOUT_SECONDS
-    while True:
-        response = await client.request(method, path, headers=headers, **kwargs)
-        if response.status_code >= 400:
-            raise RuntimeError(
-                f"Cube {method} {path} {response.status_code}: {response.text}"
-            )
-        body = response.json()
-        if poll and isinstance(body, dict) and body.get("error") == "Continue wait":
-            if time.monotonic() + 1 >= deadline:
+    started = time.monotonic()
+    try:
+        while True:
+            response = await client.request(method, path, headers=headers, **kwargs)
+            if response.status_code >= 400:
                 raise RuntimeError(
-                    f"Cube {method} {path} did not complete within "
-                    f"{TIMEOUT_SECONDS}s ('Continue wait' polling)"
+                    f"Cube {method} {path} {response.status_code}: {response.text}"
                 )
-            await asyncio.sleep(1)
-            continue
-        return body
+            body = response.json()
+            if poll and isinstance(body, dict) and body.get("error") == "Continue wait":
+                if time.monotonic() + 1 >= deadline:
+                    raise RuntimeError(
+                        f"Cube {method} {path} did not complete within "
+                        f"{TIMEOUT_SECONDS}s ('Continue wait' polling)"
+                    )
+                await asyncio.sleep(1)
+                continue
+            return body
+    finally:
+        if call is not None:
+            call.latency_ms += (time.monotonic() - started) * 1000
 
 
 def _with_default_timezone(query: dict[str, Any]) -> dict[str, Any]:

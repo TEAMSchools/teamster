@@ -924,3 +924,79 @@ def test_recorded_reads_the_client_user_agent(
     assert _call_records(capsys)[0]["client"] == "claude-ai/1.0"
     # A MagicMock ctx (no real headers) or stdio's None gives null, not junk.
     assert server._client_user_agent(MagicMock()) is None
+
+
+class _FakeResponse:
+    def __init__(self, body: dict[str, Any]) -> None:
+        self.status_code = 200
+        self.text = json.dumps(body)
+        self._body = body
+
+    def json(self) -> dict[str, Any]:
+        return self._body
+
+
+class _FakeClient:
+    """Stands in for the httpx client: returns `bodies` in order and keeps the
+    headers of every request."""
+
+    def __init__(self, bodies: list[dict[str, Any]]) -> None:
+        self.bodies = list(bodies)
+        self.sent_headers: list[dict[str, str]] = []
+
+    async def request(
+        self, method: str, path: str, *, headers: dict[str, str], **kwargs: Any
+    ) -> _FakeResponse:
+        del method, path, kwargs
+        self.sent_headers.append(dict(headers))
+        return _FakeResponse(self.bodies.pop(0))
+
+
+def test_request_sends_the_call_id_on_every_poll(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    server = _stdio_server(monkeypatch, tmp_path)
+    fake = _FakeClient(
+        [{"error": "Continue wait"}, {"error": "Continue wait"}, {"data": []}]
+    )
+    monkeypatch.setattr(server, "client", fake)
+
+    async def no_sleep(_seconds: float) -> None:
+        return None
+
+    # Replace the server module's `asyncio` name only, never the real
+    # `asyncio.sleep` the test's own event loop uses.
+    from types import SimpleNamespace
+
+    monkeypatch.setattr(server, "asyncio", SimpleNamespace(sleep=no_sleep))
+
+    async def run() -> None:
+        async with server._recorded(
+            MagicMock(), "load", session_id=None, query={}
+        ) as record:
+            record.result = await server._request(
+                "POST",
+                "/load",
+                email="engineer@apps.teamschools.org",
+                poll=True,
+                json={},
+            )
+
+    asyncio.run(run())
+    [logged] = _call_records(capsys)
+    ids = {h["x-request-id"] for h in fake.sent_headers}
+    assert len(fake.sent_headers) == 3
+    assert ids == {logged["cube_request_id"]}
+    assert isinstance(logged["latency_ms"], int)
+
+
+def test_request_without_a_recorded_call_sends_no_request_id(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    server = _stdio_server(monkeypatch, tmp_path)
+    fake = _FakeClient([{"data": []}])
+    monkeypatch.setattr(server, "client", fake)
+    asyncio.run(server._request("GET", "/meta", email="engineer@apps.teamschools.org"))
+    assert "x-request-id" not in fake.sent_headers[0]
