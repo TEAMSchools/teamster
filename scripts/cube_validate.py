@@ -846,6 +846,40 @@ def audit_rows(checks: dict, twb) -> dict[str, dict]:
     return out
 
 
+def workbook_exclusions(checks: dict, twb) -> list[str]:
+    """Extract-side conditions dropping the members of the named workbook filters.
+
+    The members (test records) are read from the workbook on every run and go only
+    into the SQL, never into a file or an output.
+    """
+    if not checks["workbook_excludes"]:
+        return []
+    found = merge_constructs(parse_twb(twb, checks["dashboards"]))
+    out = []
+    for x in checks["workbook_excludes"]:
+        members = [
+            v
+            for c in found
+            if c.key == x["construct"]
+            for v in c.detail.get("members", [])
+            if v is not None
+        ]
+        if x.get("pattern"):
+            pat = re.compile(x["pattern"])
+            members = [
+                _tableau_value(m.group(1)) for v in members if (m := pat.search(str(v)))
+            ]
+        if not members:
+            # A silent no-op would let the test records back into the comparison.
+            raise CheckError(
+                f"the workbook gives no members for {x['construct']}: the filter is "
+                "gone, empty, or its pattern matches nothing"
+            )
+        values = ", ".join(_sql_literal(v) for v in dict.fromkeys(members))
+        out.append(f"{x['sql']} not in ({values})")
+    return out
+
+
 # ---------------------------------------------------------------- checks files and queries
 CUBE_LIMIT = 50_000
 # An average is a rate on its own scale (a scale score): compared in its units.
@@ -863,9 +897,10 @@ class Dim:
     sql: str
     granularity: str | None = None
     tableau_only: bool = False  # a dashboard control, not data: never a missing member
-    group_kind: str | None = (
-        None  # a Tableau group: relabel (buckets) or rule (a definition)
-    )
+    # A Tableau group: relabel (codes rolled into buckets) or rule (a definition).
+    group_kind: str | None = None
+    # Identifies a person (a student id or name): outputs never show its values.
+    person: bool = False
 
 
 def group_case_sql(of: str, bins: dict, other: str | None = None) -> str:
@@ -930,6 +965,7 @@ def load_checks(path) -> dict:
             d.get("granularity"),
             bool(d.get("tableau_only")),
             d.get("kind") if ("group" in d or "bin" in d) else None,
+            bool(d.get("person")),
         )
         for n, d in data["dimensions"].items()
     }
@@ -1013,6 +1049,15 @@ def load_checks(path) -> dict:
             if sum(1 for n in g if dims[n].granularity) > 1:
                 raise CheckError(f"{where}: grain {g} has more than one date part")
     data["dashboards"] = list(data.get("dashboards") or [])
+    # Workbook filters whose members (test records) the extract side also drops. The
+    # members are read from the workbook on each run, so no id or name sits in git.
+    data["workbook_excludes"] = list(data.get("workbook_excludes") or [])
+    for x in data["workbook_excludes"]:
+        if not (_construct_key_ok(x.get("construct")) and x.get("sql")):
+            raise CheckError(
+                f"{path}: workbook_excludes entries need construct ('<kind>: <name>') "
+                "and sql"
+            )
     data["handled"] = dict(data.get("handled") or {})
     for key in data["handled"]:
         if not _construct_key_ok(key):
@@ -1774,6 +1819,14 @@ def run_dashboard(
                     alt = truth_cells(trows, len(g), i, m["kind"], "_alt")
                     explain(cells, m["kind"], alt)
                 summaries[m["cube"]] = summarize(cells, m["kind"], alt)
+            # A cell keyed by a person (a per-student grain) never names them.
+            person = {i for i, d in enumerate(grain) if d.person}
+            for s_ in summaries.values() if person else []:
+                for c in s_["worst"]:
+                    c["key"] = [
+                        "a student" if i in person else k
+                        for i, k in enumerate(c["key"])
+                    ]
             return preaggs, summaries
 
         summaries, errors, preaggs = {}, {}, set()
@@ -2337,6 +2390,9 @@ def _run_command(a) -> int:
     )
     cube_at = cube_built_at(checks["cube_source_table"], bigquery_rows)
     audit = audit_rows(checks, SCRATCH / checks["dashboard"] / "workbook.twb")
+    checks["truth_filters"] = checks["truth_filters"] + workbook_exclusions(
+        checks, SCRATCH / checks["dashboard"] / "workbook.twb"
+    )
     try:
         timing_guard(extract_at, cube_at)
         with ExtractSource(hyper) as truth:

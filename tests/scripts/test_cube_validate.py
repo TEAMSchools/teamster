@@ -1646,3 +1646,42 @@ def test_filters_join_only_the_grain_the_sheet_opens_at():
     ]
     # The same fields in another order are the same cut, queried once.
     assert len({tuple(sorted(g)) for g in grains}) == len(grains)
+
+
+def test_person_dimensions_never_reach_outputs(tmp_path):
+    def m(d):
+        d["dimensions"]["school"]["person"] = True
+
+    checks = cv.load_checks(_write_variant(tmp_path, m))
+    result = cv.run_dashboard(checks, FakeCube(), FakeBQ(), TODAY)
+    grain = next(
+        g for g in result["rows"]["1"]["grains"] if g["grain"] == ["region", "school"]
+    )
+    worst = [c for s in grain["metrics"].values() for c in s["worst"]]
+    assert worst and all(c["key"][1] == "a student" for c in worst)
+    assert all(c["key"][0] in ("Camden", "Newark") for c in worst)
+
+
+def test_workbook_excludes_read_members_from_the_workbook(tmp_path):
+    def m(d):
+        d["dashboards"] = ["Main"]
+        d["workbook_excludes"] = [
+            {"construct": "filter: student_name", "sql": "student_name"},
+            {"construct": "filter: att_code", "sql": "att_code", "pattern": r"^(\w)"},
+        ]
+
+    checks = cv.load_checks(_write_variant(tmp_path, m))
+    assert cv.workbook_exclusions(checks, FIX / "constructs.twb") == [
+        "student_name not in ('Student A')",
+        "att_code not in ('X')",
+    ]
+
+
+def test_workbook_excludes_fail_loudly_when_the_filter_is_gone(tmp_path):
+    def m(d):
+        d["dashboards"] = ["Main"]
+        d["workbook_excludes"] = [{"construct": "filter: nothing", "sql": "x"}]
+
+    checks = cv.load_checks(_write_variant(tmp_path, m))
+    with pytest.raises(cv.CheckError, match="filter: nothing"):
+        cv.workbook_exclusions(checks, FIX / "constructs.twb")
