@@ -11,7 +11,7 @@ import sys
 
 # Comments, string literals, and quoted identifiers never hold banned syntax.
 _SKIP = re.compile(
-    r"\{#.*?#\}|/\*.*?\*/|--[^\n]*"
+    r"\{#.*?#\}|/\*.*?\*/|--[^\n]*|#[^\n]*"
     r"|'(?:\\.|[^'\\])*'|\"(?:\\.|[^\"\\])*\"|`[^`]*`",
     re.S,
 )

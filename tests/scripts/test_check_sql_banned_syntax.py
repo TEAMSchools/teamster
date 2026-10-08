@@ -62,6 +62,7 @@ def test_corresponding_flagged() -> None:
         "select 'qualify' as a, \"group by all\" as b, from t",
         "select is_qualifying, corresponding_id, from t",
         "select a, /* qualify */ from t",
+        "select a, # qualify\nfrom t",
         "select a, from t group by all_students",
     ],
 )

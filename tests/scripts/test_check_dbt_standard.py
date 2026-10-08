@@ -224,8 +224,7 @@ def test_int_reading_two_source_folders_outside_domain_is_source_int() -> None:
         "models/kippadb/intermediate/b.sql",
         [uid(STG_PS), uid(STG_DL)],
     )
-    m = manifest(*BASE, node)
-    assert mod.layer_of(node, m, "kipptaf", DOMAIN) == "source_int"
+    assert mod.layer_of(node, "kipptaf", DOMAIN) == "source_int"
 
 
 def test_domain_folders_constant() -> None:
@@ -248,9 +247,8 @@ def test_base_is_classified_like_int() -> None:
         "base_powerschool__x", "models/powerschool/intermediate/b.sql", [uid(STG_PS)]
     )
     dom_base = model("base_students__x", "models/students/b.sql", [uid(STG_PS)])
-    m = manifest(*BASE, src_base, dom_base)
-    assert mod.layer_of(src_base, m, "kipptaf", DOMAIN) == "source_int"
-    assert mod.layer_of(dom_base, m, "kipptaf", DOMAIN) == "domain_int"
+    assert mod.layer_of(src_base, "kipptaf", DOMAIN) == "source_int"
+    assert mod.layer_of(dom_base, "kipptaf", DOMAIN) == "domain_int"
 
 
 @pytest.mark.parametrize(
@@ -264,7 +262,7 @@ def test_base_is_classified_like_int() -> None:
     ],
 )
 def test_source_layer_follows_table_prefix(table, layer) -> None:
-    assert mod.layer_of(source("s", table), {}, "kipptaf", DOMAIN) == layer
+    assert mod.layer_of(source("s", table), "kipptaf", DOMAIN) == layer
 
 
 def test_disabled_model_is_skipped() -> None:
@@ -334,13 +332,19 @@ def test_district_rpt_reading_stg_alone_is_a1() -> None:
     ]
 
 
+def test_district_rpt_reading_other_rpt_source_is_a1() -> None:
+    other = source("kipptaf_reporting", "rpt_x__z", package="kippnewark")
+    rpt = model("rpt_x__y", "models/extracts/a.sql", [uid(other)], package="kippnewark")
+    assert district(other, rpt) == [
+        ("kippnewark.rpt_x__y", "A1", "source.kipptaf_reporting.rpt_x__z")
+    ]
+
+
 def test_district_int_in_students_folder_is_source_int() -> None:
     node = model(
         "int_students__x", "models/students/a.sql", [uid(D_STG)], package="kippnewark"
     )
-    assert (
-        mod.layer_of(node, manifest(D_STG, node), "kippnewark", DOMAIN) == "source_int"
-    )
+    assert mod.layer_of(node, "kippnewark", DOMAIN) == "source_int"
 
 
 def test_duplicate_name_across_packages_is_keyed_by_package() -> None:
@@ -385,16 +389,27 @@ def unique_test(node, column=None, combo=None) -> dict:
     }
 
 
-def touched(*nodes, changed=None, added=()) -> list:
+def touched(*nodes, changed=None, added=(), project="kipptaf") -> list:
+    """changed and added take paths; every node's package is its own key."""
     m = manifest(*BASE, *nodes)
+    pkg = {n["original_file_path"]: n["package_name"] for n in nodes if "raw_code" in n}
     if changed is None:
-        changed = {
-            n["original_file_path"]: set(range(1, 200))
-            for n in nodes
-            if n["resource_type"] == "model"
-        }
-    v = mod.check_touched(m, "kipptaf", changed, set(added), DOMAIN)
+        changed = {p: set(range(1, 200)) for p in pkg}
+    changed_keys = {(pkg[p], p): lines for p, lines in changed.items()}
+    added_keys = {(pkg[p], p) for p in added}
+    v = mod.check_touched(m, project, changed_keys, added_keys, DOMAIN)
     return [(x.model, x.rule, x.severity) for x in v]
+
+
+def test_a3_runs_on_added_package_intermediate() -> None:
+    node = coded(
+        "int_powerschool__x_pivoted", "models/intermediate/a.sql", "select 1,\n"
+    )
+    node["package_name"] = "powerschool"
+    added = ["models/intermediate/a.sql"]
+    assert touched(node, added=added, project="kippnewark") == [
+        ("powerschool.int_powerschool__x_pivoted", "A3", "error")
+    ]
 
 
 MART_STAR = "with final as (select 1 as a)\n\nselect *\nfrom final\n"
@@ -402,6 +417,18 @@ MART_STAR = "with final as (select 1 as a)\n\nselect *\nfrom final\n"
 
 def test_a9_star_final_select_on_changed_line() -> None:
     node = coded("dim_y", "models/marts/dimensions/b.sql", MART_STAR)
+    assert touched(node) == [("kipptaf.dim_y", "A9", "error")]
+
+
+@pytest.mark.parametrize(
+    "code",
+    [
+        "with f as (select 1 as a)\n\nselect distinct *\nfrom f\n",
+        "select *\nfrom a\n\nunion all\n\nselect a,\nfrom b\n",
+    ],
+)
+def test_a9_star_in_distinct_or_any_union_branch(code) -> None:
+    node = coded("dim_y", "models/marts/dimensions/b.sql", code)
     assert touched(node) == [("kipptaf.dim_y", "A9", "error")]
 
 
@@ -478,6 +505,8 @@ def test_a7_direct_hash_of_macro_key(code) -> None:
         "select\n    {{ staff_key('employee_number') }} as staff_key,\nfrom t\n",
         f"select\n    {SK} as assessment_score_key,\nfrom t\n",
         f"select\n    {SK} as grades_term_key,\nfrom t\n",
+        f"select\n    {SK} as row_hash,\n    x as staff_key,\nfrom t\n",
+        f"select a,\nfrom t\nwhere k = {SK}\n\nunion all\n\nselect x as staff_key,\n",
     ],
 )
 def test_a7_passes_macro_call_and_keys_without_macro(code) -> None:
@@ -568,10 +597,52 @@ diff --git a/src/dbt/kippnewark/models/z.sql b/src/dbt/kippnewark/models/z.sql
 """
 
 
-def test_parse_diff_scopes_to_project() -> None:
-    changed, added = mod.parse_diff(DIFF, "src/dbt/kipptaf")
-    assert changed == {"models/a.sql": {4, 5, 12}, "models/new.sql": {1, 2}}
-    assert added == {"models/new.sql"}
+ROOTS = {"kipptaf": "src/dbt/kipptaf", "powerschool": "src/dbt/powerschool"}
+
+
+def test_parse_diff_scopes_to_package_roots() -> None:
+    changed, added = mod.parse_diff(DIFF, {"kipptaf": "src/dbt/kipptaf"})
+    assert changed == {
+        ("kipptaf", "models/a.sql"): {4, 5, 12},
+        ("kipptaf", "models/new.sql"): {1, 2},
+    }
+    assert added == {("kipptaf", "models/new.sql")}
+
+
+EDGE_DIFF = """diff --git a/src/dbt/powerschool/models/a.sql b/src/dbt/powerschool/models/a.sql
+--- a/src/dbt/powerschool/models/a.sql
++++ b/src/dbt/powerschool/models/a.sql
+@@ -2,0 +3,2 @@ select
++++ x,
++    y,
+@@ -9 +10,0 @@ from t
+-where a
+@@ -20 +20 @@ from t
+-z
+\\ No newline at end of file
++zz
+\\ No newline at end of file
+"""
+
+
+def test_parse_diff_reads_plus_lines_deletions_and_no_newline() -> None:
+    changed, added = mod.parse_diff(EDGE_DIFF, ROOTS)
+    assert changed == {("powerschool", "models/a.sql"): {3, 4, 20}}
+    assert added == set()
+
+
+def test_package_roots_are_cwd_relative_from_an_absolute_project_dir(
+    tmp_path, monkeypatch
+) -> None:
+    for name in ("kippnewark", "powerschool", "notes"):
+        (tmp_path / "src/dbt" / name).mkdir(parents=True)
+    for name in ("kippnewark", "powerschool"):
+        (tmp_path / "src/dbt" / name / "dbt_project.yml").write_text(f"name: {name}\n")
+    monkeypatch.chdir(tmp_path)
+    assert mod.package_roots(tmp_path / "src/dbt/kippnewark") == {
+        "kippnewark": "src/dbt/kippnewark",
+        "powerschool": "src/dbt/powerschool",
+    }
 
 
 def test_exposure_named_like_its_rpt_reads_its_own_exemption() -> None:
@@ -580,8 +651,9 @@ def test_exposure_named_like_its_rpt_reads_its_own_exemption() -> None:
     exp = exposure("rpt_gsheets__x", [uid(rpt)])
     exp["config"]["meta"]["standard_exempt"] = {"A8": "exposure"}
     m = manifest(rpt, exp)
-    assert mod._exempt_rules(m, "exposure.rpt_gsheets__x") == {"A8": "exposure"}
-    assert mod._exempt_rules(m, "kipptaf.rpt_gsheets__x") == {"A1": "model"}
+    exempt = mod.exempt_index(m)
+    assert exempt["exposure.rpt_gsheets__x"] == {"A8": "exposure"}
+    assert exempt["kipptaf.rpt_gsheets__x"] == {"A1": "model"}
 
 
 def test_snapshot_folder_follows_the_model_it_snapshots() -> None:

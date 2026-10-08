@@ -12,6 +12,7 @@ of a rule with config.meta.standard_exempt: {<rule>: <reason>}.
 import argparse
 import csv
 import json
+import os
 import re
 import sys
 from dataclasses import dataclass
@@ -113,7 +114,7 @@ def _parents(manifest: dict, node: dict) -> list[dict]:
     return [p for p in found if p is not None]
 
 
-def layer_of(node: dict, manifest: dict, project: str, domain_folders: set[str]) -> str:
+def layer_of(node: dict, project: str, domain_folders: set[str]) -> str:
     """One of source, stg, source_int, domain_int, mart, rpt, snapshot, other."""
     if node["resource_type"] == "source":
         layer = _prefix_layer(node["identifier"])
@@ -149,7 +150,7 @@ def _allowed(
             p["resource_type"] == "source" and p["source_name"] == "kipptaf_extracts"
             for p in siblings
         )
-        if parent_layer == "rpt" and parent["resource_type"] == "source":
+        if parent_layer == "rpt" and parent.get("source_name") == "kipptaf_extracts":
             return True
         if parent_layer == "stg" and reads_extracts:
             return True
@@ -169,12 +170,12 @@ def check_edges(
     for node in manifest.get("nodes", {}).values():
         if node["resource_type"] != "model" or not node["config"].get("enabled", True):
             continue
-        layer = layer_of(node, manifest, project, domain_folders)
+        layer = layer_of(node, project, domain_folders)
         if layer not in ALLOWED:
             continue
         parents = _parents(manifest, node)
         for parent in parents:
-            p_layer = layer_of(parent, manifest, project, domain_folders)
+            p_layer = layer_of(parent, project, domain_folders)
             if not _allowed(node, layer, parent, p_layer, parents, project, manifest):
                 out.append(_violation(node, "A1", parent, layer, p_layer))
     for exp in manifest.get("exposures", {}).values():
@@ -183,7 +184,7 @@ def check_edges(
         )
         layer = "cube" if "cube" in kinds else "exposure"
         for parent in _parents(manifest, exp):
-            p_layer = layer_of(parent, manifest, project, domain_folders)
+            p_layer = layer_of(parent, project, domain_folders)
             if p_layer != "other" and p_layer not in ALLOWED[layer]:
                 out.append(_violation(exp, "A8", parent, layer, p_layer))
     return sorted(out, key=lambda v: (v.model, v.rule, v.detail))
@@ -239,11 +240,37 @@ _A3_NEAR_MISSES = (
     "_unions",
 )
 
-_FINAL_SELECT = re.compile(r"^select\b", re.M)
-# a direct hash up to its alias, never crossing into the next {{ }} call
-_DIRECT_HASH = re.compile(
-    r"generate_surrogate_key\(.*?\)\s*-?\}\}[^{]{0,200}?\bas\s+(\w+_key)\b", re.S
+# sqlfmt indents CTE bodies, so a select at column 0 is the final statement or
+# one of its union branches.
+_STAR_SELECT = re.compile(r"^select\s+(?:distinct\s+)?\*", re.M | re.I)
+_DIRECT_HASH = re.compile(r"generate_surrogate_key\(.*?\)\s*-?\}\}", re.S)
+# What can follow a hash before its alias: parentheses it sits inside, the
+# alias, or a jinja call or clause keyword that means it has none.
+_ALIAS_SCAN = re.compile(
+    r"[(){]|\bas\s+(\w+)|\b(?:select|from|where|join|on|union|group|order|having)\b",
+    re.I,
 )
+
+
+def _hash_aliases(code: str) -> list[tuple[int, int, str]]:
+    """(start, end, alias) per direct hash; the alias is the first `as` outside
+    any parentheses opened after the hash."""
+    out = []
+    for m in _DIRECT_HASH.finditer(code):
+        depth = 0
+        for t in _ALIAS_SCAN.finditer(code, m.end()):
+            if t.group() == "(":
+                depth += 1
+            elif t.group() == ")":
+                depth -= 1
+            elif depth > 0:
+                continue
+            elif t.group(1):
+                out.append((m.start(), t.end(), t.group(1)))
+                break
+            else:
+                break
+    return out
 
 
 def _line(code: str, offset: int) -> int:
@@ -280,11 +307,14 @@ def _grains(manifest: dict) -> dict[str, set[frozenset[str]]]:
     return out
 
 
-def _a4(
-    manifest: dict, node: dict, layer: str, domain_folders: set[str], project: str
-) -> list[Violation]:
-    grains = _grains(manifest)
-    mine = grains.get(node["unique_id"], set())
+@dataclass
+class _Graph:
+    grains: dict[str, set[frozenset[str]]]
+    models: list[dict]
+    children: dict[str, set[str]]
+
+
+def _graph(manifest: dict) -> _Graph:
     models = [
         n
         for n in manifest["nodes"].values()
@@ -294,6 +324,14 @@ def _a4(
     for n in models:
         for p in n["depends_on"]["nodes"]:
             children.setdefault(p, set()).add(n["unique_id"])
+    return _Graph(_grains(manifest), models, children)
+
+
+def _a4(
+    g: _Graph, node: dict, layer: str, domain_folders: set[str], project: str
+) -> list[Violation]:
+    grains, models, children = g.grains, g.models, g.children
+    mine = grains.get(node["unique_id"], set())
     near = set(node["depends_on"]["nodes"]) | children.get(node["unique_id"], set())
     my_children = children.get(node["unique_id"], set())
     out = []
@@ -303,7 +341,7 @@ def _a4(
             continue
         if my_children & children.get(uid, set()):
             continue
-        o_layer = layer_of(other, manifest, project, domain_folders)
+        o_layer = layer_of(other, project, domain_folders)
         if o_layer != layer:
             continue
         if layer == "source_int" and source_folder(other) != source_folder(node):
@@ -323,60 +361,58 @@ def _a4(
     return out
 
 
+FileKey = tuple[str, str]
+
+
+def _span(code: str, start: int, end: int) -> set[int]:
+    return set(range(_line(code, start), _line(code, end) + 1))
+
+
 def check_touched(
     manifest: dict,
     project: str,
-    changed: dict[str, set[int]],
-    added: set[str],
+    changed: dict[FileKey, set[int]],
+    added: set[FileKey],
     domain_folders: set[str],
 ) -> list[Violation]:
     """A3/A4 on added intermediates; A7/A9 on changed lines of marts and rpt_.
 
-    changed maps a project-relative path to the line numbers the PR adds or
-    changes; added holds the project-relative paths of new files.
+    changed maps (package, package-relative path) to the line numbers the PR
+    adds or changes; added holds the same keys for new files.
     """
     out = []
+    graph = _graph(manifest) if added else None
     for node in manifest.get("nodes", {}).values():
         if node["resource_type"] != "model" or not node["config"].get("enabled", True):
             continue
-        path = node["original_file_path"]
-        if node["package_name"] != project or path not in changed:
+        file_key = (node["package_name"], node["original_file_path"])
+        if file_key not in changed:
             continue
-        lines, code, key = changed[path], node.get("raw_code", ""), _key(node)
-        layer = layer_of(node, manifest, project, domain_folders)
+        lines, code, key = changed[file_key], node.get("raw_code", ""), _key(node)
+        layer = layer_of(node, project, domain_folders)
         found = []
-        if layer in ("mart", "rpt"):
-            selects = list(_FINAL_SELECT.finditer(code))
-            if selects:
-                last = selects[-1]
-                if (
-                    re.match(r"select\s+\*", code[last.start() :])
-                    and _line(code, last.start()) in lines
-                ):
-                    found.append(
-                        Violation(
-                            key,
-                            "A9",
-                            "select *",
-                            "error",
-                            f"{key}: final select is select *",
-                        )
-                    )
+        if layer in ("mart", "rpt") and any(
+            _span(code, m.start(), m.end()) & lines for m in _STAR_SELECT.finditer(code)
+        ):
+            found.append(
+                Violation(
+                    key, "A9", "select *", "error", f"{key}: final select is select *"
+                )
+            )
         if layer == "mart":
-            for m in _DIRECT_HASH.finditer(code):
-                macro = _macro_for(m.group(1))
-                span = set(range(_line(code, m.start()), _line(code, m.end()) + 1))
-                if macro and span & lines:
+            for start, end, alias in _hash_aliases(code):
+                macro = _macro_for(alias)
+                if macro and _span(code, start, end) & lines:
                     found.append(
                         Violation(
                             key,
                             "A7",
-                            m.group(1),
+                            alias,
                             "error",
-                            f"{key}: hash {m.group(1)} with {{{{ {macro}(...) }}}}, not generate_surrogate_key",
+                            f"{key}: hash {alias} with {{{{ {macro}(...) }}}}, not generate_surrogate_key",
                         )
                     )
-        if layer in ("source_int", "domain_int") and path in added:
+        if graph and layer in ("source_int", "domain_int") and file_key in added:
             if node["name"].endswith(_A3_NEAR_MISSES):
                 found.append(
                     Violation(
@@ -387,7 +423,7 @@ def check_touched(
                         f"{key}: reshape suffixes are _pivot, _unpivot, _rollup, _scaffold, _union",
                     )
                 )
-            found.extend(_a4(manifest, node, layer, domain_folders, project))
+            found.extend(_a4(graph, node, layer, domain_folders, project))
         exempt = node["config"].get("meta", {}).get("standard_exempt") or {}
         out.extend(v for v in found if v.rule not in exempt)
     return sorted(out, key=lambda v: (v.model, v.rule, v.detail))
@@ -421,28 +457,51 @@ def compare(
     return new, stale, missing
 
 
-def parse_diff(diff: str, project_dir: str) -> tuple[dict[str, set[int]], set[str]]:
-    """Changed new-file line numbers and added files under project_dir, from git diff -U0."""
-    prefix = project_dir.strip("/").removeprefix("./") + "/"
-    changed: dict[str, set[int]] = {}
-    added: set[str] = set()
-    path, is_new, line = None, False, 0
+def package_roots(project_dir: Path) -> dict[str, str]:
+    """Every dbt project beside project_dir, by folder name (each folder is
+    named for its package), as a path relative to the working directory: the
+    repo root, where git diff paths start."""
+    base = project_dir.resolve().parent
+    return {
+        d.name: os.path.relpath(d, Path.cwd())
+        for d in sorted(base.iterdir())
+        if (d / "dbt_project.yml").exists()
+    }
+
+
+def _file_key(target: str, roots: dict[str, str]) -> FileKey | None:
+    for package, root in roots.items():
+        if target.startswith(root + "/"):
+            return package, target[len(root) + 1 :]
+    return None
+
+
+def parse_diff(
+    diff: str, roots: dict[str, str]
+) -> tuple[dict[FileKey, set[int]], set[FileKey]]:
+    """Changed new-file line numbers and added files under roots, from git diff -U0."""
+    changed: dict[FileKey, set[int]] = {}
+    added: set[FileKey] = set()
+    path, is_new, in_hunk, line = None, False, False, 0
     for raw in diff.splitlines():
         if raw.startswith("diff --git"):
-            path, is_new = None, False
+            path, is_new, in_hunk = None, False, False
+        elif in_hunk and raw.startswith("+"):
+            if path:
+                changed.setdefault(path, set()).add(line)
+            line += 1
+        elif raw.startswith("@@"):
+            in_hunk = True
+            hunk = re.match(r"@@ -\S+ \+(\d+)", raw)
+            line = int(hunk.group(1)) if hunk else 0
+        elif in_hunk:
+            continue  # a removed line or "\ No newline at end of file"
         elif raw.startswith("new file mode"):
             is_new = True
         elif raw.startswith("+++ "):
-            target = raw[4:].removeprefix("b/")
-            path = target[len(prefix) :] if target.startswith(prefix) else None
+            path = _file_key(raw[4:].removeprefix("b/"), roots)
             if path and is_new:
                 added.add(path)
-        elif raw.startswith("@@") and path:
-            hunk = re.match(r"@@ -\S+ \+(\d+)", raw)
-            line = int(hunk.group(1)) if hunk else 0
-        elif raw.startswith("+") and path:
-            changed.setdefault(path, set()).add(line)
-            line += 1
     return changed, added
 
 
@@ -478,10 +537,11 @@ def main(argv: list[str] | None = None) -> int:
     )
     baseline_path = Path(args.baseline or project_dir / "standard-baseline.tsv")
 
+    exempt = exempt_index(manifest)
     edges = [
         v
         for v in check_edges(manifest, project, DOMAIN_FOLDERS)
-        if v.rule not in _exempt_rules(manifest, v.model)
+        if v.rule not in exempt.get(v.model, {})
     ]
     baseline = load_baseline(baseline_path) if baseline_path.exists() else {}
     if args.write_baseline:
@@ -492,7 +552,9 @@ def main(argv: list[str] | None = None) -> int:
     new, stale, missing = compare(edges, baseline)
     touched = []
     if args.diff:
-        changed, added = parse_diff(Path(args.diff).read_text(), args.project_dir)
+        changed, added = parse_diff(
+            Path(args.diff).read_text(), package_roots(project_dir)
+        )
         touched = check_touched(manifest, project, changed, added, DOMAIN_FOLDERS)
 
     for v in [*new, *touched]:
@@ -509,12 +571,14 @@ def main(argv: list[str] | None = None) -> int:
     return 1 if failed else 0
 
 
-def _exempt_rules(manifest: dict, key: str) -> dict:
-    for coll in ("nodes", "exposures"):
-        for n in manifest.get(coll, {}).values():
-            if _key(n) == key:
-                return n.get("config", {}).get("meta", {}).get("standard_exempt") or {}
-    return {}
+def exempt_index(manifest: dict) -> dict[str, dict]:
+    """standard_exempt per model and exposure, by violation key."""
+    return {
+        _key(n): n.get("config", {}).get("meta", {}).get("standard_exempt") or {}
+        for coll in ("nodes", "exposures")
+        for n in manifest.get(coll, {}).values()
+        if n["resource_type"] in ("model", "exposure")
+    }
 
 
 if __name__ == "__main__":
