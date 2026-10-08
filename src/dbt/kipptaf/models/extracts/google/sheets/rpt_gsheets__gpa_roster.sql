@@ -7,7 +7,7 @@ with
 
             /* Y1 percents are whole numbers upstream, so no decimal is lost */
             format('%s %.0f', course_name, y1_percent_current) as course_label,
-        from {{ ref("int_gpa__course_pace") }}
+        from {{ ref("int_powerschool__course_pace") }}
         where is_below_target and not is_locked
     ),
 
@@ -28,7 +28,7 @@ with
             course_name as quickest_win_course,
             pace_percent_to_next as quickest_win_pace_percent,
             next_letter_grade as quickest_win_next_letter,
-        from {{ ref("int_gpa__course_pace") }}
+        from {{ ref("int_powerschool__course_pace") }}
         where quickest_win_rank = 1
     ),
 
@@ -96,7 +96,7 @@ with
             and co.schoolid = gc.schoolid
             and co._dbt_source_project = gc._dbt_source_project
         left join
-            {{ ref("int_gpa__student_y1_target") }} as t
+            {{ ref("int_powerschool__student_y1_target") }} as t
             on co.studentid = t.studentid
             and co.schoolid = t.schoolid
             and co._dbt_source_project = t._dbt_source_project

@@ -4,7 +4,6 @@ with
             studentid,
             course_number,
             course_name,
-            _dbt_source_project,
             potential_credit_hours,
             courses_gradescaleid_unweighted,
             termbin_end_date,
@@ -29,14 +28,13 @@ with
         select
             studentid,
             course_number,
-            _dbt_source_project,
             termbin_is_current,
             term_percent_grade_adjusted,
             y1_percent_grade_adjusted,
             y1_grade_points_unweighted,
 
             row_number() over (
-                partition by studentid, course_number, _dbt_source_project
+                partition by studentid, course_number
                 order by termbin_is_current desc, is_started desc, termbin_end_date desc
             ) as rn_current,
         from term_rows
@@ -46,7 +44,6 @@ with
         select
             studentid,
             course_number,
-            _dbt_source_project,
 
             max(course_name) as course_name,
             max(potential_credit_hours) as potential_credit_hours,
@@ -70,14 +67,13 @@ with
             sum(if(is_ended, 0.0, term_weighted_points_possible)) as remaining_weight,
             logical_and(is_ended) as is_locked,
         from term_rows
-        group by studentid, course_number, _dbt_source_project
+        group by studentid, course_number
     ),
 
     current_values as (
         select
             studentid,
             course_number,
-            _dbt_source_project,
             y1_percent_grade_adjusted as y1_percent_current,
             y1_grade_points_unweighted as y1_grade_points_unweighted_current,
 
@@ -93,7 +89,6 @@ with
             c.studentid,
             c.course_number,
             c.course_name,
-            c._dbt_source_project,
             c.potential_credit_hours,
             c.courses_gradescaleid_unweighted,
             c.total_weight,
@@ -120,11 +115,9 @@ with
             current_values as cv
             on c.studentid = cv.studentid
             and c.course_number = cv.course_number
-            and c._dbt_source_project = cv._dbt_source_project
         inner join
-            {{ ref("int_gpa__student_y1_target") }} as t
+            {{ ref("int_powerschool__student_y1_target") }} as t
             on c.studentid = t.studentid
-            and c._dbt_source_project = t._dbt_source_project
     ),
 
     pace as (
@@ -133,7 +126,6 @@ with
             schoolid,
             course_number,
             course_name,
-            _dbt_source_project,
             potential_credit_hours,
             courses_gradescaleid_unweighted,
             target_cutoff_percent,
@@ -155,9 +147,7 @@ with
     ),
 
     unweighted_scale as (
-        /* grain projection, not dup-masking: the kipptaf lookup repeats each
-           letter once per district with identical points and cutoffs */
-        select distinct letter_grade, grade_points, min_cutoffpercentage,
+        select letter_grade, grade_points, min_cutoffpercentage,
         from {{ ref("int_powerschool__gradescaleitem_lookup") }}
         where gradescale_name = 'KIPP NJ 2019 (5-12) Unweighted'
     ),
@@ -168,7 +158,6 @@ with
         select
             p.studentid,
             p.course_number,
-            p._dbt_source_project,
 
             min(us.min_cutoffpercentage) as next_cutoff_percent,
         from pace as p
@@ -176,7 +165,7 @@ with
             unweighted_scale as us
             on p.y1_grade_points_unweighted_current < us.grade_points
         where not p.is_locked
-        group by p.studentid, p.course_number, p._dbt_source_project
+        group by p.studentid, p.course_number
     ),
 
     scored as (
@@ -185,7 +174,6 @@ with
             p.schoolid,
             p.course_number,
             p.course_name,
-            p._dbt_source_project,
             p.potential_credit_hours,
             p.courses_gradescaleid_unweighted,
             p.target_cutoff_percent,
@@ -220,7 +208,6 @@ with
             next_rung as nr
             on p.studentid = nr.studentid
             and p.course_number = nr.course_number
-            and p._dbt_source_project = nr._dbt_source_project
         left join
             unweighted_scale as us on nr.next_cutoff_percent = us.min_cutoffpercentage
     ),
@@ -249,7 +236,6 @@ with
             schoolid,
             course_number,
             course_name,
-            _dbt_source_project,
             potential_credit_hours,
             courses_gradescaleid_unweighted,
             target_cutoff_percent,
@@ -283,7 +269,7 @@ with
             *,
 
             row_number() over (
-                partition by studentid, _dbt_source_project
+                partition by studentid
                 order by
                     score is null, is_below_target desc, score desc, course_number asc
             ) as rn,
@@ -295,7 +281,6 @@ select
     schoolid,
     course_number,
     course_name,
-    _dbt_source_project,
     potential_credit_hours,
     courses_gradescaleid_unweighted,
     target_cutoff_percent,

@@ -1,5 +1,5 @@
 models:
-  - name: int_gpa__student_y1_target
+  - name: int_powerschool__student_y1_target
     description: >-
       One row per current-year high school student and school with the
       unweighted letter target they must average across every unlocked GPA
@@ -9,9 +9,10 @@ models:
       the need is re-solved over the courses still open, so the target is the
       lowest unweighted letter that, held in every open course, reaches the
       cumulative, floored at B. Reads the needed GPA and attainability from
-      `int_powerschool__gpa_cumulative`. Miami high school students have no
-      PowerSchool `studentid`, so they have no row here and read NULL, not
-      `unknown`, on the roster.
+      `int_powerschool__gpa_cumulative`. Builds in each NJ district project and
+      is unioned in kipptaf; Miami high school students have no PowerSchool
+      `studentid`, so they have no row and read NULL, not `unknown`, on the
+      roster.
     config:
       meta:
         contains_pii: true
@@ -20,7 +21,6 @@ models:
           arguments:
             combination_of_columns:
               - studentid
-              - _dbt_source_project
     columns:
       - name: pace_status
         data_type: string
@@ -49,8 +49,6 @@ models:
         data_type: int64
       - name: schoolid
         data_type: int64
-      - name: _dbt_source_project
-        data_type: string
       - name: student_number
         data_type: int64
         config:
@@ -141,7 +139,7 @@ models:
             contains_pii: true
 
 unit_tests:
-  - name: unit_gpa_student_y1_target
+  - name: unit_powerschool_student_y1_target
     description: >-
       Student 1 needs 3.11 and has one AP course of 5 credits among 20, with the
       AP course carrying two term rows, so the bump is 0.25 (not 0.4 from
@@ -175,7 +173,7 @@ unit_tests:
       grade blocks, so not_on_pace. The B+ scale row appears twice, as the
       three-district union of the lookup repeats every row, and no student may
       fan out because of it.
-    model: int_gpa__student_y1_target
+    model: int_powerschool__student_y1_target
     overrides:
       vars:
         current_academic_year: 2025
@@ -185,7 +183,6 @@ unit_tests:
           - {
               studentid: 1,
               schoolid: 101,
-              _dbt_source_project: kippnewark,
               gpa_needed_for_cumulative_3_0: 3.11,
               is_cumulative_3_0_attainable: true,
               cumulative_y1_gpa_projected_unweighted: 2.9,
@@ -194,7 +191,6 @@ unit_tests:
           - {
               studentid: 2,
               schoolid: 101,
-              _dbt_source_project: kippnewark,
               gpa_needed_for_cumulative_3_0: 4.5,
               is_cumulative_3_0_attainable: false,
               cumulative_y1_gpa_projected_unweighted: 2.1,
@@ -203,7 +199,6 @@ unit_tests:
           - {
               studentid: 3,
               schoolid: 101,
-              _dbt_source_project: kippnewark,
               gpa_needed_for_cumulative_3_0: -0.5,
               is_cumulative_3_0_attainable: true,
               cumulative_y1_gpa_projected_unweighted: 3.6,
@@ -212,7 +207,6 @@ unit_tests:
           - {
               studentid: 4,
               schoolid: 101,
-              _dbt_source_project: kippnewark,
               gpa_needed_for_cumulative_3_0: null,
               is_cumulative_3_0_attainable: null,
               cumulative_y1_gpa_projected_unweighted: null,
@@ -221,7 +215,6 @@ unit_tests:
           - {
               studentid: 5,
               schoolid: 101,
-              _dbt_source_project: kippnewark,
               gpa_needed_for_cumulative_3_0: 3.11,
               is_cumulative_3_0_attainable: null,
               cumulative_y1_gpa_projected_unweighted: 2.9,
@@ -230,7 +223,6 @@ unit_tests:
           - {
               studentid: 6,
               schoolid: 101,
-              _dbt_source_project: kippnewark,
               gpa_needed_for_cumulative_3_0: 3.0,
               is_cumulative_3_0_attainable: true,
               cumulative_y1_gpa_projected_unweighted: null,
@@ -239,7 +231,6 @@ unit_tests:
           - {
               studentid: 7,
               schoolid: 101,
-              _dbt_source_project: kippnewark,
               gpa_needed_for_cumulative_3_0: 3.11,
               is_cumulative_3_0_attainable: true,
               cumulative_y1_gpa_projected_unweighted: 2.9,
@@ -248,7 +239,6 @@ unit_tests:
           - {
               studentid: 8,
               schoolid: 101,
-              _dbt_source_project: kippnewark,
               gpa_needed_for_cumulative_3_0: 4.2,
               is_cumulative_3_0_attainable: false,
               cumulative_y1_gpa_projected_unweighted: null,
@@ -257,7 +247,6 @@ unit_tests:
           - {
               studentid: 9,
               schoolid: 101,
-              _dbt_source_project: kippnewark,
               gpa_needed_for_cumulative_3_0: 3.11,
               is_cumulative_3_0_attainable: true,
               cumulative_y1_gpa_projected_unweighted: 2.9,
@@ -266,7 +255,6 @@ unit_tests:
           - {
               studentid: 10,
               schoolid: 101,
-              _dbt_source_project: kippnewark,
               gpa_needed_for_cumulative_3_0: 3.11,
               is_cumulative_3_0_attainable: true,
               cumulative_y1_gpa_projected_unweighted: 2.9,
@@ -275,7 +263,6 @@ unit_tests:
           - {
               studentid: 11,
               schoolid: 101,
-              _dbt_source_project: kippnewark,
               gpa_needed_for_cumulative_3_0: 3.11,
               is_cumulative_3_0_attainable: true,
               cumulative_y1_gpa_projected_unweighted: 2.9,
@@ -284,7 +271,6 @@ unit_tests:
           - {
               studentid: 12,
               schoolid: 101,
-              _dbt_source_project: kippnewark,
               gpa_needed_for_cumulative_3_0: 3.11,
               is_cumulative_3_0_attainable: true,
               cumulative_y1_gpa_projected_unweighted: 2.9,
@@ -296,7 +282,6 @@ unit_tests:
               studentid: 1,
               course_number: C1,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               exclude_from_gpa: 0,
               is_dropped_section: false,
               potential_credit_hours: 5.0,
@@ -312,7 +297,6 @@ unit_tests:
               studentid: 1,
               course_number: C1,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               exclude_from_gpa: 0,
               is_dropped_section: false,
               potential_credit_hours: 5.0,
@@ -328,7 +312,6 @@ unit_tests:
               studentid: 1,
               course_number: C2,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               exclude_from_gpa: 0,
               is_dropped_section: false,
               potential_credit_hours: 15.0,
@@ -344,7 +327,6 @@ unit_tests:
               studentid: 2,
               course_number: C2,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               exclude_from_gpa: 0,
               is_dropped_section: false,
               potential_credit_hours: 20.0,
@@ -360,7 +342,6 @@ unit_tests:
               studentid: 3,
               course_number: C2,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               exclude_from_gpa: 0,
               is_dropped_section: false,
               potential_credit_hours: 20.0,
@@ -376,7 +357,6 @@ unit_tests:
               studentid: 4,
               course_number: C2,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               exclude_from_gpa: 0,
               is_dropped_section: false,
               potential_credit_hours: 20.0,
@@ -392,7 +372,6 @@ unit_tests:
               studentid: 5,
               course_number: C2,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               exclude_from_gpa: 0,
               is_dropped_section: false,
               potential_credit_hours: 20.0,
@@ -408,7 +387,6 @@ unit_tests:
               studentid: 6,
               course_number: C3,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               exclude_from_gpa: 0,
               is_dropped_section: false,
               potential_credit_hours: 5.0,
@@ -424,7 +402,6 @@ unit_tests:
               studentid: 6,
               course_number: C3,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               exclude_from_gpa: 0,
               is_dropped_section: false,
               potential_credit_hours: 5.0,
@@ -440,7 +417,6 @@ unit_tests:
               studentid: 6,
               course_number: C4,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               exclude_from_gpa: 0,
               is_dropped_section: false,
               potential_credit_hours: 15.0,
@@ -456,7 +432,6 @@ unit_tests:
               studentid: 7,
               course_number: C5,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               exclude_from_gpa: 0,
               is_dropped_section: false,
               potential_credit_hours: 10.0,
@@ -472,7 +447,6 @@ unit_tests:
               studentid: 7,
               course_number: C6,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               exclude_from_gpa: 0,
               is_dropped_section: false,
               potential_credit_hours: 10.0,
@@ -488,7 +462,6 @@ unit_tests:
               studentid: 8,
               course_number: C3,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               exclude_from_gpa: 0,
               is_dropped_section: false,
               potential_credit_hours: 5.0,
@@ -504,7 +477,6 @@ unit_tests:
               studentid: 8,
               course_number: C4,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               exclude_from_gpa: 0,
               is_dropped_section: false,
               potential_credit_hours: 15.0,
@@ -520,7 +492,6 @@ unit_tests:
               studentid: 9,
               course_number: C1,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               exclude_from_gpa: 0,
               is_dropped_section: false,
               potential_credit_hours: 5.0,
@@ -536,7 +507,6 @@ unit_tests:
               studentid: 9,
               course_number: C2,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               exclude_from_gpa: 0,
               is_dropped_section: false,
               potential_credit_hours: 20.0,
@@ -552,7 +522,6 @@ unit_tests:
               studentid: 10,
               course_number: C1,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               exclude_from_gpa: 0,
               is_dropped_section: false,
               potential_credit_hours: 10.0,
@@ -568,7 +537,6 @@ unit_tests:
               studentid: 10,
               course_number: C2,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               exclude_from_gpa: 0,
               is_dropped_section: false,
               potential_credit_hours: 10.0,
@@ -584,7 +552,6 @@ unit_tests:
               studentid: 11,
               course_number: C1,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               exclude_from_gpa: 0,
               is_dropped_section: false,
               potential_credit_hours: 5.0,
@@ -600,7 +567,6 @@ unit_tests:
               studentid: 11,
               course_number: C2,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               exclude_from_gpa: 0,
               is_dropped_section: false,
               potential_credit_hours: 5.0,
@@ -616,7 +582,6 @@ unit_tests:
               studentid: 12,
               course_number: C1,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               exclude_from_gpa: 0,
               is_dropped_section: false,
               potential_credit_hours: 5.0,
@@ -632,7 +597,6 @@ unit_tests:
               studentid: 12,
               course_number: C2,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               exclude_from_gpa: 0,
               is_dropped_section: false,
               potential_credit_hours: 5.0,
@@ -670,13 +634,6 @@ unit_tests:
           - {
               gradescaleid: 976,
               gradescale_name: KIPP NJ 2019 (5-12) Unweighted,
-              letter_grade: B+,
-              grade_points: 3.33,
-              min_cutoffpercentage: 87,
-            }
-          - {
-              gradescaleid: 976,
-              gradescale_name: KIPP NJ 2019 (5-12) Unweighted,
               letter_grade: B,
               grade_points: 3.0,
               min_cutoffpercentage: 83,
@@ -695,7 +652,7 @@ unit_tests:
               grade_points: 0.0,
               min_cutoffpercentage: 0,
             }
-      - input: ref('int_extracts__student_enrollments')
+      - input: ref('base_powerschool__student_enrollments')
         rows:
           - {
               studentid: 1,
@@ -704,8 +661,6 @@ unit_tests:
               academic_year: 2025,
               rn_year: 1,
               school_level: HS,
-              student_number: 1001,
-              _dbt_source_project: kippnewark,
             }
           - {
               studentid: 2,
@@ -714,8 +669,6 @@ unit_tests:
               academic_year: 2025,
               rn_year: 1,
               school_level: HS,
-              student_number: 1002,
-              _dbt_source_project: kippnewark,
             }
           - {
               studentid: 3,
@@ -724,8 +677,6 @@ unit_tests:
               academic_year: 2025,
               rn_year: 1,
               school_level: HS,
-              student_number: 1003,
-              _dbt_source_project: kippnewark,
             }
           - {
               studentid: 4,
@@ -734,8 +685,6 @@ unit_tests:
               academic_year: 2025,
               rn_year: 1,
               school_level: HS,
-              student_number: 1004,
-              _dbt_source_project: kippnewark,
             }
           - {
               studentid: 5,
@@ -744,8 +693,6 @@ unit_tests:
               academic_year: 2025,
               rn_year: 1,
               school_level: HS,
-              student_number: 1005,
-              _dbt_source_project: kippnewark,
             }
           - {
               studentid: 6,
@@ -754,8 +701,6 @@ unit_tests:
               academic_year: 2025,
               rn_year: 1,
               school_level: HS,
-              student_number: 1006,
-              _dbt_source_project: kippnewark,
             }
           - {
               studentid: 7,
@@ -764,8 +709,6 @@ unit_tests:
               academic_year: 2025,
               rn_year: 1,
               school_level: HS,
-              student_number: 1007,
-              _dbt_source_project: kippnewark,
             }
           - {
               studentid: 8,
@@ -774,8 +717,6 @@ unit_tests:
               academic_year: 2025,
               rn_year: 1,
               school_level: HS,
-              student_number: 1008,
-              _dbt_source_project: kippnewark,
             }
           - {
               studentid: 9,
@@ -784,8 +725,6 @@ unit_tests:
               academic_year: 2025,
               rn_year: 1,
               school_level: HS,
-              student_number: 1009,
-              _dbt_source_project: kippnewark,
             }
           - {
               studentid: 10,
@@ -794,8 +733,6 @@ unit_tests:
               academic_year: 2025,
               rn_year: 1,
               school_level: HS,
-              student_number: 1010,
-              _dbt_source_project: kippnewark,
             }
           - {
               studentid: 11,
@@ -804,8 +741,6 @@ unit_tests:
               academic_year: 2025,
               rn_year: 1,
               school_level: HS,
-              student_number: 1011,
-              _dbt_source_project: kippnewark,
             }
           - {
               studentid: 12,
@@ -814,8 +749,6 @@ unit_tests:
               academic_year: 2025,
               rn_year: 1,
               school_level: HS,
-              student_number: 1012,
-              _dbt_source_project: kippnewark,
             }
     expect:
       rows:

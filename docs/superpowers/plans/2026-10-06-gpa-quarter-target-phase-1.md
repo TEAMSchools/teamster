@@ -77,14 +77,14 @@ brings a new Google Sheet source and its own staging chain.
 
 ---
 
-### Task 1: `int_gpa__student_y1_target`
+### Task 1: `int_powerschool__student_y1_target`
 
 **Files:**
 
 - Create:
-  `src/dbt/kipptaf/models/gpa/intermediate/int_gpa__student_y1_target.sql`
+  `src/dbt/kipptaf/models/gpa/intermediate/int_powerschool__student_y1_target.sql`
 - Create:
-  `src/dbt/kipptaf/models/gpa/intermediate/properties/int_gpa__student_y1_target.yml`
+  `src/dbt/kipptaf/models/gpa/intermediate/properties/int_powerschool__student_y1_target.yml`
 
 **Interfaces:**
 
@@ -113,7 +113,7 @@ does not exist yet, so the test fails at parse.
 
 ```yaml
 models:
-  - name: int_gpa__student_y1_target
+  - name: int_powerschool__student_y1_target
     description: >-
       One row per current-year high school student and school with the
       unweighted letter target they must average across every GPA course to
@@ -205,7 +205,7 @@ unit_tests:
       floors at B (83, 3.0) and status is on_pace. Student 4 has no graded
       course and needs exactly 3.0: target B, status not_on_pace. Student 5 has
       a NULL attainability flag: status unknown, target still B+.
-    model: int_gpa__student_y1_target
+    model: int_powerschool__student_y1_target
     overrides:
       vars:
         current_academic_year: 2025
@@ -466,8 +466,8 @@ Run:
 uv run dbt test --select unit_gpa_student_y1_target --project-dir /workspaces/teamster/.claude/worktrees/anthonygwalters/feat/claude-gpa-quarter-target/src/dbt/kipptaf --target dev --defer --state /workspaces/teamster/src/dbt/kipptaf/target/prod 2>&1 | tail -n 20
 ```
 
-Expected: a parse error naming `int_gpa__student_y1_target` as a model that does
-not exist.
+Expected: a parse error naming `int_powerschool__student_y1_target` as a model
+that does not exist.
 
 - [ ] **Step 3: Write the model**
 
@@ -612,9 +612,9 @@ select and adjust nothing else.
 - [ ] **Step 5: Lint and commit**
 
 ```bash
-cd /workspaces/teamster/.claude/worktrees/anthonygwalters/feat/claude-gpa-quarter-target && /workspaces/teamster/.trunk/tools/trunk check --force --no-fix src/dbt/kipptaf/models/gpa/intermediate/int_gpa__student_y1_target.sql src/dbt/kipptaf/models/gpa/intermediate/properties/int_gpa__student_y1_target.yml </dev/null
-git -C /workspaces/teamster/.claude/worktrees/anthonygwalters/feat/claude-gpa-quarter-target add src/dbt/kipptaf/models/gpa/intermediate/int_gpa__student_y1_target.sql src/dbt/kipptaf/models/gpa/intermediate/properties/int_gpa__student_y1_target.yml
-git -C /workspaces/teamster/.claude/worktrees/anthonygwalters/feat/claude-gpa-quarter-target commit -m "feat(dbt): add int_gpa__student_y1_target
+cd /workspaces/teamster/.claude/worktrees/anthonygwalters/feat/claude-gpa-quarter-target && /workspaces/teamster/.trunk/tools/trunk check --force --no-fix src/dbt/kipptaf/models/gpa/intermediate/int_powerschool__student_y1_target.sql src/dbt/kipptaf/models/gpa/intermediate/properties/int_powerschool__student_y1_target.yml </dev/null
+git -C /workspaces/teamster/.claude/worktrees/anthonygwalters/feat/claude-gpa-quarter-target add src/dbt/kipptaf/models/gpa/intermediate/int_powerschool__student_y1_target.sql src/dbt/kipptaf/models/gpa/intermediate/properties/int_powerschool__student_y1_target.yml
+git -C /workspaces/teamster/.claude/worktrees/anthonygwalters/feat/claude-gpa-quarter-target commit -m "feat(dbt): add int_powerschool__student_y1_target
 
 Refs #5768
 
@@ -623,18 +623,19 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 
 ---
 
-### Task 2: `int_gpa__course_pace`
+### Task 2: `int_powerschool__course_pace`
 
 **Files:**
 
-- Create: `src/dbt/kipptaf/models/gpa/intermediate/int_gpa__course_pace.sql`
 - Create:
-  `src/dbt/kipptaf/models/gpa/intermediate/properties/int_gpa__course_pace.yml`
+  `src/dbt/kipptaf/models/gpa/intermediate/int_powerschool__course_pace.sql`
+- Create:
+  `src/dbt/kipptaf/models/gpa/intermediate/properties/int_powerschool__course_pace.yml`
 
 **Interfaces:**
 
-- Consumes: Task 1's `int_gpa__student_y1_target` (`studentid`, `schoolid`,
-  `_dbt_source_project`, `target_cutoff_percent`);
+- Consumes: Task 1's `int_powerschool__student_y1_target` (`studentid`,
+  `schoolid`, `_dbt_source_project`, `target_cutoff_percent`);
   `base_powerschool__final_grades` (`studentid`, `course_number`, `course_name`,
   `academic_year`, `_dbt_source_project`, `storecode`, `exclude_from_gpa`,
   `is_dropped_section`, `potential_credit_hours`,
@@ -656,11 +657,11 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 
 ```yaml
 models:
-  - name: int_gpa__course_pace
+  - name: int_powerschool__course_pace
     description: >-
       One row per current-year GPA course per student with the average percent
       the student needs in each remaining term for the course Y1 to land on
-      their target cutoff from `int_gpa__student_y1_target`. A term counts
+      their target cutoff from `int_powerschool__student_y1_target`. A term counts
       as remaining until its termbin ends, so the in-progress term is in the
       remaining weight and the pace does not swing with each posted
       assignment. Exam terms are remaining terms too. A course whose every
@@ -746,12 +747,12 @@ unit_tests:
       remaining 100, pace 87, not below target because Y1 is NULL. Student 5
       course C5 has Y1 95 with Q1 at 95 ended: pace (8700 − 2375) / 75 = 84.33
       and not below target.
-    model: int_gpa__course_pace
+    model: int_powerschool__course_pace
     overrides:
       vars:
         current_academic_year: 2025
     given:
-      - input: ref('int_gpa__student_y1_target')
+      - input: ref('int_powerschool__student_y1_target')
         rows:
           - { studentid: 1, schoolid: 101, _dbt_source_project: kippnewark, target_cutoff_percent: 87.0 }
           - { studentid: 2, schoolid: 101, _dbt_source_project: kippnewark, target_cutoff_percent: 87.0 }
@@ -911,7 +912,7 @@ with
             and c.course_number = cv.course_number
             and c._dbt_source_project = cv._dbt_source_project
         inner join
-            {{ ref("int_gpa__student_y1_target") }} as t
+            {{ ref("int_powerschool__student_y1_target") }} as t
             on c.studentid = t.studentid
             and c._dbt_source_project = t._dbt_source_project
     )
@@ -951,9 +952,9 @@ Same command as Step 2. Expected: `PASS=1`.
 - [ ] **Step 5: Lint and commit**
 
 ```bash
-cd /workspaces/teamster/.claude/worktrees/anthonygwalters/feat/claude-gpa-quarter-target && /workspaces/teamster/.trunk/tools/trunk check --force --no-fix src/dbt/kipptaf/models/gpa/intermediate/int_gpa__course_pace.sql src/dbt/kipptaf/models/gpa/intermediate/properties/int_gpa__course_pace.yml </dev/null
-git -C /workspaces/teamster/.claude/worktrees/anthonygwalters/feat/claude-gpa-quarter-target add src/dbt/kipptaf/models/gpa/intermediate/int_gpa__course_pace.sql src/dbt/kipptaf/models/gpa/intermediate/properties/int_gpa__course_pace.yml
-git -C /workspaces/teamster/.claude/worktrees/anthonygwalters/feat/claude-gpa-quarter-target commit -m "feat(dbt): add int_gpa__course_pace
+cd /workspaces/teamster/.claude/worktrees/anthonygwalters/feat/claude-gpa-quarter-target && /workspaces/teamster/.trunk/tools/trunk check --force --no-fix src/dbt/kipptaf/models/gpa/intermediate/int_powerschool__course_pace.sql src/dbt/kipptaf/models/gpa/intermediate/properties/int_powerschool__course_pace.yml </dev/null
+git -C /workspaces/teamster/.claude/worktrees/anthonygwalters/feat/claude-gpa-quarter-target add src/dbt/kipptaf/models/gpa/intermediate/int_powerschool__course_pace.sql src/dbt/kipptaf/models/gpa/intermediate/properties/int_powerschool__course_pace.yml
+git -C /workspaces/teamster/.claude/worktrees/anthonygwalters/feat/claude-gpa-quarter-target commit -m "feat(dbt): add int_powerschool__course_pace
 
 Refs #5768
 
@@ -973,7 +974,7 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 
 **Interfaces:**
 
-- Consumes: Task 2's `int_gpa__course_pace` (every column);
+- Consumes: Task 2's `int_powerschool__course_pace` (every column);
   `int_powerschool__gradescaleitem_lookup` (`gradescale_name`, `letter_grade`,
   `grade_points`, `min_cutoffpercentage`).
 - Produces: one row per `studentid`, `course_number`, `_dbt_source_project` with
@@ -1064,7 +1065,7 @@ unit_tests:
       vars:
         current_academic_year: 2025
     given:
-      - input: ref('int_gpa__course_pace')
+      - input: ref('int_powerschool__course_pace')
         rows:
           - { studentid: 1, schoolid: 101, course_number: C1, course_name: English, _dbt_source_project: kippnewark, potential_credit_hours: 5.0, courses_gradescaleid_unweighted: 976, target_cutoff_percent: 87.0, y1_percent_current: 82.0, y1_grade_points_unweighted_current: 2.67, term_percent_current: 85.0, total_weight: 100.0, points_banked: 2000.0, remaining_weight: 75.0, pace_percent: 89.33, is_below_target: true, is_secured: false, is_locked: false }
           - { studentid: 1, schoolid: 101, course_number: C2, course_name: Biology, _dbt_source_project: kippnewark, potential_credit_hours: 5.0, courses_gradescaleid_unweighted: 976, target_cutoff_percent: 87.0, y1_percent_current: 88.0, y1_grade_points_unweighted_current: 3.33, term_percent_current: 88.0, total_weight: 100.0, points_banked: 2000.0, remaining_weight: 75.0, pace_percent: 89.33, is_below_target: false, is_secured: false, is_locked: false }
@@ -1113,7 +1114,7 @@ with
             p._dbt_source_project,
 
             min(us.min_cutoffpercentage) as next_cutoff_percent,
-        from {{ ref("int_gpa__course_pace") }} as p
+        from {{ ref("int_powerschool__course_pace") }} as p
         inner join
             unweighted_scale as us
             on p.y1_grade_points_unweighted_current < us.grade_points
@@ -1147,7 +1148,7 @@ with
 
             coalesce(p.term_percent_current, p.y1_percent_current) as percent_now,
             p.potential_credit_hours as credit_hours,
-        from {{ ref("int_gpa__course_pace") }} as p
+        from {{ ref("int_powerschool__course_pace") }} as p
         left join
             next_rung as nr
             on p.studentid = nr.studentid
@@ -1375,7 +1376,7 @@ Task 1 filters to HS.
                 ),
                 '; '
             ) as courses_below_target,
-        from {{ ref("int_gpa__course_pace") }}
+        from {{ ref("int_powerschool__course_pace") }}
         group by studentid, _dbt_source_project
     ),
 
@@ -1416,7 +1417,7 @@ and the joins after the `gc` join:
 
 ```sql
         left join
-            {{ ref("int_gpa__student_y1_target") }} as t
+            {{ ref("int_powerschool__student_y1_target") }} as t
             on co.studentid = t.studentid
             and co.schoolid = t.schoolid
             and co._dbt_source_project = t._dbt_source_project
@@ -1527,7 +1528,7 @@ Append to `columns:` in the yml, before `salesforce_contact_id`:
 Run:
 
 ```bash
-uv run dbt build --select int_gpa__student_y1_target int_gpa__course_pace int_gpa__course_quickest_win rpt_gsheets__gpa_roster --exclude resource_type:unit_test --project-dir /workspaces/teamster/.claude/worktrees/anthonygwalters/feat/claude-gpa-quarter-target/src/dbt/kipptaf --target dev --defer --favor-state --state /workspaces/teamster/src/dbt/kipptaf/target/prod 2>&1 | tail -n 20
+uv run dbt build --select int_powerschool__student_y1_target int_powerschool__course_pace int_gpa__course_quickest_win rpt_gsheets__gpa_roster --exclude resource_type:unit_test --project-dir /workspaces/teamster/.claude/worktrees/anthonygwalters/feat/claude-gpa-quarter-target/src/dbt/kipptaf --target dev --defer --favor-state --state /workspaces/teamster/src/dbt/kipptaf/target/prod 2>&1 | tail -n 20
 ```
 
 Expected: four models build, tests pass.
@@ -1594,7 +1595,7 @@ with
             _dbt_source_project,
 
             countif(is_below_target and not is_locked) as n_courses_below_target,
-        from {{ ref("int_gpa__course_pace") }}
+        from {{ ref("int_powerschool__course_pace") }}
         group by studentid, _dbt_source_project
     )
 ```
@@ -1615,7 +1616,7 @@ so past-year rows stay NULL:
 
 ```sql
 left join
-    {{ ref("int_gpa__student_y1_target") }} as t
+    {{ ref("int_powerschool__student_y1_target") }} as t
     on cy.studentid = t.studentid
     and cy.schoolid = t.schoolid
     and cy._dbt_source_project = t._dbt_source_project
@@ -1739,7 +1740,7 @@ select
     qw.next_cutoff_percent,
     qw.pace_percent_to_next,
     qw.quickest_win_rank,
-from {{ ref("int_gpa__course_pace") }} as p
+from {{ ref("int_powerschool__course_pace") }} as p
 inner join
     {{ ref("int_extracts__student_enrollments") }} as co
     on p.studentid = co.studentid
@@ -1889,8 +1890,8 @@ points for unlocked courses and the live points for locked ones.
 with per_course as (
   select p.studentid, p._dbt_source_project, p.potential_credit_hours,
     if(p.is_locked, p.y1_grade_points_unweighted_current, t.target_grade_points) as y1_points_if_paced
-  from `teamster-332318.zz_anthonygwalters_kipptaf_gpa.int_gpa__course_pace` p
-  join `teamster-332318.zz_anthonygwalters_kipptaf_gpa.int_gpa__student_y1_target` t
+  from `teamster-332318.zz_anthonygwalters_kipptaf_gpa.int_powerschool__course_pace` p
+  join `teamster-332318.zz_anthonygwalters_kipptaf_gpa.int_powerschool__student_y1_target` t
     on p.studentid = t.studentid and p.schoolid = t.schoolid and p._dbt_source_project = t._dbt_source_project
   where t.target_grade_points is not null
 ), per_student as (
@@ -1902,7 +1903,7 @@ select count(*) as n_students,
   countif(ps.y1_if_paced + 0.005 < t.gpa_needed_unweighted) as n_short,
   countif(ps.y1_if_paced + 0.005 < t.gpa_needed_unweighted and t.pace_status = 'not_on_pace') as n_short_not_on_pace
 from per_student ps
-join `teamster-332318.zz_anthonygwalters_kipptaf_gpa.int_gpa__student_y1_target` t
+join `teamster-332318.zz_anthonygwalters_kipptaf_gpa.int_powerschool__student_y1_target` t
   on ps.studentid = t.studentid and ps._dbt_source_project = t._dbt_source_project
 ```
 
@@ -1917,7 +1918,7 @@ select count(*) as n,
   countif(abs(gpa_needed_weighted - gpa_needed_unweighted - schedule_bump) > 0.011) as n_off,
   countif(schedule_bump = 0) as n_no_weighted,
   round(max(schedule_bump), 2) as max_bump
-from `teamster-332318.zz_anthonygwalters_kipptaf_gpa.int_gpa__student_y1_target`
+from `teamster-332318.zz_anthonygwalters_kipptaf_gpa.int_powerschool__student_y1_target`
 ```
 
 Expected: `n_off` is 0, `n_no_weighted` is about 70 percent of `n`, `max_bump`
@@ -1931,17 +1932,17 @@ subsection under _Supporting models_, add:
 ```markdown
 ### The quarter target chain
 
-- `int_gpa__student_y1_target`: one row per current-year high school student and
-  school with the lowest unweighted letter whose grade points reach the needed
-  GPA, floored at B; the weighted GPA that target corresponds to on the
-  student's own schedule; and a pace status of `on_pace`, `not_on_pace`,
+- `int_powerschool__student_y1_target`: one row per current-year high school
+  student and school with the lowest unweighted letter whose grade points reach
+  the needed GPA, floored at B; the weighted GPA that target corresponds to on
+  the student's own schedule; and a pace status of `on_pace`, `not_on_pace`,
   `goal_not_attainable`, or `unknown`. It reads the needed GPA and attainability
   from `int_powerschool__gpa_cumulative`.
-- `int_gpa__course_pace`: one row per current-year GPA course per student with
-  the average percent needed in each remaining term for the course Y1 to land on
-  the target cutoff. The in-progress term is a remaining term, so the pace moves
-  only when a term closes. A course whose terms have all ended is locked and has
-  no pace.
+- `int_powerschool__course_pace`: one row per current-year GPA course per
+  student with the average percent needed in each remaining term for the course
+  Y1 to land on the target cutoff. The in-progress term is a remaining term, so
+  the pace moves only when a term closes. A course whose terms have all ended is
+  locked and has no pace.
 - `int_gpa__course_quickest_win`: ranks each student's unlocked courses by grade
   points gained at the next letter times credits, over the percent gap to that
   letter's pace. Rank 1 is the course where the fewest points buy the most GPA.

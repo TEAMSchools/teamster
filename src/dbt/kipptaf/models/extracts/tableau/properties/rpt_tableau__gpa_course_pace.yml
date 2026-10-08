@@ -4,7 +4,7 @@ models:
       Course-grain companion to the Cumulative GPA Monitor: one row per
       current-year GPA course per high school student with the pace percent to
       the student's target letter, whether the course is below target, and its
-      quickest-win rank. Reads `int_gpa__course_pace`, which carries the
+      quickest-win rank. Reads `int_powerschool__course_pace`, which carries the
       formulas.
     config:
       meta:

@@ -438,24 +438,28 @@ network target.
 
 ### The Y1 target chain
 
-- `int_gpa__student_y1_target`: one row per current-year high school student
-  with the lowest unweighted letter whose grade points reach the needed GPA,
-  floored at B; the weighted GPA that target corresponds to on the student's
-  open courses; and a pace status of `on_pace`, `not_on_pace`,
+Both models build in each NJ district project from the shared `powerschool`
+package and are unioned in kipptaf, like the GPA models below.
+
+- `int_powerschool__student_y1_target`: one row per current-year high school
+  student with the lowest unweighted letter whose grade points reach the needed
+  GPA, floored at B; the weighted GPA that target corresponds to on the
+  student's open courses; and a pace status of `on_pace`, `not_on_pace`,
   `goal_not_attainable`, or `unknown`. It reads the needed GPA from
   `int_powerschool__gpa_cumulative`, re-bases it on every scheduled course with
   locked courses held at their current Y1 points, and decides attainability from
   that re-solved need rather than the Monitor's flag. A course that has not
   started yet neither blocks `on_pace` nor counts toward it; a started course
   with no grade blocks it.
-- `int_gpa__course_pace`: one row per current-year GPA course per student with
-  the average percent needed in each remaining term, exams included, for the
-  course Y1 to land on the target cutoff. The in-progress term is a remaining
-  term, so the pace moves only when a term closes. A course whose terms have all
-  ended is locked and has no pace. The same row carries the quickest win: the
-  student's open courses ranked by grade points gained at the next letter times
-  credits, over the percent gap to that letter's pace, with below-target courses
-  ranked first. Rank 1 is the course where the fewest points buy the most GPA.
+- `int_powerschool__course_pace`: one row per current-year GPA course per
+  student with the average percent needed in each remaining term, exams
+  included, for the course Y1 to land on the target cutoff. The in-progress term
+  is a remaining term, so the pace moves only when a term closes. A course whose
+  terms have all ended is locked and has no pace. The same row carries the
+  quickest win: the student's open courses ranked by grade points gained at the
+  next letter times credits, over the percent gap to that letter's pace, with
+  below-target courses ranked first. Rank 1 is the course where the fewest
+  points buy the most GPA.
 
 These reach the GPA roster sheet, the Cumulative GPA Monitor through
 `rpt_tableau__gpa_goal_progress`, and the course view through

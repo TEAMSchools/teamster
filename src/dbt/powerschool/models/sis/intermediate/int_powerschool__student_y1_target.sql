@@ -1,8 +1,6 @@
 with
     unweighted_scale as (
-        /* grain projection, not dup-masking: the kipptaf lookup repeats each
-           letter once per district with identical points and cutoffs */
-        select distinct letter_grade, grade_points, min_cutoffpercentage,
+        select letter_grade, grade_points, min_cutoffpercentage,
         from {{ ref("int_powerschool__gradescaleitem_lookup") }}
         /* the reference scale; the 83 floor is the B cutoff */
         where
@@ -10,22 +8,20 @@ with
             and min_cutoffpercentage >= 83
     ),
 
-    /* grain projection, not dup-masking: one name per scale id across the
-       district copies of the lookup */
     scale_names as (
-        select distinct gradescaleid, gradescale_name,
+        select gradescaleid, gradescale_name,
         from {{ ref("int_powerschool__gradescaleitem_lookup") }}
+        group by gradescaleid, gradescale_name
     ),
 
     /* final_grades is one row per course and termbin, and its Y1 columns are
        running year-to-date values that differ from term to term. The current
        Y1 is the one on the current or latest-started term row, ranked the
-       same way as int_gpa__course_pace */
+       same way as int_powerschool__course_pace */
     term_rows as (
         select
             studentid,
             course_number,
-            _dbt_source_project,
             potential_credit_hours,
             courses_gradescaleid_unweighted,
             y1_percent_grade_adjusted,
@@ -54,7 +50,7 @@ with
             *,
 
             row_number() over (
-                partition by studentid, course_number, _dbt_source_project
+                partition by studentid, course_number
                 order by termbin_is_current desc, is_started desc, termbin_end_date desc
             ) as rn_current,
         from term_rows
@@ -64,7 +60,6 @@ with
         select
             studentid,
             course_number,
-            _dbt_source_project,
 
             max(potential_credit_hours) as credits,
             max(bump) as bump,
@@ -76,14 +71,13 @@ with
             logical_and(is_ended) as is_locked,
             logical_or(is_started) as is_started,
         from term_rows_ranked
-        group by studentid, course_number, _dbt_source_project
+        group by studentid, course_number
     ),
 
     courses_with_scale as (
         select
             c.studentid,
             c.course_number,
-            c._dbt_source_project,
             c.credits,
             c.bump,
             c.y1_percent,
@@ -104,7 +98,6 @@ with
     schedule as (
         select
             studentid,
-            _dbt_source_project,
 
             countif(not is_locked) as n_courses_unlocked,
             countif(
@@ -125,16 +118,15 @@ with
                 if(is_locked and y1_points_unweighted is not null, credits, 0.0)
             ) as locked_credits,
         from courses_with_scale
-        group by studentid, _dbt_source_project
+        group by studentid
     ),
 
     students as (
         select
             co.studentid,
             co.schoolid,
-            co.student_number,
-            co._dbt_source_project,
 
+            gc.students_student_number as student_number,
             gc.is_cumulative_3_0_attainable,
             gc.cumulative_y1_gpa_projected_unweighted,
 
@@ -160,16 +152,12 @@ with
                 - s.locked_points,
                 s.unlocked_credits
             ) as gpa_needed_raw,
-        from {{ ref("int_extracts__student_enrollments") }} as co
+        from {{ ref("base_powerschool__student_enrollments") }} as co
         inner join
             {{ ref("int_powerschool__gpa_cumulative") }} as gc
             on co.studentid = gc.studentid
             and co.schoolid = gc.schoolid
-            and co._dbt_source_project = gc._dbt_source_project
-        left join
-            schedule as s
-            on co.studentid = s.studentid
-            and co._dbt_source_project = s._dbt_source_project
+        left join schedule as s on co.studentid = s.studentid
         where
             co.academic_year = {{ var("current_academic_year") }}
             and co.rn_year = 1
@@ -184,12 +172,11 @@ with
         select
             st.studentid,
             st.schoolid,
-            st._dbt_source_project,
 
             min(us.min_cutoffpercentage) as target_cutoff_percent,
         from students_rounded as st
         inner join unweighted_scale as us on st.gpa_needed_unweighted <= us.grade_points
-        group by st.studentid, st.schoolid, st._dbt_source_project
+        group by st.studentid, st.schoolid
     ),
 
     with_target as (
@@ -197,7 +184,6 @@ with
             st.studentid,
             st.schoolid,
             st.student_number,
-            st._dbt_source_project,
             st.gpa_needed_unweighted,
             st.is_cumulative_3_0_attainable,
             st.cumulative_y1_gpa_projected_unweighted,
@@ -212,10 +198,7 @@ with
             coalesce(st.schedule_bump, 0.0) as schedule_bump,
         from students_rounded as st
         left join
-            targets as t
-            on st.studentid = t.studentid
-            and st.schoolid = t.schoolid
-            and st._dbt_source_project = t._dbt_source_project
+            targets as t on st.studentid = t.studentid and st.schoolid = t.schoolid
         left join
             unweighted_scale as us on t.target_cutoff_percent = us.min_cutoffpercentage
     ),
@@ -224,18 +207,14 @@ with
         select
             wt.studentid,
             wt.schoolid,
-            wt._dbt_source_project,
 
             countif(c.y1_percent < wt.target_cutoff_percent) as n_courses_below_target,
             /* a course that has not started yet has no grade to be missing */
             countif(c.is_started and c.y1_percent is null) as n_courses_ungraded,
         from with_target as wt
-        inner join
-            courses_with_scale as c
-            on wt.studentid = c.studentid
-            and wt._dbt_source_project = c._dbt_source_project
+        inner join courses_with_scale as c on wt.studentid = c.studentid
         where not c.is_locked
-        group by wt.studentid, wt.schoolid, wt._dbt_source_project
+        group by wt.studentid, wt.schoolid
     ),
 
     with_status as (
@@ -243,7 +222,6 @@ with
             wt.studentid,
             wt.schoolid,
             wt.student_number,
-            wt._dbt_source_project,
             wt.gpa_needed_unweighted,
             wt.target_cutoff_percent,
             wt.target_letter_grade,
@@ -280,14 +258,12 @@ with
             below_target as bt
             on wt.studentid = bt.studentid
             and wt.schoolid = bt.schoolid
-            and wt._dbt_source_project = bt._dbt_source_project
     )
 
 select
     studentid,
     schoolid,
     student_number,
-    _dbt_source_project,
     is_cumulative_3_0_attainable,
     cumulative_y1_gpa_projected_unweighted,
     n_courses_unlocked,

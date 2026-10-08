@@ -64,7 +64,7 @@ Three new kipptaf models, all reading existing columns, plus columns on two
 existing extracts. Student-level outputs are tier-3 PII; every new model is
 tagged `contains_pii`.
 
-### `int_gpa__student_y1_target`
+### `int_powerschool__student_y1_target`
 
 One row per student and school for the current year.
 
@@ -90,7 +90,7 @@ Status values, in precedence order:
 B. The floor is a display rule, not a math rule: a student above 3.0 still sees
 a B target.
 
-### `int_gpa__course_pace`
+### `int_powerschool__course_pace`
 
 One row per student, course, and current year, for unlocked GPA courses.
 
@@ -232,13 +232,13 @@ fix lands.
 
 ## Revision 2026-10-07, from review of PR #5773
 
-- Names. `int_gpa__student_quarter_target` is `int_gpa__student_y1_target` and
-  `int_gpa__course_quarter_pace` is `int_gpa__course_pace`. Neither model has a
-  quarter grain: the target is a Y1 letter and the pace is the percent needed in
-  every remaining term through year end. `rpt_tableau__gpa_course_pace` keeps
-  its name.
-- `int_gpa__course_quickest_win` is folded into `int_gpa__course_pace` as
-  columns (`next_letter_grade`, `next_cutoff_percent`, `next_grade_points`,
+- Names. `int_gpa__student_quarter_target` is
+  `int_powerschool__student_y1_target` and `int_gpa__course_quarter_pace` is
+  `int_powerschool__course_pace`. Neither model has a quarter grain: the target
+  is a Y1 letter and the pace is the percent needed in every remaining term
+  through year end. `rpt_tableau__gpa_course_pace` keeps its name.
+- `int_gpa__course_quickest_win` is folded into `int_powerschool__course_pace`
+  as columns (`next_letter_grade`, `next_cutoff_percent`, `next_grade_points`,
   `points_gained`, `pace_percent_to_next`, `need_gap`, `score`,
   `quickest_win_rank`). It shared the pace model's grain and only input, and
   every consumer joined it back one-to-one.
@@ -262,6 +262,12 @@ fix lands.
   `is_on_pace_denominator = pace_status in ('on_pace', 'not_on_pace')`, the
   students for whom a 3.0 is still reachable; `goal_not_attainable` and
   `unknown` fall outside the denominator. Phase 2 wires those two columns from
-  `int_gpa__student_y1_target` and drops the separate
+  `int_powerschool__student_y1_target` and drops the separate
   `rpt_tableau__gpa_pace_rollup` in favor of the existing goal aggregations, so
   there is one on-pace rollup.
+- Both models move into the `powerschool` package as
+  `int_powerschool__student_y1_target` and `int_powerschool__course_pace`, built
+  per NJ district and unioned in kipptaf by the usual `union_relations` wrapper,
+  beside `int_powerschool__gpa_cumulative`. Every input is a package model, and
+  the per-district grade scale lookup has one row per letter, so the
+  `select distinct` projections the kipptaf copies needed are gone.

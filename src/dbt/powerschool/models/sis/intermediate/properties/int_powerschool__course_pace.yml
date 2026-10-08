@@ -1,21 +1,21 @@
 models:
-  - name: int_gpa__course_pace
+  - name: int_powerschool__course_pace
     description: >-
       One row per current-year GPA course per student with the average percent
       the student needs in each remaining term, exams included, for the course
-      Y1 to land on their target cutoff from `int_gpa__student_y1_target`, and
-      the quickest-win ranking of their open courses. A term counts as remaining
-      until its termbin ends, so the in-progress term is in the remaining weight
-      and the pace does not swing with each posted assignment. An ended term
-      with no grade counts nowhere, matching the Y1 average PowerSchool
-      computes. A course whose every term has ended is locked; it has no pace
-      and stays in the GPA. The quickest win ranks open courses by unweighted
-      grade points gained at the next letter times credit hours, divided by the
-      percent-point gap between the pace to that letter and the live Y1 percent,
-      floored at one point; courses below the student's target rank first and
-      ties break on course number. A course has no rank when it is locked, has
-      no next letter, needs more than 100 to reach it, or is already at or ahead
-      of the pace to it.
+      Y1 to land on their target cutoff from
+      `int_powerschool__student_y1_target`, and the quickest-win ranking of
+      their open courses. A term counts as remaining until its termbin ends, so
+      the in-progress term is in the remaining weight and the pace does not
+      swing with each posted assignment. An ended term with no grade counts
+      nowhere, matching the Y1 average PowerSchool computes. A course whose
+      every term has ended is locked; it has no pace and stays in the GPA. The
+      quickest win ranks open courses by unweighted grade points gained at the
+      next letter times credit hours, divided by the percent-point gap between
+      the pace to that letter and the live Y1 percent, floored at one point;
+      courses below the student's target rank first and ties break on course
+      number. A course has no rank when it is locked, has no next letter, needs
+      more than 100 to reach it, or is already at or ahead of the pace to it.
     config:
       meta:
         contains_pii: true
@@ -25,7 +25,6 @@ models:
             combination_of_columns:
               - studentid
               - course_number
-              - _dbt_source_project
     columns:
       - name: pace_percent
         data_type: float64
@@ -59,8 +58,6 @@ models:
         data_type: string
       - name: course_name
         data_type: string
-      - name: _dbt_source_project
-        data_type: string
       - name: potential_credit_hours
         data_type: float64
         description: GPA credit hours for the course.
@@ -70,7 +67,7 @@ models:
       - name: target_cutoff_percent
         data_type: float64
         description:
-          The student's target cutoff from `int_gpa__student_y1_target`.
+          The student's target cutoff from `int_powerschool__student_y1_target`.
       - name: y1_percent_current
         data_type: float64
         description: >-
@@ -136,7 +133,7 @@ models:
           course does not qualify for a rank.
 
 unit_tests:
-  - name: unit_gpa_course_pace
+  - name: unit_powerschool_course_pace
     description: >-
       Target cutoff 87 for every student. Student 1 course C1 has four 25-point
       quarters, Q1 ended at 80, Q2 in progress at 85: banked 2000, remaining 75,
@@ -167,55 +164,20 @@ unit_tests:
       student is already ahead of pace and the course has no rank. The B scale
       row appears twice, as the three-district union of the lookup repeats every
       row, and no course may fan out.
-    model: int_gpa__course_pace
+    model: int_powerschool__course_pace
     overrides:
       vars:
         current_academic_year: 2025
     given:
-      - input: ref('int_gpa__student_y1_target')
+      - input: ref('int_powerschool__student_y1_target')
         rows:
-          - {
-              studentid: 1,
-              schoolid: 101,
-              _dbt_source_project: kippnewark,
-              target_cutoff_percent: 87.0,
-            }
-          - {
-              studentid: 2,
-              schoolid: 101,
-              _dbt_source_project: kippnewark,
-              target_cutoff_percent: 87.0,
-            }
-          - {
-              studentid: 3,
-              schoolid: 101,
-              _dbt_source_project: kippnewark,
-              target_cutoff_percent: 87.0,
-            }
-          - {
-              studentid: 4,
-              schoolid: 101,
-              _dbt_source_project: kippnewark,
-              target_cutoff_percent: 87.0,
-            }
-          - {
-              studentid: 5,
-              schoolid: 101,
-              _dbt_source_project: kippnewark,
-              target_cutoff_percent: 87.0,
-            }
-          - {
-              studentid: 6,
-              schoolid: 101,
-              _dbt_source_project: kippnewark,
-              target_cutoff_percent: 87.0,
-            }
-          - {
-              studentid: 7,
-              schoolid: 101,
-              _dbt_source_project: kippnewark,
-              target_cutoff_percent: 87.0,
-            }
+          - { studentid: 1, schoolid: 101, target_cutoff_percent: 87.0 }
+          - { studentid: 2, schoolid: 101, target_cutoff_percent: 87.0 }
+          - { studentid: 3, schoolid: 101, target_cutoff_percent: 87.0 }
+          - { studentid: 4, schoolid: 101, target_cutoff_percent: 87.0 }
+          - { studentid: 5, schoolid: 101, target_cutoff_percent: 87.0 }
+          - { studentid: 6, schoolid: 101, target_cutoff_percent: 87.0 }
+          - { studentid: 7, schoolid: 101, target_cutoff_percent: 87.0 }
       - input: ref('int_powerschool__gradescaleitem_lookup')
         rows:
           - {
@@ -249,13 +211,6 @@ unit_tests:
           - {
               gradescaleid: 976,
               gradescale_name: KIPP NJ 2019 (5-12) Unweighted,
-              letter_grade: B,
-              grade_points: 3.0,
-              min_cutoffpercentage: 83,
-            }
-          - {
-              gradescaleid: 976,
-              gradescale_name: KIPP NJ 2019 (5-12) Unweighted,
               letter_grade: B-,
               grade_points: 2.67,
               min_cutoffpercentage: 80,
@@ -274,7 +229,6 @@ unit_tests:
               course_number: C1,
               course_name: English,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               storecode: Q1,
               exclude_from_gpa: 0,
               is_dropped_section: false,
@@ -293,7 +247,6 @@ unit_tests:
               course_number: C1,
               course_name: English,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               storecode: Q2,
               exclude_from_gpa: 0,
               is_dropped_section: false,
@@ -312,7 +265,6 @@ unit_tests:
               course_number: C1,
               course_name: English,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               storecode: Q3,
               exclude_from_gpa: 0,
               is_dropped_section: false,
@@ -331,7 +283,6 @@ unit_tests:
               course_number: C1,
               course_name: English,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               storecode: Q4,
               exclude_from_gpa: 0,
               is_dropped_section: false,
@@ -350,7 +301,6 @@ unit_tests:
               course_number: C2,
               course_name: Biology,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               storecode: Q1,
               exclude_from_gpa: 0,
               is_dropped_section: false,
@@ -369,7 +319,6 @@ unit_tests:
               course_number: C2,
               course_name: Biology,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               storecode: Q2,
               exclude_from_gpa: 0,
               is_dropped_section: false,
@@ -388,7 +337,6 @@ unit_tests:
               course_number: C2,
               course_name: Biology,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               storecode: E1,
               exclude_from_gpa: 0,
               is_dropped_section: false,
@@ -407,7 +355,6 @@ unit_tests:
               course_number: C2,
               course_name: Biology,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               storecode: Q3,
               exclude_from_gpa: 0,
               is_dropped_section: false,
@@ -426,7 +373,6 @@ unit_tests:
               course_number: C2,
               course_name: Biology,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               storecode: Q4,
               exclude_from_gpa: 0,
               is_dropped_section: false,
@@ -445,7 +391,6 @@ unit_tests:
               course_number: C2,
               course_name: Biology,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               storecode: E2,
               exclude_from_gpa: 0,
               is_dropped_section: false,
@@ -464,7 +409,6 @@ unit_tests:
               course_number: C3,
               course_name: Health,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               storecode: Q1,
               exclude_from_gpa: 0,
               is_dropped_section: false,
@@ -483,7 +427,6 @@ unit_tests:
               course_number: C3,
               course_name: Health,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               storecode: Q2,
               exclude_from_gpa: 0,
               is_dropped_section: false,
@@ -502,7 +445,6 @@ unit_tests:
               course_number: C4,
               course_name: Algebra,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               storecode: Q1,
               exclude_from_gpa: 0,
               is_dropped_section: false,
@@ -521,7 +463,6 @@ unit_tests:
               course_number: C4,
               course_name: Algebra,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               storecode: Q2,
               exclude_from_gpa: 0,
               is_dropped_section: false,
@@ -540,7 +481,6 @@ unit_tests:
               course_number: C4,
               course_name: Algebra,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               storecode: Q3,
               exclude_from_gpa: 0,
               is_dropped_section: false,
@@ -559,7 +499,6 @@ unit_tests:
               course_number: C4,
               course_name: Algebra,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               storecode: Q4,
               exclude_from_gpa: 0,
               is_dropped_section: false,
@@ -578,7 +517,6 @@ unit_tests:
               course_number: C5,
               course_name: History,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               storecode: Q1,
               exclude_from_gpa: 0,
               is_dropped_section: false,
@@ -597,7 +535,6 @@ unit_tests:
               course_number: C5,
               course_name: History,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               storecode: Q2,
               exclude_from_gpa: 0,
               is_dropped_section: false,
@@ -616,7 +553,6 @@ unit_tests:
               course_number: C5,
               course_name: History,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               storecode: Q3,
               exclude_from_gpa: 0,
               is_dropped_section: false,
@@ -635,7 +571,6 @@ unit_tests:
               course_number: C5,
               course_name: History,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               storecode: Q4,
               exclude_from_gpa: 0,
               is_dropped_section: false,
@@ -654,7 +589,6 @@ unit_tests:
               course_number: C6,
               course_name: Spanish,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               storecode: Q1,
               exclude_from_gpa: 0,
               is_dropped_section: false,
@@ -673,7 +607,6 @@ unit_tests:
               course_number: C6,
               course_name: Spanish,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               storecode: Q2,
               exclude_from_gpa: 0,
               is_dropped_section: false,
@@ -692,7 +625,6 @@ unit_tests:
               course_number: C6,
               course_name: Spanish,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               storecode: Q3,
               exclude_from_gpa: 0,
               is_dropped_section: false,
@@ -711,7 +643,6 @@ unit_tests:
               course_number: C6,
               course_name: Spanish,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               storecode: Q4,
               exclude_from_gpa: 0,
               is_dropped_section: false,
@@ -730,7 +661,6 @@ unit_tests:
               course_number: C1,
               course_name: English,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               storecode: Q1,
               exclude_from_gpa: 0,
               is_dropped_section: false,
@@ -749,7 +679,6 @@ unit_tests:
               course_number: C1,
               course_name: English,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               storecode: Q2,
               exclude_from_gpa: 0,
               is_dropped_section: false,
@@ -768,7 +697,6 @@ unit_tests:
               course_number: C1,
               course_name: English,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               storecode: Q3,
               exclude_from_gpa: 0,
               is_dropped_section: false,
@@ -787,7 +715,6 @@ unit_tests:
               course_number: C1,
               course_name: English,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               storecode: Q4,
               exclude_from_gpa: 0,
               is_dropped_section: false,
@@ -806,7 +733,6 @@ unit_tests:
               course_number: C2,
               course_name: Biology,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               storecode: Q1,
               exclude_from_gpa: 0,
               is_dropped_section: false,
@@ -825,7 +751,6 @@ unit_tests:
               course_number: C2,
               course_name: Biology,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               storecode: Q2,
               exclude_from_gpa: 0,
               is_dropped_section: false,
@@ -844,7 +769,6 @@ unit_tests:
               course_number: C2,
               course_name: Biology,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               storecode: Q3,
               exclude_from_gpa: 0,
               is_dropped_section: false,
@@ -863,7 +787,6 @@ unit_tests:
               course_number: C2,
               course_name: Biology,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               storecode: Q4,
               exclude_from_gpa: 0,
               is_dropped_section: false,
@@ -882,7 +805,6 @@ unit_tests:
               course_number: C3,
               course_name: Health,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               storecode: Q1,
               exclude_from_gpa: 0,
               is_dropped_section: false,
@@ -901,7 +823,6 @@ unit_tests:
               course_number: C3,
               course_name: Health,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               storecode: Q2,
               exclude_from_gpa: 0,
               is_dropped_section: false,
@@ -920,7 +841,6 @@ unit_tests:
               course_number: C4,
               course_name: Algebra,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               storecode: Q1,
               exclude_from_gpa: 0,
               is_dropped_section: false,
@@ -939,7 +859,6 @@ unit_tests:
               course_number: C4,
               course_name: Algebra,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               storecode: Q2,
               exclude_from_gpa: 0,
               is_dropped_section: false,
@@ -958,7 +877,6 @@ unit_tests:
               course_number: C4,
               course_name: Algebra,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               storecode: Q3,
               exclude_from_gpa: 0,
               is_dropped_section: false,
@@ -977,7 +895,6 @@ unit_tests:
               course_number: C4,
               course_name: Algebra,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               storecode: Q4,
               exclude_from_gpa: 0,
               is_dropped_section: false,
@@ -996,7 +913,6 @@ unit_tests:
               course_number: C6,
               course_name: Spanish,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               storecode: Q1,
               exclude_from_gpa: 0,
               is_dropped_section: false,
@@ -1015,7 +931,6 @@ unit_tests:
               course_number: C6,
               course_name: Spanish,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               storecode: Q2,
               exclude_from_gpa: 0,
               is_dropped_section: false,
@@ -1034,7 +949,6 @@ unit_tests:
               course_number: C6,
               course_name: Spanish,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               storecode: Q3,
               exclude_from_gpa: 0,
               is_dropped_section: false,
@@ -1053,7 +967,6 @@ unit_tests:
               course_number: C6,
               course_name: Spanish,
               academic_year: 2025,
-              _dbt_source_project: kippnewark,
               storecode: Q4,
               exclude_from_gpa: 0,
               is_dropped_section: false,

@@ -25,7 +25,7 @@ select
     co.student_name,
     co.advisory,
     co.school_leader_tableau_username,
-from {{ ref("int_gpa__course_pace") }} as p
+from {{ ref("int_powerschool__course_pace") }} as p
 inner join
     {{ ref("int_extracts__student_enrollments") }} as co
     on p.studentid = co.studentid

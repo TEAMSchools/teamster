@@ -75,7 +75,7 @@ left join
     and cy.academic_year = gd.academic_year
     and gd.metric = 'cumulative_gpa_unweighted'
 left join
-    {{ ref("int_gpa__student_y1_target") }} as t
+    {{ ref("int_powerschool__student_y1_target") }} as t
     on cy.studentid = t.studentid
     and cy.schoolid = t.schoolid
     and cy._dbt_source_project = t._dbt_source_project
