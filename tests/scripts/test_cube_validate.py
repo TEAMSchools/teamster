@@ -1202,3 +1202,42 @@ def test_table_calc_token_without_a_suffix_still_classifies():
         "federated.abc", "pcto:usr:Calculation_abs:qk", columns
     )
     assert (kind, label) == ("measure", "# Absent")
+
+
+def _keys(sheet):
+    return {c.key for c in sheet.constructs}
+
+
+def test_groups_are_constructs_with_their_bins():
+    (g,) = [c for c in _sheet("Codes").constructs if c.kind == "group"]
+    assert g.name == "Code Group"
+    assert g.detail == {
+        "of": "att_code",
+        "of_formula": None,
+        "bins": {"Absent": ["A", "AD"], "Present": [None, "P"]},
+    }
+
+
+def test_numeric_bins_are_constructs():
+    (b,) = [c for c in _sheet("Bins").constructs if c.kind == "bin"]
+    assert b.detail == {"of": "score", "size": 10}
+
+
+def test_lod_and_table_calc_formulas_are_constructs():
+    assert {"lod: Days FIXED", "table_calc: Share"} <= _keys(_sheet("Shares"))
+
+
+def test_viewer_functions_are_found_through_a_filter_calc():
+    assert "viewer_function: Permissions" in _keys(_sheet("Codes"))
+
+
+def test_fiscal_year_on_a_year_date_part():
+    (f,) = [c for c in _sheet("Geo").constructs if c.kind == "fiscal_year"]
+    assert f.name == "Calendardate@year"
+    assert f.detail == {"start_month": 7}
+
+
+def test_unexpandable_parameter_field_is_a_construct():
+    keys = _keys(_sheet("Levels"))
+    assert "parameter: Odd Column" in keys
+    assert "parameter: Level Column" not in keys

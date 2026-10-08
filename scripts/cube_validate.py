@@ -63,6 +63,239 @@ class Construct:
         return f"{self.kind}: {self.name}"
 
 
+CONSTRUCT_KINDS = {
+    "group",
+    "bin",
+    "set",
+    "viewer_function",
+    "lod",
+    "table_calc",
+    "filter",
+    "total",
+    "alias",
+    "fiscal_year",
+    "parameter",
+    "blend",
+    "top_n",
+    "source_filter",
+}
+_USER = "{http://www.tableausoftware.com/xml/user}"
+_REF = re.compile(r"\[([^\[\]]+)\]")
+_PARAM_REF = re.compile(r"\[Parameters\]\.\[[^\[\]]+\]")
+_VIEWER = re.compile(r"\b(ISMEMBEROF|USERNAME|USERDOMAIN|FULLNAME)\s*\(", re.I)
+_TABLE_CALC_FN = re.compile(
+    r"\b(WINDOW_\w+|RUNNING_\w+|LOOKUP|INDEX|RANK\w*|TOTAL|SIZE|FIRST|LAST"
+    r"|PREVIOUS_VALUE)\s*\(",
+    re.I,
+)
+_DATE_FN = re.compile(r"\b(YEAR|QUARTER|DATEPART|DATETRUNC|DATENAME)\s*\(", re.I)
+_LOD = re.compile(r"\{\s*(FIXED|INCLUDE|EXCLUDE)\b", re.I)
+_PARAM_CASE = re.compile(
+    r"^\s*CASE\s+\[Parameters\]\.\[([^\[\]]+)\]\s+(.*?)\s*END\s*$", re.S | re.I
+)
+_WHEN = re.compile(
+    r"WHEN\s+'([^']*)'\s+THEN\s+(.*?)(?=\s+WHEN\s+'|\s+ELSE\b|\s*$)", re.S | re.I
+)
+# Groups Tableau builds from a viewer's clicks: actions, tooltips, highlights.
+_IGNORED_GROUPS = ("Action (", "Tooltip (", "Highlight (")
+
+
+def _tableau_value(raw: str):
+    """A member as the .twb writes it: "text", a number, true/false, or %null%."""
+    if raw == "%null%":
+        return None
+    if len(raw) >= 2 and raw[0] == raw[-1] == '"':
+        return raw[1:-1]
+    if raw in ("true", "false"):
+        return raw == "true"
+    for cast in (int, float):
+        try:
+            return cast(raw)
+        except ValueError:
+            pass
+    return raw
+
+
+class _Workbook:
+    """The lookups construct detection needs, built once per workbook."""
+
+    def __init__(self, root: ET.Element):
+        self.columns = _columns(root)
+        self.cols: dict[tuple[str, str], ET.Element] = {}
+        self.groups: dict[tuple[str, str], ET.Element] = {}
+        self.drill_paths: dict[str, list[list[str]]] = {}
+        self.source_filters: dict[str, list[ET.Element]] = {}
+        self.ds_caption: dict[str, str] = {}
+        # (datasource, Measure Names member token) -> the alias shown for it
+        self.mn_aliases: dict[tuple[str, str], str] = {}
+        for ds in root.findall("datasources/datasource"):
+            name = _attr(ds, "name")
+            self.ds_caption[name] = _attr(ds, "caption") or name
+            for col in ds.findall("column"):
+                self.cols.setdefault((name, _attr(col, "name")), col)
+                if _attr(col, "name") == "[:Measure Names]":
+                    for a in col.findall("aliases/alias"):
+                        self.mn_aliases[(name, _attr(a, "key").strip('"'))] = _attr(
+                            a, "value"
+                        ).strip()
+            for g in ds.findall("group"):
+                self.groups.setdefault((name, _attr(g, "name")), g)
+            self.drill_paths[name] = [
+                [f.text or "" for f in p.findall("field")]
+                for p in ds.findall("drill-paths/drill-path")
+            ]
+            self.source_filters[name] = ds.findall("filter") + ds.findall(
+                "extract//filter"
+            )
+
+    def calc(self, ds: str, name: str):
+        col = self.cols.get((ds, name))
+        return col.find("calculation") if col is not None else None
+
+    def caption(self, ds: str, name: str) -> str:
+        col = self.cols.get((ds, name))
+        return (_attr(col, "caption") if col is not None else "") or name.strip("[]")
+
+    def formula(self, ds: str, name: str) -> str:
+        calc = self.calc(ds, name)
+        return _attr(calc, "formula") if calc is not None else ""
+
+    def deps(self, ds: str, name: str) -> list[str]:
+        """The fields a field's formula or group reads, as '[name]'."""
+        calc = self.calc(ds, name)
+        if calc is None:
+            return []
+        refs = _REF.findall(_PARAM_REF.sub("", _attr(calc, "formula")))
+        out = [f"[{r}]" for r in refs]
+        if calc.get("column"):
+            out.append(_attr(calc, "column"))
+        return out
+
+    def closure(self, ds: str, names: list[str]) -> list[str]:
+        """The fields named, and every field they read, transitively."""
+        seen: list[str] = []
+        todo = list(names)
+        while todo:
+            n = todo.pop(0)
+            if n not in seen:
+                seen.append(n)
+                todo += self.deps(ds, n)
+        return seen
+
+
+def _bins(calc: ET.Element) -> dict:
+    return {
+        _tableau_value(_attr(b, "value")): [
+            _tableau_value(v.text or "") for v in b.findall("value")
+        ]
+        for b in calc.findall("bin")
+    }
+
+
+def _param_branches(columns, ds: str, formula: str) -> dict | None:
+    """A CASE on a parameter whose branches are fields or text, else None."""
+    m = _PARAM_CASE.match(formula or "")
+    if not m:
+        return None
+    branches: dict[str, str | None] = {}
+    for value, expr in _WHEN.findall(m.group(2)):
+        expr = expr.strip()
+        ref = re.fullmatch(r"\[([^\[\]]+)\]", expr)
+        if ref:
+            branches[value] = _resolve(columns, ds, ref.group(1))[0]
+        elif re.fullmatch(r"'[^']*'|\"[^\"]*\"", expr):
+            branches[value] = None
+        else:
+            return None
+    return {"parameter": m.group(1), "branches": branches} if branches else None
+
+
+def _fiscal_start(book: _Workbook, ds: str, name: str) -> int | None:
+    col = book.cols.get((ds, name))
+    start = _attr(col, "fiscal-year-start") if col is not None else ""
+    return int(start) if start and start != "1" else None
+
+
+def _field_constructs(book: _Workbook, ds: str, name: str) -> list[Construct]:
+    """Constructs one field carries: a group, a bin, an LOD, a viewer function..."""
+    calc = book.calc(ds, name)
+    if calc is None:
+        return []
+    caption, f = book.caption(ds, name), _attr(calc, "formula")
+    out = []
+    if calc.get("class") == "categorical-bin":
+        src = _attr(calc, "column")
+        src_formula = book.formula(ds, src)
+        out.append(
+            Construct(
+                "group",
+                caption,
+                detail={
+                    "of": None if src_formula else src.strip("[]"),
+                    "of_formula": src_formula or None,
+                    "bins": _bins(calc),
+                },
+            )
+        )
+        return out
+    if calc.get("class") == "bin":
+        src = (_REF.findall(f) or [""])[0]
+        size = _tableau_value(_attr(calc, "size"))
+        return [Construct("bin", caption, detail={"of": src, "size": size})]
+    if lod := _LOD.search(f):
+        out.append(
+            Construct(
+                "lod", caption, detail={"type": lod.group(1).lower(), "formula": f}
+            )
+        )
+    if _VIEWER.search(f):
+        out.append(Construct("viewer_function", caption, detail={"formula": f}))
+    if _TABLE_CALC_FN.search(f) or calc.find("table-calc") is not None:
+        out.append(Construct("table_calc", caption, detail={"formula": f}))
+    if "[Parameters]." in f and _param_branches(book.columns, ds, f) is None:
+        out.append(Construct("parameter", caption, detail={"formula": f}))
+    if _DATE_FN.search(f) and any(
+        _fiscal_start(book, ds, d) for d in book.deps(ds, name)
+    ):
+        out.append(Construct("fiscal_year", caption, detail={"formula": f}))
+    return out
+
+
+def _sheet_tokens(w: ET.Element) -> list[tuple[str, str]]:
+    """Every field token a sheet uses: shelves, marks, filters, Measure Values."""
+    parts = [w.findtext("table/rows") or "", w.findtext("table/cols") or ""]
+    parts += [_attr(e, "column") for e in w.findall(".//encodings/*")]
+    for f in w.iter("filter"):
+        parts.append(_attr(f, "column"))
+        if _attr(f, "column").endswith("[:Measure Names]"):
+            parts += [_attr(g, "member") for g in f.iter("groupfilter")]
+    return _TOKEN.findall(" ".join(parts))
+
+
+def _sheet_constructs(book: _Workbook, w: ET.Element, columns) -> list[Construct]:
+    found: dict[str, Construct] = {}
+    by_ds: dict[str, list[str]] = {}
+    for ds, inner in _sheet_tokens(w):
+        m = _INSTANCE.match(inner)
+        if not m:
+            continue
+        deriv, fld, _ = m.groups()
+        wrapped = _NESTED.match(fld)
+        if wrapped and wrapped.group(1) in _MEASURE_DERIVATIONS:
+            fld = wrapped.group(2)
+        by_ds.setdefault(ds, []).append(f"[{fld}]")
+        start = _fiscal_start(book, ds, f"[{fld}]")
+        if deriv in ("yr", "tyr", "qr", "tqr") and start:
+            label = _classify(ds, inner, columns)[1]
+            c = Construct("fiscal_year", label, detail={"start_month": start})
+            found.setdefault(c.key, c)
+    for ds, names in by_ds.items():
+        for n in book.closure(ds, names):
+            for c in _field_constructs(book, ds, n):
+                found.setdefault(c.key, c)
+    return list(found.values())
+
+
 @dataclass
 class Sheet:
     name: str
@@ -137,7 +370,8 @@ def parse_twb(path: str | Path, dashboards: list[str]) -> list[Sheet]:
     root = SafeET.parse(path).getroot()  # defusedxml: no entity expansion
     if root is None:
         raise ValueError(f"{path}: empty workbook")
-    columns = _columns(root)
+    book = _Workbook(root)
+    columns = book.columns
     ds_caption = {
         _attr(d, "name"): _attr(d, "caption") or _attr(d, "name")
         for d in root.findall("datasources/datasource")
@@ -185,6 +419,7 @@ def parse_twb(path: str | Path, dashboards: list[str]) -> list[Sheet]:
                 target = s.filter_dims if kind == "dim" else s.other_filters
                 if label not in target and label not in s.shelf_dims:
                     target.append(label)
+        s.constructs = _sheet_constructs(book, w, columns)
         sheets.append(s)
     return sheets
 
