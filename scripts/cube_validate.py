@@ -563,8 +563,8 @@ def parse_twb(path: str | Path, dashboards: list[str]) -> list[Sheet]:
             s.shelf_dims,
         )
         for ds in raw:
-            for path in book.drill_paths.get(ds, []):
-                labels = [_resolve(columns, ds, n.strip("[]"))[0] for n in path]
+            for fields in book.drill_paths.get(ds, []):
+                labels = [_resolve(columns, ds, n.strip("[]"))[0] for n in fields]
                 if any(d in s.shelf_dims for d in labels):
                     s.drill_paths.append(labels)
         for ds, inner in _TOKEN.findall(
@@ -2249,6 +2249,7 @@ def _snippet(c: Construct) -> dict:
 def _grains_command(a) -> int:
     sheets = parse_twb(a.twb, a.dashboard)
     if a.measure:
+        measure: str = a.measure
         using = [
             s
             for s in sheets
@@ -2257,7 +2258,7 @@ def _grains_command(a) -> int:
         out = {
             "measure": a.measure,
             "resolves_to": sorted(
-                {s.measure_aliases.get(a.measure, a.measure) for s in using}
+                {s.measure_aliases.get(measure, measure) for s in using}
             ),
             "sheets": [asdict(s) for s in using],
             "grains": propose_grains(sheets, a.measure),
