@@ -7,4 +7,4 @@ left join
     and ms.campaign_reporting_term = rt.code
     and rt.type = 'SURVEY'
 where ms.campaign_academic_year is not null and rt.academic_year is null
-group by 1, 2
+group by ms.campaign_academic_year, ms.campaign_reporting_term

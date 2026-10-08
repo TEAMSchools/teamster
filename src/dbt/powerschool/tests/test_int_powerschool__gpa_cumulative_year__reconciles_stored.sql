@@ -1,4 +1,19 @@
 with
+    stored_ranked as (
+        select
+            studentid,
+            schoolid,
+            academic_year,
+            cumulative_y1_gpa,
+            cumulative_y1_gpa_unweighted,
+
+            row_number() over (
+                partition by studentid, schoolid order by academic_year desc
+            ) as rn,
+        from {{ ref("int_powerschool__gpa_cumulative_year") }}
+        where not is_projected
+    ),
+
     latest_stored as (
         select
             studentid,
@@ -6,13 +21,8 @@ with
             academic_year,
             cumulative_y1_gpa,
             cumulative_y1_gpa_unweighted,
-        from {{ ref("int_powerschool__gpa_cumulative_year") }}
-        where not is_projected
-        qualify
-            row_number() over (
-                partition by studentid, schoolid order by academic_year desc
-            )
-            = 1
+        from stored_ranked
+        where rn = 1
     )
 
 select
