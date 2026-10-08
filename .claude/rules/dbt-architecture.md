@@ -31,8 +31,10 @@ package config, district-only source models, and `rpt_` wrappers over kipptaf
 extracts. Cross-region business logic lives only in kipptaf.
 
 Until the domain tags land, a kipptaf `int_` counts as domain `int_` when it
-sits in a folder not named for a source system (`students/`, `people/`,
-`topline/`), or when it reads more than 1 source system.
+sits in a top-level folder not named for a source system (`students/`,
+`people/`, `topline/`, `extracts/`), or when it reads more than 1 source system.
+A Google Sheets config input (`stg_google_sheets__*` or `int_google_sheets__*`)
+does not count as a second source system.
 
 ### Allowed edges
 
