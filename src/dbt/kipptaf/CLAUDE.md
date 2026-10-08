@@ -20,16 +20,11 @@ any tab change. Archive tabs must be converted to BQ-native sources.
 
 ### Cross-region joins (critical)
 
-Union models carry `_dbt_source_relation` but values differ across models (they
-include schema + table name). **Never join on
-`a._dbt_source_relation = b._dbt_source_relation`** — join the materialized
-`_dbt_source_project` column:
-
-```sql
-inner join {{ ref("other_union_model") }} as b
-    on a.id = b.id
-    and a._dbt_source_project = b._dbt_source_project
-```
+Join unioned models on `_dbt_source_project` (A10 in
+`.claude/rules/dbt-architecture.md`). Union models also carry
+`_dbt_source_relation`, but its values differ across models (they include
+schema + table name). **Never join on
+`a._dbt_source_relation = b._dbt_source_relation`.**
 
 The `union_dataset_join_clause` macro that wrapped this comparison was deleted
 in [#3142](https://github.com/TEAMSchools/teamster/issues/3142). Five stale

@@ -1,8 +1,8 @@
 # CLAUDE.md — `marts/`
 
-Dimensional marts (star schema) consumed by Cube and Tableau. Most-downstream
-layer — no `ref()` from staging, intermediate, or reporting into marts.
-Intra-mart refs are permitted (e.g. `bridge_survey_expectations → dim_surveys`,
+Dimensional marts (star schema) consumed by Cube, Tableau, and `rpt_` models.
+Layers and allowed edges: `.claude/rules/dbt-architecture.md`. Intra-mart refs
+are permitted (e.g. `bridge_survey_expectations → dim_surveys`,
 `fct_staff_attrition → dim_staff_status`). When renaming a mart column, grep
 `ref(...)` within `marts/` too — not just outside.
 
@@ -13,8 +13,8 @@ dimensions via a many-to-many relationship and carry no measures. They live in
 and facts, bridges need a uniqueness test on their PK and follow the
 strict-chain rule — no diamond paths to a shared ancestor dim.
 
-The column-naming rubric (R1-R10), degenerate-dim rule, plumbing definition,
-strict-chain traversal, and PK/FK/date column shapes live in
+The column-naming rubric (R1-R4, R6-R10), degenerate-dim rule, plumbing
+definition, strict-chain traversal, and PK/FK/date column shapes live in
 `.claude/rules/dbt-marts.md`.
 
 ## Filing follow-up issues from marts work
@@ -37,7 +37,7 @@ refactor):
 
 - Scan touched models for diamond paths (_Strict-chain traversal_ in
   `.claude/rules/dbt-marts.md`).
-- Scan touched models for column-naming rubric violations (R1–R10).
+- Scan touched models for column-naming rubric violations (R1-R4, R6-R10).
 - Pull marts-model warnings from the latest CI run
   (`mcp__dbt__get_job_run_error` with `warning_only=true`). For each, search
   open issues by model name + FK target. Bucket orphans (by region, source,
@@ -56,11 +56,11 @@ guarantees the parent row exists, use INNER JOIN. LEFT JOIN silently produces
 null hash inputs that surrogate-key into placeholder hashes — orphans surface
 only at `relationships` test runtime, not at compile.
 
-A dedupe on such a join is information-preserving — not dup-masking — when every
-matched parent yields the SAME hash (e.g. duplicate stints sharing the key's
-only input). Confirm the duplicate output rows are identical across every
-column; a genuine ambiguity produces differing rows and must still fail the PK
-test.
+Exception to A5: a dedupe on such a join is information-preserving — not
+dup-masking — when every matched parent yields the SAME hash (e.g. duplicate
+stints sharing the key's only input). Confirm the duplicate output rows are
+identical across every column; a genuine ambiguity produces differing rows and
+must still fail the PK test.
 
 ## BigQuery reserved identifiers
 
@@ -261,8 +261,7 @@ Exposure requirements: `kipptaf/CLAUDE.md` → Exposures. Before removing a colu
 from any `dim_*` / `fct_*`, grep `src/cube/model/` for `sql: <col>` and bare
 `<col>` — Cube YAML reads by name and dbt has no exposure to surface the dep.
 
-Every mart must appear in `cube.yml`'s `cube_semantic_layer.depends_on`; other
-exposures reference `rpt_*` / staging / intermediate models, not marts.
+Every mart must appear in `cube.yml`'s `cube_semantic_layer.depends_on` (A8).
 
 ## SCD2 status dims bound to enrollments
 

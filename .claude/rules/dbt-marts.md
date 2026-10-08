@@ -104,7 +104,9 @@ avoid a join, the chain is probably already there — use it instead.
 - **FK constraint form**: declare foreign keys with the ref-aware
   `to: ref(...)` + `to_columns:` form (dbt 1.9+) at the **column** level for
   single-column FKs — not model-level `expression: ref(...)`, which is free text
-  that doesn't capture the ref dependency.
+  that doesn't capture the ref dependency. View marts only: a table mart carries
+  no outgoing FK constraints and records the edge under
+  `config.meta.foreign_key` instead.
 - **Date FK** (`_date_key`): raw DATE value matching `dim_dates.date_key`,
   **not** a hash. Never also expose the same date as a degenerate `_date` column
   next to its `_date_key` (R9).

@@ -95,8 +95,8 @@ adding a sibling.
   right.
 - Good: a new staff column goes into `int_people__staff_roster`, not a second
   model at 1 row per staff member.
-- Bad: `int_powerschool__gradebook_assignments_scores` and
-  `int_students__gradebook_assignments_scores` at the same grain.
+- Bad: `int_<source>__scores` and `int_<source>__scores_clean` in 1 source
+  folder at the same grain.
 - Enforced by: review; `dbt-layer-check` warns on a shared uniqueness grain.
 
 #### A5. Dedup only in `stg_` or source `int_`
@@ -122,8 +122,9 @@ fine when its output grain is reused.
 #### A7. Identity in the domain `int_`; keys through their macro
 
 Decide which source records are the same person or thing in the domain `int_`.
-Hash an entity's surrogate key in a mart only through that entity's macro
-(`{{ student_key(...) }}`), never with a direct `generate_surrogate_key` call.
+When an entity has a key macro (`{{ student_key(...) }}`), hash its surrogate
+key in a mart only through that macro, never with a direct
+`generate_surrogate_key` call.
 
 - Why: 1 macro holds each key's inputs, so a key cannot drift between the marts
   that hash it.
@@ -174,6 +175,14 @@ PR.
 <!-- --8<-- [end:architecture] -->
 
 ## Claude-only notes
+
+- Apply the A, S, and R rules only to models and lines you add or change. Never
+  propose a sweep of untouched models. An existing A1, A2, or A8 edge is known
+  backlog, not a finding.
+- Until domain folders carry the `+meta: {layer: domain}` tag, treat a kipptaf
+  `int_` that reads more than 1 source system as domain. Key macros live in
+  `src/dbt/kipptaf/macros/`; an entity with none yet uses
+  `generate_surrogate_key` (see PK shapes in `.claude/rules/dbt-marts.md`).
 
 - Mart column naming, strict-chain traversal, and PK/FK shapes:
   `.claude/rules/dbt-marts.md` (loads under kipptaf `models/marts/`).

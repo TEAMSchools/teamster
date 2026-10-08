@@ -77,15 +77,15 @@ jobs:
             .claude/rules/dbt-sql.md with the Read tool, plus src/dbt/CLAUDE.md
             and the nearest per-project CLAUDE.md; for a mart change, also read
             .claude/rules/dbt-marts.md. Check the changed models against every
-            rule (A1-A11, S1-S18, and R1-R10 for marts) and the review rubric in
-            dbt-sql.md. Cite the rule ID (for example "S10") in every SQL or dbt
-            finding. Do not report a violation of a rule enforced only by
-            sqlfluff; the Trunk check reports those. Apply the rules to models
-            the PR adds or changes only; never ask for a sweep of untouched
-            models. For the edge rules (A1, A2, A8), flag only an edge the PR
-            adds; an edge the model already had is known backlog. Apply A11 only
-            to a folder the PR adds, and A7 only to an entity that already has a
-            key macro under src/dbt/kipptaf/macros/.
+            rule (A1-A11, S1-S18, and R1-R4, R6-R10 for marts) and the review
+            rubric in dbt-sql.md. Cite the rule ID (for example "S10") in every
+            SQL or dbt finding. Do not report a violation of a rule enforced
+            only by sqlfluff; the Trunk check reports those. Apply the rules to
+            models the PR adds or changes only; never ask for a sweep of
+            untouched models. For the edge rules (A1, A2, A8), flag only an edge
+            the PR adds; an edge the model already had is known backlog. Apply
+            A11 only to a folder the PR adds, and A7 only to an entity that
+            already has a key macro under src/dbt/kipptaf/macros/.
 
             Also check model altitude: derive a model in the source-system
             package at the same layer the source system derives it, not at

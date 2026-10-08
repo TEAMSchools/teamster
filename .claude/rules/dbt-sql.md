@@ -224,7 +224,7 @@ Rationale and background go in the model's YAML `description:`.
 
 Reviewers, human or Claude, check these and cite the rule ID:
 
-1. Grain is stated and tested (A4).
+1. Grain has a uniqueness test, and 1 model owns it (A4).
 2. Dedup sits in the right layer; `distinct` is not masking duplicates (A5,
    S12).
 3. The model sits in the right layer and is the right kind (A1, A3).
@@ -455,33 +455,16 @@ partition key. That packs the whole row into a struct, inflates the input
 shuffle, and pushes the aggregate past BigQuery's single-round-shuffle threshold
 — so the plan gains `Repartition` stages that a window function never emits.
 
-Do not re-derive the width hypothesis. Measured on prod tables, macro against
-ranked column, output byte-identical in every pair (#5252):
+Do not re-derive this: the ranked form was faster at every size measured, and
+the ~1M-row threshold below is interpolated, not a measured inflection point
+(evidence: #5252). Below it the saving doesn't repay the extra CTE.
 
-|  Rows | Bytes/row | Macro / ranked slot time | Macro / ranked shuffle |
-| ----: | --------: | -----------------------: | ---------------------: |
-| 44.5M |       241 |                     6.6x |                   5.4x |
-| 4.16M |        56 |                     4.6x |                   7.1x |
-|  125k |      3629 |                     2.2x |                   1.7x |
-|   18k |       195 |                     2.5x |         below 0.02 GiB |
-
-**The ranked form never lost at any size tested** — the widest table (125k
-bytes/row) shows the smallest penalty, which is the evidence for the row-width
-conclusion. But the numbers are NOT monotonic in row count (18k shows 2.5x, 125k
-shows 2.2x), and there is no measurement between 125k and 4.16M rows — the ~1M
-threshold below is interpolated across that 33x gap, not a measured inflection
-point. Below about 1M rows the ranked form still wins on every measurement, but
-the absolute saving is small enough that it doesn't repay the extra CTE.
-
-**The default stays `dbt_utils.deduplicate()`** — it is one call, and `QUALIFY`
-is banned here, so the window form always costs an extra CTE plus an `rn`
-column. Switch to the ranked-column form only when BOTH hold: the dedup input
-exceeds about 1M rows, AND the model costs at least 1 slot hour in the 7-day
-prod ranking. #5252 applied this gate across 116 `dbt_utils.deduplicate` callers
-and rewrote only 4 that cleared both bars — the rest were deliberately left on
-the macro. A caller that doesn't clear both bars stays on
-`dbt_utils.deduplicate()`; this is not license for a repo-wide sweep of the
-remaining callers.
+The default stays `dbt_utils.deduplicate()` — it is one call, and `qualify` is
+banned (S1), so the window form always costs an extra CTE plus an `rn` column.
+Switch to the ranked-column form only when BOTH hold: the dedup input exceeds
+about 1M rows, AND the model costs at least 1 slot hour in the 7-day prod
+ranking. A caller that doesn't clear both bars stays on
+`dbt_utils.deduplicate()`; this is not license for a repo-wide sweep.
 
 ```sql
 with
@@ -506,7 +489,7 @@ needed. When `<input>` IS a `UNION ALL`, the window must sit in a separate CTE
 (named `<input>_ranked`) that reads the whole union — ranking inside each union
 branch separately ranks per-branch and breaks the tie-break.
 
-Two traps when converting:
+Three traps when converting:
 
 - A filter that ran AFTER the macro (a soft-delete predicate, typically) shares
   the `WHERE` with `rn = 1`. It must not sit in the CTE that computes `rn` — the
@@ -584,8 +567,8 @@ the same partition.
 ## sqlfluff rule traps
 
 All SQL follows `.trunk/config/.sqlfluff` (BigQuery dialect), enforced by CI —
-**do not flag code that already follows it.** ST06 and CV03 are covered in their
-own sections above.
+**do not flag code that already follows it.** ST06 traps are under _ST06 traps
+(S7)_; CV03 is under _`select *` and UNION branches_.
 
 - **sqlfluff ST09 (join order)**: ON-clause predicates list the
   earlier-referenced table on the left, including predicates inside a current
