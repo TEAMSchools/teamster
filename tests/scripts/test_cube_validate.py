@@ -1169,3 +1169,36 @@ def test_one_year_window_reads_as_that_year(tmp_path):
     result = cv.run_dashboard(c, FakeCube(), FakeBQ(), TODAY)
     assert "Window: 2025-26." in cv.digest_markdown(result, c, {})
     assert "window 2025-26." in cv.report_markdown(result)
+
+
+# ---------------------------------------------------------------- Tableau constructs
+def _sheet(name):
+    sheets = cv.parse_twb(FIX / "constructs.twb", ["Main"])
+    return next(s for s in sheets if s.name == name)
+
+
+def test_parse_twb_splits_rows_and_cols():
+    geo = _sheet("Geo")
+    assert geo.rows_dims == ["region", "School"]
+    assert geo.cols_dims == ["Calendardate@year"]
+    assert geo.shelf_dims == ["region", "School", "Calendardate@year"]
+
+
+def test_parse_twb_resolves_copies_to_the_source_field():
+    assert _sheet("Levels").cols_dims == ["School"]
+
+
+def test_bin_field_is_not_read_as_a_copy():
+    assert _sheet("Bins").shelf_dims == ["Score (bin)"]
+
+
+def test_parse_twb_reads_a_quick_table_calc_as_its_measure():
+    assert "# Absent" in _sheet("Shares").measures
+
+
+def test_table_calc_token_without_a_suffix_still_classifies():
+    columns = {("federated.abc", "[Calculation_abs]"): ("# Absent", "SUM([is_absent])")}
+    kind, label, _ = cv._classify(
+        "federated.abc", "pcto:usr:Calculation_abs:qk", columns
+    )
+    assert (kind, label) == ("measure", "# Absent")

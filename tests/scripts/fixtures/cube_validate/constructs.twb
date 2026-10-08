@@ -1,0 +1,190 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<workbook xmlns:user='http://www.tableausoftware.com/xml/user'>
+  <datasources>
+    <datasource name='Parameters'>
+      <column caption='Level' datatype='string' name='[Parameter 1]' role='measure' type='nominal' value='&quot;Region&quot;'>
+        <calculation class='tableau' formula='&quot;Region&quot;' />
+      </column>
+    </datasource>
+    <datasource caption='rpt_demo (kipptaf_tableau)' name='federated.abc'>
+      <column caption='School' datatype='string' name='[school_abbreviation]' role='dimension' type='nominal'>
+        <aliases><alias key='&quot;TEAM&quot;' value='TEAM Academy' /></aliases>
+      </column>
+      <column caption='School (copy)' datatype='string' name='[School (copy)_1]' role='dimension' type='nominal'>
+        <calculation class='tableau' formula='[school_abbreviation]' />
+      </column>
+      <column caption='Code Group' datatype='string' name='[att_code (group)]' role='dimension' type='nominal'>
+        <calculation class='categorical-bin' column='[att_code]' new-bin='true'>
+          <bin default-name='false' value='&quot;Absent&quot;'>
+            <value>&quot;A&quot;</value>
+            <value>&quot;AD&quot;</value>
+          </bin>
+          <bin default-name='false' value='&quot;Present&quot;'>
+            <value>%null%</value>
+            <value>&quot;P&quot;</value>
+          </bin>
+        </calculation>
+      </column>
+      <column caption='Score (bin)' datatype='integer' name='[score (bin)]' role='dimension' type='ordinal'>
+        <calculation class='bin' decimals='0' formula='[score]' peg='0' size='10' />
+      </column>
+      <column caption='# Absent' datatype='integer' name='[Calculation_abs]' role='measure' type='quantitative'>
+        <calculation class='tableau' formula='SUM([is_absent])' />
+      </column>
+      <column caption='Days FIXED' datatype='integer' name='[Calculation_lod]' role='measure' type='quantitative'>
+        <calculation class='tableau' formula='{FIXED [student_number]: SUM([is_absent])}' />
+      </column>
+      <column caption='Permissions' datatype='boolean' name='[Calculation_perm]' role='dimension' type='nominal'>
+        <calculation class='tableau' formula='ISMEMBEROF(&apos;Group A&apos;)' />
+      </column>
+      <column caption='Share' datatype='real' name='[Calculation_pct]' role='measure' type='quantitative'>
+        <calculation class='tableau' formula='SUM([is_absent]) / TOTAL(SUM([is_absent]))'>
+          <table-calc ordering-type='Rows' />
+        </calculation>
+      </column>
+      <column caption='Level Column' datatype='string' name='[Calculation_level]' role='dimension' type='nominal'>
+        <calculation class='tableau' formula='CASE [Parameters].[Parameter 1]&#10;WHEN &apos;Region&apos; THEN [region]&#10;WHEN &apos;School&apos; THEN [school_abbreviation]&#10;WHEN &apos;Network&apos; THEN &apos;N/A&apos;&#10;END' />
+      </column>
+      <column caption='Odd Column' datatype='string' name='[Calculation_odd]' role='dimension' type='nominal'>
+        <calculation class='tableau' formula='CASE [Parameters].[Parameter 1] WHEN &apos;Region&apos; THEN [region] + &apos;!&apos; END' />
+      </column>
+      <column caption='Calendardate' datatype='date' fiscal-year-start='7' name='[calendardate]' role='dimension' type='ordinal' />
+      <column datatype='string' name='[:Measure Names]' role='dimension' type='nominal'>
+        <aliases><alias key='&quot;[federated.abc].[usr:Calculation_abs:qk]&quot;' value='Absences Shown' /></aliases>
+      </column>
+      <group caption='Exclude OD' name='[Exclude OD]' name-style='unqualified' user:ui-builder='filter-group'>
+        <groupfilter function='except' user:ui-enumeration='exclusive'>
+          <groupfilter function='level-members' level='[school_level]' />
+          <groupfilter function='member' level='[school_level]' member='&quot;OD&quot;' />
+        </groupfilter>
+      </group>
+      <group name='[User Filter 1]' name-style='unqualified' user:ui-builder='identity-set'>
+        <groupfilter function='union'>
+          <groupfilter expression='ISMEMBEROF(&apos;Group A&apos;)' function='filter'>
+            <groupfilter function='level-members' level='[region]' />
+          </groupfilter>
+        </groupfilter>
+      </group>
+      <group name='[Action (School)]' name-style='unqualified' user:ui-builder='filter-group'>
+        <groupfilter function='level-members' level='[school_abbreviation]' />
+      </group>
+      <drill-paths>
+        <drill-path name='Geo'>
+          <field>[region]</field>
+          <field>[School (copy)_1]</field>
+        </drill-path>
+      </drill-paths>
+      <filter class='categorical' column='[federated.abc].[none:region_type:nk]'>
+        <groupfilter function='member' level='[none:region_type:nk]' member='&quot;KTAF&quot;' />
+      </filter>
+    </datasource>
+    <datasource caption='other' name='federated.other' />
+  </datasources>
+  <worksheets>
+    <worksheet name='Codes'>
+      <table>
+        <view>
+          <datasource-dependencies datasource='federated.abc' />
+          <filter class='categorical' column='[federated.abc].[none:Calculation_perm:nk]' context='true'>
+            <groupfilter function='member' level='[none:Calculation_perm:nk]' member='true' />
+          </filter>
+          <filter class='categorical' column='[federated.abc].[Exclude OD]' />
+          <filter class='categorical' column='[federated.abc].[none:att_code:nk]'>
+            <groupfilter function='except' user:ui-enumeration='exclusive'>
+              <groupfilter function='level-members' level='[none:att_code:nk]' />
+              <groupfilter function='member' level='[none:att_code:nk]' member='&quot;X&quot;' />
+              <groupfilter function='member' level='[none:att_code:nk]' member='%null%' />
+            </groupfilter>
+          </filter>
+          <filter class='categorical' column='[federated.abc].[User Filter 1]' context='true' />
+          <filter class='categorical' column='[federated.abc].[none:gender:nk]'>
+            <groupfilter function='level-members' level='[none:gender:nk]' />
+          </filter>
+        </view>
+        <panes><pane><encodings><text column='[federated.abc].[usr:Calculation_abs:qk]' /></encodings></pane></panes>
+        <rows>[federated.abc].[none:att_code (group):nk]</rows>
+        <cols />
+      </table>
+    </worksheet>
+    <worksheet name='Geo'>
+      <table>
+        <view><datasource-dependencies datasource='federated.abc' /></view>
+        <panes><pane><encodings><text column='[federated.abc].[usr:Calculation_abs:qk]' /></encodings></pane></panes>
+        <rows>([federated.abc].[none:region:nk] / [federated.abc].[none:school_abbreviation:nk])</rows>
+        <cols>[federated.abc].[yr:calendardate:ok]</cols>
+        <subtotals><column>[federated.abc].[none:region:nk]</column></subtotals>
+      </table>
+    </worksheet>
+    <worksheet name='Levels'>
+      <table>
+        <view><datasource-dependencies datasource='federated.abc' /></view>
+        <panes><pane><encodings><text column='[federated.abc].[usr:Calculation_abs:qk]' /></encodings></pane></panes>
+        <rows>([federated.abc].[none:Calculation_level:nk] / [federated.abc].[none:Calculation_odd:nk])</rows>
+        <cols>[federated.abc].[none:School (copy)_1:nk]</cols>
+      </table>
+    </worksheet>
+    <worksheet name='Shares'>
+      <table>
+        <view>
+          <datasource-dependencies datasource='federated.abc'>
+            <column-instance column='[Calculation_abs]' derivation='User' name='[pcto:usr:Calculation_abs:qk:3]' pivot='key' type='quantitative'>
+              <table-calc ordering-type='Rows' type='PctTotal' />
+            </column-instance>
+          </datasource-dependencies>
+        </view>
+        <panes>
+          <pane>
+            <encodings>
+              <text column='[federated.abc].[pcto:usr:Calculation_abs:qk:3]' />
+              <tooltip column='[federated.abc].[usr:Calculation_pct:qk]' />
+              <tooltip column='[federated.abc].[usr:Calculation_lod:qk]' />
+            </encodings>
+          </pane>
+        </panes>
+        <rows>[federated.abc].[none:region:nk]</rows>
+        <cols />
+      </table>
+    </worksheet>
+    <worksheet name='Bins'>
+      <table>
+        <view>
+          <datasource-dependencies datasource='federated.abc' />
+          <datasource-dependencies datasource='federated.other' />
+          <filter class='categorical' column='[federated.abc].[none:region:nk]'>
+            <groupfilter count='5' end='top' function='end' units='records'>
+              <groupfilter function='level-members' level='[none:region:nk]' />
+            </groupfilter>
+          </filter>
+          <filter class='quantitative' column='[federated.abc].[sum:score:qk]' included-values='in-range'>
+            <min>10</min>
+          </filter>
+        </view>
+        <panes><pane><encodings><text column='[federated.abc].[usr:Calculation_abs:qk]' /></encodings></pane></panes>
+        <rows>[federated.abc].[none:score (bin):qk]</rows>
+        <cols />
+      </table>
+    </worksheet>
+    <worksheet name='Shown'>
+      <table>
+        <view>
+          <datasource-dependencies datasource='federated.abc' />
+          <filter class='categorical' column='[federated.abc].[:Measure Names]'>
+            <groupfilter function='union' user:op='manual'>
+              <groupfilter function='member' level='[:Measure Names]' member='&quot;[federated.abc].[usr:Calculation_abs:qk]&quot;' />
+            </groupfilter>
+          </filter>
+        </view>
+        <rows>[federated.abc].[none:region:nk]</rows>
+        <cols>[federated.abc].[:Measure Names]</cols>
+      </table>
+    </worksheet>
+  </worksheets>
+  <dashboards>
+    <dashboard name='Main'>
+      <zones>
+        <zone name='Codes' /><zone name='Geo' /><zone name='Levels' />
+        <zone name='Shares' /><zone name='Bins' /><zone name='Shown' />
+      </zones>
+    </dashboard>
+  </dashboards>
+</workbook>

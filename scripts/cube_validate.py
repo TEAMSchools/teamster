@@ -30,7 +30,10 @@ if TYPE_CHECKING:
 
 # [federated.<datasource>].[<derivation>:<field>:<type>], or [federated.<ds>].[<named filter>]
 _TOKEN = re.compile(r"\[(federated\.[^\]]+)\]\.\[([^\]]+)\]")
-_INSTANCE = re.compile(r"^([a-z]+):(.+):([a-z]+)$")
+# [<derivation>:<field>:<type>], with a trailing :N on quick table calculations
+_INSTANCE = re.compile(r"^([a-z]+):(.+):([a-z]+)(?::\d+)?$")
+# A quick table calculation wraps a measure: pcto:sum:<field>
+_NESTED = re.compile(r"^([a-z]+):(.+)$")
 _DATE_PARTS = {
     "yr": "year",
     "tyr": "year",
@@ -47,6 +50,20 @@ _MEASURE_DERIVATIONS = {"sum", "avg", "cnt", "ctd", "min", "max", "med", "usr", 
 
 
 @dataclass
+class Construct:
+    """A Tableau feature on a sheet that can change what the sheet shows."""
+
+    kind: str
+    name: str
+    sheets: list[str] = field(default_factory=list)
+    detail: dict = field(default_factory=dict)
+
+    @property
+    def key(self) -> str:
+        return f"{self.kind}: {self.name}"
+
+
+@dataclass
 class Sheet:
     name: str
     dashboards: list[str]
@@ -55,6 +72,15 @@ class Sheet:
     shelf_dims: list[str] = field(default_factory=list)
     filter_dims: list[str] = field(default_factory=list)
     other_filters: list[str] = field(default_factory=list)
+    rows_dims: list[str] = field(default_factory=list)
+    cols_dims: list[str] = field(default_factory=list)
+    # A measure shown through Measure Names under another name: alias -> caption.
+    measure_aliases: dict[str, str] = field(default_factory=dict)
+    # Dimension label -> {parameter, branches: {parameter value: label or None}}.
+    param_dims: dict[str, dict] = field(default_factory=dict)
+    drill_paths: list[list[str]] = field(default_factory=list)
+    subtotal_dims: list[str] = field(default_factory=list)
+    constructs: list[Construct] = field(default_factory=list)
 
 
 def _attr(e: ET.Element, key: str) -> str:
@@ -69,9 +95,22 @@ def _columns(root: ET.Element) -> dict[tuple[str, str], tuple[str, str]]:
             calc = col.find("calculation")
             out[(_attr(ds, "name"), _attr(col, "name"))] = (
                 _attr(col, "caption") or _attr(col, "name").strip("[]"),
-                _attr(calc, "formula") if calc is not None else "",
+                _attr(calc, "formula")
+                if calc is not None and calc.get("class", "tableau") == "tableau"
+                else "",
             )
     return out
+
+
+def _resolve(columns, ds: str, fld: str) -> tuple[str, str]:
+    """Caption and formula of a field, following plain copies ([x]) to their source."""
+    caption, formula = columns.get((ds, f"[{fld}]"), (fld, ""))
+    for _ in range(5):
+        src = re.fullmatch(r"\s*\[([^\[\]]+)\]\s*", formula or "")
+        if not src:
+            break
+        caption, formula = columns.get((ds, f"[{src.group(1)}]"), (src.group(1), ""))
+    return caption, formula
 
 
 def _classify(ds: str, inner: str, columns) -> tuple[str, str, str]:
@@ -80,7 +119,10 @@ def _classify(ds: str, inner: str, columns) -> tuple[str, str, str]:
     if not m:
         return "other", inner, ""
     deriv, fld, _ = m.groups()
-    caption, formula = columns.get((ds, f"[{fld}]"), (fld, ""))
+    wrapped = _NESTED.match(fld)
+    if wrapped and wrapped.group(1) in _MEASURE_DERIVATIONS:
+        deriv, fld = wrapped.groups()
+    caption, formula = _resolve(columns, ds, fld)
     if deriv == "none":
         return "dim", caption, formula
     if deriv in _DATE_PARTS:
@@ -112,15 +154,23 @@ def parse_twb(path: str | Path, dashboards: list[str]) -> list[Sheet]:
         if _attr(w, "name") not in placed:
             continue
         s = Sheet(_attr(w, "name"), placed[_attr(w, "name")])
-        shelves = " ".join(w.findtext(f"table/{t}") or "" for t in ("rows", "cols"))
-        encodings = " ".join(_attr(e, "column") for e in w.findall(".//encodings/*"))
-        for ds, inner in _TOKEN.findall(f"{shelves} {encodings}"):
-            s.datasource = s.datasource or str(ds_caption.get(ds) or ds)
-            kind, label, formula = _classify(ds, inner, columns)
-            if kind == "dim" and label not in s.shelf_dims:
-                s.shelf_dims.append(label)
-            elif kind == "measure":
-                s.measures.setdefault(label, formula)
+
+        def take(text: str, dims: list[str], s=s) -> None:
+            for ds, inner in _TOKEN.findall(text):
+                s.datasource = s.datasource or str(ds_caption.get(ds) or ds)
+                kind, label, formula = _classify(ds, inner, columns)
+                if kind == "dim" and label not in dims:
+                    dims.append(label)
+                elif kind == "measure":
+                    s.measures.setdefault(label, formula)
+
+        take(w.findtext("table/rows") or "", s.rows_dims)
+        take(w.findtext("table/cols") or "", s.cols_dims)
+        s.shelf_dims = list(dict.fromkeys(s.rows_dims + s.cols_dims))
+        take(
+            " ".join(_attr(e, "column") for e in w.findall(".//encodings/*")),
+            s.shelf_dims,
+        )
         for f in w.iter("filter"):
             if _attr(f, "column").endswith("[:Measure Names]"):
                 # Measure Values: the sheet's measures are this filter's members.
