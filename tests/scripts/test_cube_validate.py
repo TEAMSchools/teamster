@@ -1408,3 +1408,101 @@ def test_load_checks_normalizes_tableau_captions(tmp_path):
     assert c["rows"][1]["metrics"][0]["tableau"] == []
     assert c["dashboards"] == [] and c["handled"] == {}
     assert c["rows"][0]["not_checked"] == []
+
+
+ALL_KEYS = {
+    "group: Code Group",
+    "filter: Permissions",
+    "viewer_function: Permissions",
+    "set: Exclude OD",
+    "filter: att_code",
+    "viewer_function: User Filter 1",
+    "source_filter: rpt_demo (kipptaf_tableau): region_type",
+    "fiscal_year: Calendardate@year",
+    "parameter: Odd Column",
+    "table_calc: # Absent",
+    "table_calc: Share",
+    "lod: Days FIXED",
+    "bin: Score (bin)",
+    "top_n: region",
+    "filter: score",
+    "blend: other",
+    "alias: Absences Shown",
+}
+
+
+def _audited(tmp_path, mutate=None):
+    def m(d):
+        d["dashboards"] = ["Main"]
+        for row in d["rows"]:
+            for metric in row["metrics"]:
+                metric["tableau"] = "# Absent"
+        if mutate:
+            mutate(d)
+
+    checks = cv.load_checks(_write_variant(tmp_path, m))
+    return checks, cv.audit_rows(checks, FIX / "constructs.twb")
+
+
+def test_audit_lists_every_construct_on_the_rows_sheets(tmp_path):
+    _, audit = _audited(tmp_path)
+    assert {c["key"] for c in audit["1"]["unaccounted"]} == ALL_KEYS
+
+
+def test_audit_splits_handled_and_not_checked(tmp_path):
+    def m(d):
+        d["handled"] = {"group: Code Group": "dimension code_group"}
+        d["rows"][0]["not_checked"] = [
+            {"construct": "table_calc: Share", "why": "percent of total"}
+        ]
+
+    _, audit = _audited(tmp_path, m)
+    keys = {c["key"] for c in audit["1"]["unaccounted"]}
+    assert "group: Code Group" not in keys
+    assert "table_calc: Share" not in keys
+    (nc,) = audit["1"]["not_checked"]
+    assert (nc["key"], nc["sheets"], nc["why"]) == (
+        "table_calc: Share",
+        ["Shares"],
+        "percent of total",
+    )
+
+
+def test_audit_finds_sheets_through_a_measure_names_alias(tmp_path):
+    def m(d):
+        d["rows"][0]["metrics"][0]["tableau"] = "Absences Shown"
+
+    _, audit = _audited(tmp_path, m)
+    assert {c["key"] for c in audit["1"]["unaccounted"]} == {
+        "alias: Absences Shown",
+        "source_filter: rpt_demo (kipptaf_tableau): region_type",
+    }
+
+
+def test_audit_needs_a_tableau_caption(tmp_path):
+    def m(d):
+        d["rows"][1]["metrics"][0]["tableau"] = []
+
+    _, audit = _audited(tmp_path, m)
+    assert "tableau:" in audit["2"]["error"]
+
+
+def test_audit_without_dashboards_names_the_reason(tmp_path):
+    def m(d):
+        d["dashboards"] = []
+
+    checks, audit = _audited(tmp_path, m)
+    assert "names no dashboards" in audit["1"]["error"]
+    result = cv.run_dashboard(checks, FakeCube(), FakeBQ(), TODAY, audit=audit)
+    assert result["rows"]["2"]["verdict"] == "incomplete"
+    assert "names no dashboards" in result["rows"]["2"]["audit_error"]
+
+
+def test_unaccounted_construct_makes_a_passing_row_incomplete_but_a_fail_stays_fail(
+    tmp_path,
+):
+    _, audit = _audited(tmp_path)
+    result = cv.run_dashboard(_checks(), FakeCube(), FakeBQ(), TODAY, audit=audit)
+    assert result["rows"]["1"]["verdict"] == "fail"
+    assert result["rows"]["2"]["verdict"] == "incomplete"
+    assert len(result["rows"]["2"]["unaccounted"]) == len(ALL_KEYS)

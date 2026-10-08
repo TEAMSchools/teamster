@@ -652,6 +652,62 @@ def propose_grains(sheets: list[Sheet], measure: str) -> list[list[str]]:
     return grains
 
 
+def merge_constructs(sheets: list[Sheet]) -> list[Construct]:
+    """Each construct once, with every sheet it appears on."""
+    out: dict[str, Construct] = {}
+    for s in sheets:
+        for c in s.constructs:
+            m = out.setdefault(c.key, Construct(c.kind, c.name, [], c.detail))
+            if s.name not in m.sheets:
+                m.sheets.append(s.name)
+    return list(out.values())
+
+
+def audit_rows(checks: dict, twb) -> dict[str, dict]:
+    """Per row: constructs on its sheets, split into not checked and unaccounted."""
+    rows = [str(r["row_gid"]) for r in checks["rows"]]
+    if not checks["dashboards"]:
+        msg = "the checks file names no dashboards, so its sheets cannot be audited"
+        return {gid: {"error": msg} for gid in rows}
+    sheets = parse_twb(twb, checks["dashboards"])
+    out = {}
+    for row in checks["rows"]:
+        gid = str(row["row_gid"])
+        captions = [c for m in row["metrics"] for c in m["tableau"]]
+        if not captions:
+            out[gid] = {
+                "error": "no metric names its Tableau measure (tableau:), so its "
+                "sheets cannot be audited"
+            }
+            continue
+        using = [
+            s
+            for s in sheets
+            if any(c in s.measures or c in s.measure_aliases for c in captions)
+        ]
+        if not using:
+            out[gid] = {
+                "error": f"no sheet on {', '.join(checks['dashboards'])} shows "
+                f"{', '.join(captions)}"
+            }
+            continue
+        why = {n["construct"]: n["why"] for n in row["not_checked"]}
+        found = merge_constructs(using)
+        out[gid] = {
+            "not_checked": [
+                dict(asdict(c), key=c.key, why=why[c.key])
+                for c in found
+                if c.key in why
+            ],
+            "unaccounted": [
+                dict(asdict(c), key=c.key)
+                for c in found
+                if c.key not in why and c.key not in checks["handled"]
+            ],
+        }
+    return out
+
+
 # ---------------------------------------------------------------- checks files and queries
 CUBE_LIMIT = 50_000
 # An average is a rate on its own scale (a scale score): compared in its units.
@@ -1498,7 +1554,14 @@ def scope_guard(checks, cube_load, bq, window) -> None:
 
 
 def run_dashboard(
-    checks, cube_load, bq, today, rows=None, scope_only=False, snapshots=None
+    checks,
+    cube_load,
+    bq,
+    today,
+    rows=None,
+    scope_only=False,
+    snapshots=None,
+    audit=None,
 ) -> dict:
     window = resolve_window(checks, today)
     dims, hard = checks["dimensions"], checks["hard_filters"]
@@ -1661,9 +1724,17 @@ def run_dashboard(
                 diagnosis[m["cube"]] = _diagnose(
                     checks, cube_load, bq, window, where[0], m
                 )
+        a = (audit or {}).get(str(row["row_gid"]), {})
+        verdict = row_verdict(grains)
+        if (a.get("unaccounted") or a.get("error")) and verdict in (
+            "pass",
+            "missing_member",
+        ):
+            # A construct nobody accounted for may change what the sheet shows.
+            verdict = "incomplete"
         result["rows"][str(row["row_gid"])] = {
             "name": row["name"],
-            "verdict": row_verdict(grains),
+            "verdict": verdict,
             "grains": grains,
             **({"diagnosis": diagnosis} if diagnosis else {}),
             "missing_members": {
@@ -1671,6 +1742,9 @@ def run_dashboard(
                 for k, v in missing.items()
                 if v["explains_cells"] or v["blocks_grains"] or v["changes_total"]
             },
+            **({"unaccounted": a["unaccounted"]} if a.get("unaccounted") else {}),
+            **({"not_checked": a["not_checked"]} if a.get("not_checked") else {}),
+            **({"audit_error": a["error"]} if a.get("error") else {}),
         }
     return result
 
@@ -2026,6 +2100,7 @@ def _run_command(a) -> int:
         SCRATCH / checks["dashboard"],
     )
     cube_at = cube_built_at(checks["cube_source_table"], bigquery_rows)
+    audit = audit_rows(checks, SCRATCH / checks["dashboard"] / "workbook.twb")
     try:
         timing_guard(extract_at, cube_at)
         with ExtractSource(hyper) as truth:
@@ -2037,6 +2112,7 @@ def _run_command(a) -> int:
                 rows=set(a.rows.split(",")) if a.rows else None,
                 scope_only=a.scope_only,
                 snapshots={"extract": _local(extract_at), "cube": _local(cube_at)},
+                audit=audit,
             )
     except (TimingError, ScopeError) as e:
         sys.exit(str(e))
