@@ -42,7 +42,13 @@ def _build_run_request(
                 }
             }
         },
-        tags={"dagster/max_runtime": "3600"},
+        # The in-flight guard skips every tick while this run is non-terminal,
+        # so a hung run (e.g. an evicted step pod whose replacement exits on
+        # the duplicate-start guard) freezes intraday syncing until this cap.
+        # Not tighter: a tick after downtime can select every changed table,
+        # and a cap that kills that run keeps the old baselines, so the next
+        # tick selects the same tables and is killed again.
+        tags={"dagster/max_runtime": "1800"},
     )
 
 

@@ -1,16 +1,22 @@
-"""Pins the Focus dlt op's memory limit and the merge that makes it safe.
+"""Pins the Focus dlt op's memory sizing and the merge that makes it safe.
 
 `kippmiami__dlt__focus` reached 92.6% of the shared 2.5Gi step-pod limit
 (~2.31 GiB) on 2026-09-16 and again the day before, both on 8-table sensor
-ticks, which is what the per-asset 3.0Gi override in
-`code_locations/kippmiami/dlt/focus/assets.py` answers. Two silent regressions
-are possible and neither raises on its own, so both are pinned here:
+ticks, which is what the per-asset limit override in
+`code_locations/kippmiami/dlt/focus/assets.py` answers. On 2026-10-08 a
+13-table tick at 2.58 GiB, under that limit but over the shared 2.0Gi request,
+was the first pod the kubelet evicted under node memory pressure, and the
+replacement step pod exited on Dagster's duplicate-start guard, hanging the
+run to its max_runtime. That is what the request override answers. Two silent
+regressions are possible and neither raises on its own, so both are pinned
+here:
 
 1. The override is dropped or retyped in the code location -> the op silently
-   returns to 2.5Gi and the next wide tick OOM-kills.
+   returns to the Helm 2.0Gi request / 2.5Gi limit, and the next wide tick is
+   evicted or OOM-killed.
 2. `dagster_k8s` stops defaulting to `K8sConfigMergeBehavior.DEEP` -> naming
-   only `limits.memory` would replace the whole `resources` dict and silently
-   drop the 1750m cpu limit from `.k8s/dagster/values-override.yaml`.
+   only the memory keys would replace the whole `resources` dict and silently
+   drop the cpu request and limit from `.k8s/dagster/values-override.yaml`.
 
 The code location is read with `ast`, not imported: it resolves `FOCUS_DB`
 credentials eagerly at module scope and those are unset even under pytest (see
@@ -32,7 +38,8 @@ from teamster.libraries.dlt.probe import ProbeTable
 CREDENTIALS = ConnectionStringCredentials("postgresql+psycopg://localhost:5432/db")
 
 K8S_CONFIG_KEY = "dagster-k8s/config"
-EXPECTED_MEMORY_LIMIT = "3.0Gi"
+EXPECTED_MEMORY_LIMIT = "3.5Gi"
+EXPECTED_MEMORY_REQUEST = "3.0Gi"
 
 CODE_LOCATION_ASSETS = (
     pathlib.Path(__file__).parents[2]
@@ -68,17 +75,18 @@ def _code_location_op_tags() -> dict[str, Any]:
     )
 
 
-def test_code_location_pins_the_memory_limit() -> None:
+def test_code_location_pins_the_memory_sizing() -> None:
     resources = _code_location_op_tags()[K8S_CONFIG_KEY]["container_config"][
         "resources"
     ]
 
     assert resources["limits"]["memory"] == EXPECTED_MEMORY_LIMIT
+    assert resources["requests"]["memory"] == EXPECTED_MEMORY_REQUEST
 
     # Memory only, on purpose: anything else here relies on the deep merge
-    # leaving the Helm cpu sizing alone, which the next test is what guards.
+    # leaving the Helm cpu sizing alone, which the last test is what guards.
     assert "cpu" not in resources["limits"]
-    assert "requests" not in resources
+    assert "cpu" not in resources["requests"]
 
 
 def test_op_tags_reach_the_op() -> None:
@@ -120,6 +128,6 @@ def test_memory_only_override_preserves_the_helm_cpu_limit() -> None:
     resources = merged.container_config["resources"]
 
     assert resources == {
-        "requests": {"cpu": "500m", "memory": "2.0Gi"},
+        "requests": {"cpu": "500m", "memory": EXPECTED_MEMORY_REQUEST},
         "limits": {"cpu": "1750m", "memory": EXPECTED_MEMORY_LIMIT},
     }

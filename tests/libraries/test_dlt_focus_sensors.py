@@ -88,7 +88,7 @@ def test_build_run_request_selects_changed_and_passes_signatures() -> None:
             }
         }
     }
-    assert run_request.tags["dagster/max_runtime"] == "3600"
+    assert run_request.tags["dagster/max_runtime"] == "1800"
 
 
 class _FakePipeline:
