@@ -117,7 +117,12 @@
     </worksheet>
     <worksheet name='Levels'>
       <table>
-        <view><datasource-dependencies datasource='federated.abc' /></view>
+        <view>
+          <datasource-dependencies datasource='federated.abc' />
+          <filter class='categorical' column='[federated.abc].[none:gender:nk]'>
+            <groupfilter function='level-members' level='[none:gender:nk]' />
+          </filter>
+        </view>
         <panes><pane><encodings><text column='[federated.abc].[usr:Calculation_abs:qk]' /></encodings></pane></panes>
         <rows>([federated.abc].[none:Calculation_level:nk] / [federated.abc].[none:Calculation_odd:nk])</rows>
         <cols>[federated.abc].[none:School (copy)_1:nk]</cols>
@@ -178,12 +183,20 @@
         <cols>[federated.abc].[:Measure Names]</cols>
       </table>
     </worksheet>
+    <worksheet name='Plain'>
+      <table>
+        <view><datasource-dependencies datasource='federated.abc' /></view>
+        <panes><pane><encodings><text column='[federated.abc].[usr:Calculation_abs:qk]' /></encodings></pane></panes>
+        <rows>[federated.abc].[none:school_abbreviation:nk]</rows>
+        <cols />
+      </table>
+    </worksheet>
   </worksheets>
   <dashboards>
     <dashboard name='Main'>
       <zones>
         <zone name='Codes' /><zone name='Geo' /><zone name='Levels' />
-        <zone name='Shares' /><zone name='Bins' /><zone name='Shown' />
+        <zone name='Shares' /><zone name='Bins' /><zone name='Shown' /><zone name='Plain' />
       </zones>
     </dashboard>
   </dashboards>

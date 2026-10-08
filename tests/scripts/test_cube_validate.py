@@ -1290,6 +1290,7 @@ def test_parameter_branches_parse():
     assert _sheet("Levels").param_dims["Level Column"] == {
         "parameter": "Parameter 1",
         "branches": {"Region": "region", "School": "School", "Network": None},
+        "default": "Region",
     }
 
 
@@ -1568,3 +1569,20 @@ def test_grains_cli_lists_constructs_with_dimension_snippets(capsys):
         "kind": "relabel or rule: decide",
         "cube": None,
     }
+
+
+def test_drill_paths_match_the_field_not_its_label():
+    # The Geo path holds the School copy, so the plain school field is not in it.
+    assert _sheet("Plain").drill_paths == []
+    assert _sheet("Levels").drill_paths == [["region", "School"]]
+
+
+def test_filters_join_only_the_grain_the_sheet_opens_at():
+    levels = _sheet("Levels")
+    assert cv._base_shelf(levels) == ["region", "Odd Column", "School"]
+    grains = cv.propose_grains([levels], "# Absent")
+    assert [g for g in grains if "gender" in g] == [
+        ["region", "Odd Column", "School", "gender"]
+    ]
+    # The same fields in another order are the same cut, queried once.
+    assert len({tuple(sorted(g)) for g in grains}) == len(grains)

@@ -536,9 +536,13 @@ def parse_twb(path: str | Path, dashboards: list[str]) -> list[Sheet]:
         s = Sheet(_attr(w, "name"), placed[_attr(w, "name")])
 
         raw: list[str] = []
+        # (datasource, '[field]') on the shelves: a hierarchy belongs to one field.
+        on_shelf: set[tuple[str, str]] = set()
 
-        def take(text: str, dims: list[str], s=s, raw=raw) -> None:
+        def take(text: str, dims: list[str], s=s, raw=raw, on_shelf=on_shelf) -> None:
             for ds, inner in _TOKEN.findall(text):
+                if m := _INSTANCE.match(inner):
+                    on_shelf.add((ds, f"[{m.group(2)}]"))
                 s.datasource = s.datasource or str(ds_caption.get(ds) or ds)
                 if ds not in raw:
                     raw.append(ds)
@@ -547,6 +551,15 @@ def parse_twb(path: str | Path, dashboards: list[str]) -> list[Sheet]:
                 if kind == "dim" and label not in dims:
                     dims.append(label)
                     if branches:
+                        # The value the sheet opens at: the parameter's current value.
+                        param = book.cols.get(
+                            ("Parameters", f"[{branches['parameter']}]")
+                        )
+                        branches["default"] = (
+                            _tableau_value(_attr(param, "value"))
+                            if param is not None
+                            else None
+                        )
                         s.param_dims[label] = branches
                 elif kind == "measure":
                     s.measures.setdefault(label, formula)
@@ -565,7 +578,7 @@ def parse_twb(path: str | Path, dashboards: list[str]) -> list[Sheet]:
         for ds in raw:
             for fields in book.drill_paths.get(ds, []):
                 labels = [_resolve(columns, ds, n.strip("[]"))[0] for n in fields]
-                if any(d in s.shelf_dims for d in labels):
+                if any((ds, n) in on_shelf for n in fields):
                     s.drill_paths.append(labels)
         for ds, inner in _TOKEN.findall(
             " ".join(c.text or "" for c in w.findall("table/subtotals/column"))
@@ -638,17 +651,44 @@ def _subtotal_grains(s: Sheet, shelf: list[str]) -> list[list[str]]:
     return out
 
 
+def _base_shelf(s: Sheet) -> list[str]:
+    """The grain the sheet opens at: each parameter at its value, drill levels as stored."""
+    out = []
+    for d in s.shelf_dims:
+        p = s.param_dims.get(d)
+        if p is None:
+            out.append(d)
+            continue
+        value = p.get("default")
+        if value not in p["branches"]:
+            value = next(iter(p["branches"]))
+        out.append(p["branches"][value])
+    return _dedupe(out)
+
+
 def propose_grains(sheets: list[Sheet], measure: str) -> list[list[str]]:
-    """The total; each sheet's shelf grains, subtotals, and each filter added."""
+    """The total; each sheet's shelf grains and subtotals; each filter added to the
+    grain the sheet opens at, one at a time."""
     grains: list[list[str]] = [[]]
+    seen = {()}
+
+    def add(g: list[str]) -> None:
+        # The same fields in another order are the same cut.
+        if tuple(sorted(g)) not in seen:
+            seen.add(tuple(sorted(g)))
+            grains.append(list(g))
+
     for s in sheets:
         if measure not in s.measures and measure not in s.measure_aliases:
             continue
         for shelf in _shelves(s):
-            extra = [shelf + [f] for f in s.filter_dims if f not in shelf]
-            for g in [shelf] + _subtotal_grains(s, shelf) + extra:
-                if g not in grains:
-                    grains.append(list(g))
+            for g in [shelf] + _subtotal_grains(s, shelf):
+                add(g)
+        base = _base_shelf(s)
+        add(base)
+        for f in s.filter_dims:
+            if f not in base:
+                add(base + [f])
     return grains
 
 
