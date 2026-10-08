@@ -1284,3 +1284,39 @@ def test_measure_names_alias_is_a_construct():
 
 def test_plain_subtotals_are_grains_not_constructs():
     assert not any(c.kind == "total" for c in _sheet("Geo").constructs)
+
+
+def test_parameter_branches_parse():
+    assert _sheet("Levels").param_dims["Level Column"] == {
+        "parameter": "Parameter 1",
+        "branches": {"Region": "region", "School": "School", "Network": None},
+    }
+
+
+def test_grains_expand_parameter_branches_and_drill_levels():
+    grains = cv.propose_grains(
+        cv.parse_twb(FIX / "constructs.twb", ["Main"]), "# Absent"
+    )
+    assert ["region", "Odd Column"] in grains
+    assert ["region", "School", "Odd Column"] in grains
+    assert not any("Level Column" in g for g in grains)
+
+
+def test_grains_add_drill_levels_and_subtotals():
+    geo = _sheet("Geo")
+    assert cv._shelves(geo) == [
+        ["region", "Calendardate@year"],
+        ["region", "School", "Calendardate@year"],
+    ]
+    assert cv._subtotal_grains(geo, ["region", "School", "Calendardate@year"]) == [
+        ["region", "Calendardate@year"]
+    ]
+
+
+def test_grains_include_sheets_showing_the_measure_under_an_alias():
+    # region heads the Geo drill path, so the sheet also drills down to School.
+    assert cv.propose_grains([_sheet("Shown")], "Absences Shown") == [
+        [],
+        ["region"],
+        ["region", "School"],
+    ]
