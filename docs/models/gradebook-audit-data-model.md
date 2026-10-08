@@ -235,11 +235,13 @@ Walters built it and owns it. Dagster refreshes its extract daily at 4 AM, from
 the exposure's `cron_schedule`.
 
 Its two gradebook views are **Gradebook School Rollup** and **Gradebook Teacher
-View**. Both read `rpt_tableau__gradebook_audit`, documented below. The
-workbook's GPA views read four other models and are documented on the Academic
-Health data model page (`docs/models/academic-health-data-model.md`); this page
-does not describe them. View-by-view documentation of the gradebook views is for
-Walters to add.
+View**. Both read `rpt_tableau__gradebook_audit`, documented below. A third view
+checks elementary end-of-quarter comments and reads
+`rpt_tableau__gradebook_es_comments`, which sits outside the audit (see
+_Supporting models_). The workbook's GPA views read four other models and are
+documented on the Academic Health data model page
+(`docs/models/academic-health-data-model.md`); this page does not describe them.
+View-by-view documentation of the gradebook views is for Walters to add.
 
 Two disabled exposures, `gradebook_audit` and `gradebook_audit_teacher_report`,
 also name `rpt_tableau__gradebook_audit`. They point at retired workbooks; do
@@ -616,10 +618,10 @@ In the family:
 - `int_extracts__gradebook_audit_student_flags`: the two student flags, one row
   per student, section and quarter, unfiltered. A table in the `extracts`
   schema, built at 3 AM.
-- `rpt_tableau__gradebook_es_comments`: belongs to the older Gradebook and GPA
-  Dashboard, which the Academic & Gradebook Health Suite replaced; its refresh
-  is being turned off, and Walters decides when to retire it. It is not part of
-  this audit.
+- `rpt_tableau__gradebook_es_comments`: the elementary end-of-quarter comment
+  check behind the Health Suite's elementary comments view. Elementary schools
+  do not enter gradebook assignments, so this is their only gradebook signal. It
+  is not part of this audit and carries none of its flags.
 
 Shared upstreams, maintained elsewhere:
 
