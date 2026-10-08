@@ -8,6 +8,7 @@ on:
     paths:
       - .github/workflows/mkdocs-gh-deploy.yaml
       - .claude/rules/dbt-architecture.md
+      - .claude/rules/dbt-marts.md
       - .claude/rules/dbt-sql.md
       - docs/**
       - mkdocs.yml

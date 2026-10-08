@@ -15,7 +15,7 @@ strict-chain rule — no diamond paths to a shared ancestor dim.
 
 The column-naming rubric (R1-R10), degenerate-dim rule, plumbing definition,
 strict-chain traversal, and PK/FK/date column shapes live in
-`.claude/rules/dbt-architecture.md` → _Marts_.
+`.claude/rules/dbt-marts.md`.
 
 ## Filing follow-up issues from marts work
 
@@ -36,7 +36,7 @@ Run before posting the final PR comment on any marts PR (spec, bugfix,
 refactor):
 
 - Scan touched models for diamond paths (_Strict-chain traversal_ in
-  `.claude/rules/dbt-architecture.md`).
+  `.claude/rules/dbt-marts.md`).
 - Scan touched models for column-naming rubric violations (R1–R10).
 - Pull marts-model warnings from the latest CI run
   (`mcp__dbt__get_job_run_error` with `warning_only=true`). For each, search
@@ -315,7 +315,8 @@ Validate the hash by checking the join row count reconciles before trusting it.
 
 - Reporting views (`rpt_*`) — live under `extracts/`.
 - Source-system cleanup — happens in `staging/` and `intermediate/`.
-- Plumbing (see definition above) — never leaks to a mart SELECT (R8).
+- Plumbing (_Plumbing definition_ in `.claude/rules/dbt-marts.md`) — never leaks
+  to a mart SELECT (R8).
 
 ## Spec authoring context
 

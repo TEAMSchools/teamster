@@ -13,6 +13,8 @@ swept.
 
 --8<-- ".claude/rules/dbt-architecture.md:architecture"
 
+--8<-- ".claude/rules/dbt-marts.md:marts"
+
 --8<-- ".claude/rules/dbt-sql.md:sql-style"
 
 ## Reference

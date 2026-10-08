@@ -75,8 +75,9 @@ jobs:
 
             For SQL and dbt changes, read .claude/rules/dbt-architecture.md and
             .claude/rules/dbt-sql.md with the Read tool, plus src/dbt/CLAUDE.md
-            and the nearest per-project CLAUDE.md. Check the changed models
-            against every rule (A1-A11, S1-S18) and the review rubric in
+            and the nearest per-project CLAUDE.md; for a mart change, also read
+            .claude/rules/dbt-marts.md. Check the changed models against every
+            rule (A1-A11, S1-S18, and R1-R10 for marts) and the review rubric in
             dbt-sql.md. Cite the rule ID (for example "S10") in every SQL or dbt
             finding. Do not report a violation of a rule enforced only by
             sqlfluff; the Trunk check reports those. Apply the rules to models

@@ -161,9 +161,6 @@ comments beyond the block you are editing only when asked.
 **All intermediate models must**:
 
 1. Have a uniqueness test
-2. Not be consumed directly by external tools or reports — a reporting view
-   (`rpt_*`) must always sit between an intermediate model and an external
-   consumer, buffering external dependencies from internal schema evolution
 
 **All `rpt_`, `dim_*`, and `fct_*` models must**:
 

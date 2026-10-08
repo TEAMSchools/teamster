@@ -447,8 +447,8 @@ snapshot — before removing it.
   `models/extracts/`.
 - **`dim_*` / `fct_*`** — dimensional marts for semantic layer. Live in
   `models/marts/`. The column-naming rubric and strict-chain rules are in
-  `.claude/rules/dbt-architecture.md`; hash-change discipline and mart
-  operations are in `src/dbt/kipptaf/models/marts/CLAUDE.md`.
+  `.claude/rules/dbt-marts.md`; hash-change discipline and mart operations are
+  in `src/dbt/kipptaf/models/marts/CLAUDE.md`.
 
 New KIPP Forward Google Sheets extracts take the `rpt_gsheets__kfwd_` prefix.
 Existing models use both `kfwd_` and `kippfwd_`; `kfwd_` is the going-forward
