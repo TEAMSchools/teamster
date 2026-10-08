@@ -6,7 +6,9 @@ on:
     paths:
       - src/dbt/**
       - scripts/check_dbt_standard.py
+      - scripts/check_sql_banned_syntax.py
       - tests/scripts/test_check_dbt_standard.py
+      - tests/scripts/test_check_sql_banned_syntax.py
       - .github/workflows/dbt-standard.yaml
 
 concurrency:
@@ -40,8 +42,12 @@ jobs:
       # https://github.com/astral-sh/setup-uv
       - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
 
-      - name: Test the checker
-        run: uv run pytest tests/scripts/test_check_dbt_standard.py -q
+      # The tests don't depend on the project, so 1 matrix leg runs them.
+      - name: Test the checkers
+        if: matrix.project == 'kipptaf'
+        run: >-
+          uv run pytest tests/scripts/test_check_dbt_standard.py
+          tests/scripts/test_check_sql_banned_syntax.py -q
 
       # --no-renames: a renamed model must show as added, or A3 and A4 skip it.
       - name: Diff against the base branch

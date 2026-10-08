@@ -250,9 +250,16 @@ def _line(code: str, offset: int) -> int:
     return code.count("\n", 0, offset) + 1
 
 
+# Keys a mart role-plays under a prefix (submitter_staff_key). Other entities
+# carry suffix-alike keys of their own (grades_term_key is not term_key).
+_ROLE_PLAYED = ("staff_key", "student_key")
+
+
 def _macro_for(alias: str) -> str | None:
-    for key in KEY_MACROS:
-        if alias == key or alias.endswith("_" + key):
+    if alias in KEY_MACROS:
+        return alias
+    for key in _ROLE_PLAYED:
+        if alias.endswith("_" + key):
             return key
     return None
 
@@ -396,6 +403,8 @@ def load_baseline(path: Path) -> dict[Key, str]:
         rows = csv.reader(f, delimiter="\t")
         next(rows, None)
         for row in rows:
+            if not row:
+                continue
             row += [""] * (4 - len(row))
             out[(row[0], row[1], row[2])] = row[3].strip()
     return out

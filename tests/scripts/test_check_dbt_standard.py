@@ -477,6 +477,7 @@ def test_a7_direct_hash_of_macro_key(code) -> None:
     [
         "select\n    {{ staff_key('employee_number') }} as staff_key,\nfrom t\n",
         f"select\n    {SK} as assessment_score_key,\nfrom t\n",
+        f"select\n    {SK} as grades_term_key,\nfrom t\n",
     ],
 )
 def test_a7_passes_macro_call_and_keys_without_macro(code) -> None:
@@ -533,6 +534,12 @@ def test_load_baseline_and_compare(tmp_path) -> None:
     assert [x.model for x in new] == ["kipptaf.new"]
     assert stale == [("kipptaf.gone", "A1", "kipptaf.p")]
     assert missing == [("kipptaf.b", "A1", "kipptaf.p")]
+
+
+def test_load_baseline_skips_blank_lines(tmp_path) -> None:
+    f = tmp_path / "b.tsv"
+    f.write_text("model\trule\tdetail\tissue\nkipptaf.a\tA1\tkipptaf.p\t#1\n\n")
+    assert mod.load_baseline(f) == {("kipptaf.a", "A1", "kipptaf.p"): "#1"}
 
 
 DIFF = """diff --git a/src/dbt/kipptaf/models/a.sql b/src/dbt/kipptaf/models/a.sql
