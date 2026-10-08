@@ -68,9 +68,16 @@ rows:
       - cube: pct_ontime
         kind: rate
         num:
+          sum(if(school_level = 'OD' or is_present = 0, null, if(att_code in
+          ('ET', 'T', 'T10', 'TLE'), 0, 1)))
+        den: countif(school_level != 'OD' and is_present != 0)
+        # The Attendance Metric sheets drop out-of-district students (School Level -
+        # OOD Filter Set excludes school_level = 'OD'); Cube has no member for that.
+        missing_members: [out_of_district]
+        num_without:
           sum(if(is_present = 0, null, if(att_code in ('ET', 'T', 'T10', 'TLE'),
           0, 1)))
-        den: countif(is_present != 0)
+        den_without: countif(is_present != 0)
     grains:
       - []
       - [grade_level]
@@ -232,8 +239,13 @@ rows:
     metrics:
       - cube: avg_daily_attendance
         kind: rate
-        num: sum(is_present)
-        den: count(*)
+        num: sum(if(school_level != 'OD', is_present, 0))
+        den: countif(school_level != 'OD')
+        # The Attendance Metric sheets drop out-of-district students (School Level -
+        # OOD Filter Set excludes school_level = 'OD'); Cube has no member for that.
+        missing_members: [out_of_district]
+        num_without: sum(is_present)
+        den_without: count(*)
     grains:
       - []
       - [grade_level]
@@ -339,7 +351,11 @@ rows:
     metrics:
       - cube: count_students
         kind: count
-        sql: count(distinct student_number)
+        sql: count(distinct if(school_level != 'OD', student_number, null))
+        # The Attendance Metric sheets drop out-of-district students (School Level -
+        # OOD Filter Set excludes school_level = 'OD'); Cube has no member for that.
+        missing_members: [out_of_district]
+        sql_without: count(distinct student_number)
     grains:
       - []
       - [school, grade_level]

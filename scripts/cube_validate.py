@@ -567,11 +567,14 @@ def run_dashboard(checks, cube_load, bq, today, rows=None, scope_only=False) -> 
                     metrics.append(m)
 
     outcomes = {}
-    for (view, table, g), metrics in jobs.items():
+    for step_no, ((view, table, g), metrics) in enumerate(jobs.items(), 1):
         grain = [dims[n] for n in g]
+        step = f"[{step_no}/{len(jobs)}] {view} {_label(g)}"
         if any(d.cube is None for d in grain):
+            print(f"{step}: not comparable", file=sys.stderr, flush=True)
             outcomes[(view, table, g)] = {"status": "not_comparable"}
             continue
+        print(step, file=sys.stderr, flush=True)
         try:
             crows, preaggs = cube_load(
                 cube_query(

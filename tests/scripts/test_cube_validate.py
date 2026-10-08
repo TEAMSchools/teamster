@@ -703,3 +703,10 @@ def test_run_dashboard_flags_missing_members(tmp_path):
     )
     latest = json.loads((tmp_path / "out" / "latest.json").read_text())
     assert latest["rows"]["1"]["missing_members"] == ["team"]
+
+
+def test_run_dashboard_prints_progress_per_query(capsys):
+    cv.run_dashboard(_checks(), FakeCube(), FakeBQ(), TODAY)
+    err = capsys.readouterr().err
+    assert "[1/5] demo_view total" in err
+    assert "[4/5] demo_view region x team: not comparable" in err
