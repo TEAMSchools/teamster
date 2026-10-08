@@ -310,3 +310,17 @@ as follows, and PR 2's manifest check builds from this list.
   (S12) rather than deduping the output.
 - A7 applies only to entities with a key macro. PR 2 applies it to every entity
   it writes a macro for.
+
+## Revision 2026-10-08: domain folders live in the check script
+
+A `+meta: {layer: domain}` tag in `dbt_project.yml` marks every model in the
+folder `state:modified` (tagging `topline` alone added its models to the
+modified set), so CI would rebuild each tagged folder. The section 5 fallback
+applies: the domain folders are a `DOMAIN_FOLDERS` constant in
+`scripts/check_dbt_standard.py`, and A11 now says to add a folder there.
+
+- The list is the starting 9 folders plus `performance_management`, whose `int_`
+  models read people and SchoolMint Grow.
+- The "more than 1 source system" clause is dropped. A kipptaf `int_` is domain
+  only when its folder is listed; cross-source models in source folders
+  (`int_kippadb__roster`) are source `int_`, and their edges go to the baseline.

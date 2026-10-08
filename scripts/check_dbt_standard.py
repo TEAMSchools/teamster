@@ -41,7 +41,23 @@ _PREFIXES = [
     ("snapshot_", "snapshot"),
 ]
 
-# Config inputs, not a second source system (interim domain test).
+# kipptaf folders whose int_ models are domain intermediates (A11). Kept here,
+# not as a dbt_project.yml +meta tag: a tag marks every model in the folder
+# state:modified and fans out dbt Cloud CI.
+DOMAIN_FOLDERS = {
+    "assessments",
+    "extracts",
+    "finance",
+    "gpa",
+    "people",
+    "performance_management",
+    "reporting",
+    "students",
+    "surveys",
+    "topline",
+}
+
+# Config inputs a source intermediate may read beside its own folder.
 _CONFIG_FOLDERS = {"google"}
 
 
@@ -103,14 +119,7 @@ def layer_of(node: dict, manifest: dict, project: str, domain_folders: set[str])
         return layer
     if project != "kipptaf":
         return "source_int"
-    if source_folder(node) in domain_folders:
-        return "domain_int"
-    folders = {
-        source_folder(p)
-        for p in _parents(manifest, node)
-        if p["resource_type"] != "source"
-    }
-    return "domain_int" if len(folders - _CONFIG_FOLDERS) > 1 else "source_int"
+    return "domain_int" if source_folder(node) in domain_folders else "source_int"
 
 
 def _allowed(
@@ -450,17 +459,10 @@ def main(argv: list[str] | None = None) -> int:
         Path(args.manifest or project_dir / "target/manifest.json").read_text()
     )
     baseline_path = Path(args.baseline or project_dir / "standard-baseline.tsv")
-    domain_folders = {
-        source_folder(n)
-        for n in manifest["nodes"].values()
-        if n["resource_type"] == "model"
-        and n["package_name"] == "kipptaf"
-        and n["config"].get("meta", {}).get("layer") == "domain"
-    }
 
     edges = [
         v
-        for v in check_edges(manifest, project, domain_folders)
+        for v in check_edges(manifest, project, DOMAIN_FOLDERS)
         if v.rule not in _exempt_rules(manifest, v.model)
     ]
     baseline = load_baseline(baseline_path) if baseline_path.exists() else {}
@@ -473,7 +475,7 @@ def main(argv: list[str] | None = None) -> int:
     touched = []
     if args.diff:
         changed, added = parse_diff(Path(args.diff).read_text(), args.project_dir)
-        touched = check_touched(manifest, project, changed, added, domain_folders)
+        touched = check_touched(manifest, project, changed, added, DOMAIN_FOLDERS)
 
     for v in [*new, *touched]:
         print(f"::{v.severity} title={v.rule}::{v.message}")

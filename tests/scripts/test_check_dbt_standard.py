@@ -218,24 +218,29 @@ def test_stg_union_view_over_district_stg_source_passes() -> None:
     assert violations(district_stg, union) == []
 
 
-def test_int_reading_two_source_folders_is_domain() -> None:
+def test_int_reading_two_source_folders_outside_domain_is_source_int() -> None:
     node = model(
         "int_kippadb__roster",
         "models/kippadb/intermediate/b.sql",
         [uid(STG_PS), uid(STG_DL)],
     )
     m = manifest(*BASE, node)
-    assert mod.layer_of(node, m, "kipptaf", DOMAIN) == "domain_int"
-
-
-def test_google_sheets_parent_is_not_a_second_folder() -> None:
-    node = model(
-        "int_powerschool__y",
-        "models/powerschool/intermediate/b.sql",
-        [uid(STG_PS), uid(STG_GS)],
-    )
-    m = manifest(*BASE, node)
     assert mod.layer_of(node, m, "kipptaf", DOMAIN) == "source_int"
+
+
+def test_domain_folders_constant() -> None:
+    assert mod.DOMAIN_FOLDERS == {
+        "assessments",
+        "extracts",
+        "finance",
+        "gpa",
+        "people",
+        "performance_management",
+        "reporting",
+        "students",
+        "surveys",
+        "topline",
+    }
 
 
 def test_base_is_classified_like_int() -> None:

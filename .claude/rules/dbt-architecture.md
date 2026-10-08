@@ -18,23 +18,17 @@ SQL style rules are in `.claude/rules/dbt-sql.md`.
 
 Data flows from source to consumer through these layers. Each layer has 1 job.
 
-| Layer         | Does                                                                                                           | Lives in (kipptaf)                      |
-| ------------- | -------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
-| `stg_`        | 1 source table: rename, cast, filter soft-deletes, dedup source duplicates, unpivot a source that arrives wide | `<source>/staging/`                     |
-| Source `int_` | Logic within 1 source system                                                                                   | `<source>/intermediate/`                |
-| Domain `int_` | Cross-source business entities and identity resolution                                                         | Folders tagged `+meta: {layer: domain}` |
-| Marts         | `dim_`, `fct_`, `bridge_`: the core every consumer reads                                                       | `marts/`                                |
-| `rpt_`        | Thin shaping of marts for 1 tool, including that tool's pivots                                                 | `extracts/<tool>/`                      |
+| Layer         | Does                                                                                                           | Lives in (kipptaf)       |
+| ------------- | -------------------------------------------------------------------------------------------------------------- | ------------------------ |
+| `stg_`        | 1 source table: rename, cast, filter soft-deletes, dedup source duplicates, unpivot a source that arrives wide | `<source>/staging/`      |
+| Source `int_` | Logic within 1 source system                                                                                   | `<source>/intermediate/` |
+| Domain `int_` | Cross-source business entities and identity resolution                                                         | Domain folders (A11)     |
+| Marts         | `dim_`, `fct_`, `bridge_`: the core every consumer reads                                                       | `marts/`                 |
+| `rpt_`        | Thin shaping of marts for 1 tool, including that tool's pivots                                                 | `extracts/<tool>/`       |
 
 Source packages hold `stg_` and source `int_` only. District projects hold
 package config, district-only source models, and `rpt_` wrappers over kipptaf
 extracts. Cross-region business logic lives only in kipptaf.
-
-Until the domain tags land, a kipptaf `int_` counts as domain `int_` when it
-sits in a top-level folder not named for a source system (`students/`,
-`people/`, `topline/`, `extracts/`), or when it reads more than 1 source system.
-A Google Sheets config input (`stg_google_sheets__*` or `int_google_sheets__*`)
-does not count as a second source system.
 
 ### Allowed edges
 
@@ -169,15 +163,17 @@ When 2 models both union regional datasets, add
 - Bad: `on a.student_number = b.student_number` between 2 cross-region unions.
 - Enforced by: review.
 
-#### A11. Domain folders are tagged
+#### A11. Domain folders are listed
 
-A kipptaf folder holding domain `int_` models carries `+meta: {layer: domain}`
-in `dbt_project.yml`. Adding a domain is normal: add the folder and its tag in 1
-PR.
+A kipptaf folder holding domain `int_` models is listed in `DOMAIN_FOLDERS` in
+`scripts/check_dbt_standard.py`. Every other `int_` is a source `int_`. Adding a
+domain is normal: add the folder and its list entry in 1 PR.
 
-- Why: the tag is how the check tells a domain `int_` from a source `int_`.
-- Good: `students: +meta: {layer: domain}`.
-- Bad: a new `enrollments/` folder of cross-source models with no tag.
+- Why: the list is how the check tells a domain `int_` from a source `int_`. It
+  lives in the script, not in `dbt_project.yml`, because a `+meta` tag marks
+  every model in the folder modified and rebuilds them all in CI.
+- Good: `"students"` in `DOMAIN_FOLDERS`.
+- Bad: a new `enrollments/` folder of cross-source models missing from the list.
 - Enforced by: `dbt-layer-check`.
 
 <!-- --8<-- [end:architecture] -->
