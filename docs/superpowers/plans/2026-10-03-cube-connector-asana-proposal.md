@@ -1,367 +1,413 @@
-# Asana Restructure Proposal: Data Marts + Semantic Layer
+# Asana Plan: Dates for Data Marts + Semantic Layer
 
 Refs [#5673](https://github.com/TEAMSchools/teamster/issues/5673). Builds on the
 [gap catalog](2026-10-02-cube-gap-catalog.md).
 
-This is a proposal for the Asana project's owner to approve. Nothing in Asana
-changes until it is approved. Dates come from the SY26-27 project plan and go in
-only after that plan is approved too.
+The Asana project was restructured on Oct 8, 2026: workstream sections, one
+milestone per plan milestone (M0 to M5.5), dashboard tasks with a subtask per
+measure and dimension, and a six-step transition checklist on each key
+dashboard. This plan gives every open task in that structure a due date, taken
+from the SY26-27 project plan as of Oct 8. Only one milestone (M4.4) has a date
+today, so the
+[semantic layer status page](https://teamschools.github.io/teamster/launch/semantic-layer/)
+shows an empty timeline.
 
-## What changes
-
-- Sections are grouped by the plan's five workstreams. Asana has no nested
-  sections, so a numeric prefix does the nesting: the per-domain sections stay,
-  renamed to sit under workstream 1 (`1 · Assessments`, `1 · Grades/GPA`).
-- Each plan milestone gets an Asana milestone task.
-- Work outside workstream 1 (enablement, the plugin, team capacity, sustainment)
-  gets tasks. Most of it has none today.
-- Key-dashboard tasks get the same six done-gate subtasks.
-- Per-dashboard tasks are backfilled and corrected from the gap catalog.
-- Small pieces we postpone, or that could be retired from a dashboard, go in a
-  deferral log in the parking-lot section, one task per item, reviewed at fixed
-  points so none is lost.
-- Nothing is deleted. Completed tasks keep their history, and the `Open Issues`
-  rollups (one subtask per GitHub issue) stay as they are.
+Nothing in Asana changes until this plan is approved.
 
 ## Roles
 
-Owners are named by role here. The internal project plan maps roles to people.
+Owners are named by role. The internal project plan maps roles to people.
 
-| Role                 | Owns                                                                                                                           |
-| -------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| Project lead         | Governance; workstreams 3 (platform) and 4 (capacity); the grades/GPA and student-dashboard builds; the key-dashboard rebuilds |
-| Cube/mart lead       | Workstream 1 (domain build, permissioning)                                                                                     |
-| Enablement lead      | Workstream 2 (enablement, communications, support); Claude administrator for the org                                           |
-| Engineering reviewer | Code approval; clearing marts V1 for production use; co-leads data team training                                               |
-| Analysts             | Zendesk, recruitment and surveys; the internal plan names each builder                                                         |
-| New analyst          | Enrollment domain, starting with the FRESH metric set; the project lead stands in until the hire                               |
-| Data director        | Most project calls; reviews the student persistence charter's data needs before ops starts                                     |
-| Sustainment owner    | Workstream 5; not yet decided                                                                                                  |
+| Role                 | Owns                                                                                                     |
+| -------------------- | -------------------------------------------------------------------------------------------------------- |
+| Project lead         | Governance; workstreams 3 and 4; the grades/GPA and student-dashboard builds; the key-dashboard rebuilds |
+| Cube/mart lead       | Workstream 1 (domain build, permissioning); approves Cube YAML                                           |
+| Enablement lead      | Workstream 2 (enablement, communications, support); owns assessments from Dec 18                         |
+| Engineering reviewer | Mart code approval; 48-hour pull request reviews                                                         |
+| Data director        | Most project calls; the student persistence review                                                       |
+| Analysts             | Zendesk, recruitment and surveys                                                                         |
+| New analyst          | The FRESH enrollment metric set; the project lead stands in until the hire                               |
 
-## Current state (2026-10-03)
+## The timeline
 
-The project has 18 sections and 152 tasks: 64 complete, 88 open.
+Every date is a Friday unless noted. Winter break is assumed to run Dec 21, 2026
+to Jan 1, 2027; it has not been checked against the school calendar.
 
-- `Team Meeting Agendas & Notes`: added Oct 5; one agenda task per weekly
-  meeting, with an update subtask per team member.
-- `Untitled section`: 11 tasks, all complete (spring and summer setup work).
-- `Training & Pilots`: 1 open task (intro-to-the-marts session).
-- `Platform & Tooling`: 1 rollup with 6 GitHub issues.
-- `Access & Security`: 3 complete tasks and 1 rollup with 12 GitHub issues.
-- `Conformed Dimensions`: 5 complete cubes and 1 rollup.
-- 13 domain sections. Each mixes three kinds of task: planned cube names
-  (`attendance_interventions`), measure names
-  (`assessments.dibels_pm_mastery_rate`), and per-dashboard tasks with subtasks.
+| Domain                          | Data work (marts)                  | Built in Cube | Matches, privacy review, Tableau rebuild | Verified | Pilot run         | Launched |
+| ------------------------------- | ---------------------------------- | ------------- | ---------------------------------------- | -------- | ----------------- | -------- |
+| Assessments                     | Oct 23 to Nov 20 (see Assessments) | Dec 4         | Dec 11                                   | Dec 18   | Nov 20 (cohort 2) | Jan 15   |
+| Ops (attendance, Ops Dashboard) | Jan 15 to Feb 12                   | Feb 19        | Feb 26                                   | Feb 26   | Mar 12            | Mar 26   |
+| Ops: FRESH metric set           | Feb 19                             | Feb 19        | No dashboard rebuild                     | Feb 26   | None              | With ops |
+| Grades/GPA                      | Mar 12                             | Apr 9         | Apr 16                                   | Apr 16   | May 7             | May 14   |
+| Student dashboards              | Apr 30                             | May 14        | May 21                                   | May 21   | None in the plan  | Jun 4    |
+| Zendesk                         | Dec 18                             | Jan 15        | Jan 29                                   | Jan 29   | Feb 5 (proposed)  | Feb 12   |
+| Recruitment                     | Feb 12                             | Feb 26        | Mar 12                                   | Mar 12   | Mar 19 (proposed) | Mar 26   |
+| Surveys                         | Mar 19                             | Apr 2         | Apr 16                                   | Apr 16   | Apr 23 (proposed) | Apr 30   |
+| Observations                    | Apr 16                             | Apr 30        | May 14                                   | May 14   | May 21 (proposed) | May 28   |
 
-## Proposed sections
+Recruitment depends on the Oct 16 decision on whether it stays an analyst-built
+domain. The plan has no pilot date for the four analyst-built domains; the
+proposed dates sit one week before each launch.
 
-Renames keep the section's GID, so no task moves unless the table says so.
+Other anchors: charter sent Oct 16 and signed off Oct 23; usage logging and the
+eval loop live Nov 20; org plugin beta Jan 15; midpoint review and
+stretch-domain decision Feb 26; project close Jun 25, 2027.
 
-| Proposed section                        | From (current GID)                                           | Owner role      |
-| --------------------------------------- | ------------------------------------------------------------ | --------------- |
-| `0 · Governance`                        | New                                                          | Project lead    |
-| `0 · Team meetings`                     | Rename `Team Meeting Agendas & Notes` (1219135049882042)     | Project lead    |
-| `1 · Shared dimensions and groupings`   | Rename `Conformed Dimensions` (1214075447592585)             | Cube/mart lead  |
-| `1 · Permissioning`                     | Rename `Access & Security` (1216570201249194)                | Cube/mart lead  |
-| `1 · Assessments`                       | Rename `Assessments` (1214075610424617)                      | Cube/mart lead  |
-| `1 · Ops: attendance`                   | Rename `Attendance` (1214075610424635)                       | Cube/mart lead  |
-| `1 · Ops: enrollment and Ops Dashboard` | Rename `Students` (1214075447592591)                         | Cube/mart lead  |
-| `1 · Student dashboards`                | New; receives 3 dashboard tasks from `Students`              | Project lead    |
-| `1 · Grades/GPA`                        | Rename `Grades` (1214075447593626)                           | Project lead    |
-| `1 · Zendesk`                           | Rename `Support` (1214073246940447)                          | Analysts        |
-| `1 · Recruitment`                       | Rename `Talent` (1214075447593645)                           | Analysts        |
-| `1 · Surveys`                           | Rename `Surveys` (1214075447593632)                          | Analysts        |
-| `1 · Observations`                      | Rename `Observations` (1214075610424625)                     | Cube/mart lead  |
-| `1 · Stretch: Behavior`                 | Rename `Behavior` (1214075610424641)                         | Cube/mart lead  |
-| `1 · Stretch: Staff`                    | Rename `Staff` (1214075447592604)                            | Cube/mart lead  |
-| `1 · Stretch: Postsecondary`            | Rename `Postsecondary` (1214075447593641)                    | Cube/mart lead  |
-| `1 · Ops: student recruitment (FRESH)`  | Rename `Student Recruitment & Enrollment` (1214073246940448) | New analyst     |
-| `1 · Stretch: Stipends and cert`        | Rename `Stipends and Cert` (1214073491303334)                | Cube/mart lead  |
-| `2 · Enablement, comms and support`     | Rename `Training & Pilots` (1219071017452217)                | Enablement lead |
-| `3 · Delivery platform`                 | Rename `Platform & Tooling` (1219071017452190)               | Project lead    |
-| `4 · Team capacity`                     | New                                                          | Project lead    |
-| `5 · Sustainment`                       | New                                                          | Not yet decided |
-| `Parking lot and outside the core set`  | New                                                          | Project lead    |
-| `Archive: before SY26-27`               | Rename `Untitled section` (1213735218595735)                 | Project lead    |
+## How dates are assigned
 
-The stretch sections keep their tasks as they are until the midpoint review on
-the stretch domains. A domain that is not picked stays in its stretch section.
+1. **Milestones** take the plan's milestone date.
+2. **Tasks a milestone depends on** take the date of the matching plan row, or
+   the milestone's date when no row matches.
+3. **Dashboard tasks** are due on their domain's verification date. The
+   verification milestones depend on the dashboard tasks, so a later date would
+   block them. The launch is tracked on the dashboard's `Launched` checklist
+   subtask.
+4. **Checklist subtasks** on key dashboards take the domain's step dates from
+   the timeline table. Asana lists `Pilot run` before
+   `Rebuilt in Tableau on Cube`; the dates follow the plan, where the rebuild
+   comes first for every domain except assessments.
+5. **Measure and dimension subtasks** are due on the domain's `Built in Cube`
+   date, except the measures listed under "Measure-level exceptions".
+6. **Mart tasks** (`fct_`, `dim_`, `bridge_`) take the date of the plan row that
+   names them, or two weeks before the domain's `Built in Cube` date.
+7. **No date:** the four stretch sections until the Feb 26 decision, the parking
+   lot, the `Open Issues` rollup tasks (their child issues are dated where a
+   milestone needs them), the team meeting tasks, and completed tasks.
+8. **An existing Asana date that is earlier than the plan stays.** Later ones
+   are listed under "Conflicts to resolve".
 
-### Task moves
+## Milestones
 
-| Task (GID)                                             | From              | To                                     | Why                                    |
-| ------------------------------------------------------ | ----------------- | -------------------------------------- | -------------------------------------- |
-| High School Early Warning Dashboard (1213823922414217) | Students          | `1 · Student dashboards`               | Needs ops and grades first             |
-| Promotional Status Dashboard (1213823922758693)        | Students          | `1 · Student dashboards`               | Needs ops and grades first             |
-| Data Quality Dashboard (1213823788719391)              | Students          | `1 · Student dashboards`               | Same group in the plan                 |
-| Newark Home Instruction Tracker (1213823922719414)     | Students          | `Parking lot and outside the core set` | Not a verified launch-page dashboard   |
-| Miami Instructional Rubrics (1213823907851094)         | Observations      | `Parking lot and outside the core set` | Not a verified launch-page dashboard   |
-| Intro-to-the-marts session (1218341753451039)          | Training & Pilots | `4 · Team capacity`                    | Training the data team is workstream 4 |
+| Milestone                                                  | GID              | Owner role           | Due                        |
+| ---------------------------------------------------------- | ---------------- | -------------------- | -------------------------- |
+| M0 Plan approved                                           | 1219235228654243 | Project lead         | Oct 23, 2026               |
+| M1.1 Assessments verified, DDI Suite rebuilt               | 1219235308365063 | Cube/mart lead       | Dec 18, 2026               |
+| M1.2 Ops verified                                          | 1219235025077769 | Cube/mart lead       | Feb 26, 2027               |
+| M1.3 Grades/GPA verified                                   | 1219235025827628 | Project lead         | Apr 16, 2027               |
+| M1.4 Student dashboards covered                            | 1219235307785677 | Project lead         | May 21, 2027               |
+| M1.5 Analyst-built domains verified                        | 1219235229132440 | Cube/mart lead       | May 14, 2027               |
+| M1.6 Stretch-domain decision                               | 1219235058907087 | Cube/mart lead       | Feb 26, 2027               |
+| M1.7 Permissioning ready for each launch                   | 1219235308167839 | Cube/mart lead       | Jan 15, 2027               |
+| M2.1 Domain owners named                                   | 1219235308627079 | Enablement lead      | Feb 26, 2027               |
+| M2.2 Support boundary published                            | 1219234963765039 | Enablement lead      | Nov 13, 2026               |
+| M2.3 Standard pilot kit                                    | 1219235025198061 | Enablement lead      | Nov 6, 2026                |
+| M2.4 Cohort 2 onboarded                                    | 1219235025704269 | Project lead         | Nov 20, 2026               |
+| M2.5 Launch package per domain                             | 1219235025604113 | Enablement lead      | Jun 4, 2027                |
+| M2.6 Org-wide engagement plan                              | 1219234963582140 | Enablement lead      | Nov 20, 2026               |
+| M2.7 Ongoing onboarding cycle                              | 1219235307438415 | Enablement lead      | Apr 30, 2027               |
+| M3.1 Org plugin (beta) replaces project-knowledge delivery | 1219235116996473 | Project lead         | Jan 15, 2027               |
+| M3.2 Usage logging and eval loop live                      | 1219235308676955 | Project lead         | Nov 20, 2026               |
+| M3.3 Test-question sets                                    | 1219235025703849 | Project lead         | May 14, 2027               |
+| M4.1 Build standards written                               | 1219235308629473 | Cube/mart lead       | Jan 8, 2027                |
+| M4.2 Data team trained                                     | 1219235329945594 | Cube/mart lead       | Nov 13, 2026               |
+| M4.3 Cube/mart creation skill shipped                      | 1219235059624720 | Cube/mart lead       | Jan 15, 2027               |
+| M4.4 Review path that scales                               | 1219235024629036 | Engineering reviewer | Dec 18, 2026 (already set) |
+| M4.5 Every analyst ships one reviewed view                 | 1219235025270542 | Project lead         | May 28, 2027               |
+| M4.6 New analyst onboarded into mart and cube work         | 1219235307683522 | Project lead         | The hire date, once known  |
+| M5.1 Drift rule adopted                                    | 1219235228890789 | Not yet decided      | Jan 15, 2027               |
+| M5.2 Legacy-vs-Cube checks running                         | 1219235307739161 | Not yet decided      | May 28, 2027               |
+| M5.3 Guidance release cadence                              | 1219235308484186 | Not yet decided      | Jan 15, 2027               |
+| M5.4 Data-change cadence agreed                            | 1219235330086393 | Not yet decided      | Feb 26, 2027               |
+| M5.5 Ownership after June agreed                           | 1219235043141920 | Not yet decided      | May 28, 2027               |
 
-## Size of each section
+## Task dates by section
 
-From the gap catalog. "Buildable" measure rows exclude the 36 Tableau-only
-calculations the catalog marks `workbook-only`. Cube covers 59 of the 347
-buildable rows today (about 17%).
+### 0 · Governance
 
-| Section                                 | Dashboards | Buildable rows | In Cube | Mart ready | Mart missing |
-| --------------------------------------- | ---------: | -------------: | ------: | ---------: | -----------: |
-| `1 · Assessments`                       |          7 |             96 |      30 |         36 |           30 |
-| `1 · Ops: attendance`                   |          1 |             18 |       9 |          5 |            4 |
-| `1 · Ops: enrollment and Ops Dashboard` |          1 |             16 |       6 |          0 |           10 |
-| `1 · Student dashboards`                |          3 |             42 |       8 |         13 |           21 |
-| `1 · Grades/GPA`                        |          1 |             20 |       0 |          8 |           12 |
-| `1 · Zendesk`                           |          1 |              4 |       0 |          4 |            0 |
-| `1 · Recruitment`                       |          1 |             14 |       0 |         11 |            3 |
-| `1 · Surveys`                           |          3 |             18 |       0 |         17 |            1 |
-| `1 · Observations`                      |          4 |             39 |       0 |         27 |           12 |
-| `1 · Stretch: Behavior`                 |          1 |             19 |       0 |          7 |           12 |
-| `1 · Stretch: Staff`                    |          4 |             23 |       6 |         10 |            7 |
-| `1 · Stretch: Postsecondary`            |          1 |             12 |       0 |          1 |           11 |
-| `1 · Ops: student recruitment (FRESH)`  |          1 |              9 |       0 |          0 |            9 |
-| `1 · Stretch: Stipends and cert`        |          2 |             17 |       0 |          3 |           14 |
-| **Total**                               |     **31** |        **347** |  **59** |    **142** |      **146** |
+| Task                                                | GID              | Due          |
+| --------------------------------------------------- | ---------------- | ------------ |
+| Size the stretch domains from the gap catalog       | 1219235229404345 | Feb 12, 2027 |
+| Review the whole deferral log at the midpoint       | 1219235228892596 | Feb 26, 2027 |
+| Schedule or drop every remaining deferral-log entry | 1219235118345654 | Jun 25, 2027 |
 
-The priority sections (assessments, the three ops sections, student dashboards
-and grades/GPA) hold 201 rows, 58% of the total. The four analyst-built sections
-add 75 rows, which brings the total to 80%. The plan's coverage target of 75%
-rests on those two groups. Observations includes the Leader PM Dashboard's 3
-rows; that dashboard moved to Lattice and is out of scope.
+M0 also depends on six action items from the Oct 6 meeting; see "Dependencies
+outside the sections".
 
-## Milestone tasks to add
+### 1 · Permissioning
 
-One Asana milestone per plan milestone, in the section shown. Target dates are
-the plan's proposed dates.
+| Task                                                                                   | GID              | Due          |
+| -------------------------------------------------------------------------------------- | ---------------- | ------------ |
+| Open Issues — Access & Security (triage all open issues against launch dates)          | 1219086221167065 | Dec 4, 2026  |
+| Check whether shared Claude artifacts respect each viewer's access; set a sharing rule | 1219235025752972 | Dec 11, 2026 |
+| #4237 small-cell suppression (child of the rollup)                                     | 1215942398896201 | Jan 8, 2027  |
+| #5524 Miami staff with no work-assignment location (child of the rollup)               | 1218824350465422 | Feb 12, 2027 |
 
-| Section                                 | Milestone                                                  | Owner role                              | Target               |
-| --------------------------------------- | ---------------------------------------------------------- | --------------------------------------- | -------------------- |
-| `0 · Governance`                        | M0 Plan approved                                           | Project lead                            | Oct 23, 2026         |
-| `1 · Assessments`                       | M1.1 Assessments verified, DDI Suite rebuilt               | Cube/mart lead                          | Dec 18, 2026         |
-| `1 · Ops: enrollment and Ops Dashboard` | M1.2 Ops verified                                          | Cube/mart lead                          | Feb 26, 2027         |
-| `1 · Grades/GPA`                        | M1.3 Grades/GPA verified                                   | Project lead                            | Apr 16, 2027         |
-| `1 · Student dashboards`                | M1.4 Student dashboards covered                            | Project lead                            | May 21, 2027         |
-| `1 · Observations`                      | M1.5 Analyst-built domains verified                        | Cube/mart lead                          | May 14, 2027         |
-| `0 · Governance`                        | M1.6 Stretch-domain decision                               | Cube/mart lead                          | Feb 26, 2027         |
-| `1 · Permissioning`                     | M1.7 Permissioning ready for each launch                   | Cube/mart lead                          | Jan 15, 2027         |
-| `2 · Enablement, comms and support`     | M2.1 Domain owners named                                   | Enablement lead                         | Feb 26, 2027         |
-| `2 · Enablement, comms and support`     | M2.2 Support boundary published                            | Enablement lead                         | Nov 13, 2026         |
-| `2 · Enablement, comms and support`     | M2.3 Standard pilot kit                                    | Enablement lead                         | Nov 6, 2026          |
-| `2 · Enablement, comms and support`     | M2.4 Cohort 2 onboarded                                    | Project lead                            | Nov 20, 2026         |
-| `2 · Enablement, comms and support`     | M2.5 Launch package per domain                             | Enablement lead                         | Jun 4, 2027          |
-| `2 · Enablement, comms and support`     | M2.6 Org-wide engagement plan                              | Enablement lead                         | Nov 20, 2026         |
-| `2 · Enablement, comms and support`     | M2.7 Ongoing onboarding cycle                              | Enablement lead                         | Apr 30, 2027         |
-| `3 · Delivery platform`                 | M3.1 Org plugin (beta) replaces project-knowledge delivery | Project lead                            | Jan 15, 2027         |
-| `3 · Delivery platform`                 | M3.2 Usage logging and eval loop live                      | Project lead                            | Nov 20, 2026         |
-| `3 · Delivery platform`                 | M3.3 Test-question sets                                    | Project lead                            | May 14, 2027         |
-| `4 · Team capacity`                     | M4.1 Build standards written                               | Cube/mart lead                          | Jan 8, 2027          |
-| `4 · Team capacity`                     | M4.2 Data team trained                                     | Cube/mart lead                          | Nov 13, 2026         |
-| `4 · Team capacity`                     | M4.3 Cube/mart creation skill shipped                      | Cube/mart lead                          | Jan 15, 2027         |
-| `4 · Team capacity`                     | M4.4 Review path that scales                               | Engineering reviewer                    | Dec 18, 2026         |
-| `4 · Team capacity`                     | M4.5 Every analyst ships one reviewed view                 | Project lead                            | May 28, 2027         |
-| `4 · Team capacity`                     | M4.6 New analyst onboarded into mart and cube work         | Project lead (stands in until the hire) | Depends on hire date |
-| `5 · Sustainment`                       | M5.1 Drift rule adopted                                    | Not yet decided                         | Jan 15, 2027         |
-| `5 · Sustainment`                       | M5.2 Legacy-vs-Cube checks running                         | Not yet decided                         | May 28, 2027         |
-| `5 · Sustainment`                       | M5.3 Guidance release cadence                              | Not yet decided                         | Jan 15, 2027         |
-| `5 · Sustainment`                       | M5.4 Data-change cadence agreed                            | Not yet decided                         | Feb 26, 2027         |
-| `5 · Sustainment`                       | M5.5 Ownership after June agreed                           | Not yet decided                         | May 28, 2027         |
+The rollup is dated because the plan's triage row maps to it. Small-cell
+suppression must land before the assessments launch on Jan 15.
 
-The assessment dates reflect a hard deadline: assessments are verified, and the
-DDI Suite rebuilt on Cube, by Friday, Dec 18, 2026, the last working day before
-winter break. The enablement lead then owns the assessments launch (Jan 15, with
-the plugin beta), and ops starts Jan 4.
+### 1 · Shared dimensions and groupings
 
-If workstream 5 folds into the others (the plan recommends it), M5.1 and M5.2
-move to `4 · Team capacity`, M5.4 and M5.5 to workstream 1, and M5.3 to
-workstream 2.
+| Task                                              | GID              | Due          | Why                                                     |
+| ------------------------------------------------- | ---------------- | ------------ | ------------------------------------------------------- |
+| NJ student tier / tutoring buckets and 504 status | 1219235117880911 | Nov 6, 2026  | Plan row                                                |
+| dim_student_iep_status                            | 1219288375398321 | Nov 20, 2026 | Used by all 7 assessment dashboards                     |
+| dim_student_ell_status                            | 1219288212316965 | Nov 20, 2026 | Used by 4 assessment dashboards                         |
+| dim_student_meal_eligibility_status               | 1219288550347153 | Nov 20, 2026 | Used by STAT; ops needs it by Feb 12                    |
+| dim_student_homeless_status                       | 1219288375213085 | No date      | Only the Behavior stretch domain uses it                |
+| dim_student_contact_persons                       | 1219288623977592 | No date      | Only the Staff and certification stretch domains use it |
+| dim_staff_grade_levels_taught                     | 1219288623793643 | No date      | No core dashboard uses it yet                           |
+| dim_staff_work_assignments                        | 1219288375257808 | No date      | No core dashboard uses it yet                           |
 
-## Tasks to add or link
+### 1 · Assessments
 
-Where an Asana task or GitHub issue already covers the work, the plan links it
-to the milestone as a dependency instead of creating a duplicate.
+| Task                                                           | GID              | Due                           |
+| -------------------------------------------------------------- | ---------------- | ----------------------------- |
+| Lock what "verified" includes; checkpoint                      | 1219235228944467 | Start Oct 16, due Dec 4, 2026 |
+| dim_assessment_goals                                           | 1219235308948092 | Oct 23, 2026                  |
+| dim_college_assessment_goals                                   | 1219235025928051 | Oct 30, 2026                  |
+| fct_assessment_scores_student_scoped (CARAT)                   | 1214075610424619 | Nov 6, 2026                   |
+| fct_iready_lessons                                             | 1219285715506895 | Nov 13, 2026                  |
+| fct_dibels_progress_monitoring                                 | 1219285828933892 | Nov 20, 2026                  |
+| fct_assessment_standard_scores                                 | 1219285828786749 | Nov 20, 2026                  |
+| fct_sight_words                                                | 1219286000584515 | Nov 20, 2026                  |
+| dim_assessment_comparisons                                     | 1219285715581897 | Nov 20, 2026                  |
+| dim_student_testing_accommodations                             | 1219285989040081 | Nov 20, 2026                  |
+| dim_college_assessment_expectations                            | 1219285941380935 | Nov 20, 2026                  |
+| fct_dual_enrollment_grades                                     | 1219285941416926 | Nov 20, 2026                  |
+| fct_student_ap_course_enrollments                              | 1219301358692563 | Nov 20, 2026                  |
+| Matching sign-off and privacy review: assessments              | 1219235059572563 | Dec 11, 2026                  |
+| Review assessment pull requests within 48 hours through Dec 18 | 1219235329948012 | Dec 18, 2026 (already set)    |
+| Check the deferral log for assessments                         | 1219235401039821 | Dec 18, 2026                  |
+| Clear marts V1 for production use                              | 1219235025270362 | See "Conflicts to resolve"    |
 
-### Workstream 1
+Dashboards, all due Dec 18, 2026, with measure and dimension subtasks due Dec 4:
 
-| Task                                                                                                                                                                             | Milestone  | Owner role                                | Existing item                            |
-| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- | ----------------------------------------- | ---------------------------------------- |
-| Fix high school state test scores that Cube drops                                                                                                                                | M1.1       | Cube/mart lead                            | #5692 (Assessments `Open Issues`)        |
-| Lock what "verified" includes (Oct 16); checkpoint on Dec 4 (growth, DIBELS progress monitoring, goals and DDI matching cannot move out; anything else goes to the deferral log) | M1.1       | Project lead                              | None                                     |
-| Test that a Tableau dashboard reading from Cube keeps each viewer's access                                                                                                       | M1.1       | Project lead                              | None                                     |
-| Band numbers and band set columns for state and vendor tests                                                                                                                     | M1.1       | Cube/mart lead                            | #5573, #5574                             |
-| Internal assessment goals in Cube (`dim_assessment_goals`)                                                                                                                       | M1.1       | Cube/mart lead                            | None                                     |
-| State test goals and SAT/ACT/PSAT goals in Cube                                                                                                                                  | M1.1       | Cube/mart lead                            | None                                     |
-| Connect CARAT's student-scoped scores fact to Cube                                                                                                                               | M1.1       | Cube/mart lead                            | `assessment_scores_student_scoped`       |
-| NJ student tier / tutoring buckets and 504 status                                                                                                                                | M1.1       | Cube/mart lead                            | None                                     |
-| Administered dates for state tests; governed administrations count                                                                                                               | M1.1       | Cube/mart lead                            | #4184                                    |
-| Match the DDI dashboard in Cube                                                                                                                                                  | M1.1       | Cube/mart lead                            | #5668; DDI Suite task                    |
-| Fix the assessment pre-aggregation, shipped with the knowledge drain PR (#5495)                                                                                                  | M1.1       | Cube/mart lead                            | #5557                                    |
-| Review assessment pull requests within 48 hours through Dec 18; 24 hours for emergencies                                                                                         | M1.1       | Engineering reviewer                      | None                                     |
-| Clear marts V1 for production use                                                                                                                                                | M1.1       | Engineering reviewer                      | Intro-to-the-marts task notes            |
-| Matching sign-off and privacy review: assessments (DDI Suite, STAT, Literacy Dashboard)                                                                                          | M1.1       | Cube/mart lead                            | None                                     |
-| Rebuild the DDI Suite (8 dashboards) in Tableau on Cube; the rebuild doubles as the matching check                                                                               | M1.1       | Project lead                              | DDI Suite task                           |
-| Review the student persistence charter's data needs before ops starts                                                                                                            | M1.2       | Data director                             | None                                     |
-| Confirm the chronic-absence definition with the ops domain owner                                                                                                                 | M1.2       | Cube/mart lead                            | None                                     |
-| Attendance interventions, contact rate, intervention completion, streaks                                                                                                         | M1.2       | Cube/mart lead                            | 4 open tasks in `Attendance`             |
-| Enrollment and enrollment-target marts for the Ops Dashboard                                                                                                                     | M1.2       | Cube/mart lead (the new analyst pairs)    | Ops Dashboard task                       |
-| Full enrollment metric set behind FRESH (no dashboard rebuild)                                                                                                                   | M1.2       | New analyst (project lead until the hire) | FRESH Dashboard task                     |
-| Fix the open Miami access gaps                                                                                                                                                   | M1.2       | Cube/mart lead                            | #5517, #5524                             |
-| Lunch status and retention/attrition measures                                                                                                                                    | M1.2       | Cube/mart lead                            | Ops Dashboard task                       |
-| Rebuild the Ops Dashboard in Tableau on Cube                                                                                                                                     | M1.2       | Project lead                              | Ops Dashboard task                       |
-| Course-grade and GPA cubes on the existing grade marts                                                                                                                           | M1.3       | Project lead                              | 4 cube tasks in `Grades`                 |
-| GPA goals mart; GPA bands and cusp bands                                                                                                                                         | M1.3       | Project lead                              | 2 GPA on-track measure tasks             |
-| Rebuild the Academic & Gradebook Health Suite in Tableau on Cube                                                                                                                 | M1.3       | Project lead                              | Gradebook and GPA Dashboard task         |
-| Privacy reviews: ops and grades/GPA                                                                                                                                              | M1.2, M1.3 | Cube/mart lead                            | None                                     |
-| Remaining student groupings: MTSS tiers, grade-level bands, on-track flags                                                                                                       | M1.4       | Cube/mart lead                            | None                                     |
-| The three student dashboards' remaining measures; matching and privacy review                                                                                                    | M1.4       | Project lead                              | HSEW, Promo Status, Data Quality tasks   |
-| Zendesk, recruitment and surveys: cubes, views, matching, privacy review                                                                                                         | M1.5       | Analysts                                  | Cube and measure tasks per section       |
-| Observations: cubes, views, matching, privacy review                                                                                                                             | M1.5       | Cube/mart lead                            | Cube and measure tasks in `Observations` |
-| Size the stretch domains from the gap catalog                                                                                                                                    | M1.6       | Cube/mart lead                            | None                                     |
-| Triage the 12 open access and security issues against launch dates                                                                                                               | M1.7       | Cube/mart lead                            | Access & Security `Open Issues`          |
-| Check whether shared Claude artifacts respect each viewer's access; set a sharing rule                                                                                           | M1.7       | Cube/mart lead                            | None                                     |
-| Small-cell suppression decision                                                                                                                                                  | M1.7       | Cube/mart lead                            | #4237                                    |
-| i-Ready growth, lessons passed, time on task; DIBELS PM mastery and completion                                                                                                   | M1.1       | Cube/mart lead                            | 5 open measure tasks in `Assessments`    |
+| Dashboard                                               | GID              | Checklist dates                                                                                                |
+| ------------------------------------------------------- | ---------------- | -------------------------------------------------------------------------------------------------------------- |
+| DDI Suite (key dashboard)                               | 1213823831345180 | Built Dec 4 · Matches Dec 11 · Privacy Dec 11 · Pilot run Nov 20 (cohort 2) · Rebuilt Dec 11 · Launched Jan 15 |
+| College Admission Readiness Assessments Tracker (CARAT) | 1213823831141286 | No checklist                                                                                                   |
+| Literacy Dashboard                                      | 1213823922716082 | No checklist                                                                                                   |
+| State Testing Analysis Tool                             | 1213823789082035 | No checklist                                                                                                   |
+| APM Dashboard                                           | 1213823789013913 | No checklist                                                                                                   |
+| State Testing Accommodations Tracker                    | 1213823789021563 | No checklist                                                                                                   |
+| KIPP Miami FAST & iReady Analysis                       | 1213823922772842 | No checklist                                                                                                   |
 
-### Workstreams 2 to 5 and governance
+The Oct 16 scope lock may move dashboards or measures out of the Dec 18 pass.
+Anything moved out goes to the deferral log and loses its date.
 
-| Task                                                                                                                                                                    | Milestone  | Owner role           |
-| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- | -------------------- |
-| Send the revised charter; hold the sign-off conversation                                                                                                                | M0         | Project lead         |
-| Approve this proposal; apply it                                                                                                                                         | M0         | Project lead         |
-| Capacity conversation on freeing time for the Dec 18 deadline                                                                                                           | M0         | Project lead         |
-| Design the keep/retire list process: Claude drafts each domain's list; the domain owner confirms retirements                                                            | M0         | Project lead         |
-| Decide whether recruitment stays an analyst-built domain                                                                                                                | M0         | Project lead         |
-| Design how metrics that no dashboard shows today get added                                                                                                              | M0         | Project lead         |
-| Name domain owners after a team discussion (the enablement lead decides): assessments and ops; then the rest                                                            | M2.1       | Enablement lead      |
-| Draft and publish the support boundary; Zendesk intake and response-time targets                                                                                        | M2.2       | Enablement lead      |
-| Write the pilot kit: session agenda, homework, feedback log, exit rule                                                                                                  | M2.3       | Enablement lead      |
-| Run two sessions for cohort 2                                                                                                                                           | M2.4       | Project lead         |
-| Take over assessments at verification (Dec 18): launch package, domain-owner liaison, user support, feedback into the fix list; data fixes stay with the cube/mart lead | M2.5       | Enablement lead      |
-| One launch task per domain (pilot, help article, training, announcement)                                                                                                | M2.5       | Enablement lead      |
-| Propose a usefulness success measure, built with the eval loop (#5613)                                                                                                  | M2.5       | Enablement lead      |
-| Communications calendar, office hours, Slack channel norms                                                                                                              | M2.6       | Enablement lead      |
-| Onboarding plan for mid-year hires and summer PD                                                                                                                        | M2.7       | Enablement lead      |
-| Confirm with the enablement lead, as Claude administrator, what an org plugin can carry; build it; test it; roll it out as a beta on Jan 15                             | M3.1       | Project lead         |
-| Move assessment project knowledge into Cube descriptions and skills (#5236)                                                                                             | M3.1       | Project lead         |
-| Log every Cube MCP call, no question text, and count queries per user (#5613 phase 1)                                                                                   | M3.2       | Project lead         |
-| Add question text once People Operations rules on retention; start the fortnightly fix list (#5613 phase 2)                                                             | M3.2       | Project lead         |
-| Assessments test-question set; automated reruns; a set per later domain                                                                                                 | M3.3       | Project lead         |
-| Write mart and cube build standards                                                                                                                                     | M4.1       | Cube/mart lead       |
-| Intro-to-the-marts session, then the Cube session (existing task)                                                                                                       | M4.2       | Cube/mart lead       |
-| Finish the cube/mart skill with the validation checks (#4314)                                                                                                           | M4.3       | Cube/mart lead       |
-| Train a second reviewer for mart and cube pull requests                                                                                                                 | M4.4       | Engineering reviewer |
-| CI completeness check on Cube YAML (the approval rubric)                                                                                                                | M4.4       | Engineering reviewer |
-| Assign analyst-built domains; track each analyst's first reviewed view                                                                                                  | M4.5       | Project lead         |
-| Onboard the new analyst into mart and cube work; the project lead stands in until the hire                                                                              | M4.6       | Project lead         |
-| Drift rule; legacy-vs-Cube checks; review flag on legacy models with a mart counterpart                                                                                 | M5.1, M5.2 | Not yet decided      |
-| Guidance release cadence; data-change cadence; ownership after June                                                                                                     | M5.3–M5.5  | Not yet decided      |
+### 1 · Ops: attendance
 
-The analysis-limits skill goes in `Parking lot and outside the core set`, with
-no date.
+| Task                                      | GID              | Due                                          |
+| ----------------------------------------- | ---------------- | -------------------------------------------- |
+| fct_student_attendance_enrollment_daily   | 1219283938698833 | Jan 15, 2027 (attendance matching)           |
+| fct_student_attendance_interventions      | 1214609542482047 | Jan 22, 2027                                 |
+| fct_student_attendance_streaks            | 1214609542482049 | Jan 22, 2027                                 |
+| fct_family_communications                 | 1214609542482057 | Jan 22, 2027 (contact rate)                  |
+| dim_student_attendance_intervention_types | 1219288212249102 | Jan 22, 2027                                 |
+| Attendance Dashboard                      | 1213823788919470 | Feb 26, 2027; subtasks Feb 19 (no checklist) |
 
-## Deferral log
+### 1 · Ops: enrollment and Ops Dashboard
 
-The gap catalog holds many small pieces: a single measure, a filter, a sort
-helper. Some can wait, and some could be retired from their dashboard instead of
-rebuilt. None is worth a workstream. Each one gets a task in
-`Parking lot and outside the core set`, tagged `deferred` or `retire-candidate`,
-so it stays visible without a separate tracker.
+| Task                                                             | GID              | Due                           |
+| ---------------------------------------------------------------- | ---------------- | ----------------------------- |
+| Confirm the chronic-absence definition with the ops domain owner | 1219235308564768 | Jan 8, 2027                   |
+| fct_enrollment_targets                                           | 1219288211760729 | Feb 5, 2027                   |
+| fct_student_retention                                            | 1219288212230774 | Feb 12, 2027                  |
+| Privacy reviews: ops and grades/GPA                              | 1219234963895516 | See "Conflicts to resolve"    |
+| Check the deferral log for ops                                   | 1219235330710931 | Feb 26, 2027                  |
+| Ops Dashboard (key dashboard)                                    | 1213823788795999 | Feb 26, 2027; subtasks Feb 19 |
 
-Each task records:
+Ops Dashboard checklist: Built Feb 19 · Matches Feb 26 · Privacy Feb 26 ·
+Rebuilt Feb 26 · Pilot run Mar 12 · Launched Mar 26.
 
-- **What:** the metric or field, its dashboard, and a link to its gap-catalog
-  row.
-- **Why:** the reason it waits or could be retired.
-- **Decided:** who made the call, and when.
-- **Revisit:** a date or an event, such as "after the ops launch".
-- **Coverage effect:** how many gap-catalog rows it takes out of the coverage
-  target, if any.
+### 1 · Ops: student recruitment (FRESH)
 
-Three review points keep the log from going stale. Each is a task in the section
-shown:
+| Task                                 | GID              | Due                           |
+| ------------------------------------ | ---------------- | ----------------------------- |
+| fct_student_recruitment_applications | 1214740334762451 | Feb 19, 2027                  |
+| FRESH Dashboard (metric set only)    | 1213823831350808 | Feb 19, 2027; subtasks Feb 19 |
 
-| Review                                      | Section               | Owner role     | When                          |
-| ------------------------------------------- | --------------------- | -------------- | ----------------------------- |
-| Check the log for the domain being verified | That domain's section | Cube/mart lead | At each domain's verification |
-| Review the whole log at the midpoint        | `0 · Governance`      | Project lead   | Feb 26, 2027                  |
-| Schedule or drop every remaining entry      | `0 · Governance`      | Project lead   | Jun 25, 2027 (project close)  |
+The FRESH dashboard itself is not rebuilt or launched this year.
 
-At close-out, each entry ends one of three ways: scheduled for after June,
-retired from its dashboard (with the dashboard owner's agreement), or dropped
-with a reason. The log starts empty; entries go in as they are found, starting
-with any assessment item cut at the Dec 4 checkpoint.
+### 1 · Grades/GPA
 
-## Key-dashboard tasks
+| Task                                                                         | GID                                | Due                          |
+| ---------------------------------------------------------------------------- | ---------------------------------- | ---------------------------- |
+| fct_grades_assignments, fct_grades_category, fct_grades_term, fct_grades_gpa | 1214075447593627, …628, …629, …630 | Mar 12, 2027                 |
+| fct_gradebook_audit                                                          | 1219288390836604                   | Mar 12, 2027                 |
+| fct_grades_gpa_weekly_snapshots                                              | 1219288360755341                   | Mar 12, 2027                 |
+| dim_gpa_goals (the GPA goals mart)                                           | 1219288623996935                   | Apr 9, 2027                  |
+| Check the deferral log for grades/GPA                                        | 1219235329814415                   | Apr 16, 2027                 |
+| Gradebook and GPA Dashboard (key dashboard)                                  | 1213823907731242                   | Apr 16, 2027; subtasks Apr 9 |
 
-Each domain has one key dashboard. Its task gets six done-gate subtasks: Built
-in Cube, Matches within tolerance, Privacy review passed, Rebuilt in Tableau on
-Cube, Pilot run, Launched. Other dashboard tasks keep their current subtasks.
+The grade cubes are due Mar 26 and the GPA goal measures Apr 9. Checklist: Built
+Apr 9 · Matches Apr 16 · Privacy Apr 16 · Rebuilt Apr 16 · Pilot run May 7 ·
+Launched May 14.
 
-| Section                                 | Key dashboard task (GID)                       |
-| --------------------------------------- | ---------------------------------------------- |
-| `1 · Assessments`                       | DDI Suite (1213823831345180)                   |
-| `1 · Ops: enrollment and Ops Dashboard` | Ops Dashboard (1213823788795999)               |
-| `1 · Grades/GPA`                        | Gradebook and GPA Dashboard (1213823907731242) |
-| `1 · Zendesk`                           | Zendesk Reporting (1213823925649913)           |
-| `1 · Recruitment`                       | Recruitment Dashboard (1213823789062126)       |
-| `1 · Surveys`                           | Survey Dashboard (1213823922713816)            |
-| `1 · Observations`                      | SchoolMint Grow Dashboard (1213823788976510)   |
-| `1 · Stretch: Behavior`                 | OKRTS Dashboard (1213823831158360), if picked  |
+### 1 · Student dashboards
 
-## Corrections from the gap catalog
+| Task                                                                       | GID              | Due                           |
+| -------------------------------------------------------------------------- | ---------------- | ----------------------------- |
+| Remaining student groupings: MTSS tiers, grade-level bands, on-track flags | 1219235117967724 | Apr 16, 2027                  |
+| fct_community_service_hours                                                | 1219288287075287 | Apr 30, 2027                  |
+| fct_student_promotional_status                                             | 1219288375300673 | Apr 30, 2027                  |
+| fct_graduation_pathways                                                    | 1219288375273814 | Apr 30, 2027                  |
+| fct_student_data_quality_flags                                             | 1219288360575038 | Apr 30, 2027                  |
+| High School Early Warning Dashboard                                        | 1213823922414217 | May 21, 2027; subtasks May 14 |
+| Promotional Status Dashboard                                               | 1213823922758693 | May 21, 2027; subtasks May 14 |
+| Data Quality Dashboard                                                     | 1213823788719391 | May 21, 2027; subtasks May 14 |
+| Check the deferral log for student dashboards                              | 1219235228433154 | May 21, 2027                  |
 
-These come from the catalog's
-[Asana reconciliation](2026-10-02-cube-gap-catalog.md#asana-reconciliation-report-only).
-The domain files hold the exact values to backfill.
+None of the three has a checklist, so the Jun 4 launch has no task. See "Plan
+rows with no Asana task".
 
-- Add a task for the Manager Survey Report in `1 · Surveys`. It is a verified
-  dashboard with no task.
-- Do not add a task for the Leader PM Dashboard. Its source model is disabled
-  and the work moved to Lattice.
-- Backfill the workbook LUID and `rpt_` models on the four tasks with empty
-  notes: Staff Roster, Staff Demographic Explorer, Attrition Dashboard, Finance
-  Tools.
-- Gradebook and GPA Dashboard: replace the stale workbook LUID and `rpt_` list.
-  The live workbook reads `rpt_tableau__gradebook_audit`,
-  `rpt_tableau__student_course_grades`, `rpt_tableau__gpa_cumulative_year`,
-  `rpt_tableau__gpa_goals` and `rpt_tableau__gpa_goal_progress`.
-- NJ Certification Dashboard: remove the `rpt_tableau__staff_roster` claim as
-  the cert source. Note that the cert content comes from a Google Sheet outside
-  dbt.
-- KIPP Forward Data Suite: add `rpt_tableau__kfwd_aid_report` and
-  `rpt_gsheets__kfwd_rem_roster`.
-- Recruitment Dashboard: the datasource is `rpt_tableau__seat_tracker_snapshot`,
-  not `rpt_tableau__seat_tracker`.
-- High School Early Warning: `rpt_tableau__grad_plan_tracking` does not exist.
-  Remove it.
-- Personalized Survey Links: the relation is `rpt_tableau__survey_links`, not
-  `survey_completion`.
-- Zendesk Reporting: blocker `fct_tableau_usage` should be
-  `fct_support_tickets`, which exists.
-- Rename stale blockers across tasks: `fct_observations` to
-  `fct_staff_observations`; `fct_incidents` and `fct_behaviors` to
-  `fct_behavioral_incidents` and `fct_behavioral_consequences`;
-  `fct_course_grades` to `fct_grades_term` and `fct_grades_gpa`;
-  `dim_observation_rubrics` to `dim_staff_observation_rubrics`. Remove
-  `dim_students`, `dim_locations` and `dim_terms` as blockers; they exist.
+### Analyst-built domains
 
-## Decisions for the project owner
+| Section          | Task                                                                                                                                                                      | GID(s)                                                                                                                                                                             | Due          |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
+| 1 · Zendesk      | fct_support_tickets                                                                                                                                                       | 1214075447593650                                                                                                                                                                   | Dec 18, 2026 |
+| 1 · Zendesk      | Zendesk Reporting (key dashboard); subtasks Jan 15                                                                                                                        | 1213823925649913                                                                                                                                                                   | Jan 29, 2027 |
+| 1 · Zendesk      | Check the deferral log for Zendesk                                                                                                                                        | 1219235330390759                                                                                                                                                                   | Jan 29, 2027 |
+| 1 · Recruitment  | fct_job_candidate_applications, dim_staffing_positions, dim_job_postings, dim_job_candidates, bridge_job_application_subject_preferences, fct_recruitment_calendar_events | 1214075447593646, 1214609542482108, 1219288375396543, 1219288375396736, 1219288287245566, 1219288211520053                                                                         | Feb 12, 2027 |
+| 1 · Recruitment  | Recruitment Dashboard (key dashboard); subtasks Feb 26                                                                                                                    | 1213823789062126                                                                                                                                                                   | Mar 12, 2027 |
+| 1 · Recruitment  | Check the deferral log for recruitment                                                                                                                                    | 1219235330316655                                                                                                                                                                   | Mar 12, 2027 |
+| 1 · Surveys      | fct_survey_submissions, fct_survey_responses, bridge_survey_expectations, dim_surveys, dim_survey_administrations, dim_survey_questions                                   | 1214075447593633, 1214609542482076, 1214075447593636, 1219288623753612, 1219288623761146, 1219288375291945                                                                         | Mar 19, 2027 |
+| 1 · Surveys      | School Community Diagnostic; Avg School Community Diagnostic Student Overall Score                                                                                        | 1214073491303442, 1212532285830519                                                                                                                                                 | Apr 2, 2027  |
+| 1 · Surveys      | Survey Dashboard (key dashboard), Personalized Survey Links, Manager Survey Report; subtasks Apr 2                                                                        | 1213823922713816, 1213823831344988, 1219235026691519                                                                                                                               | Apr 16, 2027 |
+| 1 · Surveys      | Check the deferral log for surveys                                                                                                                                        | 1219235025704263                                                                                                                                                                   | Apr 16, 2027 |
+| 1 · Observations | fct_staff_observations, fct_staff_observation_scores, fct_staff_observation_goals, fct_staff_pm_overall_scores, and the six dim_staff_observation_* tasks                 | 1214075610424631, 1214075610424632, 1214075610424633, 1219288211797010, 1219288375340902, 1219288623995318, 1219288390808758, 1219288212162403, 1219288390824783, 1219288623816519 | Apr 16, 2027 |
+| 1 · Observations | SchoolMint Grow Dashboard (key dashboard), Coaching Conversation Tool, Teacher Development Dashboard; subtasks Apr 30                                                     | 1213823788976510, 1213823922720520, 1213823789000345                                                                                                                               | May 14, 2027 |
+| 1 · Observations | Check the deferral log for observations                                                                                                                                   | 1219235229650596                                                                                                                                                                   | May 14, 2027 |
 
-- [ ] Workstream prefixes on section names. The alternative is a `Workstream`
-      single-select custom field, which keeps current section names but makes
-      the grouping invisible in the list view.
-- [ ] Split `Students` into `1 · Ops: enrollment and Ops Dashboard` and
-      `1 · Student dashboards`.
-- [ ] Add milestone tasks with the plan's dates, once the plan is approved.
-- [ ] Done-gate subtasks on key-dashboard tasks only.
-- [ ] Keep measure tasks as tasks, linked to their milestone. The alternative is
-      to turn them into subtasks of their dashboard task.
-- [ ] Rename `Untitled section` to `Archive: before SY26-27`.
-- [ ] Apply the corrections from the gap catalog.
-- [ ] Keep a deferral log in `Parking lot and outside the core set`, with the
-      `deferred` and `retire-candidate` tags and the three review tasks.
+Key-dashboard checklists for these four domains follow the timeline table:
+`Built in Cube`, `Matches within tolerance`, `Privacy review passed` and
+`Rebuilt in Tableau on Cube` on the verification row's dates, `Pilot run` on the
+proposed pilot date, and `Launched` on the launch date.
+
+### 2 · Enablement, comms and support
+
+| Task                                                                             | GID              | Due                            |
+| -------------------------------------------------------------------------------- | ---------------- | ------------------------------ |
+| Write the pilot kit: session agenda, homework, feedback log, exit rule           | 1219235025703875 | Nov 6, 2026                    |
+| Draft and publish the support boundary; Zendesk intake and response-time targets | 1219235308192152 | Start Oct 30, due Nov 13, 2026 |
+| Run two sessions for cohort 2                                                    | 1219235117254041 | Nov 20, 2026                   |
+| Communications calendar, office hours, Slack channel norms                       | 1219235229215922 | Nov 20, 2026                   |
+| Take over assessments at verification                                            | 1219235329950613 | Dec 18, 2026                   |
+| Onboarding plan for mid-year hires and summer PD                                 | 1219235308563407 | Apr 30, 2027                   |
+
+### 3 · Delivery platform
+
+| Task                                                                                                        | GID              | Due                                                                    |
+| ----------------------------------------------------------------------------------------------------------- | ---------------- | ---------------------------------------------------------------------- |
+| Log every Cube MCP call, no question text, and count queries per user (#5613 phase 1)                       | 1219235026062092 | Nov 20, 2026                                                           |
+| Add question text once People Operations rules on retention; start the fortnightly fix list (#5613 phase 2) | 1219235025052124 | Dec 11, 2026                                                           |
+| Confirm what an org plugin can carry; build it; test it; roll it out as a beta                              | 1219235308984528 | Jan 15, 2027 (capability check Oct 23, built Dec 18, pilot test Jan 8) |
+| Assessments test-question set; automated reruns; a set per later domain                                     | 1219235025202514 | May 14, 2027 (assessments set Dec 4, automated reruns Jan 29)          |
+| Cube Validation Skill                                                                                       | 1219100665726624 | Oct 9, 2026 (already set; earlier than the plan)                       |
+
+### 4 · Team capacity
+
+| Task                                                                               | GID              | Due                                                   |
+| ---------------------------------------------------------------------------------- | ---------------- | ----------------------------------------------------- |
+| Run an intro-to-the-marts session for the data team, with a Cube session to follow | 1218341753451039 | Nov 13, 2026 (unassigned; the cube/mart lead runs it) |
+| Write mart and cube build standards                                                | 1219235308774595 | Jan 8, 2027                                           |
+| Train a second reviewer for mart and cube pull requests                            | 1219235308278780 | Dec 18, 2026 (already set)                            |
+| Assign analyst-built domains; track each analyst's first reviewed view             | 1219235118327118 | Start Dec 4, 2026, due May 28, 2027                   |
+| Onboard the new analyst into mart and cube work                                    | 1219235118436193 | The hire date, once known                             |
+
+### 5 · Sustainment
+
+Two tasks each feed several milestones with different dates. Each gets one dated
+subtask per milestone, and the parent takes the latest date.
+
+| Task                                                                                    | GID              | Subtask dates                                                                                                        |
+| --------------------------------------------------------------------------------------- | ---------------- | -------------------------------------------------------------------------------------------------------------------- |
+| Drift rule; legacy-vs-Cube checks; review flag on legacy models with a mart counterpart | 1219235040139127 | Drift rule Jan 15 · review flag Jan 15 · assessments checks Feb 12 · attendance checks Mar 26 · later domains May 28 |
+| Guidance release cadence; data-change cadence; ownership after June                     | 1219235228373629 | Guidance cadence Jan 15 · data-change cadence Feb 26 · ownership after June May 28                                   |
+
+### Dependencies outside the sections
+
+Several milestones depend on Oct 6 meeting action items (subtasks of the meeting
+task) and on GitHub issue tasks under the `Open Issues` rollups.
+
+| Task                                                                                 | GID                                | Milestone | Due                                                     |
+| ------------------------------------------------------------------------------------ | ---------------------------------- | --------- | ------------------------------------------------------- |
+| Capacity conversation at the one-on-one on freeing time for the assessments deadline | 1219229568413562                   | M0        | Oct 13, 2026 (already set); rename "Nov 24" to "Dec 18" |
+| Send the charter to the steering committee                                           | 1219229601717095                   | M0        | Oct 16, 2026 (already set)                              |
+| Design the keep/retire list process                                                  | 1219229568319144                   | M0        | Oct 16, 2026 (already set)                              |
+| Decide whether recruitment stays an analyst-built domain                             | 1219229601712738                   | M0        | Oct 16, 2026 (already set)                              |
+| Restructure the Asana project (PR #5703)                                             | 1219229601563438                   | M0        | Oct 23, 2026 (already set)                              |
+| Design how metrics no dashboard shows today get added to Cube                        | 1219229615266410                   | M0        | See "Conflicts to resolve"                              |
+| Propose a usefulness success measure (#5613)                                         | 1219229568285693                   | M2.5      | Oct 20, 2026 (already set)                              |
+| Name the ops domain owner after a team discussion                                    | 1219229716957017                   | M2.1      | Oct 30, 2026 (already set)                              |
+| Tableau access test                                                                  | 1219229488793468                   | M1.1      | Oct 30, 2026 (already set)                              |
+| Review the student persistence charter's data needs before ops starts                | 1219229488451407                   | M1.2      | Dec 18, 2026; rename "Nov 30" to "Jan 4"                |
+| Build the CI completeness check on Cube YAML                                         | 1219229488659674                   | M4.4      | Dec 18, 2026 (already set)                              |
+| #5692 high school state test scores dropped by Cube                                  | 1219119636524318                   | M1.1      | Oct 16, 2026; the plan marks it complete                |
+| #5573 performance band set columns; #5574 assessment_family                          | 1218941375989436, 1218941760280452 | M1.1      | Oct 23, 2026                                            |
+| #4184 administered dates for state assessments                                       | 1215687069915963                   | M1.1      | Nov 6, 2026                                             |
+| #5557 assessment pre-aggregation                                                     | 1218896809936221                   | M1.1      | Oct 9, 2026 (already set; plan says Nov 13)             |
+| #5668 match the DDI dashboard in the assessment-scores cube                          | 1219084637402304                   | M1.1      | Dec 4, 2026                                             |
+| #5236 drain assessment project knowledge into Cube                                   | 1218364802829876                   | M3.1      | Nov 20, 2026                                            |
+| #4314 validation-check skill                                                         | 1216249391243519                   | M4.3      | Oct 9, 2026 (already set; earlier than the plan)        |
+| #5517 Miami SQL API emulation                                                        | 1218806460401293                   | M1.2      | Complete; no change                                     |
+
+## Measure-level exceptions
+
+These subtasks are due before their dashboard's `Built in Cube` date because a
+plan row names them.
+
+| Dashboard            | Measure subtask                                                                       | GID              | Due          |
+| -------------------- | ------------------------------------------------------------------------------------- | ---------------- | ------------ |
+| APM Dashboard        | Progress to Stretch Growth (LOD)                                                      | 1214073491303390 | Nov 13, 2026 |
+| APM Dashboard        | % Lessons Passed (LOD)                                                                | 1214073491303392 | Nov 13, 2026 |
+| APM Dashboard        | LOD Time on Task (minutes)                                                            | 1214073491303394 | Nov 13, 2026 |
+| Literacy Dashboard   | PM Internal: Starting Words, Cumulative Growth Words, Goal, Met Admin Benchmark Goal… | 1214073491303396 | Nov 20, 2026 |
+| Literacy Dashboard   | % Participation (+ Numerator/Denominator variants)                                    | 1214073491303398 | Nov 20, 2026 |
+| Attendance Dashboard | % Successful (comm log contact outcome)                                               | 1214073491303426 | Jan 22, 2027 |
+| Attendance Dashboard | Intervention Status Required (Avg/Sum/Count)                                          | 1214073491303428 | Jan 22, 2027 |
+| Ops Dashboard        | Lunch status, retention and attrition measures                                        | Resolve by name  | Feb 12, 2027 |
+
+## Conflicts to resolve before applying
+
+1. **Clear marts V1 for production use** (1219235025270362) is due Dec 18 in
+   Asana; the plan says Nov 13. The plan date lets analysts build on V1 marts
+   before verification. Pick one.
+2. **Privacy reviews: ops and grades/GPA** (1219234963895516) is one task for
+   two domains, and M1.2 (Feb 26) and M1.3 (Apr 16) both depend on it. Dated Apr
+   16, it blocks M1.2. Split it into two dated subtasks (ops Feb 26, grades/GPA
+   Apr 16). Staff Demographic Explorer also depends on it, which looks like a
+   mislink.
+3. **Design how metrics no dashboard shows today get added to Cube**
+   (1219229615266410) has no date in the plan, and M0 (Oct 23) depends on it.
+   Either date it Oct 23 or remove it from M0's dependencies.
+4. **Two meeting action items carry the old timeline:** the capacity
+   conversation's name says "Nov 24", and the persistence review is due Nov 24
+   with "before ops starts Nov 30" in its name.
+5. **#5692** is complete in the plan and open in Asana. Confirm and close it.
+6. **Restructure the Asana project** (1219229601563438) looks done after Oct 8.
+   Close it, or keep it open until this plan's dates are applied.
+
+## Plan rows with no Asana task
+
+Listed for the project owner; this plan does not add them.
+
+- Confirm with the assessments domain owner whether Miami falls back to the raw
+  goal (Oct 16).
+- Name the steering committee (Oct 16); hold the charter conversation (Oct 23);
+  send the first biweekly status update (Oct 23).
+- Name the grades/GPA, Zendesk, recruitment, surveys and observations domain
+  owners (Dec 18), and the student-dashboard owner (Feb 26). M2.1 depends only
+  on the ops owner task.
+- Publish the ops start date (Jan 4) to ops leaders (Oct 16); confirm ops pilot
+  participants (Jan 29).
+- Launch the three student dashboards (Jun 4). They have no checklist.
+- Midpoint review (Feb 26) and project close (Jun 25) exist only as deferral-log
+  review tasks.
 
 ## How it gets applied
 
-Once approved, the project lead applies it through the Asana MCP in this order:
-rename sections, add the new sections, move the six tasks, create milestone
-tasks, create or link the remaining tasks, then backfill and correct notes. No
-task is deleted. Dates go in after the project plan is approved.
+Once approved, the project lead applies it through the Asana MCP with
+`update_tasks` (`due_on`, and `start_on` where shown), at most 50 tasks per
+call:
+
+1. Resolve the conflicts above.
+2. Milestones.
+3. Dashboard tasks and their checklist subtasks.
+4. Measure and dimension subtasks by the rule, then the exceptions.
+5. Mart tasks.
+6. Every other task in the section tables, and the dependencies outside the
+   sections.
+
+A dry run lists every change first, and nothing is deleted. After the run, the
+status page's timeline shows the milestones and dashboard target dates.
