@@ -22,17 +22,15 @@ Python 3.12+ (stdlib only), pytest, trunk, GitHub Actions.
 
 ## Global Constraints
 
-- Issue #5789. Every PR body carries `Refs #5789`; the last PR uses
-  `Closes #5789`.
-- 5 PRs, each on its own branch off `origin/main`, created with
-  `gh issue develop 5789 --name <branch>` then
-  `git worktree add /workspaces/teamster/.claude/worktrees/<branch> <branch>`:
-  - Part 1 (Tasks 1-3): `cbini/feat/claude-dbt-standard` (exists; holds the spec
-    and this plan)
-  - Part 2 (Task 4): `cbini/feat/claude-entity-key-macros`
-  - Part 3 (Task 5): `cbini/feat/claude-sql-lint-rules`
-  - Part 4 (Tasks 6-8): `cbini/feat/claude-dbt-layer-check`
-  - Part 5 (Task 9): `cbini/feat/claude-review-rule-ids`
+- Issue #5789. PR 1 body carries `Refs #5789`; PR 2 uses `Closes #5789`.
+- 2 PRs:
+  - PR 1, the standard (Tasks 1-4): `cbini/feat/claude-dbt-standard` (exists;
+    holds the spec and this plan). Docs, rule files, and the claude-review
+    prompt. It merges first: the prompt reads the rule files it adds.
+  - PR 2, enforcement (Tasks 5-9): `cbini/feat/claude-dbt-enforcement`, created
+    after PR 1 merges with `gh issue develop 5789 --name <branch>` then
+    `git worktree add /workspaces/teamster/.claude/worktrees/<branch> <branch>`.
+    The `trunk.yaml` block for the user goes in its body.
 - Never sweep existing models. The standard applies to new and touched code;
   layer violations go in the baseline.
 - Rule IDs are stable once published: `A1…` architecture, `S1…` style, and the
@@ -65,7 +63,7 @@ Python 3.12+ (stdlib only), pytest, trunk, GitHub Actions.
 
 ---
 
-## Part 1: rule files and published page
+## Part 1: the standard (PR 1)
 
 ### Task 1: `.claude/rules/dbt-architecture.md`
 
@@ -81,7 +79,8 @@ Python 3.12+ (stdlib only), pytest, trunk, GitHub Actions.
 
 - Produces: snippet section `architecture`, delimited by
   `<!-- --8<-- [start:architecture] -->` and
-  `<!-- --8<-- [end:architecture] -->`. Rule IDs below, cited by Tasks 6-9.
+  `<!-- --8<-- [end:architecture] -->`. Rule IDs below, cited by Tasks 4 and
+  7-9.
 
 - [ ] **Step 1: Write the file.** Frontmatter
       `paths: ["**/src/dbt/**/models/**"]`. Inside the section, write these
@@ -182,12 +181,32 @@ Python 3.12+ (stdlib only), pytest, trunk, GitHub Actions.
       markers inside HTML comments are not recognized, use bare
       `--8<-- [start:x]` lines and re-check.
 - [ ] **Step 5: Lint, commit**
-      `docs(dbt): publish the standard from the rule files`, push, open the Part
-      1 PR (spec + plan + Tasks 1-3).
+      `docs(dbt): publish the standard from the rule files`.
 
-## Part 2: entity key macros
+### Task 4: review prompt cites rule IDs
 
-### Task 4: `src/dbt/kipptaf/macros/entity_keys.sql`
+**Files:**
+
+- Modify: `.github/workflows/claude-code-review.yaml` (prompt, lines 76-84)
+
+- [ ] **Step 1: Replace** the SQL paragraph: read
+      `.claude/rules/dbt-architecture.md` and `.claude/rules/dbt-sql.md` with
+      the Read tool; check only rules whose `Enforced by` is `review`; cite the
+      rule ID in every SQL or dbt finding; never report a rule enforced by
+      sqlfluff, `sql-banned-syntax`, or `dbt-layer-check`. Keep the
+      model-altitude paragraph.
+- [ ] **Step 2: Verify** the YAML parses after the fmt hook:
+      `uv run python -c "import yaml,sys; yaml.safe_load(open(sys.argv[1]))" .github/workflows/claude-code-review.yaml`.
+      Expected: no error. The PR's own review run is the live test: its findings
+      cite IDs.
+- [ ] **Step 3: Commit, push, open PR 1** (spec, plan, Tasks 1-4) with
+      `Refs #5789`.
+
+## Part 2: enforcement (PR 2)
+
+Create the PR 2 branch and worktree first (Global Constraints).
+
+### Task 5: `src/dbt/kipptaf/macros/entity_keys.sql`
 
 **Files:**
 
@@ -218,12 +237,10 @@ Python 3.12+ (stdlib only), pytest, trunk, GitHub Actions.
 - [ ] **Step 3: Implement** the macros.
 - [ ] **Step 4: Verify.** Each pair's compiled SQL is byte-identical; also
       compare the `nullable=true` form against the documented `if(...)` wrap.
-- [ ] **Step 5: Commit, push, open the Part 2 PR.** No mart changes; marts adopt
-      the macros when touched.
+- [ ] **Step 5: Commit** `feat(dbt): add entity key macros`. No mart changes;
+      marts adopt the macros when touched.
 
-## Part 3: lint
-
-### Task 5: sqlfluff settings and banned-syntax linter
+### Task 6: sqlfluff settings and banned-syntax linter
 
 **Files:**
 
@@ -267,11 +284,9 @@ Python 3.12+ (stdlib only), pytest, trunk, GitHub Actions.
       `parse_regex: "(?P<path>.*):(?P<line>\d+):(?P<col>\d+): \[(?P<severity>[^\]]*)\] (?P<message>.*) \((?P<code>[^)]*)\)"`,
       plus `sql-banned-syntax` in `lint.enabled`. Verify the definition keys
       against trunk's custom-linter docs (context7) before handing it over.
-- [ ] **Step 8: Commit, push, open the Part 3 PR.**
+- [ ] **Step 8: Commit** `feat(dbt): lint banned SQL syntax and subqueries`.
 
-## Part 4: manifest check
-
-### Task 6: layer classification and edges (A1, A8)
+### Task 7: layer classification and edges (A1, A8)
 
 **Files:**
 
@@ -283,7 +298,7 @@ Python 3.12+ (stdlib only), pytest, trunk, GitHub Actions.
 **Interfaces:**
 
 - Produces:
-  - `@dataclass(frozen=True) class Violation: model: str; rule: str; detail: str; severity: Literal["error", "warning"]; message: str`.
+  - `dataclass(frozen=True) class Violation: model: str; rule: str; detail: str; severity: Literal["error", "warning"]; message: str`.
     Baseline key is `(model, rule, detail)`; `detail` is the offending parent or
     child name.
   - `layer_of(node: dict, project: str, domain_folders: set[str]) -> str`, one
@@ -310,7 +325,7 @@ Python 3.12+ (stdlib only), pytest, trunk, GitHub Actions.
 - [ ] **Step 4: Run tests.** Expected: PASS.
 - [ ] **Step 5: Commit** `feat(dbt): classify layers and check edges`.
 
-### Task 7: touched-model rules (A3, A4, A7, A9) and baseline
+### Task 8: touched-model rules (A3, A4, A7, A9) and baseline
 
 **Files:**
 
@@ -319,7 +334,7 @@ Python 3.12+ (stdlib only), pytest, trunk, GitHub Actions.
 
 **Interfaces:**
 
-- Consumes: `Violation`, `layer_of` (Task 6); key macro names (Task 4).
+- Consumes: `Violation`, `layer_of` (Task 7); key macro names (Task 5).
 - Produces:
   - `changed_models(manifest: dict, changed_files: list[str]) -> set[str]`
     (unique_ids, matching `original_file_path` and `patch_path`).
@@ -330,7 +345,7 @@ Python 3.12+ (stdlib only), pytest, trunk, GitHub Actions.
     model), `A7` (mart `raw_code` calls `generate_surrogate_key` for a column
     aliased `*<entity>_key`, where `<entity>_key` is in
     `KEY_MACROS = {"student_key", "staff_key", "work_assignment_key", "region_key", "survey_key", "college_key", "job_candidate_key"}`
-    plus any Task 4 adds), `A9` (mart/`rpt_` final select is `select *`), `A4`
+    plus any Task 5 adds), `A9` (mart/`rpt_` final select is `select *`), `A4`
     warning (shares a uniqueness grain, minus direct parents and siblings
     sharing 1 consumer). A violation whose rule ID is a key of the node's
     `config.meta.standard_exempt` is dropped.
@@ -354,7 +369,7 @@ Python 3.12+ (stdlib only), pytest, trunk, GitHub Actions.
 - [ ] **Step 4: Run tests.** Expected: PASS.
 - [ ] **Step 5: Commit** `feat(dbt): check touched models against the standard`.
 
-### Task 8: domain tags, workflow, baseline, backlog issues
+### Task 9: domain tags, workflow, baseline, backlog issues
 
 **Files:**
 
@@ -391,24 +406,5 @@ Python 3.12+ (stdlib only), pytest, trunk, GitHub Actions.
 - [ ] **Step 6: Verify.** Run the check locally with an empty changed list.
       Expected: exit 0. Push; expected: the `dbt-standard` workflow passes on
       the PR, which also proves `dbt parse` runs without warehouse credentials.
-- [ ] **Step 7: Commit, push, open the Part 4 PR.**
-
-## Part 5: claude-review
-
-### Task 9: review prompt cites rule IDs
-
-**Files:**
-
-- Modify: `.github/workflows/claude-code-review.yaml` (prompt, lines 76-84)
-
-- [ ] **Step 1: Replace** the SQL paragraph: read
-      `.claude/rules/dbt-architecture.md` and `.claude/rules/dbt-sql.md` with
-      the Read tool; check only rules whose `Enforced by` is `review`; cite the
-      rule ID in every SQL or dbt finding; never report a rule enforced by
-      sqlfluff, `sql-banned-syntax`, or `dbt-layer-check`. Keep the
-      model-altitude paragraph.
-- [ ] **Step 2: Verify** the YAML parses after the fmt hook:
-      `uv run python -c "import yaml,sys; yaml.safe_load(open(sys.argv[1]))" .github/workflows/claude-code-review.yaml`.
-      Expected: no error. The PR's own review run is the live test: its findings
-      cite IDs.
-- [ ] **Step 3: Commit, push, open the Part 5 PR** with `Closes #5789`.
+- [ ] **Step 7: Commit, push, open PR 2** with `Closes #5789` and the Task 6
+      `trunk.yaml` block for the user.

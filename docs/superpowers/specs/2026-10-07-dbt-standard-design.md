@@ -256,3 +256,14 @@ After about 2 months, list the most-used `standard_exempt` entries and
 - `dbt parse` runs in a GitHub Action without warehouse credentials.
 - Trunk reports only issues on changed lines (hold-the-line), so a new lint rule
   does not flag untouched lines in an edited file.
+
+## Revision 2026-10-08: 2 PRs instead of 5
+
+The rollout ships as 2 PRs, not 5. The split now follows risk, not component.
+
+- PR 1, the standard: rule files, published page, and the claude-review prompt
+  (rollout items 1 and 5). The prompt reads the rule files, so they must merge
+  together or in that order.
+- PR 2, enforcement: key macros, lint, manifest check, workflow, baseline, and
+  backlog issues (rollout items 2-4). It can trigger dbt Cloud CI and fail other
+  PRs, so it stays separate from the docs.
