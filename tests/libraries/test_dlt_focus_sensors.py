@@ -8,6 +8,7 @@ from unittest.mock import patch
 import sqlalchemy as sa
 from dagster import RunRequest, SkipReason, build_sensor_context, instance_for_test
 from dlt.common.configuration.specs import ConnectionStringCredentials
+from dlt.common.configuration.utils import ResolvedValueTrace, get_resolved_traces
 
 from teamster.libraries.dlt.focus import sensors as sensors_module
 from teamster.libraries.dlt.focus.sensors import (
@@ -189,6 +190,46 @@ def test_sensor_skips_when_no_drift(tmp_path: Path) -> None:
             result = sensor_def(context)
 
     assert isinstance(result, SkipReason)
+
+
+class _TracingPipeline(_FakePipeline):
+    """Logs a config-resolution trace on `sync_destination`, as dlt's resolver
+    does for every BigQuery config field it looks up."""
+
+    def sync_destination(self) -> None:
+        get_resolved_traces().log(
+            ResolvedValueTrace("key", "value", None, str, (), "test", None)  # type: ignore[arg-type]
+        )
+
+
+def test_sensor_clears_dlt_config_traces(tmp_path: Path) -> None:
+    """dlt clears its process-global trace log only at the end of a traced
+    pipeline step, which a sensor tick never runs; each logged trace pins that
+    tick's whole pipeline, so the long-lived code server grows until OOM."""
+    url = _seed_sqlite(tmp_path)
+    tables = [ProbeTable(name="students", cursor_column="updated_at")]
+    sensor_def = _build_sensor(tables, url)
+
+    get_resolved_traces().clear()
+
+    with instance_for_test() as instance:
+        context = build_sensor_context(instance=instance, sensor_name=sensor_def.name)
+
+        with (
+            patch.object(
+                sensors_module,
+                "build_focus_dlt_pipeline",
+                return_value=_TracingPipeline(),
+            ),
+            patch.object(
+                sensors_module,
+                "stored_signatures",
+                return_value=_probe_all(url, tables),
+            ),
+        ):
+            sensor_def(context)
+
+    assert get_resolved_traces().all_traces == []
 
 
 def test_sensor_requests_only_drifted_tables(tmp_path: Path) -> None:

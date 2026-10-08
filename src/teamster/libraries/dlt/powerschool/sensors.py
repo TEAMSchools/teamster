@@ -6,6 +6,7 @@ from dagster import (
     SkipReason,
     sensor,
 )
+from dlt.common.configuration.utils import get_resolved_traces
 
 from teamster.libraries.dlt.powerschool.assets import (
     _SOURCE_NAME,
@@ -87,20 +88,29 @@ def build_powerschool_dlt_intraday_sensor(
         with ssh_powerschool.open_ssh_tunnel():
             connection_url = db_powerschool.connection_url()
 
-            # Restore prior signatures from the destination state table. On a
-            # truly first run (no dataset) this raises; treat as no prior state.
             try:
-                dlt_pipeline.sync_destination()
-            except Exception as e:
-                # Expected only on the first tick / a brand-new dataset. A
-                # persistent failure here (bad perms, wrong dataset) would
-                # full-reload every table every tick, so surface it at warning.
-                context.log.warning(
-                    f"dlt sync_destination failed ({e}); treating all tables as "
-                    "changed (expected only on first run / new dataset)"
-                )
+                # Restore prior signatures from the destination state table. On
+                # a truly first run (no dataset) this raises; treat as no prior
+                # state.
+                try:
+                    dlt_pipeline.sync_destination()
+                except Exception as e:
+                    # Expected only on the first tick / a brand-new dataset. A
+                    # persistent failure here (bad perms, wrong dataset) would
+                    # full-reload every table every tick, so surface it at
+                    # warning.
+                    context.log.warning(
+                        f"dlt sync_destination failed ({e}); treating all tables "
+                        "as changed (expected only on first run / new dataset)"
+                    )
 
-            stored = stored_signatures(dlt_pipeline, _SOURCE_NAME)
+                stored = stored_signatures(dlt_pipeline, _SOURCE_NAME)
+            finally:
+                # dlt logs every config resolution to a process-global list that
+                # it clears only when a traced step (run/extract/load) ends, and
+                # this tick runs none. Each entry pins the tick's whole pipeline,
+                # so the long-lived code server would grow until OOM-killed.
+                get_resolved_traces().clear()
 
             # One shared engine over the single tunnel, like the op's probe.
             engine = sa.create_engine(connection_url)
