@@ -669,6 +669,48 @@ class Dim:
     sql: str
     granularity: str | None = None
     tableau_only: bool = False  # a dashboard control, not data: never a missing member
+    group_kind: str | None = (
+        None  # a Tableau group: relabel (buckets) or rule (a definition)
+    )
+
+
+def group_case_sql(of: str, bins: dict, other: str | None = None) -> str:
+    """A Tableau group as SQL; a value in no bin keeps its own value unless `other`."""
+    whens = []
+    for label, values in bins.items():
+        conds = []
+        kept = [v for v in values if v is not None]
+        if kept:
+            conds.append(f"{of} in ({', '.join(_sql_literal(v) for v in kept)})")
+        if any(v is None for v in values):
+            conds.append(f"{of} is null")
+        whens.append(f"when {' or '.join(conds)} then {_sql_literal(label)}")
+    # The kept value is cast so a numeric field still matches text bin labels.
+    rest = _sql_literal(other) if other is not None else f"cast({of} as string)"
+    return f"case {' '.join(whens)} else {rest} end"
+
+
+def _dim_sql(path, name: str, d: dict) -> str:
+    if "group" in d:
+        if "sql" in d:
+            raise CheckError(f"{path}: dimension '{name}': give group or sql, not both")
+        if d.get("kind") not in ("relabel", "rule"):
+            raise CheckError(
+                f"{path}: dimension '{name}': a group needs kind relabel or rule"
+            )
+        g = d["group"]
+        return group_case_sql(g["of"], g["bins"], g.get("other"))
+    if "bin" in d:
+        b = d["bin"]
+        return f"floor(({b['of']}) / {b['size']}) * {b['size']}"
+    if "sql" not in d:
+        raise CheckError(f"{path}: dimension '{name}' needs sql, group or bin")
+    return d["sql"]
+
+
+def _construct_key_ok(key) -> bool:
+    kind, _, name = str(key).partition(": ")
+    return kind in CONSTRUCT_KINDS and bool(name)
 
 
 def load_checks(path) -> dict:
@@ -690,9 +732,10 @@ def load_checks(path) -> dict:
         n: Dim(
             n,
             d.get("cube"),
-            d["sql"],
+            _dim_sql(path, n, d),
             d.get("granularity"),
             bool(d.get("tableau_only")),
+            d.get("kind") if ("group" in d or "bin" in d) else None,
         )
         for n, d in data["dimensions"].items()
     }
@@ -755,6 +798,18 @@ def load_checks(path) -> dict:
                         f"{where}: metric {m.get('cube')} lists missing_members, so "
                         f"it needs {missing}: the same SQL without the missing field"
                     )
+        for m in row["metrics"]:
+            t = m.get("tableau")
+            m["tableau"] = [t] if isinstance(t, str) else list(t or [])
+        row.setdefault("not_checked", [])
+        for n in row["not_checked"]:
+            if not _construct_key_ok(n.get("construct")):
+                raise CheckError(
+                    f"{where}: not_checked names unknown construct "
+                    f"'{n.get('construct')}' (use '<kind>: <name>' from `grains`)"
+                )
+            if not n.get("why"):
+                raise CheckError(f"{where}: not_checked '{n['construct']}' needs a why")
         for g in row["grains"]:
             unknown = [n for n in g if n not in dims]
             if unknown:
@@ -763,6 +818,11 @@ def load_checks(path) -> dict:
                 )
             if sum(1 for n in g if dims[n].granularity) > 1:
                 raise CheckError(f"{where}: grain {g} has more than one date part")
+    data["dashboards"] = list(data.get("dashboards") or [])
+    data["handled"] = dict(data.get("handled") or {})
+    for key in data["handled"]:
+        if not _construct_key_ok(key):
+            raise CheckError(f"{path}: handled names unknown construct '{key}'")
     seen: dict[str, dict] = {}
     for row in data["rows"]:
         for m in row["metrics"]:

@@ -1320,3 +1320,91 @@ def test_grains_include_sheets_showing_the_measure_under_an_alias():
         ["region"],
         ["region", "School"],
     ]
+
+
+def test_group_dimension_compiles_to_a_case(tmp_path):
+    def m(d):
+        d["dimensions"]["code_group"] = {
+            "cube": None,
+            "kind": "relabel",
+            "group": {
+                "of": "att_code",
+                "bins": {"Absent": ["A", "AD"], "Present": [None, "P"]},
+            },
+        }
+
+    dim = cv.load_checks(_write_variant(tmp_path, m))["dimensions"]["code_group"]
+    assert dim.sql == (
+        "case when att_code in ('A', 'AD') then 'Absent' "
+        "when att_code in ('P') or att_code is null then 'Present' "
+        "else cast(att_code as string) end"
+    )
+    assert dim.group_kind == "relabel"
+
+
+def test_group_over_a_number_casts_the_kept_value():
+    sql = cv.group_case_sql("lvl", {"Not Proficient": [1, 2], "Proficient": [4, 5]})
+    assert sql == (
+        "case when lvl in (1, 2) then 'Not Proficient' "
+        "when lvl in (4, 5) then 'Proficient' else cast(lvl as string) end"
+    )
+    assert cv.group_case_sql("lvl", {"Low": [1]}, other="Other").endswith(
+        "else 'Other' end"
+    )
+
+
+def test_bin_dimension_compiles_to_floor(tmp_path):
+    def m(d):
+        d["dimensions"]["score_bin"] = {
+            "cube": None,
+            "bin": {"of": "score", "size": 10},
+        }
+
+    dim = cv.load_checks(_write_variant(tmp_path, m))["dimensions"]["score_bin"]
+    assert dim.sql == "floor((score) / 10) * 10"
+
+
+@pytest.mark.parametrize(
+    "mutate, message",
+    [
+        (
+            lambda d: d["dimensions"].update(
+                g={
+                    "cube": None,
+                    "sql": "x",
+                    "kind": "rule",
+                    "group": {"of": "x", "bins": {}},
+                }
+            ),
+            "not both",
+        ),
+        (
+            lambda d: d["dimensions"].update(
+                g={"cube": None, "group": {"of": "x", "bins": {}}}
+            ),
+            "relabel or rule",
+        ),
+        (
+            lambda d: d["rows"][0].update(
+                not_checked=[{"construct": "widget: x", "why": "y"}]
+            ),
+            "unknown construct",
+        ),
+        (lambda d: d["rows"][0].update(not_checked=[{"construct": "group: x"}]), "why"),
+        (lambda d: d.update(handled={"nonsense": "x"}), "unknown construct"),
+    ],
+)
+def test_load_checks_rejects_bad_construct_entries(tmp_path, mutate, message):
+    with pytest.raises(cv.CheckError, match=message):
+        cv.load_checks(_write_variant(tmp_path, mutate))
+
+
+def test_load_checks_normalizes_tableau_captions(tmp_path):
+    def m(d):
+        d["rows"][0]["metrics"][0]["tableau"] = "# Tardy"
+
+    c = cv.load_checks(_write_variant(tmp_path, m))
+    assert c["rows"][0]["metrics"][0]["tableau"] == ["# Tardy"]
+    assert c["rows"][1]["metrics"][0]["tableau"] == []
+    assert c["dashboards"] == [] and c["handled"] == {}
+    assert c["rows"][0]["not_checked"] == []
