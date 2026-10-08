@@ -11,6 +11,7 @@ inside a throwaway tests/test_zz_*.py. Runbook: .claude/skills/cube-dashboard/SK
 from __future__ import annotations
 
 import argparse
+import datetime as dt
 import json
 import re
 import sys
@@ -19,6 +20,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import defusedxml.ElementTree as SafeET
+import yaml
 
 if TYPE_CHECKING:
     # trunk-ignore(bandit/B405): type-only import; parsing goes through defusedxml
@@ -145,6 +147,144 @@ def propose_grains(sheets: list[Sheet], measure: str) -> list[list[str]]:
             if g not in grains:
                 grains.append(list(g))
     return grains
+
+
+# ---------------------------------------------------------------- checks files and queries
+CUBE_LIMIT = 50_000
+KINDS = {"count", "rate"}
+
+
+class CheckError(ValueError):
+    """A checks file that cannot be run as written."""
+
+
+@dataclass(frozen=True)
+class Dim:
+    name: str
+    cube: str | None  # None: no Cube member, so grains using it are not comparable
+    sql: str
+    granularity: str | None = None
+
+
+def load_checks(path) -> dict:
+    data = yaml.safe_load(Path(path).read_text())
+    for key in ("dashboard", "table", "view", "dimensions", "rows"):
+        if key not in data:
+            raise CheckError(f"{path}: missing '{key}'")
+    dims = {
+        n: Dim(n, d.get("cube"), d["sql"], d.get("granularity"))
+        for n, d in data["dimensions"].items()
+    }
+    if "date" not in dims or not dims["date"].cube:
+        raise CheckError(
+            f"{path}: 'dimensions.date' needs a cube member and a sql column"
+        )
+    for d in dims.values():
+        if d.granularity and d.cube != dims["date"].cube:
+            raise CheckError(
+                f"{path}: dimension '{d.name}' has a granularity but is not on the "
+                f"date member '{dims['date'].cube}'"
+            )
+    data.setdefault("hard_filters", [])
+    for f in data["hard_filters"]:
+        if f["dim"] not in dims:
+            raise CheckError(f"{path}: hard filter on unknown dimension '{f['dim']}'")
+    for row in data["rows"]:
+        where = f"{path}: row {row.get('row_gid')} ({row.get('name')})"
+        for key in ("row_gid", "name", "metrics", "grains"):
+            if key not in row:
+                raise CheckError(f"{where}: missing '{key}'")
+        for m in row["metrics"]:
+            if m.get("kind") not in KINDS:
+                raise CheckError(
+                    f"{where}: metric {m.get('cube')}: kind must be count or rate"
+                )
+            need = ("cube", "sql") if m["kind"] == "count" else ("cube", "num", "den")
+            missing = [k for k in need if not m.get(k)]
+            if missing:
+                raise CheckError(
+                    f"{where}: metric {m.get('cube')} is missing {missing}"
+                )
+        for g in row["grains"]:
+            unknown = [n for n in g if n not in dims]
+            if unknown:
+                raise CheckError(
+                    f"{where}: grain {g} uses unknown dimension(s) {unknown}"
+                )
+            if sum(1 for n in g if dims[n].granularity) > 1:
+                raise CheckError(f"{where}: grain {g} has more than one date part")
+    data["dimensions"] = dims
+    data.setdefault("scope_measure", "count_students")
+    data.setdefault("students_sql", "count(distinct student_number)")
+    return data
+
+
+def academic_window(today: dt.date) -> tuple[dt.date, dt.date]:
+    """July 1 of the academic year that contains yesterday, through yesterday."""
+    end = today - dt.timedelta(days=1)
+    return dt.date(end.year if end.month >= 7 else end.year - 1, 7, 1), end
+
+
+def cube_key(view: str, dim: Dim) -> str:
+    return (
+        f"{view}.{dim.cube}.{dim.granularity}"
+        if dim.granularity
+        else f"{view}.{dim.cube}"
+    )
+
+
+def cube_query(view, measures, grain, dims, hard_filters, window) -> dict:
+    td = {
+        "dimension": f"{view}.{dims['date'].cube}",
+        "dateRange": [window[0].isoformat(), window[1].isoformat()],
+    }
+    plain = []
+    for name in grain:
+        d = dims[name]
+        if d.granularity:
+            td["granularity"] = d.granularity
+        else:
+            plain.append(f"{view}.{d.cube}")
+    return {
+        "measures": [f"{view}.{m}" for m in measures],
+        "dimensions": plain,
+        "timeDimensions": [td],
+        "filters": [
+            {
+                "member": f"{view}.{dims[f['dim']].cube}",
+                "operator": "equals",
+                "values": [str(v) for v in f["values"]],
+            }
+            for f in hard_filters
+        ],
+        "limit": CUBE_LIMIT,
+        "timezone": "UTC",
+    }
+
+
+def _sql_literal(v) -> str:
+    if isinstance(v, (int, float)) and not isinstance(v, bool):
+        return str(v)
+    return "'" + str(v).replace("'", "\\'") + "'"
+
+
+def truth_sql(table, metrics, grain, dims, hard_filters, window, students_sql) -> str:
+    select = [f"{dims[n].sql} as g{i}" for i, n in enumerate(grain)]
+    for i, m in enumerate(metrics):
+        if m["kind"] == "count":
+            select.append(f"{m['sql']} as m{i}")
+        else:
+            select += [f"{m['num']} as m{i}_num", f"{m['den']} as m{i}_den"]
+    select.append(f"{students_sql} as n_students")
+    where = [f"{dims['date'].sql} between '{window[0]}' and '{window[1]}'"]
+    for f in hard_filters:
+        values = ", ".join(_sql_literal(v) for v in f["values"])
+        where.append(f"{dims[f['dim']].sql} in ({values})")
+    # trunk-ignore(bandit/B608): SQL comes from a reviewed checks file and runs read-only
+    sql = f"select {', '.join(select)} from `{table}` where {' and '.join(where)}"
+    if grain:
+        sql += " group by " + ", ".join(str(i + 1) for i in range(len(grain)))
+    return sql
 
 
 def _grains_command(a) -> int:

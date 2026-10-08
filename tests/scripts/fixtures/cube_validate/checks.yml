@@ -1,0 +1,33 @@
+dashboard: demo_dashboard
+task_gid: "100"
+table: proj.ds.rpt_demo
+view: demo_view
+dimensions:
+  date: { cube: attendance_date, sql: calendardate }
+  month:
+    {
+      cube: attendance_date,
+      granularity: month,
+      sql: "date_trunc(calendardate, month)",
+    }
+  region: { cube: regions_region_name, sql: region }
+  school: { cube: locations_abbreviation, sql: school_abbreviation }
+  team: { cube: null, sql: team }
+hard_filters:
+  - { dim: region, values: [Camden, Newark] }
+rows:
+  - row_gid: "1"
+    name: "# Tardy"
+    metrics:
+      - { cube: count_tardy_days, kind: count, sql: sum(is_tardy) }
+    grains: [[], [region], [region, school], [region, team]]
+  - row_gid: "2"
+    name: ADA
+    metrics:
+      - {
+          cube: avg_daily_attendance,
+          kind: rate,
+          num: sum(is_present),
+          den: sum(membershipvalue),
+        }
+    grains: [[], [region, month]]
