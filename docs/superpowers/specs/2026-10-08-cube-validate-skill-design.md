@@ -229,3 +229,25 @@ lists done-but-`mismatch` rows in its report. Done rows stay done.
 
 Whether `tests/conftest.py`'s secret loading provides `CUBE_API_SECRET`. If it
 does not, the user runs the script in their own terminal.
+
+## Revision 2026-10-08: flag missing Cube members
+
+Requested by the user after the Attendance checks review: any discrepancy that
+comes from a member Cube lacks must be flagged as such, so the member gets
+added, rather than reading as a bug.
+
+- A metric whose Tableau definition uses a field Cube lacks lists it under
+  `missing_members:` and carries the same SQL without that logic (`sql_without`,
+  or `num_without`/`den_without`). A cell that fails against `sql` but matches
+  the `_without` variant is **explained** by the missing member, not counted as
+  out of tolerance.
+- A grain on a dimension with no Cube member stays not comparable, and its
+  dimension is listed as a missing member that blocks that grain.
+- Row verdicts, strongest first: `fail` (any unexplained gap), `incomplete` (a
+  grain errored), `missing_member` (every gap is explained), `pass`. A row whose
+  only missing members block grains, with no explained gaps, can still pass.
+- The comment, report and `latest.json` list each missing member with the cells
+  it explains and the grains it blocks.
+- `sync.py` reopens a `missing_member` row: it unticks it, tags it
+  `cube-partial`, and never auto-ticks it while `latest.json` says so. `fail`
+  keeps the `mismatch` tag and stays done.

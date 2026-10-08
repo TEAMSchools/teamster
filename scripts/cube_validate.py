@@ -207,6 +207,18 @@ def load_checks(path) -> dict:
                 raise CheckError(
                     f"{where}: metric {m.get('cube')} is missing {missing}"
                 )
+            if m.get("missing_members"):
+                need = (
+                    ("sql_without",)
+                    if m["kind"] == "count"
+                    else ("num_without", "den_without")
+                )
+                missing = [k for k in need if not m.get(k)]
+                if missing:
+                    raise CheckError(
+                        f"{where}: metric {m.get('cube')} lists missing_members, so "
+                        f"it needs {missing}: the same SQL without the missing field"
+                    )
         for g in row["grains"]:
             unknown = [n for n in g if n not in dims]
             if unknown:
@@ -277,6 +289,13 @@ def truth_sql(table, metrics, grain, dims, hard_filters, window, students_sql) -
             select.append(f"{m['sql']} as m{i}")
         else:
             select += [f"{m['num']} as m{i}_num", f"{m['den']} as m{i}_den"]
+        if m.get("missing_members") and m["kind"] == "count":
+            select.append(f"{m['sql_without']} as m{i}_alt")
+        elif m.get("missing_members"):
+            select += [
+                f"{m['num_without']} as m{i}_alt_num",
+                f"{m['den_without']} as m{i}_alt_den",
+            ]
     select.append(f"{students_sql} as n_students")
     where = [f"{dims['date'].sql} between '{window[0]}' and '{window[1]}'"]
     for f in hard_filters:
@@ -327,6 +346,7 @@ class Cell:
     truth: float | None
     n_students: int | None
     ok: bool
+    explained: bool = False  # fails, but matches the variant without a missing member
 
     @property
     def delta(self) -> float:
@@ -343,18 +363,27 @@ def cube_cells(rows, view, grain_dims, metric) -> dict:
     }
 
 
-def truth_cells(rows, n_grain, i, kind) -> dict:
+def truth_cells(rows, n_grain, i, kind, suffix="") -> dict:
     out = {}
     for r in rows:
         key = tuple(norm_key(r[f"g{j}"]) for j in range(n_grain))
         if kind == "count":
-            v = _num(r[f"m{i}"])
+            v = _num(r[f"m{i}{suffix}"])
         else:
-            num, den = _num(r[f"m{i}_num"]), _num(r[f"m{i}_den"])
+            num, den = _num(r[f"m{i}{suffix}_num"]), _num(r[f"m{i}{suffix}_den"])
             v = None if not den else (num or 0.0) / den
         n = r.get("n_students")
         out[key] = (v, None if n is None else int(n))
     return out
+
+
+def _matches(kind, c, t) -> bool:
+    if kind == "count":
+        # No row on a side means nothing to count there: compare as 0.
+        return abs((c or 0.0) - (t or 0.0)) < 1e-9
+    return (c is None and t is None) or (
+        c is not None and t is not None and abs(c - t) <= RATE_TOLERANCE + 1e-12
+    )
 
 
 def compare(kind, cube, truth) -> list[Cell]:
@@ -363,22 +392,26 @@ def compare(kind, cube, truth) -> list[Cell]:
         c = cube.get(key)
         t, n = truth.get(key, (None, None))
         if kind == "count":
-            # No row on a side means nothing to count there: compare as 0.
             c, t = c or 0.0, t or 0.0
-            ok = abs(c - t) < 1e-9
-        else:
-            ok = (c is None and t is None) or (
-                c is not None and t is not None and abs(c - t) <= RATE_TOLERANCE + 1e-12
-            )
-        cells.append(Cell(key, c, t, n, ok))
+        cells.append(Cell(key, c, t, n, _matches(kind, c, t)))
     return cells
 
 
+def explain(cells, kind, without) -> None:
+    """Mark failed cells that match the truth computed without a missing member."""
+    for c in cells:
+        if not c.ok:
+            c.explained = _matches(kind, c.cube, without.get(c.key, (None, None))[0])
+
+
 def summarize(cells, kind) -> dict:
-    bad = sorted((c for c in cells if not c.ok), key=lambda c: -c.delta)
+    bad = sorted(
+        (c for c in cells if not c.ok and not c.explained), key=lambda c: -c.delta
+    )
     return {
         "cells": len(cells),
         "bad": len(bad),
+        "explained": sum(1 for c in cells if c.explained),
         "worst": [
             {
                 "key": list(c.key),
@@ -396,7 +429,11 @@ def row_verdict(grains) -> str:
     statuses = [g["status"] for g in grains]
     if "fail" in statuses:
         return "fail"
-    if "error" in statuses or "pass" not in statuses:
+    if "error" in statuses:
+        return "incomplete"
+    if "missing_member" in statuses:
+        return "missing_member"
+    if "pass" not in statuses:
         return "incomplete"
     return "pass"
 
@@ -471,6 +508,10 @@ def bigquery_rows(sql: str) -> list[dict]:
 
 
 # ---------------------------------------------------------------- run
+def _missing(missing: dict, name: str) -> dict:
+    return missing.setdefault(name, {"explains_cells": 0, "blocks_grains": []})
+
+
 def scope_guard(checks, cube_load, bq, window) -> None:
     """Stop when Cube sees none of a hard-filter value the warehouse has students for."""
     if not checks["hard_filters"]:
@@ -548,37 +589,53 @@ def run_dashboard(checks, cube_load, bq, today, rows=None, scope_only=False) -> 
                 "error": f"{type(e).__name__}: {e}"[:300],
             }
             continue
+        summaries = {}
+        for i, m in enumerate(metrics):
+            cells = compare(
+                m["kind"],
+                cube_cells(crows, view, grain, m["cube"]),
+                truth_cells(trows, len(g), i, m["kind"]),
+            )
+            if m.get("missing_members"):
+                explain(
+                    cells, m["kind"], truth_cells(trows, len(g), i, m["kind"], "_alt")
+                )
+            summaries[m["cube"]] = summarize(cells, m["kind"])
         outcomes[(view, table, g)] = {
             "status": "ok",
             "pre_aggregations": preaggs,
-            "metrics": {
-                m["cube"]: summarize(
-                    compare(
-                        m["kind"],
-                        cube_cells(crows, view, grain, m["cube"]),
-                        truth_cells(trows, len(g), i, m["kind"]),
-                    ),
-                    m["kind"],
-                )
-                for i, m in enumerate(metrics)
-            },
+            "metrics": summaries,
         }
 
     for row in selected:
         where = (row.get("view", checks["view"]), row.get("table", checks["table"]))
         grains = []
+        missing: dict[str, dict] = {}
         for g in row["grains"]:
             o = outcomes[(*where, tuple(g))]
             entry = {"grain": list(g), "status": o["status"]}
             if o["status"] == "error":
                 entry["error"] = o["error"]
+            if o["status"] == "not_comparable":
+                for name in g:
+                    if dims[name].cube is None:
+                        _missing(missing, name)["blocks_grains"].append(_label(g))
             if o["status"] == "ok":
                 ms = {m["cube"]: o["metrics"][m["cube"]] for m in row["metrics"]}
                 bad = sum(s["bad"] for s in ms.values())
+                explained = sum(s["explained"] for s in ms.values())
+                for m in row["metrics"]:
+                    for name in m.get("missing_members", []):
+                        _missing(missing, name)["explains_cells"] += ms[m["cube"]][
+                            "explained"
+                        ]
                 entry.update(
-                    status="fail" if bad else "pass",
+                    status="fail"
+                    if bad
+                    else ("missing_member" if explained else "pass"),
                     cells=sum(s["cells"] for s in ms.values()),
                     bad=bad,
+                    explained=explained,
                     metrics=ms,
                     pre_aggregations=o["pre_aggregations"],
                 )
@@ -587,6 +644,11 @@ def run_dashboard(checks, cube_load, bq, today, rows=None, scope_only=False) -> 
             "name": row["name"],
             "verdict": row_verdict(grains),
             "grains": grains,
+            "missing_members": {
+                k: v
+                for k, v in missing.items()
+                if v["explains_cells"] or v["blocks_grains"]
+            },
         }
     return result
 
@@ -606,14 +668,32 @@ def _where(grain, key) -> str:
     return f"{_label(grain)}, {' / '.join(key) or 'all'}"
 
 
+_COMPARED = ("pass", "fail", "missing_member")
+
+
+def _missing_text(missing: dict) -> str:
+    parts = []
+    for name, m in missing.items():
+        bits = []
+        if m["explains_cells"]:
+            bits.append(f"explains {m['explains_cells']} cells")
+        if m["blocks_grains"]:
+            bits.append(f"blocks {', '.join(m['blocks_grains'])}")
+        parts.append(f"{name} ({'; '.join(bits)})")
+    return ", ".join(parts)
+
+
 def comment_text(row, result, report_path) -> str:
     grains = row["grains"]
-    compared = [g for g in grains if g["status"] in ("pass", "fail")]
+    compared = [g for g in grains if g["status"] in _COMPARED]
+    explained = sum(g.get("explained", 0) for g in compared)
+    verdict = row["verdict"].replace("_", " ").upper()
     lines = [
-        f"Cube vs Tableau check, {result['run_date']}: {row['verdict'].upper()}",
+        f"Cube vs Tableau check, {result['run_date']}: {verdict}",
         f"Window: {result['window'][0]} to {result['window'][1]}. {len(compared)} grains, "
         f"{sum(g['cells'] for g in compared)} cells, "
-        f"{sum(g['bad'] for g in compared)} out of tolerance.",
+        f"{sum(g['bad'] for g in compared)} out of tolerance"
+        + (f", {explained} explained by missing Cube members." if explained else "."),
     ]
     worst = None
     for g in compared:
@@ -637,11 +717,8 @@ def comment_text(row, result, report_path) -> str:
                 f"Worst: {metric} at {_where(grain, c['key'])}: "
                 f"Cube {_fmt(c['cube'], c['kind'])}, Tableau {_fmt(c['truth'], c['kind'])}."
             )
-    not_comparable = [
-        _label(g["grain"]) for g in grains if g["status"] == "not_comparable"
-    ]
-    if not_comparable:
-        lines.append(f"Not comparable: {', '.join(not_comparable)} (no Cube member).")
+    if row.get("missing_members"):
+        lines.append(f"Missing Cube members: {_missing_text(row['missing_members'])}.")
     lines += [
         f"Error at {_label(g['grain'])}: {g['error']}"
         for g in grains
@@ -660,10 +737,17 @@ def report_markdown(result) -> str:
     ]
     for gid, row in result["rows"].items():
         out += [f"## {row['name']} ({gid}): {row['verdict']}", ""]
+        if row.get("missing_members"):
+            out += [
+                f"Missing Cube members: {_missing_text(row['missing_members'])}.",
+                "",
+            ]
         for g in row["grains"]:
             line = f"- {_label(g['grain'])}: {g['status']}"
-            if g["status"] in ("pass", "fail"):
+            if g["status"] in _COMPARED:
                 line += f", {g['bad']} of {g['cells']} cells out of tolerance"
+                if g.get("explained"):
+                    line += f", {g['explained']} explained by missing members"
                 if g["pre_aggregations"]:
                     line += f" (pre-aggregations: {', '.join(g['pre_aggregations'])})"
             if g["status"] == "error":
@@ -699,6 +783,7 @@ def write_outputs(result, out_dir: Path) -> Path:
             "date": result["run_date"],
             "dashboard": result["dashboard"],
             "name": row["name"],
+            "missing_members": sorted(row.get("missing_members", {})),
         }
     latest_path.write_text(json.dumps(latest, indent=2))
     return report

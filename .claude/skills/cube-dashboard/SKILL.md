@@ -20,6 +20,11 @@ A row passes only if every cell at every grain is within tolerance: counts
 exactly, rates within 0.1 point. A total can match while a school is far off;
 that is the case this exists to catch (#5692).
 
+Verdicts, strongest first: `fail` (a gap nothing explains), `incomplete` (a
+grain errored), `missing_member` (every gap is explained by a member Cube
+lacks), `pass`. Each comment lists the missing Cube members, with the cells they
+explain and the grains they block, so the user knows what to add.
+
 ## Validate a dashboard
 
 1. Rows. Read the dashboard task's subtasks from Asana; keep the completed ones
@@ -38,14 +43,16 @@ that is the case this exists to catch (#5692).
    wrong: mark the row `incomplete` in your summary and fix the entry before
    posting anything.
 5. Review. Summarize the verdicts for the user: rows that fail, the worst cell
-   for each, any grain errors, any pre-aggregations on failed grains (a stale
-   rollup is a different fix from a mart gap).
+   for each, the missing Cube members per row, any grain errors, any
+   pre-aggregations on failed grains (a stale rollup is a different fix from a
+   mart gap).
 6. Post. After the user agrees, post each row's `comment` from
    `~/asana-sync/validation/<date>-<dashboard>.json` verbatim with
    `mcp__claude_ai_Asana__add_comment`.
 7. Tags. Tell the user to run `~/asana-sync/sync.py` (preview, then `--apply`).
-   It reads `latest.json` and adds or removes the `mismatch` tag; the skill
-   never changes tags itself.
+   It reads `latest.json`: `fail` rows get the `mismatch` tag, and
+   `missing_member` rows are unticked and tagged `cube-partial`. The skill never
+   changes tags or ticks itself.
 
 Run template:
 
@@ -80,9 +87,15 @@ def test_run() -> None:
    Match what the dashboard counts, not what the Cube measure counts; comment on
    any deliberate difference.
 4. Map every grain dimension in `dimensions:`; one with no Cube member gets
-   `cube: null` and is reported as not comparable, not as a mismatch.
-5. `count` for sums and distinct counts, `rate` with `num`/`den` for averages.
-6. Check the file loads (`load_checks`) and each total-grain SQL runs once in
+   `cube: null`. Its grains are not comparable, and the dimension is listed as a
+   missing member. Also list each such grain without that dimension: the sheet's
+   numbers roll up to it.
+5. When the formula uses a field Cube lacks (a filter on homeroom, say), list it
+   under the metric's `missing_members:` and add the same SQL without it as
+   `sql_without` (or `num_without`/`den_without`). A cell Cube matches only
+   without it is reported as explained by that member, not as a bug.
+6. `count` for sums and distinct counts, `rate` with `num`/`den` for averages.
+7. Check the file loads (`load_checks`) and each total-grain SQL runs once in
    BigQuery.
 
 ## Rules

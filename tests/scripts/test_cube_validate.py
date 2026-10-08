@@ -579,7 +579,7 @@ def test_write_outputs_comments_report_and_latest_merge(tmp_path):
         "Worst: count_tardy_days at region x school, Newark / B: Cube 15, Tableau 12."
         in comment
     )
-    assert "Not comparable: region x team (no Cube member)." in comment
+    assert "Missing Cube members: team (blocks region x team)." in comment
 
 
 def test_comment_hides_small_cells():
@@ -617,3 +617,89 @@ def test_run_cli_requires_the_secret(monkeypatch):
     monkeypatch.delenv("CUBE_API_SECRET", raising=False)
     with pytest.raises(SystemExit, match="CUBE_API_SECRET"):
         cv.main(["run", str(FIX / "checks.yml")])
+
+
+# ---------------------------------------------------------------- missing Cube members
+def _add_missing_member(d):
+    d["rows"][0]["metrics"][0].update(
+        missing_members=["team"], sql_without="countif(att_code = 'T')"
+    )
+
+
+def test_load_checks_missing_members_need_a_without_variant(tmp_path):
+    p = _write_variant(
+        tmp_path, lambda d: d["rows"][0]["metrics"][0].update(missing_members=["team"])
+    )
+    with pytest.raises(cv.CheckError, match="sql_without"):
+        cv.load_checks(p)
+
+
+def test_truth_sql_emits_the_without_variant(tmp_path):
+    c = cv.load_checks(_write_variant(tmp_path, _add_missing_member))
+    sql = cv.truth_sql(
+        "t", c["rows"][0]["metrics"], [], c["dimensions"], [], WINDOW, "count(1)"
+    )
+    assert "countif(att_code = 'T') as m0_alt" in sql
+
+
+def test_explain_marks_cells_the_without_variant_matches():
+    cells = cv.compare(
+        "count", {("B",): 15.0, ("C",): 5.0}, {("B",): (12.0, 120), ("C",): (8.0, 80)}
+    )
+    cv.explain(cells, "count", {("B",): (15.0, 120), ("C",): (6.0, 80)})
+    assert [(c.ok, c.explained) for c in cells] == [(False, True), (False, False)]
+    s = cv.summarize(cells, "count")
+    assert s["bad"] == 1 and s["explained"] == 1
+    assert [w["key"] for w in s["worst"]] == [["C"]]
+
+
+@pytest.mark.parametrize(
+    ("statuses", "verdict"),
+    [
+        (["pass", "missing_member"], "missing_member"),
+        (["missing_member", "fail"], "fail"),
+        (["missing_member", "error"], "incomplete"),
+        (["missing_member", "not_comparable"], "missing_member"),
+    ],
+)
+def test_row_verdict_missing_member(statuses, verdict):
+    assert cv.row_verdict([{"status": s} for s in statuses]) == verdict
+
+
+class AltBQ(FakeBQ):
+    """FakeBQ plus m0_alt: the without-variant matches Cube at the school grain."""
+
+    def __call__(self, sql):
+        rows = super().__call__(sql)
+        if " as m0_alt" not in sql:
+            return rows
+        alt = {"B": 15, "C": 5}
+        return [dict(r, m0_alt=alt.get(str(r.get("g1")), r.get("m0"))) for r in rows]
+
+
+def test_run_dashboard_flags_missing_members(tmp_path):
+    checks = cv.load_checks(_write_variant(tmp_path, _add_missing_member))
+    result = cv.run_dashboard(checks, FakeCube(), AltBQ(), TODAY)
+    tardy = result["rows"]["1"]
+    assert [g["status"] for g in tardy["grains"]] == [
+        "pass",
+        "pass",
+        "missing_member",
+        "not_comparable",
+    ]
+    assert tardy["verdict"] == "missing_member"
+    assert tardy["missing_members"] == {
+        "team": {"explains_cells": 2, "blocks_grains": ["region x team"]}
+    }
+    cv.write_outputs(result, tmp_path / "out")
+    comment = tardy["comment"]
+    assert (
+        comment.splitlines()[0] == "Cube vs Tableau check, 2026-10-08: MISSING MEMBER"
+    )
+    assert "0 out of tolerance, 2 explained by missing Cube members." in comment
+    assert (
+        "Missing Cube members: team (explains 2 cells; blocks region x team)."
+        in comment
+    )
+    latest = json.loads((tmp_path / "out" / "latest.json").read_text())
+    assert latest["rows"]["1"]["missing_members"] == ["team"]
