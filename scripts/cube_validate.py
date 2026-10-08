@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import hashlib
 import json
 import os
 import re
@@ -34,6 +35,18 @@ _TOKEN = re.compile(r"\[(federated\.[^\]]+)\]\.\[([^\]]+)\]")
 _INSTANCE = re.compile(r"^([a-z]+):(.+):([a-z]+)(?::\d+)?$")
 # A quick table calculation wraps a measure: pcto:sum:<field>
 _NESTED = re.compile(r"^([a-z]+):(.+)$")
+# "Total using" on a measure: usr:<field>:vtavg:qk
+_VISUAL_TOTAL = re.compile(r":vt([a-z]+)(?=:[a-z]+(?::\d+)?$)")
+
+
+def _strip_visual_total(inner: str) -> tuple[str, str | None]:
+    """A shelf token without its visual-total segment, and that setting."""
+    m = _VISUAL_TOTAL.search(inner)
+    if not m:
+        return inner, None
+    return inner[: m.start()] + inner[m.end() :], m.group(1)
+
+
 _DATE_PARTS = {
     "yr": "year",
     "tyr": "year",
@@ -57,10 +70,30 @@ class Construct:
     name: str
     sheets: list[str] = field(default_factory=list)
     detail: dict = field(default_factory=dict)
+    # The measures it changes; empty means every measure on the sheet.
+    scope: list[str] = field(default_factory=list)
 
     @property
     def key(self) -> str:
         return f"{self.kind}: {self.name}"
+
+    @property
+    def ref(self) -> str:
+        """The key plus a fingerprint of what the construct does: editing a filter's
+        members or a group's bins changes the ref, so a stale checks entry shows."""
+        if not self.detail:
+            return self.key
+        canon = json.dumps(_canon(self.detail), default=str).encode()
+        return f"{self.key} [{hashlib.sha256(canon).hexdigest()[:6]}]"
+
+
+def _canon(v):
+    """A detail value in a fixed order, whatever its key types."""
+    if isinstance(v, dict):
+        return sorted(([str(k), _canon(x)] for k, x in v.items()), key=lambda p: p[0])
+    if isinstance(v, list | tuple):
+        return [_canon(x) for x in v]
+    return v
 
 
 CONSTRUCT_KINDS = {
@@ -147,6 +180,13 @@ class _Workbook:
             self.source_filters[name] = ds.findall("filter") + ds.findall(
                 "extract//filter"
             )
+        # A calculation typed on a sheet lives only in its datasource-dependencies.
+        for dep in root.iter("datasource-dependencies"):
+            for col in dep.findall("column"):
+                if col.find("calculation") is not None:
+                    self.cols.setdefault(
+                        (_attr(dep, "datasource"), _attr(col, "name")), col
+                    )
 
     def calc(self, ds: str, name: str):
         col = self.cols.get((ds, name))
@@ -349,46 +389,63 @@ def _measure_aliases(book: _Workbook, w: ET.Element, columns) -> dict[str, str]:
 
 
 def _sheet_constructs(book: _Workbook, w: ET.Element, columns) -> list[Construct]:
-    """Every construct that can change what this sheet shows."""
+    """Every construct that can change what this sheet shows.
+
+    A construct reached only through one measure (its shelf token or its formula) is
+    scoped to that measure; the rest change every measure on the sheet.
+    """
     found: dict[str, Construct] = {}
 
-    def add(c: Construct | None) -> None:
-        if c is not None:
-            found.setdefault(c.key, c)
+    def add(c: Construct | None, scope: list[str] | tuple[str, ...] = ()) -> None:
+        if c is None:
+            return
+        c.scope = list(scope)
+        have = found.get(c.ref)
+        if have is None:
+            found[c.ref] = c
+        elif have.scope and c.scope:
+            have.scope = list(dict.fromkeys(have.scope + c.scope))
+        else:
+            have.scope = []
 
     tokens = _sheet_tokens(w)
+    filtered = set(
+        _TOKEN.findall(
+            " ".join(
+                _attr(f, "column")
+                for f in w.iter("filter")
+                if not _attr(f, "column").endswith("[:Measure Names]")
+            )
+        )
+    )
     instances = {_attr(ci, "name"): ci for ci in w.iter("column-instance")}
-    by_ds: dict[str, list[str]] = {}
-    for ds, inner in tokens:
-        add(_set_construct(book, ds, inner))
+    reach: dict[tuple[str, tuple[str, ...]], list[str]] = {}
+    for ds, token in tokens:
+        add(_set_construct(book, ds, token))
+        inner, visual_total = _strip_visual_total(token)
         m = _INSTANCE.match(inner)
         if not m:
             continue
         deriv, fld, _ = m.groups()
         add(_set_construct(book, ds, fld))
+        kind, label, _ = _classify(ds, inner, columns)
+        # A filter changes every measure; a measure's own token changes only it.
+        scope = (label,) if kind == "measure" and (ds, token) not in filtered else ()
         wrapped = _NESTED.match(fld)
         if wrapped and wrapped.group(1) in _MEASURE_DERIVATIONS:
             fld = wrapped.group(2)
-            ci = instances.get(f"[{inner}]")
+            ci = instances.get(f"[{token}]")
             tc = ci.find("table-calc") if ci is not None else None
             quick = _attr(tc, "type") if tc is not None else deriv
+            add(Construct("table_calc", label, detail={"quick": quick or deriv}), scope)
+        if visual_total and visual_total not in ("none", "auto", "automatic"):
             add(
-                Construct(
-                    "table_calc",
-                    _classify(ds, inner, columns)[1],
-                    detail={"quick": quick or deriv},
-                )
+                Construct("total", label, detail={"visual_totals": visual_total}), scope
             )
-        by_ds.setdefault(ds, []).append(f"[{fld}]")
+        reach.setdefault((ds, scope), []).append(f"[{fld}]")
         start = _fiscal_start(book, ds, f"[{fld}]")
         if deriv in ("yr", "tyr", "qr", "tqr") and start:
-            add(
-                Construct(
-                    "fiscal_year",
-                    _classify(ds, inner, columns)[1],
-                    detail={"start_month": start},
-                )
-            )
+            add(Construct("fiscal_year", label, detail={"start_month": start}), scope)
     for f in w.iter("filter"):
         if _attr(f, "column").endswith("[:Measure Names]"):
             continue
@@ -434,11 +491,11 @@ def _sheet_constructs(book: _Workbook, w: ET.Element, columns) -> list[Construct
                     )
                 )
     for alias, caption in _measure_aliases(book, w, columns).items():
-        add(Construct("alias", alias, detail={"field": caption}))
-    for ds, names in by_ds.items():
+        add(Construct("alias", alias, detail={"field": caption}), (caption, alias))
+    for (ds, scope), names in reach.items():
         for n in book.closure(ds, names):
             for c in _field_constructs(book, ds, n):
-                add(c)
+                add(c, scope)
     return list(found.values())
 
 
@@ -468,16 +525,28 @@ def _attr(e: ET.Element, key: str) -> str:
 
 def _columns(root: ET.Element) -> dict[tuple[str, str], tuple[str, str]]:
     """(datasource name, '[field]') -> (caption, formula)."""
-    out = {}
-    for ds in root.findall("datasources/datasource"):
-        for col in ds.findall("column"):
-            calc = col.find("calculation")
-            out[(_attr(ds, "name"), _attr(col, "name"))] = (
+    out: dict[tuple[str, str], tuple[str, str]] = {}
+
+    def put(ds: str, col: ET.Element) -> None:
+        calc = col.find("calculation")
+        out.setdefault(
+            (ds, _attr(col, "name")),
+            (
                 _attr(col, "caption") or _attr(col, "name").strip("[]"),
                 _attr(calc, "formula")
                 if calc is not None and calc.get("class", "tableau") == "tableau"
                 else "",
-            )
+            ),
+        )
+
+    for ds in root.findall("datasources/datasource"):
+        for col in ds.findall("column"):
+            put(_attr(ds, "name"), col)
+    # A calculation typed on a sheet lives only in its datasource-dependencies.
+    for dep in root.iter("datasource-dependencies"):
+        for col in dep.findall("column"):
+            if col.find("calculation") is not None:
+                put(_attr(dep, "datasource"), col)
     return out
 
 
@@ -494,6 +563,7 @@ def _resolve(columns, ds: str, fld: str) -> tuple[str, str]:
 
 def _classify(ds: str, inner: str, columns) -> tuple[str, str, str]:
     """Return (kind, label, formula); kind is 'dim', 'measure' or 'other'."""
+    inner = _strip_visual_total(inner)[0]
     m = _INSTANCE.match(inner)
     if not m:
         return "other", inner, ""
@@ -541,7 +611,7 @@ def parse_twb(path: str | Path, dashboards: list[str]) -> list[Sheet]:
 
         def take(text: str, dims: list[str], s=s, raw=raw, on_shelf=on_shelf) -> None:
             for ds, inner in _TOKEN.findall(text):
-                if m := _INSTANCE.match(inner):
+                if m := _INSTANCE.match(_strip_visual_total(inner)[0]):
                     on_shelf.add((ds, f"[{m.group(2)}]"))
                 s.datasource = s.datasource or str(ds_caption.get(ds) or ds)
                 if ds not in raw:
@@ -608,9 +678,8 @@ def _dedupe(dims) -> list[str]:
     return list(dict.fromkeys(d for d in dims if d is not None))
 
 
-def _shelves(s: Sheet) -> list[list[str]]:
-    """The sheet's shelf grain once per parameter value and per drill level."""
-    shelves = [list(s.shelf_dims)]
+def _substitute(s: Sheet, shelves: list[list[str]]) -> list[list[str]]:
+    """Each shelf once per parameter value, its parameter fields replaced by the branch."""
     by_param: dict[str, list[str]] = {}
     for label, p in s.param_dims.items():
         by_param.setdefault(p["parameter"], []).append(label)
@@ -626,6 +695,13 @@ def _shelves(s: Sheet) -> list[list[str]]:
             for shelf in shelves
             for v in values
         ]
+    return shelves
+
+
+def _shelves(s: Sheet) -> list[list[str]]:
+    """The sheet's shelf grain once per drill level and per parameter value."""
+    shelves = [list(s.shelf_dims)]
+    # Drill levels expand on the shelf as stored, before any parameter is substituted.
     for path in s.drill_paths:
         nxt = []
         for shelf in shelves:
@@ -637,18 +713,19 @@ def _shelves(s: Sheet) -> list[list[str]]:
             pos = sum(1 for d in shelf[: at[0]] if d not in path)
             nxt += [rest[:pos] + path[:k] + rest[pos:] for k in range(1, len(path) + 1)]
         shelves = nxt
+    shelves = _substitute(s, shelves)
     return [list(t) for t in dict.fromkeys(tuple(sh) for sh in shelves)]
 
 
-def _subtotal_grains(s: Sheet, shelf: list[str]) -> list[list[str]]:
+def _subtotal_grains(s: Sheet) -> list[list[str]]:
     """A subtotal on d totals the fields nested inside d on its axis."""
-    out = []
+    raw = []
     for d in s.subtotal_dims:
         axis = s.rows_dims if d in s.rows_dims else s.cols_dims
-        if d in shelf and d in axis:
+        if d in axis:
             inner = axis[axis.index(d) + 1 :]
-            out.append([x for x in shelf if x not in inner])
-    return out
+            raw.append([x for x in s.shelf_dims if x not in inner])
+    return _substitute(s, raw)
 
 
 def _base_shelf(s: Sheet) -> list[str]:
@@ -681,9 +758,8 @@ def propose_grains(sheets: list[Sheet], measure: str) -> list[list[str]]:
     for s in sheets:
         if measure not in s.measures and measure not in s.measure_aliases:
             continue
-        for shelf in _shelves(s):
-            for g in [shelf] + _subtotal_grains(s, shelf):
-                add(g)
+        for g in _shelves(s) + _subtotal_grains(s):
+            add(g)
         base = _base_shelf(s)
         add(base)
         for f in s.filter_dims:
@@ -697,10 +773,29 @@ def merge_constructs(sheets: list[Sheet]) -> list[Construct]:
     out: dict[str, Construct] = {}
     for s in sheets:
         for c in s.constructs:
-            m = out.setdefault(c.key, Construct(c.kind, c.name, [], c.detail))
+            m = out.get(c.ref)
+            if m is None:
+                m = out[c.ref] = Construct(c.kind, c.name, [], c.detail, list(c.scope))
+            elif m.scope and c.scope:
+                m.scope = list(dict.fromkeys(m.scope + c.scope))
+            else:
+                m.scope = []
             if s.name not in m.sheets:
                 m.sheets.append(s.name)
     return list(out.values())
+
+
+def _public(c: Construct) -> dict:
+    """A construct for output. Filter and set members, and group bin values, become
+    counts: they can be student names or ids, and outputs carry aggregates only."""
+    out = dict(asdict(c), key=c.key, ref=c.ref)
+    d = dict(out["detail"])
+    if isinstance(d.get("members"), list):
+        d["members"] = len(d["members"])
+    if isinstance(d.get("bins"), dict):
+        d["bins"] = {str(k): len(v) for k, v in d["bins"].items()}
+    out["detail"] = d
+    return out
 
 
 def audit_rows(checks: dict, twb) -> dict[str, dict]:
@@ -732,17 +827,20 @@ def audit_rows(checks: dict, twb) -> dict[str, dict]:
             }
             continue
         why = {n["construct"]: n["why"] for n in row["not_checked"]}
-        found = merge_constructs(using)
+        # A construct scoped to another measure on the same sheet is not this row's.
+        found = [
+            c
+            for c in merge_constructs(using)
+            if not c.scope or any(x in captions for x in c.scope)
+        ]
         out[gid] = {
             "not_checked": [
-                dict(asdict(c), key=c.key, why=why[c.key])
-                for c in found
-                if c.key in why
+                dict(_public(c), why=why[c.ref]) for c in found if c.ref in why
             ],
             "unaccounted": [
-                dict(asdict(c), key=c.key)
+                _public(c)
                 for c in found
-                if c.key not in why and c.key not in checks["handled"]
+                if c.ref not in why and c.ref not in checks["handled"]
             ],
         }
     return out
@@ -1869,9 +1967,9 @@ def _construct_hint(c: dict) -> str:
     if k in ("filter", "set", "source_filter"):
         bits = [d.get("mode", "include")]
         if d.get("members"):
-            bits.append(
-                ", ".join("null" if v is None else str(v) for v in d["members"])
-            )
+            # A count, never the values: a filter's members can be student names.
+            n = d["members"] if isinstance(d["members"], int) else len(d["members"])
+            bits.append(_plural(n, "member"))
         if d.get("range"):
             bits.append(", ".join(f"{a} {v}" for a, v in d["range"].items()))
         if d.get("context"):
@@ -1889,7 +1987,7 @@ def _construct_lines(items: list[dict], with_why: bool) -> list[str]:
     out = []
     for c in items:
         hint = _construct_hint(c)
-        line = f"- {c['key']} on {', '.join(c['sheets'])}"
+        line = f"- {c['ref']} on {', '.join(c['sheets'])}"
         line += f" ({hint})" if hint else ""
         line += f": {c['why']}" if with_why else ""
         out.append(line)
@@ -2159,7 +2257,7 @@ def report_markdown(result) -> str:
             ("Not checked", "not_checked"),
         ):
             if row.get(key):
-                out += [f"{label}: {', '.join(c['key'] for c in row[key])}.", ""]
+                out += [f"{label}: {', '.join(c['ref'] for c in row[key])}.", ""]
         if row.get("audit_error"):
             out += [f"Not audited: {row['audit_error']}.", ""]
         for g in row["grains"]:
@@ -2286,6 +2384,13 @@ def _snippet(c: Construct) -> dict:
     return {}
 
 
+def _sheet_out(s: Sheet) -> dict:
+    """A sheet for `grains` output, its constructs redacted like every other output."""
+    out = asdict(s)
+    out["constructs"] = [_public(c) for c in s.constructs]
+    return out
+
+
 def _grains_command(a) -> int:
     sheets = parse_twb(a.twb, a.dashboard)
     if a.measure:
@@ -2300,15 +2405,14 @@ def _grains_command(a) -> int:
             "resolves_to": sorted(
                 {s.measure_aliases.get(measure, measure) for s in using}
             ),
-            "sheets": [asdict(s) for s in using],
+            "sheets": [_sheet_out(s) for s in using],
             "grains": propose_grains(sheets, a.measure),
             "constructs": [
-                dict(asdict(c), key=c.key, **_snippet(c))
-                for c in merge_constructs(using)
+                dict(_public(c), **_snippet(c)) for c in merge_constructs(using)
             ],
         }
     else:
-        out = {"sheets": [asdict(s) for s in sheets]}
+        out = {"sheets": [_sheet_out(s) for s in sheets]}
     print(json.dumps(out, indent=2))
     return 0
 

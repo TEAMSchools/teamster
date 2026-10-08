@@ -1283,7 +1283,9 @@ def test_measure_names_alias_is_a_construct():
 
 
 def test_plain_subtotals_are_grains_not_constructs():
-    assert not any(c.kind == "total" for c in _sheet("Geo").constructs)
+    # Geo's visual total is a construct; its plain subtotal on region is not.
+    totals = [c for c in _sheet("Geo").constructs if c.kind == "total"]
+    assert [c.name for c in totals] == ["# Absent"]
 
 
 def test_parameter_branches_parse():
@@ -1298,8 +1300,9 @@ def test_grains_expand_parameter_branches_and_drill_levels():
     grains = cv.propose_grains(
         cv.parse_twb(FIX / "constructs.twb", ["Main"]), "# Absent"
     )
-    assert ["region", "Odd Column"] in grains
-    assert ["region", "School", "Odd Column"] in grains
+    sets = {frozenset(g) for g in grains}
+    assert frozenset({"region", "Odd Column"}) in sets
+    assert frozenset({"region", "School", "Odd Column"}) in sets
     assert not any("Level Column" in g for g in grains)
 
 
@@ -1309,9 +1312,7 @@ def test_grains_add_drill_levels_and_subtotals():
         ["region", "Calendardate@year"],
         ["region", "School", "Calendardate@year"],
     ]
-    assert cv._subtotal_grains(geo, ["region", "School", "Calendardate@year"]) == [
-        ["region", "Calendardate@year"]
-    ]
+    assert cv._subtotal_grains(geo) == [["region", "Calendardate@year"]]
 
 
 def test_grains_include_sheets_showing_the_measure_under_an_alias():
@@ -1422,14 +1423,18 @@ ALL_KEYS = {
     "fiscal_year: Calendardate@year",
     "parameter: Odd Column",
     "table_calc: # Absent",
-    "table_calc: Share",
-    "lod: Days FIXED",
     "bin: Score (bin)",
     "top_n: region",
     "filter: score",
     "blend: other",
     "alias: Absences Shown",
+    "total: # Absent",
+    "filter: student_name",
 }
+
+
+def _ref(audit, gid, name):
+    return next(c["ref"] for c in audit[gid]["unaccounted"] if c["key"] == name)
 
 
 def _audited(tmp_path, mutate=None):
@@ -1451,22 +1456,75 @@ def test_audit_lists_every_construct_on_the_rows_sheets(tmp_path):
 
 
 def test_audit_splits_handled_and_not_checked(tmp_path):
+    _, first = _audited(tmp_path)
+    group = _ref(first, "1", "group: Code Group")
+    att = _ref(first, "1", "filter: att_code")
+
     def m(d):
-        d["handled"] = {"group: Code Group": "dimension code_group"}
-        d["rows"][0]["not_checked"] = [
-            {"construct": "table_calc: Share", "why": "percent of total"}
-        ]
+        d["handled"] = {group: "dimension code_group"}
+        d["rows"][0]["not_checked"] = [{"construct": att, "why": "excluded codes"}]
 
     _, audit = _audited(tmp_path, m)
     keys = {c["key"] for c in audit["1"]["unaccounted"]}
     assert "group: Code Group" not in keys
-    assert "table_calc: Share" not in keys
+    assert "filter: att_code" not in keys
     (nc,) = audit["1"]["not_checked"]
-    assert (nc["key"], nc["sheets"], nc["why"]) == (
+    assert (nc["ref"], nc["sheets"], nc["why"]) == (att, ["Codes"], "excluded codes")
+
+
+def test_a_handled_ref_stops_matching_when_the_construct_changes():
+    a = cv.Construct("filter", "Region", detail={"members": ["Camden"]})
+    b = cv.Construct("filter", "Region", detail={"members": ["Camden", "Miami"]})
+    assert a.key == b.key and a.ref != b.ref
+    s1 = cv.Sheet("one", ["Main"], constructs=[a])
+    s2 = cv.Sheet("two", ["Main"], constructs=[b])
+    assert len(cv.merge_constructs([s1, s2])) == 2
+
+
+def test_measure_scoped_constructs_attach_only_to_their_row(tmp_path):
+    def m(d):
+        d["rows"][0]["metrics"][0]["tableau"] = "Share"
+
+    _, audit = _audited(tmp_path, m)
+    assert {c["key"] for c in audit["1"]["unaccounted"]} == {
         "table_calc: Share",
-        ["Shares"],
-        "percent of total",
+        "source_filter: rpt_demo (kipptaf_tableau): region_type",
+    }
+
+
+def test_filter_members_never_reach_outputs(tmp_path, capsys):
+    checks, audit = _audited(tmp_path)
+    result = cv.run_dashboard(checks, FakeCube(), FakeBQ(), TODAY, audit=audit)
+    digest = cv.digest_markdown(result, checks, {})
+    assert "Student A" not in digest
+    assert "filter: student_name [" in digest and "(exclude; 1 member)" in digest
+    assert "Student A" not in json.dumps(result, default=str)
+    twb = str(FIX / "constructs.twb")
+    cv.main(["grains", twb, "--dashboard", "Main", "--measure", "# Absent"])
+    assert "Student A" not in capsys.readouterr().out
+    cv.main(["grains", twb, "--dashboard", "Main"])
+    assert "Student A" not in capsys.readouterr().out
+
+
+def test_visual_totals_are_read_and_inventoried():
+    geo = _sheet("Geo")
+    assert list(geo.measures) == ["# Absent"]
+    (t,) = [c for c in geo.constructs if c.kind == "total"]
+    assert (t.name, t.detail, t.scope) == (
+        "# Absent",
+        {"visual_totals": "avg"},
+        ["# Absent"],
     )
+
+
+def test_sheet_local_calcs_are_indexed():
+    assert "table_calc: Adhoc" in _keys(_sheet("Shares"))
+
+
+def test_subtotal_on_a_parameter_field_is_expanded():
+    grains = {frozenset(g) for g in cv.propose_grains([_sheet("Levels")], "# Absent")}
+    assert frozenset({"region", "School"}) in grains
+    assert frozenset({"School"}) in grains
 
 
 def test_audit_finds_sheets_through_a_measure_names_alias(tmp_path):
@@ -1510,10 +1568,11 @@ def test_unaccounted_construct_makes_a_passing_row_incomplete_but_a_fail_stays_f
 
 
 def test_comment_and_digest_list_unaccounted_and_not_checked(tmp_path):
+    _, first = _audited(tmp_path)
+    att = _ref(first, "2", "filter: att_code")
+
     def m(d):
-        d["rows"][1]["not_checked"] = [
-            {"construct": "table_calc: Share", "why": "percent of total"}
-        ]
+        d["rows"][1]["not_checked"] = [{"construct": att, "why": "excluded codes"}]
 
     checks, audit = _audited(tmp_path, m)
     result = cv.run_dashboard(checks, FakeCube(), FakeBQ(), TODAY, audit=audit)
@@ -1526,11 +1585,12 @@ def test_comment_and_digest_list_unaccounted_and_not_checked(tmp_path):
     assert "Not checked: 1 Tableau construct; see the fix digest." in text
     digest = cv.digest_markdown(result, checks, {})
     assert "## Unaccounted Tableau constructs" in digest
-    assert "- group: Code Group on Codes (2 bins over att_code)" in digest
+    assert "- group: Code Group [" in digest
+    assert "] on Codes (2 bins over att_code)" in digest
     assert "## Not checked" in digest
-    assert ": percent of total" in digest
+    assert ": excluded codes" in digest
     report = cv.report_markdown(result)
-    assert "Unaccounted: " in report and "Not checked: table_calc: Share." in report
+    assert "Unaccounted: " in report and f"Not checked: {att}." in report
 
 
 def test_rule_groups_are_listed_as_decisions(tmp_path):

@@ -97,6 +97,12 @@
             </groupfilter>
           </filter>
           <filter class='categorical' column='[federated.abc].[User Filter 1]' context='true' />
+          <filter class='categorical' column='[federated.abc].[none:student_name:nk]'>
+            <groupfilter function='except' user:ui-enumeration='exclusive'>
+              <groupfilter function='level-members' level='[none:student_name:nk]' />
+              <groupfilter function='member' level='[none:student_name:nk]' member='&quot;Student A&quot;' />
+            </groupfilter>
+          </filter>
           <filter class='categorical' column='[federated.abc].[none:gender:nk]'>
             <groupfilter function='level-members' level='[none:gender:nk]' />
           </filter>
@@ -109,7 +115,7 @@
     <worksheet name='Geo'>
       <table>
         <view><datasource-dependencies datasource='federated.abc' /></view>
-        <panes><pane><encodings><text column='[federated.abc].[usr:Calculation_abs:qk]' /></encodings></pane></panes>
+        <panes><pane><encodings><text column='[federated.abc].[usr:Calculation_abs:qk]' /><label column='[federated.abc].[usr:Calculation_abs:vtavg:qk]' /></encodings></pane></panes>
         <rows>([federated.abc].[none:region:nk] / [federated.abc].[none:school_abbreviation:nk])</rows>
         <cols>[federated.abc].[yr:calendardate:ok]</cols>
         <subtotals><column>[federated.abc].[none:region:nk]</column></subtotals>
@@ -126,12 +132,16 @@
         <panes><pane><encodings><text column='[federated.abc].[usr:Calculation_abs:qk]' /></encodings></pane></panes>
         <rows>([federated.abc].[none:Calculation_level:nk] / [federated.abc].[none:Calculation_odd:nk])</rows>
         <cols>[federated.abc].[none:School (copy)_1:nk]</cols>
+        <subtotals><column>[federated.abc].[none:Calculation_level:nk]</column></subtotals>
       </table>
     </worksheet>
     <worksheet name='Shares'>
       <table>
         <view>
           <datasource-dependencies datasource='federated.abc'>
+            <column caption='Adhoc' datatype='real' name='[Calculation_adhoc]' role='measure' type='quantitative' user:unnamed='Adhoc'>
+              <calculation class='tableau' formula='WINDOW_SUM(SUM([is_absent]))' />
+            </column>
             <column-instance column='[Calculation_abs]' derivation='User' name='[pcto:usr:Calculation_abs:qk:3]' pivot='key' type='quantitative'>
               <table-calc ordering-type='Rows' type='PctTotal' />
             </column-instance>
@@ -143,6 +153,7 @@
               <text column='[federated.abc].[pcto:usr:Calculation_abs:qk:3]' />
               <tooltip column='[federated.abc].[usr:Calculation_pct:qk]' />
               <tooltip column='[federated.abc].[usr:Calculation_lod:qk]' />
+              <tooltip column='[federated.abc].[usr:Calculation_adhoc:qk]' />
             </encodings>
           </pane>
         </panes>
