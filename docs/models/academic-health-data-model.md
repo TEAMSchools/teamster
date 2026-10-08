@@ -153,16 +153,16 @@ Every goal and band on the dashboard uses **unweighted** GPA except the
 
 ### Bands and flags
 
-| Term                                | Meaning                                                                                                                  |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `gpa_band_label`                    | Cumulative unweighted band: `3.5+`, `3.0-3.49`, `2.5-2.99`, `2.0-2.49`, `below 2.0`                                      |
-| `gpa_band_projected_...`            | The same cut points as a number, 1 (below 2.0) to 5 (3.5 and up), the KIPP Foundation five-band scale                    |
-| `is_on_cusp_3_0`                    | Cumulative unweighted GPA at least 2.75 and below 3.00                                                                   |
-| `gpa_needed_for_cumulative_3_0`     | The unweighted Y1 GPA a student must average this year to finish at exactly 3.00; negative means already safe            |
-| `is_gpa_band_slide`                 | Projected band at least one band below last year's band                                                                  |
-| `F*`                                | Not a PowerSchool grade: a live gradebook grade below 50% is floored to 50% and labelled `F*`. Failure counts match `F%` |
-| `need_60` to `need_90`, `need_next` | The percent needed in the current term for the year-to-date course grade to reach a target                               |
-| Lookbacks                           | `gpa_y1_1_week_prior` and siblings: the Y1 GPA in effect at the end of the day 1, 2, or 4 weeks ago                      |
+| Term                                           | Meaning                                                                                                                  |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `gpa_band_label`                               | Cumulative unweighted band: `3.5+`, `3.0-3.49`, `2.5-2.99`, `2.0-2.49`, `below 2.0`                                      |
+| `gpa_band_projected_...`                       | The same cut points as a number, 1 (below 2.0) to 5 (3.5 and up), the KIPP Foundation five-band scale                    |
+| `is_on_cusp_3_0`                               | Cumulative unweighted GPA at least 2.75 and below 3.00                                                                   |
+| `gpa_needed_for_cumulative_3_0`                | The unweighted Y1 GPA a student must average this year to finish at exactly 3.00; negative means already safe            |
+| `is_gpa_band_slide`                            | Projected band at least one band below last year's band                                                                  |
+| `F*`                                           | Not a PowerSchool grade: a live gradebook grade below 50% is floored to 50% and labelled `F*`. Failure counts match `F%` |
+| `need_60` to `need_90`, `need_83`, `need_next` | The percent needed in the current term for the year-to-date course grade to reach a target                               |
+| Lookbacks                                      | `gpa_y1_1_week_prior` and siblings: the Y1 GPA in effect at the end of the day 1, 2, or 4 weeks ago                      |
 
 ### Populations
 
@@ -436,6 +436,36 @@ network target.
   with a network goal, carrying the network threshold and the target share at
   each rung. Its only filter is `rn_year = 1`; its only reader,
   `rpt_tableau__gpa_goal_progress`, supplies the population.
+
+### The Y1 target chain
+
+Both models build in each NJ district project from the shared `powerschool`
+package and are unioned in kipptaf, like the GPA models below.
+
+- `int_powerschool__student_y1_target`: one row per current-year high school
+  student with the lowest unweighted letter whose grade points reach the needed
+  GPA, floored at B; the weighted GPA that target corresponds to on the
+  student's open courses; and a pace status of `on_pace`, `not_on_pace`,
+  `goal_not_attainable`, or `unknown`. It reads the needed GPA from
+  `int_powerschool__gpa_cumulative`, re-bases it on every scheduled course with
+  locked courses held at their current Y1 points, and decides attainability from
+  that re-solved need rather than the Monitor's flag. A course that has not
+  started yet neither blocks `on_pace` nor counts toward it; a started course
+  with no grade blocks it.
+- `int_powerschool__course_pace`: one row per current-year GPA course per
+  student with the average percent needed in each remaining term, exams
+  included, for the course Y1 to land on the target cutoff. The in-progress term
+  is a remaining term, so the pace moves only when a term closes. A course whose
+  terms have all ended is locked and has no pace. The same row carries the
+  quickest win: the student's open courses ranked by grade points gained at the
+  next letter times credits, over the percent gap to that letter's pace, with
+  below-target courses ranked first. Rank 1 is the course where the fewest
+  points buy the most GPA.
+
+These reach the GPA roster sheet, the Cumulative GPA Monitor through
+`rpt_tableau__gpa_goal_progress`, and the course view through
+`rpt_tableau__gpa_course_pace`. A quarter GPA target is deliberately absent:
+quarter GPAs do not average to the Y1 GPA, and course percents do.
 
 ### The PowerSchool GPA models
 

@@ -468,6 +468,9 @@ select
     s.gpa_band_projected_unweighted
     - s.gpa_band_unweighted_prior_year as gpa_band_change_from_prior_year,
 
+    /* the B cutoff, by the same affine identity need_next uses below */
+    g.need_60 + (83 - 60) / 10 * (g.need_70 - g.need_60) as need_83,
+
     g.need_next,
 
     coalesce(

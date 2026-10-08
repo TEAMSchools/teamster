@@ -358,3 +358,43 @@ models:
           school has no school-rung goal for that grade and year, on the same
           basis as gpa_goal_proportion_region — a NULL here does not mean the
           row has no goal.
+      - name: pace_status
+        data_type: string
+        description: >-
+          on_pace, not_on_pace, goal_not_attainable, or unknown, from
+          `int_powerschool__student_y1_target`. Current-year rows only.
+        config:
+          meta:
+            contains_pii: true
+      - name: gpa_needed_weighted
+        data_type: float64
+        description: >-
+          The needed GPA on the weighted scale PowerSchool shows. Current-year
+          rows only.
+        config:
+          meta:
+            contains_pii: true
+      - name: target_letter_grade
+        data_type: string
+        description: >-
+          Lowest letter in every GPA course that reaches the needed GPA, floored
+          at B. Current-year rows only.
+        config:
+          meta:
+            contains_pii: true
+      - name: target_cutoff_percent
+        data_type: float64
+        description: >-
+          Percent cutoff of `target_letter_grade` on the unweighted scale, the
+          percent to hold in every open course. Current-year rows only.
+        config:
+          meta:
+            contains_pii: true
+      - name: n_courses_below_target
+        data_type: int64
+        description: >-
+          Unlocked current-year GPA courses whose Y1 percent is below the target
+          cutoff. Current-year rows only.
+        config:
+          meta:
+            contains_pii: true

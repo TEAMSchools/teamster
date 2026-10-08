@@ -1,0 +1,108 @@
+models:
+  - name: rpt_tableau__gpa_course_pace
+    description: >-
+      Course-grain companion to the Cumulative GPA Monitor: one row per
+      current-year GPA course per high school student with the pace percent to
+      the student's target letter, whether the course is below target, and its
+      quickest-win rank. Reads `int_powerschool__course_pace`, which carries the
+      formulas.
+    config:
+      meta:
+        contains_pii: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - studentid
+              - course_number
+              - _dbt_source_project
+    columns:
+      - name: studentid
+        data_type: int64
+        description: PowerSchool student id, a surrogate key.
+      - name: schoolid
+        data_type: int64
+        description: The student's rn_year = 1 school this year.
+      - name: course_number
+        data_type: string
+        description: PowerSchool course number.
+      - name: course_name
+        data_type: string
+        description: PowerSchool course name.
+      - name: _dbt_source_project
+        data_type: string
+        description: District code location the row came from.
+      - name: potential_credit_hours
+        data_type: float64
+        description: GPA credit hours for the course.
+      - name: target_cutoff_percent
+        data_type: float64
+        description: >-
+          The percent cutoff of the student's target letter, the lowest
+          unweighted letter that reaches a 3.0 cumulative when held in every
+          open course, floored at 83. NULL when the student's status is unknown
+          or the goal is not attainable.
+      - name: y1_percent_current
+        data_type: float64
+        description: Live Y1 percent on the current or latest-started term row.
+      - name: term_percent_current
+        data_type: float64
+        description:
+          Percent in the in-progress term; NULL before any grade posts.
+      - name: pace_percent
+        data_type: float64
+        description: >-
+          Average percent needed in each remaining term, exams included, for the
+          course Y1 to land on the target cutoff. NULL when the course is locked
+          or has no target.
+      - name: is_below_target
+        data_type: boolean
+        description: True when `y1_percent_current` is below the target cutoff.
+      - name: is_secured
+        data_type: boolean
+        description: >-
+          Pace at or below 50, the live-gradebook floor, so the target is
+          already met.
+      - name: is_locked
+        data_type: boolean
+        description: Every termbin for the course has ended.
+      - name: next_letter_grade
+        data_type: string
+        description: >-
+          Lowest unweighted letter with more grade points than the course's
+          current Y1 letter. NULL when locked or already at the top.
+      - name: next_cutoff_percent
+        data_type: float64
+        description: Cutoff percent of `next_letter_grade`.
+      - name: pace_percent_to_next
+        data_type: float64
+        description: The pace formula with the next letter's cutoff as target.
+      - name: quickest_win_rank
+        data_type: int64
+        description: >-
+          1 is the course where the smallest push buys the most GPA, with
+          below-target courses ranked first. NULL when the course is locked,
+          already ahead of the pace to the next letter, or needs more than 100.
+      - name: academic_year
+        data_type: int64
+      - name: region
+        data_type: string
+      - name: school
+        data_type: string
+      - name: grade_level
+        data_type: int64
+      - name: student_number
+        data_type: int64
+        config:
+          meta:
+            contains_pii: true
+      - name: student_name
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: advisory
+        data_type: string
+      - name: school_leader_tableau_username
+        data_type: string
+        description: Row-level security key for the Tableau workbook.
