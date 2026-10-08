@@ -303,3 +303,95 @@ causes part of the gap in reopens: `latest.json` lists those members as
 `reopen_for` (they explain cells, or the dashboard's total moves without their
 logic), and `sync.py` unticks the row and tags it `cube-partial`. A `fail` also
 keeps its `mismatch` tag. Members that only block grains still do not reopen.
+
+## Revision 2026-10-08: Tableau constructs that change what a sheet shows
+
+Found on STAT: the grade-range group never reached the checks, and the grain
+proposer missed discipline hidden in field copies and parameter-driven columns.
+The user asked for groups to be handled, and for every other way Tableau can
+make a sheet's number differ from the check SQL to be found.
+
+### What the 2 workbooks use
+
+| Construct                                          | STAT    | Attendance |
+| -------------------------------------------------- | ------- | ---------- |
+| Groups (`categorical-bin`)                         | 4       | 3          |
+| Plain copies of a field                            | 19      | 8          |
+| Calculations that read a parameter                 | 33      | 13         |
+| Drill paths (hierarchies)                          | 4       | 0          |
+| Sets and other datasource groups                   | 11      | 40         |
+| Columns with aliases                               | 24      | 16         |
+| Sheets with quick table calculations               | 28      | 3          |
+| FIXED level-of-detail calculations                 | 21      | 5          |
+| Context filters / exclude filters                  | 59 / 54 | 7 / 11     |
+| Totals or subtotals                                | 44      | 29         |
+| Calculations using viewer functions (`ISMEMBEROF`) | 3       | 0          |
+| Fiscal year start set on the datasource            | no      | July       |
+
+Neither uses numeric bins, blends, top-N filters or extract filters; detection
+covers them anyway.
+
+### Rule: nothing is skipped silently
+
+`grains` inventories every construct on each sheet that shows a checked measure.
+The checks file accounts for each one: handled (a dimension, a filter or the
+metric SQL reproduces it) or listed under the row's `not_checked:` with what it
+is, why, and the sheets. Each run re-reads the workbook and marks a row
+`incomplete` when a construct on its sheets is in neither place, so a workbook
+edit after authoring cannot slip past either. `not_checked:` items do not fail a
+row; the digest lists them under "Not checked" and the row comment says how
+many.
+
+### Handling, by construct
+
+- **Groups.** A dimension may declare
+  `group: {of: <sql>, bins: {<label>: [values]}}`; the tool writes the CASE.
+  Values in no bin keep their own value (no workbook defines an Other bin;
+  confirm with 1 render before relying on it). Each group also takes
+  `kind: relabel` (codes rolled into coarser buckets) or `kind: rule` (a
+  definition, such as speech-only IEP counted as no IEP). On the Cube side it
+  maps to a member whose values equal the bin labels, or `cube: null`. The
+  digest lists rule groups as decisions, relabels as members to add.
+- **Numeric bins.** Translated to `floor(x / size) * size`; Cube side as for
+  groups.
+- **Plain copies.** Resolved to the source field in grains and formulas.
+- **Parameter-driven fields.** A CASE on a parameter is expanded: each branch is
+  its own grain (or its own measure, when the parameter swaps measures), so the
+  STAT goals sheet yields one grain per level.
+- **Drill paths.** Every level of the path is a grain on the sheets that use it,
+  not only the level on the shelf.
+- **Sets.** A set or combined field used as a filter changes the population. One
+  that encodes a rule (attendance's "Exclude OOD") is a missing member, as out
+  of district already is. Action, tooltip and highlight groups come from viewer
+  clicks and are ignored.
+- **Aliases.** They change labels, not numbers. Renders show the alias, so the
+  render step maps it back to the value. On Measure Names an alias can show one
+  field under another's name (STAT's "2024 Goal" is the field "2023 Goal
+  (copy)"), so `grains --measure` matches captions and aliases and prints the
+  field it resolved to.
+- **Table calculations.** Percent of total, difference, rank and running totals
+  are computed from the table on screen, not at the grain. The check compares
+  the base aggregate and lists the sheet under `not_checked:`.
+- **Level-of-detail calculations.** FIXED ignores every filter except context
+  filters; INCLUDE and EXCLUDE respect them. `grains` prints each sheet's
+  context filters beside the formula, and a FIXED metric applies only those
+  inside the calculation.
+- **Filters.** `grains` prints each filter with its mode: exclude (`NOT IN`),
+  null members (`%null%`), context. The skill writes `hard_filters` and
+  `truth_filters` from that, not from the field name alone.
+- **Totals.** A total is the measure at the coarser grain, which the grain list
+  already holds. A total set to sum or average the rows of a non-additive
+  measure is listed under `not_checked:`.
+- **Viewer functions.** `ISMEMBEROF` and `USERNAME` make the sheet differ by
+  viewer. The run uses a network identity on the full extract, so these are
+  listed under `not_checked:` with the groups they test.
+- **Fiscal year and week start.** A date part on a shelf follows the
+  datasource's fiscal year start, so the dimension SQL has to as well.
+
+### To confirm in the plan
+
+- Values outside every bin keep their own value (1 render of a grouped sheet).
+- Where the `.twb` records a total's aggregation (sum of rows vs the measure at
+  the total).
+- Whether the fiscal year start changes `YEAR()` inside a calculation, or only
+  date parts on shelves.
