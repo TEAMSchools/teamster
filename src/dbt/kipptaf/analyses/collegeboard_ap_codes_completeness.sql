@@ -212,19 +212,15 @@ with
     ),
 
     file_irreg_codes as (
-        select distinct code,
-        from
-            (
-                select irregularity_code_1 as code,
-                from scored_rows
-                where irregularity_code_1 is not null
+        select irregularity_code_1 as code,
+        from scored_rows
+        where irregularity_code_1 is not null
 
-                union all
+        union distinct
 
-                select irregularity_code_2 as code,
-                from scored_rows
-                where irregularity_code_2 is not null
-            ) as irreg_codes
+        select irregularity_code_2 as code,
+        from scored_rows
+        where irregularity_code_2 is not null
     ),
 
     known_codes as (

@@ -18,5 +18,5 @@ select
     ) as score_grain,
     count(*) as n,
 from {{ ref("int_assessments__resolved_section_enrollments") }}
-group by 1
+group by score_grain
 having n > 1
