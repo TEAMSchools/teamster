@@ -211,19 +211,17 @@ with
         select distinct exam_code as code, from scored_rows where exam_code is not null
     ),
 
-    irreg_codes as (
+    file_irreg_codes as (
         select irregularity_code_1 as code,
         from scored_rows
         where irregularity_code_1 is not null
 
-        union all
+        union distinct
 
         select irregularity_code_2 as code,
         from scored_rows
         where irregularity_code_2 is not null
     ),
-
-    file_irreg_codes as (select distinct code, from irreg_codes),
 
     known_codes as (
         select code, `domain`,

@@ -12,40 +12,30 @@ with
             ) as rn,
         from {{ ref("int_powerschool__gpa_cumulative_year") }}
         where not is_projected
-    ),
-
-    latest_stored as (
-        select
-            studentid,
-            schoolid,
-            academic_year,
-            cumulative_y1_gpa,
-            cumulative_y1_gpa_unweighted,
-        from stored_ranked
-        where rn = 1
     )
 
 select
-    ls.studentid,
-    ls.schoolid,
-    ls.academic_year,
-    ls.cumulative_y1_gpa,
-    ls.cumulative_y1_gpa_unweighted,
+    sr.studentid,
+    sr.schoolid,
+    sr.academic_year,
+    sr.cumulative_y1_gpa,
+    sr.cumulative_y1_gpa_unweighted,
 
     gc.cumulative_y1_gpa as gpa_cumulative_weighted,
     gc.cumulative_y1_gpa_unweighted as gpa_cumulative_unweighted,
-from latest_stored as ls
+from stored_ranked as sr
 inner join
     {{ ref("int_powerschool__gpa_cumulative") }} as gc
-    on ls.studentid = gc.studentid
-    and ls.schoolid = gc.schoolid
+    on sr.studentid = gc.studentid
+    and sr.schoolid = gc.schoolid
 where
-    not exists (
+    sr.rn = 1
+    and not exists (
         select 1,
         from {{ ref("stg_powerschool__storedgrades") }} as sg
         where
-            ls.studentid = sg.studentid
-            and ls.schoolid = sg.schoolid
+            sr.studentid = sg.studentid
+            and sr.schoolid = sg.schoolid
             and sg.storecode = 'Y1'
             and sg.academic_year = {{ var("current_academic_year") }}
     )
@@ -53,10 +43,10 @@ where
        and float64 abs(2.97 - 2.96) > 0.01; 0.015 passes the one-cent flip while
        still catching any real drift (>= 0.02) */
     and (
-        abs(coalesce(ls.cumulative_y1_gpa, -99) - coalesce(gc.cumulative_y1_gpa, -99))
+        abs(coalesce(sr.cumulative_y1_gpa, -99) - coalesce(gc.cumulative_y1_gpa, -99))
         > 0.015
         or abs(
-            coalesce(ls.cumulative_y1_gpa_unweighted, -99)
+            coalesce(sr.cumulative_y1_gpa_unweighted, -99)
             - coalesce(gc.cumulative_y1_gpa_unweighted, -99)
         )
         > 0.015
