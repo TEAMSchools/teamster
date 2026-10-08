@@ -839,3 +839,24 @@ def test_comment_names_the_snapshots():
     result = cv.run_dashboard(_checks(), FakeCube(), FakeBQ(), TODAY, snapshots=snaps)
     text = cv.comment_text(result["rows"]["2"], result, Path("r.md"))
     assert "Snapshots: extract 2026-10-08 06:28 ET, Cube 2026-10-08 06:12 ET." in text
+
+
+def test_retry_recovers_from_a_transient_failure():
+    calls = []
+
+    def flaky():
+        calls.append(1)
+        if len(calls) < 3:
+            raise RuntimeError("401002")
+        return "ok"
+
+    assert cv.retry(flaky, attempts=3, sleep=lambda _: None) == "ok"
+    assert len(calls) == 3
+
+
+def test_retry_gives_up_after_its_attempts():
+    def broken():
+        raise RuntimeError("401002")
+
+    with pytest.raises(RuntimeError, match="401002"):
+        cv.retry(broken, attempts=2, sleep=lambda _: None)

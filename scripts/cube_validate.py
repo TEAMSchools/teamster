@@ -596,6 +596,18 @@ class ExtractSource:
             ]
 
 
+def retry(fn, attempts: int = 3, sleep=time.sleep, wait: float = 5.0):
+    """Call fn until it succeeds; Tableau sign-ins fail transiently with 401002."""
+    for attempt in range(1, attempts + 1):
+        try:
+            return fn()
+        except Exception:  # noqa: BLE001 - re-raised after the last attempt
+            if attempt == attempts:
+                raise
+            sleep(wait * attempt)
+    raise ValueError("retry needs attempts >= 1")
+
+
 def download_extract(
     luid: str, datasource: str, out_dir: Path
 ) -> tuple[Path, dt.datetime]:
@@ -611,14 +623,20 @@ def download_extract(
         site_id=os.environ["TABLEAU_SITE_ID"],
     )
     server = tsc.Server(os.environ["TABLEAU_SERVER_ADDRESS"], use_server_version=True)
-    with server.auth.sign_in(auth):
-        refreshed_at = server.workbooks.get_by_id(luid).updated_at
-        # tableauserverclient appends the extension: pass the stem.
-        twbx = Path(
-            server.workbooks.download(
-                luid, filepath=str(out_dir / "workbook"), include_extract=True
+
+    def fetch():
+        # A fresh sign-in per attempt: the recovery for a 401002 sign-in race.
+        with server.auth.sign_in(auth):
+            refreshed = server.workbooks.get_by_id(luid).updated_at
+            # tableauserverclient appends the extension: pass the stem.
+            path = Path(
+                server.workbooks.download(
+                    luid, filepath=str(out_dir / "workbook"), include_extract=True
+                )
             )
-        )
+        return refreshed, path
+
+    refreshed_at, twbx = retry(fetch)
     with zipfile.ZipFile(twbx) as z:
         twb = next(n for n in z.namelist() if n.endswith(".twb"))
         (out_dir / "workbook.twb").write_bytes(z.read(twb))
