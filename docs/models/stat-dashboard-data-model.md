@@ -145,9 +145,9 @@ The NJ vendor changed on a date, not per assessment: through December 2025 it is
 Pearson; Spring 2026 and after is Cambium, for NJSLA, NJSLA Science, NJGPA and
 the Algebra I, Algebra II and Geometry end-of-course tests. The Pearson
 relations will not gain rows, so a gap in one cannot be fixed by a re-pull.
-Paterson has no NJGPA or end-of-course file (`stg_pearson__njgpa`,
-`stg_cambium__njgpa` and `stg_cambium__eoc` are disabled there), and its Pearson
-NJSLA history came through its own ID-remapping `int_pearson__njsla` and
+Paterson has no NJGPA file (`stg_pearson__njgpa` and `stg_cambium__njgpa` are
+disabled there) and no end-of-course file yet, and its Pearson NJSLA history
+came through its own ID-remapping `int_pearson__njsla` and
 `int_pearson__njsla_science`, now frozen with the rest of the Pearson models.
 The Cambium side is in
 [`src/dbt/cambium/CLAUDE.md`](https://github.com/TEAMSchools/teamster/blob/main/src/dbt/cambium/CLAUDE.md).
@@ -300,8 +300,8 @@ Newark, Camden and Paterson tables that derives `_dbt_source_project`:
   no longer rebuilt.
 - `int_cambium__all_assessments`: the live Cambium feed, already mapped to the
   shared names by each district's cambium-package `int_cambium__all_assessments`
-  (which unions the `stg_cambium__njsla`, `__eoc` and `__njgpa` models that
-  district has).
+  (which reads `stg_cambium__njsla`, carrying NJSLA and the end-of-course tests,
+  plus `stg_cambium__njgpa` where the district has it).
 
 What `int_assessments__state_nj_scores` itself does:
 

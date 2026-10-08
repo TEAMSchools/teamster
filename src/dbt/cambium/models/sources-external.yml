@@ -47,8 +47,10 @@ sources:
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base',
               env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/cambium/njsla/"
+      # Retired with stg_cambium__eoc; the njsla asset reads both files.
       - name: src_cambium__eoc
         config:
+          enabled: false
           meta:
             dagster:
               asset_key:

@@ -24,6 +24,7 @@ sources:
                 - stg_cambium__njsla
       - name: stg_cambium__eoc
         config:
+          enabled: false
           meta:
             dagster:
               group: cambium

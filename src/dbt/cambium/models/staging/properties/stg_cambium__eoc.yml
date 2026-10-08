@@ -1,11 +1,10 @@
 models:
   - name: stg_cambium__eoc
     description: >-
-      Cambium TIDE end-of-course district summative record file (Algebra I,
-      Algebra II, Geometry), one row per student per test, filtered to
-      summative, attempted records. Same header as the NJSLA file. Columns keep
-      Cambium's names; kipptaf int_pearson__all_assessments unions these rows
-      with NJSLA and maps them into the shared NJ-assessment shape.
+      Retired. End-of-course tests now load through stg_cambium__njsla, whose
+      asset reads the NJSLA and end-of-course files together.
+    config:
+      enabled: false
     columns:
       # Columns carrying per-column data_tests sort to the top. Every test sets
       # severity explicitly.
@@ -19,9 +18,11 @@ models:
           - unique:
               config:
                 severity: error
+                enabled: false
           - not_null:
               config:
                 severity: error
+                enabled: false
       - name: test_date
         data_type: date
         description: >-
@@ -33,6 +34,7 @@ models:
           - not_null:
               config:
                 severity: error
+                enabled: false
       - name: period
         data_type: string
         quote: true
@@ -45,11 +47,13 @@ models:
           - not_null:
               config:
                 severity: error
+                enabled: false
           - accepted_values:
               arguments:
                 values: [Spring]
               config:
                 severity: error
+                enabled: false
       - name: subject
         data_type: string
         quote: true
@@ -61,6 +65,7 @@ models:
           - not_null:
               config:
                 severity: error
+                enabled: false
           - accepted_values:
               arguments:
                 values:
@@ -69,6 +74,7 @@ models:
                   - Geometry
               config:
                 severity: error
+                enabled: false
       - name: academic_year
         data_type: int64
         description: >-

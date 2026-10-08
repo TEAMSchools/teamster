@@ -4,7 +4,10 @@ from teamster.libraries.cambium.assets import (
     build_partitions_def,
     build_remote_file_regex,
 )
-from teamster.libraries.sftp.assets import build_sftp_file_asset
+from teamster.libraries.sftp.assets import (
+    build_sftp_file_asset,
+    build_sftp_folder_asset,
+)
 
 ssh_resource_key = "ssh_couchdrop"
 remote_dir_regex_prefix = f"/data-team/{CODE_LOCATION}/cambium"
@@ -35,35 +38,26 @@ njgpa = build_sftp_file_asset(
     partitions_def=partitions_def,
 )
 
-njsla = build_sftp_file_asset(
+# One asset over the NJSLA file and the end-of-course (EOC) file, which share a
+# header. A re-issued NJSLA file can bundle the EOC tests too, so both files
+# land in one relation and stg_cambium__njsla keeps the newest copy of each
+# test. Each file keeps its own Couchdrop folder.
+njsla = build_sftp_folder_asset(
     asset_key=[*key_prefix, "njsla"],
-    remote_dir_regex=rf"{remote_dir_regex_prefix}/njsla",
-    remote_file_regex=build_remote_file_regex(
+    remote_dir_regex=remote_dir_regex_prefix,
+    remote_file_regex=r"(?:njsla|eoc)/"
+    + build_remote_file_regex(
         partitions_def=partitions_def,
         district_code=DISTRICT_CODE,
-        filename_suffix_regex=r"_SLA",
+        filename_suffix_regex=r"_SLA(?:_EOC)?",
     ),
     avro_schema=NJSLA_SCHEMA,
     ssh_resource_key=ssh_resource_key,
     partitions_def=partitions_def,
-)
-
-eoc = build_sftp_file_asset(
-    asset_key=[*key_prefix, "eoc"],
-    remote_dir_regex=rf"{remote_dir_regex_prefix}/eoc",
-    remote_file_regex=build_remote_file_regex(
-        partitions_def=partitions_def,
-        district_code=DISTRICT_CODE,
-        filename_suffix_regex=r"_SLA_EOC",
-    ),
-    # Cambium ships EOC with a byte-identical header to the NJSLA file.
-    avro_schema=NJSLA_SCHEMA,
-    ssh_resource_key=ssh_resource_key,
-    partitions_def=partitions_def,
+    add_source_file_modified_timestamp=True,
 )
 
 assets = [
     njgpa,
     njsla,
-    eoc,
 ]

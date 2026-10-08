@@ -7,13 +7,13 @@ models:
       Cambium TIDE New Jersey state assessment results (NJSLA, NJSLA Science,
       the Algebra I, Algebra II and Geometry end-of-course tests, and NJGPA) for
       one district, in the shared New Jersey state score shape. Cambium runs
-      every administration from Spring 2026 on. Unions stg_cambium__njsla and
-      stg_cambium__eoc, maps stg_cambium__njgpa separately, and derives the
-      aligned demographic labels, proficiency bands and subject and test-code
-      normalization. The cambium_state_assessment_relations var lists which
-      staging models a district reads; the NJGPA branch compiles only when
-      stg_cambium__njgpa is listed. kipptaf applies the student crosswalk and
-      unions this model with the frozen Pearson history in
+      every administration from Spring 2026 on. Reads stg_cambium__njsla, which
+      carries the end-of-course tests too, maps stg_cambium__njgpa separately,
+      and derives the aligned demographic labels, proficiency bands and subject
+      and test-code normalization. The cambium_state_assessment_relations var
+      lists which staging models a district reads; the NJGPA branch compiles
+      only when stg_cambium__njgpa is listed. kipptaf applies the student
+      crosswalk and unions this model with the frozen Pearson history in
       int_assessments__state_nj_scores.
 
       Drops rows whose test_status is not 'completed'. Cambium reports an

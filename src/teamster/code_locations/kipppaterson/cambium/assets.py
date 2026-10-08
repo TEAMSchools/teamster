@@ -4,7 +4,7 @@ from teamster.libraries.cambium.assets import (
     build_partitions_def,
     build_remote_file_regex,
 )
-from teamster.libraries.sftp.assets import build_sftp_file_asset
+from teamster.libraries.sftp.assets import build_sftp_folder_asset
 
 ssh_resource_key = "ssh_couchdrop"
 remote_dir_regex_prefix = f"/data-team/{CODE_LOCATION}/cambium"
@@ -23,18 +23,22 @@ partitions_def = build_partitions_def(
 )
 
 # NJSLA only. Paterson does not sit for NJGPA, so Cambium sends it no NJGPA
-# file, and stg_pearson__njgpa is disabled in the kipppaterson dbt project.
-njsla = build_sftp_file_asset(
+# file, and stg_cambium__njgpa is disabled in the kipppaterson dbt project. The
+# asset matches the same NJSLA and EOC files as Newark and Camden, so a first
+# Paterson EOC file loads without a code change.
+njsla = build_sftp_folder_asset(
     asset_key=[*key_prefix, "njsla"],
-    remote_dir_regex=rf"{remote_dir_regex_prefix}/njsla",
-    remote_file_regex=build_remote_file_regex(
+    remote_dir_regex=remote_dir_regex_prefix,
+    remote_file_regex=r"(?:njsla|eoc)/"
+    + build_remote_file_regex(
         partitions_def=partitions_def,
         district_code=DISTRICT_CODE,
-        filename_suffix_regex=r"_SLA",
+        filename_suffix_regex=r"_SLA(?:_EOC)?",
     ),
     avro_schema=NJSLA_SCHEMA,
     ssh_resource_key=ssh_resource_key,
     partitions_def=partitions_def,
+    add_source_file_modified_timestamp=True,
 )
 
 assets = [
