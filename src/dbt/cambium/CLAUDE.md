@@ -14,8 +14,7 @@ end-of-course tests come in a second file with the same header, but a re-issued
 NJSLA file can bundle them too. So both files go in the `cambium/njsla`
 Couchdrop folder, one Dagster folder asset (`njsla`) reads them, and
 `stg_cambium__njsla` keeps the copy of each `student_test_uuid` from the most
-recently modified file. `stg_cambium__eoc` and `src_cambium__eoc` are retired;
-do not re-enable them, or the end-of-course tests load twice.
+recently modified file.
 
 Column names are snake_case because Cambium ships spaced CSV headers, where
 Pearson shipped camel case. Only 11 of 225 column names overlap with
