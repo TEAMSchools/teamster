@@ -41,6 +41,7 @@ select
     e.year_in_network,
     e.rn_undergrad,
     e.is_self_contained as is_pathways,
+    e.is_hs_honors_program,
     e.is_retained_year,
     e.is_retained_ever,
     e.student_slideback,

@@ -16,6 +16,7 @@ with
             co.gifted_and_talented,
             co.unweighted_ada,
             co.weighted_ada,
+            co.is_hs_honors_program,
 
             term,
 
@@ -86,4 +87,5 @@ select
     cumulative_y1_gpa_projected,
 
     salesforce_id as salesforce_contact_id,
+    is_hs_honors_program,
 from roster pivot (max(gpa_term) as gpa for term in ('Q1', 'Q2', 'Q3', 'Q4'))
