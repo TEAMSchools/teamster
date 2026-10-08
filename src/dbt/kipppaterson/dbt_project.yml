@@ -22,9 +22,9 @@ data_tests:
   kipppaterson:
     +severity: warn
   # stg_cambium__njgpa is disabled below, and disabling a model leaves its
-  # tests enabled — they would scan a relation Paterson never builds. Each name is dbt's generated test name; changing a column
-  # name or accepted values list in the cambium yml renames the test and
-  # re-orphans it here.
+  # tests enabled — they would scan a relation Paterson never builds. Each name
+  # is dbt's generated test name; changing a column name or accepted values
+  # list in the cambium yml renames the test and re-orphans it here.
   cambium:
     staging:
       properties:
