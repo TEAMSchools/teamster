@@ -64,9 +64,10 @@ grains they block, so the user knows what to add.
    `~/asana-sync/validation/<date>-<dashboard>.json` verbatim, both with
    `mcp__claude_ai_Asana__add_comment`.
 7. Tags. Tell the user to run `~/asana-sync/sync.py` (preview, then `--apply`).
-   It reads `latest.json`: `fail` rows get the `mismatch` tag, and
-   `missing_member` rows are unticked and tagged `cube-partial`. The skill never
-   changes tags or ticks itself.
+   It reads `latest.json`: `pass` rows get the `matched` tag, `fail` rows get
+   `mismatch` and `cube-partial`, and `missing_member` rows get `cube-partial`.
+   It ticks a row only when it is both `cube-covered` and `matched`, and unticks
+   every other done row. The skill never changes tags or ticks itself.
 
 Run template:
 
