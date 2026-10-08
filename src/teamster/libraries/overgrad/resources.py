@@ -65,8 +65,6 @@ class OvergradResource(ConfigurableResource):
 
         url = self._get_url(path, *args)
 
-        # no per-page logging: each Dagster log call is a synchronous event write,
-        # and hundreds of pages turn slow writes into a max_runtime timeout
         page = 1
         data = []
         while True:
@@ -76,6 +74,8 @@ class OvergradResource(ConfigurableResource):
 
             data.extend(response_json.pop("data"))
 
+            # no per-page logging: each Dagster log call is a synchronous event
+            # write, and hundreds of pages turn slow writes into a max_runtime timeout
             if page == 1:
                 self._log.info(f"GET: {url} {response_json}")
 

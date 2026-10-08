@@ -1,3 +1,5 @@
+"""Offline pagination tests for ``OvergradResource`` (no live API calls)."""
+
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
@@ -27,7 +29,7 @@ def test_list_logs_once_per_call(monkeypatch):
 
     resource = OvergradResource(api_key="test")
     log = MagicMock()
-    resource._log = log
+    object.__setattr__(resource, "_log", log)
 
     def fake_request(params, **_):
         return _FakeResponse(page=params["page"], total_pages=3)
@@ -38,3 +40,4 @@ def test_list_logs_once_per_call(monkeypatch):
 
     assert [d["id"] for d in data] == [1, 2, 3]
     assert len(log.method_calls) == 1
+    log.info.assert_called_once()
