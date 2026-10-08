@@ -89,9 +89,7 @@ lint:
       files: [sql]
       commands:
         - name: lint
-          run:
-            uv run --no-project python scripts/check_sql_banned_syntax.py
-            ${target}
+          run: python3 scripts/check_sql_banned_syntax.py ${target}
           success_codes: [0, 1]
           read_output_from: stdout
           output: regex
