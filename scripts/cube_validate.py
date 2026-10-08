@@ -1056,7 +1056,9 @@ def _total_line(s_: dict, kind: str, members: list[str]) -> list[str]:
     else:
         lines = [f"- Total matches: Cube {c}, Tableau {t}."]
     w, truth = only.get("without"), only.get("truth")
-    if members and w is not None and truth is not None and w != truth:
+    # A share that rounds to nothing at display precision is noise, not a cause.
+    shown = 0.0005 if kind == "rate" else 0.5
+    if members and w is not None and truth is not None and abs(w - truth) >= shown:
         gap = (
             f"{abs(w - truth) * 100:.1f} points"
             if kind == "rate"

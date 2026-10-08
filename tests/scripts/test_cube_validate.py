@@ -1046,3 +1046,15 @@ def test_diagnosis_runs_without_the_missing_members_logic(tmp_path):
     assert (
         result["rows"]["1"]["diagnosis"]["count_tardy_days"]["basis"] == "without team"
     )
+
+
+def test_total_line_skips_a_share_that_rounds_to_nothing():
+    s_ = {
+        "bad": 0,
+        "explained": 0,
+        "worst": [],
+        "only": {"cube": 0.849, "truth": 0.8491, "without": 0.8492},
+    }
+    assert cv._total_line(s_, "rate", ["out_of_district"]) == [
+        "- Total matches: Cube 84.9%, Tableau 84.9%."
+    ]
