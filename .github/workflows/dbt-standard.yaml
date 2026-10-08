@@ -1,0 +1,68 @@
+# The rules' "Enforced by: dbt-layer-check" names this workflow.
+name: dbt-layer-check
+
+on:
+  pull_request:
+    paths:
+      - src/dbt/**
+      - scripts/check_dbt_standard.py
+      - scripts/check_sql_banned_syntax.py
+      - tests/scripts/test_check_dbt_standard.py
+      - tests/scripts/test_check_sql_banned_syntax.py
+      - .github/workflows/dbt-standard.yaml
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: check (${{ matrix.project }})
+    if: github.actor != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read # For repo checkout. Nothing here writes.
+    strategy:
+      fail-fast: false
+      matrix:
+        # Every project that carries a standard-baseline.tsv. A source package
+        # change reaches the districts that import it, so all run on any
+        # src/dbt change.
+        project: [kipptaf, kippnewark, kippcamden, kippmiami, kipppaterson]
+    env:
+      project_dir: src/dbt/${{ matrix.project }}
+
+    steps:
+      # https://github.com/actions/checkout
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      # https://github.com/astral-sh/setup-uv
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+
+      # The tests don't depend on the project, so 1 matrix leg runs them.
+      - name: Test the checkers
+        if: matrix.project == 'kipptaf'
+        run: >-
+          uv run pytest tests/scripts/test_check_dbt_standard.py
+          tests/scripts/test_check_sql_banned_syntax.py -q
+
+      # --no-renames: a renamed model must show as added, or A3 and A4 skip it.
+      - name: Diff against the base branch
+        run:
+          git diff -U0 --no-renames "origin/${GITHUB_BASE_REF}...HEAD" >
+          "${RUNNER_TEMP}/pr.diff"
+
+      # parse never connects to the warehouse, so the shipped oauth profile
+      # needs no credentials here.
+      - name: Parse the project
+        run: |
+          uv run dbt deps --project-dir "${project_dir}" --profiles-dir "${project_dir}"
+          uv run dbt parse --project-dir "${project_dir}" --profiles-dir "${project_dir}"
+
+      - name: Check the standard
+        run: >-
+          uv run python scripts/check_dbt_standard.py --project-dir
+          "${project_dir}" --diff "${RUNNER_TEMP}/pr.diff"

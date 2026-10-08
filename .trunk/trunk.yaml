@@ -27,6 +27,7 @@ lint:
     - svgo@4.1.0
     - taplo@0.10.0
     - yamllint@1.38.0
+    - sql-banned-syntax
   disabled:
     - pinact
     - grype
@@ -43,6 +44,7 @@ lint:
       linters:
         - sqlfluff
         - sqlfmt
+        - sql-banned-syntax
     - paths:
         - src/teamster/libraries/dlt_sources/**
       linters:
@@ -83,6 +85,17 @@ lint:
       commands:
         - name: format
           enabled: true
+    - name: sql-banned-syntax
+      files: [sql]
+      commands:
+        - name: lint
+          run: python3 ${workspace}/scripts/check_sql_banned_syntax.py ${target}
+          success_codes: [0, 1]
+          read_output_from: stdout
+          output: regex
+          parse_regex:
+            "(?P<path>.*):(?P<line>\\d+):(?P<col>\\d+):
+            \\[(?P<severity>[^\\]]*)\\] (?P<message>[^(]*) \\((?P<code>[^)]*)\\)"
 runtimes:
   enabled:
     - go@1.21.0

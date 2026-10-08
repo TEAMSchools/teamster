@@ -1,0 +1,3 @@
+model	rule	detail	issue
+finalsite.stg_finalsite__contact_relationships	A1	finalsite.stg_finalsite__contacts	#5807
+overgrad.stg_overgrad__admissions	A1	overgrad.stg_overgrad__students	#5807

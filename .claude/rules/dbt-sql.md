@@ -51,7 +51,7 @@ Use BigQuery-only syntax only when it does something standard SQL cannot.
 - Why: positional grouping breaks silently when the select list is reordered.
 - Good: `group by student_number, academic_year`.
 - Bad: `group by 1, 2`.
-- Enforced by: review.
+- Enforced by: sqlfluff AM06.
 
 #### S3. No subqueries against tables or CTEs
 
@@ -61,7 +61,7 @@ an array, which is row-local.
 - Why: a CTE has a name and can be read and tested on its own.
 - Good: `(select min(x) from unnest([d1, d2, d3]) as x) as earliest_date`.
 - Bad: `where student_number in (select student_number from enrolled)`.
-- Enforced by: review.
+- Enforced by: sqlfluff ST05 in `from` and `join`; review in `where`.
 
 #### S4. No pass-through import CTEs
 

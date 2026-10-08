@@ -80,7 +80,8 @@ jobs:
             rule (A1-A11, S1-S18, and R1-R4, R6-R10 for marts) and the review
             rubric in dbt-sql.md. Cite the rule ID (for example "S10") in every
             SQL or dbt finding. Do not report a violation of a rule enforced
-            only by sqlfluff; the Trunk check reports those. Apply the rules to
+            only by sqlfluff, sql-banned-syntax, or dbt-layer-check; the Trunk
+            check and the dbt standard workflow report those. Apply the rules to
             lines the PR adds or changes only; an old violation on an untouched
             line is not a finding, and never ask for a sweep of untouched
             models. For the edge rules (A1, A2, A8), flag only an edge the PR
