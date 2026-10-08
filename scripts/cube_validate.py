@@ -1817,6 +1817,45 @@ def _plural(n: int, word: str) -> str:
     return f"{n} {word}{'' if n == 1 else 's'}"
 
 
+def _construct_hint(c: dict) -> str:
+    """One short phrase on what a construct does, for the digest."""
+    d, k = c.get("detail") or {}, c["kind"]
+    if k == "group":
+        return (
+            f"{len(d.get('bins', {}))} bins over {d.get('of') or d.get('of_formula')}"
+        )
+    if k == "bin":
+        return f"size {d.get('size')} over {d.get('of')}"
+    if k in ("filter", "set", "source_filter"):
+        bits = [d.get("mode", "include")]
+        if d.get("members"):
+            bits.append(
+                ", ".join("null" if v is None else str(v) for v in d["members"])
+            )
+        if d.get("range"):
+            bits.append(", ".join(f"{a} {v}" for a, v in d["range"].items()))
+        if d.get("context"):
+            bits.append("context")
+        return "; ".join(bits)
+    if k == "alias":
+        return f"shows {d.get('field')}"
+    for key in ("quick", "formula", "expressions", "start_month"):
+        if d.get(key):
+            return str(d[key])
+    return ""
+
+
+def _construct_lines(items: list[dict], with_why: bool) -> list[str]:
+    out = []
+    for c in items:
+        hint = _construct_hint(c)
+        line = f"- {c['key']} on {', '.join(c['sheets'])}"
+        line += f" ({hint})" if hint else ""
+        line += f": {c['why']}" if with_why else ""
+        out.append(line)
+    return out
+
+
 def comment_text(row, result) -> str:
     """Three lines for Asana: verdict, members to add, what is left to investigate."""
     grains = row["grains"]
@@ -1849,6 +1888,18 @@ def comment_text(row, result) -> str:
     if errors:
         lines.append(
             f"Could not compare {_plural(len(errors), 'grain')}: {errors[0]['error']}"
+        )
+    if row.get("audit_error"):
+        lines.append(f"Not audited: {row['audit_error']}.")
+    if row.get("unaccounted"):
+        lines.append(
+            f"Unaccounted Tableau constructs: {len(row['unaccounted'])}; "
+            "see the fix digest."
+        )
+    if row.get("not_checked"):
+        lines.append(
+            f"Not checked: {_plural(len(row['not_checked']), 'Tableau construct')}; "
+            "see the fix digest."
         )
     return "\n".join(lines)
 
@@ -1936,14 +1987,29 @@ def digest_markdown(result, checks, cube_defs) -> str:
             break
         out.append("")
     if blocked:
-        out += ["### Dimensions the dashboard slices by that Cube lacks", ""]
-        for name, b in sorted(blocked.items(), key=lambda kv: -kv[1]["grains"]):
-            dim = checks["dimensions"].get(name)
-            col = f"; dashboard field `{dim.sql}`" if dim else ""
-            out.append(
-                f"- {name}: blocks {_plural(b['grains'], 'grain')} in {_plural(b['rows'], 'row')}{col}"
-            )
-        out.append("")
+        dims_ = checks["dimensions"]
+        rules = {
+            n: b
+            for n, b in blocked.items()
+            if getattr(dims_.get(n), "group_kind", None) == "rule"
+        }
+        plain = {n: b for n, b in blocked.items() if n not in rules}
+        for title, group in (
+            ("Dimensions the dashboard slices by that Cube lacks", plain),
+            # A group that encodes a definition: someone decides it, then Cube names it.
+            ("Definitions to decide", rules),
+        ):
+            if not group:
+                continue
+            out += [f"### {title}", ""]
+            for name, b in sorted(group.items(), key=lambda kv: -kv[1]["grains"]):
+                dim = dims_.get(name)
+                col = f"; dashboard field `{dim.sql}`" if dim else ""
+                out.append(
+                    f"- {name}: blocks {_plural(b['grains'], 'grain')} in "
+                    f"{_plural(b['rows'], 'row')}{col}"
+                )
+            out.append("")
     out += ["## Investigate", ""]
     any_gap = False
     for gid, row in rows.items():
@@ -2003,6 +2069,30 @@ def digest_markdown(result, checks, cube_defs) -> str:
         out.append("")
     if not any_gap:
         out += ["Nothing unexplained.", ""]
+    gaps = [
+        (g, r) for g, r in rows.items() if r.get("unaccounted") or r.get("audit_error")
+    ]
+    if gaps:
+        out += [
+            "## Unaccounted Tableau constructs",
+            "",
+            "Add each to the checks file: under `handled:` with what reproduces it, "
+            "or under the row's `not_checked:` with why.",
+            "",
+        ]
+        for gid, r in gaps:
+            out.append(f"### {r['name']} ({gid})")
+            if r.get("audit_error"):
+                out.append(f"- Not audited: {r['audit_error']}")
+            out += _construct_lines(r.get("unaccounted", []), with_why=False)
+            out.append("")
+    skipped = [(g, r) for g, r in rows.items() if r.get("not_checked")]
+    if skipped:
+        out += ["## Not checked", ""]
+        for gid, r in skipped:
+            out.append(f"### {r['name']} ({gid})")
+            out += _construct_lines(r["not_checked"], with_why=True)
+            out.append("")
     return "\n".join(out)
 
 
@@ -2024,6 +2114,14 @@ def report_markdown(result) -> str:
                 f"Missing Cube members: {_missing_text(row['missing_members'], full=True)}.",
                 "",
             ]
+        for label, key in (
+            ("Unaccounted", "unaccounted"),
+            ("Not checked", "not_checked"),
+        ):
+            if row.get(key):
+                out += [f"{label}: {', '.join(c['key'] for c in row[key])}.", ""]
+        if row.get("audit_error"):
+            out += [f"Not audited: {row['audit_error']}.", ""]
         for g in row["grains"]:
             line = f"- {_label(g['grain'])}: {g['status']}"
             if g["status"] in _COMPARED:

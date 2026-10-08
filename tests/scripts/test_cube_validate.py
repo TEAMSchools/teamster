@@ -1506,3 +1506,43 @@ def test_unaccounted_construct_makes_a_passing_row_incomplete_but_a_fail_stays_f
     assert result["rows"]["1"]["verdict"] == "fail"
     assert result["rows"]["2"]["verdict"] == "incomplete"
     assert len(result["rows"]["2"]["unaccounted"]) == len(ALL_KEYS)
+
+
+def test_comment_and_digest_list_unaccounted_and_not_checked(tmp_path):
+    def m(d):
+        d["rows"][1]["not_checked"] = [
+            {"construct": "table_calc: Share", "why": "percent of total"}
+        ]
+
+    checks, audit = _audited(tmp_path, m)
+    result = cv.run_dashboard(checks, FakeCube(), FakeBQ(), TODAY, audit=audit)
+    row = result["rows"]["2"]
+    text = cv.comment_text(row, result)
+    assert (
+        f"Unaccounted Tableau constructs: {len(ALL_KEYS) - 1}; see the fix digest."
+        in text
+    )
+    assert "Not checked: 1 Tableau construct; see the fix digest." in text
+    digest = cv.digest_markdown(result, checks, {})
+    assert "## Unaccounted Tableau constructs" in digest
+    assert "- group: Code Group on Codes (2 bins over att_code)" in digest
+    assert "## Not checked" in digest
+    assert ": percent of total" in digest
+    report = cv.report_markdown(result)
+    assert "Unaccounted: " in report and "Not checked: table_calc: Share." in report
+
+
+def test_rule_groups_are_listed_as_decisions(tmp_path):
+    def m(d):
+        d["dimensions"]["code_group"] = {
+            "cube": None,
+            "kind": "rule",
+            "group": {"of": "att_code", "bins": {"Absent": ["A"]}},
+        }
+        d["rows"][0]["grains"].append(["code_group"])
+
+    checks = cv.load_checks(_write_variant(tmp_path, m))
+    result = cv.run_dashboard(checks, FakeCube(), FakeBQ(), TODAY)
+    digest = cv.digest_markdown(result, checks, {})
+    assert "### Definitions to decide" in digest
+    assert "- code_group: blocks 1 grain in 1 row" in digest
