@@ -17,10 +17,10 @@ from teamster.libraries.cambium.assets import build_remote_file_regex
 from teamster.libraries.sftp.assets import compose_regex
 
 # (Couchdrop subfolder, tail after `Record_File`) for each file an asset reads,
-# verified against the real Cambium files. The njsla asset reads the NJSLA and
-# end-of-course files from their two folders.
+# verified against the real Cambium files. The NJSLA and end-of-course files
+# share the njsla folder.
 NJGPA_FILES = [("njgpa", "_GPA")]
-NJSLA_FILES = [("njsla", "_SLA"), ("eoc", "_SLA_EOC")]
+NJSLA_FILES = [("njsla", "_SLA"), ("njsla", "_SLA_EOC")]
 
 # district code embedded in each region's filename
 ASSETS = [
@@ -116,8 +116,8 @@ def test_the_run_time_regex_still_matches_every_file(
     asset, code_location, district_code, files
 ):
     # At run time the asset substitutes the partition key into the regexes with
-    # compose_regex before searching the SFTP listing. The subfolder group is
-    # not a named group, so it must survive that substitution intact.
+    # compose_regex before searching the SFTP listing, so every file the sensor
+    # matches must still match after that substitution.
     declared = _declared(asset)
 
     year = declared["administration_year"][0]

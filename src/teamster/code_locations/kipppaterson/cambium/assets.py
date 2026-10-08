@@ -28,9 +28,8 @@ partitions_def = build_partitions_def(
 # Paterson EOC file loads without a code change.
 njsla = build_sftp_folder_asset(
     asset_key=[*key_prefix, "njsla"],
-    remote_dir_regex=remote_dir_regex_prefix,
-    remote_file_regex=r"(?:njsla|eoc)/"
-    + build_remote_file_regex(
+    remote_dir_regex=rf"{remote_dir_regex_prefix}/njsla",
+    remote_file_regex=build_remote_file_regex(
         partitions_def=partitions_def,
         district_code=DISTRICT_CODE,
         filename_suffix_regex=r"_SLA(?:_EOC)?",

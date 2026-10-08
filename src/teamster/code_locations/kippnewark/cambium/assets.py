@@ -41,12 +41,11 @@ njgpa = build_sftp_file_asset(
 # One asset over the NJSLA file and the end-of-course (EOC) file, which share a
 # header. A re-issued NJSLA file can bundle the EOC tests too, so both files
 # land in one relation and stg_cambium__njsla keeps the newest copy of each
-# test. Each file keeps its own Couchdrop folder.
+# test. Both files land in the same Couchdrop folder.
 njsla = build_sftp_folder_asset(
     asset_key=[*key_prefix, "njsla"],
-    remote_dir_regex=remote_dir_regex_prefix,
-    remote_file_regex=r"(?:njsla|eoc)/"
-    + build_remote_file_regex(
+    remote_dir_regex=rf"{remote_dir_regex_prefix}/njsla",
+    remote_file_regex=build_remote_file_regex(
         partitions_def=partitions_def,
         district_code=DISTRICT_CODE,
         filename_suffix_regex=r"_SLA(?:_EOC)?",
