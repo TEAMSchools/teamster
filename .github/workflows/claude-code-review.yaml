@@ -81,7 +81,10 @@ jobs:
             finding. Do not report a violation of a rule enforced only by
             sqlfluff; the Trunk check reports those. Apply the rules to models
             the PR adds or changes only; never ask for a sweep of untouched
-            models.
+            models. For the edge rules (A1, A2, A8), flag only an edge the PR
+            adds; an edge the model already had is known backlog. Apply A11 only
+            to a folder the PR adds, and A7 only to an entity that already has a
+            key macro under src/dbt/kipptaf/macros/.
 
             Also check model altitude: derive a model in the source-system
             package at the same layer the source system derives it, not at

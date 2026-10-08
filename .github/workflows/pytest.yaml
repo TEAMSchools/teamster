@@ -5,6 +5,9 @@ on:
     paths:
       - docs/launch/**
       - docs/hooks.py
+      - docs/reference/dbt-conventions.md
+      - .claude/rules/dbt-architecture.md
+      - .claude/rules/dbt-sql.md
       - tests/launch/**
       - mkdocs.yml
       - pyproject.toml

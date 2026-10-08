@@ -93,8 +93,8 @@ adding a sibling.
 
 - Why: 2 models at 1 grain drift apart, and the next author cannot tell which is
   right.
-- Good: 7 `int_topline__*_weekly` models share a grain and all feed
-  `int_topline__student_metrics`.
+- Good: a new staff column goes into `int_people__staff_roster`, not a second
+  model at 1 row per staff member.
 - Bad: `int_powerschool__gradebook_assignments_scores` and
   `int_students__gradebook_assignments_scores` at the same grain.
 - Enforced by: review; `dbt-layer-check` warns on a shared uniqueness grain.

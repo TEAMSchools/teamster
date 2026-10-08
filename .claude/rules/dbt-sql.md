@@ -24,12 +24,12 @@ formatting. The rules below are where we add to or differ from that guide.
 
 ### Where we differ from dbt Labs
 
-| Rule                             | dbt Labs    | Us                   | Why                                                      |
-| -------------------------------- | ----------- | -------------------- | -------------------------------------------------------- |
-| Import CTEs                      | Recommended | Banned (S4)          | A CTE with no logic; `ref()` in `from` reads the same    |
-| `qualify`                        | Allowed     | Banned (S1)          | Not ANSI SQL; a ranked column plus `where` does the same |
-| `group by 1, 2` / `group by all` | Allowed     | Banned (S1, S2)      | Both break silently when the select list changes         |
-| Table aliases                    | Full names  | Short initials (S16) | The repo norm; unique in the query                       |
+| Rule                             | dbt Labs                | Us                   | Why                                                      |
+| -------------------------------- | ----------------------- | -------------------- | -------------------------------------------------------- |
+| Import CTEs                      | Recommended             | Banned (S4)          | A CTE with no logic; `ref()` in `from` reads the same    |
+| `qualify`                        | Allowed                 | Banned (S1)          | Not ANSI SQL; a ranked column plus `where` does the same |
+| `group by 1, 2` / `group by all` | Prefers `group by 1, 2` | Banned (S1, S2)      | Both break silently when the select list changes         |
+| Table aliases                    | Full names, no initials | Short initials (S16) | The repo norm; unique in the query                       |
 
 ### Rules
 
@@ -51,7 +51,7 @@ Use BigQuery-only syntax only when it does something standard SQL cannot.
 - Why: positional grouping breaks silently when the select list is reordered.
 - Good: `group by student_number, academic_year`.
 - Bad: `group by 1, 2`.
-- Enforced by: sqlfluff AM06.
+- Enforced by: review.
 
 #### S3. No subqueries against tables or CTEs
 
@@ -177,7 +177,8 @@ When ranges can share a boundary date, use `>=` start and `<` end, not
 
 #### S14. Booleans are `is_` / `has_` columns
 
-Convert to `Y`/`N` text only inside an `rpt_` whose tool needs it.
+Convert to `Y`/`N` text only inside an `rpt_` whose tool needs it. A fact's
+countable flags may be `int64` 0/1 instead (mart rubric R3).
 
 - Why: a boolean filters and aggregates directly.
 - Good: `is_enrolled` (`bool`).
