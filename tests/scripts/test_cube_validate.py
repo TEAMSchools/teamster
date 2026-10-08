@@ -1058,3 +1058,39 @@ def test_total_line_skips_a_share_that_rounds_to_nothing():
     assert cv._total_line(s_, "rate", ["out_of_district"]) == [
         "- Total matches: Cube 84.9%, Tableau 84.9%."
     ]
+
+
+class TotalShareBQ(FakeBQ):
+    """The total fails (Cube 30, dashboard 28) and the without-variant moves it to 29:
+    the missing member changes the total without explaining any cell on its own."""
+
+    def __call__(self, sql):
+        rows = super().__call__(sql)
+        if " as g0" not in sql and " as m0" in sql and " as m0_alt" in sql:
+            return [dict(rows[0], m0=28, m0_alt=29)]
+        if " as m0_alt" in sql:
+            return [dict(r, m0_alt=r.get("m0")) for r in rows]
+        return rows
+
+
+def test_a_member_that_changes_the_total_reopens_the_row(tmp_path):
+    checks = cv.load_checks(_write_variant(tmp_path, _add_missing_member))
+    result = cv.run_dashboard(checks, FakeCube(), TotalShareBQ(), TODAY)
+    tardy = result["rows"]["1"]
+    assert tardy["verdict"] == "fail"
+    assert tardy["missing_members"]["team"]["explains_cells"] == 0
+    assert tardy["missing_members"]["team"]["changes_total"] is True
+    cv.write_outputs(result, tmp_path / "out", checks, {})
+    latest = json.loads((tmp_path / "out" / "latest.json").read_text())
+    assert latest["rows"]["1"]["reopen_for"] == ["team"]
+    assert latest["rows"]["2"]["reopen_for"] == []
+    md = (tmp_path / "out" / "2026-10-08-demo_dashboard-fixes.md").read_text()
+    assert "### team: changes the total in 1 row (# Tardy)" in md
+
+
+def test_blocked_only_members_do_not_reopen(tmp_path):
+    result = cv.run_dashboard(_checks(), FakeCube(), FakeBQ(), TODAY)
+    cv.write_outputs(result, tmp_path, _checks(), {})
+    latest = json.loads((tmp_path / "latest.json").read_text())
+    assert latest["rows"]["1"]["missing_members"] == ["team"]  # blocks a grain only
+    assert latest["rows"]["1"]["reopen_for"] == []

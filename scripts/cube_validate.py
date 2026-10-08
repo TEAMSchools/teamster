@@ -759,7 +759,18 @@ def timing_guard(extract_at: dt.datetime, cube_at: dt.datetime) -> None:
 
 # ---------------------------------------------------------------- run
 def _missing(missing: dict, name: str) -> dict:
-    return missing.setdefault(name, {"explains_cells": 0, "blocks_grains": []})
+    return missing.setdefault(
+        name, {"explains_cells": 0, "blocks_grains": [], "changes_total": False}
+    )
+
+
+def reopen_for(row: dict) -> list[str]:
+    """Missing members that cause part of a row's gap: the row is not shipped."""
+    return sorted(
+        n
+        for n, m in row.get("missing_members", {}).items()
+        if m["explains_cells"] or m.get("changes_total")
+    )
 
 
 def _diagnose(checks, cube_load, bq, window, view, metric) -> dict:
@@ -990,10 +1001,21 @@ def run_dashboard(
                 bad = sum(s["bad"] for s in ms.values())
                 explained = sum(s["explained"] for s in ms.values())
                 for m in row["metrics"]:
+                    only = ms[m["cube"]].get("only") or {}
+                    w, t = only.get("without"), only.get("truth")
+                    shown = 0.0005 if m["kind"] == "rate" else 0.5
+                    # At the total, a member whose logic moves the dashboard's number
+                    # causes part of the gap even when no cell is explained by it alone.
+                    moves = (
+                        not g
+                        and w is not None
+                        and t is not None
+                        and abs(w - t) >= shown
+                    )
                     for name in m.get("missing_members", []):
-                        _missing(missing, name)["explains_cells"] += ms[m["cube"]][
-                            "explained"
-                        ]
+                        mm = _missing(missing, name)
+                        mm["explains_cells"] += ms[m["cube"]]["explained"]
+                        mm["changes_total"] = mm["changes_total"] or moves
                 entry.update(
                     status="fail"
                     if bad
@@ -1026,7 +1048,7 @@ def run_dashboard(
             "missing_members": {
                 k: v
                 for k, v in missing.items()
-                if v["explains_cells"] or v["blocks_grains"]
+                if v["explains_cells"] or v["blocks_grains"] or v["changes_total"]
             },
         }
     return result
@@ -1104,8 +1126,10 @@ def comment_text(row, result) -> str:
     lines = [first]
     add = [
         f"{name} ({m['explains_cells']} cells)"
-        for name, m in row.get("missing_members", {}).items()
         if m["explains_cells"]
+        else f"{name} (changes the total)"
+        for name, m in row.get("missing_members", {}).items()
+        if m["explains_cells"] or m.get("changes_total")
     ]
     if add:
         lines.append(f"Add to Cube: {', '.join(add)}.")
@@ -1173,7 +1197,7 @@ def digest_markdown(result, checks, cube_defs) -> str:
     blocked: dict[str, dict] = {}
     for gid, row in rows.items():
         for name, m in row.get("missing_members", {}).items():
-            if m["explains_cells"]:
+            if m["explains_cells"] or m.get("changes_total"):
                 a = adds.setdefault(name, {"cells": 0, "rows": []})
                 a["cells"] += m["explains_cells"]
                 a["rows"].append(gid)
@@ -1185,8 +1209,9 @@ def digest_markdown(result, checks, cube_defs) -> str:
         out += ["No missing member explains a gap.", ""]
     for name, a in sorted(adds.items(), key=lambda kv: -kv[1]["cells"]):
         names = ", ".join(rows[g]["name"] for g in a["rows"])
+        effect = f"explains {a['cells']} cells" if a["cells"] else "changes the total"
         out.append(
-            f"### {name}: explains {a['cells']} cells in {_plural(len(a['rows']), 'row')} ({names})"
+            f"### {name}: {effect} in {_plural(len(a['rows']), 'row')} ({names})"
         )
         doc = members_doc.get(name, {})
         for key, label in (
@@ -1342,6 +1367,7 @@ def write_outputs(result, out_dir: Path, checks=None, cube_defs=None) -> Path:
             "dashboard": result["dashboard"],
             "name": row["name"],
             "missing_members": sorted(row.get("missing_members", {})),
+            "reopen_for": reopen_for(row),
         }
     latest_path.write_text(json.dumps(latest, indent=2))
     return report

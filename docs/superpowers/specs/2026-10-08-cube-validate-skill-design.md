@@ -293,3 +293,13 @@ model.
   "Decide:" task for a definition mismatch), linked as a blocker of the rows it
   affects. The digest is posted once on the dashboard's task; each row's comment
   shrinks to its verdict and links to its fix tasks.
+
+## Revision 2026-10-08: reopen on any missing-member gap
+
+Found when the user asked why rows blocked by the out-of-district fix were still
+ticked. Reopening only `missing_member` rows (every gap explained) left a row
+with a missing member plus another bug ticked. Now any row a missing member
+causes part of the gap in reopens: `latest.json` lists those members as
+`reopen_for` (they explain cells, or the dashboard's total moves without their
+logic), and `sync.py` unticks the row and tags it `cube-partial`. A `fail` also
+keeps its `mismatch` tag. Members that only block grains still do not reopen.
