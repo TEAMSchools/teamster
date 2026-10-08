@@ -575,3 +575,15 @@ def test_exposure_named_like_its_rpt_reads_its_own_exemption() -> None:
     m = manifest(rpt, exp)
     assert mod._exempt_rules(m, "exposure.rpt_gsheets__x") == {"A8": "exposure"}
     assert mod._exempt_rules(m, "kipptaf.rpt_gsheets__x") == {"A1": "model"}
+
+
+def test_snapshot_folder_follows_the_model_it_snapshots() -> None:
+    stg = model(
+        "stg_google_appsheet__seats", "models/google/appsheet/staging/b.sql", [uid(SRC)]
+    )
+    snap = snapshot("snapshot_seat_tracker__seats", "google_appsheet")
+    snap["depends_on"]["nodes"] = [uid(stg)]
+    child = model(
+        "int_seat_tracker__snapshot", "models/google/appsheet/b.sql", [uid(snap)]
+    )
+    assert violations(stg, snap, child) == []

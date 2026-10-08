@@ -152,7 +152,6 @@ kipptaf.int_overgrad__top_choices	A1	kipptaf.stg_kippadb__account	#5807
 kipptaf.int_powerschool__ada_term	A1	kipptaf.int_students__attendance_daily	#5807
 kipptaf.int_powerschool__u_expectations_qtd_unpivot	A1	kipptaf.int_students__calendar_week	#5807
 kipptaf.int_seat_tracker__snapshot	A1	kipptaf.int_people__location_crosswalk	#5807
-kipptaf.int_seat_tracker__snapshot	A1	kipptaf.snapshot_seat_tracker__seats	#5807
 kipptaf.int_students__enrollment_daily	A1	kipptaf.dim_dates	#5807
 kipptaf.int_zendesk__tickets__custom_fields_pivot	A1	kipptaf.int_people__location_crosswalk	#5807
 kipptaf.rpt_adp_workforce_now__data_bridge	A1	kipptaf.stg_adp_workforce_now__time_and_attendance	#5810

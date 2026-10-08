@@ -1,10 +1,12 @@
-name: dbt-standard
+# The rules' "Enforced by: dbt-layer-check" names this workflow.
+name: dbt-layer-check
 
 on:
   pull_request:
     paths:
       - src/dbt/**
       - scripts/check_dbt_standard.py
+      - tests/scripts/test_check_dbt_standard.py
       - .github/workflows/dbt-standard.yaml
 
 concurrency:
@@ -38,9 +40,13 @@ jobs:
       # https://github.com/astral-sh/setup-uv
       - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
 
+      - name: Test the checker
+        run: uv run pytest tests/scripts/test_check_dbt_standard.py -q
+
+      # --no-renames: a renamed model must show as added, or A3 and A4 skip it.
       - name: Diff against the base branch
         run:
-          git diff -U0 "origin/${GITHUB_BASE_REF}...HEAD" >
+          git diff -U0 --no-renames "origin/${GITHUB_BASE_REF}...HEAD" >
           "${RUNNER_TEMP}/pr.diff"
 
       # parse never connects to the warehouse, so the shipped oauth profile

@@ -86,13 +86,18 @@ def _key(node: dict) -> str:
     return f"{node['package_name']}.{node['name']}"
 
 
-def source_folder(node: dict) -> str:
-    """Top folder under models/ (snapshots: the yml stem) in kipptaf; else the package."""
+def source_folder(node: dict, manifest: dict | None = None) -> str:
+    """Top folder under models/ in kipptaf; else the package.
+
+    A snapshot takes the folder of the model it snapshots (its yml stem when
+    no manifest is given or it has no parent).
+    """
     if node["package_name"] != "kipptaf":
         return node["package_name"]
     path = PurePosixPath(node["original_file_path"])
     if node["resource_type"] == "snapshot":
-        return path.stem
+        parents = _parents(manifest, node) if manifest else []
+        return source_folder(parents[0]) if parents else path.stem
     return path.parts[1]
 
 
@@ -132,6 +137,7 @@ def _allowed(
     parent_layer: str,
     siblings: list[dict],
     project: str,
+    manifest: dict,
 ) -> bool:
     if parent_layer == "other":
         return True
@@ -150,7 +156,7 @@ def _allowed(
     if parent_layer not in ALLOWED[child_layer]:
         return False
     if child_layer == "source_int" and parent["resource_type"] != "source":
-        folder = source_folder(parent)
+        folder = source_folder(parent, manifest)
         return folder in _CONFIG_FOLDERS or folder == source_folder(child)
     return True
 
@@ -169,7 +175,7 @@ def check_edges(
         parents = _parents(manifest, node)
         for parent in parents:
             p_layer = layer_of(parent, manifest, project, domain_folders)
-            if not _allowed(node, layer, parent, p_layer, parents, project):
+            if not _allowed(node, layer, parent, p_layer, parents, project, manifest):
                 out.append(_violation(node, "A1", parent, layer, p_layer))
     for exp in manifest.get("exposures", {}).values():
         kinds = (
