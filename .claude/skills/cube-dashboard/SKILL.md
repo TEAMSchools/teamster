@@ -106,7 +106,9 @@ def test_run() -> None:
    missing member. Also list each such grain without that dimension: the sheet's
    numbers roll up to it.
 5. Constructs. `grains --measure` lists every construct on the measure's sheets
-   under `constructs`, each with a `key`. Account for each one:
+   under `constructs`, each with a `ref`: its key plus a fingerprint of what it
+   does, so editing a filter or group in the workbook changes the ref and the
+   run reports it again. Account for each one:
    - A group or bin: paste its `dimension` snippet, set `kind: relabel` (codes
      rolled into buckets) or `kind: rule` (a definition), and set `cube:` to a
      member whose values equal the bin labels, or leave it null. Values in no
@@ -114,10 +116,12 @@ def test_run() -> None:
      add `other: Other` to the group.
    - A filter, set or source filter: reproduce it in `hard_filters`,
      `cube_filters` or `truth_filters`, reading its mode (exclude, nulls,
-     context), not just the field name.
+     context), not just the field name. Outputs show a member count, never the
+     values, which can be student names; read the values from the `.twb` only
+     for fields that are not about a person.
    - An LOD: FIXED ignores every filter except context filters; translate it
      with only those inside.
-   - Then list the key under the file's `handled:` with what reproduces it.
+   - Then list the ref under the file's `handled:` with what reproduces it.
      Anything the check cannot reproduce (table calculations, viewer functions,
      a total that sums rows) goes under the row's `not_checked:` with `why`.
 
