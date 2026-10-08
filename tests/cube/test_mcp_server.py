@@ -677,3 +677,250 @@ def test_load_summary_combines_a_multi_query_response(
     assert summary["external"] is False
     # The stalest refresh time: how old the oldest part of the answer is.
     assert summary["last_refresh_time"] == "2026-10-07T03:00:00Z"
+
+
+CALL_RECORD_ENVELOPE = {"event", "severity"}
+
+
+def _call_records(capsys: pytest.CaptureFixture[str]) -> list[dict[str, Any]]:
+    """Parse every call-record line the server wrote to stderr."""
+    records = []
+    for line in capsys.readouterr().err.splitlines():
+        try:
+            parsed = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(parsed, dict) and parsed.get("event") == "cube_mcp_call":
+            records.append(parsed)
+    return records
+
+
+def _stdio_server(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, **env: str
+) -> ModuleType:
+    """Load the server in stdio mode with an isolated meta cache and the
+    call-record settings unset unless passed in `env`."""
+    monkeypatch.setenv("CUBE_USER_EMAIL", "engineer@apps.teamschools.org")
+    for name in (
+        "AUTHKIT_DOMAIN",
+        "PUBLIC_URL",
+        "CUBE_MCP_LOG_FREE_TEXT",
+        "SERVER_SHA",
+    ):
+        monkeypatch.delenv(name, raising=False)
+    for name, value in env.items():
+        monkeypatch.setenv(name, value)
+    server = _load_server(monkeypatch)
+    server._meta_memory_cache.clear()
+    monkeypatch.setattr(server, "META_CACHE_DIR", tmp_path)
+    return server
+
+
+def _sample_record(server: ModuleType, **overrides: Any) -> Any:
+    fields = {
+        "tool": "load",
+        "session_id": "1b4e28ba-2fa1-11d2-883f-0016d3cca427",
+        "session_id_minted": False,
+        "question": "How many students are enrolled?",
+        "assumptions": "Current academic year",
+        "query": {"measures": ["v.count_students"], "timezone": "UTC"},
+        "email": "engineer@apps.teamschools.org",
+        "result": {"data": [{"v.count_students": "5"}]},
+    }
+    fields.update(overrides)
+    return server._CallRecord(**fields)
+
+
+def test_row_keys_equal_the_allowlist_on_every_path(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    server = _stdio_server(monkeypatch, tmp_path)
+    variants = [
+        {},
+        {"result": {"data": []}},
+        {"result": None, "error": "boom"},
+        {"tool": "meta", "query": None, "views": ["v"], "result": None},
+        {"tool": "sql", "result": {"sql": {"sql": ["select 1", []]}}},
+    ]
+    for overrides in variants:
+        row = _sample_record(server, **overrides).row()
+        assert tuple(row) == server.CALL_RECORD_FIELDS
+
+
+def test_row_outcome_and_load_fields(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    server = _stdio_server(monkeypatch, tmp_path)
+    ok = _sample_record(server).row()
+    assert ok["outcome"] == "ok"
+    assert ok["row_count"] == 1
+    assert ok["members_referenced"] == ["v.count_students"]
+    assert ok["views_referenced"] == ["v"]
+    assert json.loads(ok["query_json"]) == {
+        "measures": ["v.count_students"],
+        "timezone": "UTC",
+    }
+
+    assert _sample_record(server, result={"data": []}).row()["outcome"] == "empty"
+
+    error = _sample_record(server, result=None, error="Cube POST /load 400: bad").row()
+    assert error["outcome"] == "error"
+    assert error["error_message"] == "Cube POST /load 400: bad"
+
+
+def test_row_leaves_load_fields_null_on_meta_and_sql(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    server = _stdio_server(monkeypatch, tmp_path)
+    meta_row = _sample_record(
+        server, tool="meta", query=None, views=["b", "a"], result={"cubes": []}
+    ).row()
+    assert meta_row["views_referenced"] == ["a", "b"]
+    assert meta_row["members_referenced"] is None
+    assert meta_row["query_json"] is None
+    for key in ("external", "used_pre_aggregations", "last_refresh_time", "row_count"):
+        assert meta_row[key] is None
+    assert _sample_record(server, tool="sql").row()["row_count"] is None
+
+
+def test_row_never_emits_an_empty_list(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    server = _stdio_server(monkeypatch, tmp_path)
+    row = _sample_record(server, tool="meta", query=None, views=None).row()
+    assert row["views_referenced"] is None
+    assert row["used_pre_aggregations"] is None
+    assert not any(value == [] for value in row.values())
+
+
+def test_row_drops_free_text_when_the_switch_is_off(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    for env in (
+        {},
+        {"CUBE_MCP_LOG_FREE_TEXT": "false"},
+        {"CUBE_MCP_LOG_FREE_TEXT": "yes"},
+    ):
+        server = _stdio_server(monkeypatch, tmp_path, **env)
+        row = _sample_record(server, error="echoed filter value").row()
+        assert row["question"] is None
+        assert row["assumptions"] is None
+        assert row["question_provided"] is True
+        # Always logged, whatever the switch says.
+        assert row["query_json"] is not None
+        assert row["error_message"] == "echoed filter value"
+
+
+def test_row_keeps_free_text_when_the_switch_is_on(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    server = _stdio_server(monkeypatch, tmp_path, CUBE_MCP_LOG_FREE_TEXT=" TRUE ")
+    row = _sample_record(server).row()
+    assert row["question"] == "How many students are enrolled?"
+    assert row["assumptions"] == "Current academic year"
+
+
+def test_row_question_provided_ignores_blank_text(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    server = _stdio_server(monkeypatch, tmp_path)
+    for question in (None, "", "   "):
+        assert (
+            _sample_record(server, question=question).row()["question_provided"]
+            is False
+        )
+
+
+def test_row_clips_long_text(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    server = _stdio_server(monkeypatch, tmp_path, CUBE_MCP_LOG_FREE_TEXT="true")
+    huge = {
+        "filters": [
+            {
+                "member": "v.student_number",
+                "operator": "equals",
+                "values": ["1" * 50_000],
+            }
+        ]
+    }
+    row = _sample_record(
+        server, query=huge, question="q" * 50_000, error="e" * 50_000
+    ).row()
+    for key in ("query_json", "question", "error_message"):
+        assert len(row[key]) == server.CALL_RECORD_TEXT_LIMIT
+    assert len(json.dumps(row)) < 256_000
+
+
+def test_server_sha_defaults_to_local(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    server = _stdio_server(monkeypatch, tmp_path)
+    assert _sample_record(server).row()["server_sha"] == "local"
+    server = _stdio_server(monkeypatch, tmp_path, SERVER_SHA="abc123")
+    assert _sample_record(server).row()["server_sha"] == "abc123"
+
+
+def test_emit_writes_one_json_line_with_the_envelope(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    server = _stdio_server(monkeypatch, tmp_path)
+    server._emit_call_record(_sample_record(server))
+    records = _call_records(capsys)
+    assert len(records) == 1
+    assert records[0]["severity"] == "INFO"
+    assert set(records[0]) - CALL_RECORD_ENVELOPE == set(server.CALL_RECORD_FIELDS)
+
+
+def test_emit_failure_does_not_break_the_call(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    server = _stdio_server(monkeypatch, tmp_path)
+    record = _sample_record(server)
+
+    def broken_row() -> dict[str, Any]:
+        raise RuntimeError("serializer exploded")
+
+    monkeypatch.setattr(record, "row", broken_row)
+    server._emit_call_record(record)  # must not raise
+
+
+def test_recorded_marks_errors_and_reraises_the_same_exception(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    server = _stdio_server(monkeypatch, tmp_path)
+    boom = ValueError("bad query")
+
+    async def run() -> None:
+        async with server._recorded(MagicMock(), "load", session_id=None, query={}):
+            raise boom
+
+    with pytest.raises(ValueError) as caught:
+        asyncio.run(run())
+    assert caught.value is boom
+    [record] = _call_records(capsys)
+    assert record["outcome"] == "error"
+    assert record["error_message"] == "bad query"
+    assert record["session_id_minted"] is True
+    assert server._current_call.get() is None
+
+
+def test_recorded_reads_the_client_user_agent(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    server = _stdio_server(monkeypatch, tmp_path)
+    ctx = MagicMock()
+    ctx.headers = {"user-agent": "claude-ai/1.0"}
+
+    async def run() -> None:
+        async with server._recorded(ctx, "meta", session_id=None):
+            pass
+
+    asyncio.run(run())
+    assert _call_records(capsys)[0]["client"] == "claude-ai/1.0"
+    # A MagicMock ctx (no real headers) or stdio's None gives null, not junk.
+    assert server._client_user_agent(MagicMock()) is None

@@ -31,10 +31,14 @@ import contextlib
 import hashlib
 import json
 import os
+import sys
 import time
 import uuid
-from collections.abc import AsyncIterator, Iterator
+from collections.abc import AsyncGenerator, AsyncIterator, Iterator
 from contextlib import asynccontextmanager
+from contextvars import ContextVar
+from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -61,6 +65,14 @@ TOKEN_TTL_SECONDS = 5 * 60
 # results off by one day (#4298). Default queries to UTC unless the caller
 # explicitly asks for another timezone.
 DEFAULT_QUERY_TIMEZONE = "UTC"
+
+# Deploy sets SERVER_SHA to the commit; stdio dev runs log "local".
+SERVER_SHA = os.environ.get("SERVER_SHA", "").strip() or "local"
+# Off unless the deploy sets "true". `question` and `assumptions` are free text
+# staff type about students, and capturing them waits on People Operations
+# sign-off (Refs #5613). `query_json` and `error_message` always log: they
+# repeat values the warehouse already holds.
+LOG_FREE_TEXT = os.environ.get("CUBE_MCP_LOG_FREE_TEXT", "").strip().lower() == "true"
 
 TRANSPORT_STDIO = "stdio"
 TRANSPORT_HTTP = "http"
@@ -394,6 +406,171 @@ def _load_summary(payload: dict[str, Any]) -> dict[str, Any]:
             len(p["data"]) for p in parts if isinstance(p.get("data"), list)
         ),
     }
+
+
+CALL_RECORD_EVENT = "cube_mcp_call"
+# The only keys a record may carry, in order. A test pins the logged keys to
+# this tuple, so widening the payload is a deliberate edit here, matched in the
+# dbt staging model's contract.
+CALL_RECORD_FIELDS: tuple[str, ...] = (
+    "cube_request_id",
+    "ts",
+    "tool",
+    "session_id",
+    "session_id_minted",
+    "email",
+    "client",
+    "question",
+    "question_provided",
+    "assumptions",
+    "query_json",
+    "views_referenced",
+    "members_referenced",
+    "outcome",
+    "error_message",
+    "external",
+    "used_pre_aggregations",
+    "last_refresh_time",
+    "row_count",
+    "latency_ms",
+    "server_sha",
+)
+
+
+def _utc_now() -> str:
+    return datetime.now(UTC).isoformat(timespec="milliseconds").replace("+00:00", "Z")
+
+
+def _client_user_agent(ctx: Context) -> str | None:
+    """The calling client's User-Agent, or None on stdio or outside a request."""
+    with contextlib.suppress(Exception):
+        headers = ctx.headers
+        value = headers.get("user-agent") if headers is not None else None
+        if isinstance(value, str):
+            return value
+    return None
+
+
+@dataclass
+class _CallRecord:
+    """What 1 tool call did. Never holds response rows: `result` is read for
+    counts and pre-aggregation fields only, in `row()`."""
+
+    tool: str
+    session_id: str
+    session_id_minted: bool
+    question: str | None = None
+    assumptions: str | None = None
+    query: dict[str, Any] | None = None
+    views: list[str] | None = None
+    cube_request_id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    ts: str = field(default_factory=_utc_now)
+    email: str | None = None
+    client: str | None = None
+    result: dict[str, Any] | None = None
+    error: str | None = None
+    latency_ms: float = 0.0
+
+    def row(self) -> dict[str, Any]:
+        """The logged row. Empty arrays become null, because the BigQuery sink
+        cannot type a column from an empty array."""
+        members = _members_referenced(self.query) if self.query is not None else []
+        views = (
+            _views_referenced(members)
+            if self.query is not None
+            else sorted(self.views or [])
+        )
+        summary: dict[str, Any] = (
+            _load_summary(self.result)
+            if self.tool == "load" and self.result is not None
+            else {}
+        )
+        if self.error is not None:
+            outcome = "error"
+        elif summary.get("row_count") == 0:
+            outcome = "empty"
+        else:
+            outcome = "ok"
+        row = {
+            "cube_request_id": self.cube_request_id,
+            "ts": self.ts,
+            "tool": self.tool,
+            "session_id": self.session_id,
+            "session_id_minted": self.session_id_minted,
+            "email": self.email,
+            "client": _clip(self.client),
+            "question": _clip(self.question) if LOG_FREE_TEXT else None,
+            "question_provided": bool(self.question and self.question.strip()),
+            "assumptions": _clip(self.assumptions) if LOG_FREE_TEXT else None,
+            "query_json": (
+                _clip(json.dumps(self.query, sort_keys=True, default=str))
+                if self.query is not None
+                else None
+            ),
+            "views_referenced": views or None,
+            "members_referenced": members or None,
+            "outcome": outcome,
+            "error_message": _clip(self.error),
+            "external": summary.get("external"),
+            "used_pre_aggregations": summary.get("used_pre_aggregations") or None,
+            "last_refresh_time": summary.get("last_refresh_time"),
+            "row_count": summary.get("row_count"),
+            "latency_ms": round(self.latency_ms),
+            "server_sha": SERVER_SHA,
+        }
+        return {key: row[key] for key in CALL_RECORD_FIELDS}
+
+
+def _emit_call_record(record: _CallRecord) -> None:
+    """Write 1 record to stderr as a JSON line. Cloud Run ships it to Cloud
+    Logging as `jsonPayload`; stdout is the MCP transport in stdio mode. Cloud
+    Run moves `severity` onto the log entry itself. A failure here never
+    reaches the tool's caller."""
+    with contextlib.suppress(Exception):
+        line = {"event": CALL_RECORD_EVENT, "severity": "INFO", **record.row()}
+        print(json.dumps(line, default=str), file=sys.stderr, flush=True)
+
+
+# The record of the tool call in progress, so `_request` can tag Cube requests
+# with its id and add its latency without threading it through every helper.
+_current_call: ContextVar[_CallRecord | None] = ContextVar(
+    "_current_call", default=None
+)
+
+
+@asynccontextmanager
+async def _recorded(
+    ctx: Context,
+    tool: str,
+    *,
+    session_id: str | None,
+    question: str | None = None,
+    assumptions: str | None = None,
+    query: dict[str, Any] | None = None,
+    views: list[str] | None = None,
+) -> AsyncGenerator[_CallRecord]:
+    """Record 1 tool call: yield its `_CallRecord`, then write it on the way
+    out, success or failure. An exception is noted and re-raised unchanged."""
+    resolved_session_id, minted = _resolve_session_id(session_id)
+    record = _CallRecord(
+        tool=tool,
+        session_id=resolved_session_id,
+        session_id_minted=minted,
+        question=question,
+        assumptions=assumptions,
+        query=query,
+        views=views,
+        client=_client_user_agent(ctx),
+    )
+    token = _current_call.set(record)
+    try:
+        yield record
+    except BaseException as exc:
+        record.error = str(exc) or type(exc).__name__
+        raise
+    finally:
+        _current_call.reset(token)
+        _emit_call_record(record)
 
 
 def _meta_scope_key(views: list[str] | None) -> str:
