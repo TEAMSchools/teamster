@@ -39,6 +39,12 @@ data-team Codespaces via `npx mcp-remote`.
   Without these the agent leaks into Bash/ToolSearch and the live
   `mcp__claude_ai_Cube__*` connector (`allowed_tools` is permission-only, not an
   availability gate). See `eval/README.md`.
+- A field in the call record: edit `CALL_RECORD_FIELDS` and `_CallRecord.row()`
+  in `server.py`. `tests/cube/test_mcp_server.py` pins the logged keys to that
+  tuple, and the dbt staging model `stg_cube__mcp_calls` must match it. Keep
+  each field's JSON type fixed, with `null` for absent, never `""` or `[]`: the
+  BigQuery sink drops an entry whose type disagrees with its column. Sink setup:
+  `docs/guides/cube.md`, _MCP call record_.
 - Container changes (Python version, system deps): edit `Dockerfile`.
 
 ## Local testing
