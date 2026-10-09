@@ -2121,6 +2121,8 @@ def test_a_dashboard_fix_counts_its_cells_as_matches(tmp_path):
             "fix": "dashboard",
             "issue": None,
             "stale": False,
+            "unlanded": False,
+            "closed_on": None,
         }
     }
 
@@ -2561,3 +2563,35 @@ def test_latest_json_lists_undecided_mismatches(tmp_path):
     latest = json.loads((tmp_path / "out" / "latest.json").read_text())
     assert latest["rows"]["1"]["verdict"] == "undecided"
     assert latest["rows"]["1"]["undecided"] == ["tardy_formula"]
+
+
+# ---------------------------------------------------------------- final review fixes
+@pytest.mark.parametrize("mutate", [_add_mismatch, _fix_cube])
+def test_a_closed_fix_that_still_explains_cells_says_it_did_not_land(tmp_path, mutate):
+    checks, result = _mismatch_run(
+        tmp_path, lambda d: mutate(d, issue=123, closed_on="2026-10-09")
+    )
+    t = result["rows"]["1"]["mismatches"]["tardy_formula"]
+    assert t["unlanded"] is True and t["stale"] is False
+    md = cv.digest_markdown(result, checks, {})
+    assert (
+        "- Issue: #123 closed on 2026-10-09, but it still explains 2 cells: the fix "
+        "has not landed, or the extract has not refreshed. Reopen it." in md
+    )
+    text = cv.comment_text(result["rows"]["1"], result)
+    assert "Closed but not fixed: tardy_formula (#123)." in text
+
+
+def test_total_line_says_a_dashboard_fix_explains_the_total():
+    s_ = {
+        "bad": 0,
+        "explained": 0,
+        "accepted": 1,
+        "explained_by": {"completion_always_100": 1},
+        "worst": [],
+        "only": {"cube": 0.662, "truth": 1.0},
+    }
+    assert cv._total_line(s_, "rate", [])[0] == (
+        "- Total differs, but Cube matches the corrected formula "
+        "(completion_always_100): Cube 66.2%, Tableau 100.0%."
+    )

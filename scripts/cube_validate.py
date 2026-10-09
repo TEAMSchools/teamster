@@ -2455,6 +2455,9 @@ def run_dashboard(
                 "issue": t.get("issue"),
                 # A closed issue that explains nothing any more: remove its entry.
                 "stale": bool(t.get("closed_on")) and not n,
+                # Closed, yet it still explains cells: the fix did not land.
+                "unlanded": bool(t.get("closed_on")) and bool(n),
+                "closed_on": t.get("closed_on"),
             }
         result["rows"][str(row["row_gid"])] = {
             "name": row["name"],
@@ -2498,6 +2501,12 @@ def _total_line(s_: dict, kind: str, members: list[str]) -> list[str]:
     c, t = _fmt(only.get("cube"), kind), _fmt(only.get("truth"), kind)
     if s_["bad"]:
         lines = [f"- Total differs: Cube {c}, Tableau {t}."]
+    elif s_.get("accepted") and not s_["explained"]:
+        causes = ", ".join(s_.get("explained_by") or {})
+        lines = [
+            f"- Total differs, but Cube matches the corrected formula ({causes}): "
+            f"Cube {c}, Tableau {t}."
+        ]
     elif s_["explained"]:
         causes = ", ".join(s_.get("explained_by") or {}) or ", ".join(members)
         lines = [f"- Total differs, explained by {causes}: Cube {c}, Tableau {t}."]
@@ -2626,6 +2635,13 @@ def comment_text(row, result) -> str:
         ]
         if named:
             side_lines.append(f"{label}: {', '.join(named)}.")
+    unlanded = [
+        f"{slug} ({_issue_ref(t)})"
+        for slug, t in row.get("mismatches", {}).items()
+        if t.get("unlanded")
+    ]
+    if unlanded:
+        side_lines.append(f"Closed but not fixed: {', '.join(unlanded)}.")
     lines[1:1] = side_lines
     if bad:
         n = sum(1 for g in compared if g["bad"])
@@ -2755,6 +2771,12 @@ def digest_markdown(result, checks, cube_defs) -> str:
                 out.append(
                     "- Stale: the issue is closed and explains no cell now; "
                     "remove its entry."
+                )
+            elif i.get("issue") and i.get("unlanded"):
+                out.append(
+                    f"- Issue: #{i['issue']} closed on {i['closed_on']}, but it still "
+                    f"explains {_plural(i['cells'], 'cell')}: the fix has not landed, "
+                    "or the extract has not refreshed. Reopen it."
                 )
             elif i.get("issue"):
                 out.append(f"- Issue: #{i['issue']}")

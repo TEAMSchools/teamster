@@ -62,14 +62,15 @@ Nothing else waits on an undecided mismatch: every row has its own verdict.
    before running.
 3. Follow-up reads. For every `mismatches:` entry with `issue:`, read the issue
    with `mcp__github__issue_read` (`get`, `get_labels`, `get_comments`). A
-   closed issue gets `closed_on: <date closed>`, so a fixed one shows as stale.
-   On an `undecided` entry, a `fix-cube` or `fix-dashboard` label, or a comment
-   whose first word is one of them, sets `fix:` to match; relabel the issue for
-   its new side (`cube`, or `tableau`/`dbt`) with `mcp__github__issue_write` (it
-   replaces the label set, so pass the whole list) and tell the user to reassign
-   it to the cube builder or the dashboard maintainer. A comment on any issue
-   saying the other side is wrong goes to the user, who may flip `fix:`. Commit
-   the checks file.
+   closed issue gets `closed_on: <date closed>`, so a fixed one shows as stale;
+   one that still explains cells shows as closed but not fixed, so tell the user
+   to reopen it. On an `undecided` entry, a `fix-cube` or `fix-dashboard` label,
+   or a comment whose first word is one of them, sets `fix:` to match; relabel
+   the issue for its new side (`cube`, or `tableau`/`dbt`) with
+   `mcp__github__issue_write` (it replaces the label set, so pass the whole
+   list) and tell the user to reassign it to the cube builder or the dashboard
+   maintainer. A comment on any issue saying the other side is wrong goes to the
+   user, who may flip `fix:`. Commit the checks file.
 4. Run. Write `tests/test_zz_cube_dashboard_run.py` (template below), run
    `uv run pytest tests/test_zz_cube_dashboard_run.py -s -q --tb=short`, then
    delete it. The run downloads the workbook with its extracts and compares Cube
