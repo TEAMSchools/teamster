@@ -2067,8 +2067,11 @@ def _mismatch_run(tmp_path, mutate=_add_mismatch, bq=None):
     ("change", "message"),
     [
         (lambda t: t.pop("fix"), "missing \\['fix'\\]"),
-        (lambda t: t.update(fix="maybe"), "fix is cube, dashboard or undecided"),
-        (lambda t: t.update(where="sheet"), "where is tableau, rpt or source"),
+        (
+            lambda t: t.update(fix="maybe"),
+            "fix is cube, dashboard, source or undecided",
+        ),
+        (lambda t: t.update(where="source"), "where is tableau or rpt"),
         (lambda t: t.update(fix="cube", where="rpt"), "where is for dashboard fixes"),
     ],
 )
@@ -2595,3 +2598,78 @@ def test_total_line_says_a_dashboard_fix_explains_the_total():
         "- Total differs, but Cube matches the corrected formula "
         "(completion_always_100): Cube 66.2%, Tableau 100.0%."
     )
+
+
+# ---------------------------------------------------------------- fix: source and where variants
+def _fix_source(d, **extra):
+    _add_mismatch(d, fix="source", **extra)
+    d["mismatches"]["tardy_formula"]["title"] = (
+        "data(illuminate): two assessments carry the wrong academic year"
+    )
+
+
+def test_a_source_fix_makes_the_row_fix_source(tmp_path):
+    _, result = _mismatch_run(tmp_path, _fix_source)
+    row = result["rows"]["1"]
+    assert row["verdict"] == "fix_source"
+    school = next(g for g in row["grains"] if g["grain"] == ["region", "school"])
+    assert school["status"] == "fix_source" and school["source"] == 2
+    assert cv.comment_text(row, result).splitlines()[1] == (
+        "Fix in the source: tardy_formula (draft, 2 cells)."
+    )
+
+
+@pytest.mark.parametrize(
+    ("statuses", "verdict"),
+    [
+        (["fix_source", "undecided"], "fix_source"),
+        (["fix_source", "fix_cube"], "fix_cube"),
+        (["fix_source", "missing_member"], "fix_source"),
+    ],
+)
+def test_row_verdict_fix_source(statuses, verdict):
+    assert cv.row_verdict([{"status": s} for s in statuses]) == verdict
+
+
+def test_source_fix_is_listed_and_drafted_for_the_source_owner(tmp_path):
+    checks, result = _mismatch_run(tmp_path, _fix_source)
+    md = cv.digest_markdown(result, checks, {})
+    assert md.index("## Fix in the source") < md.index("## Add to Cube")
+    d = cv.issue_drafts(result, checks)["tardy_formula"]
+    assert d["labels"] == ["data", "validation"]
+    assert "Fix the source data" in d["body"]
+    cv.write_outputs(result, tmp_path / "out", checks, {})
+    latest = json.loads((tmp_path / "out" / "latest.json").read_text())
+    assert latest["rows"]["1"]["fix_source"] == ["tardy_formula"]
+
+
+def test_a_where_variant_filters_every_aggregate(tmp_path):
+    def m(d):
+        _add_mismatch(d)
+        d["rows"][0]["metrics"][0]["variants"] = [
+            {"explains": ["tardy_formula"], "where": "att_code != 'X'"}
+        ]
+        d["rows"][1]["metrics"][0]["variants"] = [
+            {"explains": ["tardy_formula"], "where": "att_code != 'X'"}
+        ]
+
+    c = cv.load_checks(_write_variant(tmp_path, m))
+    v = c["rows"][0]["metrics"][0]["variants"][0]
+    assert v["sql"] == "sum(IF(att_code <> 'X', is_tardy, NULL))"
+    r = c["rows"][1]["metrics"][0]["variants"][0]
+    assert r["num"] == "sum(IF(att_code <> 'X', is_present, NULL))"
+    assert r["den"] == "sum(IF(att_code <> 'X', membershipvalue, NULL))"
+
+
+def test_filtered_handles_count_star_and_countif():
+    assert cv._filtered("count(*)", "x = 1") == "COUNTIF(x = 1)"
+    assert cv._filtered("countif(y = 2)", "x = 1") == "COUNTIF(x = 1 AND y = 2)"
+
+
+def test_a_variant_needs_sql_or_where(tmp_path):
+    def m(d):
+        _add_mismatch(d)
+        d["rows"][0]["metrics"][0]["variants"] = [{"explains": ["tardy_formula"]}]
+
+    with pytest.raises(cv.CheckError, match="each variant needs"):
+        cv.load_checks(_write_variant(tmp_path, m))

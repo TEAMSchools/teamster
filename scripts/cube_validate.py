@@ -889,8 +889,8 @@ CUBE_LIMIT = 50_000
 # An average is a rate on its own scale (a scale score): compared in its units.
 KINDS = {"count", "rate", "average"}
 # Who fixes an explained mismatch, and where a dashboard fix lands.
-FIX_SIDES = ("cube", "dashboard", "undecided")
-DASHBOARD_WHERE = ("tableau", "rpt", "source")
+FIX_SIDES = ("cube", "dashboard", "source", "undecided")
+DASHBOARD_WHERE = ("tableau", "rpt")
 
 
 class CheckError(ValueError):
@@ -914,6 +914,36 @@ class Dim:
 
     def sql_for(self, datasource: str | None) -> str:
         return dict(self.sql_by_datasource).get(datasource or "", self.sql)
+
+
+def _filtered(sql: str, cond: str) -> str:
+    """A metric's SQL with every aggregate limited to the rows where `cond` holds."""
+    import sqlglot
+    from sqlglot import exp
+
+    tree = sqlglot.parse_one(sql, read="bigquery")
+    c = sqlglot.parse_one(cond, read="bigquery")
+
+    def keep(x):
+        return exp.If(this=c.copy(), true=x, false=exp.Null())
+
+    for agg in list(tree.find_all(exp.AggFunc)):
+        if isinstance(agg, exp.CountIf):
+            agg.set("this", exp.and_(c.copy(), agg.this))
+        elif isinstance(agg, exp.Count) and (
+            agg.this is None or isinstance(agg.this, exp.Star)
+        ):
+            new = exp.CountIf(this=c.copy())
+            # The aggregate may be the whole expression, which replace() cannot swap.
+            if agg is tree:
+                tree = new
+            else:
+                agg.replace(new)
+        elif isinstance(agg.this, exp.Distinct):
+            agg.this.set("expressions", [keep(e) for e in agg.this.expressions])
+        else:
+            agg.set("this", keep(agg.this))
+    return tree.sql(dialect="bigquery")
 
 
 def group_case_sql(of: str, bins: dict, other: str | None = None) -> str:
@@ -1037,12 +1067,12 @@ def load_checks(path) -> dict:
         if missing:
             raise CheckError(f"{at} is missing {missing}")
         if t["fix"] not in FIX_SIDES:
-            raise CheckError(f"{at}: fix is cube, dashboard or undecided")
+            raise CheckError(f"{at}: fix is cube, dashboard, source or undecided")
         if t.get("where") is not None and t["fix"] != "dashboard":
             raise CheckError(f"{at}: where is for dashboard fixes")
         t.setdefault("where", "tableau" if t["fix"] == "dashboard" else None)
         if t["fix"] == "dashboard" and t["where"] not in DASHBOARD_WHERE:
-            raise CheckError(f"{at}: where is tableau, rpt or source")
+            raise CheckError(f"{at}: where is tableau or rpt")
         if t.get("issue") is not None and not isinstance(t["issue"], int):
             raise CheckError(f"{at}: issue is the GitHub issue number")
         t["labels"] = list(t.get("labels") or [])
@@ -1111,10 +1141,15 @@ def load_checks(path) -> dict:
                     "missing member"
                 )
             for v in variants:
+                if isinstance(v, dict) and v.get("where"):
+                    # The metric's own formula, minus the rows the condition drops.
+                    keys = ("sql",) if m["kind"] == "count" else ("num", "den")
+                    for k in keys:
+                        v.setdefault(k, _filtered(m[k], v["where"]))
                 if not isinstance(v, dict) or any(not v.get(k) for k in need):
                     raise CheckError(
                         f"{where}: metric {m.get('cube')}: each variant needs "
-                        f"{list(need)}"
+                        f"{list(need)}, or explains and where"
                     )
                 known = set(mismatches) | members
                 unknown = [n for n in v["explains"] if n not in known]
@@ -1677,7 +1712,7 @@ def summarize(cells, kind, without=None, sides=None) -> dict:
                 for c in explained
                 if set(c.explained_by) & sides.get(side, frozenset())
             )
-            for side in ("cube", "undecided")
+            for side in ("cube", "source", "undecided")
         },
         "accepted": sum(1 for c in cells if is_accepted(c)),
         "explained_by": by,
@@ -1696,7 +1731,7 @@ def row_verdict(grains) -> str:
         return "fail"
     if "error" in statuses:
         return "incomplete"
-    for s in ("fix_cube", "undecided", "missing_member"):
+    for s in ("fix_cube", "fix_source", "undecided", "missing_member"):
         if s in statuses:
             return s
     if "pass" not in statuses:
@@ -2391,12 +2426,15 @@ def run_dashboard(
                         )
                         mm["changes_total"] = mm["changes_total"] or moves
                 cube = sum(s["cube"] for s in ms.values())
+                source = sum(s["source"] for s in ms.values())
                 undecided = sum(s["undecided"] for s in ms.values())
                 entry.update(
                     status="fail"
                     if bad
                     else "fix_cube"
                     if cube
+                    else "fix_source"
+                    if source
                     else "undecided"
                     if undecided
                     else ("missing_member" if explained else "pass"),
@@ -2404,6 +2442,7 @@ def run_dashboard(
                     bad=bad,
                     explained=explained,
                     cube=cube,
+                    source=source,
                     undecided=undecided,
                     accepted=sum(s["accepted"] for s in ms.values()),
                     metrics=ms,
@@ -2429,6 +2468,7 @@ def run_dashboard(
             "pass",
             "missing_member",
             "fix_cube",
+            "fix_source",
             "undecided",
         ):
             # A construct nobody accounted for may change what the sheet shows.
@@ -2528,7 +2568,7 @@ def _total_line(s_: dict, kind: str, members: list[str]) -> list[str]:
     return lines
 
 
-_COMPARED = ("pass", "fail", "missing_member", "fix_cube", "undecided")
+_COMPARED = ("pass", "fail", "missing_member", "fix_cube", "fix_source", "undecided")
 
 
 def _missing_text(missing: dict, full: bool = False) -> str:
@@ -2593,12 +2633,14 @@ def _construct_lines(items: list[dict], with_why: bool) -> list[str]:
 _SIDE_LABELS = (
     ("cube", "Fix in Cube"),
     ("dashboard", "Fix in the dashboard"),
+    ("source", "Fix in the source"),
     ("undecided", "Waiting on the domain owner"),
 )
 # The second formula, as the digest names it for each side.
 _SIDE_FORMULA = {
     "cube": "Cube, reproduced over the extract",
     "dashboard": "Corrected",
+    "source": "With the source corrected",
     "undecided": "The other formula, which Cube matches",
 }
 
@@ -2649,7 +2691,7 @@ def comment_text(row, result) -> str:
             f"Investigate: {bad} cells across {_plural(n, 'grain')}; details in the "
             f"{result['dashboard']} fix digest."
         )
-    elif row["verdict"] in ("missing_member", "fix_cube", "undecided"):
+    elif row["verdict"] in ("missing_member", "fix_cube", "fix_source", "undecided"):
         lines.append("Nothing else to investigate.")
     elif row["verdict"] == "pass" and any(
         t["fix"] == "dashboard" and t["explains_cells"]
@@ -3026,6 +3068,8 @@ def _issue_labels(t: dict) -> list[str]:
         labels.append("cube")
     elif t["fix"] == "dashboard":
         labels += {"tableau": ["tableau"], "rpt": ["dbt"]}.get(t["where"], [])
+    elif t["fix"] == "source":
+        labels.append("data")
     return list(dict.fromkeys([*labels, *t["labels"], "validation"]))
 
 
@@ -3036,6 +3080,7 @@ def _example_text(c: dict, fix: str) -> str:
     other = {
         "cube": "Cube's formula over the extract gives",
         "dashboard": "the corrected calculation gives",
+        "source": "with the source corrected it gives",
         "undecided": "the other formula gives",
     }[fix]
     return (
@@ -3054,6 +3099,11 @@ _ANSWERS = {
         "Fix the dashboard (or its model or source) to compute the corrected "
         "formula, then close this issue; the next validation run checks the fix. "
         "Cube already matches the corrected formula. " + _OTHER_SIDE
+    ),
+    "source": (
+        "Fix the source data so Cube and the dashboard both see the corrected "
+        "values, then close this issue; the next validation run checks the fix. "
+        "Neither side's code changes. " + _OTHER_SIDE
     ),
     "undecided": (
         "Decide which formula is the intended definition. Add the label `fix-cube` "
@@ -3104,6 +3154,7 @@ def issue_drafts(result, checks) -> dict[str, dict]:
         alias = {
             "cube": "cube_formula",
             "dashboard": "corrected",
+            "source": "source_corrected",
             "undecided": "matches_cube",
         }[fix]
         found = {
@@ -3116,6 +3167,11 @@ def issue_drafts(result, checks) -> dict[str, dict]:
                 "With the dashboard's calculation corrected, Cube matches it in "
                 f"{_plural(cells, 'cell')} across {_plural(len(hits), 'row')}."
             ),
+            "source": (
+                f"In {_plural(cells, 'cell')} across {_plural(len(hits), 'row')}, "
+                "the two sides disagree because of bad source data: with it "
+                "corrected, they match."
+            ),
             "undecided": (
                 f"In {_plural(cells, 'cell')} across {_plural(len(hits), 'row')}, "
                 "Cube matches the other formula below and not the dashboard's. "
@@ -3125,10 +3181,10 @@ def issue_drafts(result, checks) -> dict[str, dict]:
         place = {
             "cube": f"the Cube definition of {measure} under src/cube/model",
             "undecided": f"the Cube definition of {measure}, or {workbook}",
+            "source": f"the source data feeding `{m['datasource']}` and Cube",
             "dashboard": {
                 "tableau": workbook,
                 "rpt": f"the kipptaf dbt model behind `{m['datasource']}`",
-                "source": f"the source data feeding `{m['datasource']}`",
             }.get(t.get("where") or "tableau", workbook),
         }[fix]
         related = ", ".join(f"#{n}" for n in t["related"])

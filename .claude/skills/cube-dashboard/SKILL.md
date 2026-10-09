@@ -23,6 +23,7 @@ that is the case this exists to catch (#5692).
 Verdicts, strongest first: `fail` (a gap nothing explains), `incomplete` (a
 grain errored, or a Tableau construct on the row's sheets is unaccounted),
 `fix_cube` (every gap is explained, at least one by a mismatch Cube must fix),
+`fix_source` (every gap is explained, at least one by bad source data),
 `undecided` (every gap is explained, at least one by a mismatch whose fix the
 domain owner is deciding), `missing_member` (every gap is explained by a member
 Cube lacks), `pass`. Each comment lists the missing members and the explained
@@ -34,19 +35,25 @@ An explained mismatch is a second formula that reproduces Cube's numbers over
 the extract. Every one gets a GitHub issue; its `fix:` says who the issue is
 for. The user sets `fix:` when approving the entry, before the run.
 
-| `fix:`      | Means                                                | Issue goes to            | Row                            |
-| ----------- | ---------------------------------------------------- | ------------------------ | ------------------------------ |
-| `cube`      | The dashboard is right; Cube's formula is not        | The cube builder         | `fix_cube`, tagged `mismatch`  |
-| `dashboard` | Cube is right; the dashboard, model or source is not | The dashboard maintainer | Its cells count as matches     |
-| `undecided` | The user cannot tell which is intended               | The domain owner         | `undecided`, tagged `mismatch` |
+| `fix:`      | Means                                                   | Issue goes to                        | Row                             |
+| ----------- | ------------------------------------------------------- | ------------------------------------ | ------------------------------- |
+| `cube`      | The dashboard is right; Cube's formula is not           | The cube builder                     | `fix_cube`, tagged `mismatch`   |
+| `dashboard` | Cube is right; the dashboard or its `rpt_` model is not | The dashboard maintainer             | Its cells count as matches      |
+| `source`    | The data is wrong; both sides agree once it is fixed    | The source owner (e.g. academic ops) | `fix_source`, tagged `mismatch` |
+| `undecided` | The user cannot tell which is intended                  | The domain owner                     | `undecided`, tagged `mismatch`  |
 
 Pick by what is intended:
 
 - The dashboard is the agreed definition and Cube drifted from it (Cube counts
   rows where the dashboard counts students): `cube`.
 - The dashboard's formula is plainly broken (DDI's % Completion reads 100%
-  everywhere): `dashboard`. Add `where: rpt` or `where: source` when the fix is
-  in the model or the source, not the workbook.
+  everywhere): `dashboard`. Add `where: rpt` when the fix is in the model, not
+  the workbook.
+- The source data is wrong, and it shows up as an error on one side or the other
+  (an Illuminate date typed a year off): `source`. Express the correction as a
+  variant with `where:` (the metric's own formula, minus the bad rows) instead
+  of rewriting its SQL. A known source problem usually has an issue already
+  (#3801 for Illuminate year tags): set `issue:` to it.
 - You cannot tell: `undecided`. The owner answers with the label `fix-cube` or
   `fix-dashboard` (or a comment starting with the word), and their issue becomes
   the fix ticket.
@@ -127,11 +134,11 @@ Nothing else waits on an undecided mismatch: every row has its own verdict.
    `undecided`) the domain owner.
 9. Tags. Tell the user to run `~/asana-sync/sync.py` (preview, then `--apply`).
    It reads `latest.json` and gives every row exactly one validation tag: `pass`
-   → `matched`; `fail`, `fix_cube`, `undecided` or `missing_member` → `mismatch`
-   (a `missing_member` row also becomes `cube-partial`); `incomplete` or never
-   run → `unvalidated`. It ticks a row only when it is both `cube-covered` and
-   `matched`, and unticks every other done row. The skill never changes tags or
-   ticks itself.
+   → `matched`; `fail`, `fix_cube`, `fix_source`, `undecided` or
+   `missing_member` → `mismatch` (a `missing_member` row also becomes
+   `cube-partial`); `incomplete` or never run → `unvalidated`. It ticks a row
+   only when it is both `cube-covered` and `matched`, and unticks every other
+   done row. The skill never changes tags or ticks itself.
 
 Run template:
 
@@ -216,14 +223,15 @@ A weekly automatic follow-up is #5842.
    reproduces Cube's numbers (a corrected dashboard formula, or Cube's own
    definition copied over the extract), describe the gap under the file's
    `mismatches:`: `title` as a conventional-commit issue title, `what`, `fix`
-   (`cube`, `dashboard` or `undecided`; see "Who fixes a mismatch"), and for a
-   dashboard fix an optional `where` (`tableau`, the default, `rpt` or
-   `source`), plus optional `evidence`, `labels` and `related` (issue numbers).
-   Give the metric a `variants:` entry with that SQL and `explains: [<slug>]`. A
-   variant may explain a mismatch and a missing member together; a slug is never
-   both. Propose `fix:` with the evidence and let the user set it when they
-   approve the entry. Set the file's `open_issues_task:` to the domain's Open
-   Issues task gid (Assessments: `1219086050133309`).
+   (`cube`, `dashboard`, `source` or `undecided`; see "Who fixes a mismatch"),
+   and for a dashboard fix an optional `where` (`tableau`, the default, or
+   `rpt`), plus optional `evidence`, `labels` and `related` (issue numbers).
+   Give the metric a `variants:` entry with that SQL (or with `where:`, a
+   condition that drops rows from the metric's own formula) and
+   `explains: [<slug>]`. A variant may explain a mismatch and a missing member
+   together; a slug is never both. Propose `fix:` with the evidence and let the
+   user set it when they approve the entry. Set the file's `open_issues_task:`
+   to the domain's Open Issues task gid (Assessments: `1219086050133309`).
 7. `count` for sums and distinct counts, `rate` with `num`/`den` for shares
    (within 0.1 point), `average` with `num`/`den` for a mean in its own units,
    such as a scale score (within 0.1 unit). Give a metric
