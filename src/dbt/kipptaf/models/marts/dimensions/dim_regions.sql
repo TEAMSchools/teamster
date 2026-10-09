@@ -56,9 +56,8 @@ select
 
     case business_unit_code when 'KIPP_MIAMI' then 'FL' else 'NJ' end as state,
 
-    -- NJ DOE county-district code, read by the Branching Minds extracts as
-    -- district_id. Miami's Florida district number is not needed yet; TAF is
-    -- not a school district.
+    -- NJDOE codes, read by the Branching Minds and Clever extracts. Miami's
+    -- Florida numbers are not needed yet; TAF is not a school district.
     case
         business_unit_code
         when 'TEAM'
@@ -68,4 +67,14 @@ select
         when 'KPAT'
         then '7899'
     end as state_district_id,
+
+    case
+        business_unit_code
+        when 'TEAM'
+        then '965'
+        when 'KCNA'
+        then '111'
+        when 'KPAT'
+        then '925'
+    end as state_school_id,
 from bu_xref
