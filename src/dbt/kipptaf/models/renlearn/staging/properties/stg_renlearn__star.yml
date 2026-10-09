@@ -1,11 +1,10 @@
 models:
   - name: stg_renlearn__star
     description: >-
-      Consolidated STAR model and the single place STAR data is read or edited.
-      Folds in the derived columns that previously lived in the retired rollup —
-      academic_year, star subject and discipline, administration window mapped
-      from Fall, Winter, and Spring to BOY, MOY, and EOY, benchmark integer
-      flags, and the per-subject row numbers.
+      Consolidated STAR model and the single place STAR data is read. Unions the
+      district int_renlearn__star models, which carry the decoded columns and
+      per-subject row numbers, and moves Miami student ids onto Focus student
+      numbers and adds the home location's code location.
     columns:
       - name: assessment_id
         data_type: string
@@ -50,8 +49,6 @@ models:
       - name: course_sourced_id
         data_type: string
       - name: current_sgp
-        data_type: float64
-      - name: deactivation_reason
         data_type: float64
       - name: district_benchmark_category_level
         data_type: int64

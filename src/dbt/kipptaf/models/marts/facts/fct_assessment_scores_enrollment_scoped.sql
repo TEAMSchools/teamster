@@ -118,7 +118,7 @@ with
     -- Domain-level rows. module_code stays the subject so these rows hash to
     -- the same assessment_administration_key as the subject's overall row.
     -- No 'relative_placement is not null' predicate
-    -- because int_iready__domain_unpivot already enforces it (#4709).
+    -- because int_assessments__iready_domain_unpivot already enforces it (#4709).
     iready_domain_scores_raw as (
         select
             student_id as student_number,
@@ -147,7 +147,7 @@ with
             -- accepted_values test on relative_placement guards the strings.
             relative_placement
             in ('Early On Grade Level', 'Mid or Above Grade Level') as is_mastery,
-        from {{ ref("int_iready__domain_unpivot") }}
+        from {{ ref("int_assessments__iready_domain_unpivot") }}
         where
             completion_date is not null
             and _dbt_source_project is not null

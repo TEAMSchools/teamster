@@ -2,15 +2,16 @@ models:
   - name: int_assessments__benchmark_scores
     description: >-
       Every iReady diagnostic, STAR, and DIBELS benchmark score, one row per
-      source record. iReady rows come from int_iready__diagnostic_results, STAR
-      rows from stg_renlearn__star before any same-day retest dedupe, and DIBELS
-      rows from int_amplify__all_assessments limited to benchmark
-      administrations, with the composite as the overall row and each
-      sub-measure as a group row. Columns are renamed to one shared vocabulary,
-      and columns only one source reports are null on the others. Rows are not
-      otherwise filtered, so consumers apply their own completeness, retest and
-      year filters. The vendor subject crosswalk is joined once here, so
-      consumers read illuminate_subject_area instead of repeating the join.
+      source record. iReady rows come from
+      int_assessments__iready_diagnostic_results, STAR rows from
+      stg_renlearn__star before any same-day retest dedupe, and DIBELS rows from
+      int_amplify__all_assessments limited to benchmark administrations, with
+      the composite as the overall row and each sub-measure as a group row.
+      Columns are renamed to one shared vocabulary, and columns only one source
+      reports are null on the others. Rows are not otherwise filtered, so
+      consumers apply their own completeness, retest and year filters. The
+      vendor subject crosswalk is joined once here, so consumers read
+      illuminate_subject_area instead of repeating the join.
     config:
       materialized: table
       meta:
@@ -153,7 +154,7 @@ unit_tests:
       back to the raw subject.
     model: int_assessments__benchmark_scores
     given:
-      - input: ref('int_iready__diagnostic_results')
+      - input: ref('int_assessments__iready_diagnostic_results')
         rows: []
       - input: ref('stg_renlearn__star')
         rows: []

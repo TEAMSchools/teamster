@@ -7,7 +7,7 @@ with
 
             sy.student_number,
             sy.academic_year,
-        from {{ ref("int_iready__diagnostic_results") }} as dr
+        from {{ ref("int_assessments__iready_diagnostic_results") }} as dr
         inner join
             {{ ref("int_ignite__student_years") }} as sy
             on dr.student_id = sy.student_number
