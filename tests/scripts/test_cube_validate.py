@@ -2546,3 +2546,34 @@ def test_latest_json_lists_cube_issues(tmp_path):
     latest = json.loads((tmp_path / "out" / "latest.json").read_text())
     assert latest["rows"]["1"]["verdict"] == "cube_issue"
     assert latest["rows"]["1"]["cube_issues"] == ["rows_not_pairs"]
+
+
+def test_cube_issue_draft_asks_for_a_cube_fix(tmp_path):
+    checks, result = _truth_run(tmp_path, _add_cube_issue)
+    d = cv.issue_drafts(result, checks)["rows_not_pairs"]
+    assert d["labels"] == ["fix", "cube", "validation"]
+    for part in (
+        "cube_formula",
+        "as_written",
+        "Cube's formula over the extract gives",
+        "Fix the Cube definition",
+        "`demo_view.count_tardy_days`",
+    ):
+        assert part in d["body"], part
+    assert "cube-correct" not in d["body"]
+
+
+def test_a_filed_cube_issue_gets_no_new_draft(tmp_path):
+    checks, result = _truth_run(tmp_path, lambda d: _add_cube_issue(d, issue=77))
+    assert cv.issue_drafts(result, checks) == {}
+
+
+def test_drafts_list_only_the_related_issues_named(tmp_path):
+    checks, result = _truth_run(
+        tmp_path, lambda d: _add_truth_issue(d, related=[3801, 5668])
+    )
+    body = cv.issue_drafts(result, checks)["tardy_formula"]["body"]
+    assert "Related: #3801, #5668" in body
+    plain_checks, plain = _truth_run(tmp_path)
+    plain_body = cv.issue_drafts(plain, plain_checks)["tardy_formula"]["body"]
+    assert "Related:" not in plain_body

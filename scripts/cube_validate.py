@@ -3037,20 +3037,21 @@ def report_markdown(result) -> str:
     return "\n".join(out)
 
 
-def draft_sql(m: dict, v: dict, checks: dict, window) -> str:
-    """The dashboard's calculation and its correction, side by side, over the warehouse."""
+def draft_sql(m: dict, v: dict, checks: dict, window, alias="corrected") -> str:
+    """The dashboard's calculation beside another (its correction, or Cube's formula),
+    over the warehouse."""
     try:
         table = live_table(m["datasource"])
     except CheckError:
         table = m["datasource"]
     if m["kind"] == "count":
-        cols = [f"{m['sql']} as as_written", f"{v['sql']} as corrected"]
+        cols = [f"{m['sql']} as as_written", f"{v['sql']} as {alias}"]
     else:
         cols = [
             f"{m['num']} as as_written_num",
             f"{m['den']} as as_written_den",
-            f"{v['num']} as corrected_num",
-            f"{v['den']} as corrected_den",
+            f"{v['num']} as {alias}_num",
+            f"{v['den']} as {alias}_den",
         ]
     where = _truth_where(
         checks["dimensions"],
@@ -3064,36 +3065,61 @@ def draft_sql(m: dict, v: dict, checks: dict, window) -> str:
     return f"select {', '.join(cols)}\nfrom `{table}`\nwhere " + "\n  and ".join(where)
 
 
-def _issue_labels(t: dict) -> list[str]:
-    kind = re.match(r"^([a-z]+)", t["title"])
-    labels = [kind.group(1)] if kind else []
-    labels += {"dashboard": ["tableau"], "rpt": ["dbt"]}.get(t["where"], [])
+def _issue_labels(t: dict, kind: str = "truth") -> list[str]:
+    head = re.match(r"^([a-z]+)", t["title"])
+    labels = [head.group(1)] if head else []
+    if kind == "cube":
+        labels.append("cube")
+    else:
+        labels += {"dashboard": ["tableau"], "rpt": ["dbt"]}.get(t["where"], [])
     return list(dict.fromkeys([*labels, *t["labels"], "validation"]))
 
 
-def _example_text(c: dict) -> str:
+def _example_text(c: dict, kind: str = "truth") -> str:
     if c["n_students"] is None or c["n_students"] < SMALL_CELL:
         return "small cell"
     k = c["kind"]
+    other = (
+        "Cube's formula over the extract gives"
+        if kind == "cube"
+        else "the corrected calculation gives"
+    )
     return (
-        f"the dashboard shows {_fmt(c['truth'], k)}, the corrected calculation gives "
+        f"the dashboard shows {_fmt(c['truth'], k)}, {other} "
         f"{_fmt(c['variant'], k)}, and Cube gives {_fmt(c['cube'], k)}"
     )
 
 
+_TRUTH_ANSWER = (
+    "Add one label from the Labels menu on the right of this issue, or, if you "
+    "cannot add labels, write a comment that starts with the word. `cube-correct` "
+    "means the dashboard is wrong and Cube's number is right. `cube-wrong` means the "
+    "dashboard is right and Cube must change. If you fix the dashboard or the model "
+    "instead, close this issue; the next validation run checks the fix."
+)
+_CUBE_ANSWER = (
+    "Fix the Cube definition to compute what the dashboard shows, then close this "
+    "issue; the next validation run checks the fix. If you think the dashboard is "
+    "the one that is wrong, say so in a comment."
+)
+
+
 def issue_drafts(result, checks) -> dict[str, dict]:
-    """One GitHub issue draft per unfiled truth issue that explains cells."""
+    """One GitHub issue draft per unfiled truth or cube issue that explains cells."""
     window = resolve_window(checks, dt.date.fromisoformat(result["run_date"]))
+    entries = [("truth", s, t) for s, t in (checks.get("truth_issues") or {}).items()]
+    entries += [("cube", s, t) for s, t in (checks.get("cube_issues") or {}).items()]
     out = {}
-    for slug, t in (checks.get("truth_issues") or {}).items():
+    for kind, slug, t in entries:
+        key = "truth_issues" if kind == "truth" else "cube_issues"
         hits = [
             (gid, row)
             for gid, row in result["rows"].items()
-            if row.get("truth_issues", {}).get(slug, {}).get("explains_cells")
+            if row.get(key, {}).get(slug, {}).get("explains_cells")
         ]
         if t.get("issue") or not hits:
             continue
-        cells = sum(row["truth_issues"][slug]["explains_cells"] for _, row in hits)
+        cells = sum(row[key][slug]["explains_cells"] for _, row in hits)
         m, v = next(
             (m, v)
             for r in checks["rows"]
@@ -3114,38 +3140,62 @@ def issue_drafts(result, checks) -> dict[str, dict]:
             key=lambda x: x[0],
         )[:3]
         rows_text = ", ".join(f"{row['name']} ({gid})" for gid, row in hits)
-        place = {
-            "dashboard": f"the Tableau workbook behind {result['dashboard']}",
-            "rpt": f"the kipptaf dbt model behind `{m['datasource']}`",
-            "source": f"the source data feeding `{m['datasource']}`",
-        }[t["where"]]
+        measure = f"`{checks['view']}.{m['cube']}`"
+        if kind == "cube":
+            alias = "cube_formula"
+            place = f"the Cube definition of {measure} under src/cube/model"
+            found = (
+                f"In {_plural(cells, 'cell')} across {_plural(len(hits), 'row')}, Cube "
+                "gives what its own formula gives over the extract, and the dashboard "
+                "shows something else."
+            )
+            step1 = (
+                "`as_written` is the dashboard's calculation and `cube_formula` is "
+                "Cube's, over the same rows."
+            )
+            answer = _CUBE_ANSWER
+        else:
+            alias = "corrected"
+            place = {
+                "dashboard": f"the Tableau workbook behind {result['dashboard']}",
+                "rpt": f"the kipptaf dbt model behind `{m['datasource']}`",
+                "source": f"the source data feeding `{m['datasource']}`",
+            }[t["where"]]
+            found = (
+                "With the dashboard's calculation corrected, Cube matches it in "
+                f"{_plural(cells, 'cell')} across {_plural(len(hits), 'row')}."
+            )
+            step1 = "`as_written` is the dashboard's calculation and `corrected` is the fix."
+            answer = _TRUTH_ANSWER
+        related = ", ".join(f"#{n}" for n in t["related"])
         body = [
             "## What's happening",
             "",
             t["what"],
             "",
             f"The cube-dashboard validation compared Cube with {result['dashboard']}'s "
-            f"extract on {result['run_date']}. With the dashboard's calculation "
-            f"corrected, Cube matches it in {_plural(cells, 'cell')} across "
-            f"{_plural(len(hits), 'row')}.",
+            f"extract on {result['run_date']}. {found}",
             "",
             *[
-                f"- {' / '.join(c['key']) or 'All'}: {_example_text(c)}."
+                f"- {' / '.join(c['key']) or 'All'}: {_example_text(c, kind)}."
                 for _, c in examples
             ],
             *(["", t["evidence"]] if t.get("evidence") else []),
+            *(["", f"Related: {related}"] if related else []),
             "",
             "## Steps to reproduce",
             "",
-            "1. Run this query in BigQuery. `as_written` is the dashboard's "
-            "calculation and `corrected` is the fix.",
+            f"1. Run this query in BigQuery. {step1}",
             "",
             "   ```sql",
-            *[f"   {line}" for line in draft_sql(m, v, checks, window).splitlines()],
+            *[
+                f"   {line}"
+                for line in draft_sql(m, v, checks, window, alias).splitlines()
+            ],
             "   ```",
             "",
-            f"2. Compare both with Cube's `{checks['view']}.{m['cube']}` over the "
-            "same filters. Cube matches `corrected`.",
+            f"2. Compare both with Cube's {measure} over the same filters. Cube "
+            f"matches `{alias}`.",
             "",
             "## Where",
             "",
@@ -3155,26 +3205,21 @@ def issue_drafts(result, checks) -> dict[str, dict]:
             "",
             "## How to answer",
             "",
-            "Add one label from the Labels menu on the right of this issue, or, "
-            "if you cannot add labels, write a comment that starts with the word. "
-            "`cube-correct` means the dashboard is wrong and Cube's number is "
-            "right. `cube-wrong` means the dashboard is right and Cube must "
-            "change. If you fix the dashboard or the model instead, close this "
-            "issue; the next validation run checks the fix.",
+            answer,
             "",
             "<details>",
             "<summary>For Claude</summary>",
             "",
             f"> Checks file `.claude/skills/cube-dashboard/checks/"
-            f"{Path(checks['path']).name}`, truth issue `{slug}`. As written: "
-            f"{_metric_sql(m)}. Corrected: {_metric_sql({**v, 'kind': m['kind']})}. "
+            f"{Path(checks['path']).name}`, {kind} issue `{slug}`. As written: "
+            f"{_metric_sql(m)}. Variant: {_metric_sql({**v, 'kind': m['kind']})}. "
             "Digest: the run's `-fixes.md` under `~/asana-sync/validation/`.",
             "",
             "</details>",
         ]
         out[slug] = {
             "title": t["title"],
-            "labels": _issue_labels(t),
+            "labels": _issue_labels(t, kind),
             "body": "\n".join(body),
         }
     return out
