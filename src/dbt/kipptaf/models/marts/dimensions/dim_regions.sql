@@ -56,8 +56,8 @@ select
 
     case business_unit_code when 'KIPP_MIAMI' then 'FL' else 'NJ' end as state,
 
-    -- NJDOE codes, read by the Branching Minds and Clever extracts. Miami's
-    -- Florida numbers are not needed yet; TAF is not a school district.
+    -- NJDOE codes. Miami's Florida numbers are not needed yet; TAF is not a
+    -- school district.
     case
         business_unit_code
         when 'TEAM'
