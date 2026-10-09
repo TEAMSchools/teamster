@@ -63,7 +63,7 @@ dimensions:
     sql: module_type
   module_code:
     cube: module_code
-    sql: concat(module_type, module_number)
+    sql: module_number # already the full code, e.g. CRQ1
     sql_by_datasource:
       rpt_tableau__ddi_dashboard (kipptaf_tableau): module_code
   subject_area:
