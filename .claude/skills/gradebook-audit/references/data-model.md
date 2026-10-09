@@ -26,6 +26,16 @@ half its points) live in the package model
 `src/dbt/powerschool/models/sis/intermediate/int_powerschool__gradebook_assignments_scores.sql`,
 which builds in each district.
 
+The staff-facing statement of these rules for AY 2026-2027 is the
+[SY 27 Gradebook Health Checklists](https://docs.google.com/document/d/1j_D9uJki4AuJP0yijuVVYaJkvgCJB8tgINgLcF-YEJ8/edit)
+doc, one tab each for MS and HS. In October 2026 it matched the assignment
+checks rule for rule. Read it with the Google Docs connector. Quote it when
+telling a teacher which rule a score breaks, and check its sharing before
+linking it in a reply. If a rule you quote disagrees with the checks, the policy
+has moved: plan the change through
+[`../playbooks/plan-a-change.md`](../playbooks/plan-a-change.md) before telling
+the teacher to change scores.
+
 The grading policy also sets a 200-point quarterly total for Summative. No check
 enforces it, and Summative has no per-assignment maximum. If asked whether the
 audit catches an over- or under-weighted Summative quarter, the answer is no;

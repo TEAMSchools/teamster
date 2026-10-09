@@ -62,7 +62,7 @@ below is the _how_; `plan-a-change.md` is the _what and whether_.
 | Roll T&L's assignment expectations over to a new year (the PS plugin / `U_EXPECTATIONS` upload)                      | [`playbooks/academic-year-rollover.md`](playbooks/academic-year-rollover.md) |
 | Work on the dashboard during summer, before the new year's PowerSchool data exists (the dbt toggle)                  | [`references/summer-toggle.md`](references/summer-toggle.md)                 |
 | A flag is firing when it shouldn't, not firing when it should, or a section is missing one of its four category rows | [`playbooks/debug-a-flag.md`](playbooks/debug-a-flag.md)                     |
-| A teacher's category is flagged but they see no blank scores (often a student who left the section)                  | [`playbooks/debug-a-flag.md`](playbooks/debug-a-flag.md)                     |
+| A category reads _Invalid scores entered_ and the teacher sees nothing wrong (a student who left, or a scoring rule) | [`playbooks/debug-a-flag.md`](playbooks/debug-a-flag.md)                     |
 | Explain why an undocumented filter, column, or threshold exists                                                      | [`playbooks/explain-a-decision.md`](playbooks/explain-a-decision.md)         |
 | Lineage/refs, a configurable threshold, the Sumner override, or changing `section_or_period`                         | [`references/data-model.md`](references/data-model.md)                       |
 | Change, build, or deploy the plugin, or ship a skill change to Teaching & Learning                                   | [Plugin and end-user skill](#plugin-and-end-user-skill) below                |
