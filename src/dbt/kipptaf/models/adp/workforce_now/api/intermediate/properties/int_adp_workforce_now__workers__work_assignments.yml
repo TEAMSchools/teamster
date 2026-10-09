@@ -14,11 +14,6 @@ models:
                 field: location_key
       - name: home_work_location__name_code__name
         data_type: string
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref("stg_google_sheets__people__location_crosswalk")
-                field: name
         description:
           First non-null of home_work_location__name_code__long_name,
           home_work_location__name_code__short_name.

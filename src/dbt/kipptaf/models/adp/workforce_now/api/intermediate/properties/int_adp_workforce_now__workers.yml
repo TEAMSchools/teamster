@@ -3,6 +3,15 @@ models:
     config:
       materialized: table
     columns:
+      - name: home_work_location__name_code__name
+        data_type: string
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref("stg_google_sheets__people__location_crosswalk")
+                field: name
+              config:
+                severity: error
       - name: associate_oid
         data_type: string
       - name: effective_date_start
@@ -75,8 +84,6 @@ models:
         data_type: numeric
       - name: base_remuneration__hourly_rate_amount__amount_value
         data_type: numeric
-      - name: home_work_location__name_code__name
-        data_type: string
       - name: management_position_indicator
         data_type: boolean
       - name: payroll_file_number
