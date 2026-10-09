@@ -30,5 +30,6 @@ from {{ ref("int_overgrad__students") }} as os
 inner join
     {{ ref("stg_overgrad__admissions") }} as oa
     on os.id = oa.student__id
+    and os._dbt_source_project = oa._dbt_source_project
     and oa.status = 'Enrolled'
 inner join {{ ref("stg_overgrad__universities") }} as ou on oa.university__id = ou.id
