@@ -71,8 +71,10 @@ Run:
    exports the planned states, downloads the extracts.
 4. **Map.** From the exported CSV headers, draft `sheets:`: each column's Cube
    member (from Cube `meta`) and extract SQL. The analyst approves the mapping.
+   See _Mapping keys_ below.
 5. **Compare.** `cube_validate.py compare <checks>`. It writes `cells.jsonl` and
-   `next_states.yml` in the snapshot.
+   `next_states.yml` in the snapshot. After changing a mapping, run
+   `compare --redo`: a plain compare skips states it has already compared.
 6. **Descend.** While `next_states.yml` is not empty:
    `export <checks> --states <snapshot>/next_states.yml`, then compare again.
 7. **Close.** `close <checks>`, always, including after a failure. Confirm the
@@ -80,6 +82,32 @@ Run:
 8. **Explain.** `cube_validate.py explain <checks>`.
 9. **Report.** `cube_validate.py drafts <checks>` (no secret). Read the digest
    and the coverage report.
+
+## Mapping keys
+
+Under `sheets.<sheet>`: `datasource` (the extract's caption), `dims` and
+`measures`, keyed by the column caption Tableau exports.
+
+- **Dimension:** `cube` (member, or none when Cube lacks it), `sql` (extract
+  column or expression). Add `person: true` for a student column, or
+  `person: a teacher` for staff: outputs and draft queries then show that label,
+  never the value.
+- **Measure:** `cube`, then `sql` or `num` and `den`. `round: <n>` when the
+  export shows a plain number rounded to n decimals (without it, "36.24" must
+  equal Cube exactly). `scale` multiplies Cube's value (100 when Cube returns a
+  fraction the sheet shows as a whole number). `table_calc: percent_of_total` or
+  `running_sum`. `missing_members` and `variants` explain gaps.
+
+At the top level:
+
+- `filters`: `{caption: {cube: member}}` for filter cards not shown as a column;
+  add `person:` here too.
+- `cube_filters` and `extract_filters`: the dashboard's hard filters on each
+  side, optionally per `datasource`. Mark test-record filters `private: true` so
+  they never reach a draft.
+- `param_filters` (`{caption: {value: [cube filters]}}`) and `param_where`
+  (`{caption: {value: sql}}`): what a parameter value filters, on each side.
+  Leave a parameter out when it only changes what a sheet shows.
 
 ## Reading the results
 

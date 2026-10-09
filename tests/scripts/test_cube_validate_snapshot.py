@@ -612,13 +612,17 @@ def test_retry_recovers_then_gives_up():
         )
 
 
+def NEVER(state):  # noqa: N802 - a coverage check that never covers
+    return False
+
+
 class FakeSession:
     def __init__(self, exports):
         self.exports, self.calls = exports, []
 
-    def export_view(self, sheet, filters):
-        self.calls.append((sheet, tuple(filters)))
-        return self.exports(sheet, dict(filters))
+    def export_view(self, sheet, filters, params=()):
+        self.calls.append((sheet, tuple(filters), tuple(params)))
+        return self.exports(sheet, {**dict(filters), **dict(params)})
 
 
 def _manifest():
@@ -644,9 +648,9 @@ def test_export_state_writes_csvs_and_marks_ok(tmp_path):
 
     s, m = FakeSession(exports), _manifest()
     default = snap.State("Overview")
-    m.states[default.id] = snap.export_state(s, m, snapdir, wb, default, {}, {}, {})
+    m.states[default.id] = snap.export_state(s, m, snapdir, wb, default, {}, NEVER, {})
     north = snap.State("Overview", filters=(("Region", "North"),))
-    entry = snap.export_state(s, m, snapdir, wb, north, {}, {}, {})
+    entry = snap.export_state(s, m, snapdir, wb, north, {}, NEVER, {})
     assert entry["status"] == "ok"
     assert entry["sheets"]["Overview - Table"]["rows"] == 1
     assert (snapdir / "csv" / "overview-table" / f"{north.id}.csv").exists()
@@ -657,10 +661,10 @@ def test_export_state_flags_an_ignored_filter(tmp_path):
     wb = snap.read_workbook(TWB)
     s, m = FakeSession(lambda sheet, f: b"Region,N\r\nAll,9\r\n"), _manifest()
     default = snap.State("Overview")
-    m.states[default.id] = snap.export_state(s, m, tmp_path, wb, default, {}, {}, {})
+    m.states[default.id] = snap.export_state(s, m, tmp_path, wb, default, {}, NEVER, {})
     north = snap.State("Overview", filters=(("Region", "North"),))
     assert (
-        snap.export_state(s, m, tmp_path, wb, north, {}, {}, {})["status"]
+        snap.export_state(s, m, tmp_path, wb, north, {}, NEVER, {})["status"]
         == "filter_ignored"
     )
 
@@ -693,7 +697,7 @@ def test_click_state_exports_targets_with_the_clicked_marks_values(tmp_path):
         s, _manifest(), tmp_path, wb, state, {}, {}, {"Overview - Table": ["Title"]}
     )
     assert entry["click_filters"] == {"Title": "T1"}
-    assert ("Overview - Detail", (("Title", "T1"),)) in s.calls
+    assert ("Overview - Detail", (("Title", "T1"),), ()) in s.calls
     assert list(entry["sheets"]) == ["Overview - Detail"]
 
 
@@ -708,3 +712,82 @@ def test_plan_command_writes_a_proposal_from_a_local_twbx(tmp_path, demo_hyper):
     assert snap.main(["plan", str(checks), "--twbx", str(twbx), "--out", str(out)]) == 0
     text = out.read_text()
     assert "overview--default" in text and "trees:" in text
+
+
+# ---------------------------------------------------------------- final review fixes
+def test_saved_default_selections_are_read():
+    cards = {c.field: c for c in snap.read_workbook(TWB).filters}
+    assert cards["iep_status"].default_values == ("No IEP",)
+    assert cards["region"].default_values == ()
+
+
+def test_manifest_carries_saved_defaults(tmp_path):
+    m = _manifest()
+    m.defaults = {"Overview": {"IEP Status": ["No IEP"]}}
+    snap.write_manifest(tmp_path / "manifest.json", m)
+    assert snap.read_manifest(tmp_path / "manifest.json").defaults == m.defaults
+
+
+def test_parameter_states_use_parameters_and_are_checked(tmp_path):
+    (tmp_path / "csv").mkdir()
+    wb = snap.read_workbook(TWB)
+    s, m = FakeSession(lambda sheet, f: b"Region,N\r\nAll,9\r\n"), _manifest()
+    default = snap.State("Overview")
+    m.states[default.id] = snap.export_state(s, m, tmp_path, wb, default, {}, NEVER, {})
+    teacher = snap.State("Overview", params=(("Group By", "Teacher"),))
+    entry = snap.export_state(s, m, tmp_path, wb, teacher, {}, NEVER, {})
+    assert ("Overview - Table", (), (("Group By", "Teacher"),)) in s.calls
+    assert entry["status"] == "filter_ignored"
+
+
+def test_an_unchanged_export_is_fine_when_the_value_covers_its_parent(tmp_path):
+    (tmp_path / "csv").mkdir()
+    wb = snap.read_workbook(TWB)
+    s, m = FakeSession(lambda sheet, f: b"Region,N\r\nAll,9\r\n"), _manifest()
+    default = snap.State("Overview")
+    m.states[default.id] = snap.export_state(s, m, tmp_path, wb, default, {}, NEVER, {})
+    north = snap.State("Overview", filters=(("Region", "North"),))
+    assert (
+        snap.export_state(s, m, tmp_path, wb, north, {}, lambda st: True, {})["status"]
+        == "ok"
+    )
+
+
+def _coverage_manifest(tmp_path, demo_hyper):
+    (tmp_path / "extract").mkdir()
+    (tmp_path / "extract" / "demo.hyper").write_bytes(demo_hyper.read_bytes())
+    m = _manifest()
+    m.extracts = {DS: {"file": "extract/demo.hyper", "refreshed": None}}
+    m.fields = {
+        "Region": {"field": "region", "datasource": DS},
+        "School Name": {"field": "school", "datasource": DS},
+        "Is Tested": {"field": "Calculation_1", "datasource": DS},
+    }
+    return m
+
+
+def test_coverage_is_judged_within_the_parent(tmp_path, demo_hyper):
+    m = _coverage_manifest(tmp_path, demo_hyper)
+    with snap.Coverage(m, tmp_path) as covers:
+        # Every Alpha student is in North, so North adds nothing under Alpha.
+        assert covers(
+            snap.State(
+                "Overview", filters=(("School Name", "Alpha"), ("Region", "North"))
+            )
+        )
+        assert not covers(
+            snap.State(
+                "Overview", filters=(("Region", "North"), ("School Name", "Alpha"))
+            )
+        )
+
+
+def test_value_maps_skip_fields_the_extract_does_not_have(tmp_path, demo_hyper):
+    m = _coverage_manifest(tmp_path, demo_hyper)
+    values = snap._value_maps(m, tmp_path)
+    assert values["Region"] == ["North", "South"] and "Is Tested" not in values
+
+
+def test_click_values_lose_tableau_formatting():
+    data = b"Day,Score\r\n9/15/2026,80\r\n1/2/2026,20\r\n"
+    assert snap.pick_click_row(data, "largest", ["Day"]) == {"Day": "2026-09-15"}

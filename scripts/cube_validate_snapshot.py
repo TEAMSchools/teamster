@@ -46,6 +46,8 @@ class FilterCard:
     calculated: bool
     default_all: bool
     values: tuple[str, ...] = ()
+    # What the card's sheet saves as selected when default_all is False.
+    default_values: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -143,6 +145,7 @@ def _card(root, columns, ds_caption, dash: str, z) -> FilterCard:
         calculated=calc is not None,
         default_all=_default_all(root, z.get("name") or "", z.get("param") or ""),
         values=values,
+        default_values=_default_values(root, z.get("name") or "", z.get("param") or ""),
     )
 
 
@@ -162,6 +165,20 @@ def _default_all(root, sheet: str, param: str) -> bool:
                 or g.get(f"{_USER}ui-enumeration") == "all"
             )
     return True
+
+
+def _default_values(root, sheet: str, param: str) -> tuple[str, ...]:
+    """The members a card's sheet saves as selected (empty when it saves All)."""
+    if _default_all(root, sheet, param):
+        return ()
+    for w in root.iter("worksheet"):
+        if w.get("name") != sheet:
+            continue
+        for f in w.iter("filter"):
+            if f.get("column") == param:
+                found = [_unquote(g.get("member") or "") for g in f.iter("groupfilter")]
+                return tuple(v for v in found if v)
+    return ()
 
 
 def _param(columns, dash: str, ref: str) -> Param:
@@ -669,6 +686,8 @@ class Manifest:
     fields: dict[str, dict]
     states: dict[str, dict]
     closed: bool = False
+    # Saved default selections per dashboard: {dashboard: {caption: [values]}}.
+    defaults: dict[str, dict] = field(default_factory=dict)
 
 
 def write_manifest(path: Path, m: Manifest) -> None:
@@ -764,7 +783,20 @@ def pick_click_row(export: bytes, mark: str, dims: list[str] | None) -> dict[str
         raise SessionError("every mark on the source sheet is a total")
     value = lambda r: float(r[measure].replace(",", "").rstrip("%") or 0)  # noqa: E731
     row = max(marks, key=value) if mark == "largest" else min(marks, key=value)
-    return {d: row[d] for d in dims}
+    return {d: _plain(row[d]) for d in dims}
+
+
+_US_DATE = re.compile(r"^(\d{1,2})/(\d{1,2})/(\d{4})$")
+_GROUPED_INT = re.compile(r"^-?\d{1,3}(,\d{3})+$")
+
+
+def _plain(v: str) -> str:
+    """A value as the extract stores it: Tableau shows dates M/D/YYYY and 1,234."""
+    if m := _US_DATE.match(v.strip()):
+        return f"{m.group(3)}-{int(m.group(1)):02d}-{int(m.group(2)):02d}"
+    if _GROUPED_INT.match(v.strip()):
+        return v.strip().replace(",", "")
+    return v
 
 
 def _workbooks_in(server, project: str) -> list:
@@ -810,7 +842,9 @@ class Session:
         self.copy = item
         return item.id
 
-    def export_view(self, sheet: str, filters: list[tuple[str, str]]) -> bytes:
+    def export_view(
+        self, sheet: str, filters: list[tuple[str, str]], params=()
+    ) -> bytes:
         import tableauserverclient as tsc
 
         if not self._views:
@@ -824,6 +858,8 @@ class Session:
             opts = tsc.CSVRequestOptions()
             for k, v in filters:
                 opts = opts.vf(k, v)
+            for k, v in params:
+                opts = opts.parameter(k, v)
             self.server.views.populate_csv(view, opts)
             return b"".join(view.csv)
 
@@ -931,10 +967,12 @@ def _read_state(snapdir: Path, entry: dict | None) -> dict[str, bytes]:
 
 
 def export_state(
-    session, manifest, snapdir, wb, state, all_values, covers_all, dims_for
+    session, manifest, snapdir, wb, state, all_values, covers, dims_for
 ) -> dict:
+    """Export one state's sheets. covers(state) says whether the state's last filter
+    keeps every student its parent has, so an unchanged export is expected."""
     filters = [(k, vf_value(v, all_values.get(k, []))) for k, v in state.filters]
-    filters += list(state.params)
+    params = list(state.params)
     sheets = list(wb.dashboards[state.dashboard])
     click_filters: dict[str, str] = {}
     entry = {
@@ -946,7 +984,7 @@ def export_state(
     try:
         if state.click:
             action = next(a for a in wb.actions if a.caption == state.click[0])
-            source = session.export_view(action.source_sheet, filters)
+            source = session.export_view(action.source_sheet, filters, params)
             click_filters = pick_click_row(
                 source, state.click[1], dims_for.get(action.source_sheet)
             )
@@ -954,7 +992,7 @@ def export_state(
             sheets = [
                 s for s in wb.dashboards[action.target] if s not in action.exclude
             ]
-        data = {s: session.export_view(s, filters) for s in sheets}
+        data = {s: session.export_view(s, filters, params) for s in sheets}
     except Exception as e:  # noqa: BLE001 - recorded per state, the run goes on
         entry["status"], entry["error"] = (
             "export_failed",
@@ -966,11 +1004,10 @@ def export_state(
         p.write_bytes(b)
         entry["sheets"][s] = {"file": str(p.relative_to(snapdir)), "rows": csv_rows(b)}
     entry["click_filters"] = click_filters
-    if state.filters and not state.click:
+    if (state.filters or state.params) and not state.click:
         parent = manifest.states.get(parent_of(state).id)
-        last = state.filters[-1]
-        covers = last[1] in covers_all.get(last[0], set())
-        if filter_ignored(_read_state(snapdir, parent), data, covers):
+        covered = bool(state.filters) and not state.params and covers(state)
+        if filter_ignored(_read_state(snapdir, parent), data, covered):
             entry["status"] = "filter_ignored"
     return entry
 
@@ -1096,23 +1133,91 @@ def _states_for(checks: dict, path: str | None) -> list[State]:
     return [State.from_dict(d) for d in raw or []]
 
 
-def _value_maps(manifest: Manifest, snapdir: Path):
-    """Every value of each filter caption, and the values that cover every row."""
-    all_values, covers = {}, {}
+def _value_maps(manifest: Manifest, snapdir: Path) -> dict[str, list[str]]:
+    """Every value of each filter caption the extract has a column for."""
+    all_values: dict[str, list[str]] = {}
     by_ds: dict[str, list[tuple[str, str]]] = {}
     for caption, f in manifest.fields.items():
         by_ds.setdefault(f["datasource"], []).append((caption, f["field"]))
     for ds, pairs in by_ds.items():
-        with Hyper(snapdir / manifest.extracts[ds]["file"]) as h:
+        if ds not in manifest.extracts:
+            continue
+        with Hyper(Path(snapdir) / manifest.extracts[ds]["file"]) as h:
+            cols = set(h.columns())
+            pairs = [(c, f) for c, f in pairs if f in cols]
             prof = profile(h, [f for _, f in pairs])
         for caption, f in pairs:
-            vals = prof[f]
-            total = sum(n for _, n in vals)
-            all_values[caption] = [v for v, _ in vals if v is not None]
-            covers[caption] = {ALL} | {
-                v for v, n in vals if v is not None and n == total
-            }
-    return all_values, covers
+            all_values[caption] = [v for v, _ in prof[f] if v is not None]
+    return all_values
+
+
+def _sql_text(v: str) -> str:
+    return "'" + str(v).replace("'", "''") + "'"
+
+
+class Coverage:
+    """Whether a state's last filter keeps every student its parent has, counted
+    in the extract under the parent's filters and the dashboard's saved defaults."""
+
+    def __init__(
+        self, manifest: Manifest, snapdir: Path, student: str = "student_number"
+    ):
+        self.m, self.snapdir, self.student = manifest, Path(snapdir), student
+        self.open: dict[str, Hyper] = {}
+        self.cols: dict[str, set[str]] = {}
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        for h in self.open.values():
+            h.__exit__(None, None, None)
+
+    def _hyper(self, ds: str) -> Hyper:
+        if ds not in self.open:
+            self.open[ds] = Hyper(
+                self.snapdir / self.m.extracts[ds]["file"]
+            ).__enter__()
+            self.cols[ds] = set(self.open[ds].columns())
+        return self.open[ds]
+
+    def _count(self, ds: str, pairs) -> int:
+        conds = []
+        for caption, value in pairs:
+            f = self.m.fields.get(caption) or {}
+            if f.get("datasource") != ds or f.get("field") not in self.cols[ds]:
+                continue
+            col = f'"{f["field"]}"'
+            if isinstance(value, list):
+                conds.append(
+                    f"cast({col} as text) in ({', '.join(_sql_text(v) for v in value)})"
+                )
+            elif value == BLANK:
+                conds.append(f"{col} is null")
+            elif value != ALL:
+                conds.append(f"cast({col} as text) = {_sql_text(value)}")
+        where = " and ".join(conds) or "true"
+        sql = f'select count(distinct "{self.student}") from {EXTRACT} where {where}'
+        # trunk-ignore(bandit/B608): SQL over a local extract; names come from the workbook, not user input
+        return int(self._hyper(ds).query(sql)[0][0])
+
+    def __call__(self, state: State) -> bool:
+        caption, value = state.filters[-1]
+        if value == ALL:
+            return True
+        f = self.m.fields.get(caption)
+        if not f or f["datasource"] not in self.m.extracts:
+            return False
+        ds = f["datasource"]
+        self._hyper(ds)
+        own = dict(state.filters[:-1])
+        kept = [
+            (c, v)
+            for c, v in (self.m.defaults.get(state.dashboard) or {}).items()
+            if c not in own and c != caption
+        ]
+        parent = [*kept, *own.items()]
+        return self._count(ds, parent) == self._count(ds, [*parent, (caption, value)])
 
 
 def _open(a) -> int:
@@ -1158,24 +1263,33 @@ def _open(a) -> int:
             fields,
             {},
         )
+        m.defaults = {
+            d: {
+                c.caption: list(c.default_values)
+                for c in wb.filters
+                if c.dashboard == d and c.default_values
+            }
+            for d in checks["dashboards"]
+        }
         write_manifest(snapdir / "manifest.json", m)
         _export_all(session, m, snapdir, wb, checks, _states_for(checks, a.states))
     return 0
 
 
 def _export_all(session, m, snapdir, wb, checks, states) -> None:
-    all_values, covers = _value_maps(m, snapdir)
+    all_values = _value_maps(m, snapdir)
     dims_for = {
         s: list((v.get("dims") or {})) for s, v in (checks.get("sheets") or {}).items()
     }
-    # Parents first, so the filter-took-effect check has something to compare with.
-    for state in sorted(states, key=lambda s: (len(s.filters), s.id)):
-        session.check_refresh(m.workbook_luid, m.live_updated_at)
-        m.states[state.id] = export_state(
-            session, m, snapdir, wb, state, all_values, covers, dims_for
-        )
-        write_manifest(snapdir / "manifest.json", m)
-        print(f"  {state.id}: {m.states[state.id]['status']}")
+    with Coverage(m, snapdir) as covers:
+        # Parents first, so the filter-took-effect check has something to compare with.
+        for state in sorted(states, key=lambda s: (len(s.filters), s.id)):
+            session.check_refresh(m.workbook_luid, m.live_updated_at)
+            m.states[state.id] = export_state(
+                session, m, snapdir, wb, state, all_values, covers, dims_for
+            )
+            write_manifest(snapdir / "manifest.json", m)
+            print(f"  {state.id}: {m.states[state.id]['status']}")
 
 
 def _export(a) -> int:

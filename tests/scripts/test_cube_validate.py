@@ -697,7 +697,7 @@ def test_cell_verdict_by_who_fixes():
     assert cv.cell_verdict(cell(["b"]), sides, meas) == "pass"
 
 
-def _timing(tmp_path, live_value, cube_at):
+def _timing(tmp_path, live_value, cube_at, cube_now=49.0):
     c = _checks(tmp_path)
     cell = cv.Cell(
         "Overview - Table", "s", {}, "Avg Score", "48.50", 48.5, 49.0, 40, "mismatch"
@@ -706,7 +706,7 @@ def _timing(tmp_path, live_value, cube_at):
     live = cv.Live(
         rows=lambda ds, sql: [{"m": live_value}],
         modified=lambda ds: dt.datetime(2026, 10, 9, 10, tzinfo=dt.UTC),
-        cube_refreshed=lambda q: cube_at,
+        cube_now=lambda q: ([{"demo.avg_score": str(cube_now)}], cube_at),
     )
     cv.explain_cells(
         [cell], c, states, {}, lambda ds, sql: [{"m": 48.5}], lambda q: ([], []), live
@@ -716,17 +716,17 @@ def _timing(tmp_path, live_value, cube_at):
 
 def test_cube_matching_the_live_table_is_a_timing_pass(tmp_path):
     cell = _timing(tmp_path, 49.0, dt.datetime(2026, 10, 9, 11, tzinfo=dt.UTC))
-    assert cell.verdict == "pass" and cell.reason.startswith("timing")
+    assert cell.verdict == "pass" and cell.why.startswith("timing")
 
 
 def test_stale_cube_is_incomplete_not_fail(tmp_path):
     cell = _timing(tmp_path, 48.0, dt.datetime(2026, 10, 9, 8, tzinfo=dt.UTC))
-    assert cell.verdict == "incomplete" and "older than the live table" in cell.reason
+    assert cell.verdict == "incomplete" and "older than the live table" in cell.why
 
 
 def test_fresh_cube_that_differs_from_the_live_table_fails(tmp_path):
     cell = _timing(tmp_path, 48.0, dt.datetime(2026, 10, 9, 11, tzinfo=dt.UTC))
-    assert cell.verdict == "fail" and "2026-10-09 10:00" in cell.reason
+    assert cell.verdict == "fail" and "2026-10-09 10:00" in cell.why
 
 
 def test_worst_follows_the_verdict_order():
@@ -1176,3 +1176,190 @@ def test_replay_finds_each_ddi_gap_type(tmp_path):
     assert (
         rows["5"]["verdict"] == "incomplete"
     )  # the planted bad mapping never blames Cube
+
+
+# ---------------------------------------------------------------- final review fixes
+def test_timing_compares_the_live_table_with_cubes_current_value(tmp_path):
+    # Compare ran before Cube refreshed: the stored 49.0 is stale, Cube now says 48.0.
+    cell = _timing(
+        tmp_path, 48.0, dt.datetime(2026, 10, 9, 11, tzinfo=dt.UTC), cube_now=48.0
+    )
+    assert cell.verdict == "pass" and cell.why.startswith("timing")
+    assert cell.cube == 48.0
+
+
+def test_descent_survives_the_manifest_sorting_its_filters():
+    # write_manifest sorts keys: "Module Code" now comes before "Module Type".
+    trees = {DS: {"module_type": ["module_type", "module_code"]}}
+    fields = {
+        "Module Type": {"field": "module_type", "datasource": DS},
+        "Module Code": {"field": "module_code", "datasource": DS},
+        "IEP": {"field": "iep_status", "datasource": DS},
+    }
+    states = {"m": _entry({"Module Code": "1", "Module Type": "QA"})}
+    out = cv.next_states(states, {"m": "mismatch"}, trees, CROSS, fields, children)
+    assert [s["filters"].get("IEP") for s in out] == ["No IEP"]
+
+
+def test_drafts_hide_person_values_in_their_query(tmp_path):
+    c, cells, states = _explained(tmp_path)
+    states["s"]["state"]["filters"] = {"Student": "Real Name"}
+    states["s"]["click_filters"] = {"Student": "Other Name"}
+    body = cv.issue_drafts("Demo", cells, c, states, {})["dup"]
+    assert "Real Name" not in body and "Other Name" not in body
+    assert "a student" in body
+
+
+@pytest.mark.parametrize("blank", ["", "Null", None])
+def test_blank_dimension_values_join_cubes_nulls(blank):
+    assert cv.norm_dim(blank) == cv.norm_key(None)
+
+
+def test_saved_defaults_filter_cube_and_the_extract_unless_the_state_overrides(
+    tmp_path,
+):
+    c = _checks(tmp_path)
+    sheet = c["sheets"]["Overview - Table"]
+    defaults = {"Region": ["North"]}
+    fields = {"Region": {"field": "region", "datasource": DS}}
+    plain = {"state": {"dashboard": "Overview"}}
+    assert cv.state_filters(plain, c, defaults)[0] == [
+        {"member": "demo.region", "operator": "equals", "values": ["North"]}
+    ]
+    assert cv.state_where(plain, c, fields, sheet, defaults=defaults) == [
+        "cast(region as string) in ('North')"
+    ]
+    every = {"state": {"dashboard": "Overview", "filters": {"Region": cv.ALL}}}
+    assert cv.state_filters(every, c, defaults)[0] == []
+
+
+def test_trust_is_judged_per_grain(tmp_path):
+    # The total row is an average of averages the SQL does not reproduce; the
+    # school rows are fine and must still be judged.
+    c = _checks(tmp_path)
+    states = {"s": {"state": {"dashboard": "Overview"}, "status": "ok", "sheets": {}}}
+    row = cv.Cell(
+        "Overview - Table",
+        "s",
+        {"School Name": "Alpha"},
+        "Avg Score",
+        "48.50",
+        48.5,
+        47.0,
+        20,
+        "mismatch",
+    )
+    total = cv.Cell(
+        "Overview - Table",
+        "s",
+        {"School Name": "All"},
+        "Avg Score",
+        "48.50",
+        48.5,
+        50.0,
+        40,
+        "mismatch",
+    )
+
+    def run(ds, sql):
+        return [{"g0": "Alpha", "m": 48.5}] if "group by" in sql else [{"m": 99.0}]
+
+    cv.explain_cells([row, total], c, states, {}, run, lambda q: ([], []))
+    assert row.verdict == "fail" and total.verdict == "incomplete"
+
+
+def test_param_where_reaches_the_extract(tmp_path):
+    c = _checks(tmp_path, param_where={"Subject": {"Math": "subject = 'Math'"}})
+    entry = {"state": {"dashboard": "Overview", "params": {"Subject": "Math"}}}
+    assert "subject = 'Math'" in cv.state_where(
+        entry, c, {}, c["sheets"]["Overview - Table"]
+    )
+
+
+def test_a_cube_error_marks_the_sheet_not_comparable(tmp_path):
+    c = _checks(tmp_path)
+    snapdir = tmp_path / "snap"
+    (snapdir / "csv").mkdir(parents=True)
+    (snapdir / "csv" / "n.csv").write_bytes(b"School Name,Avg Score\r\nAlpha,48.50\r\n")
+    manifest = {
+        "workbook": "Demo",
+        "extracts": {},
+        "fields": {},
+        "states": {
+            "n": {
+                "state": {"id": "n", "dashboard": "Overview"},
+                "status": "ok",
+                "click_filters": {},
+                "sheets": {"Overview - Table": {"file": "csv/n.csv", "rows": 1}},
+            }
+        },
+    }
+    (snapdir / "manifest.json").write_text(json.dumps(manifest))
+
+    def boom(q):
+        raise cv.CubeError("result hit the 50000-row limit")
+
+    cells, _ = cv.run_compare(c, snapdir, boom, lambda ds, sql: [])
+    assert [(x.status, x.reason) for x in cells] == [
+        ("not_comparable", "Cube error: result hit the 50000-row limit")
+    ]
+
+
+def test_compare_redo_recomputes_states_already_compared(tmp_path):
+    c = _checks(tmp_path)
+    snapdir = tmp_path / "snap"
+    (snapdir / "csv").mkdir(parents=True)
+    (snapdir / "csv" / "n.csv").write_bytes(b"School Name,Avg Score\r\nAlpha,48.50\r\n")
+    manifest = {
+        "workbook": "Demo",
+        "extracts": {},
+        "fields": {},
+        "states": {
+            "n": {
+                "state": {"id": "n", "dashboard": "Overview"},
+                "status": "ok",
+                "click_filters": {},
+                "sheets": {"Overview - Table": {"file": "csv/n.csv", "rows": 1}},
+            }
+        },
+    }
+    (snapdir / "manifest.json").write_text(json.dumps(manifest))
+    cube = FakeCube({"Alpha": _row(48.5)}, _row(0))
+    cv.write_cells(
+        snapdir / "cells.jsonl", cv.run_compare(c, snapdir, cube, lambda ds, sql: [])[0]
+    )
+    assert len(cv.run_compare(c, snapdir, cube, lambda ds, sql: [], redo=True)[0]) == 1
+
+
+def test_explain_starts_each_cell_fresh_and_skips_unmapped_ones(tmp_path):
+    c = _checks(tmp_path)
+    states = {"s": {"state": {"dashboard": "Overview"}, "status": "ok", "sheets": {}}}
+    old = cv.Cell(
+        "Overview - Table",
+        "s",
+        {},
+        "Avg Score",
+        "48.50",
+        48.5,
+        49.0,
+        40,
+        "mismatch",
+        verdict="fix_cube",
+        explained_by=["gone"],
+        variant=1.0,
+    )
+    gone = cv.Cell("Renamed Sheet", "s", {}, "Avg Score", "1", 1.0, 2.0, 40, "mismatch")
+    cv.explain_cells(
+        [old, gone], c, states, {}, lambda ds, sql: [{"m": 48.5}], lambda q: ([], [])
+    )
+    assert (old.verdict, old.explained_by, old.variant) == ("fail", [], None)
+    assert gone.verdict is None and "no longer mapped" in gone.why
+
+
+def test_click_values_are_compared_unformatted(tmp_path):
+    c = _checks(tmp_path)
+    entry = {
+        "state": {"dashboard": "Overview"},
+        "click_filters": {"School Name": "1,234"},
+    }
+    assert cv.state_filters(entry, c)[0][0]["values"] == ["1234"]

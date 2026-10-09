@@ -271,7 +271,9 @@ _GROUPED_INT = re.compile(r"^-?\d{1,3}(,\d{3})+$")
 
 
 def norm_dim(v) -> str:
-    """norm_key, plus the date and number formats Tableau shows."""
+    """norm_key, plus the date and number formats Tableau shows and its blanks."""
+    if v is None or (isinstance(v, str) and v.strip() in ("", "Null")):
+        return norm_key(None)
     if isinstance(v, str):
         s = v.strip()
         if m := _US_DATE.match(s):
@@ -399,6 +401,7 @@ def load_checks(path) -> dict:
         "rows": raw.get("rows") or {},
         "filters": raw.get("filters") or {},
         "param_filters": raw.get("param_filters") or {},
+        "param_where": raw.get("param_where") or {},
         "cube_filters": raw.get("cube_filters") or [],
         "extract_filters": raw.get("extract_filters") or [],
     }
@@ -478,17 +481,51 @@ def _caption_members(checks: dict) -> dict[str, str]:
     return out
 
 
-def state_filters(entry: dict, checks: dict) -> tuple[list[dict], list[str]]:
+def _person_captions(checks: dict) -> dict[str, str]:
+    """Captions that identify a person, with the label shown in their place."""
+    out = {}
+    for s in checks["sheets"].values():
+        for c, d in s.dims.items():
+            if d.person:
+                out[c] = d.person if isinstance(d.person, str) else "a student"
+    for c, f in checks["filters"].items():
+        if f.get("person"):
+            out[c] = f["person"] if isinstance(f["person"], str) else "a student"
+    return out
+
+
+def _own_filters(entry: dict, defaults: dict | None) -> list[tuple[str, object]]:
+    """A state's filters as Tableau applies them: saved defaults it keeps, its own
+    filters, and its click (with Tableau's formatting removed)."""
+    st = entry["state"]
+    own = dict(st.get("filters") or {})
+    clicks = {c: norm_dim(v) for c, v in (entry.get("click_filters") or {}).items()}
+    kept = [
+        (c, list(v))
+        for c, v in (defaults or {}).items()
+        if c not in own and c not in clicks
+    ]
+    return [*kept, *own.items(), *clicks.items()]
+
+
+def state_filters(
+    entry: dict, checks: dict, defaults: dict | None = None
+) -> tuple[list[dict], list[str]]:
     st = entry["state"]
     members = _caption_members(checks)
-    pairs = list((st.get("filters") or {}).items()) + list(
-        (entry.get("click_filters") or {}).items()
-    )
     out, missing = [], []
-    for caption, value in pairs:
+    for caption, value in _own_filters(entry, defaults):
         member = members.get(caption)
         if member is None:
             missing.append(caption)
+        elif isinstance(value, list):
+            out.append(
+                {
+                    "member": member,
+                    "operator": "equals",
+                    "values": [str(v) for v in value],
+                }
+            )
         elif value == BLANK:
             out.append({"member": member, "operator": "notSet"})
         elif value != ALL:
@@ -548,6 +585,7 @@ class Cell:
     extract: float | None = None
     variant: float | None = None
     cube_variant: float | None = None
+    why: str = ""  # explain's reason for the verdict
 
 
 def _int(v) -> int | None:
@@ -831,9 +869,10 @@ def _tree_path(st, trees, fields):
     if any(c not in fields for c in caps):
         return None
     ds = fields[caps[0]]["datasource"]
-    fs = [fields[c]["field"] for c in caps]
+    # The manifest stores filters with sorted keys, so match the levels as a set.
+    fs = {fields[c]["field"] for c in caps}
     for levels in (trees.get(ds) or {}).values():
-        if levels[: len(fs)] == fs:
+        if set(levels[: len(fs)]) == fs:
             return ds, levels
     return None
 
@@ -895,17 +934,32 @@ def next_states(states, status, trees, cross_cuts, fields, children) -> list[dic
     return out
 
 
-def state_where(entry, checks, fields, sheet, public_only=False) -> list[str]:
+def state_where(
+    entry, checks, fields, sheet, public_only=False, defaults=None
+) -> list[str]:
+    """Extract SQL conditions for a state. public_only: for a draft that leaves the
+    terminal, so private filters are dropped and person values masked."""
     st = entry["state"]
     dims_sql = {c: d.sql for c, d in sheet.dims.items()}
+    person = _person_captions(checks) if public_only else {}
     out = []
-    pairs = list((st.get("filters") or {}).items()) + list(
-        (entry.get("click_filters") or {}).items()
-    )
-    for caption, value in pairs:
+    for caption, value in _own_filters(entry, defaults):
         f = (fields.get(caption) or {}).get("field") or dims_sql.get(caption)
-        if f and (c := _cond(f, value)):
+        if not f:
+            continue
+        if isinstance(value, list):
+            vals = [person.get(caption, v) for v in value]
+            out.append(
+                f"cast({f} as string) in ({', '.join(_sql_lit(v) for v in vals)})"
+            )
+            continue
+        if caption in person and value not in (ALL, BLANK):
+            value = person[caption]
+        if c := _cond(f, value):
             out.append(c)
+    for caption, value in (st.get("params") or {}).items():
+        if sql := checks["param_where"].get(caption, {}).get(value):
+            out.append(sql)
     for f in checks["extract_filters"]:
         if f.get("datasource") not in (None, sheet.datasource):
             continue
@@ -981,33 +1035,43 @@ def _has_state(st: dict) -> bool:
     return bool(st.get("filters") or st.get("params") or st.get("click"))
 
 
-def _trust(cells, checks, states, fields, run_extract) -> dict[tuple[str, str], bool]:
-    """A measure's SQL is trusted once it reproduces every comparable cell of one state."""
-    pools: dict[tuple[str, str], dict[str, list[Cell]]] = {}
+def _trust(
+    cells, checks, states, fields, run_extract, defaults=None
+) -> dict[tuple, bool]:
+    """A measure's SQL is trusted at a grain once it reproduces every comparable cell
+    of one state at that grain. Per grain, so a total Tableau computes differently
+    does not stop the rows from being judged."""
+    pools: dict[tuple, dict[str, list[Cell]]] = {}
     for c in cells:
         if c.status in ("match", "mismatch") and (c.shown or "").strip():
-            pools.setdefault((c.sheet, c.measure), {}).setdefault(c.state, []).append(c)
+            key = (c.sheet, c.measure, _grain(c)[0])
+            pools.setdefault(key, {}).setdefault(c.state, []).append(c)
     out = {}
-    for (sname, mname), by_state in pools.items():
-        defaults = sorted(s for s in by_state if not _has_state(states[s]["state"]))
-        state = defaults[0] if defaults else sorted(by_state)[0]
+    for (sname, mname, grain), by_state in pools.items():
+        plain = sorted(s for s in by_state if not _has_state(states[s]["state"]))
+        state = plain[0] if plain else sorted(by_state)[0]
         sheet = checks["sheets"][sname]
         meas = sheet.measures[mname]
-        where = state_where(states[state], checks, fields, sheet)
-        ok = True
-        groups: dict[tuple, list[Cell]] = {}
-        for c in by_state[state]:
-            groups.setdefault(_grain(c)[0], []).append(c)
-        for grain, group in groups.items():
-            rows = run_extract(
-                sheet.datasource, extract_sql(sheet, meas, list(grain), where)
-            )
-            ext = apply_calc(meas, extract_values(rows, len(grain)), 1.0)
-            ok = ok and all(
-                _reproduces(ext.get(_key(c, grain)), c, meas) for c in group
-            )
-        out[(sname, mname)] = ok
+        dflt = (defaults or {}).get(states[state]["state"]["dashboard"])
+        where = state_where(states[state], checks, fields, sheet, defaults=dflt)
+        rows = run_extract(
+            sheet.datasource, extract_sql(sheet, meas, list(grain), where)
+        )
+        ext = apply_calc(meas, extract_values(rows, len(grain)), 1.0)
+        out[(sname, mname, grain)] = all(
+            _reproduces(ext.get(_key(c, grain)), c, meas) for c in by_state[state]
+        )
     return out
+
+
+def _cube_values(rows, sheet, meas, grain) -> dict:
+    raw = {
+        tuple(norm_dim(r.get(sheet.dims[d].cube)) for d in grain): _num(
+            r.get(meas.cube)
+        )
+        for r in rows
+    }
+    return apply_calc(meas, raw, meas.scale)
 
 
 def _cube_at(load, sheet, meas, grain, filters) -> dict:
@@ -1018,13 +1082,7 @@ def _cube_at(load, sheet, meas, grain, filters) -> dict:
         "limit": CUBE_LIMIT,
     }
     rows, _ = load(q)
-    raw = {
-        tuple(norm_dim(r.get(sheet.dims[d].cube)) for d in grain): _num(
-            r.get(meas.cube)
-        )
-        for r in rows
-    }
-    return apply_calc(meas, raw, meas.scale)
+    return _cube_values(rows, sheet, meas, grain)
 
 
 def _variant(v, sheet, meas, grain, where, base, run_extract, load):
@@ -1068,52 +1126,65 @@ class Live:
 
     rows: Callable[[str, str], list[dict]]  # extract SQL run on the live rpt_ table
     modified: Callable[[str], dt.datetime | None]  # when that table last changed
-    cube_refreshed: Callable[[dict], dt.datetime | None]  # Cube's lastRefreshTime
+    # Cube's current answer to a query, and its lastRefreshTime
+    cube_now: Callable[[dict], tuple[list[dict], dt.datetime | None]]
 
 
-def explain_cells(cells, checks, states, fields, run_extract, load, live=None) -> None:
+def explain_cells(
+    cells, checks, states, fields, run_extract, load, live=None, defaults=None
+) -> None:
     sides = fix_sides(checks)
     batches: dict[tuple, list[Cell]] = {}
     for c in cells:
-        if c.status == "match":
+        # Every run starts fresh, so an explanation removed from the checks file goes.
+        c.verdict, c.why, c.explained_by = None, "", []
+        c.extract = c.variant = c.cube_variant = None
+        sheet = checks["sheets"].get(c.sheet)
+        if c.status != "not_comparable" and (
+            sheet is None or c.measure not in sheet.measures
+        ):
+            c.why = "no longer mapped in the checks file; run compare --redo"
+        elif c.status == "match":
             c.verdict = "pass"
         elif c.status == "missing_member":
             c.verdict = "missing_member"
         elif c.status == "mismatch":
-            batches.setdefault((c.sheet, c.state, _grain(c)[0], c.measure), []).append(
-                c
-            )
-    trusted = _trust(cells, checks, states, fields, run_extract)
+            key = (c.sheet, c.state, _grain(c)[0], c.measure)
+            batches.setdefault(key, []).append(c)
+    mapped = [c for c in cells if not c.why]
+    trusted = _trust(mapped, checks, states, fields, run_extract, defaults)
     for (sname, state, grain, mname), batch in batches.items():
         sheet = checks["sheets"][sname]
         meas = sheet.measures[mname]
-        if not trusted.get((sname, mname)):
+        if not trusted.get((sname, mname, grain)):
             for c in batch:
-                c.verdict, c.reason = (
-                    "incomplete",
-                    "extract SQL does not reproduce Tableau for this measure",
-                )
+                c.verdict = "incomplete"
+                c.why = "extract SQL does not reproduce Tableau for this measure"
             continue
         entry = states[state]
-        where = state_where(entry, checks, fields, sheet)
-        base = state_filters(entry, checks)[0] + hard_filters(checks, sheet.datasource)
-        rows = run_extract(
-            sheet.datasource, extract_sql(sheet, meas, list(grain), where)
+        dflt = (defaults or {}).get(entry["state"]["dashboard"])
+        where = state_where(entry, checks, fields, sheet, defaults=dflt)
+        base = state_filters(entry, checks, dflt)[0] + hard_filters(
+            checks, sheet.datasource
         )
-        ext = apply_calc(meas, extract_values(rows, len(grain)), 1.0)
-        live_v, times = None, (None, None)
+        sql = extract_sql(sheet, meas, list(grain), where)
+        ext = apply_calc(
+            meas, extract_values(run_extract(sheet.datasource, sql), len(grain)), 1.0
+        )
+        live_v, cube_now, cube_at, table_at = None, None, None, None
         if live is not None:
-            lrows = live.rows(
-                sheet.datasource, extract_sql(sheet, meas, list(grain), where)
+            live_v = apply_calc(
+                meas, extract_values(live.rows(sheet.datasource, sql), len(grain)), 1.0
             )
-            live_v = apply_calc(meas, extract_values(lrows, len(grain)), 1.0)
             q = {
                 "measures": [meas.cube],
                 "dimensions": [sheet.dims[d].cube for d in grain],
                 "filters": base,
                 "limit": CUBE_LIMIT,
             }
-            times = (live.cube_refreshed(q), live.modified(sheet.datasource))
+            crows, cube_at = live.cube_now(q)
+            cube_now = _cube_values(crows, sheet, meas, grain)
+            table_at = live.modified(sheet.datasource)
         variants = [
             _variant(v, sheet, meas, grain, where, base, run_extract, load)
             for v in meas.variants
@@ -1122,14 +1193,23 @@ def explain_cells(cells, checks, states, fields, run_extract, load, live=None) -
             k = _key(c, grain)
             c.extract = ext.get(k)
             if not _reproduces(c.extract, c, meas):
-                c.verdict, c.reason = (
+                c.verdict, c.why = (
                     "incomplete",
                     "extract SQL does not reproduce this cell",
                 )
                 continue
+            if cube_now is not None:
+                # Judge Cube as it is now: compare may have run before its refresh.
+                c.cube = cube_now.get(k)
+                if _reproduces(c.cube, c, meas):
+                    c.verdict, c.why = (
+                        "pass",
+                        "Cube matches Tableau after its latest refresh",
+                    )
+                    continue
             if live_v is not None and matches_raw(live_v.get(k), c.cube):
                 c.verdict = "pass"
-                c.reason = "timing: the extract is older than Cube; Cube matches the live table"
+                c.why = "timing: the extract is older than Cube; Cube matches the live table"
                 continue
             for names, dash, cube in variants:
                 d_v = c.extract if dash is None else dash.get(k)
@@ -1139,16 +1219,15 @@ def explain_cells(cells, checks, states, fields, run_extract, load, live=None) -
                     c.cube_variant = None if cube is None else c_v
                     break
             c.verdict = cell_verdict(c, sides, meas)
-            cube_at, table_at = times
             if c.verdict == "fail" and cube_at and table_at:
                 if cube_at < table_at:
                     c.verdict = "incomplete"
-                    c.reason = (
+                    c.why = (
                         f"Cube's data (refreshed {cube_at:%Y-%m-%d %H:%M}) is older than the live "
                         f"table (built {table_at:%Y-%m-%d %H:%M}); re-run explain after Cube refreshes"
                     )
                 else:
-                    c.reason = (
+                    c.why = (
                         f"Cube refreshed {cube_at:%Y-%m-%d %H:%M}; the live table was built "
                         f"{table_at:%Y-%m-%d %H:%M}"
                     )
@@ -1351,7 +1430,7 @@ def digest_markdown(workbook, cells, checks) -> str:
         ).most_common():
             lines.append(f"- {sheet} / {measure}: {n} cells")
         lines += [f"  - {_example(c, checks)}" for c in fails[:5]]
-    unsure = Counter(c.reason for c in cells if c.verdict == "incomplete")
+    unsure = Counter(c.why or c.reason for c in cells if c.verdict == "incomplete")
     if unsure:
         lines += [
             "",
@@ -1362,7 +1441,9 @@ def digest_markdown(workbook, cells, checks) -> str:
     return "\n".join(lines) + "\n"
 
 
-def issue_drafts(workbook, cells, checks, states, fields) -> dict[str, str]:
+def issue_drafts(
+    workbook, cells, checks, states, fields, defaults=None
+) -> dict[str, str]:
     out = {}
     for s, m in checks["mismatches"].items():
         mine = _coarsest([c for c in cells if s in c.explained_by])
@@ -1372,8 +1453,10 @@ def issue_drafts(workbook, cells, checks, states, fields) -> dict[str, str]:
         sheet = checks["sheets"][first.sheet]
         meas = sheet.measures[first.measure]
         grain = list(_grain(first)[0])
+        entry = states[first.state]
+        dflt = (defaults or {}).get(entry["state"]["dashboard"])
         where = state_where(
-            states[first.state], checks, fields, sheet, public_only=True
+            entry, checks, fields, sheet, public_only=True, defaults=dflt
         )
         query = extract_sql(sheet, meas, grain, where)
         alt = [v for v in meas.variants if s in v["explains"]]
@@ -1430,14 +1513,16 @@ def issue_drafts(workbook, cells, checks, states, fields) -> dict[str, str]:
     return out
 
 
-def write_outputs(out_dir, workbook, run_date, cells, checks, states, fields) -> Path:
+def write_outputs(
+    out_dir, workbook, run_date, cells, checks, states, fields, defaults=None
+) -> Path:
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     stem = f"{run_date}-{_slug(workbook)}"
     (out / f"{stem}-coverage.md").write_text(coverage_markdown(states, cells))
     digest = out / f"{stem}-digest.md"
     digest.write_text(digest_markdown(workbook, cells, checks))
-    drafts = issue_drafts(workbook, cells, checks, states, fields)
+    drafts = issue_drafts(workbook, cells, checks, states, fields, defaults)
     if drafts:
         (out / f"{stem}-issues").mkdir(exist_ok=True)
         for s, text in drafts.items():
@@ -1477,15 +1562,19 @@ class Extracts:
         self.open = {}
 
 
-def run_compare(checks, snapdir, load, extracts):
+def run_compare(checks, snapdir, load, extracts, redo=False):
+    """Compare every exported state not compared yet (every state with redo, after a
+    mapping changed), and propose the next descent level."""
     snapdir = Path(snapdir)
     m = json.loads((snapdir / "manifest.json").read_text())
-    done = {c.state for c in read_cells(snapdir / "cells.jsonl")}
+    before = [] if redo else read_cells(snapdir / "cells.jsonl")
+    done = {c.state for c in before}
     cells: list[Cell] = []
     for sid, e in sorted(m["states"].items()):
         if e.get("status") != "ok" or sid in done:
             continue
-        filters, missing = state_filters(e, checks)
+        dflt = (m.get("defaults") or {}).get(e["state"]["dashboard"])
+        filters, missing = state_filters(e, checks, dflt)
         for sheet_name, meta in e["sheets"].items():
             sheet = checks["sheets"].get(sheet_name)
             if sheet is None:
@@ -1505,8 +1594,26 @@ def run_compare(checks, snapdir, load, extracts):
                 )
                 continue
             export = read_export((snapdir / meta["file"]).read_bytes())
-            cells += compare_export(sheet, sid, export, load, filters, missing, checks)
-    every = read_cells(snapdir / "cells.jsonl") + cells
+            try:
+                cells += compare_export(
+                    sheet, sid, export, load, filters, missing, checks
+                )
+            except CubeError as err:
+                cells.append(
+                    Cell(
+                        sheet_name,
+                        sid,
+                        {},
+                        "",
+                        None,
+                        None,
+                        None,
+                        None,
+                        "not_comparable",
+                        f"Cube error: {err}",
+                    )
+                )
+    every = before + cells
 
     def children(ds, where, f):
         rows = extracts(ds, child_values_sql(where, f))
@@ -1540,12 +1647,12 @@ def _live(client: CubeClient) -> Live:
             built[ds] = table_modified(live_table(ds))
         return built[ds]
 
-    def cube_refreshed(q):
-        client.load(q)
+    def cube_now(q):
+        rows_, _ = client.load(q)
         t = client.last_refresh
-        return dt.datetime.fromisoformat(t.replace("Z", "+00:00")) if t else None
+        return rows_, dt.datetime.fromisoformat(t.replace("Z", "+00:00")) if t else None
 
-    return Live(rows, modified, cube_refreshed)
+    return Live(rows, modified, cube_now)
 
 
 def _compare(a) -> int:
@@ -1563,10 +1670,11 @@ def _compare(a) -> int:
                 checks,
                 {r["v"]: int(r["n"]) for r in rows if r["v"] is not None},
             )
-        cells, nxt = run_compare(checks, snapdir, client.load, extracts)
+        cells, nxt = run_compare(checks, snapdir, client.load, extracts, a.redo)
     finally:
         extracts.close()
-    write_cells(snapdir / "cells.jsonl", read_cells(snapdir / "cells.jsonl") + cells)
+    before = [] if a.redo else read_cells(snapdir / "cells.jsonl")
+    write_cells(snapdir / "cells.jsonl", before + cells)
     (snapdir / "next_states.yml").write_text(
         yaml.safe_dump(nxt, sort_keys=False, allow_unicode=True)
     )
@@ -1594,6 +1702,7 @@ def _explain(a) -> int:
             extracts,
             client.load,
             _live(client),
+            m.get("defaults"),
         )
     finally:
         extracts.close()
@@ -1616,6 +1725,7 @@ def _drafts(a) -> int:
         checks,
         m["states"],
         m["fields"],
+        m.get("defaults"),
     )
     print(f"digest: {digest}")
     return 0
@@ -1624,8 +1734,12 @@ def _drafts(a) -> int:
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="cube_validate")
     sub = p.add_subparsers(dest="cmd", required=True)
-    for name in ("compare", "explain"):
-        sub.add_parser(name).add_argument("checks")
+    c = sub.add_parser("compare")
+    c.add_argument("checks")
+    c.add_argument(
+        "--redo", action="store_true", help="recompare states already compared"
+    )
+    sub.add_parser("explain").add_argument("checks")
     d = sub.add_parser("drafts")
     d.add_argument("checks")
     d.add_argument("--out", default=str(DEFAULT_OUT))
