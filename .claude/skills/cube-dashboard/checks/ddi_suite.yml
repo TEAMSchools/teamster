@@ -18,8 +18,10 @@ window:
   academic_years:
     - 2025
     - 2026
+# Set from `cube_validate.py settle`; rerun it when the refresh schedule changes.
 settle:
-  days: 7
+  days: 5
+  date: coalesce(date_taken, administered_at)
   truth: coalesce(date_taken, administered_at) < '{cutoff}'
   cube:
     - or:

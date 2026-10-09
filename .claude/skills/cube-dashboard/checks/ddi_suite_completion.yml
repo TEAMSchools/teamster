@@ -18,8 +18,9 @@ window:
   academic_years:
     - 2025
     - 2026
+# Set from `cube_validate.py settle`; rerun it when the refresh schedule changes.
 settle:
-  days: 7
+  days: 5
   date: coalesce(date_taken, administered_at)
   truth: coalesce(date_taken, administered_at) < '{cutoff}'
   cube:
@@ -200,8 +201,25 @@ handled:
     response_type is in every grain, so each response type is compared on its
     own.
   "filter: Is Normed Scope [fa09b8]":
-    "missing_members untagged_assessments: the *_without SQL keeps tagged
-    assessments only."
+    "missing_members untagged_assessments: the variant that explains it keeps
+    tagged assessments only."
+open_issues_task: "1219086050133309"
+truth_issues:
+  completion_always_100:
+    title:
+      "fix(tableau): DDI Suite Module Dashboard % Completion reads 100% in every
+      module"
+    where: dashboard
+    what:
+      The Module Dashboard's % Completion divides "# Students Complete -
+      Overall" by "# Students Possible - Overall". Both count only rows whose
+      response type is overall, and every overall row has a score, so a student
+      who never tested counts in neither. The rate is 100% in every module,
+      school and grade where anyone tested, and the sheets' "75% completion or
+      more" filter never hides a module.
+    evidence:
+      In the extract, no module x school x grade group in Camden, Newark or
+      Paterson falls below 100%.
 rows:
   - row_gid: "1219284654682073"
     name: "% Complete (student-level, this week)"
@@ -254,18 +272,33 @@ rows:
         tableau:
           - "% Completion"
           - \% Completion (copy)
+        # As the dashboard writes it: both FIXED counts read only overall rows.
         num:
-          count(distinct if(response_type is not null, concat(student_number,
+          count(distinct if(response_type = 'overall' and percent_correct is not
+          null, concat(student_number, '-', assessment_id), null))
+        den:
+          count(distinct if(response_type = 'overall', concat(student_number,
           '-', assessment_id), null))
-        den: count(distinct concat(student_number, '-', assessment_id))
         missing_members:
           - untagged_assessments
-        num_without:
-          count(distinct if(is_normed_scope and response_type is not null,
-          concat(student_number, '-', assessment_id), null))
-        den_without:
-          count(distinct if(is_normed_scope, concat(student_number, '-',
-          assessment_id), null))
+        variants:
+          # Corrected: a student assigned the assessment counts in the
+          # denominator whether or not they tested.
+          - explains:
+              - completion_always_100
+            num:
+              count(distinct if(response_type is not null,
+              concat(student_number, '-', assessment_id), null))
+            den: count(distinct concat(student_number, '-', assessment_id))
+          - explains:
+              - completion_always_100
+              - untagged_assessments
+            num:
+              count(distinct if(is_normed_scope and response_type is not null,
+              concat(student_number, '-', assessment_id), null))
+            den:
+              count(distinct if(is_normed_scope, concat(student_number, '-',
+              assessment_id), null))
     grains:
       - []
       - - module_type

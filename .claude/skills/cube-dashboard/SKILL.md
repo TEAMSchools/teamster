@@ -181,9 +181,11 @@ def test_run() -> None:
    to the SQL for a row's date and run
    `scripts/cube_validate.py settle <checks>` in the run template (swap `run`
    for `settle` and drop `--as`). Run it late in the day, after the fact's later
-   rebuilds. Put its `# settle measured` line beside `settle:` and its
-   recommended `days` in the entry, and show both to the user with the other
-   changes. Rerun it when the dashboard's refresh schedule changes.
+   rebuilds. Put its recommended `days` in the entry and show its report to the
+   user with the other changes. Its `# settle measured` line goes in the commit
+   message, not the file: comments carry no one-off measurements
+   (`.claude/rules/comments.md`). Rerun it when the dashboard's refresh schedule
+   changes.
 9. Check the file loads (`load_checks`), then run the new row alone
    (`--rows <gid>`) so its SQL runs once against the extract.
 
