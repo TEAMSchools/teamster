@@ -141,7 +141,10 @@ def test_run() -> None:
    `diagnose_by: {cube, sql}` when one field explains most definition gaps (the
    attendance code for attendance counts), and describe each missing member
    under the file's `members:` (`what`, `lives_in`, `suggested_edit`) so the
-   digest can say what to add.
+   digest can say what to add. When a measure's sheets read another extract of
+   the same workbook, give that metric `datasource:` (the extract's caption); a
+   measure shown from two extracts is two metrics in one row, one per
+   datasource.
 8. Check the file loads (`load_checks`), then run the new row alone
    (`--rows <gid>`) so its SQL runs once against the extract.
 

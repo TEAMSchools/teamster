@@ -1031,6 +1031,20 @@ def load_checks(path) -> dict:
         for m in row["metrics"]:
             t = m.get("tableau")
             m["tableau"] = [t] if isinstance(t, str) else list(t or [])
+            # A metric reads the checks file's extract unless it names another one.
+            default = data["extract"]["datasource"]
+            m["datasource"] = m.get("datasource") or default
+            m["key"] = (
+                m["cube"]
+                if m["datasource"] == default
+                else f"{m['cube']} @ {m['datasource']}"
+            )
+        keys = [m["key"] for m in row["metrics"]]
+        if len(keys) != len(set(keys)):
+            raise CheckError(
+                f"{where}: a metric is listed twice on one extract; give the second a "
+                "different datasource or drop it"
+            )
         row.setdefault("not_checked", [])
         for n in row["not_checked"]:
             if not _construct_key_ok(n.get("construct")):
@@ -1065,7 +1079,7 @@ def load_checks(path) -> dict:
     seen: dict[str, dict] = {}
     for row in data["rows"]:
         for m in row["metrics"]:
-            first = seen.setdefault(m["cube"], m)
+            first = seen.setdefault(m["key"], m)
             if first != m:
                 raise CheckError(
                     f"{path}: metric {m['cube']} is defined twice with different "
@@ -1491,12 +1505,30 @@ def retry(fn, attempts: int = 3, sleep=time.sleep, wait: float = 5.0):
     raise ValueError("retry needs attempts >= 1")
 
 
-def download_extract(
-    luid: str, datasource: str, out_dir: Path
-) -> tuple[Path, dt.datetime]:
-    """Download the workbook with extracts; return the datasource's .hyper and refresh time."""
+def unpack_extracts(
+    twbx: Path, datasources: list[str], out_dir: Path
+) -> dict[str, tuple[Path, dt.datetime | None]]:
+    """Each datasource's .hyper from a downloaded .twbx, with that extract's refresh time."""
     import zipfile
 
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out = {}
+    with zipfile.ZipFile(twbx) as z:
+        twb = next(n for n in z.namelist() if n.endswith(".twb"))
+        (out_dir / "workbook.twb").write_bytes(z.read(twb))
+        for ds in datasources:
+            name = extract_file_name(out_dir / "workbook.twb", ds)
+            member = next(n for n in z.namelist() if Path(n).name == name)
+            hyper = out_dir / name
+            hyper.write_bytes(z.read(member))
+            out[ds] = (hyper, extract_refresh_time(out_dir / "workbook.twb", ds))
+    return out
+
+
+def download_extract(
+    luid: str, datasources: list[str], out_dir: Path
+) -> dict[str, tuple[Path, dt.datetime]]:
+    """Download the workbook once; return each datasource's .hyper and refresh time."""
     import tableauserverclient as tsc
 
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -1519,21 +1551,15 @@ def download_extract(
             )
         return refreshed, path
 
-    refreshed_at, twbx = retry(fetch)
-    with zipfile.ZipFile(twbx) as z:
-        twb = next(n for n in z.namelist() if n.endswith(".twb"))
-        (out_dir / "workbook.twb").write_bytes(z.read(twb))
-        name = extract_file_name(out_dir / "workbook.twb", datasource)
-        member = next(n for n in z.namelist() if Path(n).name == name)
-        hyper = out_dir / name
-        hyper.write_bytes(z.read(member))
-    # The datasource's own refresh time; the workbook's also moves on republish.
-    refreshed_at = (
-        extract_refresh_time(out_dir / "workbook.twb", datasource) or refreshed_at
-    )
-    if refreshed_at is None:
-        raise TimingError(f"Tableau returned no refresh time for workbook {luid}")
-    return hyper, refreshed_at
+    workbook_at, twbx = retry(fetch)
+    out = {}
+    for ds, (hyper, at) in unpack_extracts(twbx, datasources, out_dir).items():
+        # The datasource's own refresh time; the workbook's also moves on republish.
+        at = at or workbook_at
+        if at is None:
+            raise TimingError(f"Tableau returned no refresh time for {ds} in {luid}")
+        out[ds] = (hyper, at)
+    return out
 
 
 def cube_built_at(table: str, bq) -> dt.datetime:
@@ -1736,6 +1762,23 @@ def scope_guard(checks, cube_load, bq, window) -> None:
             )
 
 
+def _source(bq, datasource: str):
+    """The truth source for a datasource: one callable for every extract, or one each."""
+    return bq[datasource] if isinstance(bq, dict) else bq
+
+
+def _merge_outcomes(outs: list[dict]) -> dict:
+    """One grain's outcome across the extracts its row's metrics read."""
+    if any(o["status"] == "not_comparable" for o in outs):
+        return {"status": "not_comparable"}
+    return {
+        "status": "ok",
+        "pre_aggregations": sorted({p for o in outs for p in o["pre_aggregations"]}),
+        "metrics": {k: v for o in outs for k, v in o["metrics"].items()},
+        "errors": {k: v for o in outs for k, v in o["errors"].items()},
+    }
+
+
 def run_dashboard(
     checks,
     cube_load,
@@ -1748,7 +1791,7 @@ def run_dashboard(
 ) -> dict:
     window = resolve_window(checks, today)
     dims, hard = checks["dimensions"], checks["hard_filters"]
-    scope_guard(checks, cube_load, bq, window)
+    scope_guard(checks, cube_load, _source(bq, checks["extract"]["datasource"]), window)
     result = {
         "dashboard": checks["dashboard"],
         "window": _window_label(window),
@@ -1760,27 +1803,31 @@ def run_dashboard(
         return result
     selected = [r for r in checks["rows"] if rows is None or str(r["row_gid"]) in rows]
 
-    # One Cube query and one SQL query per (view, table, grain), carrying every metric.
+    # One Cube query and one SQL query per (view, extract, grain), carrying every metric.
     jobs: dict[tuple, list[dict]] = {}
     for row in selected:
-        where = (row.get("view", checks["view"]), EXTRACT_TABLE)
+        view = row.get("view", checks["view"])
         for g in row["grains"]:
-            metrics = jobs.setdefault((*where, tuple(g)), [])
             for m in row["metrics"]:
-                if m["cube"] not in [x["cube"] for x in metrics]:
+                metrics = jobs.setdefault((view, m["datasource"], tuple(g)), [])
+                if m["key"] not in [x["key"] for x in metrics]:
                     metrics.append(m)
 
     outcomes = {}
-    for step_no, ((view, table, g), metrics) in enumerate(jobs.items(), 1):
+    for step_no, ((view, ds, g), metrics) in enumerate(jobs.items(), 1):
         grain = [dims[n] for n in g]
         step = f"[{step_no}/{len(jobs)}] {view} {_label(g)}"
+        if ds != checks["extract"]["datasource"]:
+            step += f" ({ds})"
         if any(d.cube is None for d in grain):
             print(f"{step}: not comparable", file=sys.stderr, flush=True)
-            outcomes[(view, table, g)] = {"status": "not_comparable"}
+            outcomes[(view, ds, g)] = {"status": "not_comparable"}
             continue
         print(step, file=sys.stderr, flush=True)
 
-        def compare_job(ms, view=view, g=g, grain=grain):
+        source = _source(bq, ds)
+
+        def compare_job(ms, view=view, g=g, grain=grain, truth=source):
             crows, preaggs = cube_load(
                 cube_query(
                     view,
@@ -1792,7 +1839,7 @@ def run_dashboard(
                     checks["cube_filters"],
                 )
             )
-            trows = bq(
+            trows = truth(
                 truth_sql(
                     EXTRACT_TABLE,
                     ms,
@@ -1818,7 +1865,7 @@ def run_dashboard(
                 if m.get("missing_members"):
                     alt = truth_cells(trows, len(g), i, m["kind"], "_alt")
                     explain(cells, m["kind"], alt)
-                summaries[m["cube"]] = summarize(cells, m["kind"], alt)
+                summaries[m["key"]] = summarize(cells, m["kind"], alt)
             # A cell keyed by a person (a per-student grain) never names them.
             person = {i for i, d in enumerate(grain) if d.person}
             for s_ in summaries.values() if person else []:
@@ -1841,10 +1888,10 @@ def run_dashboard(
                     summaries.update(one)
                     preaggs |= set(p_aggs)
                 except Exception as e1:  # noqa: BLE001 - recorded on the metric's rows
-                    errors[m["cube"]] = f"{type(e1).__name__}: {e1}"[:300]
+                    errors[m["key"]] = f"{type(e1).__name__}: {e1}"[:300]
             if len(metrics) == 1:
-                errors[metrics[0]["cube"]] = f"{type(e).__name__}: {e}"[:300]
-        outcomes[(view, table, g)] = {
+                errors[metrics[0]["key"]] = f"{type(e).__name__}: {e}"[:300]
+        outcomes[(view, ds, g)] = {
             "status": "ok",
             "pre_aggregations": sorted(preaggs),
             "metrics": summaries,
@@ -1852,11 +1899,12 @@ def run_dashboard(
         }
 
     for row in selected:
-        where = (row.get("view", checks["view"]), EXTRACT_TABLE)
+        view = row.get("view", checks["view"])
+        sources = list(dict.fromkeys(m["datasource"] for m in row["metrics"]))
         grains = []
         missing: dict[str, dict] = {}
         for g in row["grains"]:
-            o = outcomes[(*where, tuple(g))]
+            o = _merge_outcomes([outcomes[(view, ds, tuple(g))] for ds in sources])
             entry = {"grain": list(g), "status": o["status"]}
             if o["status"] == "error":
                 entry["error"] = o["error"]
@@ -1865,18 +1913,18 @@ def run_dashboard(
                     if dims[name].cube is None and not dims[name].tableau_only:
                         _missing(missing, name)["blocks_grains"].append(_label(g))
             errs = [
-                o["errors"][m["cube"]]
+                o["errors"][m["key"]]
                 for m in row["metrics"]
-                if m["cube"] in o.get("errors", {})
+                if m["key"] in o.get("errors", {})
             ]
             if errs:
                 entry.update(status="error", error=errs[0])
             elif o["status"] == "ok":
-                ms = {m["cube"]: o["metrics"][m["cube"]] for m in row["metrics"]}
+                ms = {m["key"]: o["metrics"][m["key"]] for m in row["metrics"]}
                 bad = sum(s["bad"] for s in ms.values())
                 explained = sum(s["explained"] for s in ms.values())
                 for m in row["metrics"]:
-                    only = ms[m["cube"]].get("only") or {}
+                    only = ms[m["key"]].get("only") or {}
                     w, t = only.get("without"), only.get("truth")
                     shown = SHOWN[m["kind"]]
                     # At the total, a member whose logic moves the dashboard's number
@@ -1889,7 +1937,7 @@ def run_dashboard(
                     )
                     for name in m.get("missing_members", []):
                         mm = _missing(missing, name)
-                        mm["explains_cells"] += ms[m["cube"]]["explained"]
+                        mm["explains_cells"] += ms[m["key"]]["explained"]
                         mm["changes_total"] = mm["changes_total"] or moves
                 entry.update(
                     status="fail"
@@ -1911,9 +1959,9 @@ def run_dashboard(
             if s["bad"]
         }
         for m in row["metrics"]:
-            if m.get("diagnose_by") and m["cube"] in failing:
-                diagnosis[m["cube"]] = _diagnose(
-                    checks, cube_load, bq, window, where[0], m
+            if m.get("diagnose_by") and m["key"] in failing:
+                diagnosis[m["key"]] = _diagnose(
+                    checks, cube_load, _source(bq, m["datasource"]), window, view, m
                 )
         a = (audit or {}).get(str(row["row_gid"]), {})
         verdict = row_verdict(grains)
@@ -2217,7 +2265,7 @@ def digest_markdown(result, checks, cube_defs) -> str:
             (g["metrics"] for g in compared if g["grain"] == []), {}
         ).items():
             mdef = next(
-                (x for x in defs.get(gid, {}).get("metrics", []) if x["cube"] == m),
+                (x for x in defs.get(gid, {}).get("metrics", []) if x["key"] == m),
                 {},
             )
             out += _total_line(
@@ -2237,7 +2285,7 @@ def digest_markdown(result, checks, cube_defs) -> str:
                 (
                     x["kind"]
                     for x in defs.get(gid, {}).get("metrics", [])
-                    if x["cube"] == m
+                    if x["key"] == m
                 ),
                 "count",
             )
@@ -2252,7 +2300,7 @@ def digest_markdown(result, checks, cube_defs) -> str:
             else:
                 out.append(f"- By {label}: no value differs at the total.")
         for m in defs.get(gid, {}).get("metrics", []):
-            out.append(f"- Dashboard: {m['cube']} = {_metric_sql(m)}")
+            out.append(f"- Dashboard: {m['key']} = {_metric_sql(m)}")
             cdef = (cube_defs or {}).get(m["cube"])
             out.append(f"- Cube: {_cube_text(m['cube'], cdef)}")
             for r in (cdef or {}).get("refs", []):
@@ -2382,28 +2430,48 @@ def _run_command(a) -> int:
         )
     checks = load_checks(a.checks)
     cube = CubeClient(a.cube_url, secret, _user_email(a.email))
-    print("downloading the workbook extract", file=sys.stderr, flush=True)
-    hyper, extract_at = download_extract(
-        checks["extract"]["workbook_luid"],
-        checks["extract"]["datasource"],
-        SCRATCH / checks["dashboard"],
+    datasources = list(
+        dict.fromkeys(
+            [checks["extract"]["datasource"]]
+            + [m["datasource"] for r in checks["rows"] for m in r["metrics"]]
+        )
+    )
+    print(
+        f"downloading the workbook's {len(datasources)} extract(s)",
+        file=sys.stderr,
+        flush=True,
+    )
+    extracts = download_extract(
+        checks["extract"]["workbook_luid"], datasources, SCRATCH / checks["dashboard"]
     )
     cube_at = cube_built_at(checks["cube_source_table"], bigquery_rows)
     audit = audit_rows(checks, SCRATCH / checks["dashboard"] / "workbook.twb")
     checks["truth_filters"] = checks["truth_filters"] + workbook_exclusions(
         checks, SCRATCH / checks["dashboard"] / "workbook.twb"
     )
+    from contextlib import ExitStack
+
+    default_at = extracts[checks["extract"]["datasource"]][1]
+    stamps = "; ".join(
+        _local(at) if len(extracts) == 1 else f"{ds} {_local(at)}"
+        for ds, (_, at) in extracts.items()
+    )
     try:
-        timing_guard(extract_at, cube_at)
-        with ExtractSource(hyper) as truth:
+        for _, at in extracts.values():
+            timing_guard(at, cube_at)
+        with ExitStack() as stack:
+            truth = {
+                ds: stack.enter_context(ExtractSource(hyper))
+                for ds, (hyper, _) in extracts.items()
+            }
             result = run_dashboard(
                 checks,
                 cube.load,
                 truth,
-                snapshot_date(extract_at),
+                snapshot_date(default_at),
                 rows=set(a.rows.split(",")) if a.rows else None,
                 scope_only=a.scope_only,
-                snapshots={"extract": _local(extract_at), "cube": _local(cube_at)},
+                snapshots={"extract": stamps, "cube": _local(cube_at)},
                 audit=audit,
             )
     except (TimingError, ScopeError) as e:

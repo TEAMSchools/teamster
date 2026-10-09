@@ -1685,3 +1685,91 @@ def test_workbook_excludes_fail_loudly_when_the_filter_is_gone(tmp_path):
     checks = cv.load_checks(_write_variant(tmp_path, m))
     with pytest.raises(cv.CheckError, match="filter: nothing"):
         cv.workbook_exclusions(checks, FIX / "constructs.twb")
+
+
+# ---------------------------------------------------------------- per-metric extracts
+class WeeklyBQ(FakeBQ):
+    """A second extract whose school-grain tardies agree with Cube."""
+
+    def __init__(self):
+        super().__init__()
+        self.sql = []
+
+    def __call__(self, sql):
+        self.sql.append(sql)
+        rows = super().__call__(sql)
+        if " as g1" in sql and " as m0" in sql and "date_trunc" not in sql:
+            return [
+                {"g0": "Camden", "g1": "A", "m0": 10, "n_students": 100},
+                {"g0": "Newark", "g1": "B", "m0": 15, "n_students": 120},
+                {"g0": "Newark", "g1": "C", "m0": 5, "n_students": 80},
+            ]
+        return rows
+
+
+def _weekly_metric(d):
+    d["rows"][0]["metrics"].append(
+        {
+            "cube": "count_tardy_days",
+            "kind": "count",
+            "sql": "sum(is_tardy)",
+            "datasource": "rpt_weekly",
+        }
+    )
+
+
+def test_load_checks_keys_metrics_by_datasource(tmp_path):
+    c = cv.load_checks(_write_variant(tmp_path, _weekly_metric))
+    a, b = c["rows"][0]["metrics"]
+    assert (a["key"], a["datasource"]) == ("count_tardy_days", "rpt_demo")
+    assert (b["key"], b["datasource"]) == (
+        "count_tardy_days @ rpt_weekly",
+        "rpt_weekly",
+    )
+
+
+def test_load_checks_rejects_the_same_metric_twice_on_one_extract(tmp_path):
+    def m(d):
+        d["rows"][0]["metrics"].append(dict(d["rows"][0]["metrics"][0]))
+
+    with pytest.raises(cv.CheckError, match="twice"):
+        cv.load_checks(_write_variant(tmp_path, m))
+
+
+def test_each_metric_reads_its_own_extract(tmp_path):
+    checks = cv.load_checks(_write_variant(tmp_path, _weekly_metric))
+    weekly = WeeklyBQ()
+    result = cv.run_dashboard(
+        checks, FakeCube(), {"rpt_demo": FakeBQ(), "rpt_weekly": weekly}, TODAY
+    )
+    grain = next(
+        g for g in result["rows"]["1"]["grains"] if g["grain"] == ["region", "school"]
+    )
+    assert grain["metrics"]["count_tardy_days"]["bad"] == 2
+    assert grain["metrics"]["count_tardy_days @ rpt_weekly"]["bad"] == 0
+    assert weekly.sql and all(" as m1" not in q for q in weekly.sql)
+    digest = cv.digest_markdown(result, checks, {})
+    assert "- Dashboard: count_tardy_days @ rpt_weekly = `sum(is_tardy)`" in digest
+
+
+def test_unpack_extracts_finds_each_datasources_hyper(tmp_path):
+    import zipfile
+
+    twb = """<?xml version='1.0' encoding='utf-8' ?>
+<workbook><datasources>
+  <datasource caption='rpt_demo (kipptaf_tableau)' name='federated.a'>
+    <extract enabled='true'><connection class='hyper' dbname='Data/Extracts/a.hyper' update-time='10/08/2026 10:00:00 AM' /></extract>
+  </datasource>
+  <datasource caption='rpt_weekly (kipptaf_tableau)' name='federated.b'>
+    <extract enabled='true'><connection class='hyper' dbname='Data/Extracts/b.hyper' update-time='10/08/2026 11:00:00 AM' /></extract>
+  </datasource>
+</datasources></workbook>"""
+    twbx = tmp_path / "workbook.twbx"
+    with zipfile.ZipFile(twbx, "w") as z:
+        z.writestr("Book.twb", twb)
+        z.writestr("Data/Extracts/a.hyper", b"A")
+        z.writestr("Data/Extracts/b.hyper", b"B")
+    out = cv.unpack_extracts(twbx, ["rpt_demo", "rpt_weekly"], tmp_path / "out")
+    assert out["rpt_demo"][0].read_bytes() == b"A"
+    assert out["rpt_weekly"][0].read_bytes() == b"B"
+    assert out["rpt_weekly"][1] == dt.datetime(2026, 10, 8, 11, 0, tzinfo=dt.UTC)

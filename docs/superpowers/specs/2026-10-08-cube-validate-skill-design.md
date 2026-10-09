@@ -395,3 +395,18 @@ many.
   the total).
 - Whether the fiscal year start changes `YEAR()` inside a calculation, or only
   date parts on shelves.
+
+## Revision 2026-10-09: a metric can read its own extract
+
+Found on the DDI Suite, whose sheets read two extracts
+(`rpt_tableau__assessment_dashboard` and `rpt_tableau__ddi_dashboard`); one row,
+Student Count, has sheets on both.
+
+- A metric may name `datasource:`; it defaults to the checks file's
+  `extract.datasource`. Its truth SQL runs against that datasource's extract. A
+  row can hold the same Cube measure twice, once per datasource; each is keyed
+  `<cube> @ <datasource>` in the results, digest and report.
+- The run downloads the workbook once with every extract it needs, applies the
+  timing guard to each extract against the Cube fact, and lists each extract's
+  refresh time in the snapshots line. The scope guard uses the default
+  datasource.
