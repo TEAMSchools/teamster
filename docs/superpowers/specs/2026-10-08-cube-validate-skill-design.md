@@ -435,3 +435,89 @@ many days before the extract refreshed, on both sides, with `{cutoff}` filled
 in, and skips the timing guard. Cube filters may nest `or` and `and`. A window
 of several academic years is compared year by year: `academic_year` joins every
 grain.
+
+## Revision 2026-10-09: truth issues go to the domain owner
+
+Found on the DDI Suite. Some gaps are the dashboard's fault, not Cube's: the
+Module Dashboard's % Completion formula reads 100% in every module (both counts
+look only at rows with a score), and 7 assessments sit in the wrong academic
+year in the extract. Those rows should neither fail nor pass on the validator's
+say-so. The user cannot rule on each one mid-run, and the domain owner will not
+read Asana tasks, so each problem becomes a drafted GitHub issue the user
+assigns to the owner.
+
+### Checks file
+
+- A file-level `truth_issues:` map, keyed by slug. Each entry gives `title` (a
+  conventional-commit issue title), `what` (plain language), `where`
+  (`dashboard`, `rpt` or `source`), `evidence` (aggregates only), and, once
+  filed, `issue: <number>` and `ruling: {call, by, on, note}`. `call` is
+  `cube-correct` or `cube-wrong`.
+- A metric explains gaps through `variants:`, a list of `{explains, sql}` or
+  `{explains, num, den}`. `explains` names missing members, truth issues or
+  both, so a cell that needs a member and a corrected formula together has one
+  variant for the pair. The existing `sql_without` / `num_without` /
+  `den_without` fields load as a variant that explains the metric's
+  `missing_members`.
+- A file-level `open_issues_task: <gid>` names the domain's Open Issues task in
+  Asana ("Data Marts + Semantic Layer", one per domain section). Every truth
+  issue filed from that file is listed there.
+
+### Verdicts
+
+- A cell that fails against the metric's SQL but matches a variant is explained
+  by every name in that variant's `explains`.
+- A cell explained by a truth issue ruled `cube-correct` counts as a match. A
+  cell explained only by a truth issue ruled `cube-wrong` counts as unexplained.
+- Row verdicts, strongest first: `fail`, `incomplete`, `truth_issue` (every gap
+  is explained, and at least one by an unruled truth issue), `missing_member`,
+  `pass`.
+- `latest.json`, the comment and the digest list each truth issue with the cells
+  it explains, its issue number if filed, and its ruling if any. A truth issue
+  that explains no cell on a run whose issue is closed is reported as stale, so
+  its entry can be removed.
+
+### Issue drafts
+
+- Each run writes one draft per unfiled truth issue that explains cells:
+  `~/asana-sync/validation/<date>-<dashboard>-issues/<slug>.md`. One problem is
+  one draft, however many rows it touches.
+- The body follows `.github/ISSUE_TEMPLATE/bug_report.md`: "What's happening"
+  states the problem and the discrepancy in numbers; "Steps to reproduce" gives
+  the extract query; "Where" names the dashboard, model or source and the Asana
+  rows it blocks; the "For Claude" fold-out holds the check SQL, the variant SQL
+  and the checks-file path. A label line follows the root CLAUDE.md rule
+  (conventional-commit type, source systems, `dbt` when `where` is `rpt`), plus
+  a `validation` label and a closing note telling the owner how to answer: label
+  `cube-correct` or `cube-wrong`, or fix the source and close the issue.
+- Drafts carry aggregates only, with small cells hidden as in comments. No
+  student names or ids.
+
+### Filing and rulings (the skill, not the script)
+
+- After the run, Claude lists the drafts. The user picks which to file. For each
+  picked draft, Claude creates the issue, creates a `#NNNN | title` subtask
+  under `open_issues_task`, writes `issue: <number>` into the checks file, and
+  commits it. The user assigns the issue to the domain owner.
+- Before each run, Claude reads every filed truth issue's labels and state with
+  the GitHub MCP. A `cube-correct` or `cube-wrong` label becomes a `ruling:`
+  entry (the labeler, the date, the latest comment's first line as the note),
+  committed with the checks file. A ruling already in the file is kept; a label
+  that contradicts it is reported, not applied.
+- The script never calls GitHub or Asana, so it stays testable offline.
+
+### `sync.py` (user-run, outside the repo)
+
+`truth_issue` gets a new validation tag, `needs-review`, in place of `matched`,
+`mismatch` or `unvalidated`. The row is never ticked while it has that tag.
+Status still comes from evidence alone: a truth issue neither adds nor removes
+`cube-partial`.
+
+### To confirm in the plan
+
+- Whether the `validation`, `cube-correct` and `cube-wrong` labels exist in the
+  repo; create them if not.
+- Whether `sync.py` creates the `needs-review` tag itself, as it did for
+  `untriaged`, or the user creates it once in Asana.
+- Whether the GitHub MCP shows who applied a label. If not, `ruling.by` is the
+  issue's assignee.
