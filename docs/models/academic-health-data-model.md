@@ -153,16 +153,16 @@ Every goal and band on the dashboard uses **unweighted** GPA except the
 
 ### Bands and flags
 
-| Term                                           | Meaning                                                                                                                  |
-| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `gpa_band_label`                               | Cumulative unweighted band: `3.5+`, `3.0-3.49`, `2.5-2.99`, `2.0-2.49`, `below 2.0`                                      |
-| `gpa_band_projected_...`                       | The same cut points as a number, 1 (below 2.0) to 5 (3.5 and up), the KIPP Foundation five-band scale                    |
-| `is_on_cusp_3_0`                               | Cumulative unweighted GPA at least 2.75 and below 3.00                                                                   |
-| `gpa_needed_for_cumulative_3_0`     | The unweighted Y1 GPA a student must average across every GPA course on this year's schedule, graded or not, to finish at exactly 3.00; negative means already safe |
-| `is_gpa_band_slide`                            | Projected band at least one band below last year's band                                                                  |
-| `F*`                                           | Not a PowerSchool grade: a live gradebook grade below 50% is floored to 50% and labelled `F*`. Failure counts match `F%` |
-| `need_60` to `need_90`, `need_83`, `need_next` | The percent needed in the current term for the year-to-date course grade to reach a target                               |
-| Lookbacks                                      | `gpa_y1_1_week_prior` and siblings: the Y1 GPA in effect at the end of the day 1, 2, or 4 weeks ago                      |
+| Term                                           | Meaning                                                                                                                                                             |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `gpa_band_label`                               | Cumulative unweighted band: `3.5+`, `3.0-3.49`, `2.5-2.99`, `2.0-2.49`, `below 2.0`                                                                                 |
+| `gpa_band_projected_...`                       | The same cut points as a number, 1 (below 2.0) to 5 (3.5 and up), the KIPP Foundation five-band scale                                                               |
+| `is_on_cusp_3_0`                               | Cumulative unweighted GPA at least 2.75 and below 3.00                                                                                                              |
+| `gpa_needed_for_cumulative_3_0`                | The unweighted Y1 GPA a student must average across every GPA course on this year's schedule, graded or not, to finish at exactly 3.00; negative means already safe |
+| `is_gpa_band_slide`                            | Projected band at least one band below last year's band                                                                                                             |
+| `F*`                                           | Not a PowerSchool grade: a live gradebook grade below 50% is floored to 50% and labelled `F*`. Failure counts match `F%`                                            |
+| `need_60` to `need_90`, `need_83`, `need_next` | The percent needed in the current term for the year-to-date course grade to reach a target                                                                          |
+| Lookbacks                                      | `gpa_y1_1_week_prior` and siblings: the Y1 GPA in effect at the end of the day 1, 2, or 4 weeks ago                                                                 |
 
 ### Populations
 
