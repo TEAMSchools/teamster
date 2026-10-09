@@ -982,3 +982,197 @@ def test_run_compare_compares_new_states_and_proposes_the_next(tmp_path):
 def test_main_needs_a_command():
     with pytest.raises(SystemExit):
         cv.main([])
+
+
+def _replay_hyper(path):
+    hapi = pytest.importorskip("tableauhyperapi")
+    cols = [
+        ("student_number", hapi.SqlType.int()),
+        ("school", hapi.SqlType.text()),
+        ("is_complete", hapi.SqlType.int()),
+        ("is_scored", hapi.SqlType.int()),
+        ("is_tagged", hapi.SqlType.int()),
+        ("score", hapi.SqlType.double()),
+    ]
+    table = hapi.TableDefinition(
+        hapi.TableName("Extract", "Extract"),
+        [hapi.TableDefinition.Column(n, t, hapi.NULLABLE) for n, t in cols],
+    )
+    rows, sid = [], 0
+    for school in ("Alpha", "Beta"):
+        for i in range(1, 21):
+            sid += 1
+            done = i <= 16
+            rows.append(
+                (
+                    sid,
+                    school,
+                    int(done),
+                    int(done),
+                    int(i > 2),
+                    40.0 + i if done else None,
+                )
+            )
+    with hapi.HyperProcess(hapi.Telemetry.DO_NOT_SEND_USAGE_DATA_TO_TABLEAU) as hp:
+        with hapi.Connection(
+            hp.endpoint, str(path), hapi.CreateMode.CREATE_AND_REPLACE
+        ) as c:
+            c.catalog.create_schema("Extract")
+            c.catalog.create_table(table)
+            with hapi.Inserter(c, table) as ins:
+                ins.add_rows(rows)
+                ins.execute()
+    return path
+
+
+DONE = "count(distinct if(is_complete = 1, student_number, null))"
+REPLAY = {
+    "workbook": "Replay",
+    "workbook_luid": "w1",
+    "student_count": "demo.count_students",
+    "rows": {
+        "1": ["demo.pct_complete"],
+        "2": ["demo.pct_completion"],
+        "3": ["demo.n_tested"],
+        "4": ["demo.n_assessed"],
+        "5": ["demo.avg_score"],
+    },
+    "mismatches": {
+        "dup_rows": {
+            "title": "fix(cube): duplicate not-tested rows",
+            "what": "w",
+            "fix": "cube",
+        },
+        "scored_only": {
+            "title": "fix(tableau): completion reads scored rows",
+            "what": "w",
+            "fix": "dashboard",
+        },
+        "untagged": {
+            "title": "fix(cube): untagged assessments",
+            "what": "w",
+            "fix": "undecided",
+        },
+        "avg_bug": {"title": "fix(cube): avg", "what": "w", "fix": "cube"},
+    },
+    "sheets": {
+        "Sheet": {
+            "datasource": DS,
+            "dims": {"School": {"cube": "demo.school", "sql": "school"}},
+            "measures": {
+                "% Complete": {
+                    "cube": "demo.pct_complete",
+                    "num": DONE,
+                    "den": "count(distinct student_number)",
+                    "variants": [
+                        {
+                            "explains": ["dup_rows"],
+                            "cube_filters": [
+                                {
+                                    "member": "demo.is_duplicate",
+                                    "operator": "equals",
+                                    "values": ["0"],
+                                }
+                            ],
+                        }
+                    ],
+                },
+                "% Completion": {
+                    "cube": "demo.pct_completion",
+                    "num": "count(distinct if(is_scored = 1 and is_complete = 1, student_number, null))",
+                    "den": "count(distinct if(is_scored = 1, student_number, null))",
+                    "variants": [
+                        {
+                            "explains": ["scored_only"],
+                            "num": DONE,
+                            "den": "count(distinct student_number)",
+                        }
+                    ],
+                },
+                "Students Tested": {
+                    "cube": "demo.n_tested",
+                    "sql": DONE,
+                    "variants": [{"explains": ["untagged"], "where": "is_tagged = 1"}],
+                },
+                "Students Assessed": {"cube": "demo.n_assessed", "sql": DONE},
+                "Avg Score": {
+                    "cube": "demo.avg_score",
+                    "sql": "sum(score)",
+                    "variants": [
+                        {
+                            "explains": ["avg_bug"],
+                            "cube_filters": [
+                                {"member": "demo.avg_fixed", "operator": "set"}
+                            ],
+                        }
+                    ],
+                },
+            },
+        }
+    },
+}
+
+
+def replay_cube(q):
+    members = {f["member"] for f in q.get("filters", [])}
+
+    def row(n):
+        return {
+            "demo.count_students": str(20 * n),
+            "demo.pct_complete": str(
+                0.8 if "demo.is_duplicate" in members else 16 / 22
+            ),
+            "demo.pct_completion": "0.8",
+            "demo.n_tested": str(14 * n),
+            "demo.n_assessed": str(17 * n),
+            "demo.avg_score": str(48.5 if "demo.avg_fixed" in members else 49.5),
+        }
+
+    if "demo.school" in q["dimensions"]:
+        return [{"demo.school": s, **row(1)} for s in ("Alpha", "Beta")], []
+    return [row(2)], []
+
+
+def test_replay_finds_each_ddi_gap_type(tmp_path):
+    hyper = _replay_hyper(tmp_path / "replay.hyper")
+    checks = cv.load_checks(_write(tmp_path, REPLAY))
+    export = cv.read_export(
+        b"School,% Complete,% Completion,Students Tested,Students Assessed,Avg Score\r\n"
+        b"Alpha,0.8,1,16,16,48.5\r\nBeta,0.8,1,16,16,48.5\r\nAll,0.8,1,32,32,48.5\r\n"
+    )
+    states = {
+        "replay--default": {
+            "state": {"id": "replay--default", "dashboard": "Replay"},
+            "status": "ok",
+            "sheets": {},
+            "click_filters": {},
+        }
+    }
+    cells = cv.compare_export(
+        checks["sheets"]["Sheet"],
+        "replay--default",
+        export,
+        replay_cube,
+        [],
+        [],
+        checks,
+    )
+    with cv.ExtractSource(hyper) as src:
+        cv.explain_cells(
+            cells, checks, states, {}, lambda ds, sql: src(sql), replay_cube
+        )
+    verdicts = {
+        m: cv.worst(c.verdict for c in cells if c.measure == m)
+        for m in REPLAY["sheets"]["Sheet"]["measures"]
+    }
+    assert verdicts == {
+        "% Complete": "fix_cube",
+        "% Completion": "pass",
+        "Students Tested": "undecided",
+        "Students Assessed": "fail",
+        "Avg Score": "incomplete",
+    }
+    rows = cv.row_results(cells, checks)
+    assert (
+        rows["5"]["verdict"] == "incomplete"
+    )  # the planted bad mapping never blames Cube
