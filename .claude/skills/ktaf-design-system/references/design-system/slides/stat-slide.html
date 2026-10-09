@@ -1,0 +1,32 @@
+<!-- @dsCard group="Slides" viewport="1280x720" name="Stat slide" subtitle="Three big-number callouts on white" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../styles.css">
+<style>
+  html,body{margin:0;height:100%;}
+  .slide{width:1280px;height:720px;background:#fff;color:var(--text-strong);position:relative;overflow:hidden;display:flex;flex-direction:column;padding:72px 80px;box-sizing:border-box;}
+  .eyebrow{font-family:var(--font-brand);font-weight:700;font-size:18px;text-transform:uppercase;letter-spacing:.12em;color:var(--brand-accent);}
+  h2{font-family:var(--font-brand);font-weight:700;font-size:48px;letter-spacing:-.01em;margin:10px 0 0;}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:32px;margin-top:auto;}
+  .stat{border-top:6px solid var(--kipp-indigo);padding-top:24px;}
+  .stat:nth-child(2){border-color:var(--brand-accent);}
+  .stat:nth-child(3){border-color:var(--kipp-blue);}
+  .val{font-family:var(--font-mono);font-weight:700;font-size:88px;line-height:.95;letter-spacing:-.01em;font-variant-numeric:tabular-nums;}
+  .lbl{font-family:var(--font-brand);font-weight:700;font-size:18px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin-top:12px;}
+  .sub{font-family:var(--font-sans);font-size:16px;color:var(--text-muted);margin-top:6px;}
+</style>
+</head>
+<body data-theme="newark">
+  <div class="slide">
+    <div class="eyebrow">By the numbers</div>
+    <h2>A record year for our students</h2>
+    <div class="grid">
+      <div class="stat"><div class="val">9,042</div><div class="lbl">Students enrolled</div><div class="sub">+218 year over year</div></div>
+      <div class="stat"><div class="val">95.2%</div><div class="lbl">College enrollment</div><div class="sub">Class of 2025</div></div>
+      <div class="stat"><div class="val">93.4%</div><div class="lbl">Daily attendance</div><div class="sub">Network average</div></div>
+    </div>
+  </div>
+</body>
+</html>

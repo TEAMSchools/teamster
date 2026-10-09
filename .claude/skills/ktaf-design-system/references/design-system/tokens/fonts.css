@@ -1,0 +1,60 @@
+/* ============================================================
+   FONTS — KIPP NJ | Miami Design System
+   ------------------------------------------------------------
+   THIS FILE INTENTIONALLY DECLARES NO @font-face AND LOADS
+   NOTHING. That is the fix, not an omission.
+
+   The brand typeface is WHITNEY (Hoefler&Co), a licensed
+   commercial humanist sans that cannot be redistributed. This
+   system previously shipped Hanken Grotesk from Google Fonts as
+   a substitute, loaded via @import. Three problems with that:
+
+   1. SCHOOL NETWORKS BLOCK IT. Many district proxies and content
+      filters block fonts.googleapis.com. When the request fails
+      the page silently falls back — and the old fallback chain
+      put 'Helvetica Neue' and 'Helvetica' (neither of which
+      exists on Windows) ahead of any Windows font, so Windows
+      machines landed on an unpredictable substitution.
+
+   2. ZENDESK CANNOT LOAD WEBFONTS AT ALL. Help center articles
+      allow no <style>, <link> or <script>, so a webfont name in
+      an article's font-family NEVER resolves unless the Guide
+      theme itself loads it. Every article was already rendering
+      in the fallback.
+
+   3. WEIGHT MISMATCH. Hanken Grotesk is a 300..800 variable
+      font. Designs authored against it used 300 and 800, which
+      no system font offers — so Windows faux-bolded or
+      thinned them.
+
+   The default families in tokens/typography.css are therefore
+   the closest humanist sans PRE-INSTALLED on each platform:
+   SF Pro (Apple), Segoe UI (Windows), Roboto (Android /
+   Chromebook), Arial (last resort). Nothing to download,
+   identical rendering every time, and Segoe UI is a genuinely
+   close cousin of Whitney — humanist, tall x-height, open
+   apertures.
+
+   ------------------------------------------------------------
+   OPT IN TO A WEBFONT (only where you control the page)
+
+   Appropriate for marketing pages, slides and standalone HTML
+   artifacts. NOT for Zendesk articles. Add this line to
+   styles.css AFTER the typography import:
+
+       @import url('./tokens/fonts-webfont.css');
+
+   That file loads Hanken Grotesk and redefines --font-brand to
+   prefer it, so every component upgrades at once. If the load
+   fails, the system stack underneath still renders correctly.
+
+   ------------------------------------------------------------
+   IF YOU LICENSE WHITNEY
+
+   Self-host the .woff2 files under assets/fonts/, replace the
+   contents of fonts-webfont.css with your own @font-face rules,
+   and keep the family name first in --font-brand. Self-hosting
+   also sidesteps problem 1 entirely, since the files come from
+   your own origin. Ship only 400/600/700 to match the weight
+   tokens.
+   ============================================================ */
