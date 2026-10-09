@@ -1197,8 +1197,8 @@ class Coverage:
             elif value != ALL:
                 conds.append(f"cast({col} as text) = {_sql_text(value)}")
         where = " and ".join(conds) or "true"
-        sql = f'select count(distinct "{self.student}") from {EXTRACT} where {where}'
         # trunk-ignore(bandit/B608): SQL over a local extract; names come from the workbook, not user input
+        sql = f'select count(distinct "{self.student}") from {EXTRACT} where {where}'
         return int(self._hyper(ds).query(sql)[0][0])
 
     def __call__(self, state: State) -> bool:
