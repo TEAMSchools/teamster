@@ -575,3 +575,55 @@ showed every change within 3 days.
   query. The skill says to run it late in the day, after the fact's later
   rebuilds, and to rerun it when a dashboard's refresh schedule changes.
 - BigQuery uses ADC, as before; the command needs no Cube secret.
+
+## Revision 2026-10-09: cube issues prove Cube's formula differs
+
+Requested by the user: a gap can come from Cube's own definition (DDI's %
+Complete may count rows where the dashboard counts distinct student-assessment
+pairs). Until now that gap only showed as an unexplained `fail`, with the two
+formulas side by side for a person to compare. A cube issue turns the suspicion
+into evidence and a filed fix.
+
+### Checks file
+
+- A file-level `cube_issues:` map, keyed by slug, beside `truth_issues:`. Each
+  entry gives `title` (a conventional-commit issue title), `what`, optional
+  `evidence` and `labels`, and, once filed, `issue: <number>` and `closed_on`.
+  There is no `where` (it is always the cube) and no `ruling`: the cells the
+  variant matches are the evidence.
+- A variant's `explains` may name cube issues. Its SQL copies Cube's definition
+  over the extract's columns (for DDI, a row count in place of a distinct-pair
+  count). A slug is unique across `truth_issues`, `cube_issues` and the metric's
+  missing members.
+
+### Verdicts
+
+- A cell that fails as written but matches a variant naming a cube issue is
+  explained by that issue: Cube computes something other than what the dashboard
+  shows.
+- Row verdicts, strongest first: `fail`, `incomplete`, `cube_issue` (every gap
+  is explained, at least one by a cube issue), `truth_issue`, `missing_member`,
+  `pass`.
+- `latest.json`, the comment, the report and the digest list each cube issue
+  with the cells it explains and its issue number or draft. A closed cube issue
+  that explains no cell is stale, as for truth issues.
+
+### Outputs
+
+- The digest's first section, "Fix in Cube", lists each cube issue with its
+  title, what, cells, rows, and the dashboard's and Cube's formulas.
+- Each unfiled cube issue that explains cells gets a draft in the run's
+  `-issues/` folder. It follows the bug template like a truth-issue draft, with
+  `as_written` (the dashboard) and `cube_formula` (the variant) in its query and
+  `cube` and `validation` labels. "How to answer" says to fix the cube
+  definition and close the issue; the next run checks the fix. If the owner
+  thinks the dashboard is the one that is wrong, they say so on the issue and
+  the entry becomes a truth issue.
+- The skill files a picked cube-issue draft the same way as a truth-issue draft,
+  under the checks file's `open_issues_task`.
+
+### `sync.py`
+
+`cube_issue` gets the `mismatch` validation tag: Cube's numbers are wrong, so
+the row is never ticked. Status still comes from evidence alone; a cube issue
+neither adds nor removes `cube-partial`.
