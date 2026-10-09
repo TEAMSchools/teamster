@@ -901,6 +901,11 @@ class Dim:
     group_kind: str | None = None
     # Identifies a person (a student id or name): outputs never show its values.
     person: bool = False
+    # The same field under another column name in another extract: (datasource, sql).
+    sql_by_datasource: tuple[tuple[str, str], ...] = ()
+
+    def sql_for(self, datasource: str | None) -> str:
+        return dict(self.sql_by_datasource).get(datasource or "", self.sql)
 
 
 def group_case_sql(of: str, bins: dict, other: str | None = None) -> str:
@@ -966,6 +971,7 @@ def load_checks(path) -> dict:
             bool(d.get("tableau_only")),
             d.get("kind") if ("group" in d or "bin" in d) else None,
             bool(d.get("person")),
+            tuple(sorted((d.get("sql_by_datasource") or {}).items())),
         )
         for n, d in data["dimensions"].items()
     }
@@ -1173,10 +1179,29 @@ def _sql_literal(v) -> str:
     return "'" + str(v).replace("'", "\\'") + "'"
 
 
+def _filters_for(truth_filters, datasource: str | None) -> list[str]:
+    """Truth filters that apply to one extract: a plain string applies to every one."""
+    out = []
+    for f in truth_filters:
+        if isinstance(f, str):
+            out.append(f)
+        elif f.get("datasource") in (None, datasource):
+            out.append(f["sql"])
+    return out
+
+
 def truth_sql(
-    table, metrics, grain, dims, hard_filters, window, students_sql, truth_filters=()
+    table,
+    metrics,
+    grain,
+    dims,
+    hard_filters,
+    window,
+    students_sql,
+    truth_filters=(),
+    datasource=None,
 ) -> str:
-    select = [f"{dims[n].sql} as g{i}" for i, n in enumerate(grain)]
+    select = [f"{dims[n].sql_for(datasource)} as g{i}" for i, n in enumerate(grain)]
     for i, m in enumerate(metrics):
         if m["kind"] == "count":
             select.append(f"{m['sql']} as m{i}")
@@ -1192,13 +1217,15 @@ def truth_sql(
     select.append(f"{students_sql} as n_students")
     if isinstance(window, dict):
         years = ", ".join(str(y) for y in window["academic_years"])
-        where = [f"{dims['academic_year'].sql} in ({years})"]
+        where = [f"{dims['academic_year'].sql_for(datasource)} in ({years})"]
     else:
-        where = [f"{dims['date'].sql} between '{window[0]}' and '{window[1]}'"]
+        where = [
+            f"{dims['date'].sql_for(datasource)} between '{window[0]}' and '{window[1]}'"
+        ]
     for f in hard_filters:
         values = ", ".join(_sql_literal(v) for v in f["values"])
-        where.append(f"{dims[f['dim']].sql} in ({values})")
-    where += list(truth_filters)
+        where.append(f"{dims[f['dim']].sql_for(datasource)} in ({values})")
+    where += _filters_for(truth_filters, datasource)
     # trunk-ignore(bandit/B608): SQL comes from a reviewed checks file and runs read-only
     sql = f"select {', '.join(select)} from `{table}` where {' and '.join(where)}"
     if grain:
@@ -1687,6 +1714,7 @@ def _diagnose(checks, cube_load, bq, window, view, metric) -> dict:
                 window,
                 checks["students_sql"],
                 checks["truth_filters"],
+                metric.get("datasource"),
             )
         )
     except Exception as e:  # noqa: BLE001 - a missing breakdown never changes the verdict
@@ -1751,6 +1779,7 @@ def scope_guard(checks, cube_load, bq, window) -> None:
             window,
             checks["students_sql"],
             checks["truth_filters"],
+            checks["extract"]["datasource"],
         )
     ):
         value, n = norm_key(r["g0"]), r["n_students"]
@@ -1827,7 +1856,7 @@ def run_dashboard(
 
         source = _source(bq, ds)
 
-        def compare_job(ms, view=view, g=g, grain=grain, truth=source):
+        def compare_job(ms, view=view, g=g, grain=grain, truth=source, datasource=ds):
             crows, preaggs = cube_load(
                 cube_query(
                     view,
@@ -1849,6 +1878,7 @@ def run_dashboard(
                     window,
                     checks["students_sql"],
                     checks["truth_filters"],
+                    datasource,
                 )
             )
             if not trows or (not g and not trows[0].get("n_students")):

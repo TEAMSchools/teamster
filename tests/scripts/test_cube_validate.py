@@ -1773,3 +1773,26 @@ def test_unpack_extracts_finds_each_datasources_hyper(tmp_path):
     assert out["rpt_demo"][0].read_bytes() == b"A"
     assert out["rpt_weekly"][0].read_bytes() == b"B"
     assert out["rpt_weekly"][1] == dt.datetime(2026, 10, 8, 11, 0, tzinfo=dt.UTC)
+
+
+def test_dimension_sql_can_differ_by_extract(tmp_path):
+    def m(d):
+        _weekly_metric(d)
+        d["dimensions"]["school"]["sql_by_datasource"] = {"rpt_weekly": "course_school"}
+        d["truth_filters"] = [
+            "is_tardy is not null",
+            {"sql": "week_ok", "datasource": "rpt_weekly"},
+        ]
+
+    checks = cv.load_checks(_write_variant(tmp_path, m))
+    weekly, demo = WeeklyBQ(), WeeklyBQ()
+    cv.run_dashboard(
+        checks, FakeCube(), {"rpt_demo": demo, "rpt_weekly": weekly}, TODAY
+    )
+    school_sql = [q for q in weekly.sql if " as g1" in q]
+    assert school_sql and all("course_school as g1" in q for q in school_sql)
+    assert all("week_ok" in q for q in weekly.sql if " as m0" in q)
+    demo_school = [q for q in demo.sql if " as g1" in q and "sum(is_tardy)" in q]
+    assert demo_school and all(
+        "school_abbreviation as g1" in q and "week_ok" not in q for q in demo_school
+    )

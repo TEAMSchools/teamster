@@ -410,3 +410,8 @@ Student Count, has sheets on both.
   timing guard to each extract against the Cube fact, and lists each extract's
   refresh time in the snapshots line. The scope guard uses the default
   datasource.
+- Extracts of one workbook name the same field differently (DDI: `teacher_name`
+  vs `course_teacher_name`). A dimension may give
+  `sql_by_datasource: {<datasource>: <sql>}`, and a truth filter may be
+  `{sql, datasource}` to apply to one extract only; a plain string still applies
+  to every extract.
