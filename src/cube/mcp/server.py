@@ -27,12 +27,18 @@ Tools:
 """
 
 import asyncio
+import contextlib
 import hashlib
 import json
 import os
+import sys
 import time
-from collections.abc import AsyncIterator
+import uuid
+from collections.abc import AsyncGenerator, AsyncIterator, Iterator
 from contextlib import asynccontextmanager
+from contextvars import ContextVar
+from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -59,6 +65,14 @@ TOKEN_TTL_SECONDS = 5 * 60
 # results off by one day (#4298). Default queries to UTC unless the caller
 # explicitly asks for another timezone.
 DEFAULT_QUERY_TIMEZONE = "UTC"
+
+# Deploy sets SERVER_SHA to the commit; stdio dev runs log "local".
+SERVER_SHA = os.environ.get("SERVER_SHA", "").strip() or "local"
+# Off unless the deploy sets "true". `question` and `assumptions` are free text
+# staff type about students, and capturing them waits on People Operations
+# sign-off (Refs #5613). `query_json` and `error_message` always log: they
+# repeat values the warehouse already holds.
+LOG_FREE_TEXT = os.environ.get("CUBE_MCP_LOG_FREE_TEXT", "").strip().lower() == "true"
 
 TRANSPORT_STDIO = "stdio"
 TRANSPORT_HTTP = "http"
@@ -261,24 +275,34 @@ async def _request(
 ) -> dict[str, Any]:
     if client is None:
         raise RuntimeError("_request called before the server lifespan started")
+    call = _current_call.get()
     headers = {"Authorization": _mint_token(email)}
+    if call is not None:
+        # Cube stamps this onto the BigQuery job as the `cube_request_id`
+        # label, which joins a call record to its job's cost and SQL.
+        headers["x-request-id"] = call.cube_request_id
     deadline = time.monotonic() + TIMEOUT_SECONDS
-    while True:
-        response = await client.request(method, path, headers=headers, **kwargs)
-        if response.status_code >= 400:
-            raise RuntimeError(
-                f"Cube {method} {path} {response.status_code}: {response.text}"
-            )
-        body = response.json()
-        if poll and isinstance(body, dict) and body.get("error") == "Continue wait":
-            if time.monotonic() + 1 >= deadline:
+    started = time.monotonic()
+    try:
+        while True:
+            response = await client.request(method, path, headers=headers, **kwargs)
+            if response.status_code >= 400:
                 raise RuntimeError(
-                    f"Cube {method} {path} did not complete within "
-                    f"{TIMEOUT_SECONDS}s ('Continue wait' polling)"
+                    f"Cube {method} {path} {response.status_code}: {response.text}"
                 )
-            await asyncio.sleep(1)
-            continue
-        return body
+            body = response.json()
+            if poll and isinstance(body, dict) and body.get("error") == "Continue wait":
+                if time.monotonic() + 1 >= deadline:
+                    raise RuntimeError(
+                        f"Cube {method} {path} did not complete within "
+                        f"{TIMEOUT_SECONDS}s ('Continue wait' polling)"
+                    )
+                await asyncio.sleep(1)
+                continue
+            return body
+    finally:
+        if call is not None:
+            call.latency_ms += (time.monotonic() - started) * 1000
 
 
 def _with_default_timezone(query: dict[str, Any]) -> dict[str, Any]:
@@ -288,6 +312,285 @@ def _with_default_timezone(query: dict[str, Any]) -> dict[str, Any]:
     if query.get("timezone"):
         return query
     return {**query, "timezone": DEFAULT_QUERY_TIMEZONE}
+
+
+# Call record: 1 JSON line per tool call, written to stderr for Cloud Logging.
+# Design and the sink that routes it to BigQuery: Refs #5613.
+CALL_RECORD_TEXT_LIMIT = 10_000
+
+
+def _clip(text: str | None) -> str | None:
+    """Cut a text field so 1 record stays far under Cloud Logging's 256 KB
+    entry limit."""
+    if text is None:
+        return None
+    return text[:CALL_RECORD_TEXT_LIMIT]
+
+
+def _resolve_session_id(raw: str | None) -> tuple[str, bool]:
+    """Return `(session_id, minted)`. A value that is not a UUID is replaced
+    and never echoed, so free text a model passes here never reaches the log."""
+    with contextlib.suppress(ValueError):
+        return str(uuid.UUID((raw or "").strip())), False
+    return str(uuid.uuid4()), True
+
+
+def _filter_members(filters: Any) -> Iterator[str]:
+    """Yield the member of every filter, walking nested `and`/`or` groups.
+    Filter values are never read."""
+    if not isinstance(filters, list):
+        return
+    for item in filters:
+        if not isinstance(item, dict):
+            continue
+        for group in ("and", "or"):
+            yield from _filter_members(item.get(group))
+        member = item.get("member") or item.get("dimension")
+        if isinstance(member, str):
+            yield member
+
+
+def _members_referenced(query: dict[str, Any]) -> list[str]:
+    """Every member a Cube query names, sorted and unique. Names only."""
+    members: set[str] = set()
+    # Cube rejects a non-list member field, but its call still needs a record:
+    # skip the field rather than iterate a string or raise on a number.
+    for key in ("measures", "dimensions", "segments"):
+        values = query.get(key)
+        if isinstance(values, list):
+            members.update(m for m in values if isinstance(m, str))
+    time_dimensions = query.get("timeDimensions")
+    for time_dimension in time_dimensions if isinstance(time_dimensions, list) else []:
+        if isinstance(time_dimension, dict) and isinstance(
+            time_dimension.get("dimension"), str
+        ):
+            members.add(time_dimension["dimension"])
+    members.update(_filter_members(query.get("filters")))
+    order = query.get("order")
+    if isinstance(order, dict):
+        members.update(k for k in order if isinstance(k, str))
+    elif isinstance(order, list):
+        members.update(
+            pair[0]
+            for pair in order
+            if isinstance(pair, (list, tuple)) and pair and isinstance(pair[0], str)
+        )
+    return sorted(members)
+
+
+def _views_referenced(members: list[str]) -> list[str]:
+    return sorted({m.split(".", 1)[0] for m in members})
+
+
+def _load_summary(payload: dict[str, Any]) -> dict[str, Any]:
+    """Pull the pre-aggregation and size fields out of a `/v1/load` response.
+    A multi-query response (`results`) is summarized across its parts: served
+    by a pre-aggregation only if every part was, refreshed as of its stalest
+    part. Rows are counted, never copied."""
+    results = payload.get("results")
+    parts = (
+        [r for r in results if isinstance(r, dict)]
+        if isinstance(results, list)
+        else [payload]
+    )
+    externals = [p["external"] for p in parts if isinstance(p.get("external"), bool)]
+    used: set[str] = set()
+    for part in parts:
+        entries = part.get("usedPreAggregations")
+        if not isinstance(entries, dict):
+            continue
+        for table_name, info in entries.items():
+            # The id is stable; the table name carries a hash that changes on
+            # every rebuild.
+            pre_aggregation_id = (
+                info.get("preAggregationId") if isinstance(info, dict) else None
+            )
+            used.add(
+                pre_aggregation_id
+                if isinstance(pre_aggregation_id, str)
+                else table_name
+            )
+    refresh_times = [
+        p["lastRefreshTime"] for p in parts if isinstance(p.get("lastRefreshTime"), str)
+    ]
+    return {
+        "external": all(externals) if externals else None,
+        "used_pre_aggregations": sorted(used),
+        "last_refresh_time": min(refresh_times) if refresh_times else None,
+        "row_count": sum(
+            len(p["data"]) for p in parts if isinstance(p.get("data"), list)
+        ),
+    }
+
+
+CALL_RECORD_EVENT = "cube_mcp_call"
+# The only keys a record may carry, in order. A test pins the logged keys to
+# this tuple, so widening the payload is a deliberate edit here, matched in the
+# dbt staging model's contract.
+CALL_RECORD_FIELDS: tuple[str, ...] = (
+    "cube_request_id",
+    "ts",
+    "tool",
+    "session_id",
+    "session_id_minted",
+    "email",
+    "client",
+    "question",
+    "question_provided",
+    "assumptions",
+    "query_json",
+    "views_referenced",
+    "members_referenced",
+    "outcome",
+    "error_message",
+    "external",
+    "used_pre_aggregations",
+    "last_refresh_time",
+    "row_count",
+    "latency_ms",
+    "server_sha",
+)
+
+
+def _utc_now() -> str:
+    return datetime.now(UTC).isoformat(timespec="milliseconds").replace("+00:00", "Z")
+
+
+def _client_user_agent(ctx: Context) -> str | None:
+    """The calling client's User-Agent, or None on stdio or outside a request."""
+    with contextlib.suppress(Exception):
+        headers = ctx.headers
+        value = headers.get("user-agent") if headers is not None else None
+        if isinstance(value, str):
+            return value
+    return None
+
+
+@dataclass
+class _CallRecord:
+    """What 1 tool call did. Never holds response rows: `result` is read for
+    counts and pre-aggregation fields only, in `row()`."""
+
+    tool: str
+    session_id: str
+    session_id_minted: bool
+    question: str | None = None
+    assumptions: str | None = None
+    query: dict[str, Any] | None = None
+    views: list[str] | None = None
+    cube_request_id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    ts: str = field(default_factory=_utc_now)
+    email: str | None = None
+    client: str | None = None
+    result: dict[str, Any] | None = None
+    error: str | None = None
+    latency_ms: float = 0.0
+
+    def row(self) -> dict[str, Any]:
+        """The logged row. Empty arrays become null, because the BigQuery sink
+        cannot type a column from an empty array."""
+        members = _members_referenced(self.query) if self.query is not None else []
+        views = (
+            _views_referenced(members)
+            if self.query is not None
+            else sorted(self.views or [])
+        )
+        summary: dict[str, Any] = (
+            _load_summary(self.result)
+            if self.tool == "load" and self.result is not None
+            else {}
+        )
+        if self.error is not None:
+            outcome = "error"
+        elif summary.get("row_count") == 0:
+            outcome = "empty"
+        else:
+            outcome = "ok"
+        row = {
+            "cube_request_id": self.cube_request_id,
+            "ts": self.ts,
+            "tool": self.tool,
+            "session_id": self.session_id,
+            "session_id_minted": self.session_id_minted,
+            "email": self.email,
+            "client": _clip(self.client),
+            "question": _clip(self.question) if LOG_FREE_TEXT else None,
+            "question_provided": bool(self.question and self.question.strip()),
+            "assumptions": _clip(self.assumptions) if LOG_FREE_TEXT else None,
+            "query_json": (
+                _clip(json.dumps(self.query, sort_keys=True, default=str))
+                if self.query is not None
+                else None
+            ),
+            "views_referenced": views or None,
+            "members_referenced": members or None,
+            "outcome": outcome,
+            "error_message": _clip(self.error),
+            "external": summary.get("external"),
+            "used_pre_aggregations": summary.get("used_pre_aggregations") or None,
+            "last_refresh_time": summary.get("last_refresh_time"),
+            "row_count": summary.get("row_count"),
+            "latency_ms": round(self.latency_ms),
+            "server_sha": SERVER_SHA,
+        }
+        return {key: row[key] for key in CALL_RECORD_FIELDS}
+
+
+def _emit_call_record(record: _CallRecord) -> None:
+    """Write 1 record to stderr as a JSON line. Cloud Run ships it to Cloud
+    Logging as `jsonPayload`; stdout is the MCP transport in stdio mode. Cloud
+    Run moves `severity` onto the log entry itself. A failure here never
+    reaches the tool's caller."""
+    with contextlib.suppress(Exception):
+        line = {"event": CALL_RECORD_EVENT, "severity": "INFO", **record.row()}
+        print(json.dumps(line, default=str), file=sys.stderr, flush=True)
+
+
+# The record of the tool call in progress, so `_request` can tag Cube requests
+# with its id and add its latency without threading it through every helper.
+_current_call: ContextVar[_CallRecord | None] = ContextVar(
+    "_current_call", default=None
+)
+
+
+@asynccontextmanager
+async def _recorded(
+    ctx: Context,
+    tool: str,
+    *,
+    session_id: str | None,
+    question: str | None = None,
+    assumptions: str | None = None,
+    query: dict[str, Any] | None = None,
+    views: list[str] | None = None,
+) -> AsyncGenerator[_CallRecord]:
+    """Record 1 tool call: yield its `_CallRecord`, then write it on the way
+    out, success or failure. An exception is noted and re-raised unchanged."""
+    resolved_session_id, minted = _resolve_session_id(session_id)
+    record = _CallRecord(
+        tool=tool,
+        session_id=resolved_session_id,
+        session_id_minted=minted,
+        question=question,
+        assumptions=assumptions,
+        query=query,
+        views=views,
+        client=_client_user_agent(ctx),
+    )
+    token = _current_call.set(record)
+    try:
+        yield record
+    except BaseException as exc:
+        # A client disconnect or client-side timeout cancels the call with a
+        # message that embeds a memory address; a fixed one keeps it countable.
+        if isinstance(exc, asyncio.CancelledError):
+            record.error = "cancelled"
+        else:
+            record.error = str(exc) or type(exc).__name__
+        raise
+    finally:
+        _current_call.reset(token)
+        _emit_call_record(record)
 
 
 def _meta_scope_key(views: list[str] | None) -> str:
@@ -360,11 +663,36 @@ async def _fetch_full_meta(email: str, force_refresh: bool) -> dict[str, Any]:
     return payload
 
 
+async def _meta_payload(
+    email: str, views: list[str] | None, force_refresh: bool
+) -> dict[str, Any]:
+    """The `meta` catalog for `email`, filtered to `views` when given, served
+    from cache when fresh."""
+    scope = _meta_scope_key(views)
+    if scope == "all":
+        return await _fetch_full_meta(email, force_refresh)
+
+    cached = _read_meta_cache(email, scope, force_refresh)
+    if cached is not None:
+        return cached
+    full_payload = await _fetch_full_meta(email, force_refresh)
+    wanted = set(views or [])
+    payload = {
+        **full_payload,
+        "cubes": [
+            dict(c) for c in full_payload.get("cubes", []) if c.get("name") in wanted
+        ],
+    }
+    _write_meta_cache(email, scope, payload)
+    return payload
+
+
 @mcp.tool()
 async def meta(
     ctx: Context,
     views: list[str] | None = None,
     force_refresh: bool = False,
+    session_id: str | None = None,
 ) -> dict[str, Any]:
     """Discover available KIPP TEAM & Family data: students, attendance, grades,
     assessments, enrollment, demographics, staff, schools, regions, terms.
@@ -413,34 +741,30 @@ async def meta(
     (not an error) — see the `load` tool's grain rule before dropping a
     dimension.
 
+    Session: every cube response carries a `session_id`. Pass it back as
+    `session_id` on every later cube call in this conversation.
+
     Cached per (email, requested scope) for one hour (in-memory, with disk
     fallback across process restarts) — a filtered call never reads or writes
     the full-catalog cache entry, or another view-set's, though it does reuse
     the full catalog's cached fetch to build its filtered result. Pass
     `force_refresh=True` after a model deploy.
     """
-    email = await _get_user_email(ctx)
-    scope = _meta_scope_key(views)
-    if scope == "all":
-        return await _fetch_full_meta(email, force_refresh)
-
-    cached = _read_meta_cache(email, scope, force_refresh)
-    if cached is not None:
-        return cached
-    full_payload = await _fetch_full_meta(email, force_refresh)
-    wanted = set(views or [])
-    payload = {
-        **full_payload,
-        "cubes": [
-            dict(c) for c in full_payload.get("cubes", []) if c.get("name") in wanted
-        ],
-    }
-    _write_meta_cache(email, scope, payload)
-    return payload
+    async with _recorded(ctx, "meta", session_id=session_id, views=views) as record:
+        record.email = await _get_user_email(ctx)
+        payload = await _meta_payload(record.email, views, force_refresh)
+    # A copy: the cached payload is shared by every caller for an hour.
+    return {**payload, "session_id": record.session_id}
 
 
 @mcp.tool()
-async def load(ctx: Context, query: dict[str, Any]) -> dict[str, Any]:
+async def load(
+    ctx: Context,
+    query: dict[str, Any],
+    question: str | None = None,
+    session_id: str | None = None,
+    assumptions: str | None = None,
+) -> dict[str, Any]:
     """Answer analytics questions about KIPP TEAM & Family — student
     attendance, grades, GPA, assessments, enrollment, demographics, discipline,
     staff rosters, school and regional metrics, KPIs, year-over-year trends.
@@ -519,19 +843,37 @@ async def load(ctx: Context, query: dict[str, Any]) -> dict[str, Any]:
 
     Queries default to timezone UTC (mart dates are date-grain UTC); pass an
     explicit `timezone` only when wall-clock conversion is intended.
+
+    Every call is recorded for the data team, never with the result rows. Pass
+    `question`: the person's question, verbatim, and the same text on every
+    call made for it. If an earlier cube response in this conversation gave you
+    a `session_id`, pass it. Pass `assumptions`: the interpretive choices you
+    made turning the question into this query.
     """
-    email = await _get_user_email(ctx)
-    return await _request(
-        "POST",
-        "/load",
-        json={"query": _with_default_timezone(query)},
-        email=email,
-        poll=True,
-    )
+    sent = _with_default_timezone(query)
+    async with _recorded(
+        ctx,
+        "load",
+        session_id=session_id,
+        question=question,
+        assumptions=assumptions,
+        query=sent,
+    ) as record:
+        record.email = await _get_user_email(ctx)
+        result = await _request(
+            "POST", "/load", json={"query": sent}, email=record.email, poll=True
+        )
+        record.result = result
+    return {**result, "session_id": record.session_id}
 
 
 @mcp.tool()
-async def sql(ctx: Context, query: dict[str, Any]) -> dict[str, Any]:
+async def sql(
+    ctx: Context,
+    query: dict[str, Any],
+    question: str | None = None,
+    session_id: str | None = None,
+) -> dict[str, Any]:
     """Inspect the BigQuery SQL Cube would generate for a KIPP TEAM & Family
     analytics query, without running it. Useful for debugging query shape,
     verifying access policies, or reviewing the compiled SQL before `load`.
@@ -547,14 +889,21 @@ async def sql(ctx: Context, query: dict[str, Any]) -> dict[str, Any]:
 
     Queries default to timezone UTC (mart dates are date-grain UTC); pass an
     explicit `timezone` only when wall-clock conversion is intended.
+
+    Every call is recorded for the data team. Pass `question`: the person's
+    question, verbatim, and the same text on every call made for it. If an
+    earlier cube response in this conversation gave you a `session_id`, pass
+    it.
     """
-    email = await _get_user_email(ctx)
-    return await _request(
-        "GET",
-        "/sql",
-        params={"query": json.dumps(_with_default_timezone(query))},
-        email=email,
-    )
+    sent = _with_default_timezone(query)
+    async with _recorded(
+        ctx, "sql", session_id=session_id, question=question, query=sent
+    ) as record:
+        record.email = await _get_user_email(ctx)
+        result = await _request(
+            "GET", "/sql", params={"query": json.dumps(sent)}, email=record.email
+        )
+    return {**result, "session_id": record.session_id}
 
 
 def main() -> None:

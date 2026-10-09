@@ -827,3 +827,62 @@ Performed in the Cube Cloud UI by an admin:
    `roles/bigquery.jobUser` on the `teamster-332318` project — both for the
    warehouse data (`dim_*` / `fct_*`) and for `dim_staff_cube_access` /
    `dim_staff_reporting_chain` used for identity resolution
+
+## MCP call record
+
+The Cube MCP server writes 1 JSON line per tool call to stderr. Cloud Run ships
+it to Cloud Logging, and a log sink routes it into BigQuery. The server code and
+its field allowlist are in `src/cube/mcp/server.py` (`CALL_RECORD_FIELDS`).
+
+The sink is set up once, by someone with admin on both `teamster-mcp` and
+`teamster-332318`. Create it before the server change deploys: a sink routes
+only entries written after it exists.
+
+1. Create the dataset, with rows expiring after 730 days:
+
+   ```bash
+   bq query --project_id=teamster-332318 --use_legacy_sql=false '
+   create schema `teamster-332318.cube_mcp_logs`
+   options (
+       location = "US",
+       default_partition_expiration_days = 730,
+       description = "Cube MCP call records routed from Cloud Logging"
+   )'
+   ```
+
+2. Create the sink:
+
+   ```bash
+   gcloud logging sinks create cube-mcp-calls \
+     bigquery.googleapis.com/projects/teamster-332318/datasets/cube_mcp_logs \
+     --project=teamster-mcp \
+     --use-partitioned-tables \
+     --log-filter='resource.type="cloud_run_revision" AND resource.labels.service_name="cube-mcp" AND jsonPayload.event="cube_mcp_call"'
+   ```
+
+3. Read the sink's writer identity:
+
+   ```bash
+   gcloud logging sinks describe cube-mcp-calls --project=teamster-mcp \
+     --format='value(writerIdentity)'
+   ```
+
+4. Let it write to the dataset. Paste the whole identity from step 3; it already
+   starts with `serviceAccount:`. `bq add-iam-policy-binding` accepts only
+   tables and views, so the grant is SQL:
+
+   ```bash
+   bq query --project_id=teamster-332318 --use_legacy_sql=false '
+   grant `roles/bigquery.dataEditor`
+   on schema `teamster-332318.cube_mcp_logs`
+   to "<writer identity>"'
+   ```
+
+The first routed entry creates table `run_googleapis_com_stderr`, partitioned by
+day on `timestamp`. Each field lands under the `jsonPayload` record.
+
+!!! warning "Free text is off"
+
+    `CUBE_MCP_LOG_FREE_TEXT` is `false` in the deploy workflow, so `question`
+    and `assumptions` are logged empty. Turn it on only with People Operations
+    approval, in a PR that links it.
