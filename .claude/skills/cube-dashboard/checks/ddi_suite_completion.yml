@@ -185,6 +185,13 @@ cube_filters:
     values:
       - overall
       - not_taken
+  # rpt_tableau__ddi_dashboard drops WPP assessments (its module_type != 'WPP'
+  # filter), so Cube leaves them out beside that extract only.
+  - member: module_type
+    operator: notEquals
+    values:
+      - WPP
+    datasource: rpt_tableau__ddi_dashboard (kipptaf_tableau)
 truth_filters:
   - sql: student_number is not null
     datasource: rpt_tableau__ddi_dashboard (kipptaf_tableau)

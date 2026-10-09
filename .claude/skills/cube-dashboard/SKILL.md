@@ -142,9 +142,11 @@ def test_run() -> None:
      add `other: Other` to the group.
    - A filter, set or source filter: reproduce it in `hard_filters`,
      `cube_filters` or `truth_filters`, reading its mode (exclude, nulls,
-     context), not just the field name. Outputs show a member count, never the
-     values, which can be student names; read the values from the `.twb` only
-     for fields that are not about a person.
+     context), not just the field name. A `cube_filters` or `truth_filters`
+     entry with `datasource:` applies only beside that extract, for a filter one
+     extract's model bakes in. Outputs show a member count, never the values,
+     which can be student names; read the values from the `.twb` only for fields
+     that are not about a person.
    - An LOD: FIXED ignores every filter except context filters; translate it
      with only those inside.
    - Then list the ref under the file's `handled:` with what reproduces it.

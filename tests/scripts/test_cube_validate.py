@@ -2406,3 +2406,31 @@ def test_a_staff_dimension_is_masked_with_its_own_label(tmp_path):
     )
     keys = [c["key"] for s in grain["metrics"].values() for c in s["examples"]]
     assert keys and all(k[1] == "a teacher" for k in keys)
+
+
+def test_a_cube_filter_can_apply_to_one_extract_only(tmp_path):
+    def m(d):
+        _weekly_metric(d)
+        d["cube_filters"] = [
+            {
+                "member": "module_type",
+                "operator": "notEquals",
+                "values": ["WPP"],
+                "datasource": "rpt_weekly",
+            }
+        ]
+
+    checks = cv.load_checks(_write_variant(tmp_path, m))
+    cube = FakeCube()
+    cv.run_dashboard(
+        checks, cube, {"rpt_demo": FakeBQ(), "rpt_weekly": WeeklyBQ()}, TODAY
+    )
+    sent = [f for q in cube.queries for f in q["filters"]]
+    assert all("datasource" not in f for f in sent)
+    wpp = [
+        q
+        for q in cube.queries
+        if any(f["member"] == "demo_view.module_type" for f in q["filters"])
+    ]
+    # One query per comparable grain of the row with the weekly metric; no other.
+    assert len(wpp) == 3

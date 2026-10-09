@@ -1353,6 +1353,16 @@ def cube_key(view: str, dim: Dim) -> str:
     )
 
 
+def cube_filters_for(cube_filters, datasource: str | None) -> list[dict]:
+    """Cube filters for queries beside one extract: a filter without `datasource`
+    applies to every extract, one with it only to metrics read from that extract."""
+    return [
+        {k: v for k, v in f.items() if k != "datasource"}
+        for f in cube_filters
+        if f.get("datasource") in (None, datasource)
+    ]
+
+
 def _prefixed(view: str, f: dict) -> dict:
     """A Cube filter with its members named on the view, including inside or/and."""
     for op in ("or", "and"):
@@ -2054,7 +2064,7 @@ def _diagnose(checks, cube_load, bq, window, view, metric) -> dict:
                 dims,
                 hard,
                 window,
-                checks["cube_filters"],
+                cube_filters_for(checks["cube_filters"], metric.get("datasource")),
             )
         )
         trows = bq(
@@ -2112,7 +2122,7 @@ def scope_guard(checks, cube_load, bq, window) -> None:
             dims,
             hard,
             window,
-            checks["cube_filters"],
+            cube_filters_for(checks["cube_filters"], checks["extract"]["datasource"]),
         )
     )
     seen = {
@@ -2230,7 +2240,7 @@ def run_dashboard(
                     dims,
                     hard,
                     window,
-                    checks["cube_filters"],
+                    cube_filters_for(checks["cube_filters"], ds),
                 )
             )
             trows = truth(
