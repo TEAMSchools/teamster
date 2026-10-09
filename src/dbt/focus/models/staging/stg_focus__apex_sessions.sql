@@ -35,5 +35,5 @@ select
 
     cast(score_actual as numeric) as score_actual,
     cast(score_max as numeric) as score_max,
-    cast(percent as numeric) as percent,
+    cast(percent as numeric) as percent_score,
 from {{ source("focus", "apex_sessions") }}

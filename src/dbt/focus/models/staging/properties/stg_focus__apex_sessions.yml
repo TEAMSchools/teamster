@@ -182,7 +182,7 @@ models:
         config:
           meta:
             contains_pii: true
-      - name: percent
+      - name: percent_score
         description: >-
           Percent score on the attempt (0-100); compare to
           stg_focus__apex_band_levels min_score and max_score.
