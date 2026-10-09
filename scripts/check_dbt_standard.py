@@ -1,11 +1,11 @@
 """Check dbt models against the architecture rules in .claude/rules/dbt-architecture.md.
 
 Usage: uv run scripts/check_dbt_standard.py --project-dir src/dbt/<project>
-    [--diff <git diff -U0 file>] [--write-baseline]
+    [--diff <git diff -U0 file>] [--write-baseline] [--check-issues]
 
 Edge rules (A1, A8) run over the whole manifest against a per-project baseline
-of known violations; a baseline line must name a tracking issue and is removed
-once fixed. Changed-line rules (A3, A4, A7, A9) need --diff. A model opts out
+of known violations; a baseline line must name an open tracking issue
+(--check-issues looks each one up) and is removed once fixed. Changed-line rules (A3, A4, A7, A9) need --diff. A model opts out
 of a rule with config.meta.standard_exempt: {<rule>: <reason>}.
 """
 
@@ -14,7 +14,10 @@ import csv
 import json
 import os
 import re
+import subprocess
 import sys
+from collections import Counter
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Literal
@@ -462,6 +465,28 @@ def compare(
     return new, stale, missing
 
 
+def closed_issues(
+    baseline: dict[Key, str], is_open: Callable[[int], bool]
+) -> list[tuple[str, int]]:
+    """(issue, row count) for each baseline issue that is_open says is closed."""
+    rows = Counter(issue for issue in baseline.values() if issue)
+    return sorted(
+        (issue, n) for issue, n in rows.items() if not is_open(int(issue.lstrip("#")))
+    )
+
+
+def _gh_issue_open(number: int) -> bool:
+    # trunk-ignore(bandit/B603): hardcoded gh command, no user input
+    state = subprocess.run(
+        ["gh", "api", f"repos/{os.environ['GITHUB_REPOSITORY']}/issues/{number}"]
+        + ["--jq", ".state"],
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.strip()
+    return state == "open"
+
+
 def package_roots(project_dir: Path) -> dict[str, str]:
     """Every dbt project beside project_dir, by folder name (each folder is
     named for its package), as a path relative to the working directory: the
@@ -533,6 +558,11 @@ def main(argv: list[str] | None = None) -> int:
         "--baseline", help="default: <project-dir>/standard-baseline.tsv"
     )
     parser.add_argument("--write-baseline", action="store_true")
+    parser.add_argument(
+        "--check-issues",
+        action="store_true",
+        help="fail on a baseline issue that is closed (needs gh and GITHUB_REPOSITORY)",
+    )
     args = parser.parse_args(argv)
 
     project_dir = Path(args.project_dir)
@@ -572,7 +602,19 @@ def main(argv: list[str] | None = None) -> int:
         print(
             f"::error title=baseline::{baseline_path}: {' '.join(k)} has no tracking issue"
         )
-    failed = any(v.severity == "error" for v in [*new, *touched]) or stale or missing
+    # A closed issue leaves its rows tracked by nothing; reopen it or point the
+    # rows at an open one.
+    closed = closed_issues(baseline, _gh_issue_open) if args.check_issues else []
+    for issue, n in closed:
+        print(
+            f"::error title=baseline::{baseline_path}: {issue} is closed but {n} lines point at it"
+        )
+    failed = (
+        any(v.severity == "error" for v in [*new, *touched])
+        or stale
+        or missing
+        or closed
+    )
     return 1 if failed else 0
 
 

@@ -582,6 +582,24 @@ def test_load_baseline_skips_blank_lines(tmp_path) -> None:
     assert mod.load_baseline(f) == {("kipptaf.a", "A1", "kipptaf.p"): "#1"}
 
 
+def test_closed_issues_counts_rows_per_closed_issue() -> None:
+    baseline = {
+        ("kipptaf.a", "A1", "kipptaf.p"): "#1",
+        ("kipptaf.b", "A1", "kipptaf.p"): "#1",
+        ("kipptaf.c", "A1", "kipptaf.p"): "#2",
+        ("kipptaf.d", "A8", "kipptaf.p"): "",
+    }
+    asked = []
+
+    def is_open(n: int) -> bool:
+        asked.append(n)
+        return n != 1
+
+    assert mod.closed_issues(baseline, is_open) == [("#1", 2)]
+    # one lookup per issue; a row with no issue is compare()'s to report
+    assert sorted(asked) == [1, 2]
+
+
 DIFF = """diff --git a/src/dbt/kipptaf/models/a.sql b/src/dbt/kipptaf/models/a.sql
 index 1..2 100644
 --- a/src/dbt/kipptaf/models/a.sql
