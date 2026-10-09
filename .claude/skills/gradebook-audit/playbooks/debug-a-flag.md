@@ -17,6 +17,21 @@ Send the teacher
 **Students**, then **Show Dropped**, select the student, and score or exempt
 each blank due before the exit date.
 
+## A score that breaks a scoring rule
+
+When a category reads _Invalid scores entered_ and every score is filled in, at
+least one score breaks a scoring rule, and the dashboard does not say which.
+Query `int_powerschool__gradebook_assignment_scores_rollup` for the flagged
+`assignmentid` and `_dbt_source_project`. Each `n_*` count summed into
+`flags_sum` is one rule, and the nonzero ones name the cause. A nonzero
+`n_expected_null` is a blank: go back to the section above.
+
+Reply with the rule as the grading-policy checklist words it (linked under
+_Configurable thresholds_ in
+[`../references/data-model.md`](../references/data-model.md)), plus a count per
+section from `int_powerschool__gradebook_assignments_scores`, so the teacher
+knows how many scores to change.
+
 ## A flag that isn't firing
 
 First establish which flag: `has_grade_above_100` /
