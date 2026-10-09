@@ -12,8 +12,10 @@ Runbook: .claude/skills/cube-dashboard/SKILL.md.
 
 from __future__ import annotations
 
+import itertools
 import re
 from dataclasses import dataclass
+from pathlib import Path
 
 import defusedxml.ElementTree as SafeET
 
@@ -276,3 +278,89 @@ def views_to_hide(twb_text: str, keep: set[str]) -> list[str]:
         if w.get("class") in ("worksheet", "dashboard") and w.get("hidden") != "true"
     ]
     return sorted(n for n in publishable if n not in keep)
+
+
+EXTRACT = '"Extract"."Extract"'
+BLANK_KEY = "∅"
+
+
+class Hyper:
+    """Read-only SQL over one .hyper file; use as a context manager."""
+
+    def __init__(self, path: Path):
+        self.path = Path(path)
+
+    def __enter__(self):
+        # trunk-ignore(pyright/reportMissingImports): added per run with uv run --with
+        from tableauhyperapi import Connection, HyperProcess, Telemetry
+
+        self._hp = HyperProcess(Telemetry.DO_NOT_SEND_USAGE_DATA_TO_TABLEAU)
+        self._con = Connection(self._hp.endpoint, str(self.path))
+        return self
+
+    def __exit__(self, *exc):
+        self._con.close()
+        self._hp.close()
+
+    def query(self, sql: str) -> list[tuple]:
+        with self._con.execute_query(sql) as result:
+            return [tuple(r) for r in result]
+
+    def columns(self) -> list[str]:
+        # trunk-ignore(pyright/reportMissingImports): added per run with uv run --with
+        from tableauhyperapi import TableName
+
+        d = self._con.catalog.get_table_definition(TableName("Extract", "Extract"))
+        return [c.name.unescaped for c in d.columns]
+
+
+def _from(where: str | None) -> str:
+    return EXTRACT + (f" where {where}" if where else "")
+
+
+def _key(field: str) -> str:
+    return f"coalesce(cast(\"{field}\" as text), '{BLANK_KEY}')"
+
+
+def profile(hyper, fields, student="student_number", where=None):
+    """Each field's values with their distinct students, largest first."""
+    out = {}
+    for f in fields:
+        rows = hyper.query(
+            f'select cast("{f}" as text), count(distinct "{student}") '
+            f"from {_from(where)} group by 1 order by 2 desc, 1"
+        )
+        out[f] = [(v, int(n)) for v, n in rows]
+    return out
+
+
+def nesting(hyper, fields, where=None):
+    """How well each finer field predicts each coarser one (Goodman-Kruskal lambda).
+
+    Blank counts as a value. Lambda corrects for a lopsided parent: a parent with
+    one dominant value is predicted well by anything, which is not nesting.
+    """
+    t = _from(where)
+    n = hyper.query(f"select count(*) from {t}")[0][0]
+    distinct = {
+        f: int(hyper.query(f"select count(distinct {_key(f)}) from {t}")[0][0])
+        for f in fields
+    }
+    base = {
+        f: hyper.query(
+            f"select max(c) from (select count(*) c from {t} group by {_key(f)}) x"
+        )[0][0]
+        / n
+        for f in fields
+    }
+    scores = {}
+    for child, parent in itertools.permutations(fields, 2):
+        if distinct[child] <= distinct[parent] or base[parent] >= 1:
+            continue
+        hit = hyper.query(
+            "select sum(m) from (select max(c) m from (select "
+            f"{_key(child)} ch, {_key(parent)} pa, count(*) c from {t} "
+            "group by 1, 2) x group by ch) y"
+        )[0][0]
+        scores[(child, parent)] = (hit / n - base[parent]) / (1 - base[parent])
+    return scores, distinct

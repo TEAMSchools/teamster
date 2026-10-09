@@ -129,3 +129,107 @@ def test_views_to_hide_keeps_only_the_named_views():
         out, {"Overview", "Overview - Table", "Overview - Detail"}
     )
     assert hide == ["Scratch Sheet"]
+
+
+def make_hyper(path, columns, rows):
+    """A synthetic .hyper with one table, "Extract"."Extract"."""
+    hapi = pytest.importorskip("tableauhyperapi")
+    types = {
+        "text": hapi.SqlType.text(),
+        "int": hapi.SqlType.int(),
+        "double": hapi.SqlType.double(),
+    }
+    table = hapi.TableDefinition(
+        hapi.TableName("Extract", "Extract"),
+        [hapi.TableDefinition.Column(n, types[t], hapi.NULLABLE) for n, t in columns],
+    )
+    with hapi.HyperProcess(hapi.Telemetry.DO_NOT_SEND_USAGE_DATA_TO_TABLEAU) as hp:
+        with hapi.Connection(
+            hp.endpoint, str(path), hapi.CreateMode.CREATE_AND_REPLACE
+        ) as c:
+            c.catalog.create_schema("Extract")
+            c.catalog.create_table(table)
+            with hapi.Inserter(c, table) as ins:
+                ins.add_rows(rows)
+                ins.execute()
+    return path
+
+
+COLUMNS = [
+    ("student_number", "int"),
+    ("academic_year", "int"),
+    ("region", "text"),
+    ("school", "text"),
+    ("grade_level", "int"),
+    ("homeroom", "text"),
+    ("iep_status", "text"),
+    ("is_flag", "text"),
+]
+
+
+def demo_rows():
+    """2 regions, 2 schools each, grades 5 and 6, 1 homeroom per school-grade."""
+    rows, sid = [], 0
+    for region, schools in (
+        ("North", ("Alpha", "Beta")),
+        ("South", ("Gamma", "Delta")),
+    ):
+        for school in schools:
+            for grade in (5, 6):
+                for i in range(12):
+                    sid += 1
+                    iep = "Has IEP" if i % 4 == 0 else "No IEP"
+                    flag = "Yes" if i == 0 else None
+                    rows.append(
+                        (
+                            sid,
+                            2026,
+                            region,
+                            school,
+                            grade,
+                            f"{school}-{grade}",
+                            iep,
+                            flag,
+                        )
+                    )
+    return rows
+
+
+@pytest.fixture
+def demo_hyper(tmp_path):
+    return make_hyper(tmp_path / "demo.hyper", COLUMNS, demo_rows())
+
+
+def test_profile_counts_distinct_students_and_keeps_blank(demo_hyper):
+    with snap.Hyper(demo_hyper) as h:
+        prof = snap.profile(h, ["region", "is_flag"])
+    assert prof["region"] == [("North", 48), ("South", 48)]
+    assert (None, 88) in prof["is_flag"] and ("Yes", 8) in prof["is_flag"]
+
+
+def test_profile_where_limits_rows(demo_hyper):
+    with snap.Hyper(demo_hyper) as h:
+        prof = snap.profile(h, ["school"], where="\"region\" = 'North'")
+    assert sorted(v for v, _ in prof["school"]) == ["Alpha", "Beta"]
+
+
+def test_nesting_finds_school_inside_region_and_grade_crossing_school(demo_hyper):
+    fields = ["region", "school", "grade_level", "homeroom", "iep_status"]
+    with snap.Hyper(demo_hyper) as h:
+        scores, distinct = snap.nesting(h, fields)
+    assert scores[("school", "region")] == pytest.approx(1.0)
+    assert scores[("homeroom", "school")] == pytest.approx(1.0)
+    assert scores[("homeroom", "grade_level")] == pytest.approx(1.0)
+    # grade has fewer values than school, so it is never scored as school's child,
+    # and school does not predict grade: they cross.
+    assert ("grade_level", "school") not in scores
+    assert scores[("school", "grade_level")] == pytest.approx(0.0)
+    assert distinct["homeroom"] == 8
+
+
+def test_nesting_scores_a_lopsided_parent_as_zero_not_one(demo_hyper):
+    # is_flag is blank on 11 of 12 rows: "school predicts is_flag" must not
+    # score near 1 just because blank is the majority everywhere.
+    with snap.Hyper(demo_hyper) as h:
+        scores, _ = snap.nesting(h, ["school", "is_flag"])
+    assert scores[("school", "is_flag")] == pytest.approx(0.0)
