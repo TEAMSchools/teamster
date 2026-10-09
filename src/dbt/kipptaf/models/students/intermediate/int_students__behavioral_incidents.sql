@@ -1,3 +1,4 @@
+-- trunk-ignore(sqlfluff/AM04): union_relations resolves columns at run time
 select i.*, loc.location_key,
 from {{ ref("int_deanslist__incidents") }} as i
 left join
