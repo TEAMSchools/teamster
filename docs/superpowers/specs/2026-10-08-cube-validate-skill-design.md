@@ -676,3 +676,25 @@ the fix goes to. Every explained mismatch gets a GitHub issue either way.
   the user, who may flip `fix`.
 - `sync.py`: `fix_cube` gets the `mismatch` tag; a `pass` with an open dashboard
   issue gets `matched` like any pass.
+
+### Amended 2026-10-09: an undecided fix goes to the domain owner
+
+Settled with the user after the revision above:
+
+- `fix` may also be `undecided`, for when the user is unsure at approval. Its
+  row verdict is `undecided` (between `fix_cube` and `missing_member`), tagged
+  `mismatch` and never ticked.
+- An undecided mismatch's draft goes to the domain owner with all the evidence:
+  both formulas as a runnable query, the cells each explains, the rows and the
+  related issues. It asks them to choose with the label `fix-cube` or
+  `fix-dashboard`, or a comment that starts with the word.
+- The owner's issue becomes the fix ticket: on their answer the skill sets
+  `fix`, relabels the issue (`cube`, or `tableau`/`dbt`), and the user reassigns
+  it to the cube builder or the dashboard maintainer.
+- A `fix: dashboard` mismatch lets Cube's rows pass at once (Cube is right),
+  while the dashboard's issue stays open.
+- Nothing else waits on an undecided mismatch: each row has its own verdict.
+- A follow-up entry point ("follow up on <dashboard>") reads every filed issue
+  for the dashboard (answers, closed issues, comments saying the other side is
+  wrong), updates the entries, reruns only the rows those issues touch
+  (`--rows`), and hands off to `sync.py`. Scheduling it weekly is #5842.

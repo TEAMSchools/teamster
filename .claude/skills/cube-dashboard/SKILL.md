@@ -22,33 +22,36 @@ that is the case this exists to catch (#5692).
 
 Verdicts, strongest first: `fail` (a gap nothing explains), `incomplete` (a
 grain errored, or a Tableau construct on the row's sheets is unaccounted),
-`cube_issue` (every gap is explained, and at least one by Cube's own formula),
-`truth_issue` (every gap is explained, and at least one by a dashboard, model or
-source problem the domain owner has not ruled on), `missing_member` (every gap
-is explained by a member Cube lacks), `pass`. Each comment lists the missing
-Cube members, the cube issues and the truth issues, with the cells they explain.
+`fix_cube` (every gap is explained, at least one by a mismatch Cube must fix),
+`undecided` (every gap is explained, at least one by a mismatch whose fix the
+domain owner is deciding), `missing_member` (every gap is explained by a member
+Cube lacks), `pass`. Each comment lists the missing members and the explained
+mismatches, with who fixes each and the cells they explain.
 
-## Truth issue or cube issue?
+## Who fixes a mismatch
 
-Both rest on the same evidence: a second formula that reproduces Cube's numbers
-over the extract. The label is a judgment about which formula is the intended
-definition.
+An explained mismatch is a second formula that reproduces Cube's numbers over
+the extract. Every one gets a GitHub issue; its `fix:` says who the issue is
+for. The user sets `fix:` when approving the entry, before the run.
 
-|                 | Truth issue                                      | Cube issue                              |
-| --------------- | ------------------------------------------------ | --------------------------------------- |
-| Who is wrong    | The dashboard, its `rpt_` model or the source    | Cube's measure definition               |
-| The variant SQL | The dashboard's calculation, corrected           | Cube's formula, copied over the extract |
-| Asana tag       | `needs-review`                                   | `mismatch`                              |
-| Who decides     | The domain owner: `cube-correct` or `cube-wrong` | No ruling: the fix is in Cube           |
-| Done when       | The owner rules, or the dashboard is fixed       | Cube is fixed and the next run passes   |
+| `fix:`      | Means                                                | Issue goes to            | Row                            |
+| ----------- | ---------------------------------------------------- | ------------------------ | ------------------------------ |
+| `cube`      | The dashboard is right; Cube's formula is not        | The cube builder         | `fix_cube`, tagged `mismatch`  |
+| `dashboard` | Cube is right; the dashboard, model or source is not | The dashboard maintainer | Its cells count as matches     |
+| `undecided` | The user cannot tell which is intended               | The domain owner         | `undecided`, tagged `mismatch` |
 
 Pick by what is intended:
 
-- The dashboard's formula is plainly broken (DDI's % Completion reads 100%
-  everywhere): truth issue.
 - The dashboard is the agreed definition and Cube drifted from it (Cube counts
-  rows where the dashboard counts students): cube issue.
-- You cannot tell which is intended: truth issue, so the owner decides.
+  rows where the dashboard counts students): `cube`.
+- The dashboard's formula is plainly broken (DDI's % Completion reads 100%
+  everywhere): `dashboard`. Add `where: rpt` or `where: source` when the fix is
+  in the model or the source, not the workbook.
+- You cannot tell: `undecided`. The owner answers with the label `fix-cube` or
+  `fix-dashboard` (or a comment starting with the word), and their issue becomes
+  the fix ticket.
+
+Nothing else waits on an undecided mismatch: every row has its own verdict.
 
 ## Validate a dashboard
 
@@ -57,18 +60,16 @@ Pick by what is intended:
 2. Checks. Open `checks/<dashboard>.yml`. For any done row with no entry, author
    one (below). Show new or changed entries to the user and wait for approval
    before running.
-3. Rulings. For every `truth_issues:` entry with `issue:`, ruled or not, read
-   the issue with `mcp__github__issue_read` (`get`, then `get_labels`). A closed
-   issue gets `closed_on: <date closed>`, so a fixed one shows as stale. On an
-   entry with no `ruling:`, a `cube-correct` or `cube-wrong` label, or a comment
-   (`get_comments`) whose first word is one of them, becomes
-   `ruling: {call, by: <the commenter, else the assignee login, else "unassigned">, on: <today>, note: <first line of the latest comment>}`.
-   Owners without permission to label use the comment. Keep a ruling already in
-   the file; if a label contradicts it, tell the user instead of changing it.
-   Every `cube_issues:` entry with `issue:` gets `closed_on` the same way; also
-   read its comments (`get_comments`). If one says the dashboard is the one that
-   is wrong, tell the user and offer to move the entry to `truth_issues:` with a
-   `where`; until they agree it stays a cube issue. Commit the checks file.
+3. Follow-up reads. For every `mismatches:` entry with `issue:`, read the issue
+   with `mcp__github__issue_read` (`get`, `get_labels`, `get_comments`). A
+   closed issue gets `closed_on: <date closed>`, so a fixed one shows as stale.
+   On an `undecided` entry, a `fix-cube` or `fix-dashboard` label, or a comment
+   whose first word is one of them, sets `fix:` to match; relabel the issue for
+   its new side (`cube`, or `tableau`/`dbt`) with `mcp__github__issue_write` (it
+   replaces the label set, so pass the whole list) and tell the user to reassign
+   it to the cube builder or the dashboard maintainer. A comment on any issue
+   saying the other side is wrong goes to the user, who may flip `fix:`. Commit
+   the checks file.
 4. Run. Write `tests/test_zz_cube_dashboard_run.py` (template below), run
    `uv run pytest tests/test_zz_cube_dashboard_run.py -s -q --tb=short`, then
    delete it. The run downloads the workbook with its extracts and compares Cube
@@ -87,16 +88,15 @@ Pick by what is intended:
    comparing.
 6. Review. Walk the user through
    `~/asana-sync/validation/<date>-<dashboard>-fixes.md`, the fix digest. "Fix
-   in Cube" comes first: each cube issue with the cells it explains, the
-   dashboard's formula and Cube's, and its draft or issue number. "Dashboard,
-   model or source issues" follows: each truth issue with the cells it explains
-   and its draft, issue number or ruling. A stale entry is closed and explains
-   nothing, so remove it. Before the user picks anything to file, search the
-   repo's issues (open and closed) with `mcp__github__search_issues` for each
-   draft and each row under "Investigate": the problem in plain words, the
-   metric, the models and the dashboard. List the matches beside each. The same
-   problem becomes the entry's `issue:` instead of a new filing; a related one
-   goes in the entry's `related:`, and the draft is rewritten with its
+   in Cube", "Fix in the dashboard" and "Waiting on the domain owner" come
+   first: each mismatch with the cells it explains, the dashboard's formula and
+   the other one, and its draft or issue number. A stale entry is closed and
+   explains nothing, so remove it. Before the user picks anything to file,
+   search the repo's issues (open and closed) with `mcp__github__search_issues`
+   for each draft and each row under "Investigate": the problem in plain words,
+   the metric, the models and the dashboard. List the matches beside each. The
+   same problem becomes the entry's `issue:` instead of a new filing; a related
+   one goes in the entry's `related:`, and the draft is rewritten with its
    `Related:` line on the next run. "Add to Cube" lists each missing member that
    explains gaps, merged across rows, with what it is, where it lives and the
    suggested edit. "Investigate" lists each row's gaps nothing explains, with
@@ -110,27 +110,27 @@ Pick by what is intended:
    task, then each row's three-line `comment` from
    `~/asana-sync/validation/<date>-<dashboard>.json` verbatim, both with
    `mcp__claude_ai_Asana__add_comment`.
-8. Issues. File no draft, truth issue or cube issue, until the related-issue
-   search in step 6 has run for it and the user has seen its matches. A draft
-   whose problem an existing issue already tracks is not filed: write that
-   number into the entry's `issue:` and comment on the existing issue with the
-   new evidence (cells, rows, run date). List each draft in
-   `~/asana-sync/validation/<date>-<dashboard>-issues/` with its title and cell
-   count; the user picks which to file. For each pick: create it with
-   `mcp__github__issue_write` (`title` and `labels` from the draft's first two
-   lines, the rest as `body`; keep only labels `mcp__github__get_label` finds),
-   check the returned title and labels, create a `#NNNN | <title>` subtask under
-   the checks file's `open_issues_task` with
+8. Issues. File no draft until the related-issue search in step 6 has run for it
+   and the user has seen its matches. A draft whose problem an existing issue
+   already tracks is not filed: write that number into the entry's `issue:` and
+   comment on the existing issue with the new evidence (cells, rows, run date).
+   List each draft in `~/asana-sync/validation/<date>-<dashboard>-issues/` with
+   its title and cell count; the user picks which to file. For each pick: create
+   it with `mcp__github__issue_write` (`title` and `labels` from the draft's
+   first two lines, the rest as `body`; keep only labels
+   `mcp__github__get_label` finds), check the returned title and labels, create
+   a `#NNNN | <title>` subtask under the checks file's `open_issues_task` with
    `mcp__claude_ai_Asana__create_tasks` (`parent` set, unassigned), and write
    `issue: <number>` into the entry. Commit the checks file. The user assigns
-   each issue to the domain owner.
+   each issue by its `fix:`: the cube builder, the dashboard maintainer, or (for
+   `undecided`) the domain owner.
 9. Tags. Tell the user to run `~/asana-sync/sync.py` (preview, then `--apply`).
    It reads `latest.json` and gives every row exactly one validation tag: `pass`
-   → `matched`; `fail`, `cube_issue` or `missing_member` → `mismatch` (a
-   `missing_member` row also becomes `cube-partial`); `truth_issue` →
-   `needs-review`; `incomplete` or never run → `unvalidated`. It ticks a row
-   only when it is both `cube-covered` and `matched`, and unticks every other
-   done row. The skill never changes tags or ticks itself.
+   → `matched`; `fail`, `fix_cube`, `undecided` or `missing_member` → `mismatch`
+   (a `missing_member` row also becomes `cube-partial`); `incomplete` or never
+   run → `unvalidated`. It ticks a row only when it is both `cube-covered` and
+   `matched`, and unticks every other done row. The skill never changes tags or
+   ticks itself.
 
 Run template:
 
@@ -150,6 +150,20 @@ def test_run() -> None:
     cmd += [str(CHECKS), "--as", "<network-scoped email>", *EXTRA]
     print("exit", subprocess.run(cmd, cwd=ROOT).returncode)
 ```
+
+## Follow up on a dashboard
+
+When the user says something moved ("follow up on DDI": an owner answered, a fix
+merged, an issue closed), run only what changed instead of the whole dashboard:
+
+1. Do step 3 above for the dashboard's checks file.
+2. Rerun only the rows whose mismatches changed: `--rows <gid,...>` in the run
+   template. `latest.json` updates those rows alone; every other row keeps its
+   earlier result and date.
+3. Walk the user through those rows' digest lines, file any new drafts (steps 6
+   and 8), and tell the user to run `sync.py`.
+
+A weekly automatic follow-up is #5842.
 
 ## Author a check entry
 
@@ -197,21 +211,18 @@ def test_run() -> None:
 
 6. When the formula uses a field Cube lacks (a filter on homeroom, say), list it
    under the metric's `missing_members:` and add the same SQL without it as
-   `sql_without` (or `num_without`/`den_without`). When the dashboard's
-   calculation, its `rpt_` model or the source is what is wrong, describe the
-   problem under the file's `truth_issues:` (`title` as a conventional-commit
-   issue title, `what`, `where`: `dashboard`, `rpt` or `source`, optional
-   `evidence` and `labels`) and give the metric a `variants:` entry with the
-   corrected SQL and `explains: [<slug>]`. A variant may explain a member and a
-   truth issue together. A cell Cube matches only through a variant is explained
-   by the names in its `explains`, not reported as a bug. When Cube's own
-   formula is what differs (it counts rows where the dashboard counts students,
-   say), describe it under `cube_issues:` (`title`, `what`, optional `evidence`,
-   `labels`, `related`) and give the metric a variant whose SQL copies Cube's
-   definition over the extract, with `explains: [<slug>]`. A slug names one
-   thing only: a truth issue, a cube issue or a missing member. Set the file's
-   `open_issues_task:` to the domain's Open Issues task gid (Assessments:
-   `1219086050133309`).
+   `sql_without` (or `num_without`/`den_without`). When a second formula
+   reproduces Cube's numbers (a corrected dashboard formula, or Cube's own
+   definition copied over the extract), describe the gap under the file's
+   `mismatches:`: `title` as a conventional-commit issue title, `what`, `fix`
+   (`cube`, `dashboard` or `undecided`; see "Who fixes a mismatch"), and for a
+   dashboard fix an optional `where` (`tableau`, the default, `rpt` or
+   `source`), plus optional `evidence`, `labels` and `related` (issue numbers).
+   Give the metric a `variants:` entry with that SQL and `explains: [<slug>]`. A
+   variant may explain a mismatch and a missing member together; a slug is never
+   both. Propose `fix:` with the evidence and let the user set it when they
+   approve the entry. Set the file's `open_issues_task:` to the domain's Open
+   Issues task gid (Assessments: `1219086050133309`).
 7. `count` for sums and distinct counts, `rate` with `num`/`den` for shares
    (within 0.1 point), `average` with `num`/`den` for a mean in its own units,
    such as a scale score (within 0.1 unit). Give a metric
