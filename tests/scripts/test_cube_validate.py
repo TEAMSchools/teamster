@@ -2393,3 +2393,16 @@ def test_total_line_names_the_truth_issue_that_explains_it():
         "- Total differs, explained by completion_always_100: Cube 80.0%, "
         "Tableau 100.0%."
     )
+
+
+def test_a_staff_dimension_is_masked_with_its_own_label(tmp_path):
+    def m(d):
+        _add_truth_issue(d)
+        d["dimensions"]["school"]["person"] = "a teacher"
+
+    _, result = _truth_run(tmp_path, m)
+    grain = next(
+        g for g in result["rows"]["1"]["grains"] if g["grain"] == ["region", "school"]
+    )
+    keys = [c["key"] for s in grain["metrics"].values() for c in s["examples"]]
+    assert keys and all(k[1] == "a teacher" for k in keys)

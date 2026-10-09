@@ -81,6 +81,7 @@ dimensions:
   teacher:
     cube: staff_lead_teacher_full_name
     sql: teacher_name
+    person: a teacher
     sql_by_datasource:
       rpt_tableau__ddi_dashboard (kipptaf_tableau): course_teacher_name
   iep:
@@ -133,6 +134,7 @@ dimensions:
   head_of_school:
     cube: null
     sql: head_of_school
+    person: a school leader
   scope:
     cube: null
     sql: scope

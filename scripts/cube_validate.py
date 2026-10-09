@@ -906,8 +906,9 @@ class Dim:
     tableau_only: bool = False  # a dashboard control, not data: never a missing member
     # A Tableau group: relabel (codes rolled into buckets) or rule (a definition).
     group_kind: str | None = None
-    # Identifies a person (a student id or name): outputs never show its values.
-    person: bool = False
+    # Identifies a person: outputs show this in place of its values. True means a
+    # student ("a student"); a string names someone else ("a teacher").
+    person: bool | str = False
     # The same field under another column name in another extract: (datasource, sql).
     sql_by_datasource: tuple[tuple[str, str], ...] = ()
 
@@ -977,7 +978,9 @@ def load_checks(path) -> dict:
             d.get("granularity"),
             bool(d.get("tableau_only")),
             d.get("kind") if ("group" in d or "bin" in d) else None,
-            bool(d.get("person")),
+            d.get("person")
+            if isinstance(d.get("person"), str)
+            else bool(d.get("person")),
             tuple(sorted((d.get("sql_by_datasource") or {}).items())),
         )
         for n, d in data["dimensions"].items()
@@ -2272,14 +2275,15 @@ def run_dashboard(
                     accepted,
                     open_issues,
                 )
-            # A cell keyed by a person (a per-student grain) never names them.
-            person = {i for i, d in enumerate(grain) if d.person}
+            # A cell keyed by a person (a student or a teacher) never names them.
+            person = {
+                i: d.person if isinstance(d.person, str) else "a student"
+                for i, d in enumerate(grain)
+                if d.person
+            }
             for s_ in summaries.values() if person else []:
                 for c in [*s_["worst"], *s_["examples"]]:
-                    c["key"] = [
-                        "a student" if i in person else k
-                        for i, k in enumerate(c["key"])
-                    ]
+                    c["key"] = [person.get(i, k) for i, k in enumerate(c["key"])]
             return preaggs, summaries
 
         summaries, errors, preaggs = {}, {}, set()
@@ -3021,9 +3025,11 @@ def issue_drafts(result, checks) -> dict[str, dict]:
             "",
             "## How to answer",
             "",
-            "Add one label. `cube-correct` means the dashboard is wrong and Cube's "
-            "number is right. `cube-wrong` means the dashboard is right and Cube "
-            "must change. If you fix the dashboard or the model instead, close this "
+            "Add one label from the Labels menu on the right of this issue, or, "
+            "if you cannot add labels, write a comment that starts with the word. "
+            "`cube-correct` means the dashboard is wrong and Cube's number is "
+            "right. `cube-wrong` means the dashboard is right and Cube must "
+            "change. If you fix the dashboard or the model instead, close this "
             "issue; the next validation run checks the fix.",
             "",
             "<details>",

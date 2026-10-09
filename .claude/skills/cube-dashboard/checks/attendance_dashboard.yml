@@ -52,9 +52,18 @@ dimensions:
       Historical' end
   # No Cube member: grains using these are reported as not comparable.
   homeroom:
-    { cube: null, sql: "if(school_level = 'HS', teacher_name, section_number)" }
+    {
+      cube: null,
+      sql: "if(school_level = 'HS', teacher_name, section_number)",
+      person: a teacher or section,
+    }
   # 415 of 419 dashboard advisor names match dim_staff.full_name exactly (2026-10-08).
-  teacher_name: { cube: staff_homeroom_teacher_full_name, sql: teacher_name }
+  teacher_name:
+    {
+      cube: staff_homeroom_teacher_full_name,
+      sql: teacher_name,
+      person: a teacher,
+    }
   team: { cube: null, sql: team }
   # The PowerSchool school id: the same cut as school, so never compared on its own.
   schoolid: { cube: null, sql: schoolid, tableau_only: true }

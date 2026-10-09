@@ -37,10 +37,12 @@ Cube members and the truth issues, with the cells they explain.
 3. Rulings. For every `truth_issues:` entry with `issue:`, ruled or not, read
    the issue with `mcp__github__issue_read` (`get`, then `get_labels`). A closed
    issue gets `closed_on: <date closed>`, so a fixed one shows as stale. On an
-   entry with no `ruling:`, a `cube-correct` or `cube-wrong` label becomes
-   `ruling: {call, by: <assignee login, or "unassigned">, on: <today>, note: <first line of the latest comment>}`.
-   Keep a ruling already in the file; if a label contradicts it, tell the user
-   instead of changing it. Commit the checks file.
+   entry with no `ruling:`, a `cube-correct` or `cube-wrong` label, or a comment
+   (`get_comments`) whose first word is one of them, becomes
+   `ruling: {call, by: <the commenter, else the assignee login, else "unassigned">, on: <today>, note: <first line of the latest comment>}`.
+   Owners without permission to label use the comment. Keep a ruling already in
+   the file; if a label contradicts it, tell the user instead of changing it.
+   Commit the checks file.
 4. Run. Write `tests/test_zz_cube_dashboard_run.py` (template below), run
    `uv run pytest tests/test_zz_cube_dashboard_run.py -s -q --tb=short`, then
    delete it. The run downloads the workbook with its extracts and compares Cube
@@ -189,6 +191,9 @@ def test_run() -> None:
 
 - Aggregates only. Never put student names or ids in a comment, the report, or
   chat. Comments already hide cells under 10 students.
+- Mark every dimension whose values name a person: `person: true` for a student
+  ("a student" in outputs), `person: a teacher` or another label for staff.
+  Every output, issue drafts included, shows the label instead of the value.
 - Render only tabs that show aggregates. A roster tab (one row per student)
   renders student names into the session; list it under `renders:` never.
 - Never mark a construct handled that the check does not reproduce. A wrong
