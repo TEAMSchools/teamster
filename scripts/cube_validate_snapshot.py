@@ -338,6 +338,7 @@ def profile(hyper, fields, student="student_number", where=None):
     out = {}
     for f in fields:
         rows = hyper.query(
+            # trunk-ignore(bandit/B608): SQL over a local extract; names come from the workbook, not user input
             f'select cast("{f}" as text), count(distinct "{student}") '
             f"from {_from(where)} group by 1 order by 2 desc, 1"
         )
@@ -352,13 +353,16 @@ def nesting(hyper, fields, where=None):
     one dominant value is predicted well by anything, which is not nesting.
     """
     t = _from(where)
+    # trunk-ignore(bandit/B608): SQL over a local extract; names come from the workbook, not user input
     n = hyper.query(f"select count(*) from {t}")[0][0]
     distinct = {
+        # trunk-ignore(bandit/B608): SQL over a local extract; names come from the workbook, not user input
         f: int(hyper.query(f"select count(distinct {_key(f)}) from {t}")[0][0])
         for f in fields
     }
     base = {
         f: hyper.query(
+            # trunk-ignore(bandit/B608): SQL over a local extract; names come from the workbook, not user input
             f"select max(c) from (select count(*) c from {t} group by {_key(f)}) x"
         )[0][0]
         / n
@@ -369,6 +373,7 @@ def nesting(hyper, fields, where=None):
         if distinct[child] <= distinct[parent] or base[parent] >= 1:
             continue
         hit = hyper.query(
+            # trunk-ignore(bandit/B608): SQL over a local extract; names come from the workbook, not user input
             "select sum(m) from (select max(c) m from (select "
             f"{_key(child)} ch, {_key(parent)} pa, count(*) c from {t} "
             "group by 1, 2) x group by ch) y"
@@ -398,7 +403,9 @@ def _below(f: str, children: dict[str, set[str]]) -> set[str]:
     return out
 
 
-def derive_trees(fields, scores, distinct, accept=frozenset()) -> Trees:
+def derive_trees(
+    fields, scores, distinct, accept: set | frozenset = frozenset()
+) -> Trees:
     edges = {(c, p) for (c, p), s in scores.items() if s >= NEST} | set(accept)
     borderline = sorted(
         (
@@ -754,7 +761,7 @@ class Session:
                 f"{project_luid} is not an agreed non-production project"
             )
         self.server, self.project, self.now = server, project_luid, now
-        self._views: dict[str, object] = {}
+        self._views: dict = {}
 
     def sweep(self) -> list[str]:
         """Delete review copies older than STALE_COPY: leftovers of failed sessions."""
@@ -821,6 +828,7 @@ class Session:
 
 
 def _run(args: list[str]) -> None:
+    # trunk-ignore(bandit/B603,bandit/B607): fixed repo scripts run through uv, no shell
     r = subprocess.run(  # noqa: S603 - fixed repo scripts, no shell
         ["uv", "run", "python", *args], capture_output=True, text=True, check=False
     )
@@ -966,6 +974,7 @@ def _profiles_for(wb, extracts, snapdir, where_year=True):
             fields = [f for f in fields if f in cols]
             where = None
             if where_year and YEAR_FIELD in cols:
+                # trunk-ignore(bandit/B608): SQL over a local extract; names come from the workbook, not user input
                 where = f'"{YEAR_FIELD}" = (select max("{YEAR_FIELD}") from {EXTRACT})'
             profiles[ds] = profile(h, fields)
             scores[ds] = nesting(h, [f for f in fields if f != YEAR_FIELD], where)
@@ -1040,7 +1049,7 @@ def _download(luid: str, out_dir: Path) -> tuple[Path, str]:
             path = server.workbooks.download(
                 luid, filepath=str(out_dir / "live"), include_extract=True
             )
-        return Path(path), at.isoformat()
+        return Path(path), at.isoformat() if at else ""
 
     return retry(fetch)
 
@@ -1079,9 +1088,8 @@ def _open(a) -> int:
     with server.auth.sign_in(auth):
         session = Session(server, checks["review_project_luid"])
         print("swept:", session.sweep() or "nothing")
-        live_at = server.workbooks.get_by_id(
-            checks["workbook_luid"]
-        ).updated_at.isoformat()
+        live_updated = server.workbooks.get_by_id(checks["workbook_luid"]).updated_at
+        live_at = live_updated.isoformat() if live_updated else ""
         live = Path(
             server.workbooks.download(
                 checks["workbook_luid"],
@@ -1141,6 +1149,8 @@ def _export(a) -> int:
     m = read_manifest(snapdir / "manifest.json")
     if m.closed:
         raise SessionError("this snapshot's session is closed; open a new one")
+    if not m.copy_luid:
+        raise SessionError("this snapshot has no review copy; open a new session")
     server, auth = _server()
     with server.auth.sign_in(auth):
         session = Session(server, checks["review_project_luid"])
@@ -1156,6 +1166,8 @@ def _close(a) -> int:
     checks = _load_checks(a.checks)
     snapdir = latest_snapshot(checks["workbook"])
     m = read_manifest(snapdir / "manifest.json")
+    if not m.copy_luid:
+        raise SessionError("this snapshot has no review copy; open a new session")
     server, auth = _server()
     with server.auth.sign_in(auth):
         Session(server, checks["review_project_luid"]).close(m.copy_luid)

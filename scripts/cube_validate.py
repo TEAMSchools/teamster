@@ -798,6 +798,7 @@ def child_values_sql(where, field, student="student_number") -> str:
     conds = [c for f, v in where if (c := _cond(f, v))]
     cond = " and ".join(conds) or "true"
     return (
+        # trunk-ignore(bandit/B608): SQL over the dashboard's own extract or rpt_ table; names come from the checks file
         f"select cast({field} as string) as v, count(distinct {student}) as n "
         f"from `{EXTRACT_TABLE}` where {cond} group by 1"
     )
@@ -922,6 +923,7 @@ def extract_sql(sheet, meas, grain, where) -> str:
         else [f"{meas.num} as m_num", f"{meas.den} as m_den"]
     )
     # Backticks: sqlglot quotes the name, which to_hyper_sql swaps for the extract table.
+    # trunk-ignore(bandit/B608): SQL over the dashboard's own extract or rpt_ table; names come from the checks file
     sql = f"select {', '.join(sel)} from `{EXTRACT_TABLE}`"
     if where:
         sql += " where " + " and ".join(f"({w})" for w in where)

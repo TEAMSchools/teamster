@@ -7,7 +7,6 @@ import importlib.util
 import json
 import sys
 import threading
-import time
 from pathlib import Path
 
 import pytest
@@ -686,9 +685,10 @@ def test_cell_verdict_by_who_fixes():
         "undecided": frozenset({"d"}),
     }
     meas = cv.Measure("M", "demo.m", sql="x", missing_members=["demo.extra"])
-    cell = lambda names: cv.Cell(
-        "S", "s", {}, "M", "1", 1, 2, 20, "mismatch", explained_by=names
-    )  # noqa: E731
+
+    def cell(names):
+        return cv.Cell("S", "s", {}, "M", "1", 1, 2, 20, "mismatch", explained_by=names)
+
     assert cv.cell_verdict(cell([]), sides, meas) == "fail"
     assert cv.cell_verdict(cell(["a", "b"]), sides, meas) == "fix_cube"
     assert cv.cell_verdict(cell(["c"]), sides, meas) == "fix_source"

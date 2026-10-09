@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import importlib.util
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -365,9 +367,6 @@ def test_plan_yaml_groups_by_tier():
     assert text.index("must:") < text.index("optional:") < text.index("skipped:")
 
 
-import datetime as dt
-
-
 def test_new_snapshot_dir_keeps_the_latest_two(tmp_path):
     t0 = dt.datetime(2026, 10, 9, 8, 0)
     dirs = [
@@ -433,9 +432,6 @@ def test_parent_of_drops_the_last_filter():
     assert snap.parent_of(
         snap.State("Overview", params=(("Group By", "Teacher"),))
     ) == snap.State("Overview")
-
-
-from types import SimpleNamespace
 
 
 class FakeWorkbooks:
