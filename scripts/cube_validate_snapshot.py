@@ -292,7 +292,6 @@ def views_to_hide(twb_text: str, keep: set[str]) -> list[str]:
 
 
 EXTRACT = '"Extract"."Extract"'
-BLANK_KEY = "∅"
 
 
 class Hyper:
@@ -329,10 +328,6 @@ def _from(where: str | None) -> str:
     return EXTRACT + (f" where {where}" if where else "")
 
 
-def _key(field: str) -> str:
-    return f"coalesce(cast(\"{field}\" as text), '{BLANK_KEY}')"
-
-
 def profile(hyper, fields, student="student_number", where=None):
     """Each field's values with their distinct students, largest first."""
     out = {}
@@ -349,37 +344,51 @@ def profile(hyper, fields, student="student_number", where=None):
 def nesting(hyper, fields, where=None):
     """How well each finer field predicts each coarser one (Goodman-Kruskal lambda).
 
-    Blank counts as a value. Lambda corrects for a lopsided parent: a parent with
-    one dominant value is predicted well by anything, which is not nesting.
+    Scored on the rows where both fields have a value: blank is not a level, and 2
+    fields blank on the same rows would otherwise look nested. Lambda corrects for a
+    lopsided parent: a parent with one dominant value is predicted well by anything,
+    which is not nesting.
     """
-    t = _from(where)
-    # trunk-ignore(bandit/B608): SQL over a local extract; names come from the workbook, not user input
-    n = hyper.query(f"select count(*) from {t}")[0][0]
     distinct = {
         # trunk-ignore(bandit/B608): SQL over a local extract; names come from the workbook, not user input
-        f: int(hyper.query(f"select count(distinct {_key(f)}) from {t}")[0][0])
-        for f in fields
-    }
-    base = {
-        f: hyper.query(
-            # trunk-ignore(bandit/B608): SQL over a local extract; names come from the workbook, not user input
-            f"select max(c) from (select count(*) c from {t} group by {_key(f)}) x"
-        )[0][0]
-        / n
+        f: int(hyper.query(f'select count(distinct "{f}") from {_from(where)}')[0][0])
         for f in fields
     }
     scores = {}
     for child, parent in itertools.permutations(fields, 2):
-        if distinct[child] <= distinct[parent] or base[parent] >= 1:
+        if distinct[child] <= distinct[parent] or distinct[parent] < 2:
+            continue
+        both = f'"{child}" is not null and "{parent}" is not null'
+        t = _from(f"({where}) and {both}" if where else both)
+        # trunk-ignore(bandit/B608): SQL over a local extract; names come from the workbook, not user input
+        n = hyper.query(f"select count(*) from {t}")[0][0]
+        if not n:
+            continue
+        base = (
+            hyper.query(
+                # trunk-ignore(bandit/B608): SQL over a local extract; names come from the workbook, not user input
+                f'select max(c) from (select count(*) c from {t} group by "{parent}") x'
+            )[0][0]
+            / n
+        )
+        if base >= 1:
             continue
         hit = hyper.query(
             # trunk-ignore(bandit/B608): SQL over a local extract; names come from the workbook, not user input
-            "select sum(m) from (select max(c) m from (select "
-            f"{_key(child)} ch, {_key(parent)} pa, count(*) c from {t} "
-            "group by 1, 2) x group by ch) y"
+            f'select sum(m) from (select max(c) m from (select "{child}" ch, '
+            f'"{parent}" pa, count(*) c from {t} group by 1, 2) x group by ch) y'
         )[0][0]
-        scores[(child, parent)] = (hit / n - base[parent]) / (1 - base[parent])
+        scores[(child, parent)] = (hit / n - base) / (1 - base)
     return scores, distinct
+
+
+def best_parents(scores, fields) -> dict[str, tuple[str, float]]:
+    """The strongest candidate parent for each field, to help place it in a tree."""
+    out: dict[str, tuple[str, float]] = {}
+    for (child, parent), score in scores.items():
+        if child in fields and (child not in out or score > out[child][1]):
+            out[child] = (parent, round(score, 3))
+    return out
 
 
 NEST = 0.90
@@ -455,6 +464,8 @@ def derive_trees(
 ALL = "(All)"
 BLANK = "(Blank)"
 SMALL_CELL = 10
+# A cross-cut with more values than this is sampled, not split by every value.
+CROSS_MAX = 15
 YEAR_FIELD = "academic_year"
 # Person-level filters and parameter values: never exported, never in a draft.
 PERSON_FIELD = re.compile(
@@ -575,6 +586,14 @@ def plan_states(wb, profiles, trees, years) -> list[PlanItem]:
             if c.field in roots:
                 for v in named:
                     add("must", f"top of the {c.field} tree", filters=one(v))
+            elif c.field in t.cross_cuts and len(named) > CROSS_MAX:
+                for v in _ends(prof):
+                    add(
+                        "optional",
+                        "too many values to split by each; place it in a tree, "
+                        "or keep the largest and smallest",
+                        filters=one(v),
+                    )
             elif c.field in t.cross_cuts:
                 for v in named:
                     add("must", "cross-cut", filters=one(v))
@@ -1016,6 +1035,22 @@ def _plan(a) -> int:
         "trees": {ds: t.trees for ds, t in trees.items()},
         "cross_cuts": {ds: t.cross_cuts for ds, t in trees.items()},
         "borderline": {ds: [list(b) for b in t.borderline] for ds, t in trees.items()},
+        # Cross-cuts with too many values to split by: their best parent, so the
+        # analyst can accept one into a tree (accept_nesting).
+        "unplaced": {
+            ds: {
+                f: list(bp)
+                for f, bp in best_parents(
+                    scores[ds][0],
+                    [
+                        f
+                        for f in t.cross_cuts
+                        if len([v for v, _ in profiles[ds].get(f, []) if v]) > CROSS_MAX
+                    ],
+                ).items()
+            }
+            for ds, t in trees.items()
+        },
     }
     text = yaml.safe_dump(doc, sort_keys=False, allow_unicode=True) + plan_yaml(items)
     Path(a.out or out_dir / "plan.yml").write_text(text)

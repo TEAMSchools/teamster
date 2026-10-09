@@ -166,6 +166,7 @@ COLUMNS = [
     ("homeroom", "text"),
     ("iep_status", "text"),
     ("is_flag", "text"),
+    ("tier", "text"),
 ]
 
 
@@ -182,6 +183,8 @@ def demo_rows():
                     sid += 1
                     iep = "Has IEP" if i % 4 == 0 else "No IEP"
                     flag = "Yes" if i == 0 else None
+                    # Blank on exactly the rows is_flag is blank: correlated blanks.
+                    tier = ("Tier 1" if grade == 5 else "Tier 2") if i == 0 else None
                     rows.append(
                         (
                             sid,
@@ -192,6 +195,7 @@ def demo_rows():
                             f"{school}-{grade}",
                             iep,
                             flag,
+                            tier,
                         )
                     )
     return rows
@@ -229,12 +233,20 @@ def test_nesting_finds_school_inside_region_and_grade_crossing_school(demo_hyper
     assert distinct["homeroom"] == 8
 
 
-def test_nesting_scores_a_lopsided_parent_as_zero_not_one(demo_hyper):
-    # is_flag is blank on 11 of 12 rows: "school predicts is_flag" must not
-    # score near 1 just because blank is the majority everywhere.
+def test_a_single_value_flag_is_never_a_parent(demo_hyper):
+    # is_flag is "Yes" or blank. Blank is not a value for nesting, so the flag has
+    # one value and nothing can nest inside it: it stays a cross-cut.
     with snap.Hyper(demo_hyper) as h:
         scores, _ = snap.nesting(h, ["school", "is_flag"])
-    assert scores[("school", "is_flag")] == pytest.approx(0.0)
+    assert ("school", "is_flag") not in scores
+
+
+def test_fields_blank_on_the_same_rows_do_not_nest(demo_hyper):
+    # tier is blank exactly where is_flag is. Counting blank as a value made tier
+    # look "inside" is_flag (lambda 1.0) on the DDI assessment extract.
+    with snap.Hyper(demo_hyper) as h:
+        scores, _ = snap.nesting(h, ["is_flag", "tier"])
+    assert ("tier", "is_flag") not in scores
 
 
 # Scores as measured on the DDI weekly extract (2026-10-09), rounded.
@@ -360,6 +372,32 @@ def test_person_level_values_and_links_are_skipped_not_exported():
 def test_tree_levels_below_the_top_are_left_to_the_descent():
     every = {i.state.id for i in _plan()}
     assert not any(i.startswith("overview--school-name-") for i in every)
+
+
+def test_a_cross_cut_with_many_values_is_sampled_not_split():
+    # On the DDI assessment extract, `team` (400+ homerooms) landed as a cross-cut
+    # and planned 413 must states.
+    wb = snap.read_workbook(TWB)
+    profiles = {
+        DS: {**PROFILES[DS], "school": [(f"S{i:02d}", 20 + i) for i in range(20)]}
+    }
+    trees = {DS: snap.Trees({"region": ["region"]}, ["iep_status", "school"])}
+    items = snap.plan_states(wb, profiles, trees, ("2026", "2025"))
+    school = [i for i in items if i.state.id.startswith("overview--school-name-")]
+    assert [i.tier for i in school] == ["optional", "optional"]
+    assert "too many values" in school[0].why
+    assert {"overview--iep-status-no-iep", "overview--iep-status-has-iep"} <= _ids(
+        items, "must"
+    )
+
+
+def test_best_parents_names_the_strongest_candidate_for_each_field():
+    scores = {
+        ("team", "school"): 0.7,
+        ("team", "region"): 0.5,
+        ("school", "region"): 1.0,
+    }
+    assert snap.best_parents(scores, ["team", "region"]) == {"team": ("school", 0.7)}
 
 
 def test_plan_yaml_groups_by_tier():
