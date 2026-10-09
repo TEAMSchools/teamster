@@ -2652,13 +2652,20 @@ def comment_text(row, result) -> str:
     ]
     if wrong:
         lines.append(f"Ruled cube-wrong, so Cube must change: {', '.join(wrong)}.")
+    fix = [
+        f"{slug} ({_issue_ref(t)}, {t['explains_cells']} cells)"
+        for slug, t in row.get("cube_issues", {}).items()
+        if t["explains_cells"]
+    ]
+    if fix:
+        lines.insert(1, f"Fix in Cube: {', '.join(fix)}.")
     if bad:
         n = sum(1 for g in compared if g["bad"])
         lines.append(
             f"Investigate: {bad} cells across {_plural(n, 'grain')}; details in the "
             f"{result['dashboard']} fix digest."
         )
-    elif row["verdict"] in ("missing_member", "truth_issue"):
+    elif row["verdict"] in ("missing_member", "truth_issue", "cube_issue"):
         lines.append("Nothing else to investigate.")
     elif row["verdict"] == "pass":
         lines.append("Every compared cell matches.")
@@ -2727,6 +2734,52 @@ def digest_markdown(result, checks, cube_defs) -> str:
         + ".",
         "",
     ]
+    defs_by_slug: dict[str, tuple[dict, dict]] = {}
+    for r in checks.get("rows", []):
+        for m in r["metrics"]:
+            for v in m.get("variants", []):
+                for n in v["explains"]:
+                    defs_by_slug.setdefault(n, (m, v))
+    fixes: dict[str, dict] = {}
+    for gid, row in rows.items():
+        for slug, t in row.get("cube_issues", {}).items():
+            i = fixes.setdefault(slug, {"cells": 0, "rows": [], "stale": True, **t})
+            i["cells"] += t["explains_cells"]
+            i["stale"] = i["stale"] and t["stale"]
+            if t["explains_cells"]:
+                i["rows"].append(gid)
+    shown_fix = {s: i for s, i in fixes.items() if i["cells"] or i["stale"]}
+    if shown_fix:
+        out += ["## Fix in Cube", ""]
+        stem = f"{result['run_date']}-{result['dashboard']}"
+        for slug, i in sorted(shown_fix.items(), key=lambda kv: -kv[1]["cells"]):
+            doc = (checks.get("cube_issues") or {}).get(slug, {})
+            names = ", ".join(rows[g]["name"] for g in i["rows"])
+            out.append(
+                f"### {slug}: explains {_plural(i['cells'], 'cell')} in "
+                f"{_plural(len(i['rows']), 'row')}" + (f" ({names})" if names else "")
+            )
+            if doc.get("title"):
+                out.append(f"- {doc['title']}")
+            if doc.get("what"):
+                out.append(f"- What: {doc['what']}")
+            if slug in defs_by_slug:
+                m, v = defs_by_slug[slug]
+                out.append(f"- Dashboard: {_metric_sql(m)}")
+                out.append(
+                    "- Cube, reproduced over the extract: "
+                    f"{_metric_sql({**v, 'kind': m['kind']})}"
+                )
+            if i["stale"]:
+                out.append(
+                    "- Stale: the issue is closed and explains no cell now; "
+                    "remove its entry."
+                )
+            elif i.get("issue"):
+                out.append(f"- Issue: #{i['issue']}")
+            else:
+                out.append(f"- Draft: `{stem}-issues/{slug}.md`")
+            out.append("")
     issues: dict[str, dict] = {}
     for gid, row in rows.items():
         for slug, t in row.get("truth_issues", {}).items():
@@ -2945,6 +2998,12 @@ def report_markdown(result) -> str:
                 for s, t in row["truth_issues"].items()
             ]
             out += [f"Truth issues: {', '.join(parts)}.", ""]
+        if row.get("cube_issues"):
+            parts = [
+                f"{s} ({t['explains_cells']} cells; {_issue_ref(t)})"
+                for s, t in row["cube_issues"].items()
+            ]
+            out += [f"Cube issues: {', '.join(parts)}.", ""]
         for label, key in (
             ("Unaccounted", "unaccounted"),
             ("Not checked", "not_checked"),
@@ -3155,6 +3214,9 @@ def write_outputs(result, out_dir: Path, checks=None, cube_defs=None) -> Path:
                 s
                 for s, t in row.get("truth_issues", {}).items()
                 if t["explains_cells"] and not t["ruling"]
+            ),
+            "cube_issues": sorted(
+                s for s, t in row.get("cube_issues", {}).items() if t["explains_cells"]
             ),
         }
     latest_path.write_text(json.dumps(latest, indent=2))

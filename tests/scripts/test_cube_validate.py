@@ -2520,3 +2520,29 @@ def test_an_accepted_truth_issue_does_not_hide_a_cube_issue(tmp_path):
 )
 def test_row_verdict_cube_issue(statuses, verdict):
     assert cv.row_verdict([{"status": s} for s in statuses]) == verdict
+
+
+def test_comment_says_what_to_fix_in_cube(tmp_path):
+    _, result = _truth_run(tmp_path, _add_cube_issue)
+    assert cv.comment_text(result["rows"]["1"], result).splitlines()[1:] == [
+        "Fix in Cube: rows_not_pairs (draft, 2 cells).",
+        "Nothing else to investigate.",
+    ]
+
+
+def test_digest_puts_fix_in_cube_first(tmp_path):
+    checks, result = _truth_run(tmp_path, _add_cube_issue)
+    md = cv.digest_markdown(result, checks, {})
+    assert md.index("## Fix in Cube") < md.index("## Add to Cube")
+    assert "### rows_not_pairs: explains 2 cells in 1 row (# Tardy)" in md
+    assert "- Dashboard: `sum(is_tardy)`" in md
+    assert "- Cube, reproduced over the extract: `countif(att_code = 'T')`" in md
+    assert "- Draft: `2026-10-08-demo_dashboard-issues/rows_not_pairs.md`" in md
+
+
+def test_latest_json_lists_cube_issues(tmp_path):
+    checks, result = _truth_run(tmp_path, _add_cube_issue)
+    cv.write_outputs(result, tmp_path / "out", checks, {})
+    latest = json.loads((tmp_path / "out" / "latest.json").read_text())
+    assert latest["rows"]["1"]["verdict"] == "cube_issue"
+    assert latest["rows"]["1"]["cube_issues"] == ["rows_not_pairs"]
