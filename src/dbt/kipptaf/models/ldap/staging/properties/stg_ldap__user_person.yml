@@ -9,10 +9,13 @@ models:
                 to: ref("stg_google_sheets__people__location_crosswalk")
                 field: name
               config:
+                severity: error
                 where:
-                  # for temp staff not in ADP
+                  # temp staff not in ADP. 'Other' is a non-school office with
+                  # no crosswalk row.
                   idauto_status = 'A' and uac_account_disable = 0 and
-                  employee_id like 'TMP%'
+                  employee_id like 'TMP%' and physical_delivery_office_name !=
+                  'Other'
       - name: distinguished_name
         data_type: string
       - name: user_principal_name

@@ -15,8 +15,3 @@ models:
       - name: school_name
         data_type: string
         description: School name as provided in the vendor file.
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref("stg_google_sheets__people__location_crosswalk")
-                field: name

@@ -1,5 +1,11 @@
 models:
   - name: stg_finalsite__status_report
+    config:
+      # Not a view: a test on a view runs only when its code changes, and the
+      # assigned_school relationships test below must catch a Finalsite school
+      # missing from the crosswalk sheet on every build. No package can hold it,
+      # because the crosswalk is a kipptaf model.
+      materialized: table
     columns:
       - name: assigned_school
         data_type: string
@@ -8,6 +14,8 @@ models:
               arguments:
                 to: ref("stg_google_sheets__people__location_crosswalk")
                 field: name
+              config:
+                severity: error
       - name: grade_level
         data_type: int64
         description: >-

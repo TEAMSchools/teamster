@@ -8,6 +8,8 @@ models:
               arguments:
                 to: ref("stg_google_sheets__people__location_crosswalk")
                 field: name
+              config:
+                severity: error
       - name: dl_incident_id
         data_type: int64
       - name: dl_penalty_id
