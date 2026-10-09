@@ -275,3 +275,55 @@ def test_load_checks_rows_must_name_mapped_members(tmp_path):
     bad["rows"] = {"111": ["demo.nope"]}
     with pytest.raises(cv.CheckError, match="demo.nope"):
         cv.load_checks(_write(tmp_path, bad))
+
+
+def test_read_export_keeps_repeated_columns():
+    e = cv.read_export(
+        b"\xef\xbb\xbfGrade Level,Schoolid,Schoolid,Mastery\r\n5,A,B,0.5\r\n"
+    )
+    assert e.columns == ["Grade Level", "Schoolid", "Schoolid (2)", "Mastery"]
+    assert e.rows == [
+        {"Grade Level": "5", "Schoolid": "A", "Schoolid (2)": "B", "Mastery": "0.5"}
+    ]
+
+
+def test_read_export_of_nothing_is_empty():
+    assert cv.read_export(b"") == cv.Export([], [])
+    assert cv.read_export(b"A,B\r\n") == cv.Export(["A", "B"], [])
+
+
+@pytest.mark.parametrize(
+    ("text", "round_to", "value", "decimals"),
+    [
+        ("36.24%", None, 0.3624, 4),
+        ("100%", None, 1.0, 2),
+        ("1,234", None, 1234.0, 0),
+        ("0.362381", None, 0.362381, None),
+        ("36.24", 2, 36.24, 2),
+        ("-1.5", None, -1.5, None),
+    ],
+)
+def test_parse_shown(text, round_to, value, decimals):
+    s = cv.parse_shown(text, round_to)
+    assert s.value == pytest.approx(value) and s.decimals == decimals
+
+
+@pytest.mark.parametrize("text", ["", "All", "*", "Newark", None])
+def test_parse_shown_rejects_non_numbers(text):
+    assert cv.parse_shown(text) is None
+
+
+def test_matches_shown_uses_the_shown_precision():
+    assert cv.matches_shown(0.362381, cv.parse_shown("36.24%"))
+    assert not cv.matches_shown(0.3630, cv.parse_shown("36.24%"))
+    # A raw "1" means exactly 1, never "anything that rounds to 1".
+    assert not cv.matches_shown(0.6, cv.parse_shown("1"))
+    assert cv.matches_shown(1.0000000001, cv.parse_shown("1"))
+    assert cv.matches_shown(None, None) and not cv.matches_shown(
+        None, cv.parse_shown("1")
+    )
+
+
+def test_matches_raw():
+    assert cv.matches_raw(0.8, 0.8000000001) and not cv.matches_raw(0.8, 0.81)
+    assert cv.matches_raw(None, None) and not cv.matches_raw(None, 0.0)

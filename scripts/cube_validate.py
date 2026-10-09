@@ -402,3 +402,60 @@ def load_checks(path) -> dict:
         "cube_filters": raw.get("cube_filters") or [],
         "extract_filters": raw.get("extract_filters") or [],
     }
+
+
+@dataclass
+class Export:
+    columns: list[str]
+    rows: list[dict[str, str]]
+
+
+def read_export(data: bytes) -> Export:
+    rows = list(csv.reader(io.StringIO(data.decode("utf-8-sig"))))
+    if not rows:
+        return Export([], [])
+    seen: dict[str, int] = {}
+    cols = []
+    for c in rows[0]:
+        seen[c] = seen.get(c, 0) + 1
+        cols.append(c if seen[c] == 1 else f"{c} ({seen[c]})")
+    return Export(cols, [dict(zip(cols, r, strict=False)) for r in rows[1:] if r])
+
+
+@dataclass(frozen=True)
+class Shown:
+    value: float
+    decimals: int | None  # None: a raw value, compared almost exactly
+
+
+_SHOWN = re.compile(r"^(-?)(\d{1,3}(?:,\d{3})+|\d*)(?:\.(\d+))?(%?)$")
+
+
+def parse_shown(s: str | None, round_to: int | None = None) -> Shown | None:
+    t = (s or "").strip()
+    m = _SHOWN.match(t)
+    if not t or not m or not (m.group(2) or m.group(3)):
+        return None
+    sign, whole, frac, pct = m.group(1), m.group(2), m.group(3) or "", m.group(4)
+    value = float(f"{sign}{whole.replace(',', '') or '0'}.{frac or '0'}")
+    if pct:
+        return Shown(value / 100, len(frac) + 2)
+    if "," in whole:
+        return Shown(value, len(frac))
+    return Shown(value, round_to)
+
+
+def matches_shown(cube: float | None, shown: Shown | None) -> bool:
+    if cube is None or shown is None:
+        return cube is None and shown is None
+    if shown.decimals is None:
+        return abs(cube - shown.value) <= 1e-6 * max(1.0, abs(cube))
+    return abs(cube - shown.value) <= 0.5 * 10**-shown.decimals + 1e-9 * max(
+        1.0, abs(cube)
+    )
+
+
+def matches_raw(a: float | None, b: float | None) -> bool:
+    if a is None or b is None:
+        return a is None and b is None
+    return abs(a - b) <= 1e-6 * max(1.0, abs(a), abs(b))
