@@ -1,142 +1,2842 @@
-# Validation checks for the State Testing Analysis Tool (STAT; Tableau workbook
-# 31b6a4a9-e0ca-479b-8f44-0daaa52e109b). Run with the cube-dashboard skill.
-# Every metric's SQL reproduces the Tableau formula on the dashboard's own extract.
-# Grains are the region / school / test / discipline cuts the Overview,
-# Demographics and Roster sheets draw; STAT's many selector shelves are
-# dashboard controls and are not grains.
 dashboard: state_testing_analysis_tool
 task_gid: "1213823789082035"
-# Truth side: the dashboard's own extract (the comps datasource is a separate one).
 extract:
   workbook_luid: 31b6a4a9-e0ca-479b-8f44-0daaa52e109b
   datasource: rpt_tableau__state_assessments_dashboard (kipptaf_tableau)
 cube_source_table: teamster-332318.kipptaf_marts.fct_assessment_scores_enrollment_scoped
 view: student_assessment_scores_view
-
-# State tests are scored by year: 2025 is the 2025-26 school year (spring 2026).
+dashboards:
+  - State Testing Analysis Tool (STAT) - Landing Page
+  - Overview
+  - Demographics
+  - Teacher/Student Roster
+  - Proficiency YoY
+  - Advanced Comps
 window:
-  academic_years: [2025]
-
+  academic_years:
+    - 2025
 dimensions:
-  # The extract stores academic_year as text.
-  academic_year: { cube: academic_year, sql: cast(academic_year as int64) }
-  region: { cube: region_name, sql: region }
-  school: { cube: abbreviation, sql: school }
-  test_code: { cube: module_code, sql: test_code }
-  # NJ: Spring / Fall; Florida: the FAST windows PM1-PM3.
-  admin: { cube: administration_period, sql: admin }
-  # The test's subject, not the course discipline: a score resolved to a
-  # homeroom section has no course discipline. Cube names the high-school math
-  # tests by course; the dashboard files them under Math.
+  region:
+    cube: region_name
+    sql: region
+  state:
+    cube: state
+    sql: case when region = 'Miami' then 'FL' else 'NJ' end
+  school:
+    cube: abbreviation
+    sql: school
+  school_level:
+    cube: grade_band
+    sql: school_level
+  test_code:
+    cube: module_code
+    sql: test_code
+  admin:
+    cube: administration_period
+    sql: admin
+  grade_level:
+    cube: grade_level
+    sql: grade_level
+  academic_year:
+    cube: academic_year
+    sql: cast(academic_year as int64)
   discipline:
     cube: academic_subject
-    sql: >-
+    sql:
       case when test_code = 'ALG01' then 'Algebra I' when test_code = 'GEO01'
       then 'Geometry' when discipline = 'ELA' then 'English Language Arts' when
       discipline = 'Math' then 'Mathematics' else discipline end
-  # The dashboard's own discipline, Math including Algebra I and Geometry.
-  # No Cube member groups the tests this way.
-  dashboard_discipline: { cube: null, sql: discipline }
-  grade_level: { cube: grade_level, sql: grade_level }
-  gender: { cube: gender_identity, sql: gender }
-
+  dashboard_discipline:
+    cube: null
+    sql: discipline
+  performance_band:
+    cube: proficiency_level
+    sql: performance_band
+  performance_band_level:
+    cube: performance_band_label_number
+    sql: performance_band_level
+  is_proficient:
+    cube: is_mastery
+    sql: is_proficient
+  ml:
+    cube: is_ell
+    sql: lep_status
+  iep:
+    cube: is_iep
+    sql: iep_status
+  gifted:
+    cube: is_gifted
+    sql: gifted_and_talented
+  teacher:
+    cube: staff_lead_teacher_full_name
+    sql: teacher_name
+    person: a teacher
+  student_number:
+    cube: lea_student_identifier
+    sql: student_number
+    person: true
+  proficiency_standard:
+    cube: null
+    sql: is_proficient
+  below_far_below:
+    cube: null
+    sql: performance_band_level
+  is_504:
+    cube: null
+    sql: is_504
+  nj_student_tier:
+    cube: null
+    sql: nj_student_tier
+  ms_attended:
+    cube: null
+    sql: ms_attended
+  teacher_current:
+    cube: null
+    sql: teacher_name_current
+    person: a teacher
+  school_current:
+    cube: null
+    sql: school_current
+  most_recent_grade_level:
+    cube: null
+    sql: most_recent_grade_level
+  iready_proficiency_eoy:
+    cube: null
+    sql: iready_proficiency_eoy
+  cohort:
+    cube: null
+    sql: cohort
+  comparison_entity:
+    cube: null
+    sql: comparison_entity
+  region_comparison:
+    cube: null
+    sql: region
+  demo_group:
+    cube: null
+    sql: demo_group
+  met_goal:
+    cube: null
+    sql: met_goal
+  test_grade:
+    cube: null
+    sql: concat(test_code, '_', cast(grade_level as string))
+  grade_range_band:
+    cube: null
+    sql: grade_level
+  enroll_status:
+    cube: null
+    sql: enroll_status
+  assessment_name:
+    cube: null
+    sql: assessment_name
+  grade_range_group:
+    cube: null
+    kind: rule
+    group:
+      of: concat(test_code, '_', cast(grade_level as string))
+      bins:
+        3-8:
+          - ALG01_8
+          - ELA03_3
+          - ELA03_4
+          - ELA04_3
+          - ELA04_4
+          - ELA04_5
+          - ELA05_4
+          - ELA05_5
+          - ELA05_6
+          - ELA06_5
+          - ELA06_6
+          - ELA06_7
+          - ELA06_8
+          - ELA07_11
+          - ELA07_6
+          - ELA07_7
+          - ELA07_8
+          - ELA08_5
+          - ELA08_8
+          - ELA08_9
+          - MAT03_3
+          - MAT03_4
+          - MAT04_3
+          - MAT04_4
+          - MAT04_5
+          - MAT05_4
+          - MAT05_5
+          - MAT05_6
+          - MAT06_5
+          - MAT06_6
+          - MAT06_7
+          - MAT06_8
+          - MAT07_11
+          - MAT07_6
+          - MAT07_7
+          - MAT07_8
+          - MAT08_5
+          - MAT08_7
+          - MAT08_8
+          - SC05_4
+          - SC05_5
+          - SC08_8
+          - SCI05_4
+          - SCI05_5
+          - SCI05_6
+          - SCI08_8
+          - SCI08_99
+          - SOC08_7
+        HS:
+          - ALG01_10
+          - ALG01_11
+          - ALG01_12
+          - ALG01_9
+          - ALG02_10
+          - ALG02_11
+          - ALG02_12
+          - ELA09_10
+          - ELA09_11
+          - ELA09_12
+          - ELA09_8
+          - ELA09_9
+          - ELA10_10
+          - ELA10_11
+          - ELA10_12
+          - ELA10_9
+          - ELA11_10
+          - ELA11_11
+          - ELA11_12
+          - ELAGP_10
+          - ELAGP_11
+          - ELAGP_12
+          - GEO01_10
+          - GEO01_11
+          - GEO01_12
+          - GEO01_9
+          - MATGP_10
+          - MATGP_11
+          - MATGP_12
+          - SC11_11
+          - SCI11_10
+          - SCI11_11
+          - SCI11_12
 hard_filters:
-  - { dim: region, values: [Camden, Miami, Newark, Paterson] }
-  # 26 sheets pin season = Spring, which is admin Spring in NJ and PM3 in Miami.
-  - { dim: admin, values: [Spring, PM3] }
-
-# Cube side: state assessments only, one row per score.
+  - dim: region
+    values:
+      - Camden
+      - Miami
+      - Newark
+      - Paterson
+  - dim: admin
+    values:
+      - Spring
+      - PM3
 cube_filters:
-  - { member: assessment_type, operator: startsWith, values: [state_] }
-  - { member: response_type, operator: equals, values: [overall] }
-# Extract side: official scores only; Cube carries no preliminary rows.
+  - member: assessment_type
+    operator: startsWith
+    values:
+      - state_
+  - member: response_type
+    operator: equals
+    values:
+      - overall
 truth_filters:
   - results_type = 'Actual'
-
+workbook_excludes:
+  - construct: "filter: Student Number"
+    sql: student_number
+  - construct: "filter: Student Filter"
+    sql: student_number
+    pattern: '^\S+ (\d+) '
+handled:
+  "filter: Advanced Comps - Sheet Swapper [2450b1]":
+    "Display switch: chooses which chart shows; changes no number."
+  "filter: Region [a6207c]":
+    A slice the grains compare (every value of the field).
+  "filter: Advanced Comps - Sheet Swapper [c4235b]":
+    "Display switch: chooses which chart shows; changes no number."
+  "filter: Academic Year  [84d2a5]": "window: academic_years [2025]."
+  "filter: Region [8a83c5]":
+    Drops some values of a field the grains compare value by value.
+  "filter: Region [76836f]":
+    Drops some values of a field the grains compare value by value.
+  "lod: % Proficient [c85e9b]":
+    "Metric SQL: the window holds one academic year, so INCLUDE academic_year is
+    the plain rate."
+  "filter: Academic Year  [3de0e4]": "window: academic_years [2025]."
+  "filter: Season [36ead9]": hard_filters admin in [Spring, PM3].
+  "group: Grade Range Group [6b90e5]":
+    "Dimension grade_range_group (no Cube member: its grains are reported as
+    blocked)."
+  "filter: Academic Year  [ea0545]": "window: academic_years [2025]."
+  "filter: Season [0d3cf8]": hard_filters admin in [Spring, PM3].
+  "filter: Miami Mode Selector [99e0ee]":
+    "Display switch: chooses which chart shows; changes no number."
+  "filter: Discipline [bf7fa1]":
+    A slice the grains compare (every value of the field).
+  "filter: Discipline [e093f8]":
+    A slice the grains compare (every value of the field).
+  "filter: Discipline [dc2078]":
+    A slice the grains compare (every value of the field).
+  "filter: Discipline [228f3d]":
+    A slice the grains compare (every value of the field).
+  "filter: Student Number [1dc0f2]":
+    "workbook_excludes: test records dropped on the extract side."
+  "filter: Results Type [96090c]": truth_filters results_type = 'Actual'.
+  "filter: Standard Selector [5f7964]":
+    "Display switch: chooses which chart shows; changes no number."
+  "filter: Visualization Selector Parameter [602626]":
+    "Display switch: chooses which chart shows; changes no number."
+  "filter: Region [53f8b5]":
+    A slice the grains compare (every value of the field).
+  "filter: Visualization Selector Parameter [53b625]":
+    "Display switch: chooses which chart shows; changes no number."
+  "filter: Region [08a78a]":
+    A slice the grains compare (every value of the field).
+  "alias: % Proficiency [b1f290]":
+    The same measure (Student Number) shown under another name.
+  "filter: Student Filter [b5151b]":
+    "workbook_excludes: test records dropped on the extract side."
+  "filter: State  [fb6129]":
+    A slice the grains compare (every value of the field).
+  "filter: Region [2aea48]":
+    A slice the grains compare (every value of the field).
+  "filter: Test Code [83f1bd]":
+    A slice the grains compare (every value of the field).
+  "filter: Exclude 2024 Science [a5791e]":
+    Drops a 2023-24 test, outside the window.
+  "filter: State  [73be96]":
+    A slice the grains compare (every value of the field).
+  "filter: Standard Selector [086f79]":
+    "Display switch: chooses which chart shows; changes no number."
+  "filter: Teacher Standard Selector [086f79]":
+    "Display switch: chooses which chart shows; changes no number."
+  "filter: Teacher Visualization Selector Parameter [602626]":
+    "Display switch: chooses which chart shows; changes no number."
+  "filter: School [08a78a]":
+    A slice the grains compare (every value of the field).
+  "filter: Standard Selector [42f3e6]":
+    "Display switch: chooses which chart shows; changes no number."
+  "filter: Teacher Standard Selector [42f3e6]":
+    "Display switch: chooses which chart shows; changes no number."
+  "filter: Column Selector [ca0710]":
+    "Display switch: chooses which chart shows; changes no number."
+  "filter: Column Selector [cb6007]":
+    "Display switch: chooses which chart shows; changes no number."
 rows:
   - row_gid: "1215831548839997"
     name: "% Proficient (is_proficient rate)"
-    # Tableau: {INCLUDE academic_year: COUNTD(IF is_proficient THEN student_number)}
-    # / COUNTD(student_number): distinct students, not scores.
     metrics:
       - cube: pct_proficient
         kind: rate
-        diagnose_by: { cube: module_code, sql: test_code }
+        diagnose_by:
+          cube: module_code
+          sql: test_code
         num: count(distinct if(is_proficient, student_number, null))
         den: count(distinct student_number)
-    # No sheet shows % Proficient across disciplines, where the dashboard's
-    # student-weighted rate and Cube's score-weighted rate part ways. Whether a
-    # cross-test share counts records or students is an open network question.
+        tableau:
+          - "% Proficient"
+          - "% Proficient (Agg)"
+          - "% Proficient (Demo)"
     grains:
-      - [test_code]
-      - [test_code, admin]
-      - [region, test_code]
-      - [region, test_code, admin]
-      - [region, school, test_code]
-      - [region, school, test_code, admin]
-      - [discipline]
-      - [region, discipline]
-      - [region, school, discipline]
-      - [dashboard_discipline]
-      - [region, dashboard_discipline]
-      - [region, school, dashboard_discipline]
-      - [region, test_code, grade_level]
-      - [region, test_code, gender]
+      - - dashboard_discipline
+        - region
+        - school
+        - test_code
+      - - discipline
+        - region
+        - school
+        - test_code
+      - - region
+        - school
+        - test_code
+      - - dashboard_discipline
+        - region
+        - school
+        - test_code
+        - assessment_name
+      - - discipline
+        - region
+        - school
+        - test_code
+        - assessment_name
+      - - dashboard_discipline
+        - test_code
+      - - discipline
+        - test_code
+      - - test_code
+      - - region
+        - dashboard_discipline
+        - test_code
+      - - region
+        - discipline
+        - test_code
+      - - region
+        - test_code
+      - - region
+        - dashboard_discipline
+        - school_level
+      - - region
+        - discipline
+        - school_level
+      - - region
+        - dashboard_discipline
+        - grade_range_group
+      - - region
+        - discipline
+        - grade_range_group
+      - - region
+        - discipline
+      - - region
+        - dashboard_discipline
+        - test_code
+        - met_goal
+      - - region
+        - discipline
+        - test_code
+        - met_goal
+      - - region
+        - dashboard_discipline
+        - test_code
+        - test_grade
+      - - region
+        - discipline
+        - test_code
+        - test_grade
+      - - region
+        - dashboard_discipline
+        - test_code
+        - assessment_name
+      - - region
+        - discipline
+        - test_code
+        - assessment_name
+      - - region
+        - dashboard_discipline
+      - - region
+        - dashboard_discipline
+        - enroll_status
+      - - region
+        - discipline
+        - enroll_status
+      - - region
+        - dashboard_discipline
+        - gifted
+      - - region
+        - discipline
+        - gifted
+      - - region
+        - dashboard_discipline
+        - ml
+      - - region
+        - discipline
+        - ml
+      - - dashboard_discipline
+      - - discipline
+      - - school
+        - dashboard_discipline
+      - - school
+        - discipline
+      - - school_level
+        - dashboard_discipline
+      - - school_level
+        - discipline
+      - - grade_range_group
+        - dashboard_discipline
+      - - grade_range_group
+        - discipline
+      - - cohort
+        - dashboard_discipline
+      - - cohort
+        - discipline
+      - - region
+        - school
+        - dashboard_discipline
+      - - region
+        - school
+        - discipline
+      - - region
+        - cohort
+        - dashboard_discipline
+      - - region
+        - cohort
+        - discipline
+      - - school
+        - school_level
+        - dashboard_discipline
+      - - school
+        - school_level
+        - discipline
+      - - school
+        - grade_range_group
+        - dashboard_discipline
+      - - school
+        - grade_range_group
+        - discipline
+      - - school
+        - cohort
+        - dashboard_discipline
+      - - school
+        - cohort
+        - discipline
+      - - school
+        - test_code
+        - dashboard_discipline
+      - - school
+        - test_code
+        - discipline
+      - - school
+        - test_code
+      - - school_level
+        - grade_range_group
+        - dashboard_discipline
+      - - school_level
+        - grade_range_group
+        - discipline
+      - - school_level
+        - cohort
+        - dashboard_discipline
+      - - school_level
+        - cohort
+        - discipline
+      - - school_level
+        - test_code
+        - dashboard_discipline
+      - - school_level
+        - test_code
+        - discipline
+      - - school_level
+        - test_code
+      - - grade_range_group
+        - cohort
+        - dashboard_discipline
+      - - grade_range_group
+        - cohort
+        - discipline
+      - - grade_range_group
+        - test_code
+        - dashboard_discipline
+      - - grade_range_group
+        - test_code
+        - discipline
+      - - cohort
+        - test_code
+        - dashboard_discipline
+      - - cohort
+        - test_code
+        - discipline
+      - - region
+        - test_code
+        - dashboard_discipline
+        - iep
+      - - region
+        - test_code
+        - discipline
+        - iep
+      - - region
+        - test_code
+        - iep
+      - - region
+        - test_code
+        - dashboard_discipline
+        - ml
+      - - region
+        - test_code
+        - discipline
+        - ml
+      - - region
+        - test_code
+        - ml
+      - - school_level
+        - dashboard_discipline
+        - region
+        - comparison_entity
+      - - school_level
+        - discipline
+        - region
+        - comparison_entity
+      - - school_level
+        - test_code
+        - region
+        - comparison_entity
+      - - school_level
+        - test_code
+        - region
+      - - grade_range_band
+        - dashboard_discipline
+        - region
+        - comparison_entity
+      - - grade_range_band
+        - discipline
+        - region
+        - comparison_entity
+      - - grade_range_band
+        - test_code
+        - region
+        - comparison_entity
+      - - school_level
+        - dashboard_discipline
+        - region
+        - comparison_entity
+        - assessment_name
+      - - school_level
+        - discipline
+        - region
+        - comparison_entity
+        - assessment_name
+      - - school_level
+        - dashboard_discipline
+        - region
+        - comparison_entity
+        - demo_group
+      - - school_level
+        - discipline
+        - region
+        - comparison_entity
+        - demo_group
+      - - school_level
+        - dashboard_discipline
+        - region
+        - comparison_entity
+        - region_comparison
+      - - school_level
+        - discipline
+        - region
+        - comparison_entity
+        - region_comparison
+      - - school_level
+        - test_code
+        - demo_group
+        - region
+        - comparison_entity
+      - - grade_range_band
+        - dashboard_discipline
+        - demo_group
+        - region
+        - comparison_entity
+      - - grade_range_band
+        - discipline
+        - demo_group
+        - region
+        - comparison_entity
+      - - grade_range_band
+        - test_code
+        - demo_group
+        - region
+        - comparison_entity
+      - - school_level
+        - dashboard_discipline
+        - demo_group
+        - region
+        - comparison_entity
+        - assessment_name
+      - - school_level
+        - discipline
+        - demo_group
+        - region
+        - comparison_entity
+        - assessment_name
+    not_checked:
+      - construct: "filter: Permissions [fa09b8]"
+        why: Varies by viewer (ISMEMBEROF); the run uses a network identity.
+      - construct: "filter: Assessment Name [1ed589]"
+        why:
+          Changes the population this sheet shows (for example proficient
+          students only, or some tests or grades dropped); the check compares
+          every tested student.
+      - construct: "filter: Demo Group [75209d]"
+        why:
+          Changes the population this sheet shows (for example proficient
+          students only, or some tests or grades dropped); the check compares
+          every tested student.
+      - construct: "filter: Demo Subgroup [324477]"
+        why:
+          Changes the population this sheet shows (for example proficient
+          students only, or some tests or grades dropped); the check compares
+          every tested student.
+      - construct: "viewer_function: Permissions [b8a155]"
+        why:
+          Varies by viewer; the run uses a network identity on the full extract.
+      - construct: "lod: % Proficient (Agg) [b04854]"
+        why:
+          Level-of-detail goal or demographic calculation with no Cube measure.
+      - construct: "filter: Demo Group [59af84]"
+        why:
+          Changes the population this sheet shows (for example proficient
+          students only, or some tests or grades dropped); the check compares
+          every tested student.
+      - construct: "lod: % Proficient (Demo) [a79722]"
+        why:
+          Level-of-detail goal or demographic calculation with no Cube measure.
+      - construct: "table_calc: % Proficient [84dd5f]"
+        why:
+          Computed from the table on screen (share of total or year-over-year
+          change); the base aggregate is checked.
+      - construct: "filter: Academic Year  [ef8414]"
+        why: Shows prior years; the check covers the 2025-26 window only.
+      - construct: "filter: Assessment Name [e3dbde]"
+        why:
+          Changes the population this sheet shows (for example proficient
+          students only, or some tests or grades dropped); the check compares
+          every tested student.
+      - construct: "filter: Test Code + Grade Level [d66499]"
+        why:
+          Changes the population this sheet shows (for example proficient
+          students only, or some tests or grades dropped); the check compares
+          every tested student.
+      - construct: "filter: Assessment Name [8832cd]"
+        why:
+          Changes the population this sheet shows (for example proficient
+          students only, or some tests or grades dropped); the check compares
+          every tested student.
+      - construct: "lod: Met Goal [3e3977]"
+        why:
+          Level-of-detail goal or demographic calculation with no Cube measure.
+      - construct: "parameter: Goal Type Swapper (LP) [c86e7d]"
+        why: Goal sheet control with no Cube counterpart.
+      - construct: "viewer_function: Permissions [348046]"
+        why:
+          Varies by viewer; the run uses a network identity on the full extract.
+      - construct: "filter: Test Code + Grade Level [27eec0]"
+        why:
+          Changes the population this sheet shows (for example proficient
+          students only, or some tests or grades dropped); the check compares
+          every tested student.
+      - construct: "filter: Academic Year  [545b73]"
+        why: Shows prior years; the check covers the 2025-26 window only.
   - row_gid: "1219087671048617"
     name: Count of students tested
-    # Tableau: COUNTD(student_number).
     metrics:
       - cube: count_students
         kind: count
-        diagnose_by: { cube: module_code, sql: test_code }
+        diagnose_by:
+          cube: module_code
+          sql: test_code
         sql: count(distinct student_number)
-    # Cube's count_students is distinct students too, so totals compare.
+        tableau:
+          - Student Number
+          - ZN(COUNTD([Student Number]))
     grains:
       - []
-      - [region]
-      - [region, school]
-      - [test_code]
-      - [test_code, admin]
-      - [region, test_code]
-      - [region, test_code, admin]
-      - [region, school, test_code]
-      - [region, school, test_code, admin]
-      - [discipline]
-      - [region, discipline]
-      - [region, school, discipline]
-      - [dashboard_discipline]
-      - [region, dashboard_discipline]
-      - [region, school, dashboard_discipline]
-      - [region, test_code, grade_level]
-      - [region, test_code, gender]
+      - - region
+        - dashboard_discipline
+        - school_current
+        - school
+        - test_code
+        - most_recent_grade_level
+        - proficiency_standard
+      - - region
+        - discipline
+        - school_current
+        - school
+        - test_code
+        - most_recent_grade_level
+        - proficiency_standard
+      - - region
+        - school
+        - test_code
+      - - region
+        - discipline
+        - school
+        - test_code
+      - - region
+        - dashboard_discipline
+        - school_current
+        - school
+        - test_code
+        - most_recent_grade_level
+        - proficiency_standard
+        - student_number
+      - - region
+        - discipline
+        - school_current
+        - school
+        - test_code
+        - most_recent_grade_level
+        - proficiency_standard
+        - student_number
+      - - region
+        - school
+        - test_code
+        - student_number
+      - - region
+        - discipline
+        - school
+        - test_code
+        - student_number
+      - - region
+        - dashboard_discipline
+        - school_current
+        - school
+        - test_code
+        - most_recent_grade_level
+        - proficiency_standard
+        - assessment_name
+      - - region
+        - discipline
+        - school_current
+        - school
+        - test_code
+        - most_recent_grade_level
+        - proficiency_standard
+        - assessment_name
+      - - region
+        - dashboard_discipline
+        - school_current
+        - school
+        - test_code
+        - most_recent_grade_level
+        - proficiency_standard
+        - enroll_status
+      - - region
+        - discipline
+        - school_current
+        - school
+        - test_code
+        - most_recent_grade_level
+        - proficiency_standard
+        - enroll_status
+      - - region
+        - dashboard_discipline
+        - school_current
+        - school
+        - test_code
+        - most_recent_grade_level
+        - proficiency_standard
+        - iep
+      - - region
+        - discipline
+        - school_current
+        - school
+        - test_code
+        - most_recent_grade_level
+        - proficiency_standard
+        - iep
+      - - region
+        - school
+        - test_code
+        - iep
+      - - region
+        - discipline
+        - school
+        - test_code
+        - iep
+      - - region
+        - dashboard_discipline
+        - school_current
+        - school
+        - test_code
+        - most_recent_grade_level
+        - proficiency_standard
+        - teacher_current
+      - - region
+        - discipline
+        - school_current
+        - school
+        - test_code
+        - most_recent_grade_level
+        - proficiency_standard
+        - teacher_current
+      - - below_far_below
+      - - region
+        - below_far_below
+      - - region
+      - - region
+        - dashboard_discipline
+        - below_far_below
+      - - region
+        - discipline
+        - below_far_below
+      - - region
+        - discipline
+      - - region
+        - dashboard_discipline
+        - test_code
+        - below_far_below
+      - - region
+        - discipline
+        - test_code
+        - below_far_below
+      - - region
+        - test_code
+      - - region
+        - discipline
+        - test_code
+      - - region
+        - dashboard_discipline
+        - school
+        - below_far_below
+      - - region
+        - discipline
+        - school
+        - below_far_below
+      - - region
+        - school
+      - - region
+        - discipline
+        - school
+      - - region
+        - dashboard_discipline
+        - test_code
+        - teacher
+        - below_far_below
+      - - region
+        - discipline
+        - test_code
+        - teacher
+        - below_far_below
+      - - region
+        - test_code
+        - teacher
+      - - region
+        - discipline
+        - test_code
+        - teacher
+      - - region
+        - dashboard_discipline
+        - school
+        - teacher
+        - below_far_below
+      - - region
+        - discipline
+        - school
+        - teacher
+        - below_far_below
+      - - region
+        - school
+        - teacher
+      - - region
+        - discipline
+        - school
+        - teacher
+      - - region
+        - dashboard_discipline
+        - school
+        - below_far_below
+        - assessment_name
+      - - region
+        - discipline
+        - school
+        - below_far_below
+        - assessment_name
+      - - region
+        - dashboard_discipline
+        - school
+        - below_far_below
+        - enroll_status
+      - - region
+        - discipline
+        - school
+        - below_far_below
+        - enroll_status
+      - - region
+        - dashboard_discipline
+        - school
+        - below_far_below
+        - gifted
+      - - region
+        - discipline
+        - school
+        - below_far_below
+        - gifted
+      - - region
+        - school
+        - gifted
+      - - region
+        - discipline
+        - school
+        - gifted
+      - - region
+        - dashboard_discipline
+        - school
+        - below_far_below
+        - iep
+      - - region
+        - discipline
+        - school
+        - below_far_below
+        - iep
+      - - region
+        - school
+        - iep
+      - - region
+        - discipline
+        - school
+        - iep
+      - - region
+        - dashboard_discipline
+        - school
+        - below_far_below
+        - ml
+      - - region
+        - discipline
+        - school
+        - below_far_below
+        - ml
+      - - region
+        - school
+        - ml
+      - - region
+        - discipline
+        - school
+        - ml
+      - - region
+        - dashboard_discipline
+        - school
+        - below_far_below
+        - ms_attended
+      - - region
+        - discipline
+        - school
+        - below_far_below
+        - ms_attended
+      - - region
+        - dashboard_discipline
+        - school
+        - below_far_below
+        - test_code
+      - - region
+        - discipline
+        - school
+        - below_far_below
+        - test_code
+      - - region
+        - school
+        - below_far_below
+        - dashboard_discipline
+        - test_code
+        - student_number
+      - - region
+        - school
+        - below_far_below
+        - discipline
+        - test_code
+        - student_number
+      - - region
+        - school
+        - below_far_below
+        - dashboard_discipline
+        - test_code
+        - assessment_name
+      - - region
+        - school
+        - below_far_below
+        - discipline
+        - test_code
+        - assessment_name
+      - - region
+        - school
+        - below_far_below
+        - dashboard_discipline
+        - test_code
+        - enroll_status
+      - - region
+        - school
+        - below_far_below
+        - discipline
+        - test_code
+        - enroll_status
+      - - region
+        - school
+        - below_far_below
+        - dashboard_discipline
+        - test_code
+        - gifted
+      - - region
+        - school
+        - below_far_below
+        - discipline
+        - test_code
+        - gifted
+      - - region
+        - school
+        - test_code
+        - gifted
+      - - region
+        - school
+        - discipline
+        - test_code
+        - gifted
+      - - region
+        - school
+        - below_far_below
+        - dashboard_discipline
+        - test_code
+        - iep
+      - - region
+        - school
+        - below_far_below
+        - discipline
+        - test_code
+        - iep
+      - - region
+        - school
+        - below_far_below
+        - dashboard_discipline
+        - test_code
+        - ml
+      - - region
+        - school
+        - below_far_below
+        - discipline
+        - test_code
+        - ml
+      - - region
+        - school
+        - test_code
+        - ml
+      - - region
+        - school
+        - discipline
+        - test_code
+        - ml
+      - - region
+        - school
+        - below_far_below
+        - dashboard_discipline
+        - test_code
+        - ms_attended
+      - - region
+        - school
+        - below_far_below
+        - discipline
+        - test_code
+        - ms_attended
+      - - state
+        - test_code
+        - proficiency_standard
+      - - state
+        - test_code
+      - - state
+        - region
+        - test_code
+        - proficiency_standard
+      - - state
+        - region
+        - test_code
+      - - state
+        - region
+        - dashboard_discipline
+        - test_code
+        - proficiency_standard
+      - - state
+        - region
+        - discipline
+        - test_code
+        - proficiency_standard
+      - - state
+        - region
+        - discipline
+        - test_code
+      - - state
+        - test_code
+        - proficiency_standard
+        - student_number
+      - - state
+        - test_code
+        - student_number
+      - - state
+        - test_code
+        - proficiency_standard
+        - assessment_name
+      - - test_code
+      - - test_code
+        - assessment_name
+      - - test_code
+        - dashboard_discipline
+      - - test_code
+        - discipline
+      - - test_code
+        - school_level
+      - - state
+      - - assessment_name
+      - - dashboard_discipline
+      - - discipline
+      - - school_level
+      - - grade_level
+      - - region
+        - dashboard_discipline
+        - test_code
+      - - region
+        - school
+        - dashboard_discipline
+        - test_code
+      - - region
+        - dashboard_discipline
+        - school_level
+      - - region
+        - discipline
+        - school_level
+      - - region
+        - school_level
+      - - region
+        - dashboard_discipline
+        - grade_range_group
+      - - region
+        - discipline
+        - grade_range_group
+      - - region
+        - dashboard_discipline
+        - test_code
+        - met_goal
+      - - region
+        - discipline
+        - test_code
+        - met_goal
+      - - region
+        - dashboard_discipline
+        - test_code
+        - test_grade
+      - - region
+        - discipline
+        - test_code
+        - test_grade
+      - - region
+        - dashboard_discipline
+        - test_code
+        - assessment_name
+      - - region
+        - discipline
+        - test_code
+        - assessment_name
+      - - performance_band_level
+        - performance_band
+      - - region
+        - performance_band_level
+        - performance_band
+      - - region
+        - dashboard_discipline
+        - performance_band_level
+        - performance_band
+      - - region
+        - discipline
+        - performance_band_level
+        - performance_band
+      - - region
+        - dashboard_discipline
+        - test_code
+        - performance_band_level
+        - performance_band
+      - - region
+        - discipline
+        - test_code
+        - performance_band_level
+        - performance_band
+      - - region
+        - test_code
+        - performance_band_level
+        - performance_band
+      - - region
+        - dashboard_discipline
+        - school
+        - performance_band_level
+        - performance_band
+      - - region
+        - discipline
+        - school
+        - performance_band_level
+        - performance_band
+      - - region
+        - school
+        - performance_band_level
+        - performance_band
+      - - region
+        - dashboard_discipline
+        - test_code
+        - teacher
+        - performance_band_level
+        - performance_band
+      - - region
+        - discipline
+        - test_code
+        - teacher
+        - performance_band_level
+        - performance_band
+      - - region
+        - test_code
+        - teacher
+        - performance_band_level
+        - performance_band
+      - - region
+        - dashboard_discipline
+        - school
+        - teacher
+        - performance_band_level
+        - performance_band
+      - - region
+        - discipline
+        - school
+        - teacher
+        - performance_band_level
+        - performance_band
+      - - region
+        - school
+        - teacher
+        - performance_band_level
+        - performance_band
+      - - region
+        - dashboard_discipline
+        - school
+        - performance_band_level
+        - performance_band
+        - assessment_name
+      - - region
+        - discipline
+        - school
+        - performance_band_level
+        - performance_band
+        - assessment_name
+      - - region
+        - dashboard_discipline
+        - school
+        - performance_band_level
+        - performance_band
+        - enroll_status
+      - - region
+        - discipline
+        - school
+        - performance_band_level
+        - performance_band
+        - enroll_status
+      - - region
+        - dashboard_discipline
+        - school
+        - performance_band_level
+        - performance_band
+        - gifted
+      - - region
+        - discipline
+        - school
+        - performance_band_level
+        - performance_band
+        - gifted
+      - - region
+        - school
+        - performance_band_level
+        - performance_band
+        - gifted
+      - - region
+        - dashboard_discipline
+        - school
+        - performance_band_level
+        - performance_band
+        - iep
+      - - region
+        - discipline
+        - school
+        - performance_band_level
+        - performance_band
+        - iep
+      - - region
+        - school
+        - performance_band_level
+        - performance_band
+        - iep
+      - - region
+        - dashboard_discipline
+        - school
+        - performance_band_level
+        - performance_band
+        - ml
+      - - region
+        - discipline
+        - school
+        - performance_band_level
+        - performance_band
+        - ml
+      - - region
+        - school
+        - performance_band_level
+        - performance_band
+        - ml
+      - - region
+        - dashboard_discipline
+        - school
+        - performance_band_level
+        - performance_band
+        - ms_attended
+      - - region
+        - discipline
+        - school
+        - performance_band_level
+        - performance_band
+        - ms_attended
+      - - region
+        - dashboard_discipline
+        - school
+        - performance_band_level
+        - performance_band
+        - test_code
+      - - region
+        - discipline
+        - school
+        - performance_band_level
+        - performance_band
+        - test_code
+      - - region
+        - school
+        - performance_band_level
+        - performance_band
+        - test_code
+      - - region
+        - teacher_current
+        - performance_band_level
+        - performance_band
+      - - region
+        - teacher
+        - performance_band_level
+        - performance_band
+      - - region
+        - dashboard_discipline
+        - teacher_current
+        - performance_band_level
+        - performance_band
+      - - region
+        - discipline
+        - teacher_current
+        - performance_band_level
+        - performance_band
+      - - region
+        - dashboard_discipline
+        - teacher
+        - performance_band_level
+        - performance_band
+      - - region
+        - discipline
+        - teacher
+        - performance_band_level
+        - performance_band
+      - - region
+        - dashboard_discipline
+        - test_code
+        - teacher_current
+        - performance_band_level
+        - performance_band
+      - - region
+        - discipline
+        - test_code
+        - teacher_current
+        - performance_band_level
+        - performance_band
+      - - region
+        - dashboard_discipline
+        - test_code
+        - school
+        - teacher_current
+        - performance_band_level
+        - performance_band
+      - - region
+        - discipline
+        - test_code
+        - school
+        - teacher_current
+        - performance_band_level
+        - performance_band
+      - - region
+        - dashboard_discipline
+        - test_code
+        - school
+        - teacher
+        - performance_band_level
+        - performance_band
+      - - region
+        - discipline
+        - test_code
+        - school
+        - teacher
+        - performance_band_level
+        - performance_band
+      - - region
+        - test_code
+        - school
+        - teacher
+        - performance_band_level
+        - performance_band
+      - - dashboard_discipline
+        - test_code
+        - teacher
+        - performance_band_level
+        - performance_band
+      - - discipline
+        - test_code
+        - teacher
+        - performance_band_level
+        - performance_band
+      - - test_code
+        - teacher
+        - performance_band_level
+        - performance_band
+      - - dashboard_discipline
+        - test_code
+        - teacher
+        - performance_band_level
+        - performance_band
+        - enroll_status
+      - - discipline
+        - test_code
+        - teacher
+        - performance_band_level
+        - performance_band
+        - enroll_status
+      - - dashboard_discipline
+        - test_code
+        - teacher
+        - performance_band_level
+        - performance_band
+        - gifted
+      - - discipline
+        - test_code
+        - teacher
+        - performance_band_level
+        - performance_band
+        - gifted
+      - - test_code
+        - teacher
+        - performance_band_level
+        - performance_band
+        - gifted
+      - - dashboard_discipline
+        - test_code
+        - teacher
+        - performance_band_level
+        - performance_band
+        - iep
+      - - discipline
+        - test_code
+        - teacher
+        - performance_band_level
+        - performance_band
+        - iep
+      - - test_code
+        - teacher
+        - performance_band_level
+        - performance_band
+        - iep
+      - - dashboard_discipline
+        - test_code
+        - teacher
+        - performance_band_level
+        - performance_band
+        - iready_proficiency_eoy
+      - - discipline
+        - test_code
+        - teacher
+        - performance_band_level
+        - performance_band
+        - iready_proficiency_eoy
+      - - dashboard_discipline
+        - test_code
+        - teacher
+        - performance_band_level
+        - performance_band
+        - ml
+      - - discipline
+        - test_code
+        - teacher
+        - performance_band_level
+        - performance_band
+        - ml
+      - - test_code
+        - teacher
+        - performance_band_level
+        - performance_band
+        - ml
+      - - dashboard_discipline
+        - test_code
+        - teacher
+        - performance_band_level
+        - performance_band
+        - nj_student_tier
+      - - discipline
+        - test_code
+        - teacher
+        - performance_band_level
+        - performance_band
+        - nj_student_tier
+      - - dashboard_discipline
+        - test_code
+        - teacher
+        - performance_band_level
+        - performance_band
+        - school
+      - - discipline
+        - test_code
+        - teacher
+        - performance_band_level
+        - performance_band
+        - school
+      - - test_code
+        - teacher
+        - performance_band_level
+        - performance_band
+        - school
+      - - region
+        - school
+        - test_code
+        - dashboard_discipline
+        - performance_band
+      - - region
+        - school
+        - test_code
+        - discipline
+        - performance_band
+      - - region
+        - school
+        - test_code
+        - performance_band
+      - - region
+        - school
+        - test_code
+        - dashboard_discipline
+        - performance_band
+        - assessment_name
+      - - region
+        - school
+        - test_code
+        - discipline
+        - performance_band
+        - assessment_name
+      - - region
+        - school
+        - test_code
+        - dashboard_discipline
+        - performance_band
+        - enroll_status
+      - - region
+        - school
+        - test_code
+        - discipline
+        - performance_band
+        - enroll_status
+      - - region
+        - school
+        - test_code
+        - dashboard_discipline
+        - performance_band
+        - gifted
+      - - region
+        - school
+        - test_code
+        - discipline
+        - performance_band
+        - gifted
+      - - region
+        - school
+        - test_code
+        - performance_band
+        - gifted
+      - - region
+        - school
+        - test_code
+        - dashboard_discipline
+        - performance_band
+        - iep
+      - - region
+        - school
+        - test_code
+        - discipline
+        - performance_band
+        - iep
+      - - region
+        - school
+        - test_code
+        - performance_band
+        - iep
+      - - region
+        - school
+        - test_code
+        - dashboard_discipline
+        - performance_band
+        - ml
+      - - region
+        - school
+        - test_code
+        - discipline
+        - performance_band
+        - ml
+      - - region
+        - school
+        - test_code
+        - performance_band
+        - ml
+      - - region
+        - school
+        - test_code
+        - dashboard_discipline
+        - performance_band
+        - ms_attended
+      - - region
+        - school
+        - test_code
+        - discipline
+        - performance_band
+        - ms_attended
+      - - proficiency_standard
+      - - region
+        - proficiency_standard
+      - - region
+        - dashboard_discipline
+        - proficiency_standard
+      - - region
+        - discipline
+        - proficiency_standard
+      - - region
+        - dashboard_discipline
+        - test_code
+        - proficiency_standard
+      - - region
+        - discipline
+        - test_code
+        - proficiency_standard
+      - - region
+        - dashboard_discipline
+        - school
+        - proficiency_standard
+      - - region
+        - discipline
+        - school
+        - proficiency_standard
+      - - region
+        - dashboard_discipline
+        - test_code
+        - teacher
+        - proficiency_standard
+      - - region
+        - discipline
+        - test_code
+        - teacher
+        - proficiency_standard
+      - - region
+        - dashboard_discipline
+        - school
+        - teacher
+        - proficiency_standard
+      - - region
+        - discipline
+        - school
+        - teacher
+        - proficiency_standard
+      - - region
+        - dashboard_discipline
+        - school
+        - proficiency_standard
+        - assessment_name
+      - - region
+        - discipline
+        - school
+        - proficiency_standard
+        - assessment_name
+      - - region
+        - dashboard_discipline
+        - school
+        - proficiency_standard
+        - enroll_status
+      - - region
+        - discipline
+        - school
+        - proficiency_standard
+        - enroll_status
+      - - region
+        - dashboard_discipline
+        - school
+        - proficiency_standard
+        - gifted
+      - - region
+        - discipline
+        - school
+        - proficiency_standard
+        - gifted
+      - - region
+        - dashboard_discipline
+        - school
+        - proficiency_standard
+        - iep
+      - - region
+        - discipline
+        - school
+        - proficiency_standard
+        - iep
+      - - region
+        - dashboard_discipline
+        - school
+        - proficiency_standard
+        - ml
+      - - region
+        - discipline
+        - school
+        - proficiency_standard
+        - ml
+      - - region
+        - dashboard_discipline
+        - school
+        - proficiency_standard
+        - ms_attended
+      - - region
+        - discipline
+        - school
+        - proficiency_standard
+        - ms_attended
+      - - region
+        - dashboard_discipline
+        - school
+        - proficiency_standard
+        - test_code
+      - - region
+        - discipline
+        - school
+        - proficiency_standard
+        - test_code
+      - - region
+        - teacher_current
+        - proficiency_standard
+      - - region
+        - teacher
+        - proficiency_standard
+      - - region
+        - teacher
+      - - region
+        - dashboard_discipline
+        - teacher_current
+        - proficiency_standard
+      - - region
+        - discipline
+        - teacher_current
+        - proficiency_standard
+      - - region
+        - dashboard_discipline
+        - teacher
+        - proficiency_standard
+      - - region
+        - discipline
+        - teacher
+        - proficiency_standard
+      - - region
+        - discipline
+        - teacher
+      - - region
+        - dashboard_discipline
+        - test_code
+        - teacher_current
+        - proficiency_standard
+      - - region
+        - discipline
+        - test_code
+        - teacher_current
+        - proficiency_standard
+      - - region
+        - dashboard_discipline
+        - test_code
+        - school
+        - teacher_current
+        - proficiency_standard
+      - - region
+        - discipline
+        - test_code
+        - school
+        - teacher_current
+        - proficiency_standard
+      - - region
+        - dashboard_discipline
+        - test_code
+        - school
+        - teacher
+        - proficiency_standard
+      - - region
+        - discipline
+        - test_code
+        - school
+        - teacher
+        - proficiency_standard
+      - - region
+        - test_code
+        - school
+        - teacher
+      - - region
+        - discipline
+        - test_code
+        - school
+        - teacher
+      - - dashboard_discipline
+        - teacher
+        - proficiency_standard
+      - - discipline
+        - teacher
+        - proficiency_standard
+      - - teacher
+      - - discipline
+        - teacher
+      - - dashboard_discipline
+        - teacher
+        - proficiency_standard
+        - student_number
+      - - discipline
+        - teacher
+        - proficiency_standard
+        - student_number
+      - - teacher
+        - student_number
+      - - discipline
+        - teacher
+        - student_number
+      - - dashboard_discipline
+        - teacher
+        - proficiency_standard
+        - enroll_status
+      - - discipline
+        - teacher
+        - proficiency_standard
+        - enroll_status
+      - - dashboard_discipline
+        - teacher
+        - proficiency_standard
+        - gifted
+      - - discipline
+        - teacher
+        - proficiency_standard
+        - gifted
+      - - teacher
+        - gifted
+      - - discipline
+        - teacher
+        - gifted
+      - - dashboard_discipline
+        - teacher
+        - proficiency_standard
+        - iep
+      - - discipline
+        - teacher
+        - proficiency_standard
+        - iep
+      - - teacher
+        - iep
+      - - discipline
+        - teacher
+        - iep
+      - - dashboard_discipline
+        - teacher
+        - proficiency_standard
+        - iready_proficiency_eoy
+      - - discipline
+        - teacher
+        - proficiency_standard
+        - iready_proficiency_eoy
+      - - dashboard_discipline
+        - teacher
+        - proficiency_standard
+        - ml
+      - - discipline
+        - teacher
+        - proficiency_standard
+        - ml
+      - - teacher
+        - ml
+      - - discipline
+        - teacher
+        - ml
+      - - dashboard_discipline
+        - teacher
+        - proficiency_standard
+        - nj_student_tier
+      - - discipline
+        - teacher
+        - proficiency_standard
+        - nj_student_tier
+      - - dashboard_discipline
+        - teacher
+        - proficiency_standard
+        - school
+      - - discipline
+        - teacher
+        - proficiency_standard
+        - school
+      - - teacher
+        - school
+      - - discipline
+        - teacher
+        - school
+      - - region
+        - school
+        - proficiency_standard
+        - dashboard_discipline
+        - test_code
+        - student_number
+      - - region
+        - school
+        - proficiency_standard
+        - discipline
+        - test_code
+        - student_number
+      - - region
+        - school
+        - proficiency_standard
+        - dashboard_discipline
+        - test_code
+        - assessment_name
+      - - region
+        - school
+        - proficiency_standard
+        - discipline
+        - test_code
+        - assessment_name
+      - - region
+        - school
+        - proficiency_standard
+        - dashboard_discipline
+        - test_code
+        - enroll_status
+      - - region
+        - school
+        - proficiency_standard
+        - discipline
+        - test_code
+        - enroll_status
+      - - region
+        - school
+        - proficiency_standard
+        - dashboard_discipline
+        - test_code
+        - gifted
+      - - region
+        - school
+        - proficiency_standard
+        - discipline
+        - test_code
+        - gifted
+      - - region
+        - school
+        - proficiency_standard
+        - dashboard_discipline
+        - test_code
+        - iep
+      - - region
+        - school
+        - proficiency_standard
+        - discipline
+        - test_code
+        - iep
+      - - region
+        - school
+        - proficiency_standard
+        - dashboard_discipline
+        - test_code
+        - ml
+      - - region
+        - school
+        - proficiency_standard
+        - discipline
+        - test_code
+        - ml
+      - - region
+        - school
+        - proficiency_standard
+        - dashboard_discipline
+        - test_code
+        - ms_attended
+      - - region
+        - school
+        - proficiency_standard
+        - discipline
+        - test_code
+        - ms_attended
+      - - state
+        - grade_range_group
+        - test_code
+        - proficiency_standard
+      - - state
+        - school_level
+        - test_code
+        - proficiency_standard
+      - - state
+        - school_level
+        - test_code
+      - - state
+        - region
+        - grade_range_group
+        - test_code
+        - proficiency_standard
+      - - state
+        - region
+        - school_level
+        - test_code
+        - proficiency_standard
+      - - state
+        - region
+        - school_level
+        - test_code
+      - - state
+        - region
+        - dashboard_discipline
+        - grade_range_group
+        - test_code
+        - proficiency_standard
+      - - state
+        - region
+        - discipline
+        - grade_range_group
+        - test_code
+        - proficiency_standard
+      - - state
+        - region
+        - dashboard_discipline
+        - school_level
+        - test_code
+        - proficiency_standard
+      - - state
+        - region
+        - discipline
+        - school_level
+        - test_code
+        - proficiency_standard
+      - - state
+        - region
+        - discipline
+        - school_level
+        - test_code
+      - - state
+        - region
+        - grade_range_group
+        - proficiency_standard
+      - - state
+        - region
+      - - state
+        - region
+        - school_level
+        - proficiency_standard
+      - - state
+        - region
+        - school_level
+      - - state
+        - region
+        - proficiency_standard
+      - - state
+        - region
+        - grade_range_group
+        - test_code
+        - proficiency_standard
+        - test_grade
+    not_checked:
+      - construct: "table_calc: Student Number [4996ee]"
+        why:
+          Computed from the table on screen (share of total or year-over-year
+          change); the base aggregate is checked.
+      - construct: "viewer_function: User Filter 1 - Region [429d7b]"
+        why:
+          Varies by viewer; the run uses a network identity on the full extract.
+      - construct: "filter: Academic Year  [2df92a]"
+        why: Shows prior years; the check covers the 2025-26 window only.
+      - construct: "filter: Assessment Name [3488f1]"
+        why:
+          Changes the population this sheet shows (for example proficient
+          students only, or some tests or grades dropped); the check compares
+          every tested student.
+      - construct: "filter: Enroll Status [63895f]"
+        why:
+          Changes the population this sheet shows (for example proficient
+          students only, or some tests or grades dropped); the check compares
+          every tested student.
+      - construct: "filter: Permissions [fa09b8]"
+        why: Varies by viewer (ISMEMBEROF); the run uses a network identity.
+      - construct: "filter: Assessment Name [08a78a]"
+        why:
+          Changes the population this sheet shows (for example proficient
+          students only, or some tests or grades dropped); the check compares
+          every tested student.
+      - construct: "viewer_function: Permissions [348046]"
+        why:
+          Varies by viewer; the run uses a network identity on the full extract.
+      - construct: "filter: Below/Far Below Standard [b07488]"
+        why:
+          Changes the population this sheet shows (for example proficient
+          students only, or some tests or grades dropped); the check compares
+          every tested student.
+      - construct: "filter: Proficiency Standard [d22621]"
+        why:
+          Changes the population this sheet shows (for example proficient
+          students only, or some tests or grades dropped); the check compares
+          every tested student.
+      - construct: "filter: Test Code + Grade Level (group) [c51896]"
+        why:
+          Changes the population this sheet shows (for example proficient
+          students only, or some tests or grades dropped); the check compares
+          every tested student.
+      - construct: "filter: Academic Year  [7a317f]"
+        why: Shows prior years; the check covers the 2025-26 window only.
+      - construct: "filter: Assessment Name [c89a0b]"
+        why:
+          Changes the population this sheet shows (for example proficient
+          students only, or some tests or grades dropped); the check compares
+          every tested student.
+      - construct: "filter: School Level [a5b399]"
+        why:
+          Changes the population this sheet shows (for example proficient
+          students only, or some tests or grades dropped); the check compares
+          every tested student.
+      - construct: "filter: Test Code + Grade Level (group) [9a9b98]"
+        why:
+          Changes the population this sheet shows (for example proficient
+          students only, or some tests or grades dropped); the check compares
+          every tested student.
+      - construct: "filter: Assessment Name [1c6510]"
+        why:
+          Changes the population this sheet shows (for example proficient
+          students only, or some tests or grades dropped); the check compares
+          every tested student.
+      - construct: "filter: Grade Level  [dcefc1]"
+        why:
+          Changes the population this sheet shows (for example proficient
+          students only, or some tests or grades dropped); the check compares
+          every tested student.
+      - construct: "filter: Test Code + Grade Level [d66499]"
+        why:
+          Changes the population this sheet shows (for example proficient
+          students only, or some tests or grades dropped); the check compares
+          every tested student.
+      - construct: "filter: Assessment Name [8832cd]"
+        why:
+          Changes the population this sheet shows (for example proficient
+          students only, or some tests or grades dropped); the check compares
+          every tested student.
+      - construct: "lod: Met Goal [3e3977]"
+        why:
+          Level-of-detail goal or demographic calculation with no Cube measure.
+      - construct: "parameter: Goal Type Swapper (LP) [c86e7d]"
+        why: Goal sheet control with no Cube counterpart.
+      - construct: "filter: Performance Band Level [cbaa84]"
+        why:
+          Changes the population this sheet shows (for example proficient
+          students only, or some tests or grades dropped); the check compares
+          every tested student.
+      - construct: "filter: Results Type [f7364f]"
+        why: Includes preliminary scores; the check compares official scores.
   - row_gid: "1219284449093357"
     name: Scale score
-    # Tableau shows each student's score on the roster; compared here as the
-    # average within a test, the only grain where scale scores share a scale.
     metrics:
       - cube: avg_scale_score
         kind: average
         num: sum(score)
         den: count(score)
+        tableau:
+          - Score
     grains:
-      - [test_code]
-      - [test_code, admin]
-      - [region, test_code]
-      - [region, school, test_code]
-      - [region, school, test_code, admin]
-# Not checked: "State (NJ/FL derived from region)" (1219284586640184) is a
-# label with no number; Cube's regions.state carries it.
-
+      - []
+      - - region
+        - dashboard_discipline
+        - school_current
+        - teacher_current
+        - student_number
+        - most_recent_grade_level
+        - school
+        - test_code
+        - proficiency_standard
+        - performance_band
+      - - region
+        - discipline
+        - school_current
+        - teacher_current
+        - student_number
+        - most_recent_grade_level
+        - school
+        - test_code
+        - proficiency_standard
+        - performance_band
+      - - region
+        - student_number
+        - school
+        - test_code
+        - performance_band
+      - - region
+        - discipline
+        - student_number
+        - school
+        - test_code
+        - performance_band
+      - - region
+        - dashboard_discipline
+        - school_current
+        - teacher_current
+        - student_number
+        - most_recent_grade_level
+        - school
+        - test_code
+        - proficiency_standard
+        - performance_band
+        - assessment_name
+      - - region
+        - discipline
+        - school_current
+        - teacher_current
+        - student_number
+        - most_recent_grade_level
+        - school
+        - test_code
+        - proficiency_standard
+        - performance_band
+        - assessment_name
+      - - region
+        - dashboard_discipline
+        - school_current
+        - teacher_current
+        - student_number
+        - most_recent_grade_level
+        - school
+        - test_code
+        - proficiency_standard
+        - performance_band
+        - enroll_status
+      - - region
+        - discipline
+        - school_current
+        - teacher_current
+        - student_number
+        - most_recent_grade_level
+        - school
+        - test_code
+        - proficiency_standard
+        - performance_band
+        - enroll_status
+      - - region
+        - school
+        - student_number
+        - dashboard_discipline
+        - proficiency_standard
+        - performance_band
+        - test_code
+      - - region
+        - school
+        - student_number
+        - discipline
+        - proficiency_standard
+        - performance_band
+        - test_code
+      - - region
+        - school
+        - student_number
+        - dashboard_discipline
+        - proficiency_standard
+        - performance_band
+        - test_code
+        - enroll_status
+      - - region
+        - school
+        - student_number
+        - discipline
+        - proficiency_standard
+        - performance_band
+        - test_code
+        - enroll_status
+      - - region
+        - school
+        - student_number
+        - dashboard_discipline
+        - proficiency_standard
+        - performance_band
+        - test_code
+        - gifted
+      - - region
+        - school
+        - student_number
+        - discipline
+        - proficiency_standard
+        - performance_band
+        - test_code
+        - gifted
+      - - region
+        - school
+        - student_number
+        - performance_band
+        - test_code
+        - gifted
+      - - region
+        - school
+        - student_number
+        - discipline
+        - performance_band
+        - test_code
+        - gifted
+      - - region
+        - school
+        - student_number
+        - dashboard_discipline
+        - proficiency_standard
+        - performance_band
+        - test_code
+        - iep
+      - - region
+        - school
+        - student_number
+        - discipline
+        - proficiency_standard
+        - performance_band
+        - test_code
+        - iep
+      - - region
+        - school
+        - student_number
+        - performance_band
+        - test_code
+        - iep
+      - - region
+        - school
+        - student_number
+        - discipline
+        - performance_band
+        - test_code
+        - iep
+      - - region
+        - school
+        - student_number
+        - dashboard_discipline
+        - proficiency_standard
+        - performance_band
+        - test_code
+        - iready_proficiency_eoy
+      - - region
+        - school
+        - student_number
+        - discipline
+        - proficiency_standard
+        - performance_band
+        - test_code
+        - iready_proficiency_eoy
+      - - region
+        - school
+        - student_number
+        - dashboard_discipline
+        - proficiency_standard
+        - performance_band
+        - test_code
+        - ml
+      - - region
+        - school
+        - student_number
+        - discipline
+        - proficiency_standard
+        - performance_band
+        - test_code
+        - ml
+      - - region
+        - school
+        - student_number
+        - performance_band
+        - test_code
+        - ml
+      - - region
+        - school
+        - student_number
+        - discipline
+        - performance_band
+        - test_code
+        - ml
+      - - region
+        - school
+        - student_number
+        - dashboard_discipline
+        - proficiency_standard
+        - performance_band
+        - test_code
+        - nj_student_tier
+      - - region
+        - school
+        - student_number
+        - discipline
+        - proficiency_standard
+        - performance_band
+        - test_code
+        - nj_student_tier
+      - - region
+        - school
+        - student_number
+        - dashboard_discipline
+        - proficiency_standard
+        - performance_band
+        - test_code
+        - teacher
+      - - region
+        - school
+        - student_number
+        - discipline
+        - proficiency_standard
+        - performance_band
+        - test_code
+        - teacher
+      - - region
+        - school
+        - student_number
+        - performance_band
+        - test_code
+        - teacher
+      - - region
+        - school
+        - student_number
+        - discipline
+        - performance_band
+        - test_code
+        - teacher
+      - - region
+        - school
+        - student_number
+        - dashboard_discipline
+        - proficiency_standard
+        - performance_band
+        - test_code
+        - teacher_current
+      - - region
+        - school
+        - student_number
+        - discipline
+        - proficiency_standard
+        - performance_band
+        - test_code
+        - teacher_current
+      - - region
+        - school
+        - teacher_current
+        - student_number
+        - nj_student_tier
+        - iready_proficiency_eoy
+        - ml
+        - iep
+        - is_504
+        - most_recent_grade_level
+        - test_code
+        - dashboard_discipline
+        - performance_band
+      - - region
+        - school
+        - teacher_current
+        - student_number
+        - nj_student_tier
+        - iready_proficiency_eoy
+        - ml
+        - iep
+        - is_504
+        - most_recent_grade_level
+        - test_code
+        - discipline
+        - performance_band
+      - - region
+        - school
+        - student_number
+        - ml
+        - iep
+        - test_code
+        - performance_band
+      - - region
+        - school
+        - student_number
+        - ml
+        - iep
+        - test_code
+        - discipline
+        - performance_band
+      - - region
+        - school
+        - teacher
+        - student_number
+        - nj_student_tier
+        - iready_proficiency_eoy
+        - ml
+        - iep
+        - is_504
+        - most_recent_grade_level
+        - test_code
+        - dashboard_discipline
+        - performance_band
+      - - region
+        - school
+        - teacher
+        - student_number
+        - nj_student_tier
+        - iready_proficiency_eoy
+        - ml
+        - iep
+        - is_504
+        - most_recent_grade_level
+        - test_code
+        - discipline
+        - performance_band
+      - - region
+        - school
+        - teacher
+        - student_number
+        - ml
+        - iep
+        - test_code
+        - performance_band
+      - - region
+        - school
+        - teacher
+        - student_number
+        - ml
+        - iep
+        - test_code
+        - discipline
+        - performance_band
+      - - region
+        - school
+        - teacher
+        - student_number
+        - nj_student_tier
+        - iready_proficiency_eoy
+        - ml
+        - iep
+        - is_504
+        - most_recent_grade_level
+        - test_code
+        - dashboard_discipline
+        - performance_band
+        - assessment_name
+      - - region
+        - school
+        - teacher
+        - student_number
+        - nj_student_tier
+        - iready_proficiency_eoy
+        - ml
+        - iep
+        - is_504
+        - most_recent_grade_level
+        - test_code
+        - discipline
+        - performance_band
+        - assessment_name
+      - - region
+        - school
+        - teacher
+        - student_number
+        - nj_student_tier
+        - iready_proficiency_eoy
+        - ml
+        - iep
+        - is_504
+        - most_recent_grade_level
+        - test_code
+        - dashboard_discipline
+        - performance_band
+        - enroll_status
+      - - region
+        - school
+        - teacher
+        - student_number
+        - nj_student_tier
+        - iready_proficiency_eoy
+        - ml
+        - iep
+        - is_504
+        - most_recent_grade_level
+        - test_code
+        - discipline
+        - performance_band
+        - enroll_status
+      - - region
+        - school
+        - teacher
+        - student_number
+        - nj_student_tier
+        - iready_proficiency_eoy
+        - ml
+        - iep
+        - is_504
+        - most_recent_grade_level
+        - test_code
+        - dashboard_discipline
+        - performance_band
+        - grade_level
+      - - region
+        - school
+        - teacher
+        - student_number
+        - nj_student_tier
+        - iready_proficiency_eoy
+        - ml
+        - iep
+        - is_504
+        - most_recent_grade_level
+        - test_code
+        - discipline
+        - performance_band
+        - grade_level
+      - - region
+        - school
+        - teacher
+        - student_number
+        - ml
+        - iep
+        - test_code
+        - performance_band
+        - grade_level
+      - - region
+        - school
+        - teacher
+        - student_number
+        - ml
+        - iep
+        - test_code
+        - discipline
+        - performance_band
+        - grade_level
+      - - region
+        - school
+        - teacher
+        - student_number
+        - nj_student_tier
+        - iready_proficiency_eoy
+        - ml
+        - iep
+        - is_504
+        - most_recent_grade_level
+        - test_code
+        - dashboard_discipline
+        - performance_band
+        - is_proficient
+      - - region
+        - school
+        - teacher
+        - student_number
+        - nj_student_tier
+        - iready_proficiency_eoy
+        - ml
+        - iep
+        - is_504
+        - most_recent_grade_level
+        - test_code
+        - discipline
+        - performance_band
+        - is_proficient
+      - - region
+        - school
+        - teacher
+        - student_number
+        - ml
+        - iep
+        - test_code
+        - performance_band
+        - is_proficient
+      - - region
+        - school
+        - teacher
+        - student_number
+        - ml
+        - iep
+        - test_code
+        - discipline
+        - performance_band
+        - is_proficient
+      - - region
+        - school
+        - teacher
+        - student_number
+        - nj_student_tier
+        - iready_proficiency_eoy
+        - ml
+        - iep
+        - is_504
+        - most_recent_grade_level
+        - test_code
+        - dashboard_discipline
+        - performance_band
+        - performance_band_level
+      - - region
+        - school
+        - teacher
+        - student_number
+        - nj_student_tier
+        - iready_proficiency_eoy
+        - ml
+        - iep
+        - is_504
+        - most_recent_grade_level
+        - test_code
+        - discipline
+        - performance_band
+        - performance_band_level
+      - - region
+        - school
+        - teacher
+        - student_number
+        - ml
+        - iep
+        - test_code
+        - performance_band
+        - performance_band_level
+      - - region
+        - school
+        - teacher
+        - student_number
+        - ml
+        - iep
+        - test_code
+        - discipline
+        - performance_band
+        - performance_band_level
+      - - region
+        - school
+        - teacher
+        - student_number
+        - nj_student_tier
+        - iready_proficiency_eoy
+        - ml
+        - iep
+        - is_504
+        - most_recent_grade_level
+        - test_code
+        - dashboard_discipline
+        - performance_band
+        - teacher_current
+      - - region
+        - school
+        - teacher
+        - student_number
+        - nj_student_tier
+        - iready_proficiency_eoy
+        - ml
+        - iep
+        - is_504
+        - most_recent_grade_level
+        - test_code
+        - discipline
+        - performance_band
+        - teacher_current
+    not_checked:
+      - construct: "viewer_function: User Filter 1 - Region [429d7b]"
+        why:
+          Varies by viewer; the run uses a network identity on the full extract.
+      - construct: "filter: Permissions [fa09b8]"
+        why: Varies by viewer (ISMEMBEROF); the run uses a network identity.
+      - construct: "filter: Assessment Name [1ed589]"
+        why:
+          Changes the population this sheet shows (for example proficient
+          students only, or some tests or grades dropped); the check compares
+          every tested student.
+      - construct: "filter: Enroll Status [63895f]"
+        why:
+          Changes the population this sheet shows (for example proficient
+          students only, or some tests or grades dropped); the check compares
+          every tested student.
+      - construct: "viewer_function: Permissions [348046]"
+        why:
+          Varies by viewer; the run uses a network identity on the full extract.
+      - construct: "filter: Results Type [f7364f]"
+        why: Includes preliminary scores; the check compares official scores.
 members:
   dashboard_discipline:
-    what: >-
-      The dashboard's discipline: Math holds the grade-level tests plus Algebra
-      I (ALG01) and Geometry (GEO01).
-    lives_in: >-
+    what:
+      "The dashboard's discipline: Math holds the grade-level tests plus Algebra
+      I (ALG01) and Geometry (GEO01)."
+    lives_in:
       The extract's discipline field. Cube has academic_subject, which names
       Algebra I and Geometry separately, and courses.discipline, which comes
       from the score's section and is empty for homeroom-resolved scores.
-    suggested_edit: >-
+    suggested_edit:
       Settle which subjects count as math (an open network question in the
       assessment orchestrator), then add that test-level discipline to
       dim_assessments and expose it on student_assessment_scores_view.
+  grade_range_group:
+    what:
+      "The dashboard's grade range: each test-and-grade pair binned as 3-8 or
+      HS."
+    lives_in:
+      A Tableau group over test_code and grade_level in the STAT workbook.
+    suggested_edit:
+      Decide whether grade range is a reporting definition the network keeps; if
+      so, add it to dim_assessments or the enrollment dim and expose it on the
+      view.
