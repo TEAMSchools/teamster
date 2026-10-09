@@ -5025,7 +5025,8 @@ whenever the skill says the analyst approves something.
 
 Find the DDI Suite workbook LUID with the Tableau MCP (`search-content` for "DDI
 Suite"). Write `checks/ddi_suite.yml` with the header from the skill's step 1
-and `dashboards: [Module Dashboard]` (the dashboard the spike proved).
+and `dashboards: [Module Dashboard]`. Start with the tab the spike proved; Step
+5 widens to the 2 tabs that hold the other known gaps.
 
 - [ ] **Step 2: Plan and agree the states**
 
@@ -5051,23 +5052,36 @@ From this session's output, answer each and note the answer for the PR body:
   working blank filter and link it from the PR.
 - Whether the live workbook's `updated_at` moved during the session.
 
-- [ ] **Step 5: Explain and check the known DDI gaps are found**
+- [ ] **Step 5: Explain the Module Dashboard's gaps**
 
 Run `explain`, then `drafts`. With the analyst, add `mismatches:` entries and
-variants for the known DDI gaps (handoff list): duplicate rows in the assessment
-fact (`fix: cube`), "% Completion: From 75%" reading scored rows only
-(`fix: dashboard`), untagged Illuminate assessments (`fix: undecided`). Rerun
-`explain` and `drafts`.
+variants for the 2 known gaps on this tab: duplicate rows in the assessment fact
+(`fix: cube`) and "% Completion: From 75%" reading scored rows only
+(`fix: dashboard`). Rerun `explain` and `drafts`.
 
-Acceptance: the digest shows the first 3 under their sections, the extract's
-missing not-tested students under "Investigate" (DDI weekly extract only; skip
-if the Module Dashboard reads only the assessment extract), and no `fix_cube`
-verdict caused by a trust-gate failure.
+Acceptance: the digest lists the first under "Fix in Cube" and the second under
+"Fix in the dashboard", and no `fix_cube` verdict comes from a trust-gate
+failure.
+
+- [ ] **Step 5b: Widen to the Assessment Dashboard and Mastery Over Time
+      [School]**
+
+Add `Assessment Dashboard` and `Mastery Over Time [School]` to `dashboards:`.
+Run `plan` again and agree the new tabs' states with the analyst (the Module
+Dashboard's states stay as agreed). Repeat skill steps 3-9 for the session:
+open, map the new sheets, compare, descend, close, explain, drafts. Add a
+`mismatches:` entry for untagged Illuminate assessments (`fix: undecided`).
+
+Acceptance: the digest lists untagged assessments under "Owner to decide", and
+the weekly extract's missing not-tested students (Mastery Over Time reads
+`rpt_tableau__ddi_dashboard`) under "Investigate" as `fail`. The 8 other DDI
+tabs stay out of this task.
 
 - [ ] **Step 6: Run-twice check**
 
 Open a second session on the same extract (before the next extract refresh) with
-the same `states:`, then close it. Compare the 2 snapshots' CSVs:
+the same `dashboards:` and `states:`, then close it. Compare the 2 snapshots'
+CSVs:
 
 ```bash
 cd ~/.cache/cube-validate/ddi-suite && ls && diff -rq "$(ls | sort | tail -n 2 | head -n 1)/csv" "$(ls | sort | tail -n 1)/csv" | head -n 20
