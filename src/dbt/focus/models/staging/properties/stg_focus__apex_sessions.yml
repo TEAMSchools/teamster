@@ -82,6 +82,9 @@ models:
       - name: last_autosave_at
         description: Last autosave of the student's answers.
         data_type: timestamp
+        config:
+          meta:
+            contains_pii: true
       - name: graded
         description: Whether scoring is finished.
         data_type: boolean
@@ -103,6 +106,9 @@ models:
       - name: released_at
         description: When results were released.
         data_type: timestamp
+        config:
+          meta:
+            contains_pii: true
       - name: released_by
         description: Focus user id of the staff member who released results.
         data_type: int
@@ -117,6 +123,9 @@ models:
       - name: discarded_at
         description: When the attempt was discarded.
         data_type: timestamp
+        config:
+          meta:
+            contains_pii: true
       - name: discarded_by
         description: >-
           Focus user id of the staff member who discarded the attempt.
@@ -144,6 +153,9 @@ models:
       - name: score_locked_at
         description: When the score was locked.
         data_type: timestamp
+        config:
+          meta:
+            contains_pii: true
       - name: similar_responses
         description: Focus flag for answers similar to another student's.
         data_type: boolean
