@@ -174,8 +174,38 @@ def widen_unbounded_numeric_adapter(col_type: TypeEngine) -> TypeEngine:
     return col_type
 
 
+def json_as_text_query_adapter(query: sa.Select, table: sa.Table) -> sa.Select:
+    """Select Postgres ``json``/``jsonb`` columns as text.
+
+    The driver parses JSON into Python objects, and pyarrow cannot build one
+    array from values that mix lists and non-lists. dlt's fallback serializes
+    nested values only when the first non-null value is a list or dict, so a
+    column whose first value is a scalar fails the extract with
+    ``PyToArrowConversionException``. A text cast hands pyarrow strings;
+    staging parses them with ``parse_json`` where needed.
+    ``_widening_type_adapter`` declares the matching ``Text`` schema hint.
+    """
+    json_columns = {c.name for c in table.columns if isinstance(c.type, sa.JSON)}
+
+    if not json_columns:
+        return query
+
+    return query.with_only_columns(
+        *(
+            sa.cast(c, sa.Text).label(c.name) if c.name in json_columns else c
+            for c in table.columns
+        )
+    )
+
+
 def _widening_type_adapter(col_type: TypeEngine) -> TypeEngine | None:
-    """Both Focus type adapters, applied to every table in the source."""
+    """The Focus type adapters, applied to every table in the source.
+
+    JSON maps to ``Text`` to match ``json_as_text_query_adapter``.
+    """
+    if isinstance(col_type, sa.JSON):
+        return sa.Text()
+
     return interval_to_microseconds_adapter(widen_unbounded_numeric_adapter(col_type))
 
 
@@ -214,7 +244,7 @@ def _focus_table_items(
             type_adapter_callback=_widening_type_adapter,
             included_columns=None,
             excluded_columns=None,
-            query_adapter_callback=None,
+            query_adapter_callback=json_as_text_query_adapter,
             resolve_foreign_keys=False,
         ):
             # table_rows opens with a HintsMeta item carrying the reflected

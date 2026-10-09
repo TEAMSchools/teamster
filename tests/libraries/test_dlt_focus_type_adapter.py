@@ -23,6 +23,7 @@ import pytest
 from dagster_dlt.constants import META_KEY_SOURCE
 from dlt.common.configuration.specs import ConnectionStringCredentials
 from dlt.common.libs.pyarrow import (
+    PyToArrowConversionException,
     UnsupportedArrowTypeException,
     py_arrow_to_table_schema_columns,
 )
@@ -197,8 +198,68 @@ def test_reflection_settings_reach_table_rows(monkeypatch):
     # table_rows takes no defaults but `table_loader_class`; a dropped kwarg
     # would silently change extract behavior
     assert captured["incremental"] is None
-    assert captured["query_adapter_callback"] is None
+    assert captured["query_adapter_callback"] is focus_assets.json_as_text_query_adapter
     assert captured["resolve_foreign_keys"] is False
+
+
+def test_parsed_json_mixing_lists_and_scalars_reproduces_prod_failure():
+    """Regression guard: the prod error the JSON-as-text cast avoids.
+
+    The driver parses Postgres `json`/`jsonb` into Python objects, and pyarrow
+    cannot build one array from values that mix lists and non-lists
+    (`apex_session_responses.response`). dlt's fallback serializes nested values
+    only when the first non-null value is a list or dict, so a scalar first
+    fails.
+    """
+    columns: TTableSchemaColumns = {
+        "response": {"name": "response", "data_type": "json", "nullable": True}
+    }
+
+    with pytest.raises(PyToArrowConversionException):
+        row_tuples_to_arrow([("B",), ([1, 2],)], columns=columns, tz="UTC")
+
+
+def test_json_query_adapter_casts_json_columns_to_text():
+    """Postgres returns the cast column as a string, never a parsed object."""
+    from sqlalchemy.dialects import postgresql
+    from sqlalchemy.dialects.postgresql import JSON, JSONB
+
+    from teamster.libraries.dlt.focus import assets as focus_assets
+
+    table = Table(
+        "apex_sessions",
+        MetaData(),
+        Column("id", Integer),
+        Column("audience_config", JSON()),
+        Column("response", JSONB()),
+    )
+
+    query = focus_assets.json_as_text_query_adapter(table.select(), table)
+    sql = str(query.compile(dialect=postgresql.dialect()))
+
+    assert "CAST(apex_sessions.audience_config AS TEXT) AS audience_config" in sql
+    assert "CAST(apex_sessions.response AS TEXT) AS response" in sql
+    assert "apex_sessions.id" in sql
+    assert "CAST(apex_sessions.id" not in sql
+
+
+def test_json_query_adapter_leaves_json_free_tables_alone():
+    from teamster.libraries.dlt.focus import assets as focus_assets
+
+    table = _gradebook_assignments_table()
+    query = table.select()
+
+    assert focus_assets.json_as_text_query_adapter(query, table) is query
+
+
+def test_json_type_adapter_declares_text():
+    """The schema hint must match the text the query returns."""
+    from sqlalchemy.dialects.postgresql import JSON, JSONB
+
+    from teamster.libraries.dlt.focus import assets as focus_assets
+
+    assert isinstance(focus_assets._widening_type_adapter(JSONB()), sqltypes.Text)
+    assert isinstance(focus_assets._widening_type_adapter(JSON()), sqltypes.Text)
 
 
 def test_interval_column_without_adapter_reproduces_prod_failure():

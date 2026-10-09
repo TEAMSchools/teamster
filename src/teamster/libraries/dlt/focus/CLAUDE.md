@@ -8,12 +8,12 @@ and asset keys: see `../CLAUDE.md`. All tables come from the `public` schema
 
 ## Differences from Illuminate
 
-| Aspect              | Illuminate                              | Focus                                                                 |
-| ------------------- | --------------------------------------- | --------------------------------------------------------------------- |
-| Schema dimension    | Multi-schema (asset key includes it)    | Single `public` schema                                                |
-| Type adapters       | `unbounded_numeric_adapter`             | `interval_to_microseconds_adapter`, `widen_unbounded_numeric_adapter` |
-| Query callbacks     | `filter_date_taken_callback` (optional) | None                                                                  |
-| Nullability adapter | `remove_nullability_adapter`            | `remove_nullability_adapter`                                          |
+| Aspect              | Illuminate                              | Focus                                                                                |
+| ------------------- | --------------------------------------- | ------------------------------------------------------------------------------------ |
+| Schema dimension    | Multi-schema (asset key includes it)    | Single `public` schema                                                               |
+| Type adapters       | `unbounded_numeric_adapter`             | `interval_to_microseconds_adapter`, `widen_unbounded_numeric_adapter`, JSON → `Text` |
+| Query callbacks     | `filter_date_taken_callback` (optional) | `json_as_text_query_adapter`                                                         |
+| Nullability adapter | `remove_nullability_adapter`            | `remove_nullability_adapter`                                                         |
 
 ## Nullability adapter (required)
 
@@ -67,6 +67,16 @@ source via `type_adapter_callback`, mapping unbounded Postgres `numeric` (no
 declared precision/scale) to `Numeric(76, 38)` — BigQuery `BIGNUMERIC`. A
 `stg_focus__*` model projecting such a column must `cast(col as numeric)` to
 hold its `numeric` contract.
+
+## JSON as text (source-wide)
+
+`json_as_text_query_adapter` selects every Postgres `json`/`jsonb` column as
+`CAST(col AS TEXT)`, and `_widening_type_adapter` declares the matching `Text`
+hint, so **every Focus JSON column lands as a BigQuery STRING**: parse it with
+`parse_json` in staging. Without the cast, psycopg hands dlt parsed Python
+values, and a column whose first non-null value is a scalar while a later one is
+a list fails the extract with `PyToArrowConversionException` (#5828,
+`apex_session_responses.response`).
 
 ## Empty source tables
 
@@ -152,3 +162,14 @@ verification requires a branch deployment (GKE has static egress IP).
 Branch-deployment dlt runs write to the prod `dagster_<district>_dlt_focus`
 dataset (see `../CLAUDE.md`), so a newly-configured table materialized in a
 branch deployment can be queried directly via BigQuery MCP to verify the load.
+
+**Pre-merge gate for new tables.** Before merging a PR that adds tables to
+`config/focus.yaml`, launch a run of only the new tables in the PR's branch
+deployment, then confirm each one exists in BigQuery with the expected row
+count. Unit tests run on SQLite, which returns plain strings and Python types
+that real Postgres and psycopg don't, so a type-specific extract failure passes
+CI and first fails in prod (#5828). In prod a failed load is expensive: it keeps
+the old baselines, the sensor re-selects the same tables every tick, and every
+intraday Focus sync stalls until a revert deploys. Launch the branch run while
+no prod Focus run is in flight: both share the prod dataset and dlt state, and
+the concurrency pool doesn't span deployments.
