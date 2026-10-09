@@ -87,6 +87,16 @@ also name `rpt_tableau__gradebook_audit`. Do NOT read either as the answer —
 from a dbt Cloud CI schema that no longer exists. Mention them only if the user
 asks about disabled or archived workbooks.
 
+A third consumer, the `gradebook-flag-triage` end-user skill, has its own
+exposure `gradebook_flag_triage_skill` in
+`src/dbt/kipptaf/models/exposures/claude.yml`. It reads the audit view plus four
+intermediates directly (`int_powerschool__gradebook_assignment_scores_rollup`,
+`int_powerschool__gradebook_assignments_scores`,
+`int_powerschool__u_expectations_qtd_unpivot`,
+`int_extracts__course_enrollments_by_term`), so a column change on any of those
+reaches a Slack answer with no rpt_ in between. What to update and when:
+[`../playbooks/change-a-flag.md`](../playbooks/change-a-flag.md).
+
 Two companion Google Sheets have their own exposures in
 `src/dbt/kipptaf/models/exposures/google-sheets.yml` — check there if asked
 about the gsheets side rather than the Tableau side:

@@ -1,5 +1,14 @@
 # Add or remove a flag
 
+Adding, removing, or renaming a check, a `flag_reasons` label, or an `n_*` count
+also changes what the `gradebook-flag-triage` end-user skill (ps-plugins,
+`skills/gradebook-flag-triage/references/queries.md` and
+`reading-the-results.md`) selects and how it explains the flag to a teacher.
+Update that skill in the same change and ship it per ps-plugins
+`docs/ship-a-skill-update.md`. The `gradebook_flag_triage_skill` exposure
+records the dependency but does not fail on a rename; the skill's query file is
+the column list to check.
+
 ## Procedure: Add a new flag
 
 `stg_google_sheets__gradebook_flags` is disabled — no sheet step needed. Since
