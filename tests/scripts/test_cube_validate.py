@@ -399,3 +399,116 @@ def test_scope_guard_stops_when_cube_misses_a_region(tmp_path):
     cv.scope_guard(load, c, {"North": 40, "South": 0})
     with pytest.raises(cv.ScopeError, match="South"):
         cv.scope_guard(load, c, {"North": 40, "South": 12})
+
+
+def _sheet(tmp_path, **measure_extra):
+    d = json.loads(json.dumps(CHECKS))
+    d["sheets"]["Overview - Table"]["measures"]["Avg Score"].update(measure_extra)
+    c = cv.load_checks(_write(tmp_path, d))
+    return c, c["sheets"]["Overview - Table"]
+
+
+class FakeCube:
+    """Answers each query from rows keyed by the school, or the total."""
+
+    def __init__(self, by_school, total):
+        self.by_school, self.total, self.queries = by_school, total, []
+
+    def __call__(self, q):
+        self.queries.append(q)
+        if "demo.school" in q["dimensions"]:
+            return [{"demo.school": k, **v} for k, v in self.by_school.items()], [
+                "rollup_a"
+            ]
+        return [dict(self.total)], []
+
+
+def _row(avg, n=20):
+    return {
+        "demo.avg_score": str(avg),
+        "demo.count_students": str(n),
+        "demo.pct_complete": "0.8",
+    }
+
+
+def test_compare_matches_rows_and_totals(tmp_path):
+    c, sheet = _sheet(tmp_path)
+    export = cv.read_export(
+        b"School Name,Avg Score\r\nAlpha,48.50\r\nBeta,50.00\r\nAll,49.25\r\n"
+    )
+    cube = FakeCube({"Alpha": _row(48.5), "Beta": _row(50)}, _row(49.25, 40))
+    cells = cv.compare_export(sheet, "s1", export, cube, [], [], c)
+    assert [(x.key, x.status) for x in cells] == [
+        ({"School Name": "Alpha"}, "match"),
+        ({"School Name": "Beta"}, "match"),
+        ({"School Name": "All"}, "match"),
+    ]
+    assert len(cube.queries) == 2 and cube.queries[1]["dimensions"] == []
+    assert cells[0].n_students == 20 and cells[0].rollups == ["rollup_a"]
+
+
+def test_compare_flags_value_gaps_and_one_sided_slices(tmp_path):
+    c, sheet = _sheet(tmp_path)
+    export = cv.read_export(b"School Name,Avg Score\r\nAlpha,48.50\r\nGamma,30.00\r\n")
+    cube = FakeCube({"Alpha": _row(47.0), "Beta": _row(50)}, _row(0))
+    cells = {
+        x.key["School Name"]: x
+        for x in cv.compare_export(sheet, "s1", export, cube, [], [], c)
+    }
+    assert cells["Alpha"].status == "mismatch" and cells["Alpha"].cube == 47.0
+    assert cells["Gamma"].reason == "Tableau shows this slice; Cube does not"
+    assert cells["Beta"].reason == "Cube has this slice; Tableau does not"
+    assert cells["Beta"].tableau is None
+
+
+def test_multi_value_marks_and_unmapped_columns_are_not_comparable(tmp_path):
+    c, sheet = _sheet(tmp_path)
+    export = cv.read_export(b"School Name,Avg Score,Mystery\r\n*,48.50,1\r\n")
+    cells = cv.compare_export(sheet, "s1", export, FakeCube({}, _row(0)), [], [], c)
+    reasons = sorted(x.reason for x in cells if x.status == "not_comparable")
+    assert reasons == ["multi-value mark", "unmapped column"]
+
+
+def test_a_filter_with_no_member_blocks_the_state(tmp_path):
+    c, sheet = _sheet(tmp_path)
+    export = cv.read_export(b"School Name,Avg Score\r\nAlpha,48.50\r\n")
+    cells = cv.compare_export(
+        sheet, "s1", export, FakeCube({}, _row(0)), [], ["Grade Level"], c
+    )
+    assert cells[0].status == "not_comparable" and "Grade Level" in cells[0].reason
+
+
+def test_a_dimension_with_no_member_is_a_missing_member(tmp_path):
+    c, sheet = _sheet(tmp_path)
+    export = cv.read_export(b"Student,Avg Score\r\nsomeone,48.50\r\n")
+    cells = cv.compare_export(sheet, "s1", export, FakeCube({}, _row(0)), [], [], c)
+    assert cells[0].status == "missing_member" and "Student" in cells[0].reason
+
+
+def test_an_empty_export_still_shows_cubes_rows(tmp_path):
+    c, sheet = _sheet(tmp_path)
+    for data in (b"", b"School Name,Avg Score\r\n"):
+        cells = cv.compare_export(
+            sheet,
+            "s1",
+            cv.read_export(data),
+            FakeCube({"Alpha": _row(48.5)}, _row(0)),
+            [],
+            [],
+            c,
+        )
+        assert any(x.reason == "Cube has this slice; Tableau does not" for x in cells)
+
+
+def test_percent_of_total_is_rebuilt_from_cubes_rows(tmp_path):
+    c, sheet = _sheet(tmp_path, table_calc="percent_of_total", round=None)
+    export = cv.read_export(b"School Name,Avg Score\r\nAlpha,25%\r\nBeta,75%\r\n")
+    cube = FakeCube({"Alpha": _row(10), "Beta": _row(30)}, _row(0))
+    cells = cv.compare_export(sheet, "s1", export, cube, [], [], c)
+    assert [x.status for x in cells] == ["match", "match"]
+
+
+def test_cells_round_trip(tmp_path):
+    cell = cv.Cell("S", "s1", {"A": "x"}, "M", "1", 1.0, 1.0, 20, "match")
+    cv.write_cells(tmp_path / "cells.jsonl", [cell])
+    assert cv.read_cells(tmp_path / "cells.jsonl") == [cell]

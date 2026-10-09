@@ -528,3 +528,242 @@ def scope_guard(load, checks: dict, extract_counts: dict[str, int]) -> None:
             f"Cube shows no students for {caption} {', '.join(short)}, which the dashboard "
             "has: this Cube identity sees less than the dashboard does"
         )
+
+
+@dataclass
+class Cell:
+    sheet: str
+    state: str
+    key: dict[str, str]
+    measure: str
+    shown: str | None
+    tableau: float | None
+    cube: float | None
+    n_students: int | None
+    status: str
+    reason: str = ""
+    rollups: list[str] = field(default_factory=list)
+    verdict: str | None = None
+    explained_by: list[str] = field(default_factory=list)
+    extract: float | None = None
+    variant: float | None = None
+    cube_variant: float | None = None
+
+
+def _int(v) -> int | None:
+    n = _num(v)
+    return None if n is None else int(n)
+
+
+def apply_calc(meas: Measure, raw: dict, scale: float) -> dict:
+    """Values as the sheet shows them: scaled, or rebuilt as its table calculation."""
+    if meas.table_calc == "percent_of_total":
+        total = sum(v for v in raw.values() if v is not None)
+        return {
+            k: (v / total if v is not None and total else None) for k, v in raw.items()
+        }
+    if meas.table_calc == "running_sum":
+        out, run = {}, 0.0
+        for k in sorted(raw):
+            run += raw[k] or 0.0
+            out[k] = run * scale
+        return out
+    return {k: (None if v is None else v * scale) for k, v in raw.items()}
+
+
+def compare_export(
+    sheet, state_id, export, load, filters, missing, checks
+) -> list[Cell]:
+    def cell(
+        key,
+        m,
+        shown=None,
+        tableau=None,
+        cube=None,
+        n=None,
+        status="mismatch",
+        reason="",
+        rollups=(),
+    ):
+        return Cell(
+            sheet.name,
+            state_id,
+            key,
+            m,
+            shown,
+            tableau,
+            cube,
+            n,
+            status,
+            reason,
+            list(rollups),
+        )
+
+    cols = export.columns
+    # No header at all: compare at every mapped dimension Cube has, so its rows still show.
+    dims = (
+        [c for c in cols if c in sheet.dims]
+        if cols
+        else [d for d in sheet.dims if sheet.dims[d].cube]
+    )
+    measures = (
+        [c for c in cols if c in sheet.measures] if cols else list(sheet.measures)
+    )
+    cells = [
+        cell({}, c, status="not_comparable", reason="unmapped column")
+        for c in cols
+        if c not in sheet.dims and c not in sheet.measures
+    ]
+    if missing:
+        reason = f"filter {', '.join(missing)} has no Cube member"
+        return cells + [
+            cell({}, m, status="not_comparable", reason=reason) for m in measures
+        ]
+
+    groups: dict[tuple[str, ...], list[dict]] = {}
+    for r in export.rows:
+        if any(r.get(d) == MULTI for d in dims):
+            key = {d: r.get(d, "") for d in dims}
+            cells += [
+                cell(
+                    key, m, r.get(m), status="not_comparable", reason="multi-value mark"
+                )
+                for m in measures
+            ]
+            continue
+        groups.setdefault(tuple(d for d in dims if r.get(d) == TOTAL), []).append(r)
+    if not groups:
+        groups[()] = []
+
+    student = checks["student_count"]
+    for totals, rows in groups.items():
+        grain = [d for d in dims if d not in totals]
+        blocked = [d for d in grain if sheet.dims[d].cube is None]
+        no_member = [m for m in measures if sheet.measures[m].cube is None]
+        if blocked:
+            reason = f"dimension {', '.join(blocked)} has no Cube member"
+            for r in rows:
+                key = {d: r.get(d, "") for d in dims}
+                cells += [
+                    cell(key, m, r.get(m), status="missing_member", reason=reason)
+                    for m in measures
+                ]
+            continue
+        members = sorted(
+            {sheet.measures[m].cube for m in measures if sheet.measures[m].cube}
+            | {student}
+        )
+        q = {
+            "measures": members,
+            "dimensions": [sheet.dims[d].cube for d in grain],
+            "filters": filters + hard_filters(checks, sheet.datasource),
+            "limit": CUBE_LIMIT,
+        }
+        cube_rows, rollups = load(q)
+        by_key = {
+            tuple(norm_dim(cr.get(sheet.dims[d].cube)) for d in grain): cr
+            for cr in cube_rows
+        }
+        values = {
+            m: apply_calc(
+                sheet.measures[m],
+                {k: _num(cr.get(sheet.measures[m].cube)) for k, cr in by_key.items()},
+                sheet.measures[m].scale,
+            )
+            for m in measures
+            if m not in no_member
+        }
+        fixed = {d: TOTAL for d in totals}
+        seen = set()
+        for r in rows:
+            k = tuple(norm_dim(r.get(d)) for d in grain)
+            seen.add(k)
+            cr = by_key.get(k)
+            key = {**{d: r.get(d, "") for d in grain}, **fixed}
+            n = _int(cr.get(student)) if cr else None
+            for m in measures:
+                meas, text = sheet.measures[m], r.get(m)
+                shown = parse_shown(text, meas.round)
+                if m in no_member:
+                    cells.append(
+                        cell(
+                            key,
+                            m,
+                            text,
+                            status="missing_member",
+                            reason="measure has no Cube member",
+                        )
+                    )
+                elif shown is None and (text or "").strip():
+                    cells.append(
+                        cell(
+                            key,
+                            m,
+                            text,
+                            status="not_comparable",
+                            reason="value does not parse",
+                        )
+                    )
+                elif cr is None:
+                    cells.append(
+                        cell(
+                            key,
+                            m,
+                            text,
+                            shown and shown.value,
+                            None,
+                            None,
+                            "mismatch",
+                            "Tableau shows this slice; Cube does not",
+                            rollups,
+                        )
+                    )
+                else:
+                    v = values[m].get(k)
+                    ok = matches_shown(v, shown)
+                    cells.append(
+                        cell(
+                            key,
+                            m,
+                            text,
+                            shown and shown.value,
+                            v,
+                            n,
+                            "match" if ok else "mismatch",
+                            "",
+                            rollups,
+                        )
+                    )
+        for k, cr in by_key.items():
+            if k in seen:
+                continue
+            vals = {m: values[m].get(k) for m in values}
+            if all(v in (None, 0) for v in vals.values()):
+                continue
+            key = {**dict(zip(grain, k, strict=True)), **fixed}
+            for m, v in vals.items():
+                cells.append(
+                    cell(
+                        key,
+                        m,
+                        None,
+                        None,
+                        v,
+                        _int(cr.get(student)),
+                        "mismatch",
+                        "Cube has this slice; Tableau does not",
+                        rollups,
+                    )
+                )
+    return cells
+
+
+def write_cells(path: Path, cells: list[Cell]) -> None:
+    Path(path).write_text("".join(json.dumps(asdict(c)) + "\n" for c in cells))
+
+
+def read_cells(path: Path) -> list[Cell]:
+    p = Path(path)
+    if not p.exists():
+        return []
+    return [Cell(**json.loads(line)) for line in p.read_text().splitlines() if line]
