@@ -18,17 +18,22 @@ models:
         data_type: boolean
         description: >-
           True when `gpa_needed_for_cumulative_3_0` is less than or equal to the
-          credit-weighted maximum unweighted GPA achievable across the student's
-          current-year courses (each in-progress course capped at the max grade
-          points of its unweighted grade scale; already-stored current-year
-          grades locked at their actual unweighted points). NULL when the needed
-          value is NULL, or when any in-progress course's unweighted grade scale
-          cannot be resolved — the max is then unknowable, so the flag reads
-          unknown rather than a misstated false.
+          credit-weighted maximum unweighted GPA achievable across every GPA
+          course on the student's current-year schedule. A course still running
+          is capped at the max grade points of its unweighted grade scale; a
+          course whose terms have all ended is locked at its final unweighted Y1
+          points (the last term's running value, not the best one); a course
+          already stored this year is locked at its stored unweighted points.
+          NULL when the needed value is NULL, or when any course's max is
+          unknown — an unresolvable unweighted grade scale, or an ended course
+          with no Y1 — so the flag reads unknown rather than a misstated value.
         data_tests:
           - not_null:
               config:
                 where: gpa_needed_for_cumulative_3_0 is not null
+        config:
+          meta:
+            contains_pii: true
       - name: studentid
         data_type: int64
       - name: schoolid
@@ -48,26 +53,59 @@ models:
         data_type: string
       - name: earned_credits_cum
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: potential_credits_cum
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: earned_credits_cum_projected
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: earned_credits_cum_projected_s1
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: cumulative_y1_gpa
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: cumulative_y1_gpa_unweighted
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: cumulative_y1_gpa_projected
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: cumulative_y1_gpa_projected_s1
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: cumulative_y1_gpa_projected_s1_unweighted
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: core_cumulative_y1_gpa
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: potential_gpa_credits_cum_projected
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
         description: >-
           Sum of potential GPA credit hours across all years, including
           in-progress current-year courses — the denominator behind
@@ -75,22 +113,33 @@ models:
           auditable and joinable downstream.
       - name: potential_gpa_credits_current_year
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
         description: >-
-          Potential GPA credit hours the student is enrolled in for the current
-          academic year (in-progress courses with a Y1 grade plus any
-          already-stored current-year courses). NULL when the student has no
-          current-year GPA credits.
+          Potential GPA credit hours across every GPA course on the student's
+          current-year schedule, graded or not, plus any already-stored
+          current-year courses — the denominator behind
+          `gpa_needed_for_cumulative_3_0`. Keyed on the student's rn_year = 1
+          school, so a stored course from an earlier school this year counts
+          here and not on that school's row. Differs from the projection's
+          denominator, which counts graded courses only. NULL when the student
+          has no current-year GPA credits at this school.
       - name: gpa_needed_for_cumulative_3_0
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
         description: >-
-          Unweighted Y1 GPA the student must average across all current-year GPA
-          credits to finish with a projected cumulative Y1 GPA (unweighted) of
-          exactly 3.00. Computed as (3.0 x (prior credits + current credits) -
-          prior unweighted points) / current credits. Assumes the current credit
-          denominator stays fixed — course adds/drops move the target. Negative
-          values mean 3.00 is already guaranteed; values above the student's
-          unweighted scale maximum are not attainable this year. NULL when the
-          student has no current-year GPA credits.
+          Unweighted Y1 GPA the student must average across every GPA course on
+          this year's schedule, graded or not, to finish with a cumulative Y1
+          GPA (unweighted) of exactly 3.00. Computed as (3.0 x (prior credits +
+          current credits) - prior unweighted points) / current credits, where
+          current credits is `potential_gpa_credits_current_year`. Course
+          adds/drops move the target. Negative values mean 3.00 is already
+          guaranteed; values above the student's unweighted scale maximum are
+          not attainable this year. NULL when the student has no current-year
+          GPA credits.
 
 unit_tests:
   - name: unit_gpa_cumulative_needed_gpa
@@ -459,4 +508,514 @@ unit_tests:
             potential_gpa_credits_current_year: 70.0,
             gpa_needed_for_cumulative_3_0: 3.0,
             is_cumulative_3_0_attainable: null,
+          }
+  - name: unit_gpa_cumulative_needed_gpa_full_schedule
+    description: >-
+      The needed-GPA denominator counts every GPA course on this year's
+      schedule, graded or not, keyed on the rn_year = 1 school, while the
+      projection keeps counting only graded courses in a term covering today.
+      Student 7 has a prior F-year over 5 credits; this year C1 is graded B in a
+      Q1 term covering today and also has a future Q2 row, C2 is an ungraded
+      second-semester course with two future term rows, C3 is already stored for
+      the current year (its live row must not double count), and C4 is excluded
+      from GPA. Current credits are 15 (C1, C2, C3), needed is (3 x 20 - 0) / 15
+      = 4.0, and the max (4.0 everywhere) makes it attainable. The projection
+      sees only C1 and C3 over 15 cumulative credits at 2.5. Student 8 has one
+      zero-credit ungraded course covering today, so every GPA column is NULL.
+      Student 9 has a prior B-year over 5 credits and one ungraded 5-credit
+      future course, so needed is 3.0 and attainable. Student 10 has a
+      first-semester course whose terms have all ended with no stored Y1, a B
+      after Q1 that fell to an F by Q2, plus an ungraded future course: the
+      ended course is locked at its final 0 points, not its best 3.0, so the max
+      is 2.0 against a needed 3.0 and the flag reads false. Student 11 has a
+      graded course covering today and an ungraded future course on an
+      unresolvable grade scale, so needed computes over both but the flag is
+      NULL. Student 12 has an ended course with no Y1 at all plus a future
+      course: the ended course's max is unknown, so needed computes over both
+      and the flag is NULL. Student 13 is enrolled at school 102 but has a
+      stored current-year course at school 101: the stored row still rolls up at
+      101 with no needed GPA, and the needed GPA at 102 counts both the live and
+      the stored course.
+    model: int_powerschool__gpa_cumulative
+    overrides:
+      vars:
+        current_academic_year: 2025
+    given:
+      - input: ref('stg_powerschool__storedgrades')
+        rows:
+          - {
+              studentid: 7,
+              schoolid: 101,
+              course_number: C0,
+              academic_year: 2024,
+              storecode: Y1,
+              excludefromgpa: 0,
+              excludefromgraduation: 0,
+              potentialcrhrs: 5.0,
+              earnedcrhrs: 0.0,
+              gpa_points: 0.0,
+              percent: 50,
+              gradescale_name_unweighted: UT Unweighted,
+            }
+          - {
+              studentid: 7,
+              schoolid: 101,
+              course_number: C3,
+              academic_year: 2025,
+              storecode: Y1,
+              excludefromgpa: 0,
+              excludefromgraduation: 0,
+              potentialcrhrs: 5.0,
+              earnedcrhrs: 5.0,
+              gpa_points: 4.5,
+              percent: 95,
+              gradescale_name_unweighted: UT Unweighted,
+            }
+          - {
+              studentid: 9,
+              schoolid: 101,
+              course_number: C0,
+              academic_year: 2024,
+              storecode: Y1,
+              excludefromgpa: 0,
+              excludefromgraduation: 0,
+              potentialcrhrs: 5.0,
+              earnedcrhrs: 5.0,
+              gpa_points: 3.0,
+              percent: 85,
+              gradescale_name_unweighted: UT Unweighted,
+            }
+          - {
+              studentid: 13,
+              schoolid: 101,
+              course_number: C3,
+              academic_year: 2025,
+              storecode: Y1,
+              excludefromgpa: 0,
+              excludefromgraduation: 0,
+              potentialcrhrs: 5.0,
+              earnedcrhrs: 5.0,
+              gpa_points: 4.0,
+              percent: 95,
+              gradescale_name_unweighted: UT Unweighted,
+            }
+      - input: ref('int_powerschool__gradescaleitem_lookup')
+        rows:
+          - {
+              gradescaleid: 20,
+              gradescale_name: UT Unweighted,
+              letter_grade: A,
+              grade_points: 4.0,
+              min_cutoffpercentage: 90,
+              max_cutoffpercentage: 100,
+            }
+          - {
+              gradescaleid: 20,
+              gradescale_name: UT Unweighted,
+              letter_grade: B,
+              grade_points: 3.0,
+              min_cutoffpercentage: 80,
+              max_cutoffpercentage: 89.9,
+            }
+          - {
+              gradescaleid: 20,
+              gradescale_name: UT Unweighted,
+              letter_grade: F,
+              grade_points: 0.0,
+              min_cutoffpercentage: 0,
+              max_cutoffpercentage: 79.9,
+            }
+      - input: ref('base_powerschool__final_grades')
+        rows:
+          - {
+              studentid: 7,
+              yearid: 35,
+              course_number: C1,
+              storecode: Q1,
+              exclude_from_gpa: 0,
+              termbin_start_date: 2000-01-01,
+              termbin_end_date: 9999-12-31,
+              potential_credit_hours: 5.0,
+              y1_letter_grade: B,
+              y1_grade_points: 3.0,
+              y1_grade_points_unweighted: 3.0,
+              courses_gradescaleid: 20,
+              courses_gradescaleid_unweighted: 20,
+            }
+          - {
+              studentid: 7,
+              yearid: 35,
+              course_number: C1,
+              storecode: Q2,
+              exclude_from_gpa: 0,
+              termbin_start_date: 9999-01-01,
+              termbin_end_date: 9999-12-31,
+              potential_credit_hours: 5.0,
+              y1_letter_grade: B,
+              y1_grade_points: 3.0,
+              y1_grade_points_unweighted: 3.0,
+              courses_gradescaleid: 20,
+              courses_gradescaleid_unweighted: 20,
+            }
+          - {
+              studentid: 7,
+              yearid: 35,
+              course_number: C2,
+              storecode: Q3,
+              exclude_from_gpa: 0,
+              termbin_start_date: 9999-01-01,
+              termbin_end_date: 9999-06-30,
+              potential_credit_hours: 5.0,
+              y1_letter_grade: null,
+              y1_grade_points: null,
+              y1_grade_points_unweighted: null,
+              courses_gradescaleid: 20,
+              courses_gradescaleid_unweighted: 20,
+            }
+          - {
+              studentid: 7,
+              yearid: 35,
+              course_number: C2,
+              storecode: Q4,
+              exclude_from_gpa: 0,
+              termbin_start_date: 9999-07-01,
+              termbin_end_date: 9999-12-31,
+              potential_credit_hours: 5.0,
+              y1_letter_grade: null,
+              y1_grade_points: null,
+              y1_grade_points_unweighted: null,
+              courses_gradescaleid: 20,
+              courses_gradescaleid_unweighted: 20,
+            }
+          - {
+              studentid: 7,
+              yearid: 35,
+              course_number: C3,
+              storecode: Q1,
+              exclude_from_gpa: 0,
+              termbin_start_date: 2000-01-01,
+              termbin_end_date: 9999-12-31,
+              potential_credit_hours: 5.0,
+              y1_letter_grade: A,
+              y1_grade_points: 4.0,
+              y1_grade_points_unweighted: 4.0,
+              courses_gradescaleid: 20,
+              courses_gradescaleid_unweighted: 20,
+            }
+          - {
+              studentid: 7,
+              yearid: 35,
+              course_number: C4,
+              storecode: Q1,
+              exclude_from_gpa: 1,
+              termbin_start_date: 2000-01-01,
+              termbin_end_date: 9999-12-31,
+              potential_credit_hours: 5.0,
+              y1_letter_grade: A,
+              y1_grade_points: 4.0,
+              y1_grade_points_unweighted: 4.0,
+              courses_gradescaleid: 20,
+              courses_gradescaleid_unweighted: 20,
+            }
+          - {
+              studentid: 8,
+              yearid: 35,
+              course_number: C5,
+              storecode: Q1,
+              exclude_from_gpa: 0,
+              termbin_start_date: 2000-01-01,
+              termbin_end_date: 9999-12-31,
+              potential_credit_hours: 0.0,
+              y1_letter_grade: null,
+              y1_grade_points: null,
+              y1_grade_points_unweighted: null,
+              courses_gradescaleid: 20,
+              courses_gradescaleid_unweighted: 20,
+            }
+          - {
+              studentid: 9,
+              yearid: 35,
+              course_number: C2,
+              storecode: Q3,
+              exclude_from_gpa: 0,
+              termbin_start_date: 9999-01-01,
+              termbin_end_date: 9999-12-31,
+              potential_credit_hours: 5.0,
+              y1_letter_grade: null,
+              y1_grade_points: null,
+              y1_grade_points_unweighted: null,
+              courses_gradescaleid: 20,
+              courses_gradescaleid_unweighted: 20,
+            }
+          - {
+              studentid: 10,
+              yearid: 35,
+              course_number: C6,
+              storecode: Q1,
+              exclude_from_gpa: 0,
+              termbin_start_date: 2000-01-01,
+              termbin_end_date: 2000-06-30,
+              potential_credit_hours: 5.0,
+              y1_letter_grade: B,
+              y1_grade_points: 3.0,
+              y1_grade_points_unweighted: 3.0,
+              courses_gradescaleid: 20,
+              courses_gradescaleid_unweighted: 20,
+            }
+          - {
+              studentid: 10,
+              yearid: 35,
+              course_number: C6,
+              storecode: Q2,
+              exclude_from_gpa: 0,
+              termbin_start_date: 2000-07-01,
+              termbin_end_date: 2000-12-31,
+              potential_credit_hours: 5.0,
+              y1_letter_grade: F,
+              y1_grade_points: 0.0,
+              y1_grade_points_unweighted: 0.0,
+              courses_gradescaleid: 20,
+              courses_gradescaleid_unweighted: 20,
+            }
+          - {
+              studentid: 10,
+              yearid: 35,
+              course_number: C7,
+              storecode: Q3,
+              exclude_from_gpa: 0,
+              termbin_start_date: 9999-01-01,
+              termbin_end_date: 9999-12-31,
+              potential_credit_hours: 5.0,
+              y1_letter_grade: null,
+              y1_grade_points: null,
+              y1_grade_points_unweighted: null,
+              courses_gradescaleid: 20,
+              courses_gradescaleid_unweighted: 20,
+            }
+          - {
+              studentid: 11,
+              yearid: 35,
+              course_number: C1,
+              storecode: Q1,
+              exclude_from_gpa: 0,
+              termbin_start_date: 2000-01-01,
+              termbin_end_date: 9999-12-31,
+              potential_credit_hours: 5.0,
+              y1_letter_grade: B,
+              y1_grade_points: 3.0,
+              y1_grade_points_unweighted: 3.0,
+              courses_gradescaleid: 20,
+              courses_gradescaleid_unweighted: 20,
+            }
+          - {
+              studentid: 11,
+              yearid: 35,
+              course_number: C8,
+              storecode: Q3,
+              exclude_from_gpa: 0,
+              termbin_start_date: 9999-01-01,
+              termbin_end_date: 9999-12-31,
+              potential_credit_hours: 5.0,
+              y1_letter_grade: null,
+              y1_grade_points: null,
+              y1_grade_points_unweighted: null,
+              courses_gradescaleid: 99,
+              courses_gradescaleid_unweighted: 99,
+            }
+          - {
+              studentid: 12,
+              yearid: 35,
+              course_number: C9,
+              storecode: Q1,
+              exclude_from_gpa: 0,
+              termbin_start_date: 2000-01-01,
+              termbin_end_date: 2000-06-30,
+              potential_credit_hours: 5.0,
+              y1_letter_grade: null,
+              y1_grade_points: null,
+              y1_grade_points_unweighted: null,
+              courses_gradescaleid: 20,
+              courses_gradescaleid_unweighted: 20,
+            }
+          - {
+              studentid: 12,
+              yearid: 35,
+              course_number: C9,
+              storecode: Q2,
+              exclude_from_gpa: 0,
+              termbin_start_date: 2000-07-01,
+              termbin_end_date: 2000-12-31,
+              potential_credit_hours: 5.0,
+              y1_letter_grade: null,
+              y1_grade_points: null,
+              y1_grade_points_unweighted: null,
+              courses_gradescaleid: 20,
+              courses_gradescaleid_unweighted: 20,
+            }
+          - {
+              studentid: 12,
+              yearid: 35,
+              course_number: C10,
+              storecode: Q3,
+              exclude_from_gpa: 0,
+              termbin_start_date: 9999-01-01,
+              termbin_end_date: 9999-12-31,
+              potential_credit_hours: 5.0,
+              y1_letter_grade: null,
+              y1_grade_points: null,
+              y1_grade_points_unweighted: null,
+              courses_gradescaleid: 20,
+              courses_gradescaleid_unweighted: 20,
+            }
+          - {
+              studentid: 13,
+              yearid: 35,
+              course_number: C1,
+              storecode: Q1,
+              exclude_from_gpa: 0,
+              termbin_start_date: 2000-01-01,
+              termbin_end_date: 9999-12-31,
+              potential_credit_hours: 5.0,
+              y1_letter_grade: B,
+              y1_grade_points: 3.0,
+              y1_grade_points_unweighted: 3.0,
+              courses_gradescaleid: 20,
+              courses_gradescaleid_unweighted: 20,
+            }
+      - input: ref('base_powerschool__student_enrollments')
+        rows:
+          - {
+              studentid: 7,
+              yearid: 35,
+              academic_year: 2025,
+              schoolid: 101,
+              rn_year: 1,
+            }
+          - {
+              studentid: 8,
+              yearid: 35,
+              academic_year: 2025,
+              schoolid: 101,
+              rn_year: 1,
+            }
+          - {
+              studentid: 9,
+              yearid: 35,
+              academic_year: 2025,
+              schoolid: 101,
+              rn_year: 1,
+            }
+          - {
+              studentid: 10,
+              yearid: 35,
+              academic_year: 2025,
+              schoolid: 101,
+              rn_year: 1,
+            }
+          - {
+              studentid: 11,
+              yearid: 35,
+              academic_year: 2025,
+              schoolid: 101,
+              rn_year: 1,
+            }
+          - {
+              studentid: 12,
+              yearid: 35,
+              academic_year: 2025,
+              schoolid: 101,
+              rn_year: 1,
+            }
+          - {
+              studentid: 13,
+              yearid: 35,
+              academic_year: 2025,
+              schoolid: 102,
+              rn_year: 1,
+            }
+      - input: ref('stg_powerschool__students')
+        rows: []
+      - input: ref('stg_powerschool__schools')
+        rows: []
+    expect:
+      rows:
+        - {
+            studentid: 7,
+            schoolid: 101,
+            potential_gpa_credits_current_year: 15.0,
+            gpa_needed_for_cumulative_3_0: 4.0,
+            is_cumulative_3_0_attainable: true,
+            potential_gpa_credits_cum_projected: 15.0,
+            cumulative_y1_gpa_projected: 2.5,
+            earned_credits_cum_projected: 10.0,
+          }
+        - {
+            studentid: 8,
+            schoolid: 101,
+            potential_gpa_credits_current_year: null,
+            gpa_needed_for_cumulative_3_0: null,
+            is_cumulative_3_0_attainable: null,
+            potential_gpa_credits_cum_projected: null,
+            cumulative_y1_gpa_projected: null,
+            earned_credits_cum_projected: 0.0,
+          }
+        - {
+            studentid: 9,
+            schoolid: 101,
+            potential_gpa_credits_current_year: 5.0,
+            gpa_needed_for_cumulative_3_0: 3.0,
+            is_cumulative_3_0_attainable: true,
+            potential_gpa_credits_cum_projected: 5.0,
+            cumulative_y1_gpa_projected: 3.0,
+            earned_credits_cum_projected: 5.0,
+          }
+        - {
+            studentid: 10,
+            schoolid: 101,
+            potential_gpa_credits_current_year: 10.0,
+            gpa_needed_for_cumulative_3_0: 3.0,
+            is_cumulative_3_0_attainable: false,
+            potential_gpa_credits_cum_projected: null,
+            cumulative_y1_gpa_projected: null,
+            earned_credits_cum_projected: null,
+          }
+        - {
+            studentid: 11,
+            schoolid: 101,
+            potential_gpa_credits_current_year: 10.0,
+            gpa_needed_for_cumulative_3_0: 3.0,
+            is_cumulative_3_0_attainable: null,
+            potential_gpa_credits_cum_projected: 5.0,
+            cumulative_y1_gpa_projected: 3.0,
+            earned_credits_cum_projected: 5.0,
+          }
+        - {
+            studentid: 12,
+            schoolid: 101,
+            potential_gpa_credits_current_year: 10.0,
+            gpa_needed_for_cumulative_3_0: 3.0,
+            is_cumulative_3_0_attainable: null,
+            potential_gpa_credits_cum_projected: null,
+            cumulative_y1_gpa_projected: null,
+            earned_credits_cum_projected: null,
+          }
+        - {
+            studentid: 13,
+            schoolid: 101,
+            potential_gpa_credits_current_year: null,
+            gpa_needed_for_cumulative_3_0: null,
+            is_cumulative_3_0_attainable: null,
+            potential_gpa_credits_cum_projected: 5.0,
+            cumulative_y1_gpa_projected: 4.0,
+            earned_credits_cum_projected: 5.0,
+          }
+        - {
+            studentid: 13,
+            schoolid: 102,
+            potential_gpa_credits_current_year: 10.0,
+            gpa_needed_for_cumulative_3_0: 3.0,
+            is_cumulative_3_0_attainable: true,
+            potential_gpa_credits_cum_projected: 5.0,
+            cumulative_y1_gpa_projected: 3.0,
+            earned_credits_cum_projected: 5.0,
           }

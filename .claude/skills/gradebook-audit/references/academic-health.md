@@ -37,7 +37,6 @@ propose.
 ## Open bugs
 
 - #5562: past-year cumulative goal rates use today's GPA.
-- #5563: 2024 honors scale counts weighted points in unweighted GPA.
 - #5564: the Y1 `F*` label compares a 0-100 percent with 0.5.
 
 Fix these in their own PRs. Do not reword the reference page to describe the bug

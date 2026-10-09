@@ -153,16 +153,16 @@ Every goal and band on the dashboard uses **unweighted** GPA except the
 
 ### Bands and flags
 
-| Term                                           | Meaning                                                                                                                  |
-| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `gpa_band_label`                               | Cumulative unweighted band: `3.5+`, `3.0-3.49`, `2.5-2.99`, `2.0-2.49`, `below 2.0`                                      |
-| `gpa_band_projected_...`                       | The same cut points as a number, 1 (below 2.0) to 5 (3.5 and up), the KIPP Foundation five-band scale                    |
-| `is_on_cusp_3_0`                               | Cumulative unweighted GPA at least 2.75 and below 3.00                                                                   |
-| `gpa_needed_for_cumulative_3_0`                | The unweighted Y1 GPA a student must average this year to finish at exactly 3.00; negative means already safe            |
-| `is_gpa_band_slide`                            | Projected band at least one band below last year's band                                                                  |
-| `F*`                                           | Not a PowerSchool grade: a live gradebook grade below 50% is floored to 50% and labelled `F*`. Failure counts match `F%` |
-| `need_60` to `need_90`, `need_83`, `need_next` | The percent needed in the current term for the year-to-date course grade to reach a target                               |
-| Lookbacks                                      | `gpa_y1_1_week_prior` and siblings: the Y1 GPA in effect at the end of the day 1, 2, or 4 weeks ago                      |
+| Term                                           | Meaning                                                                                                                                                             |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `gpa_band_label`                               | Cumulative unweighted band: `3.5+`, `3.0-3.49`, `2.5-2.99`, `2.0-2.49`, `below 2.0`                                                                                 |
+| `gpa_band_projected_...`                       | The same cut points as a number, 1 (below 2.0) to 5 (3.5 and up), the KIPP Foundation five-band scale                                                               |
+| `is_on_cusp_3_0`                               | Cumulative unweighted GPA at least 2.75 and below 3.00                                                                                                              |
+| `gpa_needed_for_cumulative_3_0`                | The unweighted Y1 GPA a student must average across every GPA course on this year's schedule, graded or not, to finish at exactly 3.00; negative means already safe |
+| `is_gpa_band_slide`                            | Projected band at least one band below last year's band                                                                                                             |
+| `F*`                                           | Not a PowerSchool grade: a live gradebook grade below 50% is floored to 50% and labelled `F*`. Failure counts match `F%`                                            |
+| `need_60` to `need_90`, `need_83`, `need_next` | The percent needed in the current term for the year-to-date course grade to reach a target                                                                          |
+| Lookbacks                                      | `gpa_y1_1_week_prior` and siblings: the Y1 GPA in effect at the end of the day 1, 2, or 4 weeks ago                                                                 |
 
 ### Populations
 
@@ -479,8 +479,11 @@ and are unioned in kipptaf.
 - `int_powerschool__gpa_cumulative`: one row per student and school, current
   state only (no year). Stored Y1 grades give the cumulative; adding this year's
   unstored Y1 grades for courses whose term covers today gives the projection.
-  It also computes the GPA needed for a 3.0 and whether it is attainable.
-  Through `int_students__gpa_cumulative`, it also reaches every reader of
+  It also computes the GPA needed for a 3.0 and whether it is attainable. Those
+  two divide by every GPA course on this year's schedule, graded or not, so
+  their denominator is deliberately larger than the projection's and does not
+  change when a second-semester course starts. Through
+  `int_students__gpa_cumulative`, it also reaches every reader of
   `int_extracts__student_enrollments`.
 - `int_powerschool__gpa_cumulative_year`: one row per student, school, and year.
   Completed years are running totals of stored Y1 grades per student and school;
@@ -612,32 +615,6 @@ group by m.academic_year
 The fix is to read the year-end value from
 `int_powerschool__gpa_cumulative_year` for completed years. The Cumulative GPA
 Monitor is not affected: it reads the year extract.
-
-### Honors courses read weighted points as unweighted this year
-
-Tracked in #5563.
-
-Stored grades map the `KIPP NJ 2024 (5-12) Weighted - Honors` scale to its
-unweighted twin by name, but the current-year path maps unweighted scales by id
-in `base_powerschool__sections`, and only covers the 2016 and 2019 weighted
-scales. Honors courses on the 2024 scale therefore carry weighted points in
-every current-year unweighted GPA: in-progress Y1, projected cumulative, and the
-needed-GPA columns. Scale 1075 tops out at 4.83, so this year's unweighted
-honors GPA can pass 4.33. Stored past years are correct.
-
-```sql
-select
-    _dbt_source_project,
-    academic_year,
-    count(distinct course_number) as n_courses,
-    countif(y1_grade_points != y1_grade_points_unweighted) as n_rows_differing,
-from `teamster-332318.kipptaf_powerschool.base_powerschool__final_grades`
-where courses_gradescaleid_unweighted = 1075
-group by _dbt_source_project, academic_year
-```
-
-`n_rows_differing` reads 0 for every honors course. The mapping change belongs
-with the grade-scale work in #5092, which rewrites the same `case`.
 
 ### Some student-years drop from the year extract
 
