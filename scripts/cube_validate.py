@@ -1023,7 +1023,8 @@ def load_checks(path) -> dict:
                 raise CheckError(
                     f"{where}: metric {m.get('cube')}: diagnose_by needs cube and sql"
                 )
-            if m.get("missing_members"):
+            without = "sql_without" if m["kind"] == "count" else "num_without"
+            if m.get("missing_members") and not m.get("variants"):
                 need = (
                     ("sql_without",)
                     if m["kind"] == "count"
@@ -1035,6 +1036,29 @@ def load_checks(path) -> dict:
                         f"{where}: metric {m.get('cube')} lists missing_members, so "
                         f"it needs {missing}: the same SQL without the missing field"
                     )
+            variants = list(m.get("variants") or [])
+            if m.get("missing_members") and m.get(without):
+                # The SQL without the missing members is the variant that explains them.
+                keys = ("sql",) if m["kind"] == "count" else ("num", "den")
+                variants.insert(
+                    0,
+                    {
+                        "explains": list(m["missing_members"]),
+                        **{k: m[f"{k}_without"] for k in keys},
+                    },
+                )
+            need = (
+                ("explains", "sql")
+                if m["kind"] == "count"
+                else ("explains", "num", "den")
+            )
+            for v in variants:
+                if not isinstance(v, dict) or any(not v.get(k) for k in need):
+                    raise CheckError(
+                        f"{where}: metric {m.get('cube')}: each variant needs "
+                        f"{list(need)}"
+                    )
+            m["variants"] = variants
         for m in row["metrics"]:
             t = m.get("tableau")
             m["tableau"] = [t] if isinstance(t, str) else list(t or [])
@@ -1094,6 +1118,7 @@ def load_checks(path) -> dict:
         "sql_without",
         "num_without",
         "den_without",
+        "variants",
     )
     seen: dict[str, dict] = {}
     for row in data["rows"]:
@@ -1269,13 +1294,14 @@ def truth_sql(
             select.append(f"{m['sql']} as m{i}")
         else:
             select += [f"{m['num']} as m{i}_num", f"{m['den']} as m{i}_den"]
-        if m.get("missing_members") and m["kind"] == "count":
-            select.append(f"{m['sql_without']} as m{i}_alt")
-        elif m.get("missing_members"):
-            select += [
-                f"{m['num_without']} as m{i}_alt_num",
-                f"{m['den_without']} as m{i}_alt_den",
-            ]
+        for j, v in enumerate(m.get("variants", [])):
+            if m["kind"] == "count":
+                select.append(f"{v['sql']} as m{i}_v{j}")
+            else:
+                select += [
+                    f"{v['num']} as m{i}_v{j}_num",
+                    f"{v['den']} as m{i}_v{j}_den",
+                ]
     select.append(f"{students_sql} as n_students")
     if isinstance(window, dict):
         years = ", ".join(str(y) for y in window["academic_years"])
@@ -1336,7 +1362,13 @@ class Cell:
     truth: float | None
     n_students: int | None
     ok: bool
-    explained: bool = False  # fails, but matches the variant without a missing member
+    # Fails as written, but matches a variant: the names that variant explains.
+    explained_by: tuple[str, ...] = ()
+    variant: float | None = None  # that variant's value
+
+    @property
+    def explained(self) -> bool:
+        return bool(self.explained_by)
 
     @property
     def delta(self) -> float:
@@ -1387,37 +1419,49 @@ def compare(kind, cube, truth) -> list[Cell]:
     return cells
 
 
-def explain(cells, kind, without) -> None:
-    """Mark failed cells that match the truth computed without a missing member."""
+def explain(cells, kind, variants) -> None:
+    """Mark failed cells that match a variant; the first that matches names the cause."""
     for c in cells:
-        if not c.ok:
-            c.explained = _matches(kind, c.cube, without.get(c.key, (None, None))[0])
+        if c.ok:
+            continue
+        for names, alt in variants:
+            v = alt.get(c.key, (None, None))[0]
+            if _matches(kind, c.cube, v):
+                c.explained_by, c.variant = tuple(names), v
+                break
 
 
-def summarize(cells, kind, without=None) -> dict:
+def _cell_out(c, kind) -> dict:
+    return {
+        "key": list(c.key),
+        "cube": c.cube,
+        "truth": c.truth,
+        "n_students": c.n_students,
+        "kind": kind,
+    }
+
+
+def summarize(cells, kind, variants=()) -> dict:
     bad = sorted(
         (c for c in cells if not c.ok and not c.explained), key=lambda c: -c.delta
     )
+    by: dict[str, int] = {}
+    for c in cells:
+        for n in c.explained_by:
+            by[n] = by.get(n, 0) + 1
     only = None
     if len(cells) == 1:
         only = {"cube": cells[0].cube, "truth": cells[0].truth}
-        if without is not None:
-            only["without"] = without.get(cells[0].key, (None, None))[0]
+        if variants:
+            # Variant 0 is the SQL without the missing members, when there are any.
+            only["without"] = variants[0][1].get(cells[0].key, (None, None))[0]
     return {
         "cells": len(cells),
         "bad": len(bad),
         "explained": sum(1 for c in cells if c.explained),
+        "explained_by": by,
         "only": only,
-        "worst": [
-            {
-                "key": list(c.key),
-                "cube": c.cube,
-                "truth": c.truth,
-                "n_students": c.n_students,
-                "kind": kind,
-            }
-            for c in bad[:5]
-        ],
+        "worst": [_cell_out(c, kind) for c in bad[:5]],
     }
 
 
@@ -1776,7 +1820,8 @@ def _diagnose(checks, cube_load, bq, window, view, metric) -> dict:
     """
     by = metric["diagnose_by"]
     basis = None
-    if metric.get("missing_members"):
+    without = "sql_without" if metric["kind"] == "count" else "num_without"
+    if metric.get("missing_members") and metric.get(without):
         basis = f"without {', '.join(metric['missing_members'])}"
         keys = ("sql",) if metric["kind"] == "count" else ("num", "den")
         metric = {
@@ -1995,11 +2040,12 @@ def run_dashboard(
                     cube_cells(crows, view, grain, m["cube"]),
                     truth_cells(trows, len(g), i, m["kind"]),
                 )
-                alt = None
-                if m.get("missing_members"):
-                    alt = truth_cells(trows, len(g), i, m["kind"], "_alt")
-                    explain(cells, m["kind"], alt)
-                summaries[m["key"]] = summarize(cells, m["kind"], alt)
+                variants = [
+                    (v["explains"], truth_cells(trows, len(g), i, m["kind"], f"_v{j}"))
+                    for j, v in enumerate(m["variants"])
+                ]
+                explain(cells, m["kind"], variants)
+                summaries[m["key"]] = summarize(cells, m["kind"], variants)
             # A cell keyed by a person (a per-student grain) never names them.
             person = {i for i, d in enumerate(grain) if d.person}
             for s_ in summaries.values() if person else []:
@@ -2081,7 +2127,9 @@ def run_dashboard(
                     )
                     for name in m.get("missing_members", []):
                         mm = _missing(missing, name)
-                        mm["explains_cells"] += ms[m["key"]]["explained"]
+                        mm["explains_cells"] += ms[m["key"]]["explained_by"].get(
+                            name, 0
+                        )
                         mm["changes_total"] = mm["changes_total"] or moves
                 entry.update(
                     status="fail"

@@ -596,14 +596,14 @@ def test_truth_sql_emits_the_without_variant(tmp_path):
     sql = cv.truth_sql(
         "t", c["rows"][0]["metrics"], [], c["dimensions"], [], WINDOW, "count(1)"
     )
-    assert "countif(att_code = 'T') as m0_alt" in sql
+    assert "countif(att_code = 'T') as m0_v0" in sql
 
 
 def test_explain_marks_cells_the_without_variant_matches():
     cells = cv.compare(
         "count", {("B",): 15.0, ("C",): 5.0}, {("B",): (12.0, 120), ("C",): (8.0, 80)}
     )
-    cv.explain(cells, "count", {("B",): (15.0, 120), ("C",): (6.0, 80)})
+    cv.explain(cells, "count", [(["team"], {("B",): (15.0, 120), ("C",): (6.0, 80)})])
     assert [(c.ok, c.explained) for c in cells] == [(False, True), (False, False)]
     s = cv.summarize(cells, "count")
     assert s["bad"] == 1 and s["explained"] == 1
@@ -624,14 +624,14 @@ def test_row_verdict_missing_member(statuses, verdict):
 
 
 class AltBQ(FakeBQ):
-    """FakeBQ plus m0_alt: the without-variant matches Cube at the school grain."""
+    """FakeBQ plus m0_v0: the without-variant matches Cube at the school grain."""
 
     def __call__(self, sql):
         rows = super().__call__(sql)
-        if " as m0_alt" not in sql:
+        if " as m0_v0" not in sql:
             return rows
         alt = {"B": 15, "C": 5}
-        return [dict(r, m0_alt=alt.get(str(r.get("g1")), r.get("m0"))) for r in rows]
+        return [dict(r, m0_v0=alt.get(str(r.get("g1")), r.get("m0"))) for r in rows]
 
 
 def test_run_dashboard_prints_progress_per_query(capsys):
@@ -1038,10 +1038,10 @@ class PartialAltBQ(FakeBQ):
     def __call__(self, sql):
         self.sqls.append(sql)
         rows = super().__call__(sql)
-        if " as m0_alt" not in sql:
+        if " as m0_v0" not in sql:
             return rows
         alt = {"B": 15, "C": 6}
-        return [dict(r, m0_alt=alt.get(str(r.get("g1")), r.get("m0"))) for r in rows]
+        return [dict(r, m0_v0=alt.get(str(r.get("g1")), r.get("m0"))) for r in rows]
 
 
 def test_diagnosis_runs_without_the_missing_members_logic(tmp_path):
@@ -1079,10 +1079,10 @@ class TotalShareBQ(FakeBQ):
 
     def __call__(self, sql):
         rows = super().__call__(sql)
-        if " as g0" not in sql and " as m0" in sql and " as m0_alt" in sql:
-            return [dict(rows[0], m0=28, m0_alt=29)]
-        if " as m0_alt" in sql:
-            return [dict(r, m0_alt=r.get("m0")) for r in rows]
+        if " as g0" not in sql and " as m0" in sql and " as m0_v0" in sql:
+            return [dict(rows[0], m0=28, m0_v0=29)]
+        if " as m0_v0" in sql:
+            return [dict(r, m0_v0=r.get("m0")) for r in rows]
         return rows
 
 
@@ -1991,3 +1991,44 @@ def test_a_multi_year_window_compares_each_year(tmp_path):
 
     c = cv.load_checks(_write_variant(tmp_path, m))
     assert all("academic_year" in g for r in c["rows"] for g in r["grains"])
+
+
+# ---------------------------------------------------------------- variants
+def test_load_checks_turns_sql_without_into_variant_zero(tmp_path):
+    c = cv.load_checks(_write_variant(tmp_path, _add_missing_member))
+    assert c["rows"][0]["metrics"][0]["variants"] == [
+        {"explains": ["team"], "sql": "countif(att_code = 'T')"}
+    ]
+    assert c["rows"][1]["metrics"][0]["variants"] == []
+
+
+def test_load_checks_variant_needs_explains_and_its_sql(tmp_path):
+    def m(d):
+        d["rows"][0]["metrics"][0]["variants"] = [{"sql": "count(1)"}]
+
+    with pytest.raises(cv.CheckError, match="each variant needs"):
+        cv.load_checks(_write_variant(tmp_path, m))
+
+
+def test_explain_takes_the_first_variant_that_matches():
+    cells = cv.compare("count", {("B",): 15.0}, {("B",): (12.0, 120)})
+    cv.explain(
+        cells,
+        "count",
+        [
+            (["a"], {("B",): (14.0, 120)}),
+            (["b"], {("B",): (15.0, 120)}),
+            (["c"], {("B",): (15.0, 120)}),
+        ],
+    )
+    assert cells[0].explained_by == ("b",)
+    assert cells[0].variant == 15.0
+
+
+def test_summarize_counts_explained_cells_by_cause():
+    cells = cv.compare(
+        "count", {("B",): 15.0, ("C",): 5.0}, {("B",): (12.0, 120), ("C",): (8.0, 80)}
+    )
+    cv.explain(cells, "count", [(["team"], {("B",): (15.0, 120), ("C",): (5.0, 80)})])
+    s = cv.summarize(cells, "count")
+    assert s["explained"] == 2 and s["explained_by"] == {"team": 2}
