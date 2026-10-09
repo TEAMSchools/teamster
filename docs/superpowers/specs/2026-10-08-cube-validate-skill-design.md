@@ -637,3 +637,42 @@ problem's words, the metric, and the models and dashboard involved, and lists
 the matches beside it. A match that is the same problem becomes the entry's
 `issue:` (no new draft is filed); a related one goes in the new draft's body as
 `Related: #N`. The script stays offline: the search is a skill step.
+
+## Revision 2026-10-09: one kind of explained mismatch, with who fixes it
+
+Replaces the truth-issue and cube-issue split above, at the user's request: they
+are one mechanism, a formula that explains the gap, and the only decision is who
+the fix goes to. Every explained mismatch gets a GitHub issue either way.
+
+- The checks file has one `mismatches:` map, keyed by slug, in place of
+  `truth_issues:` and `cube_issues:`. Each entry gives `title`, `what` and
+  `fix`: `cube` (the cube builder fixes the Cube definition) or `dashboard` (the
+  dashboard maintainer fixes the workbook, its `rpt_` model or the source). A
+  `dashboard` entry may give `where`: `tableau` (the default), `rpt` or
+  `source`, for the draft's labels and its "Where" line. Optional: `evidence`,
+  `labels`, `related`, and once filed `issue` and `closed_on`. `fix` is
+  required: when it is unclear, the user decides during review, before anything
+  is filed. A file that still uses `truth_issues:` or `cube_issues:` stops with
+  a message to rename it.
+- A variant's `explains` names mismatches and missing members.
+- A cell explained by a `fix: dashboard` mismatch counts as a match: Cube is
+  right there, so the row can pass while the dashboard's issue is open. A cell
+  explained by a `fix: cube` mismatch is explained, not matched.
+- Row verdicts, strongest first: `fail` (a gap nothing explains), `incomplete`,
+  `fix_cube` (every gap is explained, at least one by a `fix: cube` mismatch),
+  `missing_member`, `pass`. Rulings, the `cube-correct` and `cube-wrong` labels,
+  and the `needs-review` tag go away.
+- The digest's first sections are "Fix in Cube" and "Fix in the dashboard", each
+  listing its mismatches with the cells they explain, both formulas, and the
+  draft or issue number. The comment names both lists.
+- Every unfiled mismatch that explains cells gets a draft. A `fix: cube` draft
+  is labeled `cube` and asks the cube builder to fix the definition; a
+  `fix: dashboard` draft is labeled `tableau` (or `dbt` for `rpt`) and asks the
+  dashboard maintainer to fix it. Both close when the fix lands and say "if you
+  think the other side is wrong, say so in a comment". The related-issue search
+  and the filing gate stay as written.
+- Before each run, the skill reads each filed issue's state and comments: a
+  closed one gets `closed_on`; a comment saying the other side is wrong goes to
+  the user, who may flip `fix`.
+- `sync.py`: `fix_cube` gets the `mismatch` tag; a `pass` with an open dashboard
+  issue gets `matched` like any pass.
