@@ -181,8 +181,9 @@ domain is normal: add the folder and its list entry in 1 PR.
 ## Claude-only notes
 
 - Apply the A, S, and R rules only to lines you add or change. Never propose a
-  sweep of untouched models. An existing A1, A2, or A8 edge is known backlog,
-  not a finding.
+  sweep of untouched models. An existing A1, A2, or A8 edge is not a finding. A1
+  and A8 edges are tracked in `standard-baseline.tsv`; nothing records A2 edges,
+  so never call one tracked.
 - Key macros live in `src/dbt/kipptaf/macros/`; an entity with none yet uses
   `generate_surrogate_key`.
 - Mart column naming, strict-chain traversal, and PK/FK shapes:

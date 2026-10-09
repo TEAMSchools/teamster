@@ -120,6 +120,13 @@ accept a subagent's self-report without the checks there.
 - Invoke `superpowers:receiving-code-review` before processing `claude-review`
   findings, and post a per-finding verdict as a PR comment. Everything else
   about review and CI: invoke `pr-ci-review`.
+- A finding you do not fix is declined (give the reason; nothing to record) or
+  deferred. A deferred finding links its record when you report it: an open
+  issue, a comment on one, a `standard-baseline.tsv` row, or a `TODO(#N)`. If
+  none covers it, file the issue first. "Out of scope", "backlog", or "left to
+  the author" with no link drops the work, since the user reads the verdict as
+  handled. This covers `claude-review` verdicts and executing-plans "Deferred
+  minors", whose ledger is deleted at finish.
 
 ## Tooling
 
