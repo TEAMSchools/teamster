@@ -2577,3 +2577,21 @@ def test_drafts_list_only_the_related_issues_named(tmp_path):
     plain_checks, plain = _truth_run(tmp_path)
     plain_body = cv.issue_drafts(plain, plain_checks)["tardy_formula"]["body"]
     assert "Related:" not in plain_body
+
+
+@pytest.mark.parametrize("related", ["5668", 5668, ["#5668"]])
+def test_related_is_a_list_of_issue_numbers(tmp_path, related):
+    with pytest.raises(
+        cv.CheckError, match="related is a list of GitHub issue numbers"
+    ):
+        cv.load_checks(
+            _write_variant(tmp_path, lambda d: _add_truth_issue(d, related=related))
+        )
+
+
+def test_a_member_listed_twice_still_loads(tmp_path):
+    def m(d):
+        _add_missing_member(d)
+        d["rows"][0]["metrics"][0]["missing_members"] = ["team", "team"]
+
+    cv.load_checks(_write_variant(tmp_path, m))

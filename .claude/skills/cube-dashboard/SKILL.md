@@ -43,8 +43,10 @@ Cube members, the cube issues and the truth issues, with the cells they explain.
    `ruling: {call, by: <the commenter, else the assignee login, else "unassigned">, on: <today>, note: <first line of the latest comment>}`.
    Owners without permission to label use the comment. Keep a ruling already in
    the file; if a label contradicts it, tell the user instead of changing it.
-   Every `cube_issues:` entry with `issue:` gets `closed_on` the same way.
-   Commit the checks file.
+   Every `cube_issues:` entry with `issue:` gets `closed_on` the same way; also
+   read its comments (`get_comments`). If one says the dashboard is the one that
+   is wrong, tell the user and offer to move the entry to `truth_issues:` with a
+   `where`; until they agree it stays a cube issue. Commit the checks file.
 4. Run. Write `tests/test_zz_cube_dashboard_run.py` (template below), run
    `uv run pytest tests/test_zz_cube_dashboard_run.py -s -q --tb=short`, then
    delete it. The run downloads the workbook with its extracts and compares Cube

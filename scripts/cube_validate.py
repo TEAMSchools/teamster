@@ -955,6 +955,20 @@ def _construct_key_ok(key) -> bool:
     return kind in CONSTRUCT_KINDS and bool(name)
 
 
+def _related(at: str, value) -> list[int]:
+    """An entry's related GitHub issue numbers, checked: a string or a "#N" would
+    cross-link the wrong issues in a filed draft."""
+    if value is None:
+        return []
+    if not isinstance(value, list) or not all(
+        isinstance(n, int) and not isinstance(n, bool) for n in value
+    ):
+        raise CheckError(
+            f"{at}: related is a list of GitHub issue numbers, like [5668]"
+        )
+    return value
+
+
 def load_checks(path) -> dict:
     data = yaml.safe_load(Path(path).read_text())
     for key in (
@@ -1033,7 +1047,7 @@ def load_checks(path) -> dict:
                 f"{at}: ruling needs call (cube-correct or cube-wrong), by and on"
             )
         t["labels"] = list(t.get("labels") or [])
-        t["related"] = list(t.get("related") or [])
+        t["related"] = _related(at, t.get("related"))
     data["truth_issues"] = issues
     # Gaps Cube's own formula causes: its variant copies Cube's definition.
     cube_issues = data.get("cube_issues") or {}
@@ -1047,7 +1061,7 @@ def load_checks(path) -> dict:
         if t.get("issue") is not None and not isinstance(t["issue"], int):
             raise CheckError(f"{at}: issue is the GitHub issue number")
         t["labels"] = list(t.get("labels") or [])
-        t["related"] = list(t.get("related") or [])
+        t["related"] = _related(at, t.get("related"))
     data["cube_issues"] = cube_issues
     data["open_issues_task"] = (
         str(data["open_issues_task"]) if data.get("open_issues_task") else None
@@ -1104,7 +1118,7 @@ def load_checks(path) -> dict:
                 if m["kind"] == "count"
                 else ("explains", "num", "den")
             )
-            names = [*issues, *cube_issues, *(m.get("missing_members") or [])]
+            names = [*issues, *cube_issues, *set(m.get("missing_members") or [])]
             twice = sorted({n for n in names if names.count(n) > 1})
             if twice:
                 raise CheckError(
