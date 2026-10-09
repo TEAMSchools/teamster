@@ -134,6 +134,24 @@ class AdpWorkforceNowResource(ConfigurableResource):
             method="GET", url=f"{self._service_root}/{endpoint}", params=params
         )
 
+    @retry(
+        stop=stop_after_attempt(5),
+        wait=wait_exponential_jitter(initial=10, max=60),
+        retry=retry_if_exception_type(JSONDecodeError),
+    )
+    def _get_page(self, endpoint: str, params: dict) -> dict | None:
+        """Fetch and parse one page, or return None past the last page.
+
+        ADP occasionally answers 200 with a body cut off mid-stream. The parse
+        lives here, not in ``_request``, so the refetch covers it.
+        """
+        response = self.get(endpoint=endpoint, params=params)
+
+        if response.status_code == 204:
+            return None
+
+        return response.json()
+
     def get_records(self, endpoint: str, params: dict | None = None) -> list[dict]:
         page_size = 100
         all_records = []
@@ -147,14 +165,12 @@ class AdpWorkforceNowResource(ConfigurableResource):
 
         while True:
             self._log.debug(msg=params)
-            response = self.get(endpoint=endpoint, params=params)
+            page = self._get_page(endpoint=endpoint, params=params)
 
-            if response.status_code == 204:
+            if page is None:
                 break
 
-            response_json = response.json()[endpoint_name]
-
-            all_records.extend(response_json)
+            all_records.extend(page[endpoint_name])
             params.update({"$skip": params["$skip"] + page_size})
 
         return all_records
