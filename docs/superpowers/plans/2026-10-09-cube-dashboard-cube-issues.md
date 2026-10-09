@@ -562,7 +562,12 @@ Read it first. Then:
    becomes the entry's `issue:` instead of a new filing; a related one goes in
    the entry's `related:` (rerun or edit the draft so its `Related:` line shows
    it)."
-3. The Issues step: "Each draft" now covers cube issues too.
+3. The Issues step: "Each draft" now covers cube issues too, and it opens with a
+   gate for both kinds: "File no draft, truth issue or cube issue, until the
+   related-issue search above has run for it and the user has seen its matches.
+   A draft whose problem an existing issue already tracks is not filed: write
+   that number into the entry's `issue:` and add a comment on the existing issue
+   with the new evidence (cells, rows, run date)."
 4. The Tags step: `cube_issue` → `mismatch`.
 5. Authoring step 6: after the truth-issue sentence, add: "When Cube's own
    formula is what differs (it counts rows where the dashboard counts students,
