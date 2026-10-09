@@ -160,7 +160,7 @@ def widen_unbounded_numeric_adapter(col_type: TypeEngine) -> TypeEngine:
     ``Float`` is returned untouched so ``double precision`` lands as FLOAT64.
     Before SQLAlchemy 2.1 it subclassed ``Numeric`` with ``precision=None`` and
     would have been widened to BIGNUMERIC; the guard keeps that from depending
-    on the installed version. It runs on every table in the source.
+    on the installed version. It covers all 79 tables in the source.
     """
     if isinstance(col_type, Float):
         return col_type

@@ -36,10 +36,9 @@ PyArrow backend. Probe-gated, same style as `powerschool/`.
   param for it: no caller passes one, so there is no precedence to resolve.
 - Tiering (04:00 schedule vs intraday sensor): see `focus/CLAUDE.md` → _Probe
   gating_.
-- `cursor_column` is `updated_at` for every Focus table except the count-only
-  ones, which declare `null`. A new table must declare one in
-  `config/focus.yaml`; the code location reads `a["cursor_column"]`, so omitting
-  it fails at module load.
+- `cursor_column` is `updated_at` for every Focus table except `co_teachers`,
+  which is count-only. A new table must declare one in `config/focus.yaml`; the
+  code location reads `a["cursor_column"]`, so omitting it fails at module load.
 
 ### `salesforce/`
 
