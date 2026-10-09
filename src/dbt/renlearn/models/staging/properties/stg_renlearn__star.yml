@@ -6,7 +6,6 @@ models:
         data_tests:
           - unique:
               config:
-                where: deactivation_reason is null
                 severity: error
       - name: _dagster_partition_fiscal_year
         data_type: int64
@@ -48,8 +47,6 @@ models:
         data_type: string
       - name: current_sgp
         data_type: int64
-      - name: deactivation_reason
-        data_type: string
       - name: district_benchmark_category_level
         data_type: int64
       - name: district_benchmark_category_name
@@ -270,3 +267,39 @@ models:
         data_type: int64
       - name: teacher_state_id
         data_type: int64
+      - name: completed_date_value
+        data_type: date
+        description: Date part of completed_date_local.
+      - name: academic_year
+        data_type: int64
+        description: >-
+          KIPP academic year (July start); the fiscal-year partition minus 1.
+      - name: grade_level
+        data_type: int64
+        description: Grade as an integer, with K mapped to 0.
+      - name: star_subject
+        data_type: string
+        description: >-
+          STAR test name from the subject partition — Math (SM), Reading (SR),
+          or Early Literacy (SEL).
+      - name: star_discipline
+        data_type: string
+        description: >-
+          Discipline from the subject partition — Math for SM; ELA for SR, and
+          for SEL in kindergarten only.
+      - name: subject
+        data_type: string
+        description: >-
+          Reporting subject from the subject partition — Math for SM; Reading
+          for SR and SEL.
+      - name: administration_window
+        data_type: string
+        description: >-
+          Screening window mapped from Fall, Winter, and Spring to BOY, MOY, and
+          EOY.
+      - name: is_district_benchmark_proficient_int
+        data_type: int64
+        description: 1 when district_benchmark_proficient is Yes, 0 when No.
+      - name: is_state_benchmark_proficient_int
+        data_type: int64
+        description: 1 when state_benchmark_proficient is Yes, 0 when No.
