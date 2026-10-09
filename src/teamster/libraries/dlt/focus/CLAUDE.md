@@ -174,3 +174,10 @@ baselines, the sensor re-selects the same tables every tick, and every intraday
 Focus sync stalls until a revert deploys. Launch the branch run while no prod
 Focus run is in flight: both share the prod dataset and dlt state, and the
 concurrency pool doesn't span deployments.
+
+After merge, launch one prod run of the same tables. The branch run's
+materializations are recorded only in the branch deployment, and the intraday
+sensor requests only tables whose signature changed, so an unchanged table never
+gets a prod materialization. Its downstream `stg_focus__*` model then stays
+blocked on `any_deps_missing` indefinitely, though the data is already in
+BigQuery.
