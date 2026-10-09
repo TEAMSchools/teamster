@@ -233,3 +233,62 @@ def test_nesting_scores_a_lopsided_parent_as_zero_not_one(demo_hyper):
     with snap.Hyper(demo_hyper) as h:
         scores, _ = snap.nesting(h, ["school", "is_flag"])
     assert scores[("school", "is_flag")] == pytest.approx(0.0)
+
+
+# Scores as measured on the DDI weekly extract (2026-10-09), rounded.
+DDI_SCORES = {
+    ("head_of_school", "region"): 1.0,
+    ("school", "region"): 1.0,
+    ("school", "head_of_school"): 1.0,
+    ("school", "school_level"): 1.0,
+    ("homeroom_section", "region"): 0.941,
+    ("homeroom_section", "head_of_school"): 0.960,
+    ("homeroom_section", "school"): 0.909,
+    ("homeroom_section", "grade_level"): 0.996,
+    ("course_section", "grade_level"): 0.877,
+    ("week_start_monday", "term"): 1.0,
+    ("module_code", "module_type"): 1.0,
+    ("school", "grade_level"): 0.10,
+}
+DDI_DISTINCT = {
+    "region": 4,
+    "school_level": 3,
+    "head_of_school": 9,
+    "school": 24,
+    "grade_level": 13,
+    "homeroom_section": 389,
+    "course_section": 409,
+    "term": 2,
+    "week_start_monday": 21,
+    "module_type": 6,
+    "module_code": 20,
+    "iep_status": 2,
+}
+
+
+def test_derive_trees_matches_the_ddi_measurement():
+    t = snap.derive_trees(list(DDI_DISTINCT), DDI_SCORES, DDI_DISTINCT)
+    assert t.trees["region"] == [
+        "region",
+        "head_of_school",
+        "school_level",
+        "school",
+        "grade_level",
+        "homeroom_section",
+    ]
+    assert t.trees["term"] == ["term", "week_start_monday"]
+    assert t.trees["module_type"] == ["module_type", "module_code"]
+    assert t.cross_cuts == ["course_section", "iep_status"]
+    assert t.borderline == [("course_section", "grade_level", 0.877)]
+
+
+def test_an_accepted_borderline_pair_joins_its_tree():
+    t = snap.derive_trees(
+        list(DDI_DISTINCT),
+        DDI_SCORES,
+        DDI_DISTINCT,
+        accept={("course_section", "grade_level")},
+    )
+    assert "course_section" in t.trees["region"]
+    assert t.borderline == []
+    assert "course_section" not in t.cross_cuts

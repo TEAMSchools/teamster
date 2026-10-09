@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import itertools
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 import defusedxml.ElementTree as SafeET
@@ -364,3 +364,71 @@ def nesting(hyper, fields, where=None):
         )[0][0]
         scores[(child, parent)] = (hit / n - base[parent]) / (1 - base[parent])
     return scores, distinct
+
+
+NEST = 0.90
+NEST_ASK = 0.85
+
+
+@dataclass
+class Trees:
+    trees: dict[str, list[str]]
+    cross_cuts: list[str]
+    borderline: list[tuple[str, str, float]] = field(default_factory=list)
+
+
+def _below(f: str, children: dict[str, set[str]]) -> set[str]:
+    out, stack = set(), list(children[f])
+    while stack:
+        x = stack.pop()
+        if x not in out:
+            out.add(x)
+            stack.extend(children[x])
+    return out
+
+
+def derive_trees(fields, scores, distinct, accept=frozenset()) -> Trees:
+    edges = {(c, p) for (c, p), s in scores.items() if s >= NEST} | set(accept)
+    borderline = sorted(
+        (
+            (c, p, round(s, 3))
+            for (c, p), s in scores.items()
+            if NEST_ASK <= s < NEST and (c, p) not in accept
+        ),
+        key=lambda x: -x[2],
+    )
+    children = {f: {c for c, p in edges if p == f} for f in fields}
+    parents = {f: {p for c, p in edges if c == f} for f in fields}
+    linked = {f for e in edges for f in e}
+
+    def rank(chain):
+        return (len(chain), [-distinct[x] for x in chain])
+
+    memo: dict[str, list[str]] = {}
+
+    def chain_from(f):
+        if f not in memo:
+            tails = [chain_from(c) for c in children[f]]
+            memo[f] = [f, *max(tails, key=rank, default=[])]
+        return memo[f]
+
+    trees, seen = {}, set()
+    for start in sorted(linked, key=lambda f: (distinct[f], f)):
+        if start in seen:
+            continue
+        group, stack = set(), [start]
+        while stack:
+            x = stack.pop()
+            if x not in group:
+                group.add(x)
+                stack.extend(children[x] | parents[x])
+        seen |= group
+        roots = [f for f in group if not parents[f]]
+        order = max((chain_from(r) for r in roots), key=rank)
+        for f in sorted(group - set(order), key=lambda f: (distinct[f], f)):
+            below = _below(f, children)
+            pos = next((i for i, s in enumerate(order) if s in below), len(order))
+            order.insert(pos, f)
+        trees[order[0]] = order
+    cross = sorted(f for f in fields if f not in linked)
+    return Trees(trees, cross, borderline)
