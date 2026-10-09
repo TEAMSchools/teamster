@@ -1,0 +1,43 @@
+models:
+  - name: stg_focus__apex_band_levels
+    description: >-
+      Focus Apex mastery band levels — one row per score band in a band set,
+      with its percent-score range. Soft-deleted levels are filtered out, but
+      Focus does not flag the levels of a deleted set, so join to
+      stg_focus__apex_band_sets to keep only live sets.
+    columns:
+      - name: id
+        description: Primary key — Focus apex_band_levels id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: band_set_id
+        description: Focus apex_band_sets id the level belongs to.
+        data_type: int
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: label
+        description: Band label shown to teachers (for example Level 3).
+        data_type: string
+      - name: color
+        description: Display color for the band.
+        data_type: string
+      - name: min_score
+        description: Lower bound of the band, as a percent score.
+        data_type: numeric
+      - name: max_score
+        description: Upper bound of the band, as a percent score.
+        data_type: numeric
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp
