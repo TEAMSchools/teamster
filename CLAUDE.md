@@ -171,12 +171,13 @@ accept a subagent's self-report without the checks there.
 
 ## Linting
 
-- Do not run `trunk fmt` or `trunk check` as a routine; the commit and push
-  hooks do. But a clean commit hook is not lint-clean. Before pushing SQL, YAML,
-  or markdown (specs and plans included), run
+- Do not run `trunk fmt` or `trunk check` as a routine. The commit hook only
+  formats, so before pushing SQL, YAML, or markdown (specs and plans included),
+  run
   `/workspaces/teamster/.trunk/tools/trunk check --force --no-fix <files> </dev/null`
-  with cwd inside the edited checkout. `--force` is required or committed files
-  are skipped and markdownlint under-reports.
+  with cwd inside the edited checkout and fix lint findings; formatting is the
+  hook's. `--force` is required or committed files are skipped and markdownlint
+  under-reports.
 - Suppress with `trunk-ignore(linter/rule): reason` on the line before the
   flagged line, never linter-native syntax.
 - Binary paths, worktree invocation, CI-only markdownlint rules: invoke
