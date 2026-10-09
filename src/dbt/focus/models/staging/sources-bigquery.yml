@@ -724,3 +724,121 @@ sources:
                 - dlt
                 - focus
                 - test_history_score_ranges
+      # Apex
+      - name: apex_assessments
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - dlt
+                - focus
+                - apex_assessments
+      - name: apex_assigned_assessments
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - dlt
+                - focus
+                - apex_assigned_assessments
+      - name: apex_assessment_items
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - dlt
+                - focus
+                - apex_assessment_items
+      - name: apex_item_questions
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - dlt
+                - focus
+                - apex_item_questions
+      - name: apex_questions
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - dlt
+                - focus
+                - apex_questions
+      - name: apex_question_standards
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - dlt
+                - focus
+                - apex_question_standards
+      - name: apex_assignment_gradebook_assignment
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - dlt
+                - focus
+                - apex_assignment_gradebook_assignment
+      - name: apex_assignment_students
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - dlt
+                - focus
+                - apex_assignment_students
+      - name: apex_band_sets
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - dlt
+                - focus
+                - apex_band_sets
+      - name: apex_band_levels
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - dlt
+                - focus
+                - apex_band_levels
+      - name: apex_band_set_assessments
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - dlt
+                - focus
+                - apex_band_set_assessments
+      - name: apex_sessions
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - dlt
+                - focus
+                - apex_sessions
+      - name: apex_session_responses
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - dlt
+                - focus
+                - apex_session_responses

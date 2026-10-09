@@ -1,0 +1,37 @@
+models:
+  - name: stg_focus__apex_assignment_gradebook_assignment
+    description: >-
+      Links between Focus Apex assignments and Focus gradebook assignments — one
+      row per gradebook assignment an Apex assignment posts scores to.
+    columns:
+      - name: id
+        description:
+          Primary key — Focus apex_assignment_gradebook_assignment id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: apex_assignment_id
+        description: Focus apex_assigned_assessments id.
+        data_type: int
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: gradebook_assignment_id
+        description: Focus gradebook assignment id that receives the scores.
+        data_type: int
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp

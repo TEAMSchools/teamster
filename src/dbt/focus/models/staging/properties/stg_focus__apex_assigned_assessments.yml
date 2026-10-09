@@ -1,0 +1,107 @@
+models:
+  - name: stg_focus__apex_assigned_assessments
+    description: >-
+      Focus Apex assignments — one row per scheduling of an assessment to an
+      audience, with its testing window and attempt rules. Soft-deleted
+      assignments are filtered out. Per-student overrides live in
+      stg_focus__apex_assignment_students.
+    columns:
+      - name: id
+        description: Primary key — Focus apex_assigned_assessments id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: assessment_id
+        description: Focus apex_assessments id of the assessment being assigned.
+        data_type: int
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: school_id
+        description: Focus internal schools id the assignment belongs to.
+        data_type: int
+      - name: default_config_id
+        description: Focus id of the default testing configuration applied.
+        data_type: int
+      - name: syear
+        description: Focus school year (the spring calendar year).
+        data_type: int
+      - name: label
+        description: Display label for the assignment.
+        data_type: string
+      - name: audience_config
+        description: >-
+          JSON text — an array of {grouper, ids} targets naming who the
+          assignment reaches. grouper is one of school, grade_level, teacher, or
+          student, and ids lists the matching Focus ids.
+        data_type: string
+      - name: auto_sync_audience
+        description: >-
+          Whether the audience refreshes automatically as rosters change.
+        data_type: boolean
+      - name: is_active
+        description: Whether the assignment is active.
+        data_type: boolean
+      - name: activation_date
+        description: When the assignment becomes visible to students.
+        data_type: timestamp
+      - name: start_date
+        description: First date of the testing window.
+        data_type: date
+      - name: start_time
+        description: Daily start time of the testing window.
+        data_type: time
+      - name: end_date
+        description: Last date of the testing window.
+        data_type: date
+      - name: end_time
+        description: Daily end time of the testing window.
+        data_type: time
+      - name: self_schedule_start
+        description: Start of the window in which students may self-schedule.
+        data_type: timestamp
+      - name: self_schedule_end
+        description: End of the window in which students may self-schedule.
+        data_type: timestamp
+      - name: include_weekends
+        description: Whether testing is allowed on weekends.
+        data_type: boolean
+      - name: close_at_bell
+        description: Whether open sessions close at the end of the period.
+        data_type: boolean
+      - name: restrict_to_course_times
+        description: Whether students may test only during their class period.
+        data_type: boolean
+      - name: restrict_to_specified_times
+        description: >-
+          Whether students may test only between start_time and end_time.
+        data_type: boolean
+      - name: time_limit
+        description: Time limit per attempt, in microseconds.
+        data_type: int
+      - name: max_attempts
+        description: Maximum attempts allowed per student.
+        data_type: int
+      - name: retake
+        description: Whether retakes are allowed.
+        data_type: boolean
+      - name: retake_elapse_time
+        description: Wait required before a retake, in microseconds.
+        data_type: int
+      - name: score_policy
+        description: >-
+          Which attempt's score is reported when a student has several (for
+          example recent).
+        data_type: string
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp
