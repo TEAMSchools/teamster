@@ -1,0 +1,66 @@
+models:
+  - name: stg_focus__apex_questions
+    description: >-
+      Focus Apex questions — one row per question in the item bank. Soft-deleted
+      questions are filtered out. The question text (stimulus) is dropped;
+      standards alignment lives in stg_focus__apex_question_standards.
+    columns:
+      - name: id
+        description: Primary key — Focus apex_questions id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: passage_id
+        description: Focus id of the reading passage the question draws on.
+        data_type: int
+      - name: rubric_id
+        description: Focus id of the scoring rubric for hand-graded questions.
+        data_type: int
+      - name: syear
+        description: Focus school year (the spring calendar year).
+        data_type: int
+      - name: type
+        description: >-
+          Question format — mcq, numeric, essay, short_answer, matching, and
+          others.
+        data_type: string
+      - name: status
+        description: Authoring status of the question (for example draft).
+        data_type: string
+      - name: auto_grade
+        description: Whether Focus scores the question automatically.
+        data_type: boolean
+      - name: shuffle_answers
+        description: Whether answer choices are randomized per student.
+        data_type: boolean
+      - name: dok
+        description: >-
+          Webb's Depth of Knowledge level, as code and label (for example
+          2-Skill/Concept).
+        data_type: string
+      - name: bloom_taxonomy
+        description: Bloom's taxonomy level (for example applying).
+        data_type: string
+      - name: uuid
+        description: Focus-assigned universally unique identifier for the row.
+        data_type: string
+      - name: vendor_id
+        description: Content vendor identifier for vendor-supplied questions.
+        data_type: string
+      - name: import_legacy_id
+        description: Identifier from the source system for imported questions.
+        data_type: string
+      - name: import_source
+        description: Source system for imported questions; null when authored.
+        data_type: string
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp

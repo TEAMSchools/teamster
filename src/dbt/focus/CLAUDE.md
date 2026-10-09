@@ -117,7 +117,10 @@ deleted — **never `0`**. Filter `where deleted is null` in staging (`= 0`
 matches nothing) and omit the column. Present on `students`, `users`, `schools`,
 `address`, `student_enrollment_codes`, the `custom_field*` tables; absent on
 others (e.g. `custom_field_log_entries`). `inactive`/`active`/`archived` are raw
-attributes, not delete sentinels.
+attributes, not delete sentinels. The `apex_*` tables differ: `deleted` is BOOL
+with `false` on live rows, so filter `deleted is not true` (`is null` returns
+zero rows and still passes every test). Apex deletes do not cascade to child or
+link rows; those models say which parent to join.
 
 **Primary keys.** Most tables PK on `id`; some on `<entity>_id` (`address_id`,
 `course_id`, `course_period_id`, `marking_period_id`, `period_id`,
