@@ -2155,3 +2155,62 @@ def test_explained_examples_never_name_a_student(tmp_path):
     )
     examples = [c for s in grain["metrics"].values() for c in s["examples"]]
     assert examples and all(c["key"][1] == "a student" for c in examples)
+
+
+def test_comment_names_dashboard_issues_for_the_owner(tmp_path):
+    _, result = _truth_run(tmp_path)
+    assert cv.comment_text(result["rows"]["1"], result).splitlines()[1:] == [
+        "Dashboard issues for the domain owner: tardy_formula (draft, 2 cells).",
+        "Nothing else to investigate.",
+    ]
+
+
+def test_comment_gives_a_filed_issue_its_number(tmp_path):
+    _, result = _truth_run(tmp_path, lambda d: _add_truth_issue(d, issue=123))
+    line = cv.comment_text(result["rows"]["1"], result).splitlines()[1]
+    assert line == (
+        "Dashboard issues for the domain owner: tardy_formula (#123, 2 cells)."
+    )
+
+
+def test_digest_lists_dashboard_issues_before_cube_additions(tmp_path):
+    checks, result = _truth_run(tmp_path)
+    md = cv.digest_markdown(result, checks, {})
+    assert md.index("## Dashboard, model or source issues") < md.index("## Add to Cube")
+    assert "### tardy_formula (dashboard): explains 2 cells in 1 row (# Tardy)" in md
+    assert "- Draft: `2026-10-08-demo_dashboard-issues/tardy_formula.md`" in md
+
+
+def test_digest_has_no_issue_section_without_truth_issues():
+    result = cv.run_dashboard(_checks(), FakeCube(), FakeBQ(), TODAY)
+    assert "Dashboard, model or source issues" not in cv.digest_markdown(
+        result, _checks(), {}
+    )
+
+
+class SameBQ(AltBQ):
+    """The variant gives what the dashboard gives: it explains nothing."""
+
+    def __call__(self, sql):
+        return [
+            dict(r, m0_v0=r["m0"]) if "m0_v0" in r else r for r in super().__call__(sql)
+        ]
+
+
+def test_closed_issue_explaining_nothing_is_stale_and_open_one_is_silent(tmp_path):
+    for extra, stale in (({"closed_on": "2026-10-09"}, True), ({}, False)):
+        checks = cv.load_checks(
+            _write_variant(tmp_path, lambda d: _add_truth_issue(d, **extra))
+        )
+        result = cv.run_dashboard(checks, FakeCube(), SameBQ(), TODAY)
+        assert result["rows"]["1"]["truth_issues"]["tardy_formula"]["stale"] is stale
+        md = cv.digest_markdown(result, checks, {})
+        assert ("- Stale: the issue is closed" in md) is stale
+
+
+def test_latest_json_lists_open_truth_issues(tmp_path):
+    checks, result = _truth_run(tmp_path)
+    cv.write_outputs(result, tmp_path / "out", checks, {})
+    latest = json.loads((tmp_path / "out" / "latest.json").read_text())
+    assert latest["rows"]["1"]["verdict"] == "truth_issue"
+    assert latest["rows"]["1"]["truth_issues"] == ["tardy_formula"]

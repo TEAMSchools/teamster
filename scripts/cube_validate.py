@@ -2392,6 +2392,10 @@ def _construct_lines(items: list[dict], with_why: bool) -> list[str]:
     return out
 
 
+def _issue_ref(t: dict) -> str:
+    return f"#{t['issue']}" if t.get("issue") else "draft"
+
+
 def comment_text(row, result) -> str:
     """Three lines for Asana: verdict, members to add, what is left to investigate."""
     grains = row["grains"]
@@ -2410,13 +2414,20 @@ def comment_text(row, result) -> str:
     ]
     if add:
         lines.append(f"Add to Cube: {', '.join(add)}.")
+    owner = [
+        f"{slug} ({_issue_ref(t)}, {t['explains_cells']} cells)"
+        for slug, t in row.get("truth_issues", {}).items()
+        if t["explains_cells"] and not t["ruling"]
+    ]
+    if owner:
+        lines.append(f"Dashboard issues for the domain owner: {', '.join(owner)}.")
     if bad:
         n = sum(1 for g in compared if g["bad"])
         lines.append(
             f"Investigate: {bad} cells across {_plural(n, 'grain')}; details in the "
             f"{result['dashboard']} fix digest."
         )
-    elif row["verdict"] == "missing_member":
+    elif row["verdict"] in ("missing_member", "truth_issue"):
         lines.append("Nothing else to investigate.")
     elif row["verdict"] == "pass":
         lines.append("Every compared cell matches.")
@@ -2479,9 +2490,45 @@ def digest_markdown(result, checks, cube_defs) -> str:
         + ", ".join(f"{n} {v.replace('_', ' ')}" for v, n in sorted(verdicts.items()))
         + ".",
         "",
-        "## Add to Cube",
-        "",
     ]
+    issues: dict[str, dict] = {}
+    for gid, row in rows.items():
+        for slug, t in row.get("truth_issues", {}).items():
+            i = issues.setdefault(slug, {"cells": 0, "rows": [], "stale": True, **t})
+            i["cells"] += t["explains_cells"]
+            i["stale"] = i["stale"] and t["stale"]
+            if t["explains_cells"]:
+                i["rows"].append(gid)
+    shown = {s: i for s, i in issues.items() if i["cells"] or i["stale"]}
+    if shown:
+        out += ["## Dashboard, model or source issues", ""]
+        stem = f"{result['run_date']}-{result['dashboard']}"
+        for slug, i in sorted(shown.items(), key=lambda kv: -kv[1]["cells"]):
+            doc = (checks.get("truth_issues") or {}).get(slug, {})
+            names = ", ".join(rows[g]["name"] for g in i["rows"])
+            out.append(
+                f"### {slug} ({doc.get('where', '?')}): explains "
+                f"{_plural(i['cells'], 'cell')} in {_plural(len(i['rows']), 'row')}"
+                + (f" ({names})" if names else "")
+            )
+            if doc.get("title"):
+                out.append(f"- {doc['title']}")
+            if doc.get("what"):
+                out.append(f"- What: {doc['what']}")
+            if i["stale"]:
+                out.append(
+                    "- Stale: the issue is closed and explains no cell now; "
+                    "remove its entry."
+                )
+            elif i.get("issue"):
+                call = (
+                    f", ruled {i['ruling']}" if i.get("ruling") else ", not ruled yet"
+                )
+                out.append(f"- Issue: #{i['issue']}{call}")
+            else:
+                out.append(f"- Draft: `{stem}-issues/{slug}.md`")
+            out.append("")
+    out += ["## Add to Cube", ""]
     adds: dict[str, dict] = {}
     blocked: dict[str, dict] = {}
     for gid, row in rows.items():
@@ -2650,6 +2697,14 @@ def report_markdown(result) -> str:
                 f"Missing Cube members: {_missing_text(row['missing_members'], full=True)}.",
                 "",
             ]
+        if row.get("truth_issues"):
+            parts = [
+                f"{s} ({t['explains_cells']} cells; {_issue_ref(t)}"
+                + (f"; {t['ruling']}" if t["ruling"] else "")
+                + ")"
+                for s, t in row["truth_issues"].items()
+            ]
+            out += [f"Truth issues: {', '.join(parts)}.", ""]
         for label, key in (
             ("Unaccounted", "unaccounted"),
             ("Not checked", "not_checked"),
@@ -2664,6 +2719,8 @@ def report_markdown(result) -> str:
                 line += f", {g['bad']} of {g['cells']} cells out of tolerance"
                 if g.get("explained"):
                     line += f", {g['explained']} explained by missing members"
+                if g.get("review"):
+                    line += f", {g['review']} awaiting the domain owner"
                 if g["pre_aggregations"]:
                     line += f" (pre-aggregations: {', '.join(g['pre_aggregations'])})"
             if g["status"] == "error":
@@ -2704,6 +2761,11 @@ def write_outputs(result, out_dir: Path, checks=None, cube_defs=None) -> Path:
             "name": row["name"],
             "missing_members": sorted(row.get("missing_members", {})),
             "reopen_for": reopen_for(row),
+            "truth_issues": sorted(
+                s
+                for s, t in row.get("truth_issues", {}).items()
+                if t["explains_cells"] and not t["ruling"]
+            ),
         }
     latest_path.write_text(json.dumps(latest, indent=2))
     return report
