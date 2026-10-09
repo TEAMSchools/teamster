@@ -38,7 +38,8 @@ specifics live there.
   Read `.github/ISSUE_TEMPLATE/bug_report.md` or `feature_request.md` and match
   its structure, plain-language sections first and a "For Claude" fold-out last.
   Label with the conventional-commit type, source systems, and `dagster`/`dbt`
-  when applicable.
+  when applicable. Then invoke `cube-data-issue-notice` to check whether the
+  issue reaches Cube.
 - At the investigation-to-build pivot, ask whether to run
   `superpowers:brainstorming`. A design settled in conversation does not waive
   it.
@@ -298,6 +299,8 @@ exploration that led nowhere (keep only the conclusion).
   - `gh run *`, `gh workflow *`, `gh repo edit`
   - `gh api` only to PATCH an existing comment or PR body (`-F body=@<file>`),
     POST a PR review-thread reply, read a file at a pinned SHA with the raw
-    Accept header, create/add labels, `-X GET search/issues`
+    Accept header, create/add labels, `-X GET search/issues`, GET an issue or
+    its comments when the result feeds a shell pipeline
+    (`cube-data-issue-notice`)
 
   Mechanics and failure modes: `.claude/context/github.md`.

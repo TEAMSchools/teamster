@@ -93,6 +93,10 @@ description:
   (e.g. `libraries/dlt/`) redeploys every consuming location, not just the ones
   whose config you edited.
 
+- A PR whose body closes an issue (`Closes`, `Fixes`, `Resolves #N`) that
+  carries a `Cube power users notice:` comment: right after opening it, run
+  `cube-data-issue-notice` `update`; when it merges, run `resolve`.
+
 ## dbt Cloud CI builds only kipptaf
 
 The dbt Cloud CI job (`Build - CI (Modified)`, dbt Cloud project 211862) runs
