@@ -144,7 +144,6 @@ with
         left join
             {{ ref("int_powerschool__gpa_term") }} as g
             on co.studentid = g.studentid
-            and co.schoolid = g.schoolid
             and co.yearid = g.yearid
             and co._dbt_source_project = g._dbt_source_project
             and g.is_current

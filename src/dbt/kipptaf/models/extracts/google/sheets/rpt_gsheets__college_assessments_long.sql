@@ -111,7 +111,6 @@ with
             {{ ref("int_powerschool__gpa_term") }} as gt
             on e.studentid = gt.studentid
             and e.yearid = gt.yearid
-            and e.schoolid = gt.schoolid
             and e._dbt_source_project = gt._dbt_source_project
             and gt.is_current
         where

@@ -1,11 +1,14 @@
 models:
   - name: int_powerschool__gpa_term
+    description:
+      Term and year-to-date GPA, one row per student, academic year, and term.
+      GPA spans every school where the student earned GPA-eligible grades that
+      year, so join on studentid and yearid, not schoolid.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
               - studentid
-              - schoolid
               - yearid
               - term_name
     columns:
@@ -13,6 +16,10 @@ models:
         data_type: int64
       - name: schoolid
         data_type: int64
+        description:
+          The school where the student earned the most GPA credit hours that
+          year, ties broken by the higher school number. A label for the row,
+          not a join key.
       - name: students_dcid
         data_type: int64
       - name: students_student_number
