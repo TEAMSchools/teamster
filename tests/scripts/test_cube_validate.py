@@ -796,3 +796,146 @@ def test_write_latest_merges_rows(tmp_path):
         "dashboard": "Demo",
         "run_date": "2026-10-09",
     }
+
+
+def _explained(tmp_path):
+    c = _checks(
+        tmp_path,
+        mismatches={
+            "dup": {
+                "title": "fix(cube): duplicate rows",
+                "what": "Cube counts some rows twice.",
+                "fix": "cube",
+            },
+            "filed": {
+                "title": "fix(tableau): x",
+                "what": "y",
+                "fix": "dashboard",
+                "issue": 4321,
+            },
+        },
+    )
+    cells = [
+        cv.Cell(
+            "Overview - Table",
+            "s",
+            {"School Name": "All"},
+            "Avg Score",
+            "48.50",
+            48.5,
+            47.0,
+            40,
+            "mismatch",
+            verdict="fix_cube",
+            explained_by=["dup"],
+            extract=48.5,
+            variant=48.5,
+            cube_variant=48.5,
+        ),
+        cv.Cell(
+            "Overview - Table",
+            "s",
+            {"School Name": "Alpha"},
+            "Avg Score",
+            "48.50",
+            48.5,
+            47.0,
+            4,
+            "mismatch",
+            verdict="fix_cube",
+            explained_by=["dup"],
+        ),
+        cv.Cell(
+            "Overview - Table",
+            "s",
+            {"Student": "Real Name"},
+            "Avg Score",
+            "9",
+            9,
+            8,
+            30,
+            "mismatch",
+            verdict="fail",
+        ),
+    ]
+    states = {"s": {"state": {"dashboard": "Overview"}, "status": "ok", "sheets": {}}}
+    return c, cells, states
+
+
+def test_person_keys_are_masked(tmp_path):
+    c, cells, _ = _explained(tmp_path)
+    assert cv.masked_key(cells[2], c) == {"Student": "a student"}
+
+
+def test_digest_groups_by_who_fixes_and_hides_small_cells_and_names(tmp_path):
+    c, cells, _ = _explained(tmp_path)
+    text = cv.digest_markdown("Demo", cells, c)
+    assert text.index("## Fix in Cube") < text.index("## Investigate")
+    assert "duplicate rows" in text and "small cell" in text
+    assert "Real Name" not in text and "a student" in text
+
+
+def test_one_draft_per_unfiled_mismatch_with_examples_coarsest_first(tmp_path):
+    c, cells, states = _explained(tmp_path)
+    drafts = cv.issue_drafts("Demo", cells, c, states, {})
+    assert list(drafts) == ["dup"]
+    body = drafts["dup"]
+    assert body.startswith(
+        "title: fix(cube): duplicate rows\nlabels: fix, cube, validation\n"
+    )
+    for heading in (
+        "## What's happening",
+        "## Steps to reproduce",
+        "## Where",
+        "<summary>For Claude</summary>",
+    ):
+        assert heading in body
+    assert body.index("School Name = All") < body.index("small cell")
+
+
+def test_drafts_never_carry_private_filters(tmp_path):
+    c, cells, states = _explained(tmp_path)
+    c["extract_filters"] = [{"sql": "student_number not in (1, 2)", "private": True}]
+    assert (
+        "student_number not in"
+        not in cv.issue_drafts("Demo", cells, c, states, {})["dup"]
+    )
+
+
+def test_coverage_lists_skipped_states_and_not_comparable_causes():
+    states = {
+        "a": {"state": {"dashboard": "D"}, "status": "ok"},
+        "b": {"state": {"dashboard": "D"}, "status": "filter_ignored"},
+        "c": {"state": {"dashboard": "D"}, "status": "export_failed", "error": "429"},
+    }
+    cells = [
+        cv.Cell(
+            "S",
+            "a",
+            {},
+            "M",
+            None,
+            None,
+            None,
+            None,
+            "not_comparable",
+            "multi-value mark",
+        )
+    ]
+    text = cv.coverage_markdown(states, cells)
+    assert (
+        "filter_ignored: b" in text
+        and "export_failed: c" in text
+        and "multi-value mark: 1" in text
+    )
+
+
+def test_write_outputs_writes_every_file(tmp_path):
+    c, cells, states = _explained(tmp_path)
+    digest = cv.write_outputs(
+        tmp_path / "out", "Demo", "2026-10-09", cells, c, states, {}
+    )
+    out = tmp_path / "out"
+    assert digest.exists() and (out / "2026-10-09-demo-coverage.md").exists()
+    assert (out / "2026-10-09-demo-issues" / "dup.md").exists()
+    assert json.loads((out / "latest.json").read_text())["111"]["verdict"] == "fail"

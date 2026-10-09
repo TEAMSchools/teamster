@@ -1212,3 +1212,233 @@ def write_latest(path: Path, workbook: str, run_date: str, rows: dict) -> None:
         data[gid] = {**r, "dashboard": workbook, "run_date": run_date}
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(json.dumps(data, indent=2, sort_keys=True))
+
+
+def _issue_labels(t: dict) -> list[str]:
+    head = re.match(r"^([a-z]+)", t["title"])
+    labels = [head.group(1)] if head else []
+    if t["fix"] == "cube":
+        labels.append("cube")
+    elif t["fix"] == "dashboard":
+        labels += {"tableau": ["tableau"], "rpt": ["dbt"]}.get(t["where"], [])
+    elif t["fix"] == "source":
+        labels.append("data")
+    return list(dict.fromkeys([*labels, *t["labels"], "validation"]))
+
+
+_OTHER_SIDE = "If you think the other side is wrong, say so in a comment."
+_ANSWERS = {
+    "cube": (
+        "Fix the Cube definition to compute what the dashboard shows, then close "
+        "this issue; the next validation run checks the fix. " + _OTHER_SIDE
+    ),
+    "dashboard": (
+        "Fix the dashboard (or its model or source) to compute the corrected "
+        "formula, then close this issue; the next validation run checks the fix. "
+        "Cube already matches the corrected formula. " + _OTHER_SIDE
+    ),
+    "source": (
+        "Fix the source data so Cube and the dashboard both see the corrected "
+        "values, then close this issue; the next validation run checks the fix. "
+        "Neither side's code changes. " + _OTHER_SIDE
+    ),
+    "undecided": (
+        "Decide which formula is the intended definition. Add the label `fix-cube` "
+        "if the dashboard's formula is right and Cube must change, or "
+        "`fix-dashboard` if the other formula is right and the dashboard must "
+        "change. If you cannot add labels, write a comment that starts with the "
+        "word. This issue then becomes the fix ticket for the side you chose."
+    ),
+}
+
+
+_SIDE_TITLES = (
+    ("cube", "Fix in Cube"),
+    ("dashboard", "Fix in the dashboard"),
+    ("source", "Fix in the source"),
+    ("undecided", "Owner to decide"),
+)
+
+
+def _slug(s: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "-", s.lower()).strip("-")
+
+
+def _fmt(v) -> str:
+    return "nothing" if v is None else f"{v:.4g}"
+
+
+def masked_key(c: Cell, checks: dict) -> dict[str, str]:
+    dims = checks["sheets"][c.sheet].dims if c.sheet in checks["sheets"] else {}
+    out = {}
+    for d, v in c.key.items():
+        p = dims[d].person if d in dims else False
+        out[d] = (p if isinstance(p, str) else "a student") if p else v
+    return out
+
+
+def _where_text(c: Cell, checks) -> str:
+    key = masked_key(c, checks)
+    return ", ".join(f"{d} = {v}" for d, v in key.items()) or "the whole sheet"
+
+
+def _example(c: Cell, checks, fix: str | None = None) -> str:
+    if c.n_students is None or c.n_students < SMALL_CELL:
+        return f"{c.sheet}, {_where_text(c, checks)}: small cell"
+    text = f"{c.sheet}, {_where_text(c, checks)}: the dashboard shows {c.shown}, Cube gives {_fmt(c.cube)}"
+    if fix and c.variant is not None:
+        text += f", the other formula gives {_fmt(c.variant)}"
+    if c.cube_variant is not None:
+        text += f"; Cube without the affected rows gives {_fmt(c.cube_variant)}"
+    return text
+
+
+def _coarsest(cells: list[Cell]) -> list[Cell]:
+    return sorted(
+        cells,
+        key=lambda c: (sum(v != TOTAL for v in c.key.values()), -(c.n_students or 0)),
+    )
+
+
+def coverage_markdown(states, cells) -> str:
+    by_status: dict[str, list[str]] = {}
+    for sid, e in sorted(states.items()):
+        by_status.setdefault(e.get("status", "ok"), []).append(sid)
+    lines = ["# Coverage", "", f"States visited: {len(by_status.get('ok', []))}", ""]
+    for status in ("filter_ignored", "export_failed"):
+        if by_status.get(status):
+            lines.append(f"- {status}: {', '.join(by_status[status])}")
+    causes = Counter(c.reason for c in cells if c.status == "not_comparable")
+    if causes:
+        lines += [
+            "",
+            "Cells not compared:",
+            *(f"- {r}: {n}" for r, n in causes.most_common()),
+        ]
+    return "\n".join(lines) + "\n"
+
+
+def digest_markdown(workbook, cells, checks) -> str:
+    sides = fix_sides(checks)
+    lines = [f"# {workbook}: Cube against Tableau", ""]
+    lines.append(
+        "Verdicts: "
+        + ", ".join(
+            f"{v} {n}"
+            for v, n in Counter(c.verdict for c in cells if c.verdict).most_common()
+        )
+    )
+    for side, title in _SIDE_TITLES:
+        slugs = sorted(
+            s for s in sides[side] if any(s in c.explained_by for c in cells)
+        )
+        if not slugs:
+            continue
+        lines += ["", f"## {title}", ""]
+        for s in slugs:
+            m = checks["mismatches"][s]
+            mine = _coarsest([c for c in cells if s in c.explained_by])
+            ref = f"#{m['issue']}" if m.get("issue") else "draft"
+            lines.append(f"- **{m['title']}** ({ref}): {m['what']} {len(mine)} cells.")
+            lines += [f"  - {_example(c, checks, side)}" for c in mine[:3]]
+    fails = _coarsest([c for c in cells if c.verdict == "fail"])
+    if fails:
+        lines += ["", "## Investigate", ""]
+        for (sheet, measure), n in Counter(
+            (c.sheet, c.measure) for c in fails
+        ).most_common():
+            lines.append(f"- {sheet} / {measure}: {n} cells")
+        lines += [f"  - {_example(c, checks)}" for c in fails[:5]]
+    unsure = Counter(c.reason for c in cells if c.verdict == "incomplete")
+    if unsure:
+        lines += [
+            "",
+            "## Could not tell",
+            "",
+            *(f"- {r}: {n} cells" for r, n in unsure.most_common()),
+        ]
+    return "\n".join(lines) + "\n"
+
+
+def issue_drafts(workbook, cells, checks, states, fields) -> dict[str, str]:
+    out = {}
+    for s, m in checks["mismatches"].items():
+        mine = _coarsest([c for c in cells if s in c.explained_by])
+        if m.get("issue") or not mine:
+            continue
+        first = mine[0]
+        sheet = checks["sheets"][first.sheet]
+        meas = sheet.measures[first.measure]
+        grain = list(_grain(first)[0])
+        where = state_where(
+            states[first.state], checks, fields, sheet, public_only=True
+        )
+        query = extract_sql(sheet, meas, grain, where)
+        alt = [v for v in meas.variants if s in v["explains"]]
+        labels = _issue_labels(m)
+        related = " ".join(f"#{n}" for n in m.get("related") or [])
+        body = [
+            f"title: {m['title']}",
+            f"labels: {', '.join(labels)}",
+            "",
+            "## What's happening",
+            "",
+            m["what"],
+            "",
+            f"On the {workbook} dashboard, {len(mine)} cells differ between Tableau and Cube "
+            "because of this. Examples, coarsest first:",
+            "",
+            *(f"- {_example(c, checks, m['fix'])}" for c in mine[:5]),
+            "",
+            "## Steps to reproduce",
+            "",
+            "1. Run the query below over the dashboard's extract. It gives what Tableau shows.",
+            f"2. Query Cube's `{meas.cube}` at the same grain and filters.",
+            "3. Compare the two with the other formula below.",
+            "",
+            "```sql",
+            query,
+            "```",
+            "",
+            "The other formula:",
+            "",
+            "```yaml",
+            yaml.safe_dump(alt, sort_keys=False).strip(),
+            "```",
+            "",
+            "## Where",
+            "",
+            f"- **Code location / dbt project:** {m.get('where', 'tableau')}",
+            "- **Environment:** prod",
+            f"- **Run, PR, or dashboard link (if any):** {workbook}",
+            *([f"- **Related:** {related}"] if related else []),
+            "",
+            _ANSWERS[m["fix"]],
+            "",
+            "<details>",
+            "<summary>For Claude</summary>",
+            "",
+            f"> Checks file `.claude/skills/cube-dashboard/checks/{_slug(workbook)}.yml`, "
+            f"mismatch `{s}`. Rerun `cube_validate.py explain` after the fix; the cells "
+            "above must turn `pass`.",
+            "",
+            "</details>",
+        ]
+        out[s] = "\n".join(body) + "\n"
+    return out
+
+
+def write_outputs(out_dir, workbook, run_date, cells, checks, states, fields) -> Path:
+    out = Path(out_dir)
+    out.mkdir(parents=True, exist_ok=True)
+    stem = f"{run_date}-{_slug(workbook)}"
+    (out / f"{stem}-coverage.md").write_text(coverage_markdown(states, cells))
+    digest = out / f"{stem}-digest.md"
+    digest.write_text(digest_markdown(workbook, cells, checks))
+    drafts = issue_drafts(workbook, cells, checks, states, fields)
+    if drafts:
+        (out / f"{stem}-issues").mkdir(exist_ok=True)
+        for s, text in drafts.items():
+            (out / f"{stem}-issues" / f"{s}.md").write_text(text)
+    write_latest(out / "latest.json", workbook, run_date, row_results(cells, checks))
+    return digest
