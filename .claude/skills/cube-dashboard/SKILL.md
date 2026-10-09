@@ -22,9 +22,10 @@ that is the case this exists to catch (#5692).
 
 Verdicts, strongest first: `fail` (a gap nothing explains), `incomplete` (a
 grain errored, or a Tableau construct on the row's sheets is unaccounted),
-`missing_member` (every gap is explained by a member Cube lacks), `pass`. Each
-comment lists the missing Cube members, with the cells they explain and the
-grains they block, so the user knows what to add.
+`truth_issue` (every gap is explained, and at least one by a dashboard, model or
+source problem the domain owner has not ruled on), `missing_member` (every gap
+is explained by a member Cube lacks), `pass`. Each comment lists the missing
+Cube members and the truth issues, with the cells they explain.
 
 ## Validate a dashboard
 
@@ -33,7 +34,14 @@ grains they block, so the user knows what to add.
 2. Checks. Open `checks/<dashboard>.yml`. For any done row with no entry, author
    one (below). Show new or changed entries to the user and wait for approval
    before running.
-3. Run. Write `tests/test_zz_cube_dashboard_run.py` (template below), run
+3. Rulings. For each `truth_issues:` entry with `issue:` and no `ruling:`, read
+   the issue with `mcp__github__issue_read` (`get`, then `get_labels`). A
+   `cube-correct` or `cube-wrong` label becomes
+   `ruling: {call, by: <assignee login, or "unassigned">, on: <today>, note: <first line of the latest comment>}`.
+   A closed issue gets `closed_on: <date closed>`. Keep a ruling already in the
+   file; if a label contradicts it, tell the user instead of changing it. Commit
+   the checks file.
+4. Run. Write `tests/test_zz_cube_dashboard_run.py` (template below), run
    `uv run pytest tests/test_zz_cube_dashboard_run.py -s -q --tb=short`, then
    delete it. The run downloads the workbook with its extracts and compares Cube
    with the dashboard's own extract, not the live warehouse view. First run with
@@ -41,7 +49,7 @@ grains they block, so the user knows what to add.
    dashboard; a `TimingError` means the extract and the Cube fact are more than
    an hour apart (one of them did not refresh). Stop and tell the user either
    way.
-4. Renders. For each tab in the entries' `renders:`, call
+5. Renders. For each tab in the entries' `renders:`, call
    `mcp__tableau__get-view-image` once per region (`viewFilters` set to that
    region) and at the worst failing cells. Compare the visible numbers to the
    report. A render that disagrees with the check SQL means the SQL is wrong:
@@ -49,26 +57,40 @@ grains they block, so the user knows what to add.
    anything. A render shows aliased labels (a school id shown as its name); map
    a label back to its value from the column's `<aliases>` in the `.twb` before
    comparing.
-5. Review. Walk the user through
-   `~/asana-sync/validation/<date>-<dashboard>-fixes.md`, the fix digest. "Add
-   to Cube" lists each missing member that explains gaps, merged across rows,
-   with what it is, where it lives and the suggested edit. "Investigate" lists
-   each row's gaps nothing explains, with the breakdown by its `diagnose_by`
-   field and the dashboard and Cube definitions side by side: enough to name the
-   cube or model edit. Note any pre-aggregations on failed grains (a stale
-   rollup is a different fix from a mart gap). "Unaccounted Tableau constructs"
-   lists what the checks file must account for before the row can pass; "Not
-   checked" lists what the check deliberately skips, with why.
-6. Post. After the user agrees, post the digest once on the dashboard's Asana
+6. Review. Walk the user through
+   `~/asana-sync/validation/<date>-<dashboard>-fixes.md`, the fix digest.
+   "Dashboard, model or source issues" comes first: each truth issue with the
+   cells it explains and its draft, issue number or ruling; a stale one is
+   closed and explains nothing, so remove its entry. "Add to Cube" lists each
+   missing member that explains gaps, merged across rows, with what it is, where
+   it lives and the suggested edit. "Investigate" lists each row's gaps nothing
+   explains, with the breakdown by its `diagnose_by` field and the dashboard and
+   Cube definitions side by side: enough to name the cube or model edit. Note
+   any pre-aggregations on failed grains (a stale rollup is a different fix from
+   a mart gap). "Unaccounted Tableau constructs" lists what the checks file must
+   account for before the row can pass; "Not checked" lists what the check
+   deliberately skips, with why.
+7. Post. After the user agrees, post the digest once on the dashboard's Asana
    task, then each row's three-line `comment` from
    `~/asana-sync/validation/<date>-<dashboard>.json` verbatim, both with
    `mcp__claude_ai_Asana__add_comment`.
-7. Tags. Tell the user to run `~/asana-sync/sync.py` (preview, then `--apply`).
+8. Issues. List each draft in
+   `~/asana-sync/validation/<date>-<dashboard>-issues/` with its title and cell
+   count; the user picks which to file. For each pick: create it with
+   `mcp__github__issue_write` (`title` and `labels` from the draft's first two
+   lines, the rest as `body`; keep only labels `mcp__github__get_label` finds),
+   check the returned title and labels, create a `#NNNN | <title>` subtask under
+   the checks file's `open_issues_task` with
+   `mcp__claude_ai_Asana__create_tasks` (`parent` set, unassigned), and write
+   `issue: <number>` into the entry. Commit the checks file. The user assigns
+   each issue to the domain owner.
+9. Tags. Tell the user to run `~/asana-sync/sync.py` (preview, then `--apply`).
    It reads `latest.json` and gives every row exactly one validation tag: `pass`
    → `matched`; `fail` or `missing_member` → `mismatch` (a `missing_member` row
-   also becomes `cube-partial`); `incomplete` or never run → `unvalidated`. It
-   ticks a row only when it is both `cube-covered` and `matched`, and unticks
-   every other done row. The skill never changes tags or ticks itself.
+   also becomes `cube-partial`); `truth_issue` → `needs-review`; `incomplete` or
+   never run → `unvalidated`. It ticks a row only when it is both `cube-covered`
+   and `matched`, and unticks every other done row. The skill never changes tags
+   or ticks itself.
 
 Run template:
 
@@ -133,8 +155,16 @@ def test_run() -> None:
 
 6. When the formula uses a field Cube lacks (a filter on homeroom, say), list it
    under the metric's `missing_members:` and add the same SQL without it as
-   `sql_without` (or `num_without`/`den_without`). A cell Cube matches only
-   without it is reported as explained by that member, not as a bug.
+   `sql_without` (or `num_without`/`den_without`). When the dashboard's
+   calculation, its `rpt_` model or the source is what is wrong, describe the
+   problem under the file's `truth_issues:` (`title` as a conventional-commit
+   issue title, `what`, `where`: `dashboard`, `rpt` or `source`, optional
+   `evidence` and `labels`) and give the metric a `variants:` entry with the
+   corrected SQL and `explains: [<slug>]`. A variant may explain a member and a
+   truth issue together. A cell Cube matches only through a variant is explained
+   by the names in its `explains`, not reported as a bug. Set the file's
+   `open_issues_task:` to the domain's Open Issues task gid (Assessments:
+   `1219086050133309`).
 7. `count` for sums and distinct counts, `rate` with `num`/`den` for shares
    (within 0.1 point), `average` with `num`/`den` for a mean in its own units,
    such as a scale score (within 0.1 unit). Give a metric
@@ -145,7 +175,14 @@ def test_run() -> None:
    the same workbook, give that metric `datasource:` (the extract's caption); a
    measure shown from two extracts is two metrics in one row, one per
    datasource.
-8. Check the file loads (`load_checks`), then run the new row alone
+8. Settle. When the window includes the current school year, set `settle.date`
+   to the SQL for a row's date and run
+   `scripts/cube_validate.py settle <checks>` in the run template (swap `run`
+   for `settle` and drop `--as`). Run it late in the day, after the fact's later
+   rebuilds. Put its `# settle measured` line beside `settle:` and its
+   recommended `days` in the entry, and show both to the user with the other
+   changes. Rerun it when the dashboard's refresh schedule changes.
+9. Check the file loads (`load_checks`), then run the new row alone
    (`--rows <gid>`) so its SQL runs once against the extract.
 
 ## Rules
