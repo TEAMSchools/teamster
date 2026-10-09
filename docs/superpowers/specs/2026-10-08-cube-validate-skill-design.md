@@ -424,3 +424,14 @@ window whose academic years have all ended gets no new scores, so the run skips
 the timing guard and says so on the snapshots line. DDI and STAT validate on
 2025-26; a row that only exists in the current year (DDI's "% Complete (this
 week)") waits for a current-year run.
+
+## Revision 2026-10-09: a settle window instead of a tight timing match
+
+Measured on DDI: between a 01:39 extract and the live table 14 hours and three
+fact rebuilds later, every changed row was taken within three days of the
+refresh (plus a few newly assigned not-taken rows); no older row moved. A checks
+file may give `settle: {days, truth, cube}`: the run leaves out scores from that
+many days before the extract refreshed, on both sides, with `{cutoff}` filled
+in, and skips the timing guard. Cube filters may nest `or` and `and`. A window
+of several academic years is compared year by year: `academic_year` joins every
+grain.

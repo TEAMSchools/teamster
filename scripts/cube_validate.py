@@ -1110,6 +1110,27 @@ def load_checks(path) -> dict:
     data.setdefault("cube_filters", [])
     # Extract-side only: rows the dashboard's table holds that Cube never carries.
     data.setdefault("truth_filters", [])
+    settle = data.get("settle")
+    if settle is not None and not (
+        isinstance(settle, dict)
+        and isinstance(settle.get("days"), int)
+        and isinstance(settle.get("truth"), str)
+        and isinstance(settle.get("cube"), list)
+    ):
+        raise CheckError(
+            f"{path}: settle needs days (an integer), truth (SQL with {{cutoff}}) and "
+            "cube (filters with {cutoff})"
+        )
+    # Several academic years are compared year by year, never pooled.
+    if window and len(window["academic_years"]) > 1:
+        for row in data["rows"]:
+            row["grains"] = [
+                list(t)
+                for t in dict.fromkeys(
+                    tuple(g if "academic_year" in g else [*g, "academic_year"])
+                    for g in row["grains"]
+                )
+            ]
     data.setdefault("scope_measure", "count_students")
     data.setdefault("students_sql", "count(distinct student_number)")
     return data
@@ -1119,6 +1140,25 @@ def academic_window(today: dt.date) -> tuple[dt.date, dt.date]:
     """July 1 of the academic year that contains yesterday, through yesterday."""
     end = today - dt.timedelta(days=1)
     return dt.date(end.year if end.month >= 7 else end.year - 1, 7, 1), end
+
+
+def _fill(value, cutoff: str):
+    """A filter tree with {cutoff} replaced in every string."""
+    if isinstance(value, str):
+        return value.replace("{cutoff}", cutoff)
+    if isinstance(value, list):
+        return [_fill(v, cutoff) for v in value]
+    if isinstance(value, dict):
+        return {k: _fill(v, cutoff) for k, v in value.items()}
+    return value
+
+
+def settle_filters(checks: dict, extract_date: dt.date) -> tuple[str, list]:
+    """Truth and Cube filters that leave out scores from the settle window: the days
+    before the extract refreshed, where scores are still being entered and corrected."""
+    settle = checks["settle"]
+    cutoff = (extract_date - dt.timedelta(days=settle["days"])).isoformat()
+    return _fill(settle["truth"], cutoff), _fill(settle["cube"], cutoff)
 
 
 def resolve_window(checks: dict, today: dt.date):
@@ -1141,6 +1181,14 @@ def cube_key(view: str, dim: Dim) -> str:
         if dim.granularity
         else f"{view}.{dim.cube}"
     )
+
+
+def _prefixed(view: str, f: dict) -> dict:
+    """A Cube filter with its members named on the view, including inside or/and."""
+    for op in ("or", "and"):
+        if op in f:
+            return {op: [_prefixed(view, x) for x in f[op]]}
+    return dict(f, member=f"{view}.{f['member']}")
 
 
 def cube_query(
@@ -1181,7 +1229,7 @@ def cube_query(
             }
             for f in hard_filters
         ]
-        + [dict(f, member=f"{view}.{f['member']}") for f in cube_filters],
+        + [_prefixed(view, f) for f in cube_filters],
         "limit": CUBE_LIMIT,
         "timezone": "UTC",
     }
@@ -2554,11 +2602,20 @@ def _run_command(a) -> int:
     )
     today = dt.date.today()
     closed = window_is_closed(resolve_window(checks, today), today)
-    cube_stamp = _local(cube_at) + (
-        " (closed year: timing not checked)" if closed else ""
-    )
+    cube_stamp = _local(cube_at)
+    if checks.get("settle"):
+        # Scores still being entered sit inside the settle window: leave them out on
+        # both sides, and the snapshots no longer need to be close in time.
+        truth, cube_settle = settle_filters(checks, snapshot_date(default_at))
+        checks["truth_filters"] = [*checks["truth_filters"], truth]
+        checks["cube_filters"] = [*checks["cube_filters"], *cube_settle]
+        cube_stamp += (
+            f" (scores from the last {checks['settle']['days']} days left out)"
+        )
+    elif closed:
+        cube_stamp += " (closed year: timing not checked)"
     try:
-        for _, at in extracts.values() if not closed else []:
+        for _, at in extracts.values() if not (closed or checks.get("settle")) else []:
             timing_guard(at, cube_at)
         with ExitStack() as stack:
             truth = {

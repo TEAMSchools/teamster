@@ -17,6 +17,23 @@ dashboards:
 window:
   academic_years:
     - 2025
+    - 2026
+settle:
+  days: 7
+  truth: coalesce(date_taken, administered_at) < '{cutoff}'
+  cube:
+    - or:
+        - member: date_taken
+          operator: beforeDate
+          values:
+            - "{cutoff}"
+        - and:
+            - member: date_taken
+              operator: notSet
+            - member: date_day
+              operator: beforeDate
+              values:
+                - "{cutoff}"
 dimensions:
   region:
     cube: region_name
@@ -166,8 +183,7 @@ truth_filters:
     datasource: rpt_tableau__ddi_dashboard (kipptaf_tableau)
 handled:
   "filter: Academic Year [170633]":
-    The year is the viewer's choice and no definition depends on it; checked on
-    2025-26, a closed year.
+    The year is the viewer's choice; 2025-26 and 2026-27 are each compared.
   "filter: Response Type [c1aae5]":
     response_type is in every grain, so each response type is compared on its
     own.
@@ -187,15 +203,13 @@ handled:
   "filter: School [86b944]":
     A slice of a field the grains compare value by value.
   "filter: Academic Year [5ae12d]":
-    The year is the viewer's choice and no definition depends on it; checked on
-    2025-26, a closed year.
+    The year is the viewer's choice; 2025-26 and 2026-27 are each compared.
   "alias: % Mastery (Gen Ed) [275e47]":
     The same measure (Is Mastery Int - Gen Ed) shown under another name.
   "alias: % Mastery (IEP) [b8798d]":
     The same measure (Is Mastery Int - IEP) shown under another name.
   "filter: Academic Year [6005b6]":
-    The year is the viewer's choice and no definition depends on it; checked on
-    2025-26, a closed year.
+    The year is the viewer's choice; 2025-26 and 2026-27 are each compared.
   "filter: Subject Area [08a78a]":
     A slice of a field the grains compare value by value.
   "filter: Response Type [dc0a33]":

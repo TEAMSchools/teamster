@@ -1913,3 +1913,81 @@ def test_a_closed_year_window_skips_the_timing_guard():
     assert cv.window_is_closed({"academic_years": [2025]}, today)
     assert not cv.window_is_closed({"academic_years": [2025, 2026]}, today)
     assert not cv.window_is_closed((dt.date(2026, 7, 1), dt.date(2026, 10, 8)), today)
+
+
+# ---------------------------------------------------------------- settle window
+SETTLE = {
+    "days": 7,
+    "truth": "coalesce(date_taken, administered_at) < '{cutoff}'",
+    "cube": [
+        {
+            "or": [
+                {
+                    "member": "date_taken",
+                    "operator": "beforeDate",
+                    "values": ["{cutoff}"],
+                },
+                {
+                    "and": [
+                        {"member": "date_taken", "operator": "notSet"},
+                        {
+                            "member": "date_day",
+                            "operator": "beforeDate",
+                            "values": ["{cutoff}"],
+                        },
+                    ]
+                },
+            ]
+        }
+    ],
+}
+
+
+def test_settle_filters_leave_out_the_last_days_before_the_extract(tmp_path):
+    def m(d):
+        d["settle"] = SETTLE
+
+    c = cv.load_checks(_write_variant(tmp_path, m))
+    truth, cube = cv.settle_filters(c, dt.date(2026, 10, 9))
+    assert truth == "coalesce(date_taken, administered_at) < '2026-10-02'"
+    assert cube[0]["or"][0]["values"] == ["2026-10-02"]
+    assert cube[0]["or"][1]["and"][1]["values"] == ["2026-10-02"]
+
+
+def test_load_checks_rejects_a_settle_block_without_days(tmp_path):
+    def m(d):
+        d["settle"] = {"truth": "x < '{cutoff}'", "cube": []}
+
+    with pytest.raises(cv.CheckError, match="settle"):
+        cv.load_checks(_write_variant(tmp_path, m))
+
+
+def test_cube_query_prefixes_nested_filters():
+    dims = _checks()["dimensions"]
+    q = cv.cube_query(
+        "demo_view",
+        ["count_tardy_days"],
+        [],
+        dims,
+        [],
+        WINDOW,
+        [
+            {
+                "or": [
+                    {"member": "a", "operator": "set"},
+                    {"and": [{"member": "b", "operator": "notSet"}]},
+                ]
+            }
+        ],
+    )
+    nested = q["filters"][-1]
+    assert nested["or"][0]["member"] == "demo_view.a"
+    assert nested["or"][1]["and"][0]["member"] == "demo_view.b"
+
+
+def test_a_multi_year_window_compares_each_year(tmp_path):
+    def m(d):
+        _year_window(d)
+
+    c = cv.load_checks(_write_variant(tmp_path, m))
+    assert all("academic_year" in g for r in c["rows"] for g in r["grains"])
