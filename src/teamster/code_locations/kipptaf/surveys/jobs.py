@@ -24,7 +24,11 @@ from teamster.libraries.google.bigquery.ops import BigQueryOpConfig, bigquery_qu
         }
     ),
     # a retry would re-email everyone who was already sent to before the failure
-    tags={"job_type": "op", "dagster/max_runtime": "7200", "dagster/max_retries": "0"},
+    tags={
+        "job_type": "op",
+        "dagster/max_runtime": "14400",
+        "dagster/max_retries": "0",
+    },
 )
 def survey_email_reminder_job():
     recipients = bigquery_query_op()

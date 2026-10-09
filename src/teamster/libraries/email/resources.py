@@ -5,7 +5,7 @@ from smtplib import SMTP
 from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
 from dagster_shared import check
 from pydantic import PrivateAttr
-from requests import HTTPError, Response, Session
+from requests import HTTPError, RequestException, Response, Session
 from requests.exceptions import ConnectionError as RequestsConnectionError
 from requests.exceptions import Timeout
 from tenacity import (
@@ -70,11 +70,57 @@ class EmailResource(ConfigurableResource):
             self._log.error(msg=e)
 
 
-class GraphTransientError(HTTPError):
-    """A Microsoft Graph response worth retrying: throttled (429) or a 5xx."""
+class TransientHTTPError(HTTPError):
+    """A response worth retrying: throttled (429) or a 5xx."""
 
 
-class GraphEmailResource(ConfigurableResource):
+class ZapierWebhookError(RequestException):
+    """A failed Zapier webhook call, with the secret webhook URL kept out."""
+
+
+class MailSenderResource(ConfigurableResource):
+    """Base for resources that send one HTML email per `send_mail` call.
+
+    Provides an HTTP session and a `_request` that retries throttling, 5xx,
+    connection errors, and timeouts. Error messages never include the request
+    URL, because some subclasses keep a secret in it.
+    """
+
+    timeout: int = 30
+
+    _session: Session = PrivateAttr()
+
+    def setup_for_execution(self, context: InitResourceContext) -> None:
+        self._session = Session()
+
+    @retry(
+        retry=retry_if_exception_type(
+            (TransientHTTPError, RequestsConnectionError, Timeout)
+        ),
+        stop=stop_after_attempt(5),
+        wait=wait_exponential_jitter(initial=2, max=60),
+        reraise=True,
+    )
+    def _request(self, method: str, url: str, **kwargs) -> Response:
+        response = self._session.request(
+            method=method, url=url, timeout=self.timeout, **kwargs
+        )
+
+        if response.status_code == 429 or response.status_code >= 500:
+            raise TransientHTTPError(
+                f"{response.status_code} response", response=response
+            )
+
+        if response.status_code >= 400:
+            raise HTTPError(f"{response.status_code} response", response=response)
+
+        return response
+
+    def send_mail(self, to_email: str, subject: str, html_body: str) -> None:
+        raise NotImplementedError
+
+
+class GraphEmailResource(MailSenderResource):
     """Send email as one mailbox through Microsoft Graph, with app-only auth.
 
     Signs in with the OAuth client credentials flow. The Entra app needs the
@@ -88,43 +134,15 @@ class GraphEmailResource(ConfigurableResource):
         client_id: Entra app (client) ID.
         client_secret: Entra app client secret.
         sender: Mailbox address the email is sent from.
-        timeout: Per-request timeout in seconds.
     """
 
     tenant_id: str
     client_id: str
     client_secret: str
     sender: str
-    timeout: int = 30
 
-    _session: Session = PrivateAttr()
     _token: str = PrivateAttr(default="")
     _token_expires_at: float = PrivateAttr(default=0.0)
-
-    def setup_for_execution(self, context: InitResourceContext) -> None:
-        self._session = Session()
-
-    @retry(
-        retry=retry_if_exception_type(
-            (GraphTransientError, RequestsConnectionError, Timeout)
-        ),
-        stop=stop_after_attempt(5),
-        wait=wait_exponential_jitter(initial=2, max=60),
-        reraise=True,
-    )
-    def _request(self, method: str, url: str, **kwargs) -> Response:
-        response = self._session.request(
-            method=method, url=url, timeout=self.timeout, **kwargs
-        )
-
-        if response.status_code == 429 or response.status_code >= 500:
-            raise GraphTransientError(
-                f"{response.status_code} from {url}", response=response
-            )
-
-        response.raise_for_status()
-
-        return response
 
     def _get_token(self) -> str:
         # refresh 5 minutes early so a long send loop never uses an expired token
@@ -167,3 +185,44 @@ class GraphEmailResource(ConfigurableResource):
                 "saveToSentItems": False,
             },
         )
+
+
+class ZapierWebhookEmailResource(MailSenderResource):
+    """Hand each email to a Zap that catches a webhook and sends it.
+
+    Posts `email`, `subject`, and `html` to a Webhooks by Zapier Catch Hook.
+    The Zap's email action decides the sender and holds the mail connection.
+    A success response means Zapier accepted the request, not that the email
+    was delivered; delivery errors show up in the Zap's task history.
+
+    Attributes:
+        webhook_url: The Catch Hook URL. Treat it as a secret: anyone holding
+            it can send email through the Zap.
+    """
+
+    webhook_url: str
+
+    def send_mail(self, to_email: str, subject: str, html_body: str) -> None:
+        """Post one email to the Zap.
+
+        Raises `ZapierWebhookError`, without the URL or the original message,
+        when the call fails after retries.
+        """
+        error: RequestException | None = None
+
+        try:
+            self._request(
+                method="POST",
+                url=self.webhook_url,
+                json={"email": to_email, "subject": subject, "html": html_body},
+            )
+        except RequestException as e:
+            error = e
+
+        # raised outside the except block so the original exception, whose
+        # message can contain the webhook URL, is not attached as context
+        if error is not None:
+            raise ZapierWebhookError(
+                f"{type(error).__name__} {getattr(error.response, 'status_code', None)}",
+                response=error.response,
+            )

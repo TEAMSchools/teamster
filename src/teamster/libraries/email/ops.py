@@ -7,7 +7,7 @@ from jinja2 import Environment, select_autoescape
 from requests import RequestException
 
 from teamster.core.utils.functions import chunk
-from teamster.libraries.email.resources import EmailResource, GraphEmailResource
+from teamster.libraries.email.resources import EmailResource, MailSenderResource
 
 
 class SendEmailOpConfig(Config):
@@ -46,9 +46,15 @@ class SendPersonalizedEmailOpConfig(Config):
     Attributes:
         subject: Subject line for every email.
         html_template_path: Path to a Jinja template for the HTML body.
-        messages_per_minute: Send rate cap. Exchange Online allows 30 messages
-            per minute per mailbox, Graph included, so the default leaves
-            headroom.
+        messages_per_minute: Send rate cap. Exchange Online's hard limit is 30
+            per minute per mailbox, but tenant outbound spam policies can block
+            a sender well below that, so the default stays far under it.
+        max_recipients: Refuse to send anything if a run has more recipients
+            than this, which guards against a bad query emailing far more people
+            than intended.
+        dry_run: Render every email and log the counts without sending.
+        only_send_to: When set, send only to these addresses. Use it to test
+            against your own pending surveys before a full run.
         max_consecutive_failures: Stop the run after this many failed sends in
             a row, which means the service or login is down rather than one bad
             address.
@@ -56,7 +62,10 @@ class SendPersonalizedEmailOpConfig(Config):
 
     subject: str
     html_template_path: str
-    messages_per_minute: int = 25
+    messages_per_minute: int = 8
+    max_recipients: int = 2000
+    dry_run: bool = False
+    only_send_to: list[str] | None = None
     max_consecutive_failures: int = 5
 
 
@@ -74,7 +83,7 @@ def group_rows_by_email(rows: list[dict]) -> dict[str, list[dict]]:
 def send_personalized_email_op(
     context: OpExecutionContext,
     config: SendPersonalizedEmailOpConfig,
-    email: GraphEmailResource,
+    email: MailSenderResource,
     recipients: list[dict],
 ) -> None:
     """Send each recipient one email built from all of their rows.
@@ -83,6 +92,8 @@ def send_personalized_email_op(
     email are passed to the template as `items`, so a person with three pending
     surveys gets one email listing all three.
 
+    Before sending, the op narrows to `only_send_to` when set, and raises
+    `Failure` without sending anything if more than `max_recipients` remain.
     A failed send is logged without the address and skipped. The op raises
     `Failure` at the end if any send failed, or right away after
     `max_consecutive_failures` failures in a row.
@@ -92,9 +103,32 @@ def send_personalized_email_op(
     )
 
     grouped = group_rows_by_email(recipients)
-    delay = 60 / config.messages_per_minute
 
-    context.log.info(f"Sending {len(grouped)} emails from {len(recipients)} rows")
+    if config.only_send_to is not None:
+        allowed = {address.lower() for address in config.only_send_to}
+        grouped = {k: v for k, v in grouped.items() if k.lower() in allowed}
+
+    if len(grouped) > config.max_recipients:
+        raise Failure(
+            description=(
+                f"{len(grouped)} recipients is over max_recipients "
+                f"({config.max_recipients}); nothing was sent"
+            )
+        )
+
+    delay = 60 / config.messages_per_minute
+    context.log.info(
+        f"{len(grouped)} emails from {len(recipients)} rows; at "
+        f"{config.messages_per_minute}/minute this takes about "
+        f"{round(len(grouped) * delay / 60)} minutes"
+    )
+
+    if config.dry_run:
+        for items in grouped.values():
+            html_template.render(items=items)
+
+        context.log.info("Dry run: rendered every email, sent none")
+        return
 
     sent = 0
     failed = 0

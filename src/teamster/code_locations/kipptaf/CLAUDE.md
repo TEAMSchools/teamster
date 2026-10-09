@@ -65,13 +65,15 @@ Op-based job, no assets: `bigquery_query_op` reads
 `kipptaf_extracts.rpt_extracts__survey_reminder`, then
 `send_personalized_email_op` sends each person one email with their own survey
 links. The model returns rows only while a survey window is open, so the
-schedule runs year-round and sends nothing between windows. Sends as
-performancemanagement@kippnj.org through Microsoft Graph (the
-`op-microsoft-graph-survey-reminders` secret, marked `optional` so a missing
-secret can't block the code server) and throttles to stay under Exchange
-Online's 30 messages per minute, so a full window run takes about an hour. The
+schedule runs year-round and sends nothing between windows. Each email goes to a
+Zapier Catch Hook, and the Zap sends it from performancemanagement@kippnj.org
+through its Microsoft Outlook connection (the `op-zapier-survey-reminders`
+secret holds the webhook URL, marked `optional` so a missing secret can't block
+the code server). The Foundation watches this mailbox's sending activity, so the
+op paces sends at 8 per minute and a full window run takes about 3 hours. The
 job sets `dagster/max_retries: 0`: a whole-run retry would re-email everyone
-already sent to.
+already sent to. For a test, launch with `only_send_to` set to your own address,
+or `dry_run: true`.
 
 The email text, including the window name and dates, lives only in
 `surveys/template.html`. Update it for each survey round.

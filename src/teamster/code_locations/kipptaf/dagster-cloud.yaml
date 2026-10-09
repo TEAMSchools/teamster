@@ -435,23 +435,11 @@ locations:
                   secretKeyRef:
                     name: op-overgrad-api-kippnewark
                     key: credential
-              - name: MICROSOFT_GRAPH_TENANT_ID
+              - name: ZAPIER_SURVEY_REMINDER_WEBHOOK_URL
                 valueFrom:
                   secretKeyRef:
-                    name: op-microsoft-graph-survey-reminders
-                    key: tenant_id
-                    optional: true
-              - name: MICROSOFT_GRAPH_CLIENT_ID
-                valueFrom:
-                  secretKeyRef:
-                    name: op-microsoft-graph-survey-reminders
-                    key: client_id
-                    optional: true
-              - name: MICROSOFT_GRAPH_CLIENT_SECRET
-                valueFrom:
-                  secretKeyRef:
-                    name: op-microsoft-graph-survey-reminders
-                    key: client_secret
+                    name: op-zapier-survey-reminders
+                    key: webhook_url
                     optional: true
               - name: KNOWBE4_API_KEY
                 valueFrom:
@@ -836,23 +824,11 @@ locations:
                   secretKeyRef:
                     name: op-overgrad-api-kippnewark
                     key: credential
-              - name: MICROSOFT_GRAPH_TENANT_ID
+              - name: ZAPIER_SURVEY_REMINDER_WEBHOOK_URL
                 valueFrom:
                   secretKeyRef:
-                    name: op-microsoft-graph-survey-reminders
-                    key: tenant_id
-                    optional: true
-              - name: MICROSOFT_GRAPH_CLIENT_ID
-                valueFrom:
-                  secretKeyRef:
-                    name: op-microsoft-graph-survey-reminders
-                    key: client_id
-                    optional: true
-              - name: MICROSOFT_GRAPH_CLIENT_SECRET
-                valueFrom:
-                  secretKeyRef:
-                    name: op-microsoft-graph-survey-reminders
-                    key: client_secret
+                    name: op-zapier-survey-reminders
+                    key: webhook_url
                     optional: true
               - name: KNOWBE4_API_KEY
                 valueFrom:

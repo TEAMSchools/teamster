@@ -362,10 +362,10 @@ spec:
 apiVersion: onepassword.com/v1
 kind: OnePasswordItem
 metadata:
-  name: op-microsoft-graph-survey-reminders
+  name: op-zapier-survey-reminders
   namespace: dagster-cloud
 spec:
-  itemPath: vaults/Data Team/items/Microsoft Graph - Survey Reminders
+  itemPath: vaults/Data Team/items/Zapier Webhook - Survey Reminders
 ---
 apiVersion: onepassword.com/v1
 kind: OnePasswordItem

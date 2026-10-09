@@ -110,7 +110,7 @@ defs = Definitions(
         "db_bigquery": BIGQUERY_RESOURCE,
         "dbt_cli": get_dbt_cli_resource(DBT_PROJECT),
         "dlt": DLT_RESOURCE,
-        "email": resources.MICROSOFT_GRAPH_EMAIL_RESOURCE,
+        "email": resources.ZAPIER_SURVEY_REMINDER_EMAIL_RESOURCE,
         "gcs": GCS_RESOURCE,
         "google_directory": resources.GOOGLE_DIRECTORY_RESOURCE,
         "google_drive": GOOGLE_DRIVE_RESOURCE,
