@@ -292,3 +292,74 @@ def test_an_accepted_borderline_pair_joins_its_tree():
     assert "course_section" in t.trees["region"]
     assert t.borderline == []
     assert "course_section" not in t.cross_cuts
+
+
+DS = "rpt_demo (kipptaf_tableau)"
+PROFILES = {
+    DS: {
+        "region": [("North", 48), ("South", 48)],
+        "school": [("Alpha", 24), ("Beta", 24), ("Gamma", 24), ("Delta", 6)],
+        "grade_level": [("5", 48), ("6", 48)],
+        "iep_status": [("No IEP", 72), ("Has IEP", 24), (None, 3)],
+        "academic_year": [("2026", 96), ("2025", 90), ("2024", 80)],
+        "student_name": [("someone", 1)],
+    }
+}
+TREES = {
+    DS: snap.Trees({"region": ["region", "school", "grade_level"]}, ["iep_status"])
+}
+
+
+def _plan():
+    wb = snap.read_workbook(TWB)
+    return snap.plan_states(wb, PROFILES, TREES, ("2026", "2025"))
+
+
+def _ids(items, tier):
+    return {i.state.id for i in items if i.tier == tier}
+
+
+def test_state_ids_are_stable_and_readable():
+    s = snap.State("Overview", filters=(("School Name", "Alpha"), ("Region", "North")))
+    assert s.id == "overview--region-north--school-name-alpha"
+    assert snap.State("Overview").id == "overview--default"
+    assert snap.State.from_dict(s.as_dict()) == s
+
+
+def test_must_includes_default_params_tree_top_crosscuts_years_and_clicks():
+    must = _ids(_plan(), "must")
+    assert "overview--default" in must
+    assert "overview--group-by-teacher" in must
+    assert {"overview--region-north", "overview--region-south"} <= must
+    assert {"overview--iep-status-no-iep", "overview--iep-status-has-iep"} <= must
+    assert "overview--iep-status-blank" in must
+    assert {"overview--academic-year-2026", "overview--academic-year-2025"} <= must
+    assert "overview--academic-year-2024" not in must
+    assert "overview--is-tested-yes" in must  # calculated filter, every value
+    assert "overview--iep-status-all" in must  # saved default is not All
+    assert "overview--click-table-to-detail-largest" in must
+    assert "overview--click-table-to-detail-small" in must
+
+
+def test_person_level_values_and_links_are_skipped_not_exported():
+    items = _plan()
+    skipped = _ids(items, "skipped")
+    assert "overview--group-by-student" in skipped  # person-level parameter value
+    assert "overview--group-by-student" not in _ids(items, "must")
+    assert any(
+        i.state.id.startswith("overview--student-name")
+        for i in items
+        if i.tier == "skipped"
+    )
+    assert "overview--click-open-report-largest" in skipped
+    assert any("free-entry" in i.why for i in items if i.tier == "skipped")
+
+
+def test_tree_levels_below_the_top_are_left_to_the_descent():
+    every = {i.state.id for i in _plan()}
+    assert not any(i.startswith("overview--school-name-") for i in every)
+
+
+def test_plan_yaml_groups_by_tier():
+    text = snap.plan_yaml(_plan())
+    assert text.index("must:") < text.index("optional:") < text.index("skipped:")

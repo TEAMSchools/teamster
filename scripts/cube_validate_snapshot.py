@@ -18,6 +18,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 import defusedxml.ElementTree as SafeET
+import yaml
 
 # [<datasource>].[<derivation>:<field>:<type>], or [<datasource>].[<field>]
 _FIELD = re.compile(r"^\[([^\]]+)\]\.\[([^\]]+)\]$")
@@ -432,3 +433,160 @@ def derive_trees(fields, scores, distinct, accept=frozenset()) -> Trees:
         trees[order[0]] = order
     cross = sorted(f for f in fields if f not in linked)
     return Trees(trees, cross, borderline)
+
+
+ALL = "(All)"
+BLANK = "(Blank)"
+SMALL_CELL = 10
+YEAR_FIELD = "academic_year"
+# Person-level filters and parameter values: never exported, never in a draft.
+PERSON_FIELD = re.compile(
+    r"(lastfirst|student_name|first_name|last_name|teacher_name)$"
+)
+PERSON_VALUES = {"Student", "Students"}
+
+
+def slug(s: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "-", s.lower()).strip("-")
+
+
+def _value_slug(v: str) -> str:
+    return {ALL: "all", BLANK: "blank"}.get(v, v)
+
+
+@dataclass(frozen=True)
+class State:
+    dashboard: str
+    filters: tuple[tuple[str, str], ...] = ()
+    params: tuple[tuple[str, str], ...] = ()
+    click: tuple[str, str] | None = None
+
+    @property
+    def id(self) -> str:
+        parts = [f"{k}-{_value_slug(v)}" for k, v in sorted(self.filters + self.params)]
+        if self.click:
+            parts.append(f"click-{self.click[0]}-{self.click[1]}")
+        return "--".join(
+            [slug(self.dashboard), *(slug(p) for p in parts or ["default"])]
+        )
+
+    def as_dict(self) -> dict:
+        d: dict = {"id": self.id, "dashboard": self.dashboard}
+        if self.filters:
+            d["filters"] = dict(self.filters)
+        if self.params:
+            d["params"] = dict(self.params)
+        if self.click:
+            d["click"] = {"action": self.click[0], "mark": self.click[1]}
+        return d
+
+    @classmethod
+    def from_dict(cls, d: dict) -> State:
+        click = d.get("click")
+        return cls(
+            d["dashboard"],
+            tuple((d.get("filters") or {}).items()),
+            tuple((d.get("params") or {}).items()),
+            (click["action"], click["mark"]) if click else None,
+        )
+
+
+@dataclass(frozen=True)
+class PlanItem:
+    state: State
+    tier: str
+    why: str
+
+
+def _ends(values) -> list[str]:
+    """The largest value and the smallest with at least SMALL_CELL students."""
+    named = [(v, n) for v, n in values if v is not None]
+    if not named:
+        return []
+    big = max(named, key=lambda x: x[1])[0]
+    small = [v for v, n in sorted(named, key=lambda x: x[1]) if n >= SMALL_CELL][:1]
+    return list(dict.fromkeys([big, *small]))
+
+
+def plan_states(wb, profiles, trees, years) -> list[PlanItem]:
+    items: list[PlanItem] = []
+    for dash in wb.dashboards:
+
+        def add(tier, why, dash=dash, **kw):
+            items.append(PlanItem(State(dash, **kw), tier, why))
+
+        add("must", "default view")
+        for p in (p for p in wb.params if p.dashboard == dash):
+            if not p.values:
+                add(
+                    "skipped",
+                    f"{p.caption}: free-entry parameter, default only",
+                    params=((p.caption, p.default),),
+                )
+            for v in p.values:
+                if v in PERSON_VALUES:
+                    add(
+                        "skipped",
+                        f"{p.caption} = {v}: person-level",
+                        params=((p.caption, v),),
+                    )
+                else:
+                    add("must", "view-changing parameter", params=((p.caption, v),))
+
+        for c in (c for c in wb.filters if c.dashboard == dash):
+            prof = profiles.get(c.datasource, {}).get(c.field, [])
+            t = trees.get(c.datasource, Trees({}, []))
+            in_tree = {f for levels in t.trees.values() for f in levels}
+            roots = {levels[0] for levels in t.trees.values()}
+            one = lambda v, c=c: ((c.caption, v),)  # noqa: E731
+            if PERSON_FIELD.search(c.field) and c.field not in in_tree:
+                add("skipped", f"{c.caption}: person-level filter", filters=one(ALL))
+                continue
+            if c.calculated:
+                for v in c.values or [v for v, _ in prof if v is not None]:
+                    add("must", "calculated-field filter", filters=one(v))
+                continue
+            if not c.default_all:
+                add("must", "saved default is not All", filters=one(ALL))
+            if c.field == YEAR_FIELD:
+                for y in years:
+                    add("must", "academic year", filters=one(y))
+                continue
+            if any(v is None for v, _ in prof):
+                add("must", "blank value", filters=one(BLANK))
+            named = [v for v, _ in prof if v is not None]
+            if c.field in roots:
+                for v in named:
+                    add("must", f"top of the {c.field} tree", filters=one(v))
+            elif c.field in t.cross_cuts:
+                for v in named:
+                    add("must", "cross-cut", filters=one(v))
+            elif c.field not in in_tree:
+                for v in _ends(prof):
+                    add(
+                        "optional", "plain filter, largest and smallest", filters=one(v)
+                    )
+
+        for a in (a for a in wb.actions if a.dashboard == dash):
+            if a.kind != "filter":
+                add(
+                    "skipped",
+                    f"{a.caption}: {a.kind} action",
+                    click=(a.caption, "largest"),
+                )
+                continue
+            add("must", "click, largest mark", click=(a.caption, "largest"))
+            add("must", "click, a small mark", click=(a.caption, "small"))
+
+    seen: dict[str, PlanItem] = {}
+    for i in items:
+        seen.setdefault(i.state.id, i)
+    return list(seen.values())
+
+
+def plan_yaml(items: list[PlanItem]) -> str:
+    out = {
+        tier: [dict(i.state.as_dict(), why=i.why) for i in items if i.tier == tier]
+        for tier in ("must", "optional", "skipped")
+    }
+    return yaml.safe_dump(out, sort_keys=False, allow_unicode=True)
