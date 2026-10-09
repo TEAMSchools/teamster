@@ -1,4 +1,5 @@
 select
+    -- trunk-ignore(sqlfluff/AM04): passes through every upstream column
     * except (
         most_recent_completion_date,
         most_recent_diagnostic_gain,

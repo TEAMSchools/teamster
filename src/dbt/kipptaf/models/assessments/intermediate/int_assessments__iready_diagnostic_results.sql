@@ -1,4 +1,5 @@
 select
+    -- trunk-ignore(sqlfluff/AM04): passes through every upstream column
     wc.*,
 
     cwo.sublevel_name as projected_sublevel,

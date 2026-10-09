@@ -1,4 +1,5 @@
 select
+    -- trunk-ignore(sqlfluff/AM04): passes through every upstream column
     *,
 
     row_number() over (
