@@ -474,7 +474,8 @@ def test_a_filter_with_no_member_blocks_the_state(tmp_path):
     cells = cv.compare_export(
         sheet, "s1", export, FakeCube({}, _row(0)), [], ["Grade Level"], c
     )
-    assert cells[0].status == "not_comparable" and "Grade Level" in cells[0].reason
+    # Cube cannot express the dashboard's filter: a missing member, so sync.py reopens the row.
+    assert cells[0].status == "missing_member" and "Grade Level" in cells[0].reason
 
 
 def test_a_dimension_with_no_member_is_a_missing_member(tmp_path):
@@ -1363,3 +1364,19 @@ def test_click_values_are_compared_unformatted(tmp_path):
         "click_filters": {"School Name": "1,234"},
     }
     assert cv.state_filters(entry, c)[0][0]["values"] == ["1234"]
+
+
+def test_a_filter_can_translate_values_to_cubes(tmp_path):
+    c = _checks(
+        tmp_path,
+        filters={
+            "Schoolid": {"cube": "demo.abbreviation", "values": {"73258": "BOLD"}}
+        },
+    )
+    entry = {"state": {"dashboard": "Overview", "filters": {"Schoolid": "73258"}}}
+    assert cv.state_filters(entry, c)[0] == [
+        {"member": "demo.abbreviation", "operator": "equals", "values": ["BOLD"]}
+    ]
+    # A value the lookup does not cover cannot be expressed in Cube.
+    other = {"state": {"dashboard": "Overview", "filters": {"Schoolid": "5173"}}}
+    assert cv.state_filters(other, c) == ([], ["Schoolid"])

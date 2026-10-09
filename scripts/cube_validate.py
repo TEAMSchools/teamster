@@ -516,6 +516,15 @@ def state_filters(
     out, missing = [], []
     for caption, value in _own_filters(entry, defaults):
         member = members.get(caption)
+        # A lookup from the extract's value to Cube's (school id to abbreviation).
+        lookup = (checks["filters"].get(caption) or {}).get("values")
+        if lookup is not None and value not in (ALL, BLANK):
+            wanted = value if isinstance(value, list) else [value]
+            found = [lookup.get(str(v)) for v in wanted]
+            if None in found:
+                missing.append(caption)
+                continue
+            value = found if isinstance(value, list) else found[0]
         if member is None:
             missing.append(caption)
         elif isinstance(value, list):
@@ -653,9 +662,10 @@ def compare_export(
         if c not in sheet.dims and c not in sheet.measures
     ]
     if missing:
+        # Cube cannot express a filter the dashboard applies: a missing member.
         reason = f"filter {', '.join(missing)} has no Cube member"
         return cells + [
-            cell({}, m, status="not_comparable", reason=reason) for m in measures
+            cell({}, m, status="missing_member", reason=reason) for m in measures
         ]
 
     groups: dict[tuple[str, ...], list[dict]] = {}
