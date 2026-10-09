@@ -28,9 +28,12 @@ Query `int_powerschool__gradebook_assignment_scores_rollup` for the flagged
 
 Reply with the rule as the grading-policy checklist words it (linked under
 _Configurable thresholds_ in
-[`../references/data-model.md`](../references/data-model.md)), plus a count per
-section from `int_powerschool__gradebook_assignments_scores`, so the teacher
-knows how many scores to change.
+[`../references/data-model.md`](../references/data-model.md)), plus the nonzero
+`n_*` count on each section row, so the teacher knows how many scores to change.
+The rollup has no section label: join `sectionsdcid` to `sections_dcid` in
+`rpt_tableau__gradebook_audit` for `section_or_period`. In HS,
+`n_expected_academic_dishonesty` counts the zeros with no Missing flag, which
+usually need the flag rather than a higher score.
 
 ## A flag that isn't firing
 

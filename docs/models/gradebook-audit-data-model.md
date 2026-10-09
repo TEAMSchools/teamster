@@ -863,10 +863,9 @@ It decides whether the audit needs code changes: new or retired flags, changed
 thresholds (the 90% graded bar, the 10-point maximum, the scoring floors), or a
 change in which schools and levels are audited. Compare it against _Assignment
 checks_ and the scope filters, and plan any change through the data-team skill's
-`plan-a-change.md`. For AY 2026-2027 the rules are in the
-[SY 27 Gradebook Health Checklists](https://docs.google.com/document/d/1j_D9uJki4AuJP0yijuVVYaJkvgCJB8tgINgLcF-YEJ8/edit)
-doc, one tab each for MS and HS, and they match _Assignment checks_ rule for
-rule.
+`plan-a-change.md`. For AY 2026-2027 the rules are in the **SY 27 Gradebook
+Health Checklists** doc, one tab each for MS and HS. In October 2026 they
+matched _Assignment checks_ rule for rule. Ask the data team for the link.
 
 ## Owner
 
