@@ -547,3 +547,31 @@ Status still comes from evidence alone: a truth issue neither adds nor removes
   `untriaged`, or the user creates it once in Asana.
 - Whether the GitHub MCP shows who applied a label. If not, `ruling.by` is the
   issue's assignee.
+
+## Revision 2026-10-09: measure each dashboard's settle window
+
+Requested by the user: the settle window's length should come from evidence per
+dashboard, not a guess. DDI's 7 days was set before measuring; the measurement
+showed every change within 3 days.
+
+- `cube_validate.py settle <checks>` downloads the extracts the checks file
+  needs, then compares each one with the live warehouse table behind it. The
+  table comes from the datasource caption: `rpt_x (dataset)` reads
+  `teamster-332318.dataset.rpt_x`. A caption that does not parse stops the
+  command with that message.
+- The checks file's `settle:` gains `date:`, the BigQuery SQL for a row's date
+  (DDI: `coalesce(date_taken, administered_at)`). The command groups by that
+  date and computes every metric on that datasource (its `sql`, or `num` and
+  `den`) on both sides, with the file's truth filters and hard filters and the
+  window's academic years.
+- A day drifts when any value differs. The report lists each drifting day with
+  its age in days before the extract refresh and the size of each change. It
+  lists rows with no date separately, because no date cutoff can settle them.
+- It recommends `days` = the oldest drifting age + 1, at least 1, and prints the
+  YAML comment to put beside `settle:` (date measured, live-table age, the
+  oldest drift, and the recommendation). Claude writes it into the checks file;
+  the user approves the change with the rest of the entries.
+- One comparison sees only the changes made between the extract refresh and the
+  query. The skill says to run it late in the day, after the fact's later
+  rebuilds, and to rerun it when a dashboard's refresh schedule changes.
+- BigQuery uses ADC, as before; the command needs no Cube secret.
