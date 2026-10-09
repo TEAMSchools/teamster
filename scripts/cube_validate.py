@@ -459,3 +459,72 @@ def matches_raw(a: float | None, b: float | None) -> bool:
     if a is None or b is None:
         return a is None and b is None
     return abs(a - b) <= 1e-6 * max(1.0, abs(a), abs(b))
+
+
+ALL = "(All)"
+BLANK = "(Blank)"
+TOTAL = "All"  # a total row in a Tableau export
+MULTI = "*"  # a mark that covers several values
+
+
+def _caption_members(checks: dict) -> dict[str, str]:
+    out = {
+        c: d.cube
+        for s in checks["sheets"].values()
+        for c, d in s.dims.items()
+        if d.cube
+    }
+    out.update({c: f["cube"] for c, f in checks["filters"].items() if f.get("cube")})
+    return out
+
+
+def state_filters(entry: dict, checks: dict) -> tuple[list[dict], list[str]]:
+    st = entry["state"]
+    members = _caption_members(checks)
+    pairs = list((st.get("filters") or {}).items()) + list(
+        (entry.get("click_filters") or {}).items()
+    )
+    out, missing = [], []
+    for caption, value in pairs:
+        member = members.get(caption)
+        if member is None:
+            missing.append(caption)
+        elif value == BLANK:
+            out.append({"member": member, "operator": "notSet"})
+        elif value != ALL:
+            out.append({"member": member, "operator": "equals", "values": [str(value)]})
+    for caption, value in (st.get("params") or {}).items():
+        out += checks["param_filters"].get(caption, {}).get(value, [])
+    return out, missing
+
+
+def hard_filters(checks: dict, datasource: str) -> list[dict]:
+    return [
+        {k: v for k, v in f.items() if k != "datasource"}
+        for f in checks["cube_filters"]
+        if f.get("datasource") in (None, datasource)
+    ]
+
+
+def scope_guard(load, checks: dict, extract_counts: dict[str, int]) -> None:
+    """Stop when Cube shows no students for a scope value the dashboard has."""
+    caption = checks["scope"]["filter"]
+    member = _caption_members(checks)[caption]
+    rows, _ = load(
+        {
+            "measures": [checks["student_count"]],
+            "dimensions": [member],
+            "limit": CUBE_LIMIT,
+        }
+    )
+    cube = {
+        norm_dim(r.get(member)): _num(r.get(checks["student_count"])) or 0 for r in rows
+    }
+    short = sorted(
+        v for v, n in extract_counts.items() if n > 0 and not cube.get(norm_dim(v))
+    )
+    if short:
+        raise ScopeError(
+            f"Cube shows no students for {caption} {', '.join(short)}, which the dashboard "
+            "has: this Cube identity sees less than the dashboard does"
+        )

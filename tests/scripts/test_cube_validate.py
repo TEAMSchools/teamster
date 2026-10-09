@@ -327,3 +327,75 @@ def test_matches_shown_uses_the_shown_precision():
 def test_matches_raw():
     assert cv.matches_raw(0.8, 0.8000000001) and not cv.matches_raw(0.8, 0.81)
     assert cv.matches_raw(None, None) and not cv.matches_raw(None, 0.0)
+
+
+def _checks(tmp_path, **extra):
+    d = json.loads(json.dumps(CHECKS))
+    d.update(extra)
+    return cv.load_checks(_write(tmp_path, d))
+
+
+def test_state_filters_translate_captions_all_and_blank(tmp_path):
+    c = _checks(tmp_path)
+    entry = {
+        "state": {
+            "dashboard": "Overview",
+            "filters": {"Region": "North", "School Name": cv.ALL},
+        },
+        "click_filters": {"School Name": "Alpha"},
+    }
+    filters, missing = cv.state_filters(entry, c)
+    assert filters == [
+        {"member": "demo.region", "operator": "equals", "values": ["North"]},
+        {"member": "demo.school", "operator": "equals", "values": ["Alpha"]},
+    ]
+    assert missing == []
+    blank = {"state": {"dashboard": "Overview", "filters": {"Region": cv.BLANK}}}
+    assert cv.state_filters(blank, c)[0] == [
+        {"member": "demo.region", "operator": "notSet"}
+    ]
+
+
+def test_state_filters_report_captions_with_no_member(tmp_path):
+    c = _checks(tmp_path)
+    entry = {"state": {"dashboard": "Overview", "filters": {"Grade Level": "5"}}}
+    assert cv.state_filters(entry, c) == ([], ["Grade Level"])
+
+
+def test_parameters_add_filters_only_when_mapped(tmp_path):
+    pf = {
+        "Subject": {
+            "Math": [
+                {"member": "demo.subject", "operator": "equals", "values": ["Math"]}
+            ]
+        }
+    }
+    c = _checks(tmp_path, param_filters=pf)
+    entry = {
+        "state": {
+            "dashboard": "Overview",
+            "params": {"Subject": "Math", "Group By": "Teacher"},
+        }
+    }
+    assert cv.state_filters(entry, c)[0] == pf["Subject"]["Math"]
+
+
+def test_hard_filters_apply_per_datasource(tmp_path):
+    c = _checks(
+        tmp_path,
+        cube_filters=[
+            {"member": "demo.is_test", "operator": "equals", "values": ["false"]},
+            {"member": "demo.other", "operator": "set", "datasource": "elsewhere"},
+        ],
+    )
+    assert cv.hard_filters(c, DS) == [
+        {"member": "demo.is_test", "operator": "equals", "values": ["false"]}
+    ]
+
+
+def test_scope_guard_stops_when_cube_misses_a_region(tmp_path):
+    c = _checks(tmp_path)
+    load = lambda q: ([{"demo.region": "North", "demo.count_students": "40"}], [])  # noqa: E731
+    cv.scope_guard(load, c, {"North": 40, "South": 0})
+    with pytest.raises(cv.ScopeError, match="South"):
+        cv.scope_guard(load, c, {"North": 40, "South": 12})
