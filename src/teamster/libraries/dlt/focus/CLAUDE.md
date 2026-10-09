@@ -166,10 +166,11 @@ branch deployment can be queried directly via BigQuery MCP to verify the load.
 **Pre-merge gate for new tables.** Before merging a PR that adds tables to
 `config/focus.yaml`, launch a run of only the new tables in the PR's branch
 deployment, then confirm each one exists in BigQuery with the expected row
-count. Unit tests run on SQLite, which returns plain strings and Python types
-that real Postgres and psycopg don't, so a type-specific extract failure passes
-CI and first fails in prod (#5828). In prod a failed load is expensive: it keeps
-the old baselines, the sensor re-selects the same tables every tick, and every
-intraday Focus sync stalls until a revert deploys. Launch the branch run while
-no prod Focus run is in flight: both share the prod dataset and dlt state, and
-the concurrency pool doesn't span deployments.
+count. Unit tests run on SQLite, which reflects and returns only some Postgres
+types the way psycopg does (it does parse a `JSON`-declared column, which is how
+the #5828 tests reproduce that failure), so a new table can still pass CI and
+fail its first prod load. In prod a failed load is expensive: it keeps the old
+baselines, the sensor re-selects the same tables every tick, and every intraday
+Focus sync stalls until a revert deploys. Launch the branch run while no prod
+Focus run is in flight: both share the prod dataset and dlt state, and the
+concurrency pool doesn't span deployments.

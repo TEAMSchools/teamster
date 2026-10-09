@@ -19,7 +19,9 @@ every table in the source, and these tests pin that.
 from datetime import timedelta
 from typing import Any
 
+import pyarrow as pa
 import pytest
+import sqlalchemy as sa
 from dagster_dlt.constants import META_KEY_SOURCE
 from dlt.common.configuration.specs import ConnectionStringCredentials
 from dlt.common.libs.pyarrow import (
@@ -38,6 +40,7 @@ from sqlalchemy import BigInteger, Column, Integer, MetaData, String, Table
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, INTERVAL
 from sqlalchemy.sql import sqltypes
 
+from teamster.libraries.dlt.focus import assets as focus_assets
 from teamster.libraries.dlt.focus.assets import (
     build_focus_dlt_assets,
     interval_to_microseconds_adapter,
@@ -202,21 +205,50 @@ def test_reflection_settings_reach_table_rows(monkeypatch):
     assert captured["resolve_foreign_keys"] is False
 
 
-def test_parsed_json_mixing_lists_and_scalars_reproduces_prod_failure():
-    """Regression guard: the prod error the JSON-as-text cast avoids.
+def _seed_json_mixing_scalars_and_lists(url: str) -> None:
+    """A scalar first, then a list, as in `apex_session_responses.response`."""
+    engine = sa.create_engine(url)
+    with engine.begin() as conn:
+        conn.exec_driver_sql("create table t (id integer primary key, response JSON)")
+        conn.exec_driver_sql("""insert into t values (1, '"B"'), (2, '[1,2]')""")
+    engine.dispose()
 
-    The driver parses Postgres `json`/`jsonb` into Python objects, and pyarrow
-    cannot build one array from values that mix lists and non-lists
-    (`apex_session_responses.response`). dlt's fallback serializes nested values
-    only when the first non-null value is a list or dict, so a scalar first
-    fails.
+
+def _response_column(url: str) -> pa.ChunkedArray:
+    for item in focus_assets._focus_table_items(
+        ConnectionStringCredentials(url), "t", None
+    ):
+        data = getattr(item, "data", item)
+        if isinstance(data, pa.Table):
+            return data.column("response")
+    raise AssertionError("no arrow table yielded")
+
+
+def test_json_mixing_scalars_and_lists_extracts_as_text(tmp_path):
+    """sqlite reflects a JSON-declared column as `sa.JSON` and parses it."""
+    url = f"sqlite:///{tmp_path / 'focus.db'}"
+    _seed_json_mixing_scalars_and_lists(url)
+
+    column = _response_column(url)
+
+    assert column.type == pa.string()
+    assert column.to_pylist() == ['"B"', "[1,2]"]
+
+
+def test_json_without_cast_reproduces_prod_failure(tmp_path, monkeypatch):
+    """Regression guard: the extract error the cast avoids.
+
+    dlt's fallback serializes nested values only when the first non-null value
+    is a list or dict, so a scalar first fails.
     """
-    columns: TTableSchemaColumns = {
-        "response": {"name": "response", "data_type": "json", "nullable": True}
-    }
+    url = f"sqlite:///{tmp_path / 'focus.db'}"
+    _seed_json_mixing_scalars_and_lists(url)
+    monkeypatch.setattr(
+        focus_assets, "json_as_text_query_adapter", lambda query, table: query
+    )
 
     with pytest.raises(PyToArrowConversionException):
-        row_tuples_to_arrow([("B",), ([1, 2],)], columns=columns, tz="UTC")
+        _response_column(url)
 
 
 def test_json_query_adapter_casts_json_columns_to_text():

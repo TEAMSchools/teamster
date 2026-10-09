@@ -185,15 +185,14 @@ def json_as_text_query_adapter(query: sa.Select, table: sa.Table) -> sa.Select:
     staging parses them with ``parse_json`` where needed.
     ``_widening_type_adapter`` declares the matching ``Text`` schema hint.
     """
-    json_columns = {c.name for c in table.columns if isinstance(c.type, sa.JSON)}
-
-    if not json_columns:
+    if not any(isinstance(c.type, sa.JSON) for c in table.columns):
         return query
 
+    # selected_columns, not table.columns: keep whatever projection dlt built
     return query.with_only_columns(
         *(
-            sa.cast(c, sa.Text).label(c.name) if c.name in json_columns else c
-            for c in table.columns
+            sa.cast(c, sa.Text).label(c.name) if isinstance(c.type, sa.JSON) else c
+            for c in query.selected_columns
         )
     )
 
