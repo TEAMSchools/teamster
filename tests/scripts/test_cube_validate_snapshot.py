@@ -433,3 +433,146 @@ def test_parent_of_drops_the_last_filter():
     assert snap.parent_of(
         snap.State("Overview", params=(("Group By", "Teacher"),))
     ) == snap.State("Overview")
+
+
+from types import SimpleNamespace
+
+
+class FakeWorkbooks:
+    def __init__(self, items):
+        self.items = {w.id: w for w in items}
+        self.deleted, self.published = [], []
+
+    def delete(self, luid):
+        self.deleted.append(luid)
+        self.items.pop(luid, None)
+
+    def publish(self, item, path, mode):
+        self.published.append(
+            (item.name, item.project_id, list(item.hidden_views), mode)
+        )
+        new = SimpleNamespace(
+            id="copy-1",
+            name=item.name,
+            project_id=item.project_id,
+            project_name="TEMP-CB",
+            created_at=None,
+        )
+        self.items[new.id] = new
+        return new
+
+    def get_by_id(self, luid):
+        return SimpleNamespace(updated_at=dt.datetime(2026, 10, 9, 5, 0, tzinfo=dt.UTC))
+
+
+def _session(monkeypatch, items):
+    wbs = FakeWorkbooks(items)
+    server = SimpleNamespace(workbooks=wbs)
+    monkeypatch.setattr(
+        snap, "_workbooks_in", lambda server, project: list(wbs.items.values())
+    )
+    now = lambda: dt.datetime(2026, 10, 9, 12, 0, tzinfo=dt.UTC)  # noqa: E731
+    return snap.Session(server, snap.TEMP_CB, now=now), wbs
+
+
+def test_session_refuses_a_production_project():
+    with pytest.raises(snap.SessionError, match="non-production"):
+        snap.Session(SimpleNamespace(), "some-production-project")
+
+
+def test_sweep_deletes_only_old_review_copies(monkeypatch):
+    old = SimpleNamespace(
+        id="a",
+        name="ZZ-REVIEW 2026-10-07 0800 DDI Suite",
+        created_at=dt.datetime(2026, 10, 7, 8, tzinfo=dt.UTC),
+        project_id=snap.TEMP_CB,
+    )
+    fresh = SimpleNamespace(
+        id="b",
+        name="ZZ-REVIEW 2026-10-09 1100 DDI Suite",
+        created_at=dt.datetime(2026, 10, 9, 11, tzinfo=dt.UTC),
+        project_id=snap.TEMP_CB,
+    )
+    mine = SimpleNamespace(
+        id="c",
+        name="My Draft",
+        created_at=dt.datetime(2026, 1, 1, tzinfo=dt.UTC),
+        project_id=snap.TEMP_CB,
+    )
+    s, wbs = _session(monkeypatch, [old, fresh, mine])
+    assert s.sweep() == ["ZZ-REVIEW 2026-10-07 0800 DDI Suite"]
+    assert wbs.deleted == ["a"]
+
+
+def test_publish_requires_the_prefix_and_creates_new(monkeypatch, tmp_path):
+    s, wbs = _session(monkeypatch, [])
+    with pytest.raises(snap.SessionError, match="ZZ-REVIEW"):
+        s.publish(tmp_path / "x.twbx", "DDI Suite", [])
+    luid = s.publish(
+        tmp_path / "x.twbx", "ZZ-REVIEW 2026-10-09 1200 DDI Suite", ["Scratch Sheet"]
+    )
+    assert luid == "copy-1"
+    name, project, hidden, mode = wbs.published[0]
+    assert (
+        project == snap.TEMP_CB and hidden == ["Scratch Sheet"] and mode == "CreateNew"
+    )
+
+
+def test_close_confirms_the_copy_is_gone(monkeypatch):
+    copy = SimpleNamespace(
+        id="copy-1", name="ZZ-REVIEW x", created_at=None, project_id=snap.TEMP_CB
+    )
+    s, wbs = _session(monkeypatch, [copy])
+    s.close("copy-1")
+    assert wbs.deleted == ["copy-1"]
+
+
+def test_close_raises_with_the_luid_when_the_copy_survives(monkeypatch):
+    copy = SimpleNamespace(
+        id="copy-1", name="ZZ-REVIEW x", created_at=None, project_id=snap.TEMP_CB
+    )
+    s, wbs = _session(monkeypatch, [copy])
+    wbs.delete = lambda luid: None  # the server ignores the delete
+    with pytest.raises(snap.SessionError, match="copy-1"):
+        s.close("copy-1")
+
+
+def test_check_refresh_stops_when_the_live_workbook_moved(monkeypatch):
+    s, _ = _session(monkeypatch, [])
+    s.check_refresh("w1", "2026-10-09T05:00:00+00:00")
+    with pytest.raises(snap.RefreshedError):
+        s.check_refresh("w1", "2026-10-08T05:00:00+00:00")
+
+
+def test_vf_value_escapes_commas_and_expands_all_and_blank():
+    assert snap.vf_value("KIPP, Newark", []) == "KIPP\\, Newark"
+    assert snap.vf_value(snap.ALL, ["A", "B, C"]) == "A,B\\, C"
+    assert snap.vf_value(snap.BLANK, []) == "Null"
+
+
+def test_pick_click_row_takes_the_largest_or_smallest_mark():
+    data = "Title,School,Score\r\nT1,All,50\r\nT1,Alpha,80\r\nT2,Beta,20\r\nT3,*,90\r\n".encode()
+    assert snap.pick_click_row(data, "largest", ["Title", "School"]) == {
+        "Title": "T1",
+        "School": "Alpha",
+    }
+    assert snap.pick_click_row(data, "small", ["Title", "School"]) == {
+        "Title": "T2",
+        "School": "Beta",
+    }
+
+
+def test_retry_recovers_then_gives_up():
+    calls = []
+
+    def flaky():
+        calls.append(1)
+        if len(calls) < 2:
+            raise RuntimeError("401002")
+        return "ok"
+
+    assert snap.retry(flaky, sleep=lambda s: None) == "ok"
+    with pytest.raises(RuntimeError):
+        snap.retry(
+            lambda: (_ for _ in ()).throw(RuntimeError("x")), sleep=lambda s: None
+        )

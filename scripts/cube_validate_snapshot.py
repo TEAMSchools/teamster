@@ -17,8 +17,12 @@ import datetime as dt
 import io
 import itertools
 import json
+import os
 import re
 import shutil
+import subprocess
+import time
+import zipfile
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
@@ -668,3 +672,217 @@ def parent_of(state: State) -> State:
     if state.click or (state.params and not state.filters):
         return State(state.dashboard, (), (), None)
     return State(state.dashboard, state.filters[:-1], state.params, None)
+
+
+TEMP_CB = "ddc817c2-6bc7-4bca-8be9-e385f95b9ebc"
+#: Projects a review copy may land in. Production is never added here.
+NON_PRODUCTION_PROJECTS = {TEMP_CB: "TEMP-CB"}
+REVIEW_PREFIX = "ZZ-REVIEW "
+STALE_COPY = dt.timedelta(hours=24)
+REPO = Path(__file__).resolve().parents[1]
+XML_SCRIPTS = REPO / "docs" / "tableau-xml" / "scripts"
+
+
+class SessionError(RuntimeError):
+    """The review copy could not be published, exported or removed safely."""
+
+
+class RefreshedError(SessionError):
+    """The live workbook changed mid-session, so the snapshot no longer holds."""
+
+
+def retry(fn, attempts: int = 3, sleep=time.sleep, wait: float = 5.0):
+    """Call fn until it succeeds; Tableau sign-ins fail transiently with 401002."""
+    for attempt in range(1, attempts + 1):
+        try:
+            return fn()
+        except Exception:  # noqa: BLE001 - re-raised after the last attempt
+            if attempt == attempts:
+                raise
+            sleep(wait * attempt)
+    raise ValueError("retry needs attempts >= 1")
+
+
+def vf_value(value: str, all_values: list[str]) -> str:
+    """A filter value as Tableau's vf takes it: commas separate values."""
+
+    def esc(v: str) -> str:
+        return v.replace(",", "\\,")
+
+    if value == ALL:
+        return ",".join(esc(v) for v in all_values)
+    if value == BLANK:
+        return "Null"
+    return esc(value)
+
+
+def _is_number(s: str) -> bool:
+    try:
+        float(s.replace(",", "").rstrip("%"))
+    except ValueError:
+        return False
+    return True
+
+
+def pick_click_row(export: bytes, mark: str, dims: list[str] | None) -> dict[str, str]:
+    """The dimension values of the mark a person would click: largest or smallest."""
+    rows = list(csv.DictReader(io.StringIO(export.decode("utf-8-sig"))))
+    if not rows:
+        raise SessionError("the source sheet exported no marks to click")
+    cols = list(rows[0])
+    dims = dims or [c for c in cols if not all(_is_number(r[c]) for r in rows if r[c])]
+    measure = next(c for c in cols if c not in dims)
+    marks = [r for r in rows if not any(r[d] in ("All", "*") for d in dims)]
+    if not marks:
+        raise SessionError("every mark on the source sheet is a total")
+    value = lambda r: float(r[measure].replace(",", "").rstrip("%") or 0)  # noqa: E731
+    row = max(marks, key=value) if mark == "largest" else min(marks, key=value)
+    return {d: row[d] for d in dims}
+
+
+def _workbooks_in(server, project: str) -> list:
+    import tableauserverclient as tsc
+
+    return [w for w in tsc.Pager(server.workbooks) if w.project_id == project]
+
+
+class Session:
+    def __init__(self, server, project_luid: str, now=lambda: dt.datetime.now(dt.UTC)):
+        if project_luid not in NON_PRODUCTION_PROJECTS:
+            raise SessionError(
+                f"{project_luid} is not an agreed non-production project"
+            )
+        self.server, self.project, self.now = server, project_luid, now
+        self._views: dict[str, object] = {}
+
+    def sweep(self) -> list[str]:
+        """Delete review copies older than STALE_COPY: leftovers of failed sessions."""
+        cutoff, gone = self.now() - STALE_COPY, []
+        for w in _workbooks_in(self.server, self.project):
+            if (
+                w.name.startswith(REVIEW_PREFIX)
+                and w.created_at
+                and w.created_at < cutoff
+            ):
+                self.server.workbooks.delete(w.id)
+                gone.append(w.name)
+        return gone
+
+    def publish(self, twbx: Path, name: str, hidden: list[str]) -> str:
+        import tableauserverclient as tsc
+
+        if not name.startswith(REVIEW_PREFIX):
+            raise SessionError(
+                f"review copies carry the {REVIEW_PREFIX.strip()} prefix"
+            )
+        item = tsc.WorkbookItem(project_id=self.project, name=name, show_tabs=True)
+        item.hidden_views = hidden
+        item = self.server.workbooks.publish(item, str(twbx), mode="CreateNew")
+        if item.project_id != self.project:
+            raise SessionError(f"published to {item.project_name}, not TEMP-CB")
+        self.copy = item
+        return item.id
+
+    def export_view(self, sheet: str, filters: list[tuple[str, str]]) -> bytes:
+        import tableauserverclient as tsc
+
+        if not self._views:
+            self.server.workbooks.populate_views(self.copy)
+            self._views = {v.name: v for v in self.copy.views}
+        view = self._views.get(sheet)
+        if view is None:
+            raise SessionError(f"the review copy has no view named {sheet}")
+
+        def fetch():
+            opts = tsc.CSVRequestOptions()
+            for k, v in filters:
+                opts = opts.vf(k, v)
+            self.server.views.populate_csv(view, opts)
+            return b"".join(view.csv)
+
+        return retry(fetch)
+
+    def check_refresh(self, live_luid: str, recorded: str) -> None:
+        now = self.server.workbooks.get_by_id(live_luid).updated_at
+        if now and now.isoformat() != recorded:
+            raise RefreshedError(
+                f"the live workbook changed at {now.isoformat()} (recorded {recorded}); "
+                "close this session and open a new one"
+            )
+
+    def close(self, copy_luid: str) -> None:
+        self.server.workbooks.delete(copy_luid)
+        if any(w.id == copy_luid for w in _workbooks_in(self.server, self.project)):
+            raise SessionError(
+                f"review copy {copy_luid} is still on the server; delete it in "
+                f"Tableau (project TEMP-CB). The next open sweeps it after 24 hours."
+            )
+
+
+def _run(args: list[str]) -> None:
+    r = subprocess.run(  # noqa: S603 - fixed repo scripts, no shell
+        ["uv", "run", "python", *args], capture_output=True, text=True, check=False
+    )
+    if r.returncode:
+        raise SessionError(
+            f"{Path(args[0]).name} failed:\n{r.stdout[-2000:]}{r.stderr[-2000:]}"
+        )
+
+
+def build_review_twbx(
+    live_twbx: Path, out_dir: Path, dashboards: list[str]
+) -> tuple[Path, list[str]]:
+    """Edit the live workbook into a review copy and pass the tableau-workbook-xml gates."""
+    with zipfile.ZipFile(live_twbx) as z:
+        twb_name = next(n for n in z.namelist() if n.endswith(".twb"))
+        base = z.read(twb_name).decode("utf-8")
+    (out_dir / "base.twb").write_text(base, encoding="utf-8", newline="")
+    review = review_copy(base, dashboards)
+    (out_dir / "review.twb").write_text(review, encoding="utf-8", newline="")
+    _run(
+        [
+            str(XML_SCRIPTS / "check_twb.py"),
+            str(out_dir / "review.twb"),
+            "--ref",
+            str(out_dir / "base.twb"),
+        ]
+    )
+    out = out_dir / "review.twbx"
+    _run(
+        [
+            str(XML_SCRIPTS / "repack.py"),
+            str(out_dir / "review.twb"),
+            str(live_twbx),
+            str(out),
+        ]
+    )
+    wb = read_workbook(review)
+    keep = set(dashboards) | {s for d in dashboards for s in wb.dashboards[d]}
+    return out, views_to_hide(review, keep)
+
+
+def unpack_extracts(twbx: Path, out_dir: Path) -> dict[str, dict]:
+    """Each datasource's .hyper from a downloaded .twbx, with its refresh time (UTC)."""
+    out = {}
+    with zipfile.ZipFile(twbx) as z:
+        twb = z.read(next(n for n in z.namelist() if n.endswith(".twb"))).decode(
+            "utf-8"
+        )
+        root = SafeET.fromstring(twb)
+        for ds in root.iter("datasource"):
+            conn = ds.find("extract/connection")
+            if conn is None or conn.get("class") != "hyper" or not ds.get("caption"):
+                continue
+            name = Path(conn.get("dbname") or "").name
+            member = next(n for n in z.namelist() if Path(n).name == name)
+            (out_dir / name).write_bytes(z.read(member))
+            raw = conn.get("update-time") or ""
+            at = (
+                dt.datetime.strptime(raw, "%m/%d/%Y %I:%M:%S %p")
+                .replace(tzinfo=dt.UTC)
+                .isoformat()
+                if raw
+                else None
+            )
+            out[ds.get("caption")] = {"file": name, "refreshed": at}
+    return out
