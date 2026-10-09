@@ -847,7 +847,7 @@ def audit_rows(checks: dict, twb) -> dict[str, dict]:
     return out
 
 
-def workbook_exclusions(checks: dict, twb) -> list[str]:
+def workbook_exclusions(checks: dict, twb) -> list[dict]:
     """Extract-side conditions dropping the members of the named workbook filters.
 
     The members (test records) are read from the workbook on every run and go only
@@ -877,7 +877,8 @@ def workbook_exclusions(checks: dict, twb) -> list[str]:
                 "gone, empty, or its pattern matches nothing"
             )
         values = ", ".join(_sql_literal(v) for v in dict.fromkeys(members))
-        out.append(f"{x['sql']} not in ({values})")
+        # private: the members are test-record ids, so no draft or output repeats them.
+        out.append({"sql": f"{x['sql']} not in ({values})", "private": True})
     return out
 
 
@@ -1196,6 +1197,7 @@ def load_checks(path) -> dict:
             ]
     data.setdefault("scope_measure", "count_students")
     data.setdefault("students_sql", "count(distinct student_number)")
+    data["path"] = str(path)
     return data
 
 
@@ -1304,15 +1306,36 @@ def _sql_literal(v) -> str:
     return "'" + str(v).replace("'", "\\'") + "'"
 
 
-def _filters_for(truth_filters, datasource: str | None) -> list[str]:
-    """Truth filters that apply to one extract: a plain string applies to every one."""
+def _filters_for(truth_filters, datasource: str | None, public_only=False) -> list[str]:
+    """Truth filters that apply to one extract: a plain string applies to every one.
+
+    public_only drops the test-record filters, for SQL that leaves this machine.
+    """
     out = []
     for f in truth_filters:
         if isinstance(f, str):
             out.append(f)
-        elif f.get("datasource") in (None, datasource):
+        elif f.get("datasource") in (None, datasource) and not (
+            public_only and f.get("private")
+        ):
             out.append(f["sql"])
     return out
+
+
+def _truth_where(
+    dims, hard_filters, window, truth_filters, datasource, public_only=False
+) -> list[str]:
+    if isinstance(window, dict):
+        years = ", ".join(str(y) for y in window["academic_years"])
+        where = [f"{dims['academic_year'].sql_for(datasource)} in ({years})"]
+    else:
+        where = [
+            f"{dims['date'].sql_for(datasource)} between '{window[0]}' and '{window[1]}'"
+        ]
+    for f in hard_filters:
+        values = ", ".join(_sql_literal(v) for v in f["values"])
+        where.append(f"{dims[f['dim']].sql_for(datasource)} in ({values})")
+    return where + _filters_for(truth_filters, datasource, public_only)
 
 
 def truth_sql(
@@ -1341,17 +1364,7 @@ def truth_sql(
                     f"{v['den']} as m{i}_v{j}_den",
                 ]
     select.append(f"{students_sql} as n_students")
-    if isinstance(window, dict):
-        years = ", ".join(str(y) for y in window["academic_years"])
-        where = [f"{dims['academic_year'].sql_for(datasource)} in ({years})"]
-    else:
-        where = [
-            f"{dims['date'].sql_for(datasource)} between '{window[0]}' and '{window[1]}'"
-        ]
-    for f in hard_filters:
-        values = ", ".join(_sql_literal(v) for v in f["values"])
-        where.append(f"{dims[f['dim']].sql_for(datasource)} in ({values})")
-    where += _filters_for(truth_filters, datasource)
+    where = _truth_where(dims, hard_filters, window, truth_filters, datasource)
     # trunk-ignore(bandit/B608): SQL comes from a reviewed checks file and runs read-only
     sql = f"select {', '.join(select)} from `{table}` where {' and '.join(where)}"
     if grain:
@@ -1638,6 +1651,20 @@ def bigquery_rows(sql: str) -> list[dict]:
     return [
         dict(r.items()) for r in bigquery.Client(project=BQ_PROJECT).query(sql).result()
     ]
+
+
+_CAPTION = re.compile(r"^(\w+) \((\w+)\)$")
+
+
+def live_table(datasource: str) -> str:
+    """The warehouse table behind a datasource captioned `rpt_x (dataset)`."""
+    m = _CAPTION.match(datasource)
+    if not m:
+        raise CheckError(
+            f"datasource '{datasource}' is not captioned 'rpt_x (dataset)', so its "
+            "warehouse table is unknown"
+        )
+    return f"{BQ_PROJECT}.{m.group(2)}.{m.group(1)}"
 
 
 # ---------------------------------------------------------------- the dashboard's extract
@@ -2738,6 +2765,147 @@ def report_markdown(result) -> str:
     return "\n".join(out)
 
 
+def draft_sql(m: dict, v: dict, checks: dict, window) -> str:
+    """The dashboard's calculation and its correction, side by side, over the warehouse."""
+    try:
+        table = live_table(m["datasource"])
+    except CheckError:
+        table = m["datasource"]
+    if m["kind"] == "count":
+        cols = [f"{m['sql']} as as_written", f"{v['sql']} as corrected"]
+    else:
+        cols = [
+            f"{m['num']} as as_written_num",
+            f"{m['den']} as as_written_den",
+            f"{v['num']} as corrected_num",
+            f"{v['den']} as corrected_den",
+        ]
+    where = _truth_where(
+        checks["dimensions"],
+        checks["hard_filters"],
+        window,
+        checks["truth_filters"],
+        m["datasource"],
+        public_only=True,
+    )
+    # trunk-ignore(bandit/B608): SQL comes from a reviewed checks file and runs read-only
+    return f"select {', '.join(cols)}\nfrom `{table}`\nwhere " + "\n  and ".join(where)
+
+
+def _issue_labels(t: dict) -> list[str]:
+    kind = re.match(r"^([a-z]+)", t["title"])
+    labels = [kind.group(1)] if kind else []
+    labels += {"dashboard": ["tableau"], "rpt": ["dbt"]}.get(t["where"], [])
+    return list(dict.fromkeys([*labels, *t["labels"], "validation"]))
+
+
+def _example_text(c: dict) -> str:
+    if c["n_students"] is None or c["n_students"] < SMALL_CELL:
+        return "small cell"
+    k = c["kind"]
+    return (
+        f"the dashboard shows {_fmt(c['truth'], k)}, the corrected calculation gives "
+        f"{_fmt(c['variant'], k)}, and Cube gives {_fmt(c['cube'], k)}"
+    )
+
+
+def issue_drafts(result, checks) -> dict[str, dict]:
+    """One GitHub issue draft per unfiled truth issue that explains cells."""
+    window = resolve_window(checks, dt.date.fromisoformat(result["run_date"]))
+    out = {}
+    for slug, t in (checks.get("truth_issues") or {}).items():
+        hits = [
+            (gid, row)
+            for gid, row in result["rows"].items()
+            if row.get("truth_issues", {}).get(slug, {}).get("explains_cells")
+        ]
+        if t.get("issue") or not hits:
+            continue
+        cells = sum(row["truth_issues"][slug]["explains_cells"] for _, row in hits)
+        m, v = next(
+            (m, v)
+            for r in checks["rows"]
+            for m in r["metrics"]
+            for v in m["variants"]
+            if slug in v["explains"]
+        )
+        # The coarsest grains first: a total reads more plainly than a classroom.
+        examples = sorted(
+            (
+                (len(g["grain"]), c)
+                for _, row in hits
+                for g in row["grains"]
+                for s in g.get("metrics", {}).values()
+                for c in s.get("examples", [])
+                if slug in c["explains"]
+            ),
+            key=lambda x: x[0],
+        )[:3]
+        rows_text = ", ".join(f"{row['name']} ({gid})" for gid, row in hits)
+        place = {
+            "dashboard": f"the Tableau workbook behind {result['dashboard']}",
+            "rpt": f"the kipptaf dbt model behind `{m['datasource']}`",
+            "source": f"the source data feeding `{m['datasource']}`",
+        }[t["where"]]
+        body = [
+            "## What's happening",
+            "",
+            t["what"],
+            "",
+            f"The cube-dashboard validation compared Cube with {result['dashboard']}'s "
+            f"extract on {result['run_date']}. With the dashboard's calculation "
+            f"corrected, Cube matches it in {_plural(cells, 'cell')} across "
+            f"{_plural(len(hits), 'row')}.",
+            "",
+            *[
+                f"- {' / '.join(c['key']) or 'All'}: {_example_text(c)}."
+                for _, c in examples
+            ],
+            *(["", t["evidence"]] if t.get("evidence") else []),
+            "",
+            "## Steps to reproduce",
+            "",
+            "1. Run this query in BigQuery. `as_written` is the dashboard's "
+            "calculation and `corrected` is the fix.",
+            "",
+            "   ```sql",
+            *[f"   {line}" for line in draft_sql(m, v, checks, window).splitlines()],
+            "   ```",
+            "",
+            f"2. Compare both with Cube's `{checks['view']}.{m['cube']}` over the "
+            "same filters. Cube matches `corrected`.",
+            "",
+            "## Where",
+            "",
+            f"- **Code location / dbt project:** {place}",
+            "- **Environment:** prod",
+            f"- **Run, PR, or dashboard link (if any):** Asana rows {rows_text}",
+            "",
+            "## How to answer",
+            "",
+            "Add one label. `cube-correct` means the dashboard is wrong and Cube's "
+            "number is right. `cube-wrong` means the dashboard is right and Cube "
+            "must change. If you fix the dashboard or the model instead, close this "
+            "issue; the next validation run checks the fix.",
+            "",
+            "<details>",
+            "<summary>For Claude</summary>",
+            "",
+            f"> Checks file `.claude/skills/cube-dashboard/checks/"
+            f"{Path(checks['path']).name}`, truth issue `{slug}`. As written: "
+            f"{_metric_sql(m)}. Corrected: {_metric_sql({**v, 'kind': m['kind']})}. "
+            "Digest: the run's `-fixes.md` under `~/asana-sync/validation/`.",
+            "",
+            "</details>",
+        ]
+        out[slug] = {
+            "title": t["title"],
+            "labels": _issue_labels(t),
+            "body": "\n".join(body),
+        }
+    return out
+
+
 def write_outputs(result, out_dir: Path, checks=None, cube_defs=None) -> Path:
     out_dir.mkdir(parents=True, exist_ok=True)
     stem = f"{result['run_date']}-{result['dashboard']}"
@@ -2749,6 +2917,13 @@ def write_outputs(result, out_dir: Path, checks=None, cube_defs=None) -> Path:
     )
     report.write_text(report_markdown(result))
     (out_dir / f"{stem}.json").write_text(json.dumps(result, indent=2, default=str))
+    drafts = issue_drafts(result, checks) if checks else {}
+    for slug, d in drafts.items():
+        issues_dir = out_dir / f"{stem}-issues"
+        issues_dir.mkdir(exist_ok=True)
+        (issues_dir / f"{slug}.md").write_text(
+            f"Title: {d['title']}\nLabels: {', '.join(d['labels'])}\n\n{d['body']}\n"
+        )
     latest_path = out_dir / "latest.json"
     latest = (
         json.loads(latest_path.read_text()) if latest_path.exists() else {"rows": {}}
@@ -2860,6 +3035,9 @@ def _run_command(a) -> int:
     }
     report = write_outputs(result, a.out, checks, cube_defs)
     print(f"digest: {a.out / (report.stem + '-fixes.md')}")
+    drafts = a.out / f"{report.stem}-issues"
+    if drafts.exists():
+        print(f"issue drafts: {drafts}")
     for gid, row in result["rows"].items():
         print(f"{row['verdict']:<10} {gid} {row['name']}")
     print(f"report: {report}")

@@ -1672,8 +1672,8 @@ def test_workbook_excludes_read_members_from_the_workbook(tmp_path):
 
     checks = cv.load_checks(_write_variant(tmp_path, m))
     assert cv.workbook_exclusions(checks, FIX / "constructs.twb") == [
-        "student_name not in ('Student A')",
-        "att_code not in ('X')",
+        {"sql": "student_name not in ('Student A')", "private": True},
+        {"sql": "att_code not in ('X')", "private": True},
     ]
 
 
@@ -2214,3 +2214,57 @@ def test_latest_json_lists_open_truth_issues(tmp_path):
     latest = json.loads((tmp_path / "out" / "latest.json").read_text())
     assert latest["rows"]["1"]["verdict"] == "truth_issue"
     assert latest["rows"]["1"]["truth_issues"] == ["tardy_formula"]
+
+
+# ---------------------------------------------------------------- issue drafts
+def test_live_table_reads_the_datasource_caption():
+    assert cv.live_table("rpt_tableau__ddi_dashboard (kipptaf_tableau)") == (
+        "teamster-332318.kipptaf_tableau.rpt_tableau__ddi_dashboard"
+    )
+    with pytest.raises(cv.CheckError, match="rpt_demo"):
+        cv.live_table("rpt_demo")
+
+
+def test_issue_draft_follows_the_bug_template(tmp_path):
+    checks, result = _truth_run(tmp_path)
+    d = cv.issue_drafts(result, checks)["tardy_formula"]
+    assert d["title"] == "fix(tableau): the demo dashboard counts half days as tardy"
+    assert d["labels"] == ["fix", "tableau", "validation"]
+    for part in (
+        "## What's happening",
+        "## Steps to reproduce",
+        "## Where",
+        "## How to answer",
+        "<summary>For Claude</summary>",
+        "2 cells across 1 row",
+        "as_written",
+        "corrected",
+        "# Tardy (1)",
+        "`cube-correct`",
+        "checks/checks.yml",
+    ):
+        assert part in d["body"], part
+
+
+def test_a_filed_issue_gets_no_new_draft(tmp_path):
+    checks, result = _truth_run(tmp_path, lambda d: _add_truth_issue(d, issue=123))
+    assert cv.issue_drafts(result, checks) == {}
+
+
+def test_draft_sql_leaves_out_test_record_filters(tmp_path):
+    checks, result = _truth_run(tmp_path)
+    checks["truth_filters"] = [
+        *checks["truth_filters"],
+        {"sql": "student_number not in (987654)", "private": True},
+    ]
+    body = cv.issue_drafts(result, checks)["tardy_formula"]["body"]
+    assert "987654" not in body and "student_number not in" not in body
+
+
+def test_write_outputs_writes_one_draft_per_issue(tmp_path):
+    checks, result = _truth_run(tmp_path)
+    cv.write_outputs(result, tmp_path / "out", checks, {})
+    p = tmp_path / "out" / "2026-10-08-demo_dashboard-issues" / "tardy_formula.md"
+    text = p.read_text()
+    assert text.startswith("Title: fix(tableau): the demo dashboard")
+    assert "Labels: fix, tableau, validation" in text.splitlines()[1]
