@@ -727,3 +727,72 @@ def test_stale_cube_is_incomplete_not_fail(tmp_path):
 def test_fresh_cube_that_differs_from_the_live_table_fails(tmp_path):
     cell = _timing(tmp_path, 48.0, dt.datetime(2026, 10, 9, 11, tzinfo=dt.UTC))
     assert cell.verdict == "fail" and "2026-10-09 10:00" in cell.reason
+
+
+def test_worst_follows_the_verdict_order():
+    assert cv.worst(["pass", "undecided", "fix_cube"]) == "fix_cube"
+    assert cv.worst(["pass", None]) == "pass"
+    assert cv.worst([]) == "incomplete"
+
+
+def test_row_results_take_the_worst_cell_of_the_rows_members(tmp_path):
+    c = _checks(
+        tmp_path, rows={"111": ["demo.avg_score"], "222": ["demo.pct_complete"]}
+    )
+    cells = [
+        cv.Cell(
+            "Overview - Table",
+            "s",
+            {},
+            "Avg Score",
+            "1",
+            1,
+            1,
+            20,
+            "match",
+            verdict="pass",
+        ),
+        cv.Cell(
+            "Overview - Table",
+            "s",
+            {},
+            "Avg Score",
+            "1",
+            1,
+            2,
+            20,
+            "mismatch",
+            verdict="fix_cube",
+            explained_by=["dup"],
+        ),
+        cv.Cell(
+            "Overview - Table",
+            "s",
+            {},
+            "% Complete",
+            None,
+            None,
+            None,
+            None,
+            "not_comparable",
+        ),
+    ]
+    rows = cv.row_results(cells, c)
+    assert rows["111"]["verdict"] == "fix_cube" and rows["111"]["mismatches"] == ["dup"]
+    assert rows["222"]["verdict"] == "incomplete"  # nothing comparable: never a pass
+
+
+def test_write_latest_merges_rows(tmp_path):
+    p = tmp_path / "latest.json"
+    p.write_text(json.dumps({"999": {"verdict": "pass"}}))
+    cv.write_latest(
+        p, "Demo", "2026-10-09", {"111": {"verdict": "fail", "reopen_for": []}}
+    )
+    data = json.loads(p.read_text())
+    assert data["999"]["verdict"] == "pass"
+    assert data["111"] == {
+        "verdict": "fail",
+        "reopen_for": [],
+        "dashboard": "Demo",
+        "run_date": "2026-10-09",
+    }

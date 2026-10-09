@@ -1150,3 +1150,65 @@ def explain_cells(cells, checks, states, fields, run_extract, load, live=None) -
                         f"Cube refreshed {cube_at:%Y-%m-%d %H:%M}; the live table was built "
                         f"{table_at:%Y-%m-%d %H:%M}"
                     )
+
+
+ORDER = (
+    "fail",
+    "incomplete",
+    "fix_cube",
+    "fix_source",
+    "undecided",
+    "missing_member",
+    "pass",
+)
+
+
+def worst(verdicts) -> str:
+    found = [v for v in verdicts if v]
+    return min(found, key=ORDER.index) if found else "incomplete"
+
+
+def _members(checks) -> dict[tuple[str, str], Measure]:
+    return {
+        (s.name, m.caption): m
+        for s in checks["sheets"].values()
+        for m in s.measures.values()
+    }
+
+
+def row_results(cells, checks) -> dict[str, dict]:
+    by_cell = _members(checks)
+    out = {}
+    for gid, members in checks["rows"].items():
+        mine = [
+            c
+            for c in cells
+            if c.verdict
+            and (m := by_cell.get((c.sheet, c.measure)))
+            and m.cube in members
+        ]
+        reopen = sorted(
+            {
+                mm
+                for c in mine
+                if c.verdict == "missing_member"
+                for mm in by_cell[(c.sheet, c.measure)].missing_members
+            }
+        )
+        out[gid] = {
+            "verdict": worst(c.verdict for c in mine),
+            "cells": len(mine),
+            "by_verdict": dict(Counter(c.verdict for c in mine)),
+            "mismatches": sorted({n for c in mine for n in c.explained_by}),
+            "reopen_for": reopen,
+        }
+    return out
+
+
+def write_latest(path: Path, workbook: str, run_date: str, rows: dict) -> None:
+    p = Path(path)
+    data = json.loads(p.read_text()) if p.exists() else {}
+    for gid, r in rows.items():
+        data[gid] = {**r, "dashboard": workbook, "run_date": run_date}
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps(data, indent=2, sort_keys=True))
