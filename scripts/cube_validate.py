@@ -17,6 +17,7 @@ import json
 import os
 import re
 import sys
+import threading
 import time
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
@@ -1402,13 +1403,29 @@ class ScopeError(RuntimeError):
     """The Cube identity sees less than the dashboard does."""
 
 
-class CubeClient:
-    def __init__(self, url, secret, email, http=None, sleep=time.sleep):
-        import httpx
+def _httpx_client():
+    import httpx
 
+    return httpx.Client(timeout=60)
+
+
+class CubeClient:
+    def __init__(
+        self, url, secret, email, http=None, sleep=time.sleep, http_factory=None
+    ):
         self.url, self.secret, self.email = url.rstrip("/"), secret, email
-        self.http = http or httpx.Client(timeout=60)
+        self._shared = http
+        self._factory = http_factory or _httpx_client
+        self._local = threading.local()
         self.sleep = sleep
+
+    def _http(self):
+        """One HTTP client per thread, so parallel runs never share a connection pool."""
+        if self._shared is not None:
+            return self._shared
+        if getattr(self._local, "client", None) is None:
+            self._local.client = self._factory()
+        return self._local.client
 
     def _token(self) -> str:
         import jwt
@@ -1422,12 +1439,18 @@ class CubeClient:
         )
 
     def load(self, query) -> tuple[list[dict], list[str]]:
+        overloaded = 0
         for _ in range(120):
-            r = self.http.post(
+            r = self._http().post(
                 f"{self.url}/load",
                 json={"query": query},
                 headers={"Authorization": self._token()},
             )
+            if r.status_code in (429, 502, 503, 504) and overloaded < 5:
+                # Cube Cloud is busy (other users, or this run's own workers): back off.
+                overloaded += 1
+                self.sleep(2**overloaded)
+                continue
             try:
                 body = r.json()
             except ValueError as e:
@@ -1830,6 +1853,7 @@ def run_dashboard(
     scope_only=False,
     snapshots=None,
     audit=None,
+    workers=1,
 ) -> dict:
     window = resolve_window(checks, today)
     dims, hard = checks["dimensions"], checks["hard_filters"]
@@ -1855,21 +1879,31 @@ def run_dashboard(
                 if m["key"] not in [x["key"] for x in metrics]:
                     metrics.append(m)
 
-    outcomes = {}
-    for step_no, ((view, ds, g), metrics) in enumerate(jobs.items(), 1):
-        grain = [dims[n] for n in g]
-        step = f"[{step_no}/{len(jobs)}] {view} {_label(g)}"
-        if ds != checks["extract"]["datasource"]:
-            step += f" ({ds})"
-        if any(d.cube is None for d in grain):
-            print(f"{step}: not comparable", file=sys.stderr, flush=True)
-            outcomes[(view, ds, g)] = {"status": "not_comparable"}
-            continue
-        print(step, file=sys.stderr, flush=True)
+    truth_lock, progress = threading.Lock(), threading.Lock()
+    finished = [0]
 
+    def say(text: str) -> None:
+        with progress:
+            finished[0] += 1
+            print(f"[{finished[0]}/{len(jobs)}] {text}", file=sys.stderr, flush=True)
+
+    def run_job(item):
+        (view, ds, g), metrics = item
+        grain = [dims[n] for n in g]
+        label = f"{view} {_label(g)}"
+        if ds != checks["extract"]["datasource"]:
+            label += f" ({ds})"
+        if any(d.cube is None for d in grain):
+            say(f"{label}: not comparable")
+            return (view, ds, g), {"status": "not_comparable"}
         source = _source(bq, ds)
 
-        def compare_job(ms, view=view, g=g, grain=grain, truth=source, datasource=ds):
+        def truth(sql):
+            # An extract connection serves one query at a time; Cube queries overlap.
+            with truth_lock:
+                return source(sql)
+
+        def compare_job(ms):
             crows, preaggs = cube_load(
                 cube_query(
                     view,
@@ -1891,7 +1925,7 @@ def run_dashboard(
                     window,
                     checks["students_sql"],
                     checks["truth_filters"],
-                    datasource,
+                    ds,
                 )
             )
             if not trows or (not g and not trows[0].get("n_students")):
@@ -1934,12 +1968,22 @@ def run_dashboard(
                     errors[m["key"]] = f"{type(e1).__name__}: {e1}"[:300]
             if len(metrics) == 1:
                 errors[metrics[0]["key"]] = f"{type(e).__name__}: {e}"[:300]
-        outcomes[(view, ds, g)] = {
+        outcome = {
             "status": "ok",
             "pre_aggregations": sorted(preaggs),
             "metrics": summaries,
             "errors": errors,
         }
+        say(label)
+        return (view, ds, g), outcome
+
+    if workers > 1:
+        from concurrent.futures import ThreadPoolExecutor
+
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            outcomes = dict(pool.map(run_job, jobs.items()))
+    else:
+        outcomes = dict(run_job(item) for item in jobs.items())
 
     for row in selected:
         view = row.get("view", checks["view"])
@@ -2516,6 +2560,7 @@ def _run_command(a) -> int:
                 scope_only=a.scope_only,
                 snapshots={"extract": stamps, "cube": _local(cube_at)},
                 audit=audit,
+                workers=a.workers,
             )
     except (TimingError, ScopeError) as e:
         sys.exit(str(e))
@@ -2599,6 +2644,12 @@ def main(argv: list[str] | None = None) -> int:
         "--as", dest="email", help="Cube identity (default: CUBE_USER_EMAIL)"
     )
     r.add_argument("--cube-url", default=DEFAULT_CUBE_URL)
+    r.add_argument(
+        "--workers",
+        type=int,
+        default=4,
+        help="Cube queries in flight at once (default 4; 1 runs them in order)",
+    )
     r.add_argument("--out", type=Path, default=DEFAULT_OUT)
     a = p.parse_args(argv)
     return _grains_command(a) if a.cmd == "grains" else _run_command(a)

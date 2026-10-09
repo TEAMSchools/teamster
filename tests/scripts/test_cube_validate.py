@@ -1811,3 +1811,98 @@ def test_rows_sharing_a_measure_may_differ_in_captions(tmp_path):
 
     c = cv.load_checks(_write_variant(tmp_path, m))
     assert c["rows"][2]["metrics"][0]["tableau"] == ["Other caption"]
+
+
+# ---------------------------------------------------------------- parallel runs
+import threading  # noqa: E402
+import time  # noqa: E402
+
+
+class SlowCube(FakeCube):
+    """FakeCube that takes a moment per query and records peak concurrency."""
+
+    def __init__(self):
+        super().__init__()
+        self.active = self.peak = 0
+        self.lock = threading.Lock()
+
+    def __call__(self, q):
+        with self.lock:
+            self.active += 1
+            self.peak = max(self.peak, self.active)
+        time.sleep(0.02)
+        try:
+            return super().__call__(q)
+        finally:
+            with self.lock:
+                self.active -= 1
+
+
+class ExclusiveBQ(FakeBQ):
+    """FakeBQ that fails if two queries are ever inside it at once."""
+
+    def __init__(self):
+        super().__init__()
+        self.inside = 0
+
+    def __call__(self, sql):
+        self.inside += 1
+        assert self.inside == 1, "extract queried concurrently"
+        time.sleep(0.005)
+        try:
+            return super().__call__(sql)
+        finally:
+            self.inside -= 1
+
+
+def test_parallel_run_matches_sequential():
+    seq = cv.run_dashboard(_checks(), FakeCube(), FakeBQ(), TODAY)
+    cube = SlowCube()
+    par = cv.run_dashboard(_checks(), cube, FakeBQ(), TODAY, workers=4)
+    assert json.dumps(par, sort_keys=True, default=str) == json.dumps(
+        seq, sort_keys=True, default=str
+    )
+    assert cube.peak > 1
+
+
+def test_parallel_run_never_queries_an_extract_concurrently():
+    cv.run_dashboard(_checks(), SlowCube(), ExclusiveBQ(), TODAY, workers=4)
+
+
+class StatusHttp(FakeHttp):
+    def __init__(self, replies):
+        super().__init__([])
+        self.replies = list(replies)
+
+    def post(self, url, json, headers):
+        self.calls.append((url, json, headers))
+        body, status = self.replies.pop(0)
+        return FakeResponse(body, status)
+
+
+def test_cube_client_backs_off_when_cube_is_overloaded():
+    waits = []
+    http = StatusHttp(
+        [({"error": "Too many requests"}, 429), ({"data": [{"a": "1"}]}, 200)]
+    )
+    client = cv.CubeClient(
+        "https://cube/api", SECRET, "me@example.org", http=http, sleep=waits.append
+    )
+    rows, _ = client.load({"measures": []})
+    assert rows == [{"a": "1"}] and waits and waits[0] >= 1
+
+
+def test_cube_client_gives_each_thread_its_own_http_client():
+    made = []
+    client = cv.CubeClient(
+        "https://cube/api",
+        SECRET,
+        "me@example.org",
+        http_factory=lambda: made.append(1) or object(),
+    )
+    a = client._http()
+    b = []
+    t = threading.Thread(target=lambda: b.append(client._http()))
+    t.start()
+    t.join()
+    assert a is client._http() and b[0] is not a and len(made) == 2
