@@ -57,7 +57,10 @@ specifics live there.
   `git worktree add /workspaces/teamster/.claude/worktrees/<branch> <branch>`.
   The path must be absolute; a relative one nests one worktree inside another.
   Keep worktrees under `.claude/worktrees/`: `.claude/rules/worktrees.md` loads
-  on the first read there and nowhere else.
+  on the first read there and nowhere else. Merging a linked branch's PR closes
+  the issue whatever the body says, so when the issue must outlive the PR (it
+  tracks `standard-baseline.tsv` rows or deferred work), use the no-issue form
+  below and write `Refs #N`.
 - Create, without an issue (user declined):
   `git worktree add -b <branch> <abs-path> origin/main` or
   `git checkout -b <branch>`. Name `origin/main`; local `main` is often behind.
