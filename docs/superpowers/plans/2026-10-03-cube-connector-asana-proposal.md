@@ -40,14 +40,14 @@ to Jan 1, 2027; it has not been checked against the school calendar.
 | Ops: FRESH metric set           | Feb 19                             | Feb 19        | No dashboard rebuild                     | Feb 26   | None              | With ops |
 | Grades/GPA                      | Mar 12                             | Apr 9         | Apr 16                                   | Apr 16   | May 7             | May 14   |
 | Student dashboards              | Apr 30                             | May 14        | May 21                                   | May 21   | None in the plan  | Jun 4    |
-| Zendesk                         | Dec 18                             | Jan 15        | Jan 29                                   | Jan 29   | Feb 5 (proposed)  | Feb 12   |
-| Recruitment                     | Feb 12                             | Feb 26        | Mar 12                                   | Mar 12   | Mar 19 (proposed) | Mar 26   |
-| Surveys                         | Mar 19                             | Apr 2         | Apr 16                                   | Apr 16   | Apr 23 (proposed) | Apr 30   |
-| Observations                    | Apr 16                             | Apr 30        | May 14                                   | May 14   | May 21 (proposed) | May 28   |
+| Zendesk                         | Dec 18                             | Jan 15        | Jan 29                                   | Jan 29   | Feb 5             | Feb 12   |
+| Recruitment                     | Feb 12                             | Feb 26        | Mar 12                                   | Mar 12   | Mar 19            | Mar 26   |
+| Surveys                         | Mar 19                             | Apr 2         | Apr 16                                   | Apr 16   | Apr 23            | Apr 30   |
+| Observations                    | Apr 16                             | Apr 30        | May 14                                   | May 14   | May 21            | May 28   |
 
 Recruitment depends on the Oct 16 decision on whether it stays an analyst-built
-domain. The plan has no pilot date for the four analyst-built domains; the
-proposed dates sit one week before each launch.
+domain. The four analyst-built domains run their pilot one week before each
+launch (decided Oct 9; the project plan has no pilot date for them).
 
 Other anchors: charter sent Oct 16 and signed off Oct 23; usage logging and the
 eval loop live Nov 20; org plugin beta Jan 15; midpoint review and
@@ -74,7 +74,7 @@ stretch-domain decision Feb 26; project close Jun 25, 2027.
    lot, the `Open Issues` rollup tasks (their child issues are dated where a
    milestone needs them), the team meeting tasks, and completed tasks.
 8. **An existing Asana date that is earlier than the plan stays.** Later ones
-   are listed under "Conflicts to resolve".
+   were settled on Oct 9; see "Decisions made on Oct 9".
 
 ## Milestones
 
@@ -150,25 +150,25 @@ suppression must land before the assessments launch on Jan 15.
 
 ### 1 · Assessments
 
-| Task                                                           | GID              | Due                           |
-| -------------------------------------------------------------- | ---------------- | ----------------------------- |
-| Lock what "verified" includes; checkpoint                      | 1219235228944467 | Start Oct 16, due Dec 4, 2026 |
-| dim_assessment_goals                                           | 1219235308948092 | Oct 23, 2026                  |
-| dim_college_assessment_goals                                   | 1219235025928051 | Oct 30, 2026                  |
-| fct_assessment_scores_student_scoped (CARAT)                   | 1214075610424619 | Nov 6, 2026                   |
-| fct_iready_lessons                                             | 1219285715506895 | Nov 13, 2026                  |
-| fct_dibels_progress_monitoring                                 | 1219285828933892 | Nov 20, 2026                  |
-| fct_assessment_standard_scores                                 | 1219285828786749 | Nov 20, 2026                  |
-| fct_sight_words                                                | 1219286000584515 | Nov 20, 2026                  |
-| dim_assessment_comparisons                                     | 1219285715581897 | Nov 20, 2026                  |
-| dim_student_testing_accommodations                             | 1219285989040081 | Nov 20, 2026                  |
-| dim_college_assessment_expectations                            | 1219285941380935 | Nov 20, 2026                  |
-| fct_dual_enrollment_grades                                     | 1219285941416926 | Nov 20, 2026                  |
-| fct_student_ap_course_enrollments                              | 1219301358692563 | Nov 20, 2026                  |
-| Matching sign-off and privacy review: assessments              | 1219235059572563 | Dec 11, 2026                  |
-| Review assessment pull requests within 48 hours through Dec 18 | 1219235329948012 | Dec 18, 2026 (already set)    |
-| Check the deferral log for assessments                         | 1219235401039821 | Dec 18, 2026                  |
-| Clear marts V1 for production use                              | 1219235025270362 | See "Conflicts to resolve"    |
+| Task                                                           | GID              | Due                                           |
+| -------------------------------------------------------------- | ---------------- | --------------------------------------------- |
+| Lock what "verified" includes; checkpoint                      | 1219235228944467 | Start Oct 16, due Dec 4, 2026                 |
+| dim_assessment_goals                                           | 1219235308948092 | Oct 23, 2026                                  |
+| dim_college_assessment_goals                                   | 1219235025928051 | Oct 30, 2026                                  |
+| fct_assessment_scores_student_scoped (CARAT)                   | 1214075610424619 | Nov 6, 2026                                   |
+| fct_iready_lessons                                             | 1219285715506895 | Nov 13, 2026                                  |
+| fct_dibels_progress_monitoring                                 | 1219285828933892 | Nov 20, 2026                                  |
+| fct_assessment_standard_scores                                 | 1219285828786749 | Nov 20, 2026                                  |
+| fct_sight_words                                                | 1219286000584515 | Nov 20, 2026                                  |
+| dim_assessment_comparisons                                     | 1219285715581897 | Nov 20, 2026                                  |
+| dim_student_testing_accommodations                             | 1219285989040081 | Nov 20, 2026                                  |
+| dim_college_assessment_expectations                            | 1219285941380935 | Nov 20, 2026                                  |
+| fct_dual_enrollment_grades                                     | 1219285941416926 | Nov 20, 2026                                  |
+| fct_student_ap_course_enrollments                              | 1219301358692563 | Nov 20, 2026                                  |
+| Matching sign-off and privacy review: assessments              | 1219235059572563 | Dec 11, 2026                                  |
+| Review assessment pull requests within 48 hours through Dec 18 | 1219235329948012 | Dec 18, 2026 (already set)                    |
+| Check the deferral log for assessments                         | 1219235401039821 | Dec 18, 2026                                  |
+| Clear marts V1 for production use                              | 1219235025270362 | Nov 13, 2026 (the plan date; replaces Dec 18) |
 
 Dashboards, all due Dec 18, 2026, with measure and dimension subtasks due Dec 4:
 
@@ -198,14 +198,14 @@ Anything moved out goes to the deferral log and loses its date.
 
 ### 1 · Ops: enrollment and Ops Dashboard
 
-| Task                                                             | GID              | Due                           |
-| ---------------------------------------------------------------- | ---------------- | ----------------------------- |
-| Confirm the chronic-absence definition with the ops domain owner | 1219235308564768 | Jan 8, 2027                   |
-| fct_enrollment_targets                                           | 1219288211760729 | Feb 5, 2027                   |
-| fct_student_retention                                            | 1219288212230774 | Feb 12, 2027                  |
-| Privacy reviews: ops and grades/GPA                              | 1219234963895516 | See "Conflicts to resolve"    |
-| Check the deferral log for ops                                   | 1219235330710931 | Feb 26, 2027                  |
-| Ops Dashboard (key dashboard)                                    | 1213823788795999 | Feb 26, 2027; subtasks Feb 19 |
+| Task                                                             | GID              | Due                                              |
+| ---------------------------------------------------------------- | ---------------- | ------------------------------------------------ |
+| Confirm the chronic-absence definition with the ops domain owner | 1219235308564768 | Jan 8, 2027                                      |
+| fct_enrollment_targets                                           | 1219288211760729 | Feb 5, 2027                                      |
+| fct_student_retention                                            | 1219288212230774 | Feb 12, 2027                                     |
+| Privacy reviews: ops and grades/GPA                              | 1219234963895516 | Split: ops Feb 26, 2027; grades/GPA Apr 16, 2027 |
+| Check the deferral log for ops                                   | 1219235330710931 | Feb 26, 2027                                     |
+| Ops Dashboard (key dashboard)                                    | 1213823788795999 | Feb 26, 2027; subtasks Feb 19                    |
 
 Ops Dashboard checklist: Built Feb 19 · Matches Feb 26 · Privacy Feb 26 ·
 Rebuilt Feb 26 · Pilot run Mar 12 · Launched Mar 26.
@@ -272,7 +272,7 @@ rows with no Asana task".
 Key-dashboard checklists for these four domains follow the timeline table:
 `Built in Cube`, `Matches within tolerance`, `Privacy review passed` and
 `Rebuilt in Tableau on Cube` on the verification row's dates, `Pilot run` on the
-proposed pilot date, and `Launched` on the launch date.
+pilot date, and `Launched` on the launch date.
 
 ### 2 · Enablement, comms and support
 
@@ -326,14 +326,14 @@ task) and on GitHub issue tasks under the `Open Issues` rollups.
 | Send the charter to the steering committee                                           | 1219229601717095                   | M0        | Oct 16, 2026 (already set)                              |
 | Design the keep/retire list process                                                  | 1219229568319144                   | M0        | Oct 16, 2026 (already set)                              |
 | Decide whether recruitment stays an analyst-built domain                             | 1219229601712738                   | M0        | Oct 16, 2026 (already set)                              |
-| Restructure the Asana project (PR #5703)                                             | 1219229601563438                   | M0        | Oct 23, 2026 (already set)                              |
-| Design how metrics no dashboard shows today get added to Cube                        | 1219229615266410                   | M0        | See "Conflicts to resolve"                              |
+| Restructure the Asana project (PR #5703)                                             | 1219229601563438                   | M0        | Mark complete                                           |
+| Design how metrics no dashboard shows today get added to Cube                        | 1219229615266410                   | M0        | Oct 20, 2026                                            |
 | Propose a usefulness success measure (#5613)                                         | 1219229568285693                   | M2.5      | Oct 20, 2026 (already set)                              |
 | Name the ops domain owner after a team discussion                                    | 1219229716957017                   | M2.1      | Oct 30, 2026 (already set)                              |
 | Tableau access test                                                                  | 1219229488793468                   | M1.1      | Oct 30, 2026 (already set)                              |
 | Review the student persistence charter's data needs before ops starts                | 1219229488451407                   | M1.2      | Dec 18, 2026; rename "Nov 30" to "Jan 4"                |
 | Build the CI completeness check on Cube YAML                                         | 1219229488659674                   | M4.4      | Dec 18, 2026 (already set)                              |
-| #5692 high school state test scores dropped by Cube                                  | 1219119636524318                   | M1.1      | Oct 16, 2026; the plan marks it complete                |
+| #5692 high school state test scores dropped by Cube                                  | 1219119636524318                   | M1.1      | Oct 16, 2026; stays open                                |
 | #5573 performance band set columns; #5574 assessment_family                          | 1218941375989436, 1218941760280452 | M1.1      | Oct 23, 2026                                            |
 | #4184 administered dates for state assessments                                       | 1215687069915963                   | M1.1      | Nov 6, 2026                                             |
 | #5557 assessment pre-aggregation                                                     | 1218896809936221                   | M1.1      | Oct 9, 2026 (already set; plan says Nov 13)             |
@@ -358,29 +358,28 @@ plan row names them.
 | Attendance Dashboard | Intervention Status Required (Avg/Sum/Count)                                          | 1214073491303428 | Jan 22, 2027 |
 | Ops Dashboard        | Lunch status, retention and attrition measures                                        | Resolve by name  | Feb 12, 2027 |
 
-## Conflicts to resolve before applying
+## Decisions made on Oct 9
 
-1. **Clear marts V1 for production use** (1219235025270362) is due Dec 18 in
-   Asana; the plan says Nov 13. The plan date lets analysts build on V1 marts
-   before verification. Pick one.
-2. **Privacy reviews: ops and grades/GPA** (1219234963895516) is one task for
-   two domains, and M1.2 (Feb 26) and M1.3 (Apr 16) both depend on it. Dated Apr
-   16, it blocks M1.2. Split it into two dated subtasks (ops Feb 26, grades/GPA
-   Apr 16). Staff Demographic Explorer also depends on it, which looks like a
-   mislink.
+1. **Clear marts V1 for production use** (1219235025270362) moves from Dec 18 to
+   the plan's Nov 13.
+2. **Privacy reviews: ops and grades/GPA** (1219234963895516) gets two subtasks:
+   `Privacy review: ops` (Feb 26) and `Privacy review: grades/GPA` (Apr 16).
+   M1.2 depends on the ops subtask and M1.3 on the grades/GPA subtask; the
+   parent comes off both milestones and takes Apr 16. Staff Demographic Explorer
+   also depends on the parent, which looks like a mislink; that is left for the
+   project owner.
 3. **Design how metrics no dashboard shows today get added to Cube**
-   (1219229615266410) has no date in the plan, and M0 (Oct 23) depends on it.
-   Either date it Oct 23 or remove it from M0's dependencies.
-4. **Two meeting action items carry the old timeline:** the capacity
-   conversation's name says "Nov 24", and the persistence review is due Nov 24
-   with "before ops starts Nov 30" in its name.
-5. **#5692** is complete in the plan and open in Asana. Confirm and close it.
-6. **Restructure the Asana project** (1219229601563438) looks done after Oct 8.
-   Close it, or keep it open until this plan's dates are applied.
+   (1219229615266410) is due Oct 20.
+4. **The two meeting action items follow the plan:** the capacity conversation
+   (1219229568413562) is renamed from "Nov 24" to "Dec 18", and the persistence
+   review (1219229488451407) is due Dec 18 and renamed from "Nov 30" to "Jan 4".
+5. **#5692** (1219119636524318) stays open, due Oct 16. The project plan now
+   shows it in progress.
+6. **Restructure the Asana project** (1219229601563438) is marked complete.
 
-## Plan rows with no Asana task
+## Plan rows kept outside Asana
 
-Listed for the project owner; this plan does not add them.
+Decided Oct 9: these stay in the project plan only.
 
 - Confirm with the assessments domain owner whether Miami falls back to the raw
   goal (Oct 16).
@@ -401,7 +400,7 @@ Once approved, the project lead applies it through the Asana MCP with
 `update_tasks` (`due_on`, and `start_on` where shown), at most 50 tasks per
 call:
 
-1. Resolve the conflicts above.
+1. Apply the Oct 9 decisions above.
 2. Milestones.
 3. Dashboard tasks and their checklist subtasks.
 4. Measure and dimension subtasks by the rule, then the exceptions.
