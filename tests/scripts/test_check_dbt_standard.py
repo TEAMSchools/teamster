@@ -563,17 +563,22 @@ def test_load_baseline_and_compare(tmp_path) -> None:
         "model\trule\tdetail\tissue\n"
         "kipptaf.a\tA1\tkipptaf.p\t#1\n"
         "kipptaf.b\tA1\tkipptaf.p\t\n"
+        "kipptaf.c\tA1\tkipptaf.p\t#58o6\n"
         "kipptaf.gone\tA1\tkipptaf.p\t#2\n"
     )
     baseline = mod.load_baseline(f)
     v = [
         mod.Violation(m_, "A1", "kipptaf.p", "error", "")
-        for m_ in ("kipptaf.a", "kipptaf.b", "kipptaf.new")
+        for m_ in ("kipptaf.a", "kipptaf.b", "kipptaf.c", "kipptaf.new")
     ]
     new, stale, missing = mod.compare(v, baseline)
     assert [x.model for x in new] == ["kipptaf.new"]
     assert stale == [("kipptaf.gone", "A1", "kipptaf.p")]
-    assert missing == [("kipptaf.b", "A1", "kipptaf.p")]
+    # a cell that isn't #N names no issue either
+    assert missing == [
+        ("kipptaf.b", "A1", "kipptaf.p"),
+        ("kipptaf.c", "A1", "kipptaf.p"),
+    ]
 
 
 def test_load_baseline_skips_blank_lines(tmp_path) -> None:
@@ -588,6 +593,7 @@ def test_closed_issues_counts_rows_per_closed_issue() -> None:
         ("kipptaf.b", "A1", "kipptaf.p"): "#1",
         ("kipptaf.c", "A1", "kipptaf.p"): "#2",
         ("kipptaf.d", "A8", "kipptaf.p"): "",
+        ("kipptaf.e", "A8", "kipptaf.p"): "#58o6",
     }
     asked = []
 

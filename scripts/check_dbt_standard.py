@@ -5,8 +5,9 @@ Usage: uv run scripts/check_dbt_standard.py --project-dir src/dbt/<project>
 
 Edge rules (A1, A8) run over the whole manifest against a per-project baseline
 of known violations; a baseline line must name an open tracking issue
-(--check-issues looks each one up) and is removed once fixed. Changed-line rules (A3, A4, A7, A9) need --diff. A model opts out
-of a rule with config.meta.standard_exempt: {<rule>: <reason>}.
+(--check-issues looks each one up) and is removed once fixed. Changed-line rules
+(A3, A4, A7, A9) need --diff. A model opts out of a rule with
+config.meta.standard_exempt: {<rule>: <reason>}.
 """
 
 import argparse
@@ -454,14 +455,18 @@ def load_baseline(path: Path) -> dict[Key, str]:
     return out
 
 
+_ISSUE = re.compile(r"#\d+")
+
+
 def compare(
     violations: list[Violation], baseline: dict[Key, str]
 ) -> tuple[list[Violation], list[Key], list[Key]]:
-    """(violations not in the baseline, baseline lines no longer found, lines without an issue)."""
+    """(violations not in the baseline, baseline lines no longer found, lines whose
+    issue cell is not #N)."""
     keys = {(v.model, v.rule, v.detail) for v in violations}
     new = [v for v in violations if (v.model, v.rule, v.detail) not in baseline]
     stale = sorted(k for k in baseline if k not in keys)
-    missing = sorted(k for k, issue in baseline.items() if not issue)
+    missing = sorted(k for k, issue in baseline.items() if not _ISSUE.fullmatch(issue))
     return new, stale, missing
 
 
@@ -469,7 +474,7 @@ def closed_issues(
     baseline: dict[Key, str], is_open: Callable[[int], bool]
 ) -> list[tuple[str, int]]:
     """(issue, row count) for each baseline issue that is_open says is closed."""
-    rows = Counter(issue for issue in baseline.values() if issue)
+    rows = Counter(i for i in baseline.values() if _ISSUE.fullmatch(i))
     return sorted(
         (issue, n) for issue, n in rows.items() if not is_open(int(issue.lstrip("#")))
     )
@@ -477,14 +482,15 @@ def closed_issues(
 
 def _gh_issue_open(number: int) -> bool:
     # trunk-ignore(bandit/B603): hardcoded gh command, no user input
-    state = subprocess.run(
+    is_open = subprocess.run(
         ["gh", "api", f"repos/{os.environ['GITHUB_REPOSITORY']}/issues/{number}"]
-        + ["--jq", ".state"],
-        capture_output=True,
+        # a PR number resolves here too; it tracks nothing, so it is not open
+        + ["--jq", '.pull_request == null and .state == "open"'],
+        stdout=subprocess.PIPE,  # stderr reaches the job log on failure
         text=True,
         check=True,
     ).stdout.strip()
-    return state == "open"
+    return is_open == "true"
 
 
 def package_roots(project_dir: Path) -> dict[str, str]:
@@ -600,14 +606,14 @@ def main(argv: list[str] | None = None) -> int:
         )
     for k in missing:
         print(
-            f"::error title=baseline::{baseline_path}: {' '.join(k)} has no tracking issue"
+            f"::error title=baseline::{baseline_path}: {' '.join(k)} has no tracking issue (#N)"
         )
-    # A closed issue leaves its rows tracked by nothing; reopen it or point the
-    # rows at an open one.
+    # A closed issue leaves its rows tracked by nothing. It fails whichever PR runs
+    # next, so the message says the PR did not cause it.
     closed = closed_issues(baseline, _gh_issue_open) if args.check_issues else []
     for issue, n in closed:
         print(
-            f"::error title=baseline::{baseline_path}: {issue} is closed but {n} lines point at it"
+            f"::error title=baseline::{baseline_path}: {issue} is closed but {n} rows point at it. This PR did not cause it: reopen the issue or point the rows at an open one, then rerun this job"
         )
     failed = (
         any(v.severity == "error" for v in [*new, *touched])
