@@ -1906,3 +1906,10 @@ def test_cube_client_gives_each_thread_its_own_http_client():
     t.start()
     t.join()
     assert a is client._http() and b[0] is not a and len(made) == 2
+
+
+def test_a_closed_year_window_skips_the_timing_guard():
+    today = dt.date(2026, 10, 9)  # academic year 2026 is open
+    assert cv.window_is_closed({"academic_years": [2025]}, today)
+    assert not cv.window_is_closed({"academic_years": [2025, 2026]}, today)
+    assert not cv.window_is_closed((dt.date(2026, 7, 1), dt.date(2026, 10, 8)), today)

@@ -1681,6 +1681,15 @@ def snapshot_date(ts: dt.datetime) -> dt.date:
     return ts.astimezone(ZoneInfo(LOCAL_TZ)).date()
 
 
+def window_is_closed(window, today: dt.date) -> bool:
+    """True when every academic year in the window has ended: no new scores arrive,
+    so the extract and Cube agree whenever each was built."""
+    if not isinstance(window, dict):
+        return False
+    current = today.year if today.month >= 7 else today.year - 1
+    return all(y < current for y in window["academic_years"])
+
+
 def timing_guard(extract_at: dt.datetime, cube_at: dt.datetime) -> None:
     gap = extract_at - cube_at
     if gap > MAX_SNAPSHOT_GAP:
@@ -2543,8 +2552,13 @@ def _run_command(a) -> int:
         _local(at) if len(extracts) == 1 else f"{ds} {_local(at)}"
         for ds, (_, at) in extracts.items()
     )
+    today = dt.date.today()
+    closed = window_is_closed(resolve_window(checks, today), today)
+    cube_stamp = _local(cube_at) + (
+        " (closed year: timing not checked)" if closed else ""
+    )
     try:
-        for _, at in extracts.values():
+        for _, at in extracts.values() if not closed else []:
             timing_guard(at, cube_at)
         with ExitStack() as stack:
             truth = {
@@ -2558,7 +2572,7 @@ def _run_command(a) -> int:
                 snapshot_date(default_at),
                 rows=set(a.rows.split(",")) if a.rows else None,
                 scope_only=a.scope_only,
-                snapshots={"extract": stamps, "cube": _local(cube_at)},
+                snapshots={"extract": stamps, "cube": cube_stamp},
                 audit=audit,
                 workers=a.workers,
             )

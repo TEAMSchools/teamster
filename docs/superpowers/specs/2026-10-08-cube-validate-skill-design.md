@@ -415,3 +415,12 @@ Student Count, has sheets on both.
   `sql_by_datasource: {<datasource>: <sql>}`, and a truth filter may be
   `{sql, datasource}` to apply to one extract only; a plain string still applies
   to every extract.
+
+## Revision 2026-10-09: closed years skip the timing guard
+
+The assessment fact rebuilds five times a day while DDI's extracts refresh
+nightly, so a current-year run is only consistent in a narrow morning window. A
+window whose academic years have all ended gets no new scores, so the run skips
+the timing guard and says so on the snapshots line. DDI and STAT validate on
+2025-26; a row that only exists in the current year (DDI's "% Complete (this
+week)") waits for a current-year run.

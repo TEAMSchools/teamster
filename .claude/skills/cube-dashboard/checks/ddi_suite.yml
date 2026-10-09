@@ -16,7 +16,7 @@ dashboards:
   - Assessment Dashboard
 window:
   academic_years:
-    - 2026
+    - 2025
 dimensions:
   region:
     cube: region_name
@@ -165,7 +165,9 @@ truth_filters:
   - sql: coalesce(response_type, '') != 'walkthrough'
     datasource: rpt_tableau__ddi_dashboard (kipptaf_tableau)
 handled:
-  "filter: Academic Year [170633]": "window: academic_years [2026]."
+  "filter: Academic Year [170633]":
+    The year is the viewer's choice and no definition depends on it; checked on
+    2025-26, a closed year.
   "filter: Response Type [c1aae5]":
     response_type is in every grain, so each response type is compared on its
     own.
@@ -184,11 +186,16 @@ handled:
     own.
   "filter: School [86b944]":
     A slice of a field the grains compare value by value.
-  "filter: Academic Year [5ae12d]": "window: academic_years [2026]."
+  "filter: Academic Year [5ae12d]":
+    The year is the viewer's choice and no definition depends on it; checked on
+    2025-26, a closed year.
   "alias: % Mastery (Gen Ed) [275e47]":
     The same measure (Is Mastery Int - Gen Ed) shown under another name.
   "alias: % Mastery (IEP) [b8798d]":
     The same measure (Is Mastery Int - IEP) shown under another name.
+  "filter: Academic Year [6005b6]":
+    The year is the viewer's choice and no definition depends on it; checked on
+    2025-26, a closed year.
   "filter: Subject Area [08a78a]":
     A slice of a field the grains compare value by value.
   "filter: Response Type [dc0a33]":
@@ -3696,8 +3703,6 @@ rows:
         - week_start
         - response_type
     not_checked:
-      - construct: "filter: Academic Year [6005b6]"
-        why: Shows another academic year; the check covers 2026-27 only.
       - construct: "table_calc: % of Students [d06edd]"
         why:
           Computed from the table on screen (share of total, rank or running
@@ -4456,8 +4461,6 @@ rows:
         - bucket
         - response_type
     not_checked:
-      - construct: "filter: Academic Year [6005b6]"
-        why: Shows another academic year; the check covers 2026-27 only.
       - construct: "viewer_function: Region User Filter [3fe0a9]"
         why:
           Varies by viewer; the run uses a network identity on the full extract.

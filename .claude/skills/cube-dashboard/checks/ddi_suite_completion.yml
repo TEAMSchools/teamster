@@ -16,7 +16,7 @@ dashboards:
   - Assessment Dashboard
 window:
   academic_years:
-    - 2026
+    - 2025
 dimensions:
   region:
     cube: region_name
@@ -171,10 +171,9 @@ truth_filters:
     datasource: rpt_tableau__ddi_dashboard (kipptaf_tableau)
   - (response_type is null or response_type = 'overall')
 handled:
-  "filter: Response Type [c06d56]":
-    response_type is in every grain, so each response type is compared on its
-    own.
-  "filter: Academic Year [170633]": "window: academic_years [2026]."
+  "filter: Academic Year [170633]":
+    The year is the viewer's choice and no definition depends on it; checked on
+    2025-26, a closed year.
   "filter: Response Type [c1aae5]":
     response_type is in every grain, so each response type is compared on its
     own.
@@ -182,43 +181,6 @@ handled:
     "missing_members untagged_assessments: the *_without SQL keeps tagged
     assessments only."
 rows:
-  - row_gid: "1219284654682073"
-    name: "% Complete (student-level, this week)"
-    metrics:
-      - cube: pct_taken
-        kind: rate
-        tableau:
-          - "% Complete"
-        datasource: rpt_tableau__ddi_dashboard (kipptaf_tableau)
-        num:
-          count(distinct if(is_complete = 1, concat(student_number, '-',
-          assessment_id), null))
-        den: count(distinct concat(student_number, '-', assessment_id))
-    grains:
-      - []
-      - - region
-        - grade_subject
-        - module_code
-        - title
-        - assessment_id
-      - - region
-        - module_code
-        - title
-        - assessment_id
-    not_checked:
-      - construct: "set: Exclude NULL Assessment ID [3982af]"
-        why:
-          A Tableau-only calculation, parameter or grouping with no Cube
-          counterpart.
-      - construct: "filter: is_current_week [fa09b8]"
-        why:
-          Narrows this sheet to a slice by a field Cube has no member for (term,
-          discipline group, bright-spot status and the like), or hides future
-          assessments; the check compares the unfiltered population.
-      - construct: "lod: % Complete [d8a41a]"
-        why:
-          A Tableau-only calculation, parameter or grouping with no Cube
-          counterpart.
   - row_gid: "1219087843079530"
     name: "% Completion (module completion rate)"
     metrics:
