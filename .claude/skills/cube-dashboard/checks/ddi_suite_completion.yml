@@ -185,8 +185,8 @@ cube_filters:
     values:
       - overall
       - not_taken
-  # rpt_tableau__ddi_dashboard drops WPP assessments (its module_type != 'WPP'
-  # filter), so Cube leaves them out beside that extract only.
+    # rpt_tableau__ddi_dashboard drops WPP assessments (its module_type != 'WPP'
+    # filter), so Cube leaves them out beside that extract only.
   - member: module_type
     operator: notEquals
     values:
@@ -208,8 +208,7 @@ handled:
     response_type is in every grain, so each response type is compared on its
     own.
   "filter: Is Normed Scope [fa09b8]":
-    "missing_members untagged_assessments: the variant that explains it keeps
-    tagged assessments only."
+    The untagged_assessments mismatch's variants keep tagged assessments only.
 open_issues_task: "1219086050133309"
 mismatches:
   completion_always_100:
@@ -227,6 +226,31 @@ mismatches:
     evidence:
       In the extract, no module x school x grade group in Camden, Newark or
       Paterson falls below 100%.
+  untagged_assessments:
+    title:
+      "fix: decide whether Cube answers for Illuminate assessments with no
+      AppSheet tag"
+    what:
+      Cube carries only the assessments tagged in AppSheet. The DDI Suite's
+      Assessment Dashboard tab shows every Illuminate assessment, tagged or not,
+      so its counts run higher. Either Cube adds untagged assessments, or the
+      Assessment Dashboard shows tagged ones only.
+    fix: undecided
+    evidence:
+      "Seek, 2025-26, overall rows in the top band: Cube 5,819; the extract
+      23,368, of which 5,916 are tagged."
+  illuminate_dates_disagree:
+    title: "data(illuminate): assessments whose year tag and date disagree"
+    what:
+      For 8 assessments, Illuminate's year tag and the assessment date point to
+      different school years (one date was typed a year late), so the dashboard
+      files them by the tag and Cube by the date. Fixing the source data fixes
+      both.
+    fix: source
+    issue: 3801
+    evidence:
+      Assessments 185525, 186256, 188349, 188353, 189131, 189344, 189353,
+      189354.
 rows:
   - row_gid: "1219284654682073"
     name: "% Complete (student-level, this week)"
@@ -240,6 +264,12 @@ rows:
           count(distinct if(is_complete = 1, concat(student_number, '-',
           assessment_id), null))
         den: count(distinct concat(student_number, '-', assessment_id))
+        variants:
+          - explains:
+              - illuminate_dates_disagree
+            where:
+              cast(assessment_id as string) not in ('185525', '186256',
+              '188349', '188353', '189131', '189344', '189353', '189354')
     grains:
       - []
       - - region
@@ -279,15 +309,13 @@ rows:
         tableau:
           - "% Completion"
           - \% Completion (copy)
-        # As the dashboard writes it: both FIXED counts read only overall rows.
+            # As the dashboard writes it: both FIXED counts read only overall rows.
         num:
           count(distinct if(response_type = 'overall' and percent_correct is not
           null, concat(student_number, '-', assessment_id), null))
         den:
           count(distinct if(response_type = 'overall', concat(student_number,
           '-', assessment_id), null))
-        missing_members:
-          - untagged_assessments
         variants:
           # Corrected: a student assigned the assessment counts in the
           # denominator whether or not they tested.
@@ -306,6 +334,32 @@ rows:
             den:
               count(distinct if(is_normed_scope, concat(student_number, '-',
               assessment_id), null))
+          - explains:
+              - completion_always_100
+              - illuminate_dates_disagree
+            num:
+              count(DISTINCT IF(NOT CAST(assessment_id AS STRING) IN ('185525',
+              '186256', '188349', '188353', '189131', '189344', '189353',
+              '189354'), IF(NOT response_type IS NULL, CONCAT(student_number,
+              '-', assessment_id), NULL), NULL))
+            den:
+              count(DISTINCT IF(NOT CAST(assessment_id AS STRING) IN ('185525',
+              '186256', '188349', '188353', '189131', '189344', '189353',
+              '189354'), CONCAT(student_number, '-', assessment_id), NULL))
+          - explains:
+              - completion_always_100
+              - untagged_assessments
+              - illuminate_dates_disagree
+            num:
+              count(DISTINCT IF(NOT CAST(assessment_id AS STRING) IN ('185525',
+              '186256', '188349', '188353', '189131', '189344', '189353',
+              '189354'), IF(is_normed_scope AND NOT response_type IS NULL,
+              CONCAT(student_number, '-', assessment_id), NULL), NULL))
+            den:
+              count(DISTINCT IF(NOT CAST(assessment_id AS STRING) IN ('185525',
+              '186256', '188349', '188353', '189131', '189344', '189353',
+              '189354'), IF(is_normed_scope, CONCAT(student_number, '-',
+              assessment_id), NULL), NULL))
     grains:
       - []
       - - module_type
@@ -537,17 +591,3 @@ rows:
         why:
           A Tableau-only calculation, parameter or grouping with no Cube
           counterpart.
-members:
-  untagged_assessments:
-    what:
-      Illuminate assessments with no AppSheet tag (is_normed_scope false). The
-      Assessment Dashboard view shows them; the Module Dashboard and DKI views
-      do not.
-    lives_in:
-      rpt_tableau__assessment_dashboard carries every Illuminate assessment;
-      fct_assessment_scores_enrollment_scoped's internal branch carries tagged
-      ones only.
-    suggested_edit:
-      Decide whether Cube should answer for untagged assessments. If so, carry
-      them in the fact (or a sibling fact) with is_internal_assessment false; if
-      not, scope the Assessment Dashboard rebuild to tagged assessments.

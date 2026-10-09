@@ -192,8 +192,7 @@ handled:
     response_type is in every grain, so each response type is compared on its
     own.
   "filter: Is Normed Scope [fa09b8]":
-    "missing_members untagged_assessments: the *_without SQL keeps tagged
-    assessments only."
+    The untagged_assessments mismatch's variants keep tagged assessments only.
   "filter: Module Type [7188f9]":
     A slice of a field the grains compare value by value.
   "filter: Response Type [58f457]":
@@ -240,13 +239,30 @@ rows:
           - Mastery
         num: count(if(is_mastery, 1, null))
         den: count(is_mastery)
-        missing_members:
-          - untagged_assessments
-        num_without: count(if(is_mastery and is_normed_scope, 1, null))
-        den_without: count(if(is_normed_scope, is_mastery, null))
         diagnose_by:
           cube: module_code
           sql: module_number
+        variants:
+          - explains:
+              - untagged_assessments
+            num: count(if(is_mastery and is_normed_scope, 1, null))
+            den: count(if(is_normed_scope, is_mastery, null))
+          - explains:
+              - illuminate_dates_disagree
+            where:
+              cast(assessment_id as string) not in ('185525', '186256',
+              '188349', '188353', '189131', '189344', '189353', '189354')
+          - explains:
+              - untagged_assessments
+              - illuminate_dates_disagree
+            num:
+              count(IF(NOT CAST(assessment_id AS STRING) IN ('185525', '186256',
+              '188349', '188353', '189131', '189344', '189353', '189354'),
+              IF(is_mastery AND is_normed_scope, 1, NULL), NULL))
+            den:
+              count(IF(NOT CAST(assessment_id AS STRING) IN ('185525', '186256',
+              '188349', '188353', '189131', '189344', '189353', '189354'),
+              IF(is_normed_scope, is_mastery, NULL), NULL))
     grains:
       - []
       - - response_type
@@ -1042,6 +1058,12 @@ rows:
         diagnose_by:
           cube: module_code
           sql: module_code
+        variants:
+          - explains:
+              - illuminate_dates_disagree
+            where:
+              cast(assessment_id as string) not in ('185525', '186256',
+              '188349', '188353', '189131', '189344', '189353', '189354')
     grains:
       - []
       - - response_type
@@ -1989,6 +2011,12 @@ rows:
         datasource: rpt_tableau__ddi_dashboard (kipptaf_tableau)
         num: sum(is_mastery_int)
         den: count(is_mastery_int)
+        variants:
+          - explains:
+              - illuminate_dates_disagree
+            where:
+              cast(assessment_id as string) not in ('185525', '186256',
+              '188349', '188353', '189131', '189344', '189353', '189354')
     grains:
       - - iep
       - - response_type
@@ -2702,10 +2730,27 @@ rows:
           - "% Mastery - IEP Diff from GenEd"
         num: count(if(is_mastery, 1, null))
         den: count(is_mastery)
-        missing_members:
-          - untagged_assessments
-        num_without: count(if(is_mastery and is_normed_scope, 1, null))
-        den_without: count(if(is_normed_scope, is_mastery, null))
+        variants:
+          - explains:
+              - untagged_assessments
+            num: count(if(is_mastery and is_normed_scope, 1, null))
+            den: count(if(is_normed_scope, is_mastery, null))
+          - explains:
+              - illuminate_dates_disagree
+            where:
+              cast(assessment_id as string) not in ('185525', '186256',
+              '188349', '188353', '189131', '189344', '189353', '189354')
+          - explains:
+              - untagged_assessments
+              - illuminate_dates_disagree
+            num:
+              count(IF(NOT CAST(assessment_id AS STRING) IN ('185525', '186256',
+              '188349', '188353', '189131', '189344', '189353', '189354'),
+              IF(is_mastery AND is_normed_scope, 1, NULL), NULL))
+            den:
+              count(IF(NOT CAST(assessment_id AS STRING) IN ('185525', '186256',
+              '188349', '188353', '189131', '189344', '189353', '189354'),
+              IF(is_normed_scope, is_mastery, NULL), NULL))
     grains:
       - - iep
       - - response_type
@@ -2925,15 +2970,34 @@ rows:
           - Student Number
           - "% of Students"
         sql: count(distinct student_number)
-        missing_members:
-          - untagged_assessments
-        sql_without: count(distinct if(is_normed_scope, student_number, null))
+        variants:
+          - explains:
+              - untagged_assessments
+            sql: count(distinct if(is_normed_scope, student_number, null))
+          - explains:
+              - illuminate_dates_disagree
+            where:
+              cast(assessment_id as string) not in ('185525', '186256',
+              '188349', '188353', '189131', '189344', '189353', '189354')
+          - explains:
+              - untagged_assessments
+              - illuminate_dates_disagree
+            sql:
+              count(DISTINCT IF(NOT CAST(assessment_id AS STRING) IN ('185525',
+              '186256', '188349', '188353', '189131', '189344', '189353',
+              '189354'), IF(is_normed_scope, student_number, NULL), NULL))
       - cube: count_students
         kind: count
         tableau:
           - Student Count
         datasource: rpt_tableau__ddi_dashboard (kipptaf_tableau)
         sql: count(distinct student_number)
+        variants:
+          - explains:
+              - illuminate_dates_disagree
+            where:
+              cast(assessment_id as string) not in ('185525', '186256',
+              '188349', '188353', '189131', '189344', '189353', '189354')
     grains:
       - []
       - - response_type
@@ -3801,10 +3865,27 @@ rows:
           - Percent Correct
         num: sum(percent_correct)
         den: count(percent_correct)
-        missing_members:
-          - untagged_assessments
-        num_without: sum(if(is_normed_scope, percent_correct, null))
-        den_without: count(if(is_normed_scope, percent_correct, null))
+        variants:
+          - explains:
+              - untagged_assessments
+            num: sum(if(is_normed_scope, percent_correct, null))
+            den: count(if(is_normed_scope, percent_correct, null))
+          - explains:
+              - illuminate_dates_disagree
+            where:
+              cast(assessment_id as string) not in ('185525', '186256',
+              '188349', '188353', '189131', '189344', '189353', '189354')
+          - explains:
+              - untagged_assessments
+              - illuminate_dates_disagree
+            num:
+              sum(IF(NOT CAST(assessment_id AS STRING) IN ('185525', '186256',
+              '188349', '188353', '189131', '189344', '189353', '189354'),
+              IF(is_normed_scope, percent_correct, NULL), NULL))
+            den:
+              count(IF(NOT CAST(assessment_id AS STRING) IN ('185525', '186256',
+              '188349', '188353', '189131', '189344', '189353', '189354'),
+              IF(is_normed_scope, percent_correct, NULL), NULL))
     grains:
       - []
       - - response_type
@@ -4516,9 +4597,22 @@ rows:
         tableau:
           - Performance Band Number
         sql: count(response_type)
-        missing_members:
-          - untagged_assessments
-        sql_without: count(if(is_normed_scope, response_type, null))
+        variants:
+          - explains:
+              - untagged_assessments
+            sql: count(if(is_normed_scope, response_type, null))
+          - explains:
+              - illuminate_dates_disagree
+            where:
+              cast(assessment_id as string) not in ('185525', '186256',
+              '188349', '188353', '189131', '189344', '189353', '189354')
+          - explains:
+              - untagged_assessments
+              - illuminate_dates_disagree
+            sql:
+              count(IF(NOT CAST(assessment_id AS STRING) IN ('185525', '186256',
+              '188349', '188353', '189131', '189344', '189353', '189354'),
+              IF(is_normed_scope, response_type, NULL), NULL))
     grains:
       - - performance_band
       - - response_type
@@ -4995,10 +5089,27 @@ rows:
           - Mastery
         num: count(if(is_mastery, 1, null))
         den: count(is_mastery)
-        missing_members:
-          - untagged_assessments
-        num_without: count(if(is_mastery and is_normed_scope, 1, null))
-        den_without: count(if(is_normed_scope, is_mastery, null))
+        variants:
+          - explains:
+              - untagged_assessments
+            num: count(if(is_mastery and is_normed_scope, 1, null))
+            den: count(if(is_normed_scope, is_mastery, null))
+          - explains:
+              - illuminate_dates_disagree
+            where:
+              cast(assessment_id as string) not in ('185525', '186256',
+              '188349', '188353', '189131', '189344', '189353', '189354')
+          - explains:
+              - untagged_assessments
+              - illuminate_dates_disagree
+            num:
+              count(IF(NOT CAST(assessment_id AS STRING) IN ('185525', '186256',
+              '188349', '188353', '189131', '189344', '189353', '189354'),
+              IF(is_mastery AND is_normed_scope, 1, NULL), NULL))
+            den:
+              count(IF(NOT CAST(assessment_id AS STRING) IN ('185525', '186256',
+              '188349', '188353', '189131', '189344', '189353', '189354'),
+              IF(is_normed_scope, is_mastery, NULL), NULL))
     grains:
       - - title
         - assessment_id
@@ -5481,17 +5592,29 @@ rows:
         why:
           A Tableau-only calculation, parameter or grouping with no Cube
           counterpart.
-members:
+mismatches:
   untagged_assessments:
+    title:
+      "fix: decide whether Cube answers for Illuminate assessments with no
+      AppSheet tag"
     what:
-      Illuminate assessments with no AppSheet tag (is_normed_scope false). The
-      Assessment Dashboard view shows them; the Module Dashboard and DKI views
-      do not.
-    lives_in:
-      rpt_tableau__assessment_dashboard carries every Illuminate assessment;
-      fct_assessment_scores_enrollment_scoped's internal branch carries tagged
-      ones only.
-    suggested_edit:
-      Decide whether Cube should answer for untagged assessments. If so, carry
-      them in the fact (or a sibling fact) with is_internal_assessment false; if
-      not, scope the Assessment Dashboard rebuild to tagged assessments.
+      Cube carries only the assessments tagged in AppSheet. The DDI Suite's
+      Assessment Dashboard tab shows every Illuminate assessment, tagged or not,
+      so its counts run higher. Either Cube adds untagged assessments, or the
+      Assessment Dashboard shows tagged ones only.
+    fix: undecided
+    evidence:
+      "Seek, 2025-26, overall rows in the top band: Cube 5,819; the extract
+      23,368, of which 5,916 are tagged."
+  illuminate_dates_disagree:
+    title: "data(illuminate): assessments whose year tag and date disagree"
+    what:
+      For 8 assessments, Illuminate's year tag and the assessment date point to
+      different school years (one date was typed a year late), so the dashboard
+      files them by the tag and Cube by the date. Fixing the source data fixes
+      both.
+    fix: source
+    issue: 3801
+    evidence:
+      Assessments 185525, 186256, 188349, 188353, 189131, 189344, 189353,
+      189354.
