@@ -67,16 +67,16 @@ Constraints to preserve when touching any of these:
   `libraries/dlt/focus/CLAUDE.md` → _Probe gating_). Losing them would delay
   picking up an in-place edit to a count-only table by up to a day; FRESH's
   Miami enrollment/attendance rows and the rest of Focus-sourced Miami data come
-  from `updated_at`-tracked tables and would not go stale. Those 78 tables have
-  NO unconditional reload — if one is suspected of drifting (a stuck signature,
-  a bad cursor), fix it with a manual launch of the Focus asset job for that
+  from `updated_at`-tracked tables and would not go stale. Those tables have NO
+  unconditional reload — if one is suspected of drifting (a stuck signature, a
+  bad cursor), fix it with a manual launch of the Focus asset job for that
   table. The safe rule for ops is not a clock time: do not re-run the delivery
   unless a Focus sync has run SINCE the last import.
 - **First diagnostic when midday Focus data looks stale: check whether the
   intraday sensor is running.** It ships with `defaultStatus` STOPPED and must
-  be enabled by hand after a one-off manual load of all 79 tables has seeded
-  their baselines (the 04:00 tier seeds only the count-only tables). A stopped
-  sensor silently freezes every `updated_at`-tracked table.
+  be enabled by hand after a one-off manual load of every table has seeded their
+  baselines (the 04:00 tier seeds only the count-only tables). A stopped sensor
+  silently freezes every `updated_at`-tracked table.
 - **The `contacts` API pull runs at 00:15, not 04:00.** That still lands before
   FRESH's 05:00 Tableau extract, so Miami's morning dashboard reads same-day
   data, and it puts `contacts` ahead of the NJ consumers of
