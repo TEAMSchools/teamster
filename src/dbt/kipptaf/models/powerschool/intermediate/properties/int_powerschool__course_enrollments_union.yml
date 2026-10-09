@@ -7,28 +7,6 @@ models:
       `_dbt_source_relation`. Exists so the SIS-neutral
       `int_students__course_enrollments` model can `ref()` it instead of
       inlining `dbt_utils.union_relations`.
-    config:
-      materialized: table
-      meta:
-        dagster:
-          # Cron, not eager: eager rebuilds on any change to any of the four
-          # district base_powerschool__course_enrollments sources, far more
-          # often than its only child, int_students__course_enrollments, reads
-          # it. Keep this tick identical to that model's, whose comment explains
-          # the schedule, so ~any_deps_in_progress builds the pair in order.
-          #
-          # Not a view: the uniqueness test on (cc_dcid, _dbt_source_project)
-          # guards the cross-district union grain, and the data-change
-          # condition re-materializes tables only, so as a view the test would
-          # fire on code change alone. Refs #5082
-          automation_condition:
-            cron_schedule: 0 0,4,6-18 * * *
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns:
-              - cc_dcid
-              - _dbt_source_project
     columns:
       - name: _dbt_source_project
         description: >-
