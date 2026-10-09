@@ -14,6 +14,5 @@ models:
       student_school_id alone so a student who moved regions keeps prior-year
       hours.
     config:
-      materialized: view
       meta:
         contains_pii: true

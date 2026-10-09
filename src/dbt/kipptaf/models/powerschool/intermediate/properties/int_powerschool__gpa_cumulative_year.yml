@@ -13,7 +13,6 @@ models:
       and school_level unchanged from the package model of the same name, which
       is where their descriptions live.
     config:
-      materialized: view
       meta:
         contains_pii: true
     columns:

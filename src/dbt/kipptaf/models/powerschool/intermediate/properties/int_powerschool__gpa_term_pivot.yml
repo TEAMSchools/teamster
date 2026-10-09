@@ -1,7 +1,6 @@
 models:
   - name: int_powerschool__gpa_term_pivot
     config:
-      materialized: view
       meta:
         contains_pii: true
     description: >-

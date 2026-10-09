@@ -1,4 +1,2 @@
 models:
   - name: stg_powerschool__courses
-    config:
-      materialized: view

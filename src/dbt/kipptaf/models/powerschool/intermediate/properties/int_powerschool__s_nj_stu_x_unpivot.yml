@@ -1,7 +1,6 @@
 models:
   - name: int_powerschool__s_nj_stu_x_unpivot
     config:
-      materialized: view
       meta:
         contains_pii: true
     description: >-

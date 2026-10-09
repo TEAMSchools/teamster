@@ -1,4 +1,2 @@
 models:
   - name: stg_powerschool__s_nj_ren_x
-    config:
-      materialized: view

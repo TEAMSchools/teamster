@@ -5,8 +5,6 @@ models:
       PowerSchool calendar day with the covering year term and the school's
       name, abbreviation, level, and city attached. Column docs live on the
       package model.
-    config:
-      materialized: view
     columns:
       - name: _dbt_source_relation
         data_type: string

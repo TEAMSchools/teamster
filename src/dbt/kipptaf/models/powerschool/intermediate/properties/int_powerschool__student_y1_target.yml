@@ -6,7 +6,6 @@ models:
       the weighted need on their open courses, and the pace status. Column
       semantics live on the package model.
     config:
-      materialized: view
       meta:
         contains_pii: true
     columns:

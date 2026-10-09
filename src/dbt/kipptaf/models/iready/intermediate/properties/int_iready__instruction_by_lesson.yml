@@ -5,8 +5,6 @@ models:
       the Newark/Camden/Paterson and Miami district staging models. The student
       number is normalized to the network student number and the source relation
       is rewritten to the school's Dagster code location.
-    config:
-      materialized: view
     columns:
       - name: school
         data_type: string

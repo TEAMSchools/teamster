@@ -1,7 +1,5 @@
 models:
   - name: int_deanslist__incidents
-    config:
-      materialized: view
     columns:
       - name: location_key
         data_type: string

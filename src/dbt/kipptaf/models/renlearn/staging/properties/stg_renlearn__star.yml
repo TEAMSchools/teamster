@@ -6,8 +6,6 @@ models:
       academic_year, star subject and discipline, administration window mapped
       from Fall, Winter, and Spring to BOY, MOY, and EOY, benchmark integer
       flags, and the per-subject row numbers.
-    config:
-      materialized: view
     columns:
       - name: assessment_id
         data_type: string

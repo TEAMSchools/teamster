@@ -7,8 +7,6 @@ models:
       `_dbt_source_relation`. Exists so the SIS-neutral
       `int_students__course_enrollments` model can `ref()` it instead of
       inlining `dbt_utils.union_relations`.
-    config:
-      materialized: view
     columns:
       - name: _dbt_source_project
         description: >-
