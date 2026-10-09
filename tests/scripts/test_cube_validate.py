@@ -198,3 +198,80 @@ def test_table_modified_reads_bigquery_metadata():
     at = dt.datetime(2026, 10, 9, 10, tzinfo=dt.UTC)
     fake = SimpleNamespace(get_table=lambda t: SimpleNamespace(modified=at))
     assert cv.table_modified("p.d.t", client=fake) == at
+
+
+DS = "rpt_demo (kipptaf_tableau)"
+CHECKS = {
+    "workbook": "Demo",
+    "workbook_luid": "w1",
+    "student_count": "demo.count_students",
+    "scope": {"filter": "Region"},
+    "filters": {"Region": {"cube": "demo.region"}},
+    "rows": {"111": ["demo.avg_score"]},
+    "sheets": {
+        "Overview - Table": {
+            "datasource": DS,
+            "dims": {
+                "Region": {"cube": "demo.region", "sql": "region"},
+                "School Name": {"cube": "demo.school", "sql": "school"},
+                "Student": {"cube": None, "sql": "student_name", "person": True},
+            },
+            "measures": {
+                "Avg Score": {
+                    "cube": "demo.avg_score",
+                    "sql": "avg(score)",
+                    "round": 2,
+                },
+                "% Complete": {
+                    "cube": "demo.pct_complete",
+                    "num": "count(distinct if(is_complete = 1, student_number, null))",
+                    "den": "count(distinct student_number)",
+                },
+            },
+        }
+    },
+    "mismatches": {},
+}
+
+
+def _write(tmp_path, d):
+    p = tmp_path / "checks.yml"
+    p.write_text(yaml.safe_dump(d, sort_keys=False))
+    return p
+
+
+def test_load_checks_builds_sheet_maps(tmp_path):
+    c = cv.load_checks(_write(tmp_path, CHECKS))
+    s = c["sheets"]["Overview - Table"]
+    assert s.dims["School Name"] == cv.Dim("demo.school", "school")
+    assert s.dims["Student"].person is True
+    assert s.measures["Avg Score"].round == 2
+    assert s.measures["% Complete"].num.startswith("count(distinct")
+    assert c["cube_filters"] == [] and c["extract_filters"] == []
+
+
+def test_load_checks_rejects_a_measure_without_sql(tmp_path):
+    bad = json.loads(json.dumps(CHECKS))
+    bad["sheets"]["Overview - Table"]["measures"]["Avg Score"].pop("sql")
+    with pytest.raises(cv.CheckError, match="give sql, or num and den"):
+        cv.load_checks(_write(tmp_path, bad))
+
+
+def test_load_checks_checks_mismatches_and_variants(tmp_path):
+    bad = json.loads(json.dumps(CHECKS))
+    bad["mismatches"] = {"dup": {"title": "fix(cube): x", "what": "y", "fix": "nobody"}}
+    with pytest.raises(cv.CheckError, match="fix must be one of"):
+        cv.load_checks(_write(tmp_path, bad))
+    bad["mismatches"]["dup"]["fix"] = "cube"
+    bad["sheets"]["Overview - Table"]["measures"]["Avg Score"]["variants"] = [
+        {"explains": ["other"], "sql": "avg(x)"}
+    ]
+    with pytest.raises(cv.CheckError, match="unknown other"):
+        cv.load_checks(_write(tmp_path, bad))
+
+
+def test_load_checks_rows_must_name_mapped_members(tmp_path):
+    bad = json.loads(json.dumps(CHECKS))
+    bad["rows"] = {"111": ["demo.nope"]}
+    with pytest.raises(cv.CheckError, match="demo.nope"):
+        cv.load_checks(_write(tmp_path, bad))

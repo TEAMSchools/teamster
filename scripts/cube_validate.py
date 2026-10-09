@@ -288,3 +288,117 @@ def table_modified(table: str, client=None) -> dt.datetime | None:
 
         client = bigquery.Client(project=BQ_PROJECT)
     return client.get_table(table).modified
+
+
+TABLE_CALCS = {"percent_of_total", "running_sum"}
+
+
+@dataclass(frozen=True)
+class Dim:
+    cube: str | None
+    sql: str
+    # Identifies a person: outputs show "a student", or this label, in place of values.
+    person: bool | str = False
+
+
+@dataclass
+class Measure:
+    caption: str
+    cube: str | None
+    sql: str | None = None
+    num: str | None = None
+    den: str | None = None
+    scale: float = 1.0
+    round: int | None = None
+    table_calc: str | None = None
+    missing_members: list[str] = field(default_factory=list)
+    variants: list[dict] = field(default_factory=list)
+
+
+@dataclass
+class SheetMap:
+    name: str
+    datasource: str
+    dims: dict[str, Dim]
+    measures: dict[str, Measure]
+
+
+def _measure(where: str, caption: str, m: dict, known: set[str]) -> Measure:
+    if not m.get("sql") and not (m.get("num") and m.get("den")):
+        raise CheckError(f"{where} / {caption}: give sql, or num and den")
+    if m.get("table_calc") and m["table_calc"] not in TABLE_CALCS:
+        raise CheckError(
+            f"{where} / {caption}: table_calc must be one of {sorted(TABLE_CALCS)}"
+        )
+    missing = list(m.get("missing_members") or [])
+    for v in m.get("variants") or []:
+        if not v.get("explains"):
+            raise CheckError(f"{where} / {caption}: a variant needs explains")
+        if not any(v.get(k) for k in ("sql", "num", "where", "cube_filters")):
+            raise CheckError(
+                f"{where} / {caption}: a variant needs sql, num and den, where, or cube_filters"
+            )
+        unknown = set(v["explains"]) - known - set(missing)
+        if unknown:
+            raise CheckError(
+                f"{where} / {caption}: variant explains unknown {', '.join(sorted(unknown))}"
+            )
+    return Measure(
+        caption,
+        m.get("cube"),
+        m.get("sql"),
+        m.get("num"),
+        m.get("den"),
+        float(m.get("scale", 1)),
+        m.get("round"),
+        m.get("table_calc"),
+        missing,
+        list(m.get("variants") or []),
+    )
+
+
+def load_checks(path) -> dict:
+    raw = yaml.safe_load(Path(path).read_text()) or {}
+    for key in ("workbook", "workbook_luid", "student_count", "sheets"):
+        if key not in raw:
+            raise CheckError(f"{path}: missing '{key}'")
+    mismatches = raw.get("mismatches") or {}
+    for name, m in mismatches.items():
+        for k in ("title", "what", "fix"):
+            if k not in m:
+                raise CheckError(f"mismatch {name}: missing '{k}'")
+        if m["fix"] not in FIX_SIDES:
+            raise CheckError(
+                f"mismatch {name}: fix must be one of {', '.join(FIX_SIDES)}"
+            )
+        m.setdefault("labels", [])
+        m.setdefault("related", [])
+        m.setdefault("where", "tableau")
+    sheets = {}
+    for name, s in raw["sheets"].items():
+        dims = {
+            c: Dim(d.get("cube"), d.get("sql") or "", d.get("person", False))
+            for c, d in (s.get("dims") or {}).items()
+        }
+        measures = {
+            c: _measure(name, c, m, set(mismatches))
+            for c, m in (s.get("measures") or {}).items()
+        }
+        sheets[name] = SheetMap(name, s.get("datasource", ""), dims, measures)
+    members = {m.cube for s in sheets.values() for m in s.measures.values() if m.cube}
+    for gid, ms in (raw.get("rows") or {}).items():
+        unknown = set(ms) - members
+        if unknown:
+            raise CheckError(
+                f"row {gid}: {', '.join(sorted(unknown))} is not mapped on any sheet"
+            )
+    return {
+        **raw,
+        "sheets": sheets,
+        "mismatches": mismatches,
+        "rows": raw.get("rows") or {},
+        "filters": raw.get("filters") or {},
+        "param_filters": raw.get("param_filters") or {},
+        "cube_filters": raw.get("cube_filters") or [],
+        "extract_filters": raw.get("extract_filters") or [],
+    }
