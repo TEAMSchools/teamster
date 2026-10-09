@@ -1,0 +1,3214 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Finalsite Incremental Contacts Implementation Plan - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#finalsite-incremental-contacts-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Finalsite Incremental Contacts Implementation Plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/fresh-dashboard-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/launch-page-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Launch Page
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube-access-individual-exceptions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube Access - Individual Exceptions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/tableau-permissions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tableau Permissions (People Data)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/fresh-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FRESH Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/carat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CARAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/csgf-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CSGF Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/crdc-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CRDC Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/ddi-stack-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DDI Stack Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/hs-early-warning-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HS Early Warning Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/dibels-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DIBELS Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/stat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/njdoe-universal-screener-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NJDOE Universal Screener Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/athletic-eligibility-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Athletic Eligibility Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/academic-health-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Academic Health Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/grad-plan-tracking-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Grad Plan Tracking Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/ignite-r2i-extract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IGNITE R2I Extract
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#global-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Global Constraints
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Global Constraints">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-1-derive-since-from-the-partition-key-in-the-asset-factory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1: Derive since from the partition key in the asset factory
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-2-pass-partitions_def-at-the-four-code-location-call-sites" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2: Pass partitions_def at the four code-location call sites
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-3-schedule-factory-at-0015-and-1200-for-all-four-districts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 3: Schedule factory at 00:15 and 12:00 for all four districts
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-4-hive-partition-the-dbt-external-source" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 4: Hive-partition the dbt external source
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-5-dedupe-to-one-row-per-contact-in-stg_finalsite__contacts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 5: Dedupe to one row per contact in stg_finalsite__contacts
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-6-read-the-deduped-model-in-stg_finalsite__contact_relationships" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 6: Read the deduped model in stg_finalsite__contact_relationships
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-7-cutover-runbook-and-spec-correction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 7: Cutover runbook and spec correction
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#out-of-scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Out of scope
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/plans/2026-08-10-finalsite-incremental-contacts.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="finalsite-incremental-contacts-implementation-plan">Finalsite Incremental Contacts Implementation Plan</h1>
+<blockquote>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use
+superpowers:subagent-driven-development (recommended) or
+superpowers:executing-plans to implement this plan task-by-task. Steps use
+checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+</blockquote>
+<p><strong>Goal:</strong> Pull only Finalsite contacts changed since the previous day,
+accumulate them as Hive-partitioned Avro, and dedupe to one row per contact in
+staging, so the pull runs twice daily instead of once and lands before the
+consumers that read it.</p>
+<p><strong>Architecture:</strong> The contacts asset gains a <code>DailyPartitionsDefinition</code> and
+derives the API's <code>since</code> parameter from its own partition key
+(<code>partition_date - 1</code>), so the partition key IS the watermark and no cursor is
+stored. Each pull writes its own Hive partition instead of replacing one object;
+<code>stg_finalsite__contacts</code> picks the newest partition per contact <code>id</code> with
+<code>dbt_utils.deduplicate</code>, and <code>stg_finalsite__contact_relationships</code> reads that
+deduped model rather than the raw source.</p>
+<p><strong>Tech Stack:</strong> Dagster (assets, <code>DailyPartitionsDefinition</code>, <code>@schedule</code>), dbt
+on BigQuery (external Avro source, <code>dbt_utils.deduplicate</code>, unit tests), <code>uv</code>
+for all Python execution.</p>
+<p><strong>Design spec:</strong>
+<code>docs/superpowers/specs/2026-08-10-finalsite-incremental-contacts-design.md</code></p>
+<h2 id="global-constraints">Global Constraints</h2>
+<ul>
+<li><strong>Worktree:</strong> all work happens in
+  <code>/workspaces/teamster/.worktrees/cbini/refactor/claude-finalsite-incremental-contacts</code>.
+  Use <code>git -C &lt;worktree&gt;</code> on every git call and
+  <code>--project-dir &lt;worktree&gt;/src/dbt/&lt;project&gt;</code> on every dbt call. Editing
+  <code>/workspaces/teamster/&lt;path&gt;</code> silently dirties <code>main</code>.</li>
+<li><strong>The asset key must not change:</strong> <code>[{code_location}, finalsite, contacts]</code>.</li>
+<li><strong>The dbt source name must not change:</strong> <code>source('finalsite', 'contacts')</code>.</li>
+<li><strong>Schedule names must stay byte-identical</strong> to today's
+  (<code>{code_location}__finalsite__contacts__daily_asset_job_schedule</code>). Renaming
+  mints a new Dagster+ schedule object and abandons its status and tick history.</li>
+<li><strong>No <code>QUALIFY</code>, no dup-masking <code>SELECT DISTINCT</code>.</strong> Use
+  <code>dbt_utils.deduplicate</code>. Its <code>order_by</code> must use bare <code>desc</code> — BigQuery
+  rejects explicit null-ordering inside the <code>array_agg</code> the macro compiles to.</li>
+<li><strong>The <code>finalsite_api</code> pool stays at limit 1.</strong> #4408 is out of scope.</li>
+<li><strong>Python:</strong> always <code>uv run</code>, never bare <code>python</code>. Return type annotations on
+  all library functions. Built-in generics (<code>list[str]</code>, <code>dict[str, int]</code>),
+  <code>X | None</code> for nullable.</li>
+<li><strong>Never run <code>trunk fmt</code> or <code>trunk check</code> manually</strong> except the explicit
+  <code>--force</code> verification steps in this plan, which run from inside the worktree
+  using the absolute binary <code>/workspaces/teamster/.trunk/tools/trunk</code>.</li>
+<li><strong>Markdown:</strong> every fenced block needs a language (MD040).</li>
+<li><strong><code>CUTOVER_START_DATE</code> is <code>2026-08-11</code>.</strong> If the merge slips past that date,
+  bump it before merging. A <code>start_date</code> in the past only shows extra missing
+  partitions, which is harmless, so erring early is safe.</li>
+</ul>
+<hr />
+<h3 id="task-1-derive-since-from-the-partition-key-in-the-asset-factory">Task 1: Derive <code>since</code> from the partition key in the asset factory</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>src/teamster/libraries/finalsite/api/assets.py</code></li>
+<li>Test: <code>tests/libraries/test_finalsite_contacts_since.py</code> (create)</li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: nothing from earlier tasks.</li>
+<li>Produces:</li>
+<li><code>get_finalsite_since(partition_key: str) -&gt; str</code> — returns the ISO date one
+    day before <code>partition_key</code>.</li>
+<li><code>FinalsiteContactsConfig</code> — a <code>dagster.Config</code> subclass with one field,
+    <code>full_pull: bool = False</code>.</li>
+<li>
+<p><code>build_finalsite_asset(code_location: str, asset_name: str, schema, params: dict | None = None, partitions_def=None)</code>
+    — the existing factory plus a trailing optional <code>partitions_def</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing test</strong></p>
+</li>
+</ul>
+<p>Create <code>tests/libraries/test_finalsite_contacts_since.py</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">teamster.libraries.finalsite.api.assets</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_finalsite_since</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_since_subtracts_the_safety_day</span><span class="p">():</span>
+    <span class="k">assert</span> <span class="n">get_finalsite_since</span><span class="p">(</span><span class="s2">"2026-08-11"</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"2026-08-10"</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_since_crosses_a_month_boundary</span><span class="p">():</span>
+    <span class="k">assert</span> <span class="n">get_finalsite_since</span><span class="p">(</span><span class="s2">"2026-08-01"</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"2026-07-31"</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_since_crosses_a_year_boundary</span><span class="p">():</span>
+    <span class="k">assert</span> <span class="n">get_finalsite_since</span><span class="p">(</span><span class="s2">"2026-01-01"</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"2025-12-31"</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run the test to verify it fails</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-finalsite-incremental-contacts<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="o">&amp;&amp;</span><span class="w"> </span>uv<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </span>tests/libraries/test_finalsite_contacts_since.py<span class="w"> </span>-v
+</code></pre></div>
+<p>Expected: FAIL with <code>ImportError: cannot import name 'get_finalsite_since'</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Add the helper and the config class</strong></li>
+</ul>
+<p>In <code>src/teamster/libraries/finalsite/api/assets.py</code>, replace the import block
+and add the two new definitions above <code>build_finalsite_asset</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">date</span><span class="p">,</span> <span class="n">timedelta</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">dagster</span><span class="w"> </span><span class="kn">import</span> <span class="n">AssetExecutionContext</span><span class="p">,</span> <span class="n">Config</span><span class="p">,</span> <span class="n">Output</span><span class="p">,</span> <span class="n">asset</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">teamster.core.asset_checks</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">build_check_spec_avro_schema_valid</span><span class="p">,</span>
+    <span class="n">check_avro_schema_valid</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">teamster.libraries.finalsite.api.resources</span><span class="w"> </span><span class="kn">import</span> <span class="n">FinalsiteResource</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">get_finalsite_since</span><span class="p">(</span><span class="n">partition_key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Return the `since` date for a pull, one day before the partition date.</span>
+
+<span class="sd">    The API's `since` is date-grained, so the finest possible increment is one</span>
+<span class="sd">    day. Subtracting a safety day means a run that straddles midnight or hits a</span>
+<span class="sd">    vendor clock skew cannot drop records, and it makes every pull on a given</span>
+<span class="sd">    date a superset of any earlier pull on that date — which is what lets the</span>
+<span class="sd">    midday run overwrite the overnight run's partition safely. Measured cost on</span>
+<span class="sd">    kippmiami: 43 extra records, 2 extra pages.</span>
+<span class="sd">    """</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">date</span><span class="o">.</span><span class="n">fromisoformat</span><span class="p">(</span><span class="n">partition_key</span><span class="p">)</span> <span class="o">-</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">FinalsiteContactsConfig</span><span class="p">(</span><span class="n">Config</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Run config for a contacts pull.</span>
+
+<span class="sd">    `full_pull` omits `since` entirely, pulling every contact. Used once per</span>
+<span class="sd">    district to seed the first partition; a `since` pull alone would leave</span>
+<span class="sd">    staging holding only contacts that changed after go-live.</span>
+<span class="sd">    """</span>
+
+    <span class="n">full_pull</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Run the test to verify it passes</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-finalsite-incremental-contacts<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="o">&amp;&amp;</span><span class="w"> </span>uv<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </span>tests/libraries/test_finalsite_contacts_since.py<span class="w"> </span>-v
+</code></pre></div>
+<p>Expected: 3 passed.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Wire the factory to use them</strong></li>
+</ul>
+<p>Replace the body of <code>build_finalsite_asset</code> in the same file:</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">build_finalsite_asset</span><span class="p">(</span>
+    <span class="n">code_location</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">asset_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">schema</span><span class="p">,</span>
+    <span class="n">params</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">partitions_def</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<span class="p">):</span>
+    <span class="n">key</span> <span class="o">=</span> <span class="p">[</span><span class="n">code_location</span><span class="p">,</span> <span class="s2">"finalsite"</span><span class="p">,</span> <span class="n">asset_name</span><span class="p">]</span>
+
+    <span class="nd">@asset</span><span class="p">(</span>
+        <span class="n">key</span><span class="o">=</span><span class="n">key</span><span class="p">,</span>
+        <span class="n">io_manager_key</span><span class="o">=</span><span class="s2">"io_manager_gcs_avro"</span><span class="p">,</span>
+        <span class="n">partitions_def</span><span class="o">=</span><span class="n">partitions_def</span><span class="p">,</span>
+        <span class="n">check_specs</span><span class="o">=</span><span class="p">[</span><span class="n">build_check_spec_avro_schema_valid</span><span class="p">(</span><span class="n">key</span><span class="p">)],</span>
+        <span class="n">group_name</span><span class="o">=</span><span class="s2">"finalsite"</span><span class="p">,</span>
+        <span class="c1"># One shared pool across ALL districts (not per-location): the Finalsite</span>
+        <span class="c1"># gateway throttles by source IP, so simultaneous pulls from the shared</span>
+        <span class="c1"># egress IP return 403 even with separate subdomains and credentials.</span>
+        <span class="c1"># Set this pool's limit to 1 in Dagster+ to serialize them. See #4408.</span>
+        <span class="n">pool</span><span class="o">=</span><span class="s2">"finalsite_api"</span><span class="p">,</span>
+        <span class="n">kinds</span><span class="o">=</span><span class="p">{</span><span class="s2">"python"</span><span class="p">},</span>
+    <span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_asset</span><span class="p">(</span>
+        <span class="n">context</span><span class="p">:</span> <span class="n">AssetExecutionContext</span><span class="p">,</span>
+        <span class="n">finalsite</span><span class="p">:</span> <span class="n">FinalsiteResource</span><span class="p">,</span>
+        <span class="n">config</span><span class="p">:</span> <span class="n">FinalsiteContactsConfig</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="n">request_params</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="p">(</span><span class="n">params</span> <span class="ow">or</span> <span class="p">{})}</span>
+
+        <span class="c1"># A partitioned asset pulls incrementally: the partition key IS the</span>
+        <span class="c1"># watermark, so a failed run writes no partition and advances nothing.</span>
+        <span class="c1"># `full_pull` is the seed escape hatch.</span>
+        <span class="k">if</span> <span class="n">partitions_def</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">config</span><span class="o">.</span><span class="n">full_pull</span><span class="p">:</span>
+            <span class="n">request_params</span><span class="p">[</span><span class="s2">"since"</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_finalsite_since</span><span class="p">(</span><span class="n">context</span><span class="o">.</span><span class="n">partition_key</span><span class="p">)</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="n">finalsite</span><span class="o">.</span><span class="n">list</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="n">asset_name</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">request_params</span><span class="p">)</span>
+
+        <span class="k">yield</span> <span class="n">Output</span><span class="p">(</span>
+            <span class="n">value</span><span class="o">=</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">schema</span><span class="p">),</span>
+            <span class="n">metadata</span><span class="o">=</span><span class="p">{</span>
+                <span class="s2">"record_count"</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">),</span>
+                <span class="s2">"since"</span><span class="p">:</span> <span class="n">request_params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"since"</span><span class="p">,</span> <span class="s2">"FULL PULL"</span><span class="p">),</span>
+            <span class="p">},</span>
+        <span class="p">)</span>
+        <span class="k">yield</span> <span class="n">check_avro_schema_valid</span><span class="p">(</span>
+            <span class="n">asset_key</span><span class="o">=</span><span class="n">context</span><span class="o">.</span><span class="n">asset_key</span><span class="p">,</span> <span class="n">records</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">schema</span><span class="o">=</span><span class="n">schema</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">_asset</span>
+</code></pre></div>
+<p><code>partitions_def=None</code> keeps the factory usable for a future non-partitioned
+asset, and the <code>since</code> derivation is gated on it rather than assumed.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Verify the module still imports</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-finalsite-incremental-contacts<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="o">&amp;&amp;</span><span class="w"> </span>uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">"from teamster.libraries.finalsite.api.assets import build_finalsite_asset, get_finalsite_since, FinalsiteContactsConfig; print('ok')"</span>
+</code></pre></div>
+<p>Expected: <code>ok</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-finalsite-incremental-contacts<span class="w"> </span>add<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/teamster/libraries/finalsite/api/assets.py<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>tests/libraries/test_finalsite_contacts_since.py
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-finalsite-incremental-contacts<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"feat(finalsite): derive an incremental since date from the partition key</span>
+
+<span class="s2">Refs #4715"</span>
+</code></pre></div>
+<hr />
+<h3 id="task-2-pass-partitions_def-at-the-four-code-location-call-sites">Task 2: Pass <code>partitions_def</code> at the four code-location call sites</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>src/teamster/code_locations/kippnewark/finalsite/assets.py:25-30</code></li>
+<li>Modify: <code>src/teamster/code_locations/kippcamden/finalsite/assets.py:27-32</code></li>
+<li>Modify: <code>src/teamster/code_locations/kippmiami/finalsite/assets.py:27-32</code></li>
+<li>Modify: <code>src/teamster/code_locations/kipppaterson/finalsite/assets.py:27-32</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: <code>build_finalsite_asset(..., partitions_def=...)</code> from Task 1.</li>
+<li>
+<p>Produces: four partitioned <code>contacts</code> assets, still keyed
+  <code>[{code_location}, finalsite, contacts]</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Edit all four call sites</strong></p>
+</li>
+</ul>
+<p>In each of the four files, add the two imports and the <code>partitions_def</code>
+argument. The <code>contacts</code> block becomes identical in all four (only
+<code>CODE_LOCATION</code> and the already-imported <code>LOCAL_TIMEZONE</code> differ by module):</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">dagster</span><span class="w"> </span><span class="kn">import</span> <span class="n">DailyPartitionsDefinition</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">teamster.code_locations.</span><span class="o">&lt;</span><span class="n">location</span><span class="o">&gt;</span> <span class="kn">import</span><span class="w"> </span><span class="nn">CODE_LOCATION</span><span class="o">,</span><span class="w"> </span><span class="nn">LOCAL_TIMEZONE</span>
+
+<span class="n">contacts</span> <span class="o">=</span> <span class="n">build_finalsite_asset</span><span class="p">(</span>
+    <span class="n">code_location</span><span class="o">=</span><span class="n">CODE_LOCATION</span><span class="p">,</span>
+    <span class="n">asset_name</span><span class="o">=</span><span class="s2">"contacts"</span><span class="p">,</span>
+    <span class="n">schema</span><span class="o">=</span><span class="n">CONTACTS_SCHEMA</span><span class="p">,</span>
+    <span class="n">params</span><span class="o">=</span><span class="p">{</span><span class="s2">"includes"</span><span class="p">:</span> <span class="s2">"contacts.relationships"</span><span class="p">},</span>
+    <span class="c1"># One partition per pull date. The partition key is the incremental</span>
+    <span class="c1"># watermark (see get_finalsite_since); start_date is the cutover date, so</span>
+    <span class="c1"># Dagster shows no backlog of partitions that predate the migration.</span>
+    <span class="n">partitions_def</span><span class="o">=</span><span class="n">DailyPartitionsDefinition</span><span class="p">(</span>
+        <span class="n">start_date</span><span class="o">=</span><span class="s2">"2026-08-11"</span><span class="p">,</span> <span class="n">timezone</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">LOCAL_TIMEZONE</span><span class="p">)</span>
+    <span class="p">),</span>
+<span class="p">)</span>
+</code></pre></div>
+<p>Note on each file: <code>kippnewark</code> already imports <code>CURRENT_FISCAL_YEAR</code> and
+<code>LOCAL_TIMEZONE</code> may not be imported yet — add it to the existing
+<code>from teamster.code_locations.&lt;location&gt; import ...</code> line rather than adding a
+second import statement.</p>
+<p><code>params</code> keeps only <code>includes</code>. Do <strong>not</strong> add <code>since_includes_expanded</code>: it
+measured as a no-op (identical id sets with it on and off), and the relationship
+edits it would catch arrive anyway.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Verify each module imports and the asset is partitioned</strong></li>
+</ul>
+<p><code>kippnewark</code> and <code>kippcamden</code> import cleanly. <code>kippmiami</code> and <code>kipptaf</code>
+<code>definitions</code> modules fail at module load in a codespace on unrelated dlt
+credential specs, so import the <code>finalsite</code> submodule alone for those.</p>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-finalsite-incremental-contacts<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="o">&amp;&amp;</span><span class="w"> </span>uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">"</span>
+<span class="s2">from dagster import DailyPartitionsDefinition</span>
+<span class="s2">for loc in ['kippnewark', 'kippcamden', 'kippmiami', 'kipppaterson']:</span>
+<span class="s2">    mod = __import__(f'teamster.code_locations.{loc}.finalsite.assets', fromlist=['contacts'])</span>
+<span class="s2">    pd = mod.contacts.partitions_def</span>
+<span class="s2">    assert isinstance(pd, DailyPartitionsDefinition), (loc, pd)</span>
+<span class="s2">    assert mod.contacts.key.to_user_string() == f'{loc}/finalsite/contacts', mod.contacts.key</span>
+<span class="s2">    print(loc, 'ok', pd)</span>
+<span class="s2">"</span>
+</code></pre></div>
+<p>Expected: four <code>ok</code> lines, each naming a <code>DailyPartitionsDefinition</code>.</p>
+<p>Use <code>key.to_user_string()</code> for the slash form — <code>str(AssetKey([...]))</code> returns
+the repr, not <code>code_location/integration/name</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-finalsite-incremental-contacts<span class="w"> </span>add<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/teamster/code_locations/kippnewark/finalsite/assets.py<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/teamster/code_locations/kippcamden/finalsite/assets.py<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/teamster/code_locations/kippmiami/finalsite/assets.py<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/teamster/code_locations/kipppaterson/finalsite/assets.py
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-finalsite-incremental-contacts<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"feat(finalsite): partition the contacts asset by pull date</span>
+
+<span class="s2">Refs #4715"</span>
+</code></pre></div>
+<hr />
+<h3 id="task-3-schedule-factory-at-0015-and-1200-for-all-four-districts">Task 3: Schedule factory at 00:15 and 12:00 for all four districts</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create: <code>src/teamster/libraries/finalsite/api/schedules.py</code></li>
+<li>Modify: <code>src/teamster/code_locations/kippnewark/finalsite/schedules.py</code></li>
+<li>Modify: <code>src/teamster/code_locations/kippcamden/finalsite/schedules.py</code></li>
+<li>Modify: <code>src/teamster/code_locations/kippmiami/finalsite/schedules.py</code></li>
+<li>Modify: <code>src/teamster/code_locations/kipppaterson/finalsite/schedules.py</code></li>
+<li>Test: <code>tests/libraries/test_finalsite_contacts_schedule.py</code> (create)</li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: the partitioned <code>contacts</code> assets from Task 2.</li>
+<li>
+<p>Produces:
+  <code>build_finalsite_contacts_schedule(code_location: str, execution_timezone: str, asset_selection: list[AssetsDefinition], cron_schedule: Sequence[str] = ("15 0 * * *", "0 12 * * *"), max_runtime_seconds: int = 900) -&gt; ScheduleDefinition</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing test</strong></p>
+</li>
+</ul>
+<p>Create <code>tests/libraries/test_finalsite_contacts_schedule.py</code>. It builds its own
+fixture asset rather than importing a code location, so it needs no dbt
+manifest:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">zoneinfo</span><span class="w"> </span><span class="kn">import</span> <span class="n">ZoneInfo</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">dagster</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">DailyPartitionsDefinition</span><span class="p">,</span>
+    <span class="n">DagsterInstance</span><span class="p">,</span>
+    <span class="n">asset</span><span class="p">,</span>
+    <span class="n">build_schedule_context</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">teamster.libraries.finalsite.api.schedules</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">build_finalsite_contacts_schedule</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">TIMEZONE</span> <span class="o">=</span> <span class="s2">"America/New_York"</span>
+
+
+<span class="nd">@asset</span><span class="p">(</span>
+    <span class="n">key</span><span class="o">=</span><span class="p">[</span><span class="s2">"test"</span><span class="p">,</span> <span class="s2">"finalsite"</span><span class="p">,</span> <span class="s2">"contacts"</span><span class="p">],</span>
+    <span class="n">partitions_def</span><span class="o">=</span><span class="n">DailyPartitionsDefinition</span><span class="p">(</span>
+        <span class="n">start_date</span><span class="o">=</span><span class="s2">"2026-08-01"</span><span class="p">,</span> <span class="n">timezone</span><span class="o">=</span><span class="n">TIMEZONE</span>
+    <span class="p">),</span>
+<span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_contacts</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span> <span class="o">...</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_run_requests_at</span><span class="p">(</span><span class="n">hour</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">minute</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+    <span class="n">schedule</span> <span class="o">=</span> <span class="n">build_finalsite_contacts_schedule</span><span class="p">(</span>
+        <span class="n">code_location</span><span class="o">=</span><span class="s2">"test"</span><span class="p">,</span>
+        <span class="n">execution_timezone</span><span class="o">=</span><span class="n">TIMEZONE</span><span class="p">,</span>
+        <span class="n">asset_selection</span><span class="o">=</span><span class="p">[</span><span class="n">_contacts</span><span class="p">],</span>
+    <span class="p">)</span>
+
+    <span class="n">context</span> <span class="o">=</span> <span class="n">build_schedule_context</span><span class="p">(</span>
+        <span class="n">instance</span><span class="o">=</span><span class="n">DagsterInstance</span><span class="o">.</span><span class="n">ephemeral</span><span class="p">(),</span>
+        <span class="n">scheduled_execution_time</span><span class="o">=</span><span class="n">datetime</span><span class="p">(</span>
+            <span class="mi">2026</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span> <span class="n">hour</span><span class="p">,</span> <span class="n">minute</span><span class="p">,</span> <span class="n">tzinfo</span><span class="o">=</span><span class="n">ZoneInfo</span><span class="p">(</span><span class="n">TIMEZONE</span><span class="p">)</span>
+        <span class="p">),</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">schedule</span><span class="o">.</span><span class="n">evaluate_tick</span><span class="p">(</span><span class="n">context</span><span class="p">)</span><span class="o">.</span><span class="n">run_requests</span> <span class="ow">or</span> <span class="p">[])</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_overnight_tick_targets_todays_partition</span><span class="p">():</span>
+    <span class="n">run_requests</span> <span class="o">=</span> <span class="n">_run_requests_at</span><span class="p">(</span><span class="n">hour</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">minute</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">run_requests</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+    <span class="k">assert</span> <span class="n">run_requests</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">partition_key</span> <span class="o">==</span> <span class="s2">"2026-08-11"</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_midday_tick_targets_the_same_partition</span><span class="p">():</span>
+    <span class="n">run_requests</span> <span class="o">=</span> <span class="n">_run_requests_at</span><span class="p">(</span><span class="n">hour</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">minute</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">run_requests</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+    <span class="k">assert</span> <span class="n">run_requests</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">partition_key</span> <span class="o">==</span> <span class="s2">"2026-08-11"</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_run_key_is_none_so_the_second_daily_tick_is_not_deduplicated</span><span class="p">():</span>
+    <span class="c1"># Both ticks target the same partition key. A run_key equal to the partition</span>
+    <span class="c1"># key would make Dagster's idempotency silently swallow the 12:00 run.</span>
+    <span class="k">assert</span> <span class="n">_run_requests_at</span><span class="p">(</span><span class="n">hour</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">minute</span><span class="o">=</span><span class="mi">15</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">run_key</span> <span class="ow">is</span> <span class="kc">None</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_max_runtime_tag_is_bounded_for_an_incremental_pull</span><span class="p">():</span>
+    <span class="n">tags</span> <span class="o">=</span> <span class="n">_run_requests_at</span><span class="p">(</span><span class="n">hour</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">minute</span><span class="o">=</span><span class="mi">15</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">tags</span>
+
+    <span class="k">assert</span> <span class="n">tags</span><span class="p">[</span><span class="s2">"dagster/max_runtime"</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"900"</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_schedule_name_matches_the_existing_dagster_plus_object</span><span class="p">():</span>
+    <span class="n">schedule</span> <span class="o">=</span> <span class="n">build_finalsite_contacts_schedule</span><span class="p">(</span>
+        <span class="n">code_location</span><span class="o">=</span><span class="s2">"test"</span><span class="p">,</span>
+        <span class="n">execution_timezone</span><span class="o">=</span><span class="n">TIMEZONE</span><span class="p">,</span>
+        <span class="n">asset_selection</span><span class="o">=</span><span class="p">[</span><span class="n">_contacts</span><span class="p">],</span>
+    <span class="p">)</span>
+
+    <span class="k">assert</span> <span class="n">schedule</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">"test__finalsite__contacts__daily_asset_job_schedule"</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run the test to verify it fails</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-finalsite-incremental-contacts<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="o">&amp;&amp;</span><span class="w"> </span>uv<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </span>tests/libraries/test_finalsite_contacts_schedule.py<span class="w"> </span>-v
+</code></pre></div>
+<p>Expected: FAIL with
+<code>ModuleNotFoundError: No module named 'teamster.libraries.finalsite.api.schedules'</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Write the schedule factory</strong></li>
+</ul>
+<p>Create <code>src/teamster/libraries/finalsite/api/schedules.py</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sequence</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">dagster</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">MAX_RUNTIME_SECONDS_TAG</span><span class="p">,</span>
+    <span class="n">AssetsDefinition</span><span class="p">,</span>
+    <span class="n">RunRequest</span><span class="p">,</span>
+    <span class="n">ScheduleDefinition</span><span class="p">,</span>
+    <span class="n">ScheduleEvaluationContext</span><span class="p">,</span>
+    <span class="n">schedule</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">build_finalsite_contacts_schedule</span><span class="p">(</span>
+    <span class="n">code_location</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">execution_timezone</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">asset_selection</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">AssetsDefinition</span><span class="p">],</span>
+    <span class="n">cron_schedule</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"15 0 * * *"</span><span class="p">,</span> <span class="s2">"0 12 * * *"</span><span class="p">),</span>
+    <span class="n">max_runtime_seconds</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">900</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ScheduleDefinition</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Build the twice-daily incremental contacts schedule for one district.</span>
+
+<span class="sd">    Both ticks target the SAME daily partition: 00:15 lands before the 01:00</span>
+<span class="sd">    Google Directory account sync and the 01:25 DeansList ship, and 12:00 feeds</span>
+<span class="sd">    the midday Focus import cycle. Neither is top-of-hour, where GKE Autopilot</span>
+<span class="sd">    fan-out adds 3-9 minutes of step-pod scheduling wait.</span>
+
+<span class="sd">    The name is deliberately unchanged from the pre-incremental schedule --</span>
+<span class="sd">    renaming mints a NEW Dagster+ schedule object and abandons this one's status</span>
+<span class="sd">    and tick history -- so "daily" now means twice a day.</span>
+<span class="sd">    """</span>
+
+    <span class="nd">@schedule</span><span class="p">(</span>
+        <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">code_location</span><span class="si">}</span><span class="s2">__finalsite__contacts__daily_asset_job_schedule"</span><span class="p">,</span>
+        <span class="n">cron_schedule</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">cron_schedule</span><span class="p">),</span>
+        <span class="n">execution_timezone</span><span class="o">=</span><span class="n">execution_timezone</span><span class="p">,</span>
+        <span class="n">target</span><span class="o">=</span><span class="n">asset_selection</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_schedule</span><span class="p">(</span><span class="n">context</span><span class="p">:</span> <span class="n">ScheduleEvaluationContext</span><span class="p">):</span>
+        <span class="c1"># run_key stays None: both daily ticks share a partition key, and a</span>
+        <span class="c1"># run_key equal to it would dedupe the second run away.</span>
+        <span class="k">yield</span> <span class="n">RunRequest</span><span class="p">(</span>
+            <span class="n">partition_key</span><span class="o">=</span><span class="n">context</span><span class="o">.</span><span class="n">scheduled_execution_time</span><span class="o">.</span><span class="n">date</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+            <span class="n">tags</span><span class="o">=</span><span class="p">{</span><span class="n">MAX_RUNTIME_SECONDS_TAG</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">max_runtime_seconds</span><span class="p">)},</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">_schedule</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Run the test to verify it passes</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-finalsite-incremental-contacts<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="o">&amp;&amp;</span><span class="w"> </span>uv<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </span>tests/libraries/test_finalsite_contacts_schedule.py<span class="w"> </span>-v
+</code></pre></div>
+<p>Expected: 5 passed.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Replace each district's schedule module</strong></li>
+</ul>
+<p><code>src/teamster/code_locations/kippnewark/finalsite/schedules.py</code> becomes (and the
+other three are identical apart from the import path):</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">teamster.code_locations.kippnewark</span><span class="w"> </span><span class="kn">import</span> <span class="n">CODE_LOCATION</span><span class="p">,</span> <span class="n">LOCAL_TIMEZONE</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">teamster.code_locations.kippnewark.finalsite.assets</span><span class="w"> </span><span class="kn">import</span> <span class="n">contacts</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">teamster.libraries.finalsite.api.schedules</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">build_finalsite_contacts_schedule</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">finalsite_contacts_daily_asset_job_schedule</span> <span class="o">=</span> <span class="n">build_finalsite_contacts_schedule</span><span class="p">(</span>
+    <span class="n">code_location</span><span class="o">=</span><span class="n">CODE_LOCATION</span><span class="p">,</span>
+    <span class="n">execution_timezone</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">LOCAL_TIMEZONE</span><span class="p">),</span>
+    <span class="n">asset_selection</span><span class="o">=</span><span class="p">[</span><span class="n">contacts</span><span class="p">],</span>
+<span class="p">)</span>
+
+<span class="n">schedules</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">finalsite_contacts_daily_asset_job_schedule</span><span class="p">,</span>
+<span class="p">]</span>
+</code></pre></div>
+<p>For <code>kippmiami</code>, this replaces the <code>["0 4 * * *", "0 12 * * *"]</code> cron. Preserve
+the substance of its existing comment by moving the midday-chain rationale into
+the call site:</p>
+<div class="highlight"><pre><span></span><code><span class="n">finalsite_contacts_daily_asset_job_schedule</span> <span class="o">=</span> <span class="n">build_finalsite_contacts_schedule</span><span class="p">(</span>
+    <span class="n">code_location</span><span class="o">=</span><span class="n">CODE_LOCATION</span><span class="p">,</span>
+    <span class="n">execution_timezone</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">LOCAL_TIMEZONE</span><span class="p">),</span>
+    <span class="n">asset_selection</span><span class="o">=</span><span class="p">[</span><span class="n">contacts</span><span class="p">],</span>
+    <span class="c1"># 12:00 feeds the midday Focus import cycle, firing alongside the Focus dlt</span>
+    <span class="c1"># pull rather than staggered behind it: they share no pool and neither gates</span>
+    <span class="c1"># the other. The 12:45 delivery is a plain cron with a 45-minute time</span>
+    <span class="c1"># budget, not a dependency -- an incremental pull uses ~1-2 min of it where</span>
+    <span class="c1"># the full snapshot used ~5. 00:15 replaces the old 04:00: FRESH's 05:00</span>
+    <span class="c1"># Tableau extract still reads a same-day pull, and the NJ consumers at 01:00</span>
+    <span class="c1"># and 01:25 stop reading yesterday's. See #4715.</span>
+<span class="p">)</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Verify the schedules resolve</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-finalsite-incremental-contacts<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="o">&amp;&amp;</span><span class="w"> </span>uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">"</span>
+<span class="s2">for loc in ['kippnewark', 'kippcamden', 'kippmiami', 'kipppaterson']:</span>
+<span class="s2">    mod = __import__(f'teamster.code_locations.{loc}.finalsite.schedules', fromlist=['schedules'])</span>
+<span class="s2">    s = mod.schedules[0]</span>
+<span class="s2">    assert s.name == f'{loc}__finalsite__contacts__daily_asset_job_schedule', s.name</span>
+<span class="s2">    print(s.name, s.cron_schedule)</span>
+<span class="s2">"</span>
+</code></pre></div>
+<p>Expected: four lines, each with the unchanged name and
+<code>['15 0 * * *', '0 12 * * *']</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-finalsite-incremental-contacts<span class="w"> </span>add<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/teamster/libraries/finalsite/api/schedules.py<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>tests/libraries/test_finalsite_contacts_schedule.py<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/teamster/code_locations/kippnewark/finalsite/schedules.py<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/teamster/code_locations/kippcamden/finalsite/schedules.py<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/teamster/code_locations/kippmiami/finalsite/schedules.py<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/teamster/code_locations/kipppaterson/finalsite/schedules.py
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-finalsite-incremental-contacts<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"feat(finalsite): pull contacts at 00:15 and 12:00 on a shared schedule factory</span>
+
+<span class="s2">The NJ consumers of stg_finalsite__contacts run at 01:00 (Google Directory</span>
+<span class="s2">user sync), 01:25 (DeansList) and 18:00 (ParentSquare), all ahead of the</span>
+<span class="s2">04:00 pull that fed them, so they shipped day-old contacts. 00:15 puts the</span>
+<span class="s2">pull in front of them. Drops max_runtime from 3600s to 900s.</span>
+
+<span class="s2">Refs #4715"</span>
+</code></pre></div>
+<hr />
+<h3 id="task-4-hive-partition-the-dbt-external-source">Task 4: Hive-partition the dbt external source</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>src/dbt/finalsite/models/sources-external.yml:28-40</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: the partitioned GCS layout written by Task 2's asset.</li>
+<li>
+<p>Produces: <code>source('finalsite', 'contacts')</code> exposing <code>_dagster_partition_date</code>
+  as a column, which Task 5 orders on.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Add <code>hive_partition_uri_prefix</code> to the contacts source</strong></p>
+</li>
+</ul>
+<p>The <code>contacts</code> entry becomes (mirroring <code>status_report</code> twelve lines above it,
+which already uses this pattern):</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">contacts</span>
+<span class="w">  </span><span class="nt">external</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">location</span><span class="p">:</span><span class="w"> </span><span class="s">"{{</span><span class="nv"> </span><span class="s">var('cloud_storage_uri_base')</span><span class="nv"> </span><span class="s">}}/finalsite/contacts/*"</span>
+<span class="w">    </span><span class="nt">options</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">connection_name</span><span class="p">:</span><span class="w"> </span><span class="s">"{{</span><span class="nv"> </span><span class="s">var('bigquery_external_connection_name')</span><span class="nv"> </span><span class="s">}}"</span>
+<span class="w">      </span><span class="nt">metadata_cache_mode</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">MANUAL</span>
+<span class="w">      </span><span class="nt">max_staleness</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">INTERVAL 7 DAY</span>
+<span class="w">      </span><span class="nt">hive_partition_uri_prefix</span><span class="p">:</span>
+<span class="w">        </span><span class="s">"{{</span><span class="nv"> </span><span class="s">var('cloud_storage_uri_base',</span>
+<span class="w">        </span><span class="s">env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE',</span><span class="nv"> </span><span class="s">''))</span><span class="nv"> </span><span class="s">}}/finalsite/contacts/"</span>
+<span class="w">      </span><span class="nt">format</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">AVRO</span>
+<span class="w">      </span><span class="nt">enable_logical_types</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">  </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">meta</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">dagster</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">asset_key</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">"{{</span><span class="nv"> </span><span class="s">project_name</span><span class="nv"> </span><span class="s">}}"</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">finalsite</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">contacts</span>
+</code></pre></div>
+<p><code>location</code> is unchanged. Only <code>hive_partition_uri_prefix</code> is added.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Verify the project still parses</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="o">&amp;&amp;</span><span class="w"> </span>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>parse<span class="w"> </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-finalsite-incremental-contacts/src/dbt/kippnewark
+</code></pre></div>
+<p>Expected: parse succeeds with no error mentioning <code>sources-external.yml</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-finalsite-incremental-contacts<span class="w"> </span>add<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/finalsite/models/sources-external.yml
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-finalsite-incremental-contacts<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"feat(finalsite): hive-partition the contacts external source</span>
+
+<span class="s2">Refs #4715"</span>
+</code></pre></div>
+<hr />
+<h3 id="task-5-dedupe-to-one-row-per-contact-in-stg_finalsite__contacts">Task 5: Dedupe to one row per contact in <code>stg_finalsite__contacts</code></h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>src/dbt/finalsite/models/api/staging/stg_finalsite__contacts.sql</code></li>
+<li>Modify:
+  <code>src/dbt/finalsite/models/api/staging/properties/stg_finalsite__contacts.yml</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: <code>_dagster_partition_date</code> from Task 4.</li>
+<li>
+<p>Produces: <code>stg_finalsite__contacts</code> at one row per <code>finalsite_enrollment_id</code>,
+  now also carrying a <code>relationships</code> column of type
+  <code>array&lt;struct&lt;id string, rel_id string, rel_name string, rel_type string, primary bool, financial bool, portal_access bool&gt;&gt;</code>,
+  which Task 6 unnests.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing unit test</strong></p>
+</li>
+</ul>
+<p>Append to <code>unit_tests:</code> in
+<code>src/dbt/finalsite/models/api/staging/properties/stg_finalsite__contacts.yml</code>.
+Two partitions of the same contact go in; the newer one wins and one row
+survives:</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">test_contacts_dedupe_newest_partition_wins</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Accumulated partitions hold the same contact more than once. The</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">newest `_dagster_partition_date` wins and exactly one row survives per</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">contact, so the singleton grain every downstream model assumes still holds.</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">Guards the `is_primary` and address-of-record picks in</span><span class="w"> </span><span class="c1">#4616 / #4617 / #4680.</span>
+<span class="w">  </span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">stg_finalsite__contacts</span>
+<span class="w">  </span><span class="nt">given</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">source('finalsite', 'contacts')</span>
+<span class="w">      </span><span class="nt">format</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sql</span>
+<span class="w">      </span><span class="nt">rows</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">        </span><span class="no">select</span>
+<span class="w">          </span><span class="no">'con1' as id,</span>
+<span class="w">          </span><span class="no">'Stale' as first_name,</span>
+<span class="w">          </span><span class="no">cast(null as string) as middle_name,</span>
+<span class="w">          </span><span class="no">'Doe' as last_name,</span>
+<span class="w">          </span><span class="no">'Stale Doe' as full_name,</span>
+<span class="w">          </span><span class="no">cast(null as string) as preferred_name,</span>
+<span class="w">          </span><span class="no">'stale@example.com' as email,</span>
+<span class="w">          </span><span class="no">'F' as gender,</span>
+<span class="w">          </span><span class="no">'Female' as gender_display,</span>
+<span class="w">          </span><span class="no">'Female' as gender_full_text,</span>
+<span class="w">          </span><span class="no">'applicant' as status,</span>
+<span class="w">          </span><span class="no">'new' as enrollment_type,</span>
+<span class="w">          </span><span class="no">cast(null as string) as inquiry_submit_date,</span>
+<span class="w">          </span><span class="no">cast(null as string) as application_submit_date,</span>
+<span class="w">          </span><span class="no">cast(null as string) as contract_submit_date,</span>
+<span class="w">          </span><span class="no">struct('5' as canonical_name, 'Grade 5' as name, 'ES' as school_level)</span>
+<span class="w">            </span><span class="no">as grade,</span>
+<span class="w">          </span><span class="no">struct('6' as canonical_name) as prospect_entry_grade,</span>
+<span class="w">          </span><span class="no">struct(2025 as start_year) as school_year,</span>
+<span class="w">          </span><span class="no">struct(2026 as start_year) as prospect_entry_year,</span>
+<span class="w">          </span><span class="no">struct('Cell' as phone_type, '8623007240' as number) as phone_1,</span>
+<span class="w">          </span><span class="no">struct(cast(null as string) as phone_type, cast(null as string) as number)</span>
+<span class="w">            </span><span class="no">as phone_2,</span>
+<span class="w">          </span><span class="no">struct(cast(null as string) as phone_type, cast(null as string) as number)</span>
+<span class="w">            </span><span class="no">as phone_3,</span>
+<span class="w">          </span><span class="no">array&lt;struct&lt;field_name string, value struct&lt;string_value string&gt;&gt;&gt;[]</span>
+<span class="w">            </span><span class="no">as custom_attributes,</span>
+<span class="w">          </span><span class="no">array&lt;struct&lt;field_name string, value struct&lt;string_value string&gt;&gt;&gt;[]</span>
+<span class="w">            </span><span class="no">as id_attributes,</span>
+<span class="w">          </span><span class="no">array&lt;struct&lt;field_name string, value struct&lt;string_value string&gt;&gt;&gt;[]</span>
+<span class="w">            </span><span class="no">as track_attributes,</span>
+<span class="w">          </span><span class="no">'2015-04-05' as birth_date,</span>
+<span class="w">          </span><span class="no">[</span>
+<span class="w">            </span><span class="no">struct(</span>
+<span class="w">              </span><span class="no">'hh1' as id,</span>
+<span class="w">              </span><span class="no">'1 Old St' as address_1,</span>
+<span class="w">              </span><span class="no">cast(null as string) as address_2,</span>
+<span class="w">              </span><span class="no">'Newark' as city,</span>
+<span class="w">              </span><span class="no">'NJ' as state,</span>
+<span class="w">              </span><span class="no">'07102' as zip,</span>
+<span class="w">              </span><span class="no">'US' as country</span>
+<span class="w">            </span><span class="no">)</span>
+<span class="w">          </span><span class="no">] as households,</span>
+<span class="w">          </span><span class="no">array&lt;</span>
+<span class="w">            </span><span class="no">struct&lt;</span>
+<span class="w">              </span><span class="no">id string,</span>
+<span class="w">              </span><span class="no">rel_id string,</span>
+<span class="w">              </span><span class="no">rel_name string,</span>
+<span class="w">              </span><span class="no">rel_type string,</span>
+<span class="w">              </span><span class="no">`primary` bool,</span>
+<span class="w">              </span><span class="no">financial bool,</span>
+<span class="w">              </span><span class="no">portal_access bool</span>
+<span class="w">            </span><span class="no">&gt;</span>
+<span class="w">          </span><span class="no">&gt;[] as relationships,</span>
+<span class="w">          </span><span class="no">'2026-08-10' as _dagster_partition_date</span>
+<span class="w">        </span><span class="no">union all</span>
+<span class="w">        </span><span class="no">select</span>
+<span class="w">          </span><span class="no">'con1' as id,</span>
+<span class="w">          </span><span class="no">'Fresh' as first_name,</span>
+<span class="w">          </span><span class="no">cast(null as string) as middle_name,</span>
+<span class="w">          </span><span class="no">'Doe' as last_name,</span>
+<span class="w">          </span><span class="no">'Fresh Doe' as full_name,</span>
+<span class="w">          </span><span class="no">cast(null as string) as preferred_name,</span>
+<span class="w">          </span><span class="no">'fresh@example.com' as email,</span>
+<span class="w">          </span><span class="no">'F' as gender,</span>
+<span class="w">          </span><span class="no">'Female' as gender_display,</span>
+<span class="w">          </span><span class="no">'Female' as gender_full_text,</span>
+<span class="w">          </span><span class="no">'enrolled' as status,</span>
+<span class="w">          </span><span class="no">'returning' as enrollment_type,</span>
+<span class="w">          </span><span class="no">cast(null as string) as inquiry_submit_date,</span>
+<span class="w">          </span><span class="no">cast(null as string) as application_submit_date,</span>
+<span class="w">          </span><span class="no">cast(null as string) as contract_submit_date,</span>
+<span class="w">          </span><span class="no">struct('6' as canonical_name, 'Grade 6' as name, 'MS' as school_level)</span>
+<span class="w">            </span><span class="no">as grade,</span>
+<span class="w">          </span><span class="no">struct('6' as canonical_name) as prospect_entry_grade,</span>
+<span class="w">          </span><span class="no">struct(2026 as start_year) as school_year,</span>
+<span class="w">          </span><span class="no">struct(2026 as start_year) as prospect_entry_year,</span>
+<span class="w">          </span><span class="no">struct('Cell' as phone_type, '8623007240' as number) as phone_1,</span>
+<span class="w">          </span><span class="no">struct(cast(null as string) as phone_type, cast(null as string) as number)</span>
+<span class="w">            </span><span class="no">as phone_2,</span>
+<span class="w">          </span><span class="no">struct(cast(null as string) as phone_type, cast(null as string) as number)</span>
+<span class="w">            </span><span class="no">as phone_3,</span>
+<span class="w">          </span><span class="no">array&lt;struct&lt;field_name string, value struct&lt;string_value string&gt;&gt;&gt;[]</span>
+<span class="w">            </span><span class="no">as custom_attributes,</span>
+<span class="w">          </span><span class="no">array&lt;struct&lt;field_name string, value struct&lt;string_value string&gt;&gt;&gt;[]</span>
+<span class="w">            </span><span class="no">as id_attributes,</span>
+<span class="w">          </span><span class="no">array&lt;struct&lt;field_name string, value struct&lt;string_value string&gt;&gt;&gt;[]</span>
+<span class="w">            </span><span class="no">as track_attributes,</span>
+<span class="w">          </span><span class="no">'2015-04-05' as birth_date,</span>
+<span class="w">          </span><span class="no">[</span>
+<span class="w">            </span><span class="no">struct(</span>
+<span class="w">              </span><span class="no">'hh1' as id,</span>
+<span class="w">              </span><span class="no">'2 New Ave' as address_1,</span>
+<span class="w">              </span><span class="no">cast(null as string) as address_2,</span>
+<span class="w">              </span><span class="no">'Newark' as city,</span>
+<span class="w">              </span><span class="no">'NJ' as state,</span>
+<span class="w">              </span><span class="no">'07103' as zip,</span>
+<span class="w">              </span><span class="no">'US' as country</span>
+<span class="w">            </span><span class="no">)</span>
+<span class="w">          </span><span class="no">] as households,</span>
+<span class="w">          </span><span class="no">array&lt;</span>
+<span class="w">            </span><span class="no">struct&lt;</span>
+<span class="w">              </span><span class="no">id string,</span>
+<span class="w">              </span><span class="no">rel_id string,</span>
+<span class="w">              </span><span class="no">rel_name string,</span>
+<span class="w">              </span><span class="no">rel_type string,</span>
+<span class="w">              </span><span class="no">`primary` bool,</span>
+<span class="w">              </span><span class="no">financial bool,</span>
+<span class="w">              </span><span class="no">portal_access bool</span>
+<span class="w">            </span><span class="no">&gt;</span>
+<span class="w">          </span><span class="no">&gt;[] as relationships,</span>
+<span class="w">          </span><span class="no">'2026-08-11' as _dagster_partition_date</span>
+<span class="w">  </span><span class="nt">expect</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">format</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sql</span>
+<span class="w">    </span><span class="nt">rows</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">      </span><span class="no">select</span>
+<span class="w">        </span><span class="no">'con1' as finalsite_enrollment_id,</span>
+<span class="w">        </span><span class="no">'Fresh' as first_name,</span>
+<span class="w">        </span><span class="no">'enrolled' as status,</span>
+<span class="w">        </span><span class="no">'returning' as enrollment_type,</span>
+<span class="w">        </span><span class="no">'2 New Ave' as address_1,</span>
+<span class="w">        </span><span class="no">'07103' as zip</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Add <code>_dagster_partition_date</code> to the existing unit test
+      fixture</strong></li>
+</ul>
+<p><code>test_contacts_phone_normalization</code> supplies an explicit column list, and the
+model is about to reference <code>_dagster_partition_date</code> in its <code>order_by</code>. Add one
+line to that fixture's <code>rows</code> block (after <code>] as households</code>, line 273):</p>
+<div class="highlight"><pre><span></span><code><span class="p">,</span>
+<span class="s1">'2026-08-11'</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">_dagster_partition_date</span>
+</code></pre></div>
+<p>Without this, the existing test fails to compile once Step 3 lands.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Run the unit tests to verify the new one fails</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="o">&amp;&amp;</span><span class="w"> </span>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span><span class="nb">test</span><span class="w"> </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-finalsite-incremental-contacts/src/dbt/kippnewark<span class="w"> </span><span class="se">\</span>
+<span class="w">       </span>--select<span class="w"> </span>stg_finalsite__contacts
+</code></pre></div>
+<p>Expected: <code>test_contacts_dedupe_newest_partition_wins</code> FAILS with 2 rows
+returned where 1 was expected (the model does not dedupe yet).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Add the dedupe and the <code>relationships</code> passthrough</strong></li>
+</ul>
+<p><code>src/dbt/finalsite/models/api/staging/stg_finalsite__contacts.sql</code> gains a CTE
+wrapper. The existing projection is unchanged except for the added
+<code>relationships</code> column and the new <code>from</code> clause:</p>
+<div class="highlight"><pre><span></span><code><span class="k">with</span>
+<span class="w">    </span><span class="c1">-- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below</span>
+<span class="w">    </span><span class="k">source</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">source</span><span class="p">(</span><span class="ss">"finalsite"</span><span class="p">,</span><span class="w"> </span><span class="ss">"contacts"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="p">),</span>
+
+<span class="w">    </span><span class="c1">-- Pulls accumulate one Hive partition per pull date, and a `since` window</span>
+<span class="w">    </span><span class="c1">-- re-delivers a contact on every pull that covers it, so the same `id`</span>
+<span class="w">    </span><span class="c1">-- appears in many partitions. Keep the newest. `desc` alone is deliberate:</span>
+<span class="w">    </span><span class="c1">-- the macro compiles to array_agg(... limit 1) and BigQuery rejects</span>
+<span class="w">    </span><span class="c1">-- explicit null-ordering inside an aggregate. See #4715.</span>
+<span class="w">    </span><span class="n">deduplicated</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="err">{{</span>
+<span class="w">            </span><span class="n">dbt_utils</span><span class="p">.</span><span class="n">deduplicate</span><span class="p">(</span>
+<span class="w">                </span><span class="n">relation</span><span class="o">=</span><span class="ss">"source"</span><span class="p">,</span>
+<span class="w">                </span><span class="n">partition_by</span><span class="o">=</span><span class="ss">"id"</span><span class="p">,</span>
+<span class="w">                </span><span class="n">order_by</span><span class="o">=</span><span class="ss">"_dagster_partition_date desc"</span><span class="p">,</span>
+<span class="w">            </span><span class="p">)</span>
+<span class="w">        </span><span class="err">}}</span>
+<span class="w">    </span><span class="p">)</span>
+
+<span class="k">select</span>
+<span class="w">    </span><span class="n">id</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">finalsite_enrollment_id</span><span class="p">,</span>
+<span class="w">    </span><span class="c1">-- ... every existing column expression, unchanged ...</span>
+
+<span class="w">    </span><span class="c1">-- passed through whole so stg_finalsite__contact_relationships can unnest</span>
+<span class="w">    </span><span class="c1">-- one deduped copy rather than re-reading the accumulated source. Same</span>
+<span class="w">    </span><span class="c1">-- contract-widening move `households` already carries for</span>
+<span class="w">    </span><span class="c1">-- int_finalsite__contacts__households.</span>
+<span class="w">    </span><span class="n">relationships</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="n">deduplicated</span>
+</code></pre></div>
+<p>Change only three things in that file: wrap with the two CTEs, add
+<code>relationships,</code> to the select list, and change the final line from
+<code>from {{ source("finalsite", "contacts") }}</code> to <code>from deduplicated</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Declare <code>relationships</code> in the enforced contract</strong></li>
+</ul>
+<p><code>api/staging</code> is <code>+contract: enforced: true</code>, so the new column must be
+declared. Add to the <code>columns:</code> list in
+<code>properties/stg_finalsite__contacts.yml</code>, after the <code>households</code> entry:</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">relationships</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">array&lt;struct&lt;id string, rel_id string, rel_name string, rel_type string,</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">`primary` bool, financial bool, portal_access bool&gt;&gt;</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">Raw bidirectional relationship links for this contact, passed through whole</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">so `stg_finalsite__contact_relationships` unnests a deduped copy instead of</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">re-reading the accumulated source. `primary` is a per-record singleton and</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">is NULL, not false, when unset.</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Run the unit tests to verify both pass</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="o">&amp;&amp;</span><span class="w"> </span>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span><span class="nb">test</span><span class="w"> </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-finalsite-incremental-contacts/src/dbt/kippnewark<span class="w"> </span><span class="se">\</span>
+<span class="w">       </span>--select<span class="w"> </span>stg_finalsite__contacts
+</code></pre></div>
+<p>Expected: <code>test_contacts_dedupe_newest_partition_wins</code> PASSES and
+<code>test_contacts_phone_normalization</code> still PASSES.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-finalsite-incremental-contacts<span class="w"> </span>add<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/finalsite/models/api/staging/stg_finalsite__contacts.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/finalsite/models/api/staging/properties/stg_finalsite__contacts.yml
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-finalsite-incremental-contacts<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"feat(finalsite): dedupe accumulated contacts partitions to one row per contact</span>
+
+<span class="s2">Refs #4715"</span>
+</code></pre></div>
+<hr />
+<h3 id="task-6-read-the-deduped-model-in-stg_finalsite__contact_relationships">Task 6: Read the deduped model in <code>stg_finalsite__contact_relationships</code></h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify:
+  <code>src/dbt/finalsite/models/api/staging/stg_finalsite__contact_relationships.sql</code></li>
+<li>Modify:
+  <code>src/dbt/finalsite/models/api/staging/properties/stg_finalsite__contact_relationships.yml</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: <code>stg_finalsite__contacts.relationships</code> and
+  <code>stg_finalsite__contacts.household_1_id</code> from Task 5.</li>
+<li>
+<p>Produces: <code>stg_finalsite__contact_relationships</code> at one row per (contact,
+  relationship), unchanged column set.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing unit test</strong></p>
+</li>
+</ul>
+<p>Add a <code>unit_tests:</code> entry to
+<code>properties/stg_finalsite__contact_relationships.yml</code>. Because this model now
+reads <code>stg_finalsite__contacts</code>, the fixture mocks that ref rather than the
+source — which is exactly what proves the fan-out is gone: one contact with two
+relationships yields two rows, not two per partition.</p>
+<div class="highlight"><pre><span></span><code><span class="nt">unit_tests</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">test_relationships_do_not_fan_out_across_partitions</span>
+<span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">One deduped contact with two relationships yields exactly two</span>
+<span class="w">      </span><span class="l l-Scalar l-Scalar-Plain">rows. Reading the deduped model instead of the accumulated source is what</span>
+<span class="w">      </span><span class="l l-Scalar l-Scalar-Plain">prevents the cross join multiplying each relationship by the number of</span>
+<span class="w">      </span><span class="l l-Scalar l-Scalar-Plain">partitions the contact appears in. See</span><span class="w"> </span><span class="c1">#4715.</span>
+<span class="w">    </span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">stg_finalsite__contact_relationships</span>
+<span class="w">    </span><span class="nt">given</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref('stg_finalsite__contacts')</span>
+<span class="w">        </span><span class="nt">format</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sql</span>
+<span class="w">        </span><span class="nt">rows</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">          </span><span class="no">select</span>
+<span class="w">            </span><span class="no">'con1' as finalsite_enrollment_id,</span>
+<span class="w">            </span><span class="no">'hh1' as household_1_id,</span>
+<span class="w">            </span><span class="no">array&lt;struct&lt;field_name string, value struct&lt;boolean_value bool&gt;&gt;&gt;[]</span>
+<span class="w">              </span><span class="no">as custom_attributes,</span>
+<span class="w">            </span><span class="no">[</span>
+<span class="w">              </span><span class="no">struct(</span>
+<span class="w">                </span><span class="no">'rel1' as id,</span>
+<span class="w">                </span><span class="no">'adult1' as rel_id,</span>
+<span class="w">                </span><span class="no">'Ann Doe' as rel_name,</span>
+<span class="w">                </span><span class="no">'mother' as rel_type,</span>
+<span class="w">                </span><span class="no">true as `primary`,</span>
+<span class="w">                </span><span class="no">true as financial,</span>
+<span class="w">                </span><span class="no">true as portal_access</span>
+<span class="w">              </span><span class="no">),</span>
+<span class="w">              </span><span class="no">struct(</span>
+<span class="w">                </span><span class="no">'rel2' as id,</span>
+<span class="w">                </span><span class="no">'adult2' as rel_id,</span>
+<span class="w">                </span><span class="no">'Bob Doe' as rel_name,</span>
+<span class="w">                </span><span class="no">'father' as rel_type,</span>
+<span class="w">                </span><span class="no">cast(null as bool) as `primary`,</span>
+<span class="w">                </span><span class="no">false as financial,</span>
+<span class="w">                </span><span class="no">false as portal_access</span>
+<span class="w">              </span><span class="no">)</span>
+<span class="w">            </span><span class="no">] as relationships</span>
+<span class="w">    </span><span class="nt">expect</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">format</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sql</span>
+<span class="w">      </span><span class="nt">rows</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">        </span><span class="no">select</span>
+<span class="w">          </span><span class="no">'con1' as finalsite_enrollment_id,</span>
+<span class="w">          </span><span class="no">'rel1' as relationship_id,</span>
+<span class="w">          </span><span class="no">'adult1' as rel_id,</span>
+<span class="w">          </span><span class="no">'mother' as rel_type,</span>
+<span class="w">          </span><span class="no">true as is_primary,</span>
+<span class="w">          </span><span class="no">'hh1' as household_1_id</span>
+<span class="w">        </span><span class="no">union all</span>
+<span class="w">        </span><span class="no">select</span>
+<span class="w">          </span><span class="no">'con1' as finalsite_enrollment_id,</span>
+<span class="w">          </span><span class="no">'rel2' as relationship_id,</span>
+<span class="w">          </span><span class="no">'adult2' as rel_id,</span>
+<span class="w">          </span><span class="no">'father' as rel_type,</span>
+<span class="w">          </span><span class="no">cast(null as bool) as is_primary,</span>
+<span class="w">          </span><span class="no">'hh1' as household_1_id</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run it to verify it fails</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="o">&amp;&amp;</span><span class="w"> </span>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span><span class="nb">test</span><span class="w"> </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-finalsite-incremental-contacts/src/dbt/kippnewark<span class="w"> </span><span class="se">\</span>
+<span class="w">       </span>--select<span class="w"> </span>stg_finalsite__contact_relationships
+</code></pre></div>
+<p>Expected: FAIL — the model still reads <code>source('finalsite', 'contacts')</code>, so the
+mocked <code>ref</code> is unused and the fixture columns do not resolve.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Repoint the model</strong></li>
+</ul>
+<p>Replace
+<code>src/dbt/finalsite/models/api/staging/stg_finalsite__contact_relationships.sql</code>
+in full:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">    </span><span class="n">finalsite_enrollment_id</span><span class="p">,</span>
+
+<span class="w">    </span><span class="n">r</span><span class="p">.</span><span class="n">id</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">relationship_id</span><span class="p">,</span>
+<span class="w">    </span><span class="n">r</span><span class="p">.</span><span class="n">rel_id</span><span class="p">,</span>
+<span class="w">    </span><span class="n">r</span><span class="p">.</span><span class="n">rel_name</span><span class="p">,</span>
+<span class="w">    </span><span class="n">r</span><span class="p">.</span><span class="n">rel_type</span><span class="p">,</span>
+<span class="w">    </span><span class="n">r</span><span class="p">.</span><span class="k">primary</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">is_primary</span><span class="p">,</span>
+<span class="w">    </span><span class="n">r</span><span class="p">.</span><span class="n">financial</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">is_financial</span><span class="p">,</span>
+<span class="w">    </span><span class="n">r</span><span class="p">.</span><span class="n">portal_access</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">has_portal_access</span><span class="p">,</span>
+
+<span class="w">    </span><span class="n">household_1_id</span><span class="p">,</span>
+
+<span class="w">    </span><span class="c1">-- record-owner fields carried onto the relationship grain so consumers</span>
+<span class="w">    </span><span class="c1">-- gating on them (e.g. the contact_2 pick) need no extra joins. These</span>
+<span class="w">    </span><span class="c1">-- describe the OWNING contact (`finalsite_enrollment_id`), never the</span>
+<span class="w">    </span><span class="c1">-- related person (`rel_id`).</span>
+<span class="w">    </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="n">logical_or</span><span class="p">(</span><span class="n">ca</span><span class="p">.</span><span class="n">value</span><span class="p">.</span><span class="n">boolean_value</span><span class="p">),</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="k">unnest</span><span class="p">(</span><span class="n">custom_attributes</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">ca</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">ca</span><span class="p">.</span><span class="n">field_name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'is_parent2'</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">is_parent2</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"stg_finalsite__contacts"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="k">cross</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="k">unnest</span><span class="p">(</span><span class="n">relationships</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">r</span>
+</code></pre></div>
+<p>Two things changed beyond the <code>from</code>: <code>household_1_id</code> is now read from
+<code>stg_finalsite__contacts</code> instead of being re-derived as
+<code>c.households[safe_offset(0)].id</code>, and the <code>c.</code> alias is gone.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Run it to verify it passes</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="o">&amp;&amp;</span><span class="w"> </span>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span><span class="nb">test</span><span class="w"> </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-finalsite-incremental-contacts/src/dbt/kippnewark<span class="w"> </span><span class="se">\</span>
+<span class="w">       </span>--select<span class="w"> </span>stg_finalsite__contact_relationships
+</code></pre></div>
+<p>Expected: PASS, 2 rows.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Verify nothing downstream broke</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="o">&amp;&amp;</span><span class="w"> </span>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-finalsite-incremental-contacts/src/dbt/kippnewark<span class="w"> </span><span class="se">\</span>
+<span class="w">       </span>--select<span class="w"> </span>stg_finalsite__contacts+<span class="w"> </span>--empty
+</code></pre></div>
+<p>Expected: every downstream model compiles and resolves its columns. <code>--empty</code>
+proves column resolution only, not values — the value proof is cutover step 6.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Lint the changed SQL and YAML</strong></li>
+</ul>
+<p><code>sqlfluff</code> and <code>yamllint</code> fire at pre-push and in CI, not in the pre-commit
+<code>fmt</code> hook, so check them explicitly. This takes over two minutes — run it in
+the background and read the output only after it exits.</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-finalsite-incremental-contacts<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="o">&amp;&amp;</span><span class="w"> </span>/workspaces/teamster/.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span>--no-fix<span class="w"> </span><span class="se">\</span>
+<span class="w">       </span>src/dbt/finalsite/models/api/staging/stg_finalsite__contacts.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">       </span>src/dbt/finalsite/models/api/staging/stg_finalsite__contact_relationships.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">       </span>src/dbt/finalsite/models/api/staging/properties/stg_finalsite__contacts.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">       </span>src/dbt/finalsite/models/api/staging/properties/stg_finalsite__contact_relationships.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">       </span>src/dbt/finalsite/models/sources-external.yml<span class="w"> </span>&lt;/dev/null
+</code></pre></div>
+<p>Expected: <code>No issues</code>, or only <code>unformatted file</code> findings, which the commit
+hook fixes. Fix any <code>file:line</code> + rule finding before committing.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-finalsite-incremental-contacts<span class="w"> </span>add<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/finalsite/models/api/staging/stg_finalsite__contact_relationships.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/finalsite/models/api/staging/properties/stg_finalsite__contact_relationships.yml
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-finalsite-incremental-contacts<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"feat(finalsite): unnest relationships from the deduped contacts model</span>
+
+<span class="s2">Refs #4715"</span>
+</code></pre></div>
+<hr />
+<h3 id="task-7-cutover-runbook-and-spec-correction">Task 7: Cutover runbook and spec correction</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create:
+  <code>docs/superpowers/plans/2026-08-10-finalsite-incremental-contacts-cutover.md</code></li>
+<li>Modify:
+  <code>docs/superpowers/specs/2026-08-10-finalsite-incremental-contacts-design.md</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: everything above.</li>
+<li>
+<p>Produces: the ordered manual runbook the cutover follows.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Correct the spec's <code>since_includes_expanded</code> row</strong></p>
+</li>
+</ul>
+<p>The Decisions table says <code>Dropped. Measured no-op.</code> but the parameter was never
+sent — all four code locations passed only <code>includes</code>. Change that cell to:</p>
+<div class="highlight"><pre><span></span><code>| <span class="sb">`since_includes_expanded`</span> | Not adopted. Measured no-op, and it was never sent
+today. |
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Write the cutover runbook</strong></li>
+</ul>
+<p>Create the file with this content:</p>
+<div class="highlight"><pre><span></span><code><span class="gh"># Finalsite incremental contacts: cutover runbook</span>
+
+Refs <span class="ni">#4715</span>. Run these in order. Steps marked <span class="gs">**manual**</span> need a human — they
+touch production GCS or the Dagster+ UI.
+
+The external glob <span class="sb">`contacts/*`</span> matches recursively, so while both the legacy
+root object and partition files exist the table unions them and every <span class="sb">`id`</span>
+appears twice. That window is steps 3 to 5.
+
+<span class="gu">## 1. Record the pre-cutover baseline (manual)</span>
+
+<span class="sb">```sql</span>
+<span class="k">select</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">contacts</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="k">distinct</span><span class="w"> </span><span class="n">id</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">ids</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kippnewark_finalsite</span><span class="p">.</span><span class="n">contacts</span><span class="o">`</span>
+<span class="sb">```</span>
+
+Repeat for <span class="sb">`kippcamden`</span>, <span class="sb">`kippmiami`</span>, <span class="sb">`kipppaterson`</span>. Expected around 25,052
+(kippnewark) and 7,688 (kippmiami). Keep these numbers for step 6.
+
+<span class="gu">## 2. Pause the schedules (manual, Dagster+ UI)</span>
+
+Stop all four <span class="sb">`&lt;location&gt;__finalsite__contacts__daily_asset_job_schedule`</span>
+schedules. Do not rename them.
+
+<span class="gu">## 3. Merge the PR and let the deploy land</span>
+
+Confirm every <span class="sb">`dagster-cloud-deploy / deploy`</span> check-run reaches a terminal
+conclusion — a shared-library change redeploys every consuming location, so
+expect one same-named check per location.
+
+<span class="gu">## 4. Seed one full partition per district (manual, Dagster+ UI)</span>
+
+For each location, materialize <span class="sb">`&lt;location&gt;/finalsite/contacts`</span> for partition
+<span class="sb">`2026-08-11`</span> with run config:
+
+<span class="sb">```yaml</span>
+<span class="nt">ops</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">&lt;location&gt;__finalsite__contacts</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">full_pull</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="sb">```</span>
+
+Override the run's <span class="sb">`dagster/max_runtime`</span> tag to <span class="sb">`3600`</span> for these four runs only
+— a full pull is ~20 minutes for kippnewark, well past the new 900s default.
+They serialize through the <span class="sb">`finalsite_api`</span> pool, so budget ~35 minutes total.
+
+Verify each run's <span class="sb">`record_count`</span> metadata matches step 1's baseline, and that
+its <span class="sb">`since`</span> metadata reads <span class="sb">`FULL PULL`</span>.
+
+<span class="gu">## 5. Delete the legacy root object (manual, destructive)</span>
+
+One per bucket. Check before deleting:
+
+<span class="sb">```bash</span>
+gsutil<span class="w"> </span>ls<span class="w"> </span>-l<span class="w"> </span>gs://teamster-kippnewark/dagster/kippnewark/finalsite/contacts/data
+gsutil<span class="w"> </span>rm<span class="w"> </span>gs://teamster-kippnewark/dagster/kippnewark/finalsite/contacts/data
+<span class="sb">```</span>
+
+Repeat for <span class="sb">`teamster-kippcamden`</span>, <span class="sb">`teamster-kippmiami`</span>, <span class="sb">`teamster-kipppaterson`</span>.
+
+Confirm only partition directories remain:
+
+<span class="sb">```bash</span>
+gsutil<span class="w"> </span>ls<span class="w"> </span>gs://teamster-kippnewark/dagster/kippnewark/finalsite/contacts/
+<span class="sb">```</span>
+
+Expected: only <span class="sb">`_dagster_partition_fiscal_year=.../`</span> entries, no bare <span class="sb">`data`</span>.
+
+<span class="gu">## 6. Rebuild and verify values</span>
+
+Re-stage the external source and rebuild:
+
+<span class="sb">```bash</span>
+uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>run-operation<span class="w"> </span>stage_external_sources<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>src/dbt/kippnewark<span class="w"> </span>--args<span class="w"> </span><span class="s2">"select: finalsite.contacts"</span>
+uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span>--project-dir<span class="w"> </span>src/dbt/kippnewark<span class="w"> </span>--select<span class="w"> </span>stg_finalsite__contacts+
+<span class="sb">```</span>
+
+Then confirm the grain and the count, with <span class="sb">`--nouse_cache`</span> so the results cache
+cannot mask a stale read:
+
+<span class="sb">```sql</span>
+<span class="k">select</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="k">rows</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="k">distinct</span><span class="w"> </span><span class="n">finalsite_enrollment_id</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">ids</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kippnewark_finalsite</span><span class="p">.</span><span class="n">stg_finalsite__contacts</span><span class="o">`</span>
+<span class="sb">```</span>
+
+<span class="sb">`rows`</span> must equal <span class="sb">`ids`</span>, and both must match step 1's baseline within a day of
+churn. The <span class="sb">`unique`</span> test on <span class="sb">`finalsite_enrollment_id`</span> is the automated form of
+this check.
+
+Between steps 4 and 5 expect that <span class="sb">`unique`</span> test to FAIL: the seed bumps the
+source's data version, the automation sensor rebuilds staging while duplicates
+exist. That ordering is deliberate — deleting the root object first would leave
+the table empty and ship empty files to DeansList, ParentSquare and Focus. A
+loud failed test beats a silent empty shipment.
+
+<span class="gu">## 7. Resume the schedules (manual, Dagster+ UI)</span>
+
+Start all four schedules. The next tick is 00:15 or 12:00 ET.
+
+<span class="gu">## 8. Confirm the first incremental tick</span>
+
+After the first 00:15 run, check its metadata: <span class="sb">`since`</span> should read the previous
+day's date, and <span class="sb">`record_count`</span> should be in the low thousands, not the tens of
+thousands. Then confirm the 01:00 Google Directory sync and 01:25 DeansList ship
+read same-day contacts.
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Lint both documents</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-finalsite-incremental-contacts<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="o">&amp;&amp;</span><span class="w"> </span>/workspaces/teamster/.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span>--no-fix<span class="w"> </span><span class="se">\</span>
+<span class="w">       </span>docs/superpowers/plans/2026-08-10-finalsite-incremental-contacts-cutover.md<span class="w"> </span><span class="se">\</span>
+<span class="w">       </span>docs/superpowers/specs/2026-08-10-finalsite-incremental-contacts-design.md<span class="w"> </span>&lt;/dev/null
+</code></pre></div>
+<p>Expected: <code>No issues</code>, or only <code>unformatted file</code>, which the commit hook fixes.
+The nested fences in the runbook are why its outer block is four backticks.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-finalsite-incremental-contacts<span class="w"> </span>add<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>docs/superpowers/plans/2026-08-10-finalsite-incremental-contacts-cutover.md<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>docs/superpowers/specs/2026-08-10-finalsite-incremental-contacts-design.md
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-finalsite-incremental-contacts<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"docs(finalsite): add the incremental contacts cutover runbook</span>
+
+<span class="s2">Refs #4715"</span>
+</code></pre></div>
+<hr />
+<h2 id="out-of-scope">Out of scope</h2>
+<ul>
+<li><code>status_report</code> — SFTP, already school-year partitioned.</li>
+<li>The <code>finalsite_api</code> pool limit and the shared-IP 403 (#4408).</li>
+<li>Bounded retry in <code>_request</code> (#4494).</li>
+<li>Un-pausing kippnewark's ParentSquare extract schedule.</li>
+<li>Any full-refresh mechanism. Hard deletes leak by design; see the spec's Known
+  limitations.</li>
+<li>Renaming <code>stg_finalsite__contact_relationships</code> to <code>int_</code>. Precedent
+  (<code>int_finalsite__contacts__households</code>) says a model reading a
+  contract-widened staging column belongs in <code>intermediate</code>, but renaming would
+  ripple into <code>kipptaf</code>'s <code>source()</code> references for no functional gain.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

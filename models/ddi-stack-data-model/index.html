@@ -1,0 +1,3166 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+        <link rel="prev" href="../crdc-data-model/">
+      
+      
+        <link rel="next" href="../hs-early-warning-data-model/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>DDI Stack Data Model - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#ddi-stack-data-model" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              DDI Stack Data Model
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../fresh-dashboard-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/launch-page-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Launch Page
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/cube-access-individual-exceptions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube Access - Individual Exceptions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/tableau-permissions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tableau Permissions (People Data)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../fresh-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FRESH Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../carat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CARAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../csgf-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CSGF Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../crdc-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CRDC Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DDI Stack Data Model
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DDI Stack Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-it-is" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What it is
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-it-fits-together" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How it fits together
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="How it fits together">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#materialization-and-freshness" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Materialization and freshness
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#terms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Terms
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-the-data-comes-from" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where the data comes from
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-ddi-suite-workbook" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The DDI Suite workbook
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The DDI Suite workbook">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rpt_tableau__assessment_dashboard" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rpt_tableau__assessment_dashboard
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rpt_tableau__ddi_dashboard" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rpt_tableau__ddi_dashboard
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-audit-dashboards" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The audit dashboards
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The audit dashboards">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rpt_tableau__assessment_entry_audit-data-quality-dashboard" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rpt_tableau__assessment_entry_audit (Data Quality Dashboard)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rpt_tableau__sight_words_dashboard-literacy-dashboard" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rpt_tableau__sight_words_dashboard (Literacy Dashboard)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deanslist-report-card-extracts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DeansList report-card extracts
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-google-sheets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Google Sheets
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The Google Sheets">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rpt_gsheets__ddi_tier_roster" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rpt_gsheets__ddi_tier_roster
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rpt_gsheets__deanslist_mod_audit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rpt_gsheets__deanslist_mod_audit
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-appsheet-catalog-feed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The AppSheet catalog feed
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-assessment-cube-illuminate-branch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The assessment Cube (Illuminate branch)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#supporting-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Supporting models
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#inputs-hand-maintained" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inputs (hand-maintained)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#decisions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Decisions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#support-themes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Support themes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#known-issues-need-to-fix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Known issues, need to fix
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#yearly-upkeep" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Yearly upkeep
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../hs-early-warning-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HS Early Warning Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dibels-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DIBELS Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../njdoe-universal-screener-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NJDOE Universal Screener Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../athletic-eligibility-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Athletic Eligibility Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../academic-health-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Academic Health Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../grad-plan-tracking-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Grad Plan Tracking Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ignite-r2i-extract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IGNITE R2I Extract
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-it-is" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What it is
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-it-fits-together" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How it fits together
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="How it fits together">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#materialization-and-freshness" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Materialization and freshness
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#terms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Terms
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-the-data-comes-from" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where the data comes from
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-ddi-suite-workbook" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The DDI Suite workbook
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The DDI Suite workbook">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rpt_tableau__assessment_dashboard" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rpt_tableau__assessment_dashboard
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rpt_tableau__ddi_dashboard" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rpt_tableau__ddi_dashboard
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-audit-dashboards" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The audit dashboards
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The audit dashboards">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rpt_tableau__assessment_entry_audit-data-quality-dashboard" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rpt_tableau__assessment_entry_audit (Data Quality Dashboard)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rpt_tableau__sight_words_dashboard-literacy-dashboard" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rpt_tableau__sight_words_dashboard (Literacy Dashboard)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deanslist-report-card-extracts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DeansList report-card extracts
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-google-sheets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Google Sheets
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The Google Sheets">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rpt_gsheets__ddi_tier_roster" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rpt_gsheets__ddi_tier_roster
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rpt_gsheets__deanslist_mod_audit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rpt_gsheets__deanslist_mod_audit
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-appsheet-catalog-feed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The AppSheet catalog feed
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-assessment-cube-illuminate-branch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The assessment Cube (Illuminate branch)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#supporting-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Supporting models
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#inputs-hand-maintained" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inputs (hand-maintained)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#decisions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Decisions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#support-themes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Support themes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#known-issues-need-to-fix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Known issues, need to fix
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#yearly-upkeep" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Yearly upkeep
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/models/ddi-stack-data-model.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="ddi-stack-data-model">DDI Stack Data Model</h1>
+<h2 id="what-it-is">What it is</h2>
+<p>The DDI (data-driven instruction) stack turns internal Illuminate assessment
+results into the dashboards, report-card feeds and planning sheets KTAF's NJ
+regions run their assessment cycle on. Achievement directors enter assessments
+in Illuminate and tag them in an AppSheet app; teachers administer and score
+them; the stack fans the results out to:</p>
+<ul>
+<li>the <strong>DDI Suite</strong> Tableau workbook (two extracts: the assessment dashboard and
+  the weekly DDI dashboard),</li>
+<li>the <strong>assessment entry audit</strong> (on the Data Quality Dashboard) and the <strong>sight
+  words dashboard</strong> (on the Literacy Dashboard),</li>
+<li>four <strong>DeansList extracts</strong> that put scores on report cards and progress
+  reports,</li>
+<li>two <strong>Google Sheets</strong> (the NJ DDI tier roster and the DeansList mod audit),</li>
+<li>the <strong>AppSheet catalog feed</strong> that closes the tagging loop, and</li>
+<li>the Illuminate branch of the <strong>assessment Cube</strong> (the star schema behind
+  <code>student_assessment_scores_view</code>).</li>
+</ul>
+<p>"Internal assessment" here means an Illuminate assessment someone tagged in the
+AppSheet — the tag is literally what makes it internal (see Terms). The stack
+covers the three NJ regions. Miami's final year on it is SY25-26; Miami returns
+when Focus assessment data is ingested, and there is no interim exception.</p>
+<p>Owner: Anthony Walters, Director, Data. Marya Shukla owns assessment-tagging
+quality control in the AppSheet and the standard-domains lookup; achievement
+directors enter their own assessments.</p>
+<h2 id="how-it-fits-together">How it fits together</h2>
+<div class="highlight"><pre><span></span><code>Illuminate DnA (dlt sync)        AppSheet tagging app          Assessments
+27 stg_illuminate__* tables      (Marya Shukla + ADs)          lookup sheet
++ 46 repository_* stubs               |    ^                   (5 named ranges)
+       |                              v    |                        |
+       |               stg_google_appsheet__illuminate_             |
+       |               assessments_extension                        |
+       |                              |        rpt_appsheet__       |
+       v                              v        assessments ---------+--&gt; AppSheet
+int_illuminate__assessments --&gt; int_assessments__assessments_members    (catalog
+       |                              |                                  feed)
+       |                              v
+int_illuminate__agg_student_    int_assessments__assessments_canonical
+responses (overall/standard/          |
+group)                                v
+       |                int_assessments__scaffold  &lt;-- course enrollments,
+       |                 ("expected to take")          Illuminate sessions
+       v                              |
+int_assessments__response_rollup  &lt;---+  &lt;-- performance bands, reporting terms
+       |         |          |         |
+       v         v          v         v
+DDI Suite    DeansList   mod audit   assessment star (dim_assessments,
+(2 Tableau   extracts    sheet       administrations, bridges,
+extracts)    (4 CDO      + tier      fct_assessment_scores_*) --&gt; Cube view
+             feeds)      roster
+</code></pre></div>
+<p><code>int_illuminate__repository_data</code> (custom student-data tables) feeds the sight
+words dashboard and the DeansList sight-words extract on a separate track from
+the response rollup. On the star side, <code>int_assessments__score_anchors</code> and
+<code>int_assessments__resolved_section_enrollments</code> sit between the scaffold and
+<code>fct_assessment_scores_enrollment_scoped</code>, tying each score to one course
+section.</p>
+<h3 id="materialization-and-freshness">Materialization and freshness</h3>
+<p>Every <code>rpt_*</code> extract in the family is a <strong>view</strong>. Under them, the staging layer
+is all <strong>tables</strong> (the 27 <code>stg_illuminate__*</code> models, the repository stubs, the
+sheet staging models, and the AppSheet staging table), as are
+<code>int_assessments__response_rollup</code>, <code>__scaffold</code>, <code>__course_enrollments</code>,
+<code>__resolved_section_enrollments</code>, <code>__score_anchors</code>,
+<code>int_illuminate__root_standards</code>, and the table marts of the assessment star.
+The remaining intermediates (<code>int_illuminate__*</code> apart from <code>root_standards</code>;
+<code>int_assessments__assessments_members</code>, <code>__assessments_canonical</code>,
+<code>__performance_bands</code>, <code>__academic_goals</code>) and <code>dim_assessment_goals</code> are views.
+A new score therefore reaches a consumer only after:</p>
+<ol>
+<li>The Illuminate dlt sync lands it. The assessment tables
+   (<code>agg_student_responses*</code>, <code>students_assessments</code>) sync at midnight and 5pm
+   daily, plus Wednesday 10am/2pm and Friday 3pm. Reference tables (performance
+   bands, reporting groups, repositories) sync at <strong>midnight only</strong> — the root
+   of <a href="https://github.com/TEAMSchools/teamster/issues/5399">#5399</a>: same-day
+   scores on a brand-new assessment can sit unscored until the next midnight.</li>
+<li>The assessment star rebuilds. <code>int_assessments__response_rollup</code>, the other
+   table intermediates and the table marts share one cron tick,
+   <code>0 0,10,13,15,17 * * *</code> (5x/day, Eastern). The sync and the star both fire at
+   midnight and 5pm, so data from the same-hour sync can miss that star tick and
+   wait for the next one — check run timestamps before promising users a refresh
+   time.</li>
+<li>The consumer refreshes: the DDI Suite Tableau extracts at 1am and 6pm daily
+   plus Friday 4pm (exposure <code>ddi_suite</code> cron, Dagster-owned); the DeansList
+   SFTP extracts at 1:25am daily; Cube's <code>proficiency_rollup</code> pre-aggregation
+   daily.</li>
+</ol>
+<h2 id="terms">Terms</h2>
+<ul>
+<li><strong>Internal assessment</strong> (<code>is_internal_assessment</code>; "normed" in the workbook,
+  surfaced as <code>is_normed_scope</code>): an Illuminate assessment with a row in the
+  AppSheet Illuminate Assessments Extension. The flag is
+  <code>if(iae.assessment_id is not null, ...)</code> in
+  <code>int_assessments__assessments_members</code>. Untagged assessments still flow
+  through the scaffold's non-internal branch into
+  <code>rpt_tableau__assessment_dashboard</code>, so the Assessment Dashboard worksheet can
+  analyze every Illuminate assessment — but the Module Dashboard and DKI
+  worksheets display only normed (tagged) assessments, and the canonical
+  grouping, the report-card feeds and the star's internal branch use only tagged
+  ones. An untagged assessment is otherwise invisible to every consumer below
+  except the raw Illuminate intermediates.</li>
+<li><strong>Canonical assessment</strong> (<code>canonical_assessment_id</code>): internal assessments are
+  created once per region/variant in Illuminate, so members that share
+  <code>(academic_year, scope, subject_area, module_code, grade_level_id)</code> are
+  grouped, and the lowest member <code>assessment_id</code> names the group. Miami-only
+  Florida copies (AppSheet <code>regions_assessed</code> exactly <code>Miami</code>) group separately,
+  so New Jersey rows never inherit a Florida title or date. Non-internal
+  assessments are their own canonical. Known defect: inconsistent SY25-26
+  tagging destabilizes the grouping
+  (<a href="https://github.com/TEAMSchools/teamster/issues/5654">#5654</a>).</li>
+<li><strong>Scope</strong>: Illuminate's assessment category (decoded from <code>dna_scopes</code>) — Unit
+  Assessment ("UA"), Cumulative Review Quizzes ("CRQ"), Cold Read Quizzes, Sight
+  Words Quiz, and so on. K-1 cumulative-review and cold-read quizzes are
+  relabeled <code>Checkpoint</code> in <code>int_illuminate__assessments</code>. <code>WPP</code> is a
+  <code>module_type</code> value excluded from the DDI dashboard; its expansion is
+  unwritten — owner to confirm.</li>
+<li><strong>Module</strong> (<code>module_type</code>, <code>module_sequence</code>, <code>module_code</code>): the AppSheet
+  tagging that sequences assessments within a scope; <code>module_code</code> is the
+  concatenation (for example <code>UA3</code>). These have no Illuminate-native
+  counterpart.</li>
+<li><strong><code>academic_year</code> vs <code>academic_year_clean</code></strong>: Illuminate dates a school year
+  by its spring (<code>2026</code> for SY25-26); the warehouse dates it by its fall
+  (<code>2025</code>). <code>academic_year_clean = academic_year - 1</code> converts, and
+  <code>int_assessments__course_enrollments</code> converts the other way
+  (<code>illuminate_academic_year = cc_academic_year + 1</code>). Every consumer join
+  crosses this boundary somewhere; when counts look shifted by exactly one year,
+  check which convention each side uses.</li>
+<li><strong><code>response_type</code></strong>: which aggregation a response row is — <code>overall</code> (the
+  whole assessment), <code>standard</code> (one standard), or <code>group</code> (one reporting
+  group). Minted in <code>int_illuminate__agg_student_responses</code> from the <em>name</em> of
+  the unioned source relation, with <code>response_type_id = -1</code> as the sentinel for
+  overall rows. A <strong>null</strong> <code>response_type</code> on the scaffold-joined surfaces
+  (<code>int_assessments__response_rollup</code>, the DDI dashboard) means
+  assigned-but-not-taken; <code>fct_assessment_scores_enrollment_scoped</code> makes that
+  explicit as <code>not_taken</code>.</li>
+<li><strong><code>is_replacement</code></strong>: an internal-assessment sitting where the assessment's
+  AppSheet-tagged grade level differs from the student's current Illuminate
+  session grade — a retained or accelerated student sitting an off-grade
+  assessment. Set in <code>int_assessments__scaffold</code>, with three limits that follow
+  from its SQL: only Text Study, Mathematics, Social Studies and Science; only
+  K-8 assessments; and only sittings that actually exist in Illuminate (the
+  branch inner-joins <code>students_assessments</code>), so a not-taken off-grade
+  assignment never appears. An assessment with no grade tag can never be a
+  replacement. These rows bypass the course-enrollment join (null <code>cc_dcid</code>),
+  are excluded from score anchoring and the enrollment-scoped bridge, and are
+  carried by the student-scoped bridge instead. The sight words dashboard reuses
+  the column name for the analogous off-grade-quiz case; the two are computed
+  independently.</li>
+<li><strong>Performance bands</strong>: Illuminate band sets attached per response type in
+  <code>int_assessments__performance_bands</code>. <code>int_illuminate__performance_band_sets</code>
+  computes each band's range as <code>[minimum_value, next band's minimum - 0.1)</code>,
+  top band capped at 9998.9. Each band also carries Illuminate's own
+  <code>is_mastery</code> flag, so on band-driven surfaces the band set defines which
+  labels count as mastery. The DeansList feeds are the exception: they hardcode
+  their own ladders and cut points (see their section).</li>
+<li><strong>DDI tiers</strong> (<code>nj_student_tier</code>), called <strong>"buckets"</strong> by every stakeholder
+  ("Bucket 1 and 2" in tickets): the student intervention tier the tier roster
+  publishes. The ladder is <strong>not</strong> in this family — it lives in the shared hub
+  <code>int_extracts__student_enrollments_subjects</code>, and the roster passes it
+  through.</li>
+<li><strong>QBLs and Power Standards</strong>: retired programs. The lookup named range still
+  exists and <code>rpt_tableau__ddi_dashboard</code> still computes <code>is_qbl</code> from it;
+  finishing the retirement is
+  <a href="https://github.com/TEAMSchools/teamster/issues/5656">#5656</a>.
+  <code>rpt_tableau__assessment_dashboard</code> already hardcodes its power-standards
+  columns to null for workbook compatibility.</li>
+<li><strong>Sight words</strong>: K-2 sight-word quizzes stored as an Illuminate <em>repository</em>
+  (custom student-data table), not as assessment responses — they flow through
+  <code>int_illuminate__repository_data</code>, not the response rollup.</li>
+<li><strong>DKI, Module Dashboard, Mastery by Classroom</strong>: names users bring to support
+  tickets. DKI View, Module Dashboard and Mastery by Classroom are worksheets
+  inside the DDI Suite workbook; DKI is also the name of the recurring data
+  meeting the dashboard preps, so "the DKI dashboard" in a ticket means the DDI
+  Suite. (What DKI expands to is not yet written down — owner to confirm.)</li>
+</ul>
+<h2 id="where-the-data-comes-from">Where the data comes from</h2>
+<ul>
+<li><strong>Illuminate DnA and Repositories</strong>, via the dlt sync (27 staging tables plus
+  46 enabled <code>repository_&lt;id&gt;</code> stubs; layout and the repository-model mechanics
+  are in <code>src/dbt/kipptaf/models/illuminate/CLAUDE.md</code>). Only repositories
+  443-472 are on the dlt schedules; the 16 enabled stubs below 443 never sync,
+  so their data is frozen (known issue). Owned by the data team; assessment
+  content is owned by the achievement directors who build it.</li>
+<li><strong>The AppSheet Illuminate Assessments Extension</strong>: the tagging app writes a
+  BigQuery table read as
+  <code>stg_google_appsheet__illuminate_assessments_extension</code>. The app's item list
+  comes back out of the warehouse as <code>rpt_appsheet__assessments</code>, so the loop
+  is: catalog feed → staff tag in the app → tags land in BigQuery → tags drive
+  everything. Marya Shukla runs QC; achievement directors tag their own
+  assessments.</li>
+<li><strong>The Assessments lookup spreadsheet</strong> (ask the data team for it): one
+  spreadsheet, five named ranges, five staging models — <code>standard_domains</code>
+  (Marya Shukla), <code>academic_goals</code>, <code>course_subject_crosswalk</code>,
+  <code>vendor_subject_crosswalk</code> (data team), and the retired
+  <code>qbls_power_standards</code>. All five externals share the spreadsheet's URI, so an
+  edit to any tab re-triggers all five sources together.</li>
+<li><strong>Shared hubs</strong> (out of family, one line each):</li>
+<li><code>int_extracts__student_enrollments</code> / <code>_weeks</code> / <code>_subjects</code>: enrollment,
+    demographics, week scaffold, and the subject-level supplement (tiers, iReady
+    proficiency, state proficiency) the dashboards and tier roster read.</li>
+<li><code>base_powerschool__course_enrollments</code>: course/section/teacher context,
+    joined on <code>illuminate_subject_area</code>.</li>
+<li><code>stg_google_sheets__reporting__terms</code>: RT-type reporting terms, date-range
+    joined for term labels and term keys.</li>
+<li><code>stg_google_sheets__people__locations</code>: school-to-region mapping in the
+    scaffold.</li>
+<li>SchoolMint Grow + <code>int_performance_management__observation_details</code>: the
+    walkthrough branch of the DDI dashboard.</li>
+<li><code>int_iready__instruction_by_lesson_union</code>: weekly iReady lesson-pass counts
+    on the DDI dashboard.</li>
+<li><strong>Adjacent, not in family</strong>: <code>rpt_ln__*</code> (the roster feed <em>into</em> Illuminate:
+  courses, enrollment, users, terms), and the non-Illuminate branches of the
+  assessment star (Amplify/DIBELS, iReady, STAR, college, AP, state), which
+  belong to the DIBELS, CARAT and STAT families.</li>
+</ul>
+<h2 id="the-ddi-suite-workbook">The DDI Suite workbook</h2>
+<p>Tableau exposure <code>ddi_suite</code>, two extracts, both views.
+<code>rpt_tableau__assessment_dashboard</code> drives the Assessment Dashboard and Module
+Dashboard worksheets; <code>rpt_tableau__ddi_dashboard</code> drives the weekly worksheets
+(the DKI View; tickets also name a Mastery by Classroom worksheet whose extract
+the owner should confirm). The full worksheet-to-filter breakdown still needs
+the owner's walkthrough or a workbook download.</p>
+<h3 id="rpt_tableau__assessment_dashboard">rpt_tableau__assessment_dashboard</h3>
+<ul>
+<li><strong>What it shows</strong>: Illuminate assessment response rows (overall, standard and
+  group level) joined to enrollment, course/teacher and student-subject context.
+  Carries every Illuminate assessment, tagged or not, with <code>is_normed_scope</code>
+  marking the tagged ones; drives the Assessment Dashboard worksheet (all
+  assessments) and the Module Dashboard worksheet (normed only).</li>
+<li><strong>Grain</strong>: student x response record; the course join is pinned to one section
+  per subject (<code>rn_student_year_illuminate_subject_desc = 1</code>), yet prod shows
+  about 0.7% of keys duplicated exactly twice (cause untraced, measured
+  2026-10-02). No uniqueness test (known issue).</li>
+<li><strong>Reads</strong>: <code>int_assessments__response_rollup</code>,
+  <code>int_extracts__student_enrollments</code> (+<code>_subjects</code>),
+  <code>base_powerschool__course_enrollments</code>.</li>
+<li><strong>Worth knowing</strong>:</li>
+<li>Population: <code>rn_year = 1</code>, <code>grade_level != 99</code>, current and prior academic
+    year only.</li>
+<li>Miami holds <strong>zero rows in prod</strong> in every year (measured 2026-10-02): the
+    rollup still carries Miami AY2025 responses, but none survive this model's
+    enrollment join after the Focus cutover.</li>
+<li><code>power_standard_goal</code>, <code>is_power_standard</code>, <code>standard_domain</code> are hardcoded
+    null — retired fields kept so the workbook's field list does not break.</li>
+</ul>
+<h3 id="rpt_tableau__ddi_dashboard">rpt_tableau__ddi_dashboard</h3>
+<ul>
+<li><strong>What it shows</strong>: the weekly DDI cycle — students x school week x that week's
+  tagged-assessment rows (expected or taken), plus iReady lesson completion
+  (ES/MS) and a staff walkthrough branch, so instruction, assessment and
+  coaching sit on one axis. It is <strong>not</strong> one row per enrolled student per week:
+  the <code>module_type != 'WPP'</code> predicate sits in the WHERE clause on the
+  LEFT-joined rollup, which turns the join inner — weeks with no tagged
+  assessment produce no row, and untagged assessments (null <code>module_type</code>) never
+  appear. Assigned-but-not-taken rows for tagged assessments do survive (tens of
+  thousands per year).
+  <a href="https://github.com/TEAMSchools/teamster/issues/4808">#4808</a> describes the
+  same shape.</li>
+<li><strong>Grain</strong>: three unioned branches — ES/MS (grades 0-8) and HS (9-12) at
+  student x week x response row; walkthrough rows at observation-row grain with
+  student columns nulled and staff overloaded into them (<code>student_name</code> is the
+  staff member, <code>subject_area</code> is their microgoals, <code>response_type</code> is the
+  literal <code>walkthrough</code>). No uniqueness test (known issue).</li>
+<li><strong>Reads</strong>: <code>int_extracts__student_enrollments_weeks</code>,
+  <code>int_assessments__response_rollup</code>, the standard-domains and QBLs sheets,
+  <code>int_assessments__academic_goals</code>, courses, the iReady lesson union, and the
+  SchoolMint Grow/performance-management chain.</li>
+<li><strong>Worth knowing</strong>:</li>
+<li>Eligibility is enrollment as of the week end (<code>is_enrolled_week_end</code>,
+    <code>enroll_status in (0, 2, 3)</code>), not current status — pinning to
+    <code>enroll_status = 0</code> retroactively erased withdrawn students' history
+    (<a href="https://github.com/TEAMSchools/teamster/issues/4807">#4807</a>).</li>
+<li>The <code>module_type != 'WPP'</code> filter carries a <code>TODO: Remove SY26</code> marker, and
+    it is also what makes the join inner (see the grain note above).</li>
+<li>A row with a null <code>response_type</code> and null <code>date_taken</code> is
+    assigned-but-not-taken; <code>is_complete</code> encodes it, and the still-open PR
+    <a href="https://github.com/TEAMSchools/teamster/pull/3576">#3576</a> proposes an
+    <code>is_completion_row</code> flag to make completion-rate denominators explicit.</li>
+<li>The ES/MS and HS branches join the QBLs sheet and the goals sheet with
+    different keys (ES/MS includes <code>grade_level</code> and requires <code>qbl is not null</code>;
+    HS includes neither) — deliberate, but easy to misread.</li>
+<li>iReady lesson columns are ES/MS only; HS and walkthrough rows carry nulls.</li>
+<li>The iReady weekly metrics undercount when keyed to the assessment subject
+    (<a href="https://github.com/TEAMSchools/teamster/issues/4808">#4808</a>).</li>
+</ul>
+<h2 id="the-audit-dashboards">The audit dashboards</h2>
+<h3 id="rpt_tableau__assessment_entry_audit-data-quality-dashboard">rpt_tableau__assessment_entry_audit (Data Quality Dashboard)</h3>
+<ul>
+<li><strong>What it shows</strong>: expected-to-take internal assessments for the current year
+  against what has actually been entered in Illuminate — the "who has not
+  entered scores" view.</li>
+<li><strong>Grain</strong>: student x expected assessment, tested as
+  <code>(student_number, assessment_id)</code>.</li>
+<li><strong>Reads</strong>: <code>int_assessments__scaffold</code>, <code>int_extracts__student_enrollments</code>
+  (<code>enroll_status = 0</code> only), reporting terms,
+  <code>int_illuminate__agg_student_responses</code> (<code>response_type = 'overall'</code>).</li>
+<li><strong>Worth knowing</strong>: replacement sittings are excluded (<code>not is_replacement</code>)
+  but the output still carries an <code>is_replacement</code> column hardcoded to null.</li>
+</ul>
+<h3 id="rpt_tableau__sight_words_dashboard-literacy-dashboard">rpt_tableau__sight_words_dashboard (Literacy Dashboard)</h3>
+<ul>
+<li><strong>What it shows</strong>: Sight Words Quiz results per student x quiz x word, with
+  untested on-grade students kept as null-value rows; shares a workbook with the
+  DIBELS dashboard (see the DIBELS family doc for that side).</li>
+<li><strong>Grain</strong>: <code>(repository_id, student_number, sight_word)</code>, tested at
+  <code>severity: warn</code>.</li>
+<li><strong>Reads</strong>: <code>int_illuminate__repositories</code>/<code>__repository_data</code>, repository
+  fields and grade levels, reporting terms,
+  <code>int_extracts__student_enrollments_subjects</code> (Reading rows).</li>
+<li><strong>Worth knowing</strong>: Paterson is excluded in both branches. The off-grade branch
+  (<code>is_replacement = true</code>) keeps only <em>scored</em> rows, while the on-grade branch
+  keeps every expected student — so completion rates only mean something
+  on-grade, and even there the on-grade branch applies no <code>enroll_status</code>
+  filter, so withdrawn students stay in the denominator.</li>
+</ul>
+<h2 id="deanslist-report-card-extracts">DeansList report-card extracts</h2>
+<ul>
+<li><strong>What triggers it</strong>: the Dagster <code>deanslist</code> extract job, daily at 1:25am
+  Eastern (<code>deanslist-annual.yaml</code> config; "annual" names the config rotation,
+  not the cadence). Each asset queries its <code>rpt_deanslist__*</code> view and delivers
+  <code>json.gz</code> to DeansList's SFTP as a custom data object (CDO).</li>
+<li><strong>Inputs</strong>: <code>int_assessments__response_rollup</code>, the AppSheet region tags
+  (<code>regions_report_card</code>, <code>regions_progress_report</code>), performance band sets,
+  enrollments, the standard-domains sheet, reporting terms.</li>
+<li><strong>The four feeds</strong>:</li>
+<li><code>rpt_deanslist__mod_assessment</code>: K-4 enrichment (non-ELA/Math) subject
+    averages per term, current year only; feeds only the Enrichment table on NJ
+    ES report cards. Includes Unit Assessments always — <strong>tagged or not</strong> — and
+    other scopes only when AppSheet-tagged report-card-eligible for the
+    student's region. Output <code>subject_area</code> is the literal <code>ENRICHMENT</code> (a CDO
+    schema placeholder).</li>
+<li><code>rpt_deanslist__mod_standards</code>: ELA/Math/Writing reporting-group averages,
+    all grades, current year only, with Writing folded into Text Study and a
+    five-label mastery ladder (Advanced Mastery down to Far Below Mastery) from
+    the band sets; feeds the "overall" course grades on ES report cards. Gated
+    by tagging (<code>is_internal_assessment</code>) only — it has no region-tag gate.</li>
+<li><code>rpt_deanslist__mod_standards_domains</code>: K-4 progress-report (overall) and
+    report-card (standard-domain) performance, with <strong>no year filter</strong> (it
+    carries every year the rollup holds). The cut-point case lists K-2 branches
+    at 90/75/60 and then unconditional branches at 85/70/50/30/0, so the
+    effective K-2 ladder is Exceeds 90+, Met 75-89, Approaching 50-74 (the 60
+    branch only keeps 70-74 out of the generic Met), and K-2 students fall into
+    Below/Far Below under 50 like everyone else. Feeds the mastery pages on NJ
+    ES report cards.</li>
+<li><code>rpt_deanslist__sight_words</code>: raw sight-word mastery per student per word,
+    current year forward, with no grade or region filter (Paterson included,
+    unlike the dashboard); <code>retested</code> displays as its own status but counts as
+    mastered (<code>is_mastery = 1</code>). The report cards use it for the K-1 sight-words
+    table.</li>
+<li><strong>Outputs</strong>: DeansList report cards and progress reports. The AppSheet region
+  tags gate <code>mod_standards_domains</code> and the non-UA scopes of <code>mod_assessment</code>;
+  untagged Unit Assessments still reach the enrichment feed, and <code>mod_standards</code>
+  is gated by tagging alone, not region.</li>
+<li><strong>Who runs it</strong>: nobody by hand; the schedule runs and the AppSheet tags steer
+  it. When a score is missing from a report card, check the tag first, then the
+  mod audit sheet.</li>
+</ul>
+<h2 id="the-google-sheets">The Google Sheets</h2>
+<h3 id="rpt_gsheets__ddi_tier_roster">rpt_gsheets__ddi_tier_roster</h3>
+<p>One row per currently-enrolled student x iReady subject with <code>nj_student_tier</code>,
+prior-year NJSLA and iReady EOY proficiency — the tier-planning roster. Pure
+passthrough of <code>int_extracts__student_enrollments_subjects</code> (current year,
+<code>rn_year = 1</code>, <code>enroll_status = 0</code>); the tier logic lives in that hub. Lands in
+the <code>NJ DDI Roster - Source</code> sheet (exposure <code>nj_ddi_roster_source</code>). The
+extract applies no region filter, so Miami rows are present and
+<code>njsla_previous_year</code> carries their FAST values — accepted (2026-10-03): the
+reporting sheets downstream alias the column correctly, so no SQL change.</p>
+<h3 id="rpt_gsheets__deanslist_mod_audit">rpt_gsheets__deanslist_mod_audit</h3>
+<p>The QA view behind the three mod feeds: the individual pre-aggregation response
+rows, with a windowed <code>computed_avg_pct_correct</code> reproducing each published
+feed's GROUP BY so a published average can be checked against its inputs. Scoped
+to the current and prior year — wider than <code>mod_assessment</code> and <code>mod_standards</code>
+(current-year) but narrower than <code>mod_standards_domains</code>, which has no year
+filter. There are no flag columns; the comparison is done by eye in the sheet.
+Known gap: its <code>mod_standards</code> slice does not apply the Writing-to-Text-Study
+remap the published feed applies, so Writing rows need manual reconciliation.</p>
+<h2 id="the-appsheet-catalog-feed">The AppSheet catalog feed</h2>
+<p><code>rpt_appsheet__assessments</code> sends the entire assessment catalog
+(<code>int_assessments__assessments_members</code>, no filter) to the tagging app,
+including the three region-tag fields staff edit and a 0-indexed <code>grade_level</code>.
+This is the outbound half of the tagging loop; the inbound half is the AppSheet
+staging table. Because <code>assessments_members</code> already left-joins the extension,
+staff see their own prior tags when they open the app.</p>
+<h2 id="the-assessment-cube-illuminate-branch">The assessment Cube (Illuminate branch)</h2>
+<p>The assessment star — <code>dim_assessments</code>, <code>dim_assessment_administrations</code>,
+<code>dim_assessment_goals</code>, <code>bridge_assessment_expectations_enrollment_scoped</code> /
+<code>_student_scoped</code>, <code>fct_assessment_scores_enrollment_scoped</code> / <code>_student_scoped</code>
+— is multi-source. This page covers only its Illuminate branch; Amplify/DIBELS,
+iReady, STAR, college and state branches belong to their own families, and the
+Cube-side reference (measure semantics, view structure) ships with PR
+<a href="https://github.com/TEAMSchools/teamster/pull/5495">#5495</a> under
+<code>src/cube/mcp/project_knowledge/</code>.</p>
+<p>What the Illuminate branch contributes:</p>
+<ul>
+<li><code>dim_assessments</code> is member-grained for Illuminate (one row per
+  <code>assessment_id</code>, <code>type = 'illuminate'</code>); other sources are canonical-grained.</li>
+<li><code>dim_assessment_administrations</code> fans the canonical catalog out per assessed
+  region; <code>source_assessment_id</code> is populated only for Illuminate.</li>
+<li>The two expectation bridges split the scaffold on resolvability: sittings with
+  a real course enrollment go enrollment-scoped; replacement sittings and the
+  synthesized K-4 Newark/Camden ES-Writing rows go student-scoped.</li>
+<li><code>fct_assessment_scores_enrollment_scoped</code>'s internal branch keeps
+  assigned-but-not-taken rows (<code>response_type = 'not_taken'</code>) and drops any
+  score <code>int_assessments__resolved_section_enrollments</code> cannot tie to a section
+  (the resolver — subject section first, then a discipline match for state
+  scores, then homeroom — is the scope of record).</li>
+<li><strong>Neither fact exposes a source column.</strong> The only reliable way to isolate
+  Illuminate rows is the join path
+  <code>assessment_administration_key -&gt; dim_assessment_administrations.assessment_key -&gt; dim_assessments.type = 'illuminate'</code>.</li>
+<li>The public surface is <code>student_assessment_scores_view</code>, row-level-secured per
+  viewer; its <code>proficiency_rollup</code> pre-aggregation refreshes daily, which is why
+  the intraday star rebuilds are invisible in Cube.</li>
+</ul>
+<h2 id="supporting-models">Supporting models</h2>
+<p>In-family intermediates and their outside readers ("also read by" — a change
+here moves those consumers too):</p>
+<ul>
+<li><code>int_assessments__response_rollup</code> — the family workhorse: scaffold x
+  responses x bands, one row per expected student-assessment-response. Also read
+  by <code>rpt_gsheets__assessment_roster</code>, <code>rpt_gsheets__school_metrics_extract</code>,
+  <code>rpt_tableau__miami_fast</code>, and <code>int_assessments__college_assessment_practice</code>
+  (CARAT family), so a rollup change also moves the practice-SAT chain.</li>
+<li><code>int_assessments__assessments_members</code> — also read by
+  <code>bridge_assessment_administration_members</code> (disabled).</li>
+<li><code>int_assessments__scaffold</code> — also read by the entry audit (in family).</li>
+<li><code>int_assessments__academic_goals</code> — also read by
+  <code>rpt_tableau__academic_goals_rollup</code> (mid-retirement) and
+  <code>rpt_tableau__state_assessments_dashboard</code> (STAT family).</li>
+<li><code>int_illuminate__assessments</code>, <code>__agg_student_responses_standard</code>,
+  <code>stg_illuminate__public__students</code>, and the overall-responses staging — also
+  read by <code>int_act__test_prep_scores</code> (ACT family).</li>
+<li><code>int_illuminate__repositories</code> / <code>__repository_data</code> — also read by the sight
+  words dashboard (in family).</li>
+<li><code>stg_google_sheets__assessments__course_subject_crosswalk</code> — also read by
+  <code>dim_courses</code>.</li>
+</ul>
+<h2 id="inputs-hand-maintained">Inputs (hand-maintained)</h2>
+<table>
+<thead>
+<tr>
+<th>Input</th>
+<th>Maintainer</th>
+<th>Feeds</th>
+<th>Update rhythm</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>AppSheet assessment tagging</td>
+<td>ADs; QC: Marya Shukla</td>
+<td>everything (<code>is_internal_assessment</code>)</td>
+<td>frequent; turned over every year</td>
+</tr>
+<tr>
+<td>Standard domains named range</td>
+<td>Marya Shukla</td>
+<td>report-card domains, DDI dashboard</td>
+<td>largely static</td>
+</tr>
+<tr>
+<td>Academic goals named range</td>
+<td>data team</td>
+<td>goals on the DDI dashboard, <code>dim_assessment_goals</code></td>
+<td>once a year in theory, several each fall</td>
+</tr>
+<tr>
+<td>Course subject crosswalk</td>
+<td>data team</td>
+<td><code>int_assessments__course_enrollments</code>, <code>dim_courses</code></td>
+<td>annual audit (below)</td>
+</tr>
+<tr>
+<td>Vendor subject crosswalk</td>
+<td>data team</td>
+<td>state/vendor branches of the star</td>
+<td>rare</td>
+</tr>
+<tr>
+<td>QBLs / Power Standards named range</td>
+<td>nobody (retired)</td>
+<td><code>rpt_tableau__ddi_dashboard.is_qbl</code> (<a href="https://github.com/TEAMSchools/teamster/issues/5656">#5656</a>)</td>
+<td>none</td>
+</tr>
+</tbody>
+</table>
+<p>The course subject crosswalk's annual audit is worth systematizing (the family
+skill should carry it as a procedure): list new courses with current-year
+enrollments that are missing from the sheet, then hand the list to c3/academic
+ops to confirm which are tested subjects — connected to Illuminate results,
+state testing results, both, or eventually Focus Apex assessments.</p>
+<h2 id="decisions">Decisions</h2>
+<ul>
+<li><strong>Tag-driven scope.</strong> The AppSheet extension, not Illuminate metadata, decides
+  what is a DDI assessment. This keeps the stack robust to Illuminate's messy
+  catalog (duplicates, "Copy of" titles) at the cost of making the tags a single
+  point of failure.</li>
+<li><strong>Canonical grouping by attributes, not region.</strong> Network policy is one shared
+  internal assessment per module, so regional copies share a canonical id via
+  their shared attributes. The one exception is Miami's own Florida versions,
+  which stay in a separate group.</li>
+<li><strong>Replacement sittings are visible but unscored.</strong> Off-grade sittings show on
+  rosters and the student-scoped bridge but never anchor scores — the section
+  resolver cannot place them.</li>
+<li><strong>The resolver is the scope of record for the fact.</strong> An internal score with
+  no resolvable section is dropped from
+  <code>fct_assessment_scores_enrollment_scoped</code> rather than carried with a null FK.</li>
+<li><strong>NJ state history is capped at 7 years in the fact; FL is not.</strong></li>
+<li><strong>5x/day star, daily Cube pre-agg.</strong> Intraday rebuilds serve Tableau; Cube
+  users see daily data.</li>
+<li><strong>Miami exit.</strong> Miami's Illuminate feed ended with SY25-26. Its historical
+  rows stay; nothing new lands until Focus assessment data is ingested, at which
+  point the internal branch grows a Focus source (decided 2026-09-30).</li>
+</ul>
+<h2 id="support-themes">Support themes</h2>
+<p>What people actually ask about, from a keyword pass (assessment dashboard,
+module dashboard, DDI, DKI) over the Zendesk warehouse copy (17 relevant
+tickets) and the two Slack channels where this work is discussed (22 relevant
+threads), 2026-04-02 through 2026-10-02, measured 2026-10-02. The themes, most
+frequent first, and where each one points:</p>
+<ol>
+<li><strong>"My assessment is not on the dashboard."</strong> The assessment director's own
+   triage rule: anything not rolling up is untagged or mistagged — wrong term
+   date, wrong grade's tag, or no tag at all. When the tag is right, follow the
+   freshness chain above: did the Illuminate sync land it; has the assessment
+   star ticked since; has the Tableau extract refreshed. Occasionally the cause
+   is genuinely on the data side (an overnight pipeline bug has reproduced this
+   with tagging fully correct), so confirm the rows in the extract before and
+   after a refresh rather than re-arguing the tag. After a tag fix, users expect
+   a manual refresh push rather than waiting for the next tick, and they know
+   the refresh times.</li>
+<li><strong>Two worksheets disagree, or the dashboard disagrees with Illuminate.</strong>
+   Module Dashboard vs DKI View discrepancies are usually denominator questions:
+   completion rows vs mastery rows (null <code>response_type</code> is
+   assigned-but-not-taken), and course-enrollment vs grade-level population (an
+   Algebra 1 student is in grade 8 on one cut and in the Algebra course on the
+   other). A multi-assessment DKI View cut also confuses when quizzes are tagged
+   to different dates per grade level — viewing by grade level is the documented
+   workaround. Dashboard-vs-Illuminate discrepancies get reconciled against the
+   extract rows and the sync times.</li>
+<li><strong>Wrong or missing teacher/section.</strong> Two distinct causes. In the model: the
+   course join keeps one section per student, year and subject
+   (<code>rn_student_year_illuminate_subject_desc = 1</code>), so a student's honors or
+   second section is dropped from classroom rollups, and a co-teacher or
+   interventionist can appear as the section of record. In the source: a wrong
+   course assignment in PowerSchool rolls students up under the wrong course on
+   the Module Dashboard — the fix is in PowerSchool, and it populates on the
+   next morning's refresh.</li>
+<li><strong>Access.</strong> A blank DDI Suite page from the Launch page, or a login failure,
+   is Tableau licensing or permissions — not a data defect. Route to the Tableau
+   admin path before reading any SQL.</li>
+<li><strong>Scores entered but banded wrong.</strong> Entered answers showing a too-low
+   mastery band is the shape of
+   <a href="https://github.com/TEAMSchools/teamster/issues/5399">#5399</a> (band tables
+   sync at midnight only) — check the band-set join before suspecting the
+   scores.</li>
+</ol>
+<p>One recurring feature ask: averaging across module sequence numbers (for honor
+roll). That is a workbook/extract change, not a data defect.</p>
+<h2 id="known-issues-need-to-fix">Known issues, need to fix</h2>
+<p>Tracked elsewhere:</p>
+<ul>
+<li><a href="https://github.com/TEAMSchools/teamster/issues/5654">#5654</a> — inconsistent
+  SY25-26 scope/module tagging destabilizes canonical groups.</li>
+<li><a href="https://github.com/TEAMSchools/teamster/issues/5399">#5399</a> — performance
+  band tables sync only at midnight; same-day scores stay unscored intraday.</li>
+<li><a href="https://github.com/TEAMSchools/teamster/issues/4808">#4808</a> — DDI dashboard
+  iReady metrics undercount.</li>
+<li><a href="https://github.com/TEAMSchools/teamster/issues/3797">#3797</a> — Illuminate
+  catalog defects (ops-tracked).</li>
+<li><a href="https://github.com/TEAMSchools/teamster/issues/5349">#5349</a> — fragmented
+  Illuminate standards codes.</li>
+<li><a href="https://github.com/TEAMSchools/teamster/issues/4173">#4173</a> /
+  <a href="https://github.com/TEAMSchools/teamster/issues/4174">#4174</a> — mart orphan
+  rows (college-practice module codes; 5 pre-existing expectation orphans).</li>
+<li><a href="https://github.com/TEAMSchools/teamster/issues/5656">#5656</a> — finish retiring
+  QBLs/Power Standards (the sheet staging model and <code>is_qbl</code>).</li>
+<li><a href="https://github.com/TEAMSchools/teamster/issues/4446">#4446</a> — Illuminate dlt
+  sync refactor.</li>
+<li><a href="https://github.com/TEAMSchools/teamster/issues/5700">#5700</a> — the sight-words
+  dashboard's warn-level uniqueness test fails in prod (about 5,500 duplicate
+  keys, measured 2026-10-03): 6 SY21-22 Sight Words quizzes carry placeholder
+  <code>TBD</code> word fields in Illuminate. Fixed in Illuminate, not dbt.</li>
+</ul>
+<p>Found during the documentation run, not yet tracked separately:</p>
+<ul>
+<li>Uniqueness tests cover every family model with a prod-verified clean grain;
+  two still lack one: <code>rpt_tableau__assessment_dashboard</code> (no clean key exists —
+  the ~0.7% duplicated keys above) and <code>rpt_tableau__ddi_dashboard</code> (its
+  properties YAML is in flight on PR
+  <a href="https://github.com/TEAMSchools/teamster/pull/3576">#3576</a>).</li>
+<li>The academic-goals sheet holds 2 duplicated key rows (one AY2024, one AY2025
+  subject-level HS goal, each entered twice); they flow through
+  <code>int_assessments__academic_goals</code> and are masked downstream by
+  <code>dim_assessment_goals</code>' highest-school-goal-wins dedupe. Check: <code>group by</code> the
+  5 goal keys <code>having count(*) &gt; 1</code>.</li>
+<li><code>rpt_tableau__assessment_dashboard</code>'s description carries a stale Miami row
+  count and says Miami AY2026 rows have "not landed upstream yet"; prod holds
+  zero Miami rows in any year and none will land — Miami left the stack.</li>
+<li><code>dim_assessments</code> documentation points at
+  <code>bridge_assessment_administration_members</code> as the member drill-down, but that
+  bridge is disabled with zero consumers.</li>
+<li><code>int_illuminate__performance_band_sets</code> carries a commented-out
+  <code>materialized: table</code> override — decide and either enable or delete it.</li>
+<li>The 16 enabled repository stubs below 443 are absent from the dlt schedules,
+  so their repository data is frozen (see Where the data comes from).</li>
+<li>The mod audit's Writing remap gap and its year-scope mismatch with
+  <code>mod_standards_domains</code> (see its section).</li>
+<li>The <code>NJ DDI Roster - Source</code> sheet sits in the Reports drive folder despite
+  its name, and no Reports-layer IMPORTRANGE consumer of either extract sheet
+  was found — confirm how people actually read them.</li>
+<li><code>rpt_tableau__ddi_dashboard</code>'s <code>TODO: Remove SY26</code> filter on
+  <code>module_type != 'WPP'</code>, which is also what makes its rollup join inner.</li>
+</ul>
+<h2 id="yearly-upkeep">Yearly upkeep</h2>
+<ol>
+<li>July: the <code>current_academic_year</code> var rollover (repo-wide, not
+   family-specific) moves every current-year filter in the family at once.</li>
+<li>Before the first administration: achievement directors create the year's
+   assessments in Illuminate and tag them in the AppSheet; Marya Shukla QCs the
+   tags. Nothing shows anywhere until this happens.</li>
+<li>Goals: add the new year's rows to the academic-goals named range.</li>
+<li>Standard domains: update the named range when standards or domains change.</li>
+<li>Reporting terms: confirm the year's RT rows exist (shared hub, but this
+   family breaks visibly when they lag).</li>
+<li>August: turn the DDI Suite Tableau refresh schedule back on and review its
+   cron list with the assessment director — anything to add or remove for the
+   year.</li>
+<li>Fall: bump the DDI Suite workbook tabs' default year to the new school year
+   (a workbook edit, requested every year).</li>
+<li>Fall: run the course subject crosswalk audit (see Inputs) — new courses with
+   current-year enrollments that the sheet is missing, confirmed with
+   c3/academic ops.</li>
+<li>Check the DDI Suite after the first assessment window: the first real rows
+   exercise the whole chain.</li>
+</ol>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

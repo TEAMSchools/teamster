@@ -1,0 +1,3842 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+        <link rel="prev" href="../fiscal-year-partitioning/">
+      
+      
+        <link rel="next" href="../finalsite-focus-import/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>dbt Conventions - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#dbt-conventions" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              dbt Conventions
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../models/fresh-dashboard-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/launch-page-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Launch Page
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/cube-access-individual-exceptions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube Access - Individual Exceptions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/tableau-permissions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tableau Permissions (People Data)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architecture
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Architecture">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#layers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Layers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#allowed-edges" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Allowed edges
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rules" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rules
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Rules">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#a1-read-only-the-layers-your-layer-allows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A1. Read only the layers your layer allows
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a2-an-rpt_-reads-a-mart-when-1-covers-the-entity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A2. An rpt_ reads a mart when 1 covers the entity
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a3-an-intermediate-either-builds-or-reshapes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A3. An intermediate either builds or reshapes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a4-1-model-per-grain" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A4. 1 model per grain
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a5-dedup-only-in-stg_-or-source-int_" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A5. Dedup only in stg_ or source int_
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a6-long-in-the-core-wide-at-the-edge" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A6. Long in the core, wide at the edge
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a7-identity-in-the-domain-int_-keys-through-their-macro" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A7. Identity in the domain int_; keys through their macro
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a8-exposures-read-only-rpt_-and-marts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A8. Exposures read only rpt_ and marts
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a9-no-select-in-the-final-select-of-an-rpt_-or-mart" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A9. No select * in the final select of an rpt_ or mart
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a10-join-unioned-regional-models-on-_dbt_source_project" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A10. Join unioned regional models on _dbt_source_project
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a11-domain-folders-are-listed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A11. Domain folders are listed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#marts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Marts
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Marts">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#column-naming-rubric" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Column-naming rubric
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#degenerate-dim-rule" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Degenerate-dim rule
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#plumbing-definition" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Plumbing definition
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#strict-chain-traversal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Strict-chain traversal
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pk-fk-date-column-shapes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PK / FK / date column shapes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sql-style" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SQL style
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="SQL style">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#where-we-differ-from-dbt-labs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where we differ from dbt Labs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rules_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rules
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Rules">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#s1-ansi-sql-or-a-dbt-macro-first" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S1. ANSI SQL or a dbt macro first
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s2-name-every-group-by-column" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S2. Name every group by column
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s3-no-subqueries-against-tables-or-ctes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S3. No subqueries against tables or CTEs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s4-no-pass-through-import-ctes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S4. No pass-through import CTEs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s5-no-order-by-in-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S5. No order by in models
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s6-order-the-select-list-by-complexity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S6. Order the select list by complexity
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s7-sqlfluff-st06-select-order" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S7. sqlfluff ST06 select order
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s8-at-most-1-level-of-function-nesting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S8. At most 1 level of function nesting
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s9-cast-early-once-with-an-alias" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S9. Cast early, once, with an alias
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s10-no-calculations-on-table-columns-in-where-or-1-sided-in-on" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S10. No calculations on table columns in where or 1-sided in on
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s11-row-filters-on-the-preserved-table-go-in-where" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S11. Row filters on the preserved table go in where
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s12-distinct-only-for-grain-projection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S12. distinct only for grain projection
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s13-half-open-intervals-for-date-ranges-that-touch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S13. Half-open intervals for date ranges that touch
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s14-booleans-are-is_-has_-columns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S14. Booleans are is_ / has_ columns
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s15-if-for-1-condition-case-for-2-or-more" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S15. if() for 1 condition, case for 2 or more
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s16-short-table-aliases-unique-in-the-query" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S16. Short table aliases, unique in the query
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s17-union-all-branches-list-the-same-columns-in-the-same-order" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S17. union all branches list the same columns in the same order
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s18-comments-say-only-what-the-line-cannot-show" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S18. Comments say only what the line cannot show
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#review-rubric" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Review rubric
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reference
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Reference">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#required-config-per-layer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Required config per layer
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#region-labels" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Region labels
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#handy-sql" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Handy SQL
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ref-and-source" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ref() and source()
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bigquery-scalar-functions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        BigQuery scalar functions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#model-properties-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Model properties file
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exposures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Exposures
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/fresh-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FRESH Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/carat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CARAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/csgf-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CSGF Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/crdc-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CRDC Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/ddi-stack-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DDI Stack Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/hs-early-warning-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HS Early Warning Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/dibels-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DIBELS Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/stat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/njdoe-universal-screener-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NJDOE Universal Screener Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/athletic-eligibility-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Athletic Eligibility Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/academic-health-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Academic Health Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/grad-plan-tracking-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Grad Plan Tracking Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/ignite-r2i-extract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IGNITE R2I Extract
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architecture
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Architecture">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#layers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Layers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#allowed-edges" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Allowed edges
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rules" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rules
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Rules">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#a1-read-only-the-layers-your-layer-allows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A1. Read only the layers your layer allows
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a2-an-rpt_-reads-a-mart-when-1-covers-the-entity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A2. An rpt_ reads a mart when 1 covers the entity
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a3-an-intermediate-either-builds-or-reshapes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A3. An intermediate either builds or reshapes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a4-1-model-per-grain" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A4. 1 model per grain
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a5-dedup-only-in-stg_-or-source-int_" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A5. Dedup only in stg_ or source int_
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a6-long-in-the-core-wide-at-the-edge" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A6. Long in the core, wide at the edge
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a7-identity-in-the-domain-int_-keys-through-their-macro" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A7. Identity in the domain int_; keys through their macro
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a8-exposures-read-only-rpt_-and-marts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A8. Exposures read only rpt_ and marts
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a9-no-select-in-the-final-select-of-an-rpt_-or-mart" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A9. No select * in the final select of an rpt_ or mart
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a10-join-unioned-regional-models-on-_dbt_source_project" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A10. Join unioned regional models on _dbt_source_project
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a11-domain-folders-are-listed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A11. Domain folders are listed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#marts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Marts
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Marts">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#column-naming-rubric" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Column-naming rubric
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#degenerate-dim-rule" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Degenerate-dim rule
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#plumbing-definition" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Plumbing definition
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#strict-chain-traversal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Strict-chain traversal
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pk-fk-date-column-shapes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PK / FK / date column shapes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sql-style" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SQL style
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="SQL style">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#where-we-differ-from-dbt-labs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where we differ from dbt Labs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rules_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rules
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Rules">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#s1-ansi-sql-or-a-dbt-macro-first" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S1. ANSI SQL or a dbt macro first
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s2-name-every-group-by-column" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S2. Name every group by column
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s3-no-subqueries-against-tables-or-ctes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S3. No subqueries against tables or CTEs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s4-no-pass-through-import-ctes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S4. No pass-through import CTEs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s5-no-order-by-in-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S5. No order by in models
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s6-order-the-select-list-by-complexity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S6. Order the select list by complexity
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s7-sqlfluff-st06-select-order" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S7. sqlfluff ST06 select order
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s8-at-most-1-level-of-function-nesting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S8. At most 1 level of function nesting
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s9-cast-early-once-with-an-alias" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S9. Cast early, once, with an alias
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s10-no-calculations-on-table-columns-in-where-or-1-sided-in-on" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S10. No calculations on table columns in where or 1-sided in on
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s11-row-filters-on-the-preserved-table-go-in-where" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S11. Row filters on the preserved table go in where
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s12-distinct-only-for-grain-projection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S12. distinct only for grain projection
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s13-half-open-intervals-for-date-ranges-that-touch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S13. Half-open intervals for date ranges that touch
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s14-booleans-are-is_-has_-columns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S14. Booleans are is_ / has_ columns
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s15-if-for-1-condition-case-for-2-or-more" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S15. if() for 1 condition, case for 2 or more
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s16-short-table-aliases-unique-in-the-query" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S16. Short table aliases, unique in the query
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s17-union-all-branches-list-the-same-columns-in-the-same-order" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S17. union all branches list the same columns in the same order
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#s18-comments-say-only-what-the-line-cannot-show" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S18. Comments say only what the line cannot show
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#review-rubric" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Review rubric
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reference
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Reference">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#required-config-per-layer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Required config per layer
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#region-labels" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Region labels
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#handy-sql" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Handy SQL
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ref-and-source" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ref() and source()
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bigquery-scalar-functions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        BigQuery scalar functions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#model-properties-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Model properties file
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exposures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Exposures
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/reference/dbt-conventions.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="dbt-conventions">dbt Conventions</h1>
+<p>This page is built from the rule files Claude reads
+(<code>.claude/rules/dbt-architecture.md</code>, <code>.claude/rules/dbt-marts.md</code>, and
+<code>.claude/rules/dbt-sql.md</code>), so people and Claude review against the same text.
+Cite rules by ID (<code>A2</code>, <code>S10</code>) in review.</p>
+<p>A rule changes through a PR to its rule file. If you disagree with a rule in
+review, open an issue; the feature PR follows the current rule.</p>
+<p>The standard applies to the lines a PR adds or changes. Old violations elsewhere
+in a model are left alone, and existing models are not swept.</p>
+<h2 id="architecture">Architecture</h2>
+<h3 id="layers">Layers</h3>
+<p>Data flows from source to consumer through these layers. Each layer has 1 job.</p>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Does</th>
+<th>Lives in (kipptaf)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>stg_</code></td>
+<td>1 source table: rename, cast, filter soft-deletes, dedup source duplicates, unpivot a source that arrives wide</td>
+<td><code>&lt;source&gt;/staging/</code></td>
+</tr>
+<tr>
+<td>Source <code>int_</code></td>
+<td>Logic within 1 source system</td>
+<td><code>&lt;source&gt;/intermediate/</code></td>
+</tr>
+<tr>
+<td>Domain <code>int_</code></td>
+<td>Cross-source business entities and identity resolution</td>
+<td>Domain folders (A11)</td>
+</tr>
+<tr>
+<td>Marts</td>
+<td><code>dim_</code>, <code>fct_</code>, <code>bridge_</code>: the core every consumer reads</td>
+<td><code>marts/</code></td>
+</tr>
+<tr>
+<td><code>rpt_</code></td>
+<td>Thin shaping of marts for 1 tool, including that tool's pivots</td>
+<td><code>extracts/&lt;tool&gt;/</code></td>
+</tr>
+</tbody>
+</table>
+<p>Source packages hold <code>stg_</code> and source <code>int_</code> only. District projects hold
+package config, district-only source models, and <code>rpt_</code> wrappers over kipptaf
+extracts. Cross-region business logic lives only in kipptaf.</p>
+<h3 id="allowed-edges">Allowed edges</h3>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th>May read</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>stg_</code></td>
+<td><code>source()</code>, except a district <code>int_</code> or <code>base_</code></td>
+</tr>
+<tr>
+<td>Source <code>int_</code></td>
+<td><code>stg_</code>, source <code>int_</code>, and <code>snapshot_</code> of a model in the same source folder; <code>source()</code> for district union wrappers</td>
+</tr>
+<tr>
+<td>Domain <code>int_</code></td>
+<td><code>stg_</code>, any source <code>int_</code>, domain <code>int_</code>, <code>snapshot_</code></td>
+</tr>
+<tr>
+<td>Marts</td>
+<td>Domain <code>int_</code>, other marts</td>
+</tr>
+<tr>
+<td><code>rpt_</code></td>
+<td>Marts, domain <code>int_</code>; in a district project, its kipptaf <code>rpt_</code> through <code>source("kipptaf_extracts", …)</code>; a wrapper that reconciles against its target system (kippmiami <code>rpt_focus__*</code>) may also read that system's <code>stg_</code></td>
+</tr>
+<tr>
+<td>Exposures</td>
+<td><code>rpt_</code>, marts; Cube reads marts only</td>
+</tr>
+</tbody>
+</table>
+<p><code>base_</code> models count as <code>int_</code> until
+<a href="https://github.com/TEAMSchools/teamster/issues/2541">#2541</a> renames them;
+classify each as source or domain by what it reads, as for any <code>int_</code>.</p>
+<h3 id="rules">Rules</h3>
+<h4 id="a1-read-only-the-layers-your-layer-allows">A1. Read only the layers your layer allows</h4>
+<p>A model reads only what the <em>Allowed edges</em> table lists for its layer. An <code>rpt_</code>
+never reads another <code>rpt_</code>, except a district wrapper over its kipptaf
+counterpart.</p>
+<ul>
+<li>Why: when every layer reads from its own place, logic has 1 home and a
+  reviewer knows where to look for it.</li>
+<li>Good: <code>rpt_tableau__&lt;dashboard&gt;</code> reads
+  <code>fct_student_attendance_enrollment_daily</code>.</li>
+<li>Bad: <code>rpt_tableau__&lt;dashboard&gt;</code> reads <code>stg_powerschool__attendance</code>.</li>
+<li>Enforced by: <code>dbt-layer-check</code>, with a baseline of existing violations.</li>
+</ul>
+<h4 id="a2-an-rpt_-reads-a-mart-when-1-covers-the-entity">A2. An <code>rpt_</code> reads a mart when 1 covers the entity</h4>
+<p>Read a domain <code>int_</code> only while no mart covers the entity, and link an issue for
+the missing mart in the PR.</p>
+<ul>
+<li>Why: marts are the 1 shared definition; an <code>rpt_</code> built on an <code>int_</code> rebuilds
+  logic the mart already owns.</li>
+<li>Good: <code>rpt_gsheets__&lt;roster&gt;</code> reads <code>dim_staff</code>.</li>
+<li>Bad: <code>rpt_gsheets__&lt;roster&gt;</code> reads <code>int_people__staff_roster</code> when <code>dim_staff</code>
+  has the columns.</li>
+<li>Enforced by: review.</li>
+</ul>
+<h4 id="a3-an-intermediate-either-builds-or-reshapes">A3. An intermediate either builds or reshapes</h4>
+<p>A build model keeps a grain and assembles columns (joins, decodes, cleanup); its
+name has no suffix. A reshape model changes the grain; its name ends in
+<code>_pivot</code>, <code>_unpivot</code>, <code>_rollup</code>, <code>_scaffold</code>, or <code>_union</code>. A crosswalk is a
+build model whose entity is a mapping. Existing names stay.</p>
+<ul>
+<li>Why: the name tells a reader what happens to the grain before they open the
+  file.</li>
+<li>Good: <code>int_people__staff_roster</code> (build),
+  <code>int_kippadb__standardized_test_unpivot</code> (reshape).</li>
+<li>Bad: <code>int_&lt;concern&gt;__scores_unpivoted</code>.</li>
+<li>Enforced by: <code>dbt-layer-check</code> (new models).</li>
+</ul>
+<h4 id="a4-1-model-per-grain">A4. 1 model per grain</h4>
+<p>Each grain has 1 model within a source folder, and 1 across the domain folders.
+A reshape model is the canonical model for its output grain. Before adding an
+intermediate, check whether a model already has that grain; extend it instead of
+adding a sibling.</p>
+<ul>
+<li>Why: 2 models at 1 grain drift apart, and the next author cannot tell which is
+  right.</li>
+<li>Good: a new staff column goes into <code>int_people__staff_roster</code>, not a second
+  model at 1 row per staff member.</li>
+<li>Bad: <code>int_&lt;source&gt;__scores</code> and <code>int_&lt;source&gt;__scores_clean</code> in 1 source
+  folder at the same grain.</li>
+<li>Enforced by: review; <code>dbt-layer-check</code> warns on a shared uniqueness grain.</li>
+</ul>
+<h4 id="a5-dedup-only-in-stg_-or-source-int_">A5. Dedup only in <code>stg_</code> or source <code>int_</code></h4>
+<ul>
+<li>Why: a dedup further down hides an upstream bug instead of fixing it.</li>
+<li>Good: <code>dbt_utils.deduplicate</code> in a staging model over a source that resends
+  rows.</li>
+<li>Bad: <code>dbt_utils.deduplicate</code> on the PK at the end of a mart.</li>
+<li>Enforced by: review.</li>
+</ul>
+<h4 id="a6-long-in-the-core-wide-at-the-edge">A6. Long in the core, wide at the edge</h4>
+<p>Intermediates and marts stay long: 1 row per fact at its natural grain. A pivot
+to a wide layout for 1 tool lives inside that tool's <code>rpt_</code>. An <code>int_</code> pivot is
+fine when its output grain is reused.</p>
+<ul>
+<li>Why: long data serves every consumer; a wide layout serves 1.</li>
+<li>Good: a fact with 1 row per student, test, and subject.</li>
+<li>Bad: <code>int_deanslist__students__custom_fields__pivot</code> read only by
+  <code>rpt_tableau__community_service</code>.</li>
+<li>Enforced by: review.</li>
+</ul>
+<h4 id="a7-identity-in-the-domain-int_-keys-through-their-macro">A7. Identity in the domain <code>int_</code>; keys through their macro</h4>
+<p>Decide which source records are the same person or thing in the domain <code>int_</code>.
+When an entity has a key macro (<code>{{ student_key(...) }}</code>), hash its surrogate
+key in a mart only through that macro, never with a direct
+<code>generate_surrogate_key</code> call.</p>
+<ul>
+<li>Why: 1 macro holds each key's inputs, so a key cannot drift between the marts
+  that hash it.</li>
+<li>Good: <code>{{ student_key("s.student_number") }} as student_key</code>.</li>
+<li>Bad:
+  <code>{{ dbt_utils.generate_surrogate_key(["s.student_number"]) }} as student_key</code>.</li>
+<li>Enforced by: <code>dbt-layer-check</code> (lines the PR changes).</li>
+</ul>
+<h4 id="a8-exposures-read-only-rpt_-and-marts">A8. Exposures read only <code>rpt_</code> and marts</h4>
+<p>A tool reads an <code>rpt_</code> or a mart. Cube reads marts only.</p>
+<ul>
+<li>Why: the consumer layer absorbs schema change; a tool on an <code>int_</code> breaks when
+  the <code>int_</code> changes.</li>
+<li>Good: a Tableau exposure <code>depends_on: ref("rpt_tableau__&lt;dashboard&gt;")</code>.</li>
+<li>Bad: a Tableau exposure <code>depends_on: ref("int_topline__student_metrics")</code>.</li>
+<li>Enforced by: <code>dbt-layer-check</code>, with a baseline.</li>
+</ul>
+<h4 id="a9-no-select-in-the-final-select-of-an-rpt_-or-mart">A9. No <code>select *</code> in the final select of an <code>rpt_</code> or mart</h4>
+<ul>
+<li>Why: the column list is the consumer's contract; a star hides it.</li>
+<li>Good: <code>select student_key, academic_year, … from final</code>.</li>
+<li>Bad: <code>select * from final</code>.</li>
+<li>Enforced by: <code>dbt-layer-check</code> (lines the PR changes).</li>
+</ul>
+<h4 id="a10-join-unioned-regional-models-on-_dbt_source_project">A10. Join unioned regional models on <code>_dbt_source_project</code></h4>
+<p>When 2 models both union regional datasets, add
+<code>a._dbt_source_project = b._dbt_source_project</code> to the join.</p>
+<ul>
+<li>Why: ids repeat across regions; without it, rows match across regions.</li>
+<li>Good:
+  <code>on a.student_number = b.student_number and a._dbt_source_project = b._dbt_source_project</code>.</li>
+<li>Bad: <code>on a.student_number = b.student_number</code> between 2 cross-region unions.</li>
+<li>Enforced by: review.</li>
+</ul>
+<h4 id="a11-domain-folders-are-listed">A11. Domain folders are listed</h4>
+<p>A kipptaf folder holding domain <code>int_</code> models is listed in <code>DOMAIN_FOLDERS</code> in
+<code>scripts/check_dbt_standard.py</code>. Every other <code>int_</code> is a source <code>int_</code>. Adding a
+domain is normal: add the folder and its list entry in 1 PR.</p>
+<ul>
+<li>Why: the list is how the check tells a domain <code>int_</code> from a source <code>int_</code>. It
+  lives in the script, not in <code>dbt_project.yml</code>, because a <code>+meta</code> tag marks
+  every model in the folder modified and rebuilds them all in CI.</li>
+<li>Good: <code>"students"</code> in <code>DOMAIN_FOLDERS</code>.</li>
+<li>Bad: a new <code>enrollments/</code> folder of cross-source models missing from the list.</li>
+<li>Enforced by: <code>dbt-layer-check</code>.</li>
+</ul>
+<h2 id="marts">Marts</h2>
+<p>Dimensional marts (star schema) are consumed by Cube, Tableau, and the <code>rpt_</code>
+layer. Bridge models (<code>bridge_*</code>) are factless facts that link 2 or more
+dimensions many-to-many.</p>
+<h3 id="column-naming-rubric">Column-naming rubric</h3>
+<p>Applied to every mart column a PR adds, renames, or changes.</p>
+<ul>
+<li>R1. Strip source-system prefixes/names (<code>powerschool_</code>, <code>adp_</code>, <code>deanslist_</code>,
+  <code>focus_</code>, <code>finalsite_</code>) unless disambiguating unified columns. Source-agnostic
+  naming is load-bearing — the mart surface must not change when Focus replaces
+  PowerSchool or Finalsite replaces PowerSchool enrollment.</li>
+<li>R2. No KIPP-specific language (<code>teammate</code>, <code>employee_number</code>, <code>microgoal</code>,
+  <code>dcid</code>, <code>oid</code>, <code>lep</code>).</li>
+<li>R3. Boolean fields use <code>is_</code> / <code>has_</code> prefix. On fact tables, countable 0/1
+  flags may use <code>INT64</code> rather than <code>BOOLEAN</code> so <code>SUM(is_x)</code> / <code>AVG(is_x)</code> read
+  naturally without casting. Weighted non-binary measures drop <code>is_</code> (e.g.
+  <code>present_weight</code>).</li>
+<li>R4. Dates end <code>_date</code>; timestamps end <code>_timestamp</code>.</li>
+<li>R6. Ed-Fi Unified Data Model nomenclature is the default for IDs, entity
+  names, standard attributes. Deviate toward plain English for awkward
+  descriptors.</li>
+<li>R7. Keep ubiquitous acronyms; spell out internal ones. Ubiquitous, user-facing
+  acronyms (<code>gpa</code>, <code>ada</code>, <code>fte</code>, etc.) stay verbatim; niche source-system
+  acronyms (<code>dcid</code>, <code>oid</code>, <code>lep</code>) get spelled out or removed.</li>
+<li>R8. Plumbing removed from mart SELECTs — see definition below.</li>
+<li>R9. Remove dimension attributes reachable via FK. Includes natural keys that
+  duplicate a surrogate FK, and date columns that duplicate a date-key FK.</li>
+<li>R10. Entity qualification. Qualify a descriptive column with the model's
+  entity prefix only when removing it creates a real downstream-join ambiguity
+  (e.g. <code>full_name</code> on every person dim — not <code>student_name</code>). Otherwise default
+  to unqualified. Don't entity-qualify bare reserved-word columns to satisfy BI
+  field-list readability — Cube <code>title:</code> aliases BI presentation. Evaluate R10 /
+  reserved-word rename decisions against raw-SQL ergonomics only.</li>
+</ul>
+<h3 id="degenerate-dim-rule">Degenerate-dim rule</h3>
+<p>Text columns (e.g. <code>incident_type</code>, <code>consequence_type</code>) drop <code>_code</code> / <code>_name</code>
+suffixes. Exception: when a code AND a human name coexist in the same table
+(e.g. <code>term_code</code> + <code>term_name</code>, <code>status_code</code> + <code>status_name</code>), both suffixes
+stay. Under R10, both halves also keep their entity prefix so the pair stays
+consistent.</p>
+<h3 id="plumbing-definition">Plumbing definition</h3>
+<p>Removed from all mart SELECTs:</p>
+<ul>
+<li><code>_dbt_source_relation</code> (dbt internal, union-model metadata)</li>
+<li>Source-system internal row IDs used only for upstream joins (DeansList <code>lid</code>,
+  PowerSchool <code>dcid</code>, Amplify record IDs, iReady submission IDs, etc.)</li>
+<li>Any column whose only historical use was as a join key in intermediate layers</li>
+</ul>
+<p>Plumbing remains in <code>staging/</code> and <code>intermediate/</code> — only stripped from the mart
+SELECT.</p>
+<h3 id="strict-chain-traversal">Strict-chain traversal</h3>
+<p>Facts, bridges, and child dims FK to their direct parent(s) only; deeper
+dimensional context is reached by traversing the FK chain, not by denormalizing
+it into the row.</p>
+<ul>
+<li>No diamond paths. A fact should never have two FK routes to the same ultimate
+  dim. If a fact needs attributes of a deep dim (e.g. <code>dim_regions</code> from a staff
+  observation), traversal goes through the chain
+  (<code>fct_staff_observations → dim_locations → dim_regions</code>), not via a direct
+  <code>region_key</code> on the fact.</li>
+<li>Parent-fact inheritance. A child fact that FKs to a parent fact inherits the
+  parent's dimensional context and does not repeat it. Example:
+  <code>fct_behavioral_consequences</code> carries <code>behavioral_incident_key</code> only; student
+  / location / region come through the parent, not duplicated here.</li>
+</ul>
+<p>Watch for common diamond triggers: a new <code>region_key</code> on a fact that already FKs
+to a location or staff-work-assignment; role-playing date FKs pointed at the
+same <code>dim_dates</code> row without a role qualifier (<code>created_date_key</code> vs
+<code>solved_date_key</code>, not both <code>date_key</code>). If you find yourself adding an FK to
+avoid a join, the chain is probably already there — use it instead.</p>
+<h3 id="pk-fk-date-column-shapes">PK / FK / date column shapes</h3>
+<ul>
+<li>Primary key: <code>&lt;entity&gt;_key</code>, hashed through the entity's key macro (A7), or
+  <code>generate_surrogate_key([...])</code> for an entity with no macro yet.</li>
+<li>Foreign key: <code>&lt;target&gt;_key</code> when unambiguous; <code>&lt;role&gt;_&lt;target&gt;_key</code> when
+  multiple FKs to the same target coexist (e.g. <code>submitter_staff_key</code> +
+  <code>assignee_staff_key</code> on <code>fct_support_tickets</code>). Never expose the raw natural
+  key alongside its surrogate (R9).</li>
+<li>FK constraint form: declare foreign keys with the ref-aware <code>to: ref(...)</code> +
+  <code>to_columns:</code> form (dbt 1.9+) at the column level for single-column FKs — not
+  model-level <code>expression: ref(...)</code>, which is free text that doesn't capture
+  the ref dependency. View marts only: a table mart carries no outgoing FK
+  constraints and records the edge under <code>config.meta.foreign_key</code> instead.</li>
+<li>Date FK (<code>_date_key</code>): raw DATE value matching <code>dim_dates.date_key</code>, not a
+  hash. Never also expose the same date as a degenerate <code>_date</code> column next to
+  its <code>_date_key</code> (R9).</li>
+</ul>
+<h2 id="sql-style">SQL style</h2>
+<p>Our base is dbt Labs'
+<a href="https://docs.getdbt.com/best-practices/how-we-style/2-how-we-style-our-sql">How we style our SQL</a>:
+lowercase, trailing commas, explicit <code>inner join</code> / <code>left join</code>, and CTEs over
+subqueries. sqlfmt and sqlfluff (<code>.trunk/config/.sqlfluff</code>) enforce the
+formatting. The rules below are where we add to or differ from that guide.</p>
+<h3 id="where-we-differ-from-dbt-labs">Where we differ from dbt Labs</h3>
+<table>
+<thead>
+<tr>
+<th>Rule</th>
+<th>dbt Labs</th>
+<th>Us</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Import CTEs</td>
+<td>Recommended</td>
+<td>Banned (S4)</td>
+<td>A CTE with no logic; <code>ref()</code> in <code>from</code> reads the same</td>
+</tr>
+<tr>
+<td><code>qualify</code></td>
+<td>Allowed</td>
+<td>Banned (S1)</td>
+<td>Not ANSI SQL; a ranked column plus <code>where</code> does the same</td>
+</tr>
+<tr>
+<td><code>group by 1, 2</code> / <code>group by all</code></td>
+<td>Prefers <code>group by 1, 2</code></td>
+<td>Banned (S1, S2)</td>
+<td>Both break silently when the select list changes</td>
+</tr>
+<tr>
+<td>Table aliases</td>
+<td>Full names, no initials</td>
+<td>Short initials (S16)</td>
+<td>The repo norm; unique in the query</td>
+</tr>
+</tbody>
+</table>
+<h3 id="rules_1">Rules</h3>
+<p>Common remedy for S3, S8, S9, and S10: derive the expression as a named column
+in an upstream CTE, then reference the plain column.</p>
+<h4 id="s1-ansi-sql-or-a-dbt-macro-first">S1. ANSI SQL or a dbt macro first</h4>
+<p>Use BigQuery-only syntax only when it does something standard SQL cannot.
+<code>qualify</code>, <code>group by all</code>, and <code>union all corresponding</code> never pass that test.</p>
+<ul>
+<li>Why: standard SQL reads the same to everyone and ports between engines.</li>
+<li>Good: <code>row_number() over (...) as rn</code> in 1 CTE, <code>where rn = 1</code> in the next.</li>
+<li>Bad: <code>qualify row_number() over (...) = 1</code>.</li>
+<li>Enforced by: <code>sql-banned-syntax</code>.</li>
+</ul>
+<h4 id="s2-name-every-group-by-column">S2. Name every <code>group by</code> column</h4>
+<ul>
+<li>Why: positional grouping breaks silently when the select list is reordered.</li>
+<li>Good: <code>group by student_number, academic_year</code>.</li>
+<li>Bad: <code>group by 1, 2</code>.</li>
+<li>Enforced by: sqlfluff AM06.</li>
+</ul>
+<h4 id="s3-no-subqueries-against-tables-or-ctes">S3. No subqueries against tables or CTEs</h4>
+<p>Write a CTE and join it. The 1 exception is a scalar aggregate over <code>unnest</code> of
+an array, which is row-local.</p>
+<ul>
+<li>Why: a CTE has a name and can be read and tested on its own.</li>
+<li>Good: <code>(select min(x) from unnest([d1, d2, d3]) as x) as earliest_date</code>.</li>
+<li>Bad: <code>where student_number in (select student_number from enrolled)</code>.</li>
+<li>Enforced by: sqlfluff ST05 in <code>from</code> and <code>join</code>; review in <code>where</code>.</li>
+</ul>
+<h4 id="s4-no-pass-through-import-ctes">S4. No pass-through import CTEs</h4>
+<p>Reference <code>ref()</code> and <code>source()</code> directly in <code>from</code> and <code>join</code>. Every CTE does
+real work.</p>
+<ul>
+<li>Why: a CTE that only renames a ref adds a hop and no logic.</li>
+<li>Good: <code>from {{ ref("stg_powerschool__students") }} as s</code>.</li>
+<li>Bad: <code>students as (select * from {{ ref("stg_powerschool__students") }})</code>.</li>
+<li>Enforced by: review.</li>
+</ul>
+<h4 id="s5-no-order-by-in-models">S5. No <code>order by</code> in models</h4>
+<ul>
+<li>Why: ordering belongs to the tool that displays the data.</li>
+<li>Good: no <code>order by</code> in the final select.</li>
+<li>Bad: <code>order by student_number</code> at the end of a model.</li>
+<li>Enforced by: review.</li>
+</ul>
+<h4 id="s6-order-the-select-list-by-complexity">S6. Order the select list by complexity</h4>
+<p>Our house order, with no interleaving:</p>
+<ol>
+<li>Plain columns, grouped by source table in join order, with a blank line
+   between tables</li>
+<li>Constants and literals</li>
+<li>Simple functions (<code>coalesce(...)</code>, simple <code>if(...)</code>)</li>
+<li>Nested functions</li>
+<li>Logicals (<code>if(condition, true, false)</code>)</li>
+<li>Case statements</li>
+<li>Window functions (<code>row_number() over (...)</code>)</li>
+</ol>
+<p>When a select reads from 1 table or CTE, do not prefix columns with an alias.</p>
+<ul>
+<li>Why: a reader finds the plain columns first and the logic last.</li>
+<li>Good: plain columns, then <code>coalesce(...)</code>, then <code>case ... end</code>.</li>
+<li>Bad: a <code>case</code> between 2 plain columns.</li>
+<li>Enforced by: review.</li>
+</ul>
+<h4 id="s7-sqlfluff-st06-select-order">S7. sqlfluff ST06 select order</h4>
+<p>sqlfluff's own rule, separate from S6: wildcards, then plain columns, then
+calculations. It treats <code>cast()</code> as a plain column.</p>
+<ul>
+<li>Why: lint consistency.</li>
+<li>Good: <code>cast(x as int64) as x</code> before <code>date(y) as y_date</code>.</li>
+<li>Bad: <code>date(y) as y_date</code> before <code>cast(x as int64) as x</code>.</li>
+<li>Enforced by: sqlfluff ST06.</li>
+</ul>
+<h4 id="s8-at-most-1-level-of-function-nesting">S8. At most 1 level of function nesting</h4>
+<p>Aggregates passed as direct arguments do not count.</p>
+<ul>
+<li>Why: nested calls hide intermediate values a reader needs to check.</li>
+<li>Good: <code>if(coalesce(x, y) &gt; 0, 'a', 'b')</code>;
+  <code>round(safe_divide(sum(a), sum(b)), 2)</code>.</li>
+<li>Bad: <code>if(coalesce(cast(x as int64), 0) &gt; 0, 'a', 'b')</code>.</li>
+<li>Enforced by: review.</li>
+</ul>
+<h4 id="s9-cast-early-once-with-an-alias">S9. Cast early, once, with an alias</h4>
+<p>Cast in staging or where the raw value first appears, as a named column. Never
+nest <code>cast()</code> inside another function.</p>
+<ul>
+<li>Why: 1 typed column downstream; an unaliased <code>cast()</code> is named <code>f0_</code> by
+  BigQuery.</li>
+<li>Good: <code>cast(student_id as string) as student_id</code> in staging.</li>
+<li>Bad: <code>date(cast(entry_ts as timestamp))</code> in a mart.</li>
+<li>Enforced by: review.</li>
+</ul>
+<h4 id="s10-no-calculations-on-table-columns-in-where-or-1-sided-in-on">S10. No calculations on table columns in <code>where</code> or 1-sided in <code>on</code></h4>
+<p>Precompute them as named columns upstream. Literals, <code>{{ var(...) }}</code>, and
+<code>current_date(...)</code> on the other side are fine; so are expressions that combine
+both join sides.</p>
+<ul>
+<li>Why: the filter or join reads as plain columns, and the derived value can be
+  tested.</li>
+<li>Good: <code>where is_enrolled</code>.</li>
+<li>Bad: <code>where date_diff(exit_date, entry_date, day) &gt; 0</code>.</li>
+<li>Enforced by: review.</li>
+</ul>
+<h4 id="s11-row-filters-on-the-preserved-table-go-in-where">S11. Row filters on the preserved table go in <code>where</code></h4>
+<p>For a <code>left join</code>, a filter in <code>on</code> keeps non-matching rows. Exception: a
+<code>full join</code> condition on 1 side stays in <code>on</code>.</p>
+<ul>
+<li>Why: <code>on</code> decides matches; <code>where</code> decides rows.</li>
+<li>Good: <code>left join t on a.id = t.id where a.is_active</code>.</li>
+<li>Bad: <code>left join t on a.id = t.id and a.is_active</code>.</li>
+<li>Enforced by: review.</li>
+</ul>
+<h4 id="s12-distinct-only-for-grain-projection">S12. <code>distinct</code> only for grain projection</h4>
+<p>Use <code>distinct</code> for a grouping with no aggregate, or when every column is fixed
+by the partition key; annotate it <code>grain projection, not dup-masking</code>. Never use
+it to hide duplicates.</p>
+<ul>
+<li>Why: a masking <code>distinct</code> hides which row was meant.</li>
+<li>Good: <code>select distinct student_number, academic_year</code> with the annotation.</li>
+<li>Bad: <code>select distinct *</code> after a join that fans out.</li>
+<li>Enforced by: review.</li>
+</ul>
+<h4 id="s13-half-open-intervals-for-date-ranges-that-touch">S13. Half-open intervals for date ranges that touch</h4>
+<p>When ranges can share a boundary date, use <code>&gt;=</code> start and <code>&lt;</code> end, not
+<code>between</code>.</p>
+<ul>
+<li>Why: <code>between</code> matches both ranges on the shared date and fans out.</li>
+<li>Good: <code>enr.entrydate &lt;= cc.dateenrolled and enr.exitdate &gt; cc.dateenrolled</code>.</li>
+<li>Bad: <code>cc.dateenrolled between enr.entrydate and enr.exitdate</code> across
+  enrollment stints.</li>
+<li>Enforced by: review.</li>
+</ul>
+<h4 id="s14-booleans-are-is_-has_-columns">S14. Booleans are <code>is_</code> / <code>has_</code> columns</h4>
+<p>Convert to <code>Y</code>/<code>N</code> text only inside an <code>rpt_</code> whose tool needs it. A fact's
+countable flags may be <code>int64</code> 0/1 instead (mart rubric R3).</p>
+<ul>
+<li>Why: a boolean filters and aggregates directly.</li>
+<li>Good: <code>is_enrolled</code> (<code>bool</code>).</li>
+<li>Bad: <code>enrolled_flag</code> with values <code>'Y'</code> / <code>'N'</code> in an intermediate.</li>
+<li>Enforced by: review.</li>
+</ul>
+<h4 id="s15-if-for-1-condition-case-for-2-or-more">S15. <code>if()</code> for 1 condition, <code>case</code> for 2 or more</h4>
+<ul>
+<li>Why: each form reads best at its own size.</li>
+<li>Good: <code>if(score &gt;= 70, 'pass', 'fail')</code>.</li>
+<li>Bad: nested <code>if(a, 'x', if(b, 'y', 'z'))</code>.</li>
+<li>Enforced by: review.</li>
+</ul>
+<h4 id="s16-short-table-aliases-unique-in-the-query">S16. Short table aliases, unique in the query</h4>
+<p>Derive them from the model name.</p>
+<ul>
+<li>Why: short aliases keep joins readable; the repo already uses them.</li>
+<li>Good: <code>int_extracts__student_enrollments as e</code>.</li>
+<li>Bad: <code>as t1</code>, or 2 tables both aliased <code>s</code>.</li>
+<li>Enforced by: review.</li>
+</ul>
+<h4 id="s17-union-all-branches-list-the-same-columns-in-the-same-order">S17. <code>union all</code> branches list the same columns in the same order</h4>
+<p>Pad a missing column with <code>cast(null as &lt;type&gt;) as &lt;col&gt;</code>.</p>
+<ul>
+<li>Why: BigQuery matches branches by position; 2 same-typed columns can swap
+  silently.</li>
+<li>Good: each branch selects <code>student_number, academic_year, score</code>.</li>
+<li>Bad: <code>select * from a union all select * from b</code>.</li>
+<li>Enforced by: review.</li>
+</ul>
+<h4 id="s18-comments-say-only-what-the-line-cannot-show">S18. Comments say only what the line cannot show</h4>
+<p>Rationale and background go in the model's YAML <code>description:</code>.</p>
+<ul>
+<li>Why: SQL comments drift; YAML descriptions are published with the model.</li>
+<li>Good: <code>-- source resends rows on retry</code>.</li>
+<li>Bad: a paragraph explaining what the model is for.</li>
+<li>Enforced by: review.</li>
+</ul>
+<h3 id="review-rubric">Review rubric</h3>
+<p>Reviewers, human or Claude, check these and cite the rule ID:</p>
+<ol>
+<li>Grain has a uniqueness test, and 1 model owns it (A4).</li>
+<li>Dedup sits in the right layer; <code>distinct</code> is not masking duplicates (A5,
+   S12).</li>
+<li>The model sits in the right layer and is the right kind (A1, A3).</li>
+<li>An <code>rpt_</code> reads a mart when 1 exists (A2).</li>
+<li>Join types are right; filters sit in <code>on</code> or <code>where</code> correctly (S10, S11).</li>
+<li>Date-range joins are half-open where ranges touch (S13).</li>
+<li>Nested logic is split into named columns past 1 level (S8, S9).</li>
+<li>Comments say only what the line cannot show (S18).</li>
+</ol>
+<h2 id="reference">Reference</h2>
+<h3 id="required-config-per-layer">Required config per layer</h3>
+<ul>
+<li><code>stg_</code>, marts, and <code>rpt_</code> models set <code>contract: enforced: true</code>. Marts and
+  <code>rpt_</code> models are the last stop before data reaches an external tool (Tableau,
+  PowerSchool, Google Sheets), so a schema change breaks downstream
+  <a href="https://docs.getdbt.com/reference/exposure-properties">exposures</a> and must be
+  deliberate.</li>
+<li>Every model has a uniqueness test: a single-column <code>unique:</code> test or
+  <code>dbt_utils.unique_combination_of_columns</code> for a composite key.</li>
+<li>Exceptions: a kipptaf <code>stg_</code> union view over district staging, and a thin
+  district <code>rpt_</code> wrapper over a kipptaf extract, carry no uniqueness test; it
+  lives on the model they wrap. The district wrapper still enforces its
+  contract, and a kipptaf union view enforces one only where its own properties
+  file sets it.</li>
+</ul>
+<h3 id="region-labels">Region labels</h3>
+<p>A10 covers joining unioned regional models on <code>_dbt_source_project</code>. Each union
+view materializes that column once; see <code>src/dbt/kipptaf/CLAUDE.md</code> for which
+form applies. For a human-readable region label, use the <code>extract_region()</code>
+macro:</p>
+<div class="highlight"><pre><span></span><code><span class="err">{{</span><span class="w"> </span><span class="n">extract_region</span><span class="p">(</span><span class="ss">"s"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">region</span>
+</code></pre></div>
+<h3 id="handy-sql">Handy SQL</h3>
+<ul>
+<li>Timezone-aware today, so <code>current_date</code> reflects local time rather than UTC:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">current_date</span><span class="p">(</span><span class="s1">'{{ var("local_timezone") }}'</span><span class="p">)</span>
+</code></pre></div>
+<ul>
+<li>Removing diacritical marks, to normalize names with accented characters:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="n">regexp_replace</span><span class="p">(</span><span class="n">normalize</span><span class="p">(</span><span class="n">name_col</span><span class="p">,</span><span class="w"> </span><span class="n">NFD</span><span class="p">),</span><span class="w"> </span><span class="n">r</span><span class="s1">'\pM'</span><span class="p">,</span><span class="w"> </span><span class="s1">''</span><span class="p">)</span>
+</code></pre></div>
+<ul>
+<li>Time travel, to query a table as it existed at a point in time:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="o">*</span>
+<span class="k">from</span><span class="w"> </span><span class="n">my_table</span>
+<span class="k">for</span><span class="w"> </span><span class="n">system_time</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="k">timestamp</span><span class="p">(</span><span class="s1">'2025-08-22 23:59:59'</span><span class="p">)</span>
+</code></pre></div>
+<ul>
+<li>New or modified external sources must be staged before building. See
+  <a href="../../guides/dbt-development/#staging-external-sources">Staging external sources</a>
+  for the full command and CI requirements.</li>
+</ul>
+<h3 id="ref-and-source"><code>ref()</code> and <code>source()</code></h3>
+<p>Use <code>ref()</code> to reference other dbt models; use <code>source()</code> for raw source tables
+declared in a <code>sources:</code> YAML file:</p>
+<div class="highlight"><pre><span></span><code><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"stg_amplify__benchmark_student_summary"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="err">{{</span><span class="w"> </span><span class="k">source</span><span class="p">(</span><span class="ss">"amplify"</span><span class="p">,</span><span class="w"> </span><span class="ss">"src_amplify__benchmark_student_summary"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+</code></pre></div>
+<h3 id="bigquery-scalar-functions">BigQuery scalar functions</h3>
+<p>Shared UDFs in the <code>functions</code> dataset:</p>
+<table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Returns</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>functions.current_academic_year()</code></td>
+<td>Current academic year integer</td>
+</tr>
+<tr>
+<td><code>functions.date_to_sy(date_col)</code></td>
+<td>Academic year of a given date</td>
+</tr>
+</tbody>
+</table>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">    </span><span class="n">functions</span><span class="p">.</span><span class="n">current_academic_year</span><span class="p">()</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">academic_year</span><span class="p">,</span>
+<span class="w">    </span><span class="n">functions</span><span class="p">.</span><span class="n">date_to_sy</span><span class="p">(</span><span class="n">att_date</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">att_academic_year</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="n">my_table</span>
+</code></pre></div>
+<p><code>functions.region_join</code> also exists in the dataset. Don't use it; join on
+<code>_dbt_source_project</code> (A10).</p>
+<h3 id="model-properties-file">Model properties file</h3>
+<p>Every model must have a corresponding <code>[model_name].yml</code> properties file. Write
+it by hand — there is no scaffold generator in this repo. Column names and types
+come from <code>INFORMATION_SCHEMA.COLUMNS</code> on the built relation:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="k">column_name</span><span class="p">,</span><span class="w"> </span><span class="n">data_type</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="o">`</span><span class="p">.</span><span class="o">&lt;</span><span class="k">schema</span><span class="o">&gt;</span><span class="p">.</span><span class="n">INFORMATION_SCHEMA</span><span class="p">.</span><span class="n">COLUMNS</span>
+<span class="k">where</span><span class="w"> </span><span class="k">table_name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'&lt;model_name&gt;'</span>
+<span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">ordinal_position</span>
+</code></pre></div>
+<p>The shape:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">models</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">model_name</span>
+<span class="w">    </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">contract</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">enforced</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w"> </span><span class="c1"># keep false while building; remove this line before merging</span>
+<span class="w">    </span><span class="nt">columns</span><span class="p">:</span><span class="w"> </span><span class="c1"># required for contracted models</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">column_name</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string | int64 | date | ...</span><span class="w"> </span><span class="c1"># required for contracted models</span>
+<span class="w">        </span><span class="nt">data_tests</span><span class="p">:</span><span class="w"> </span><span class="c1"># optional column-level tests</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">not_null</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">accepted_values</span><span class="p">:</span>
+<span class="w">              </span><span class="nt">values</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">...</span><span class="p p-Indicator">]</span>
+<span class="w">    </span><span class="nt">data_tests</span><span class="p">:</span><span class="w"> </span><span class="c1"># optional model-level tests</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">dbt_utils.unique_combination_of_columns</span><span class="p">:</span><span class="w"> </span><span class="c1"># use for composite keys</span>
+<span class="w">          </span><span class="nt">arguments</span><span class="p">:</span>
+<span class="w">            </span><span class="nt">combination_of_columns</span><span class="p">:</span>
+<span class="w">              </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">column_a</span>
+<span class="w">              </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">column_b</span>
+</code></pre></div>
+<h3 id="exposures">Exposures</h3>
+<p>Every external tool that consumes our data must have a
+<a href="https://docs.getdbt.com/reference/exposure-properties">dbt exposure</a> defined in
+the consuming project (typically <code>src/dbt/kipptaf/models/exposures/</code>). Exposures
+make the dependency graph explicit and power Dagster asset lineage.</p>
+<p>All exposures require a <code>name</code>, <code>label</code>, <code>type</code>, <code>owner</code>, <code>depends_on</code> (listing
+every model the tool uses), and a <code>url</code> linking to the external
+tool/workbook/sheet:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">exposures</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">exposure_name_snake_case</span>
+<span class="w">    </span><span class="nt">label</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Human Readable Title</span>
+<span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">dashboard | notebook | analysis | ml | application</span>
+<span class="w">    </span><span class="nt">owner</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Data Team</span>
+<span class="w">    </span><span class="nt">depends_on</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref("rpt_tableau__some_model")</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref("another_model")</span>
+<span class="w">    </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">https://...</span><span class="w"> </span><span class="c1"># optional</span>
+<span class="w">    </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">meta</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">dagster</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">kinds</span><span class="p">:</span>
+<span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">tableau</span><span class="w"> </span><span class="c1"># or: googlesheets, powerschool, etc.</span>
+<span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">...</span><span class="w"> </span><span class="c1"># additional kinds</span>
+</code></pre></div>
+<p>Tableau dashboards that refresh on a schedule must also include the Tableau
+workbook LSID and a <code>cron_schedule</code> under <code>asset.metadata</code>. Workbooks without a
+scheduled refresh can omit the <code>asset</code> block:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">config</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">meta</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">dagster</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">kinds</span><span class="p">:</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">tableau</span>
+<span class="w">      </span><span class="nt">asset</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">metadata</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;tableau-workbook-lsid-uuid&gt;</span>
+<span class="w">          </span><span class="nt">cron_schedule</span><span class="p">:</span><span class="w"> </span><span class="s">"0</span><span class="nv"> </span><span class="s">7</span><span class="nv"> </span><span class="s">*</span><span class="nv"> </span><span class="s">*</span><span class="nv"> </span><span class="s">*"</span><span class="w"> </span><span class="c1"># omit entirely if no scheduled refresh</span>
+</code></pre></div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

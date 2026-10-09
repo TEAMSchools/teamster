@@ -1,0 +1,3151 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+        <link rel="prev" href="../csgf-data-model/">
+      
+      
+        <link rel="next" href="../ddi-stack-data-model/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>CRDC Data Model - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#crdc-data-model" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              CRDC Data Model
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../fresh-dashboard-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/launch-page-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Launch Page
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/cube-access-individual-exceptions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube Access - Individual Exceptions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/tableau-permissions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tableau Permissions (People Data)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../fresh-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FRESH Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../carat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CARAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../csgf-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CSGF Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CRDC Data Model
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CRDC Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-it-is" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What it is
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-it-fits-together" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How it fits together
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#terms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Terms
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-the-data-comes-from" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where the data comes from
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-triggers-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What triggers it
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#inputs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inputs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Steps
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Steps">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-kickoff-doc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Kickoff doc
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-collection-sheet" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Collection sheet
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-queries-and-workbook" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Queries and workbook
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-entry-on-the-ocr-site" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Entry on the OCR site
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#outputs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Outputs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#who-runs-it-and-when" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Who runs it and when
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Who runs it and when">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#regions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Regions
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-model-rpt_tableau__crdc_roster" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The model: rpt_tableau__crdc_roster
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The model: rpt_tableau__crdc_roster">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#manual-entry-tags" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Manual-entry tags
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fall-snapshot-rule" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fall snapshot rule
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-each-branch-computes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What each branch computes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-2025-26-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The 2025-26 changes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#supporting-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Supporting models
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#inputs-to-maintain" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inputs to maintain
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#decisions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Decisions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#known-issues-need-to-fix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Known issues, need to fix
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Known issues, need to fix">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#open-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open questions
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#good-to-implement-next-cycle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Good to implement next cycle
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#yearly-upkeep" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Yearly upkeep
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ddi-stack-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DDI Stack Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../hs-early-warning-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HS Early Warning Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dibels-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DIBELS Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../njdoe-universal-screener-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NJDOE Universal Screener Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../athletic-eligibility-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Athletic Eligibility Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../academic-health-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Academic Health Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../grad-plan-tracking-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Grad Plan Tracking Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ignite-r2i-extract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IGNITE R2I Extract
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-it-is" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What it is
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-it-fits-together" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How it fits together
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#terms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Terms
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-the-data-comes-from" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where the data comes from
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-triggers-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What triggers it
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#inputs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inputs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Steps
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Steps">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-kickoff-doc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Kickoff doc
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-collection-sheet" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Collection sheet
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-queries-and-workbook" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Queries and workbook
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-entry-on-the-ocr-site" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Entry on the OCR site
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#outputs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Outputs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#who-runs-it-and-when" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Who runs it and when
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Who runs it and when">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#regions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Regions
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-model-rpt_tableau__crdc_roster" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The model: rpt_tableau__crdc_roster
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The model: rpt_tableau__crdc_roster">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#manual-entry-tags" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Manual-entry tags
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fall-snapshot-rule" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fall snapshot rule
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-each-branch-computes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What each branch computes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-2025-26-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The 2025-26 changes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#supporting-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Supporting models
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#inputs-to-maintain" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inputs to maintain
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#decisions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Decisions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#known-issues-need-to-fix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Known issues, need to fix
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Known issues, need to fix">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#open-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open questions
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#good-to-implement-next-cycle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Good to implement next cycle
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#yearly-upkeep" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Yearly upkeep
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/models/crdc-data-model.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="crdc-data-model">CRDC Data Model</h1>
+<p>!!! tip "Claude Code skill available" The <code>crdc</code> skill in <code>.claude/skills/crdc/</code>
+is the step-by-step runbook for each cycle: kickoff, the collection sheet,
+running the model and workbook, entering data on the OCR site, and rolling the
+code over. This page explains what the pieces are and why they work the way they
+do.</p>
+<h2 id="what-it-is">What it is</h2>
+<p>The Civil Rights Data Collection (CRDC) is a federal survey run by the U.S.
+Department of Education's Office for Civil Rights (OCR). Every public school
+district that receives federal funds must answer it. It runs every two years,
+and each submission reports the previous school year: the submission that opens
+in fall 2026 reports SY2025-26. The questions cover enrollment, course access,
+test taking, retention, discipline, harassment or bullying, restraint and
+seclusion, staffing, and internet access, broken down by race, sex, English
+learner status, and disability.</p>
+<p>All of this data becomes public record. OCR publishes it by school and district,
+so every number we enter is a number anyone can look up.</p>
+<p>The data team runs KTAF's submission. It collects answers from other
+departments, computes the student counts from the warehouse, and types the final
+numbers into OCR's submission website by hand. Owner: the data team, with
+Anthony Walters as owner.</p>
+<h2 id="how-it-fits-together">How it fits together</h2>
+<pre class="mermaid"><code>flowchart LR
+    enr[int_extracts__student_enrollments] --&gt; rpt[rpt_tableau__crdc_roster]
+    ce[int_students__course_enrollments] --&gt; rpt
+    sg[stg_powerschool__storedgrades] --&gt; rpt
+    tu[int_kippadb__standardized_test_unpivot] --&gt; rpt
+    sn[stg_google_sheets__crdc__student_numbers] --&gt; rpt
+    sx[stg_google_sheets__crdc__sced_code_crosswalk] --&gt; rpt
+    rpt --&gt; twb[CRDC Dashboard workbook]
+    twb --&gt; cs[(Collection sheet)]
+    depts[Other departments] --&gt; cs
+    cs --&gt; ocr[OCR submission site]</code></pre>
+<p>The model produces student-level rows. The Tableau workbook counts them into the
+same breakdowns the OCR form asks for. The counts go into the collection sheet
+next to the answers other departments supply, and the data team enters the
+sheet's numbers on the OCR site.</p>
+<h2 id="terms">Terms</h2>
+<ul>
+<li><strong>CRDC cycle</strong> — one submission, named for the school year it reports
+  ("SY2025-26"). It runs in the fall and winter after that year ends.</li>
+<li><strong>Submission year</strong> — the school year being reported. In dbt it is
+  <code>current_academic_year - 1</code> (academic year 2025 for SY2025-26).</li>
+<li><strong>Reference period</strong> — the window a question counts over. There are three:</li>
+<li><strong>Fall snapshot</strong>: one day in early October of the submission year.</li>
+<li><strong>School year</strong>: first day to last day of school.</li>
+<li><strong>School year + summer</strong>: first day of school up to the day before the next
+    school year starts.</li>
+<li><strong>LEA form and school form</strong> — OCR asks some questions once per district (the
+  LEA form) and the rest once per school (the school form). The collection sheet
+  marks these as <code>DF</code> (district form) and <code>SF</code> (school form) tabs.</li>
+<li><strong>Question section</strong> — OCR's code for a question, such as <code>ENRL</code>, <code>COUR-7</code>, or
+  <code>ARRS-1</code>. The model tags each row with one.</li>
+<li><strong>SCED code</strong> — the federal course code (subject area plus course number) that
+  PowerSchool stores on each course. The crosswalk maps it to OCR's course
+  groups.</li>
+<li><strong>Quality flag</strong> — a warning the OCR site raises when a value looks unlikely,
+  for example "values are extremely high compared to LEAs with similar
+  characteristics". Each flag needs either a correction or a written reason.</li>
+<li><strong>Collection sheet</strong> — the internal Google Sheet, one per cycle, laid out like
+  the OCR form, where every answer is gathered before entry.</li>
+<li><strong>Kickoff doc</strong> — the internal Google Doc, one per cycle, that names owners,
+  deadlines, and reference period dates.</li>
+</ul>
+<h2 id="where-the-data-comes-from">Where the data comes from</h2>
+<table>
+<thead>
+<tr>
+<th>Input</th>
+<th>Source</th>
+<th>Owner</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Enrollment, demographics, IEP, 504, EL, retention</td>
+<td>PowerSchool, through <code>int_extracts__student_enrollments</code></td>
+<td>School operations</td>
+</tr>
+<tr>
+<td>Course enrollments and SCED codes</td>
+<td>PowerSchool, through <code>int_students__course_enrollments</code></td>
+<td>Schools and the registrar function</td>
+</tr>
+<tr>
+<td>Y1 grades and credit recovery courses</td>
+<td>PowerSchool stored grades</td>
+<td>Schools, through report cards</td>
+</tr>
+<tr>
+<td>SAT and ACT participation</td>
+<td>KIPP Forward's Salesforce, through the test unpivot model</td>
+<td>KIPP Forward</td>
+</tr>
+<tr>
+<td>Students tagged for distance ed, athletics, arrests</td>
+<td>CRDC Google Sheet, <code>src_crdc__student_numbers</code> tab</td>
+<td>The data team, from department lists</td>
+</tr>
+<tr>
+<td>SCED to OCR course group crosswalk</td>
+<td>CRDC Google Sheet, <code>src_crdc__sced_code_crosswalk</code> tab</td>
+<td>The data team</td>
+</tr>
+<tr>
+<td>Staffing, discipline, harassment, restraint, internet</td>
+<td>Collection sheet, entered by each department (not in dbt)</td>
+<td>See the owner table under Steps</td>
+</tr>
+</tbody>
+</table>
+<p>Ask the data team for the sheet links.</p>
+<h2 id="what-triggers-it">What triggers it</h2>
+<p>OCR announces each cycle on its community site and emails each district's CRDC
+contact when the submission system opens. For SY2025-26, OMB approved the form
+on 2026-07-20, and OCR expects the system to open in fall 2026, possibly as late
+as December 2026. The data team starts the kickoff as soon as the form is final.</p>
+<h2 id="inputs">Inputs</h2>
+<ul>
+<li>OCR's list of data elements and its form for the cycle, from
+  crdc.communities.ed.gov.</li>
+<li>The kickoff doc and collection sheet from the last cycle, kept in the CRDC
+  folder on the shared drive, one subfolder per cycle.</li>
+<li><code>rpt_tableau__crdc_roster</code> and the CRDC Dashboard workbook.</li>
+<li>Department answers entered into the collection sheet.</li>
+</ul>
+<h2 id="steps">Steps</h2>
+<h3 id="1-kickoff-doc">1. Kickoff doc</h3>
+<p>The data team copies the last cycle's kickoff doc and updates it. It holds:</p>
+<ul>
+<li>what the CRDC is and that the data becomes public record;</li>
+<li>the reference period dates for each region (fall snapshot date, first and last
+  day of school, the day before next year starts);</li>
+<li>the owner table, by team and domain;</li>
+<li>milestones: a date to flag data gaps, a "panic deadline" after which a missing
+  answer is escalated, the internal deadline, and the official deadline;</li>
+<li>items that need extra review before entry: law enforcement referrals, arrests,
+  physical restraint, and harassment or bullying data.</li>
+</ul>
+<p>Owners for SY2025-26, by role:</p>
+<table>
+<thead>
+<tr>
+<th>Domain</th>
+<th>Owner role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Academic data (enrollment, courses, tests)</td>
+<td>Data team lead</td>
+</tr>
+<tr>
+<td>Distance education, dual enrollment, athletics</td>
+<td>Teaching and Learning director</td>
+</tr>
+<tr>
+<td>Special education and English learners</td>
+<td>Special education managing director</td>
+</tr>
+<tr>
+<td>Staffing (teachers, FTE, security staff)</td>
+<td>Data team senior analyst for talent</td>
+</tr>
+<tr>
+<td>Internet access and devices</td>
+<td>Technology managing director</td>
+</tr>
+<tr>
+<td>Paterson</td>
+<td>Operations managing director (likely)</td>
+</tr>
+<tr>
+<td>Civil rights compliance</td>
+<td>Open question</td>
+</tr>
+<tr>
+<td>Student discipline</td>
+<td>Open question</td>
+</tr>
+</tbody>
+</table>
+<h3 id="2-collection-sheet">2. Collection sheet</h3>
+<p>The data team copies the last cycle's collection sheet. It has a Home tab with
+instructions and a percent-complete tracker per region, then one tab per OCR
+section. Every tab has the same columns: section code, subsection, description,
+OCR's wording of the question, reference period, one value column per region,
+and the subject matter expert (SME) responsible. Tabs that drew quality flags
+last cycle also have an audit reason column and a correction reason column.</p>
+<table>
+<thead>
+<tr>
+<th>Form</th>
+<th>Tabs</th>
+<th>Filled by</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LEA</td>
+<td>SSPR (enrollment count), CRCO (civil rights coordinator), HIBD (harassment policy), DSED, HSEE</td>
+<td>Data team, compliance, Teaching and Learning</td>
+</tr>
+<tr>
+<td>School</td>
+<td>SCHR and DIND (school characteristics), PENR, ENRL, COUR, APIB, SAT/ACT, RETN</td>
+<td>Data team, from the workbook</td>
+</tr>
+<tr>
+<td>School</td>
+<td>ATHL (athletics)</td>
+<td>Teaching and Learning, plus the data team</td>
+</tr>
+<tr>
+<td>School</td>
+<td>STAF (teachers), SECR (security staff)</td>
+<td>Talent</td>
+</tr>
+<tr>
+<td>School</td>
+<td>DISC (discipline), ARRS (referrals and arrests), OFFN (offenses), HIBS (harassment), RSTR</td>
+<td>Discipline and student support owners</td>
+</tr>
+<tr>
+<td>School</td>
+<td>INET (internet access and devices)</td>
+<td>Technology</td>
+</tr>
+</tbody>
+</table>
+<p>A value cell holding several numbers separated by commas follows the OCR form's
+order of breakdowns (for example seven race categories), so it can be typed
+straight across. The ARRS raw-data tab lists the incidents behind the arrest
+counts at student level, so the sheet is restricted to the people working the
+collection.</p>
+<h3 id="3-queries-and-workbook">3. Queries and workbook</h3>
+<p>When <code>current_academic_year</code> is the year after the submission year, the model
+already points at the right year; no code change is needed for the year itself.
+The data team:</p>
+<ol>
+<li>tags students in the <code>src_crdc__student_numbers</code> tab for the sections the
+   warehouse cannot derive (distance education, athletics, arrests);</li>
+<li>checks the SCED crosswalk covers every course code offered that year;</li>
+<li>refreshes the CRDC Dashboard workbook, which is laid out like the OCR form;</li>
+<li>copies each count into the collection sheet.</li>
+</ol>
+<h3 id="4-entry-on-the-ocr-site">4. Entry on the OCR site</h3>
+<p>The data team enters every value by hand, form by form and school by school. The
+OCR site checks entries as they go and raises quality flags. For each flag the
+team either fixes the value or records why it is correct; last cycle's answers
+sit in the collection sheet's audit and correction columns. After every flag is
+cleared, the district's CRDC contact certifies the submission.</p>
+<h2 id="outputs">Outputs</h2>
+<ul>
+<li>Numbers on OCR's site, certified by each district, published later by OCR.</li>
+<li>The filled collection sheet and kickoff doc, kept in the cycle's subfolder as
+  the record of what was submitted and why.</li>
+<li>The CRDC Dashboard workbook, published to the Production project on Tableau
+  Server in September 2026. An older <code>.twb</code> copy sits in the CRDC folder on the
+  shared drive; use the published one.</li>
+</ul>
+<h2 id="who-runs-it-and-when">Who runs it and when</h2>
+<p>The data team, every two years, from the fall after the submission year until
+the official deadline (for SY2023-24 the internal deadline was mid-February 2025
+and the official deadline early March 2025). Other departments fill their tabs
+between kickoff and the gap deadline.</p>
+<h3 id="regions">Regions</h3>
+<p>Camden, Newark, and Paterson each file as a separate district, and each reports
+all of its schools as one school. Paterson files for the first time in the
+SY2025-26 cycle; the model already includes it. Miami files its own CRDC
+independently and is outside this process: every branch of the model excludes
+it.</p>
+<h2 id="the-model-rpt_tableau__crdc_roster">The model: <code>rpt_tableau__crdc_roster</code></h2>
+<p>!!! warning "Refresh only after this change is live" Until the computed fall
+snapshot deploys, prod still runs the old hardcoded 2023 snapshot date. Sections
+gated on the snapshot then read empty for the current submission year. Refresh
+the workbook only after the change is live in prod.</p>
+<p>One row per student per question section, and per course for the course
+sections. It is a view in <code>kipptaf_tableau</code>. Every branch reads the submission
+year (<code>current_academic_year - 1</code>) except retention, which is recorded in
+PowerSchool the following year and so reads <code>current_academic_year</code>.</p>
+<h3 id="manual-entry-tags">Manual-entry tags</h3>
+<p>Students tagged on the student-numbers tab reach the output through their own
+branch, joined on student number, so a student tagged to two sections appears
+once per tag. <code>ENRL</code> and <code>EXAM-1</code> have one row per student. The course sections
+have one row per qualifying course, so a student in two qualifying courses
+appears twice in that section. Course-section counts in the workbook should
+count distinct students.</p>
+<h3 id="fall-snapshot-rule">Fall snapshot rule</h3>
+<p>The model computes the fall snapshot date at the top: 1 October of the
+submission year, moved to the following Monday when 1 October is a Saturday or
+Sunday. For SY2025-26 that is 1 October 2025, a Wednesday. Course rows use it
+for <code>is_oct_01_course</code> (the student was in the course on that day). Confirm the
+rule against OCR's definition each cycle. For example, when 1 October is a
+Sunday, the snapshot is Monday 2 October.</p>
+<p>Student rows use <code>is_enrolled_oct01</code> from the enrollment model instead, which is
+always the literal 1 October. See <em>Known issues</em>.</p>
+<h3 id="what-each-branch-computes">What each branch computes</h3>
+<table>
+<thead>
+<tr>
+<th>Section</th>
+<th>Rows</th>
+<th>Reference period used</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ENRL</code></td>
+<td>Every student enrolled on 1 October, with demographics, IEP, 504, EL, and retention flags</td>
+<td>Fall snapshot</td>
+</tr>
+<tr>
+<td><code>DSED-2</code>, <code>ATHL-3</code>, <code>ARRS-1</code> to <code>ARRS-6</code></td>
+<td>Students tagged in the student-numbers tab</td>
+<td>Set by whoever tags them</td>
+</tr>
+<tr>
+<td><code>PENR-4</code></td>
+<td>Grades 9-12 in a dual enrollment course (name ends <code>(DE)</code>, not AP) on the snapshot date</td>
+<td>Fall snapshot</td>
+</tr>
+<tr>
+<td><code>PENR-6</code></td>
+<td>Grades 9-12 in a credit recovery course (name ends <code>(CR)</code>, taken at summer school)</td>
+<td>School year + summer</td>
+</tr>
+<tr>
+<td><code>COUR</code></td>
+<td>Grades 7-8 in a middle school Algebra I course (SCED <code>52052</code> or <code>02052</code>), with pass or fail</td>
+<td>Any enrollment in the school year (no snapshot filter)</td>
+</tr>
+<tr>
+<td><code>COUR-7</code></td>
+<td>Grades 9-12 in Algebra I, Geometry, Algebra II, advanced math, or calculus, excluding dual enrollment</td>
+<td>Any enrollment in the school year (no snapshot filter)</td>
+</tr>
+<tr>
+<td><code>COUR-14</code>, <code>COUR-18</code>, <code>COUR-20</code></td>
+<td>Grades 9-12 enrolled on the snapshot date in biology, chemistry, physics; computer science; data science</td>
+<td>Fall snapshot</td>
+</tr>
+<tr>
+<td><code>APIB-4</code></td>
+<td>Grades 9-12 enrolled on the snapshot date in an AP course that has an OCR AP group</td>
+<td>Fall snapshot</td>
+</tr>
+<tr>
+<td><code>EXAM-1</code></td>
+<td>Grades 9-12 with an SAT total or ACT composite score in the submission year</td>
+<td>School year + summer</td>
+</tr>
+</tbody>
+</table>
+<p>Two derived values do most of the work:</p>
+<ul>
+<li><code>crdc_gender</code> maps PowerSchool <code>F</code>, <code>M</code>, and <code>X</code> to Female, Male, and
+  Nonbinary. <code>crdc_demographic</code> maps the ethnicity code to OCR's seven race and
+  ethnicity categories.</li>
+<li><code>iep_only</code>, <code>iep_and_c504</code>, and <code>c504_only</code> split disability status the way
+  the OCR form does. <code>lep_parent_refusal</code> marks EL students whose families
+  declined services.</li>
+</ul>
+<p>AP courses are matched two ways: PowerSchool's AP flag and the crosswalk's
+<code>ap_tag</code>. When they disagree (<code>ap_tag_mismatch</code>), the row still counts if the
+crosswalk gives it an OCR AP group, so a course OCR does not recognize as AP
+stays out.</p>
+<h2 id="the-2025-26-changes">The 2025-26 changes</h2>
+<p>From OCR's "2025-26 CRDC General Overview, Changes, and List of Data Elements"
+(version 1, 2026-07-20). Most 2023-24 elements continue.</p>
+<p>New and optional:</p>
+<ul>
+<li>instruction type (in-person, remote, or both), remote instruction setting, and
+  the share of students who received remote instruction;</li>
+<li>students served in non-LEA facilities, including restraint and seclusion of
+  those students (LEA form);</li>
+<li>whether the school has a threat assessment team, and threat assessment
+  referrals for preschool and K-12 students with and without disabilities;</li>
+<li>FTE teachers certified in bilingual education.</li>
+</ul>
+<p>Removed:</p>
+<ul>
+<li>the nonbinary category from enrollment, IDEA, Section 504, EL, EL program, and
+  every discipline count;</li>
+<li>COVID-related remote instruction items;</li>
+<li>harassment or bullying allegations on the basis of gender identity, and the
+  LEA's gender identity harassment policy and its web link.</li>
+</ul>
+<p>What it means here: the new optional items have no source in the warehouse and
+would come through the collection sheet if KTAF answers them. The nonbinary
+removal affects the model directly; see the open decision below. The collection
+sheet's NBIN tab (does the LEA record any students as nonbinary) and the gender
+identity rows on the harassment tabs should go away; confirm against the form.</p>
+<h2 id="supporting-models">Supporting models</h2>
+<ul>
+<li><code>int_extracts__student_enrollments</code> — one row per student per year per
+  enrollment; supplies demographics, program flags, <code>is_enrolled_oct01</code>, and
+  retention. Shared with most student dashboards.</li>
+<li><code>int_students__course_enrollments</code> — course sections with SCED subject area
+  and course id. Shared.</li>
+<li><code>stg_powerschool__storedgrades</code> — Y1 grades for passing, and the only source
+  of summer credit recovery courses. Shared.</li>
+<li><code>int_kippadb__standardized_test_unpivot</code> — SAT and ACT scores by Salesforce
+  contact. Shared.</li>
+<li><code>stg_google_sheets__crdc__student_numbers</code> and
+  <code>stg_google_sheets__crdc__sced_code_crosswalk</code> — pass-throughs of the two
+  sheet tabs below. Read only by this model.</li>
+</ul>
+<h2 id="inputs-to-maintain">Inputs to maintain</h2>
+<ul>
+<li><code>src_crdc__student_numbers</code> — one row per student per question section the
+  warehouse cannot derive. Rebuilt each cycle from department lists. Holds
+  student numbers, so it is PII.</li>
+<li><code>src_crdc__sced_code_crosswalk</code> — one row per SCED code, with the OCR course
+  group, subject group, AP group, and AP tag. Add any new course code before
+  running the workbook.</li>
+</ul>
+<h2 id="decisions">Decisions</h2>
+<ul>
+<li>Region counts, not school counts. Each region reports as one school, so the
+  workbook sums across schools within a region.</li>
+<li>Previous year, computed in the SQL. Rolling <code>current_academic_year</code> each July
+  is enough to point the model at the right year; there is no separate CRDC year
+  variable.</li>
+<li>Student-level rows, counted in Tableau. The model keeps one row per student
+  and section so a count that looks wrong can be traced to students before it is
+  entered.</li>
+<li>Hand entry. The team types each value so it is checked against OCR's flags as
+  it goes in. Whether a file upload would be faster has not been tested.</li>
+</ul>
+<h2 id="known-issues-need-to-fix">Known issues, need to fix</h2>
+<p>Every query below returns aggregates only.</p>
+<ol>
+<li><strong>The student-numbers tab has a duplicate key.</strong> A student number and section
+   pair appears more than once. The tab's uniqueness test on those two columns
+   runs at warn. Remove the repeat in the sheet, then raise the test to error.</li>
+</ol>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">duplicate_keys</span><span class="p">,</span>
+<span class="k">from</span>
+<span class="w">    </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="n">student_number</span><span class="p">,</span><span class="w"> </span><span class="n">crdc_question_section</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span>
+<span class="w">            </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="o">`</span><span class="p">.</span><span class="n">kipptaf_google_sheets</span><span class="p">.</span><span class="n">stg_google_sheets__crdc__student_numbers</span>
+<span class="w">        </span><span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">student_number</span><span class="p">,</span><span class="w"> </span><span class="n">crdc_question_section</span>
+<span class="w">        </span><span class="k">having</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">1</span>
+<span class="w">    </span><span class="p">)</span>
+</code></pre></div>
+<ol>
+<li><strong>The roster has no uniqueness test.</strong> The grain is student by section by
+   course, and nothing in the output names the course except the nullable
+   <code>sections_dcid</code>. The query below finds repeats in two branches. In <code>PENR-6</code>
+   they are students with more than one credit recovery course, because that
+   branch has no <code>sections_dcid</code>. In <code>COUR-7</code>, some students repeat within the
+   same section; see issue 5 for the likely cause.</li>
+</ol>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="n">crdc_question_section</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">repeated_keys</span><span class="p">,</span>
+<span class="k">from</span>
+<span class="w">    </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="n">student_number</span><span class="p">,</span><span class="w"> </span><span class="n">crdc_question_section</span><span class="p">,</span><span class="w"> </span><span class="n">sections_dcid</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="o">`</span><span class="p">.</span><span class="n">kipptaf_tableau</span><span class="p">.</span><span class="n">rpt_tableau__crdc_roster</span>
+<span class="w">        </span><span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">student_number</span><span class="p">,</span><span class="w"> </span><span class="n">crdc_question_section</span><span class="p">,</span><span class="w"> </span><span class="n">sections_dcid</span>
+<span class="w">        </span><span class="k">having</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">1</span>
+<span class="w">    </span><span class="p">)</span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">crdc_question_section</span>
+</code></pre></div>
+<ol>
+<li><strong>Two fall snapshot dates.</strong> Course rows use the weekend-shifted date;
+   student rows use <code>is_enrolled_oct01</code>, always 1 October. They agree for
+   SY2025-26 (a Wednesday). In a cycle where 1 October falls on a weekend,
+   <code>ENRL</code> and the course sections would count different days. The student flag
+   is set in
+   <code>src/dbt/powerschool/models/sis/intermediate/int_powerschool__student_enrollment_union.sql</code>
+   as <code>date(academic_year, 10, 1) between entrydate and exitdate</code> (the kipptaf
+   model of that name only unions the regions).
+   <code>base_powerschool__student_enrollments</code> then takes the max over the year, so
+   the flag means "any enrollment stint that year covered 1 October".</li>
+<li><strong>Course branches disagree on filters and joins.</strong> <code>COUR</code> (middle school
+   Algebra I) and <code>COUR-7</code> (high school math) have no <code>is_enrolled_oct01</code> filter
+   and no <code>is_oct_01_course</code> filter, so they count anyone enrolled in the course
+   at any point in the year. <code>passed_course</code> is
+   <code>if(grade like 'F%', false, true)</code>, which returns true when the grade is
+   null, so a course with no Y1 grade counts as passed in every course branch.
+   <code>PENR-6</code> joins on <code>studentid</code> and source project, while the other course
+   branches join on <code>schoolid</code> and <code>student_number</code>. Check all of these against
+   OCR's definitions at the next rollover.</li>
+<li><strong>Dropped enrollments are never filtered.</strong> The course branches select
+   <code>is_dropped_course</code> and <code>is_dropped_section</code> but never filter on them, so a
+   student who dropped a course still counts in it. The repo convention is to
+   filter <code>is_dropped_section</code> first when reading course enrollments. This is
+   the likely cause of the <code>COUR-7</code> repeats in issue 2: the repeated keys differ
+   on <code>is_last_day_course</code>, which points to several course-enrollment rows for
+   one section.</li>
+</ol>
+<h3 id="open-questions">Open questions</h3>
+<p>Settle the first five with the data team lead at the cycle's kickoff, before the
+collection sheet goes out. The kickoff doc carries them in its open questions
+block until each has an answer.</p>
+<ul>
+<li><strong>Who leads compliance?</strong> The civil rights coordinator item, the harassment
+  policy item, and sign-off on the discipline and restraint data need an owner.
+  Question for the data team lead.</li>
+<li><strong>Who owns student discipline?</strong> DISC, ARRS, OFFN, and HIBS had school-level
+  experts last cycle; nobody is named for SY2025-26. Question for the data team
+  lead.</li>
+<li><strong>How do we get access to the Paterson instance of the CRDC submission
+  system?</strong> Paterson is its own district in OCR's system and needs its own
+  login. The model already includes Paterson.</li>
+<li><strong>How do we report nonbinary students?</strong> OCR removed the nonbinary category
+  for SY2025-26, and KTAF has students recorded as <code>X</code>. The model still labels
+  them Nonbinary, and the OCR form has no column for them. Decision for the data
+  team lead and compliance: how these students are counted, and then a change to
+  <code>crdc_gender</code> to match.</li>
+<li><strong>Which new optional 2025-26 items does KTAF answer?</strong> Instruction type and
+  remote instruction, students served in non-LEA facilities (with their
+  restraint and seclusion), threat assessment teams and referrals, and teachers
+  certified in bilingual education. None has a warehouse source; each one KTAF
+  answers needs an owner and rows on the collection sheet.</li>
+<li><strong>Which summer do <code>PENR-6</code> rows cover?</strong> The branch reads "KIPP Summer School"
+  credit recovery grades stored under the submission year. Nobody has confirmed
+  whether that is the summer before the submission year or the summer after it.
+  The answer decides whether the "school year + summer" period is applied
+  correctly.</li>
+</ul>
+<h2 id="good-to-implement-next-cycle">Good to implement next cycle</h2>
+<p>An unfinished proposal from an earlier cycle suggested collecting some sections
+every year instead of scrambling every other fall: a yearly Google Form per
+section, landing in BigQuery, feeding a Tableau view, with a dashboard tracking
+which schools have answered. Compared with the SY2025-26 elements, these parts
+still fit:</p>
+<ul>
+<li><strong>Harassment or bullying (HIBS).</strong> Still collected, by sex, race, and
+  disability. Drop the gender identity items from any form: OCR removed them.</li>
+<li><strong>Restraint and seclusion (RSTR).</strong> Still collected for IDEA and non-IDEA
+  students, and now also for students served in non-LEA facilities. A yearly
+  form would catch the new items too.</li>
+<li><strong>Internet access and devices (INET).</strong> Fiber connection, Wi-Fi in every
+  classroom, and take-home and bring-your-own device policies continue. These
+  change rarely, so a yearly confirmation is enough.</li>
+<li><strong>A completion tracker.</strong> One view of which owner has filled which tab would
+  replace the Home tab's manual percent-complete count.</li>
+</ul>
+<p>The proposal's optional file upload to OCR is not worth building until the team
+decides to stop entering by hand. The new optional threat assessment items would
+fit the same yearly form if KTAF chooses to answer them.</p>
+<h2 id="yearly-upkeep">Yearly upkeep</h2>
+<p>Between cycles, nothing runs. At each cycle:</p>
+<ol>
+<li>Read OCR's changes document and map each changed element to the model and the
+   collection sheet.</li>
+<li>Confirm the fall snapshot rule against OCR's definition.</li>
+<li>Rebuild the student-numbers tab and extend the SCED crosswalk.</li>
+<li>Copy the kickoff doc and collection sheet into a new cycle subfolder, and add
+   a value column for every district that files (Paterson from SY2025-26).</li>
+</ol>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

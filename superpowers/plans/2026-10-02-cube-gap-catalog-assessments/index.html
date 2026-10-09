@@ -1,0 +1,4796 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Cube Gap Catalog — Assessments - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#cube-gap-catalog-assessments" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Cube Gap Catalog — Assessments
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/fresh-dashboard-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/launch-page-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Launch Page
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube-access-individual-exceptions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube Access - Individual Exceptions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/tableau-permissions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tableau Permissions (People Data)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/fresh-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FRESH Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/carat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CARAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/csgf-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CSGF Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/crdc-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CRDC Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/ddi-stack-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DDI Stack Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/hs-early-warning-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HS Early Warning Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/dibels-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DIBELS Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/stat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/njdoe-universal-screener-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NJDOE Universal Screener Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/athletic-eligibility-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Athletic Eligibility Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/academic-health-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Academic Health Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/grad-plan-tracking-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Grad Plan Tracking Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/ignite-r2i-extract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IGNITE R2I Extract
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/plans/2026-10-02-cube-gap-catalog-assessments.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="cube-gap-catalog-assessments">Cube Gap Catalog — Assessments</h1>
+<p>Part of the <a href="../2026-10-02-cube-gap-catalog/">Cube Connector Gap Catalog</a>. Refs</p>
+<h1 id="5673-one-section-per-core-set-dashboard-tables-and-notes-are-the-per-workbook">5673. One section per core-set dashboard; tables and notes are the per-workbook</h1>
+<p>inventory extracted from the production .twb and classified against the dbt
+marts and Cube model YAML as of 2026-10-02.</p>
+<h2 id="college-admission-readiness-assessment-tracker-carat-college_admission_readiness_assessment_tracker">College Admission Readiness Assessment Tracker (CARAT) (<code>college_admission_readiness_assessment_tracker</code>)</h2>
+<ul>
+<li>workbook: College Admission Readiness Assessments Tracker (CARAT) | contentUrl
+  <code>CollegeAdmissionReadinessAssessmentsTrackerCARAT</code> | luid
+  <code>286156c4-2f9e-4983-926b-63c9b11f44f4</code> (confirmed, matches expected) | project
+  Production</li>
+<li>upstream datasources (all embedded, none published separately):
+  <code>rpt_tableau__college_assessment_dashboard_scores</code>,
+  <code>rpt_tableau__ap_assessment_dashboard</code>,
+  <code>rpt_tableau__college_assessment_dashboard_over_time</code>,
+  <code>rpt_tableau__college_assessment_dashboard_benchmark_calcs</code>,
+  <code>rpt_tableau__college_assessment_dashboard_de</code>,
+  <code>rpt_tableau__college_assessment_dashboard_roster</code>,
+  <code>rpt_tableau__college_assessment_dashboard_current</code></li>
+<li>rpt_/source models in use (from datasources + SQL <code>ref()</code> chase): the 7
+  datasources above, plus their own upstreams
+  <code>int_assessments__all_college_assessments</code>,
+  <code>int_assessments__college_assessment</code>,
+  <code>int_assessments__college_assessment_practice</code>,
+  <code>int_assessments__ap_assessments</code>,
+  <code>int_tableau__college_assessment_roster_scores</code>,
+  <code>int_students__college_assessment_participation_roster</code>,
+  <code>int_students__ccr_schedule</code>, <code>int_extracts__student_enrollments</code>,
+  <code>base_powerschool__course_enrollments</code>, <code>stg_powerschool__storedgrades</code>,
+  <code>stg_powerschool__u_storedgrades_de</code>, <code>stg_google_sheets__kippfwd__scaffold</code>,
+  <code>stg_google_sheets__kippfwd__expected_assessments</code>,
+  <code>int_google_sheets__kippfwd__goals_unpivot</code>,
+  <code>stg_collegeboard__ap_course_crosswalk</code></li>
+<li>published dashboards inventoried: Landing Page, Over Time, Roster, AP
+  Overview, DE Overview (5 of 5 views on the workbook; none hidden server-side)</li>
+<li>sheets excluded as hidden/scratch: 2 — <code>Sheet 12</code>, <code>Sheet 31</code> (orphan
+  worksheets referencing <code>graduation_year</code>/<code>expected_aligned_subject</code>/
+  <code>expected_field_name_score_category</code>; zoned on no dashboard). All other
+  worksheets marked <code>hidden='true'</code> in <code>&lt;windows&gt;</code> are normal dashboard-only
+  sheets (not standalone tabs), not excluded.</li>
+<li>regions served by this dashboard overall: split by sub-dashboard — see per-row
+  <code>regions</code> column. Landing Page / Over Time / Roster (SAT/ACT/PSAT) are
+  network-wide (all 4 regions). AP Overview and DE Overview carry an explicit
+  <strong>"NJ Only" image banner</strong> baked into the workbook layout (zones
+  <code>Image/NJ_Only.png</code>, confirmed at byte offsets inside the <code>AP Overview</code> and
+  <code>DE Overview</code> <code>&lt;dashboard&gt;</code> blocks only — not Landing Page/Over Time/Roster).
+  The underlying SQL has <strong>no explicit region <code>WHERE</code> filter</strong> on either
+  <code>rpt_tableau__ap_assessment_dashboard</code> (<code>school_level = 'HS'</code> only) or
+  <code>rpt_tableau__college_assessment_dashboard_de</code> (storecode/course-name filter
+  only) — the NJ-only behavior is a side effect of both reading PowerSchool-only
+  sources (<code>base_powerschool__course_enrollments</code>,
+  <code>stg_powerschool__storedgrades</code>), which Miami (Focus SIS) never populates.
+  Newark/Camden/Paterson are all PowerSchool, so "NJ Only" likely means those
+  three, not just Newark/Camden as hinted — <strong>unverified whether Paterson HS has
+  live AP or DE program data today; flagged, not confirmed.</strong></li>
+</ul>
+<h3 id="measures">Measures</h3>
+<table>
+<thead>
+<tr>
+<th>metric</th>
+<th>agg</th>
+<th>source field / formula (trimmed)</th>
+<th>dashboards</th>
+<th>status</th>
+<th>where</th>
+<th>regions</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>AP exam score distribution ("3+" vs "&lt;3" max score group)</td>
+<td>CountD(student) grouped by <code>Maximum Total Score Group</code> (<code>MAX(exam_score)&gt;=3</code>)</td>
+<td><code>IF {FIXED student,ap_course_name: MAX(exam_score)}&gt;=3 THEN '3+' ELSE '&lt;3'</code></td>
+<td>AP Overview</td>
+<td>mart-ready</td>
+<td><code>fct_assessment_scores_student_scoped.scale_score</code>/<code>is_mastery</code> (ap row, <code>exam_score&gt;=3</code>) — near-identical logic already computed, just not Cube-wired</td>
+<td>newark/camden/paterson (NJ; PowerSchool-sourced)</td>
+</tr>
+<tr>
+<td>% AP exams attempted per student (by all-taken vs expected-test view)</td>
+<td><code>AP Test Count by Student per Year / AP Course Count by Student per Year</code> (ratio of 2 <code>COUNTD</code>s)</td>
+<td><code>{FIXED academic_year,student: COUNTD(course_name)}</code> variants</td>
+<td>AP Overview (2 sheets: "All Taken" / "Expected")</td>
+<td>mart-missing</td>
+<td><code>rpt_tableau__ap_assessment_dashboard.sql</code> (course-enrollment × AP-test join; denominator is AP <strong>course enrollment</strong>, which no mart/cube carries alongside AP scores)</td>
+<td>newark/camden/paterson</td>
+</tr>
+<tr>
+<td>% students enrolled in &gt;=1 AP course vs population (AP-only / All-students view)</td>
+<td><code>COUNTD(student)</code> by <code>AP Course Count by Student per Year &gt;=1</code> flag</td>
+<td><code>COUNTD(IF course_name&lt;&gt;'Not an AP course' THEN course_name END)</code></td>
+<td>AP Overview (2 sheets)</td>
+<td>mart-missing</td>
+<td><code>rpt_tableau__ap_assessment_dashboard.sql</code> / <code>base_powerschool__course_enrollments</code> — pure course-taking metric, no assessment score involved</td>
+<td>newark/camden/paterson</td>
+</tr>
+<tr>
+<td>AP Analysis pivot: # unique students tested, # scores, # AP enrollments, % tests attempted, Scored-1..5 counts, %3+/%4+ (Tested) and (Enrolled)</td>
+<td>mixed <code>COUNTD</code>/<code>COUNT</code>/<code>SUM(IF exam_score&gt;=N,1,0)</code></td>
+<td>~10 calcs keyed on <code>exam_score</code>, <code>ap_course_name</code>, <code>student_number</code></td>
+<td>AP Overview ("AP Analysis - Custom Pivot Table", tooltip/measure-names pivot)</td>
+<td>mart-missing (mixed)</td>
+<td>score-only pieces (Scored 1-5, # unique tested, %3+/%4+ Tested) are <strong>mart-ready</strong> off <code>fct_assessment_scores_student_scoped</code> (ap rows); the <strong>Enrolled</strong>-denominator pieces (# All AP Enrollments, %3+/%4+ Enrolled) need course-enrollment data — <code>rpt_tableau__ap_assessment_dashboard.sql</code></td>
+<td>newark/camden/paterson</td>
+</tr>
+<tr>
+<td>AP test-attempt flag by grad year ("No AP Test Attempt Ever" vs "1+")</td>
+<td><code>COUNTD(student)</code> by lifetime AP-test-count &gt;=1 flag</td>
+<td><code>{FIXED student: COUNTD(...)}</code></td>
+<td>AP Overview ("Test / Enrollment")</td>
+<td>mart-missing</td>
+<td><code>rpt_tableau__ap_assessment_dashboard.sql</code> (lifetime participation flag, not a mart concept)</td>
+<td>newark/camden/paterson</td>
+</tr>
+<tr>
+<td>AP roster: avg scale score by course/section/admin</td>
+<td><code>AVG(exam_score)</code></td>
+<td>raw <code>exam_score</code></td>
+<td>AP Overview ("AP Roster", drill-down)</td>
+<td>mart-ready</td>
+<td><code>fct_assessment_scores_student_scoped.scale_score</code> (ap rows) — course/section/teacher dims are mart-missing, see Dimensions</td>
+<td>newark/camden/paterson</td>
+</tr>
+<tr>
+<td>DE grade distribution (% / # students by letter-grade bucket, by year)</td>
+<td><code>COUNT(student)</code> / <code>SUM(...)/SUM({FIXED year:...})</code> grouped by A/B/C/D/F bucket of <code>de_score</code></td>
+<td><code>IF de_score IN ('A','A-','A+') THEN 'A' ...</code></td>
+<td>DE Overview (2 sheets: "% Grades by Year", "Univ. Course Performance")</td>
+<td>mart-missing</td>
+<td><code>rpt_tableau__college_assessment_dashboard_de.sql</code> → <code>stg_powerschool__storedgrades</code> + <code>stg_powerschool__u_storedgrades_de</code>. No dim/fact mart exists for Dual Enrollment grades at all (not part of the assessment star)</td>
+<td>newark/camden/paterson</td>
+</tr>
+<tr>
+<td>Avg scale score / max scale score by grad year, subject (EBRW/Math/Combined/Total)</td>
+<td><code>AVG(scale_score \| max_scale_score)</code> selectable via parameter</td>
+<td><code>CASE Parameter WHEN 'Scale Score' THEN scale_score WHEN 'Max Scale Score' THEN max_scale_score END</code></td>
+<td>Landing Page ("Avg Scores by Grad Yr")</td>
+<td>mart-ready</td>
+<td><code>fct_assessment_scores_student_scoped.scale_score</code> / <code>.max_scale_score</code> (college rows) — exact column match, needs Cube wiring + subject dim via <code>dim_assessments.academic_subject</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>% Met Benchmark Goal (Combined / EBRW / Math), by grad year, benchmark name</td>
+<td><code>COUNTD(student WHERE met_benchmark_goal='Met') / COUNTD(student)</code>, <code>{INCLUDE grad_year: ...}</code></td>
+<td>compares <code>max_score</code>/<code>score</code> to <code>benchmark_goal</code> (target)</td>
+<td>Landing Page (3 near-identical "Benchmarks" sheets: Combined/EBRW/Math)</td>
+<td>mart-missing</td>
+<td><code>rpt_tableau__college_assessment_dashboard_benchmark_calcs.sql</code> → <code>stg_google_sheets__kippfwd__scaffold</code> (goal thresholds live in a KIPP Forward Google Sheet, not in any mart)</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Board Report: avg score by Board Subject Area; score distribution into SAT Bands (CR Benchmark / HS-Ready / below)</td>
+<td><code>AVG(score)</code>; <code>COUNTD(student)</code> by band classification</td>
+<td>band logic: <code>IF score&gt;=[fixed HS-Ready min] THEN 'CR Benchmark' ELSEIF ...</code> vs <code>expected_metric_min_score</code></td>
+<td>Landing Page ("Board Report - Average scores only", "...Scores Distribution by Subject")</td>
+<td>mart-missing (mixed)</td>
+<td><code>avg(score)</code> piece is <strong>mart-ready</strong> (<code>fct_assessment_scores_student_scoped.scale_score</code>); the band/threshold comparison needs <code>stg_google_sheets__kippfwd__expected_assessments</code> (goal sheet) — <code>rpt_tableau__college_assessment_dashboard_current.sql</code></td>
+<td>all; filtered to grade 12, SAT scope only on these 2 sheets</td>
+</tr>
+<tr>
+<td>% Met goal by NJ(state) / Region / School, by grade (11/12) and expected metric (College-Ready / HS Grad-Ready / HS-Ready)</td>
+<td><code>AVG(met_min_score_int)</code> vs <code>expected_metric_pct_goal</code>, "Met"/"Not Met"/"No Goal" classifier</td>
+<td><code>ROUND(%Met*100,0) &gt;= FLOOR(goal*100)</code></td>
+<td>Landing Page (3 near-identical "Key Metrics % Goals by NJ/Region/School" sheets)</td>
+<td>mart-missing</td>
+<td><code>rpt_tableau__college_assessment_dashboard_current.sql</code> / <code>stg_google_sheets__kippfwd__expected_assessments</code> — goal-threshold comparison, sheet-driven</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Over Time: % / count of students meeting HS/CR benchmark (Cohort vs Tested view), by grad year trend</td>
+<td><code>COUNTD(student WHERE met_min_score_int_overall...=1)</code>, <code>MIN(pct_goal)</code> LOD</td>
+<td><code>Calculation_1076360365772124174</code> ("Met Min Score") vs goal lookup</td>
+<td>Over Time (2 "[Test]" sheets — dev/test-prefixed names, still on the published dashboard)</td>
+<td>mart-missing</td>
+<td><code>rpt_tableau__college_assessment_dashboard_over_time.sql</code> / <code>int_google_sheets__kippfwd__goals_unpivot</code>; raw "met min score" flag parallels <code>is_mastery</code> in the mart (mart-ready sub-piece) but the published measure is the goal-compared rate</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Roster: per-student SAT/PSAT/ACT score matrix across administrations (avg score by admin season × score category)</td>
+<td><code>AVG(score)</code> pivoted by <code>expected_admin_season</code> × <code>expected_field_name_score_category</code></td>
+<td>raw <code>score</code></td>
+<td>Roster ("Roster - Table")</td>
+<td>mart-ready</td>
+<td><code>fct_assessment_scores_student_scoped.scale_score</code> (college rows) — needs an admin-season/score-category dimension via <code>dim_assessment_administrations</code>/<code>dim_assessments</code>, not yet Cube-exposed</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Roster: SAT Total Superscore, SAT EBRW/Math Highest</td>
+<td>row-level <code>MAX</code>-style pick, not re-aggregated in-sheet</td>
+<td><code>sat_total_superscore</code>, <code>sat_ebrw_highest</code>, <code>sat_math_highest</code></td>
+<td>Roster</td>
+<td>mart-ready</td>
+<td><code>fct_assessment_scores_student_scoped.superscore</code> / <code>.max_scale_score</code> (per subject) — same concept, column names differ</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Roster: lifetime test-count badges (SAT / PSAT10 / PSAT NMSQT / PSAT 8-9 count lifetime)</td>
+<td><code>COUNT</code> per scope, precomputed upstream</td>
+<td><code>sat_count_lifetime</code>, <code>psat10_count_lifetime</code>, etc.</td>
+<td>Roster</td>
+<td>mart-ready</td>
+<td>trivial <code>COUNT(assessment_score_key)</code> per <code>scope</code> off <code>fct_assessment_scores_student_scoped</code>, once joined to <code>dim_assessments.category</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Roster admin aggregates: avg score, distinct students tested, distinct students scored, by school/admin-season (+ CCR course/section/teacher variant)</td>
+<td><code>AVG(score)</code>, <code>COUNTD(student)</code>, <code>COUNTD(IF score IS NOT NULL THEN student END)</code></td>
+<td>—</td>
+<td>Roster ("Table Aggregates for Admins", "...- CCR")</td>
+<td>mart-ready (score agg) / mart-missing (CCR dims)</td>
+<td>score aggregation mart-ready off <code>fct_assessment_scores_student_scoped</code>; CCR (College &amp; Career Readiness) course/section/teacher slice is <strong>mart-missing</strong> — not part of the assessment star, lives in <code>int_students__ccr_schedule</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Cumulative Y1 GPA / GPA Projected / College Match GPA (displayed, not aggregated on Roster)</td>
+<td>row-level display</td>
+<td><code>cumulative_y1_gpa</code>, <code>cumulative_y1_gpa_projected</code>, <code>college_match_gpa</code></td>
+<td>Roster</td>
+<td>unknown</td>
+<td>likely served by a separate GPA mart/cube outside assessment scope — <strong>not checked in this pass</strong>, flagged for a GPA-domain inventory</td>
+<td>all</td>
+</tr>
+</tbody>
+</table>
+<h3 id="dimensions">Dimensions</h3>
+<table>
+<thead>
+<tr>
+<th>dimension</th>
+<th>used as</th>
+<th>status</th>
+<th>where</th>
+<th>regions</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Academic Year / Academic Year Display, Grad Year</td>
+<td>rows/cols/filter on nearly every sheet</td>
+<td>mart-ready</td>
+<td><code>dim_dates.academic_year</code> + <code>fct_assessment_scores_student_scoped</code> → <code>dim_students.graduation_year</code>; dims exist and are Cube-exposed on other (non-assessment) views, but unreachable from college/AP scores today since no cube joins that fact</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Region, School</td>
+<td>filter/color/rows on most sheets</td>
+<td>mart-ready</td>
+<td><code>dim_locations</code>/<code>dim_regions</code> via <code>dim_students</code> — same "exists elsewhere, not reachable from this fact" caveat as above</td>
+<td>all (AP/DE sheets: newark/camden/paterson only, by data presence not filter)</td>
+</tr>
+<tr>
+<td>Grade Level</td>
+<td>filter (11/12 common)</td>
+<td>mart-ready</td>
+<td><code>dim_students.grade_level</code> / <code>student_school_enrollments.grade_level</code> (Cube-exposed on other views)</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Student Number, Name, First/Last, Email, Contact ID (Salesforce), Advisor</td>
+<td>row-level identity, drill-down (PII)</td>
+<td>mart-ready</td>
+<td><code>dim_students</code> (<code>student_key</code>, <code>full_name</code>, <code>lea_student_identifier</code>, <code>salesforce_contact_id</code> on existing Cube student views) — reachable once an assessment cube joins <code>dim_students</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Enroll Status, Grad IEP Exempt Status, IEP Status, 504 Status, ELL/LEP status</td>
+<td>filters</td>
+<td>mart-ready</td>
+<td><code>dim_student_enrollment_status</code>/<code>student_enrollment_status</code> cube members, same reachability caveat</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Scope / Expected Scope (SAT, ACT, PSAT10, PSAT NMSQT, PSAT 8/9)</td>
+<td>rows/cols/filter, pivot</td>
+<td>mart-ready</td>
+<td><code>dim_assessments.category</code> (sourced from <code>int_assessments__college_assessment.scope</code>) — present in the mart layer, not Cube-wired</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Subject Area / Expected Subject Area / Aligned Subject Area (EBRW, Math, Combined)</td>
+<td>rows/cols/filter</td>
+<td>mart-ready</td>
+<td><code>dim_assessments.academic_subject</code> (from <code>subject_area</code>)</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Test Type / Expected Test Type (Official vs Practice)</td>
+<td>filter (defaults to "Official")</td>
+<td>mart-ready</td>
+<td><code>fct_assessment_scores_student_scoped</code> is unioned by <code>score_source</code>/<code>test_type</code> (<code>college</code> official vs practice rows carry it in the hash, not projected as a column today — would need adding a <code>test_type</code> output column)</td>
+<td>all</td>
+</tr>
+<tr>
+<td>AP Course Name, AP Course Section, AP Teacher Name</td>
+<td>rows/filter on AP Roster/Analysis</td>
+<td>mart-ready (course name via <code>dim_assessments.title</code>) / mart-missing (section, teacher — these come from <code>base_powerschool__course_enrollments</code>, not the assessment star)</td>
+<td><code>dim_assessments</code> (course name); <code>rpt_tableau__ap_assessment_dashboard.sql</code> (section/teacher)</td>
+<td>newark/camden/paterson</td>
+</tr>
+<tr>
+<td>Test Subject Area ("Not applicable" / "Took course, but not AP exam." / course name)</td>
+<td>filter, drives participation logic</td>
+<td>mart-missing</td>
+<td><code>rpt_tableau__ap_assessment_dashboard.sql</code> (derived from course-enrollment × AP-test join, a bespoke 4-way case)</td>
+<td>newark/camden/paterson</td>
+</tr>
+<tr>
+<td>DE Institution, DE Course Name, DE Score, DE Semester, DE Pass/Fail</td>
+<td>rows/filter on DE Overview</td>
+<td>mart-missing</td>
+<td><code>stg_powerschool__u_storedgrades_de</code> / <code>stg_powerschool__storedgrades</code> — no mart</td>
+<td>newark/camden/paterson</td>
+</tr>
+<tr>
+<td>CCR Course, CCR Section, CCR Teacher Name</td>
+<td>rows/filter on Roster CCR variant</td>
+<td>mart-missing</td>
+<td><code>int_students__ccr_schedule</code> (not part of the assessment star or a Cube cube)</td>
+<td>all</td>
+</tr>
+<tr>
+<td>KTC Cohort</td>
+<td>filter across most sheets</td>
+<td>unknown</td>
+<td>not traced in this pass — likely a KIPP-Through-College cohort tag on <code>int_students__ccr_schedule</code> or similar; flag for follow-up</td>
+<td>all</td>
+</tr>
+<tr>
+<td>College Match GPA (Bands)</td>
+<td>filter/tooltip</td>
+<td>unknown</td>
+<td>same as GPA measures above — separate GPA-domain check needed</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Has Superscore (boolean)</td>
+<td>tooltip-only calc</td>
+<td>workbook-only</td>
+<td><code>NOT ISNULL(sat_total_superscore)</code> — trivial display calc on an already-mart-ready column, not worth porting as its own Cube member</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Expected Admin Season / Expected Admin Season Order / Expected Months Included</td>
+<td>cols/sort-key on Roster pivots</td>
+<td>mart-missing</td>
+<td><code>stg_google_sheets__kippfwd__expected_assessments</code> (process/admin-calendar sheet)</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Year In Network</td>
+<td>filter</td>
+<td>mart-ready</td>
+<td>likely <code>student_school_enrollments.year_in_network</code> (Cube-exposed elsewhere, same reachability caveat)</td>
+<td>all</td>
+</tr>
+</tbody>
+</table>
+<h3 id="notes">Notes</h3>
+<ul>
+<li><strong>Headline finding</strong>: none of this dashboard's measures are <code>cube-covered</code>.
+  The <code>student_assessment_scores</code> Cube cube reads
+  <code>kipptaf_marts.fct_assessment_scores_enrollment_scoped</code> only — its own view
+  description explicitly scopes to "Illuminate interims, NJ/FL state
+  assessments, and vendor benchmarks (i-Ready, DIBELS, STAR)" and omits
+  SAT/ACT/PSAT/AP entirely. Those live in a <strong>sibling</strong> mart,
+  <code>kipptaf_marts.fct_assessment_scores_student_scoped</code>
+  (<code>src/dbt/kipptaf/models/marts/facts/fct_assessment_scores_student_scoped.sql</code>),
+  which no Cube cube reads at all (<code>grep -rl "student_scoped" src/cube/model</code>
+  returns nothing). This is NOT the "neither fct exists" situation the task
+  prompt hinted at — the fact table exists, at essentially the right grain (one
+  row per student × assessment × test date for college-entrance; per student ×
+  AP course × year for AP), and already computes <code>scale_score</code>,
+  <code>max_scale_score</code>, <code>superscore</code>, <code>running_max_scale_score</code>, <code>rank</code>, and
+  <code>is_mastery</code> (using the exact College Board/AP benchmark cutoffs this
+  dashboard hand-rolls in Tableau calcs). The gap is purely a missing Cube
+  cube/view wiring it up, not missing dbt modeling, for the score-only measures.</li>
+<li><code>fct_assessment_scores_student_scoped</code>'s own SELECT does <strong>not</strong> project
+  <code>scope</code>/<code>subject_area</code>/<code>academic_year</code>/<code>test_type</code> as columns — they're hash
+  inputs only. They resurface via a join through
+  <code>dim_assessment_administrations.assessment_key</code> → <code>dim_assessments</code>
+  (<code>category</code>=scope, <code>academic_subject</code>=subject_area, <code>title</code>=AP course name /
+  SAT-ACT-PSAT label). A new Cube cube over the student-scoped fact needs that
+  2-hop join path to expose the dimensions this dashboard actually uses.</li>
+<li>A meaningful share of measures are genuinely <strong>mart-missing</strong>, not just
+  Cube-missing: AP course-<strong>enrollment</strong> participation (denominator for every "%
+  enrolled in AP" / "% tests attempted" measure), Dual Enrollment grades, CCR
+  course/section/teacher, and every benchmark-<strong>goal threshold</strong> (they live in
+  two KIPP Forward Google Sheets — <code>stg_google_sheets__kippfwd__scaffold</code> and
+  <code>stg_google_sheets__kippfwd__expected_assessments</code> — not in any dimensional
+  mart). Wiring Cube to the existing fact table would light up the raw-score
+  measures but leave every goal-comparison and participation-rate measure dark.</li>
+<li>GPA fields on the Roster (<code>cumulative_y1_gpa</code>, <code>cumulative_y1_gpa_projected</code>,
+  <code>college_match_gpa</code>/bands) and <code>KTC Cohort</code> were left <code>unknown</code> — out of this
+  pass's assessment-domain scope; a GPA-mart/Cube check would resolve them
+  quickly (dim_students or a GPA fact likely already covers them elsewhere in
+  Cube).</li>
+<li>Two worksheet names carry a <code>[Test]</code> prefix ("[Test] Over Time - Met HS/CR
+  Benchmark (Cohort)" / "(Tested)") and sit directly on the published "Over
+  Time" dashboard — not hidden, not scratch. Treated as in-scope per the
+  "include and flag" rule; the naming suggests these may be WIP despite being
+  live.</li>
+<li>Near-identical sheet variants were collapsed into one row each: the 3 "Key
+  Metrics % Goals by NJ/Region/School" sheets (same calc, different grouping
+  dimension), the 3 "Benchmarks - Combined/EBRW/Math" sheets (same calc,
+  <code>subject_area</code> filter differs), and the AP "% ... by Tests Taken - All Taken /
+  Expected" pair.</li>
+<li>Excluded as pure formatting/layout, not listed as rows: 4 title-only
+  worksheets (<code>AP Overview - Title</code>, <code>DE Overview - Title</code>, <code>Over Time - Title</code>,
+  <code>Roster Table - Title</code>, all a literal <code>"Title"</code> string calc) and 2
+  Google-Sheet-link placeholder worksheets (<code>Roster - Camden GSheet</code>,
+  <code>Roster - Newark GSheet</code>, both a literal <code>'text'</code> calc — link-out buttons, no
+  data).</li>
+<li>Region classification for AP Overview / DE Overview rests on the workbook's
+  own "NJ Only" image banner plus the PowerSchool-only lineage of their source
+  rpt_ models (Miami runs Focus, not PowerSchool) — genuinely a data-presence
+  argument, not a SQL <code>WHERE region = ...</code> filter, since neither rpt_ model
+  filters on region explicitly. Whether Paterson (also PowerSchool) actually
+  carries AP/DE data today was not verified against warehouse rows (no-PII
+  instruction; would need a row-count-only check against prod).</li>
+</ul>
+<h3 id="verification">Verification</h3>
+<ul>
+<li><strong>cube-covered spot-check (negative result, verified)</strong>:
+  <code>src/cube/model/cubes/student_assessments/student_assessment_scores.yml</code> line
+  4, <code>sql_table: kipptaf_marts.fct_assessment_scores_enrollment_scoped</code> —
+  confirmed this is NOT the same table as <code>fct_assessment_scores_student_scoped</code>
+  (two separate files exist:
+  <code>src/dbt/kipptaf/models/marts/facts/fct_assessment_scores_enrollment_scoped.sql</code>
+  and <code>.../fct_assessment_scores_student_scoped.sql</code>), and a repo-wide
+  <code>grep -rl "student_scoped" src/cube/model</code> returned zero files.</li>
+<li><strong>mart-ready spot-check</strong>: <code>avg scale score by grad yr</code> (Landing Page) maps
+  exactly to <code>fct_assessment_scores_student_scoped.scale_score</code>, column defined
+  at
+  <code>src/dbt/kipptaf/models/marts/facts/fct_assessment_scores_student_scoped.sql</code>
+  lines 109/189/245 (one value per union branch: official college, practice
+  college, AP) — confirmed by reading the full model SQL.</li>
+<li><strong>mart-missing spot-check</strong>: DE grade-bucket measures trace to
+  <code>src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__college_assessment_dashboard_de.sql</code>,
+  which reads <code>stg_powerschool__storedgrades</code> joined to
+  <code>stg_powerschool__u_storedgrades_de</code> — confirmed neither model nor any
+  downstream mart/cube exists for Dual Enrollment grades
+  (<code>find src/dbt/kipptaf/models/marts -iname "*storedgrades*"</code> and
+  <code>*dual_enrollment*</code> both return nothing).</li>
+</ul>
+<h2 id="ddi-suite-ddi_suite">DDI Suite (<code>ddi_suite</code>)</h2>
+<ul>
+<li>workbook: DDI Suite | contentUrl <code>DDISuite</code> | luid
+  <code>6d82b643-59a8-4106-b2f9-97ddf7f638e7</code> | project Production</li>
+<li>upstream datasources: <code>rpt_tableau__assessment_dashboard (kipptaf_tableau)</code>
+  (embedded), <code>rpt_tableau__ddi_dashboard (kipptaf_tableau)</code> (embedded) —
+  matches the Asana task's two named rpt_ models exactly</li>
+<li>rpt_/source models in use (from datasources + SQL):
+  <code>rpt_tableau__assessment_dashboard</code>, <code>rpt_tableau__ddi_dashboard</code>, and (via
+  the two rpt_ models' own lineage) <code>int_assessments__response_rollup</code>,
+  <code>int_assessments__academic_goals</code>,
+  <code>int_extracts__student_enrollments(_weeks/_subjects)</code>,
+  <code>int_iready__instruction_by_lesson_union</code>,
+  <code>int_performance_management__observation_details</code>,
+  <code>stg_google_sheets__assessments__qbls_power_standards</code>,
+  <code>stg_google_sheets__assessments__academic_goals</code>, <code>stg_schoolmint_grow__*</code>
+  (microgoals)</li>
+<li>published dashboards inventoried: Landing Page, Mastery Over Time [Region],
+  Mastery Over Time [School], Mastery Over Time [Classroom], O3 View, DKI View,
+  Module Dashboard, Assessment Dashboard (8, matching <code>get-workbook</code>'s <code>views</code>
+  list exactly)</li>
+<li>sheets excluded as hidden/scratch: 9 total — 2 whole <strong>orphaned dashboards</strong>
+  ("Standards Over Time", "Module Score Distribution": both have
+  <code>repository-location path='/t/KIPPNJ/workbooks/AssessmentDashboard'</code>, a
+  different legacy workbook, not <code>DDISuite</code> — they are not in the server's
+  published view list and were excluded from scope) plus their worksheets
+  ("Module - RGs - Student Distribution", "School - TT - Walkthrogh Indicators",
+  "Sheet 78"); the rest are true layout/alias duplicates folded into variant
+  rows below. 70 of 79 total worksheets feed the 8 in-scope dashboards.</li>
+<li>regions served by this dashboard overall: all four (Newark, Camden, Miami,
+  Paterson) — region filters enumerate <code>level-members function="all"</code> everywhere
+  and the Landing Page has one bucket-roster sheet per region. <strong>But</strong> the
+  differentiated-goal calculations silently special-case Miami out (see Notes) —
+  this is a real per-region logic difference, not just a filter default.</li>
+</ul>
+<h3 id="measures_1">Measures</h3>
+<table>
+<thead>
+<tr>
+<th>metric</th>
+<th>agg</th>
+<th>source field / formula (trimmed)</th>
+<th>dashboards</th>
+<th>status</th>
+<th>where</th>
+<th>regions</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Mastery rate (<code>is_mastery_int</code>), overall/standard toggle</td>
+<td>Avg</td>
+<td><code>IF response_type='overall'/'standard' THEN is_mastery_int END</code> (Parameter-driven; also a QBL variant via <code>Qbl</code> field)</td>
+<td>DKI Grid/Table/Bars, O3 Assessment/Standards Mastery, Region/School/Classroom Mastery Lines &amp; Grids, Mastery Roster</td>
+<td>cube-covered</td>
+<td><code>student_assessment_scores.is_mastery</code> / <code>pct_proficient</code>, filtered by <code>response_type</code> — <code>src/cube/model/cubes/student_assessments/student_assessment_scores.yml</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Mastery rate — walkthrough observations (<code>Is Mastery Int - Walkthrough [LOD]</code>, Walkthrough Goal Status)</td>
+<td>Avg/User</td>
+<td><code>{FIXED teacher, week : AVG(IF response_type='walkthrough' THEN is_mastery_int END)}</code></td>
+<td>Classroom/Region/School Mastery Lines, LP2 - Walkthrough Indicators</td>
+<td>mart-ready</td>
+<td><code>fct_staff_observation_scores.score_value</code> (<code>src/dbt/kipptaf/models/marts/facts/fct_staff_observation_scores.sql</code>) — no cube reads <code>fct_staff_observation*</code> yet</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Mastery rate sliced by tutoring bucket (Bucket 1 / Bucket 2 / Unbucketed)</td>
+<td>Avg</td>
+<td><code>IF nj_student_tier = 'Bucket 1'/'Bucket 2'/'Unbucketed' THEN is_mastery_int END</code></td>
+<td>DKI Grid, O3 Standards Mastery</td>
+<td>mart-missing</td>
+<td><code>rpt_tableau__ddi_dashboard.sql</code> ← <code>int_extracts__student_enrollments_subjects.nj_student_tier</code> (no mart/cube exposes this tiering)</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Mastery rate sliced by IEP / Gen Ed</td>
+<td>Avg</td>
+<td><code>IF iep_status = 'Has IEP' / != 'Has IEP' THEN is_mastery_int END</code></td>
+<td>DKI Grid, O3 Standards Mastery</td>
+<td>cube-covered (slicing dim only)</td>
+<td>the slice dimension <code>student_enrollment_status.is_iep</code> is on the view; the Tableau IEP-diff calc itself is workbook-only arithmetic on top of it</td>
+<td>all</td>
+</tr>
+<tr>
+<td>% Mastery override (toggleable fixed-threshold mode) + Performance Band - Override</td>
+<td>Avg/None</td>
+<td><code>IF [Toggle]='Off' THEN Mastery ELSEIF 'On' THEN IF percent_correct &gt;= [param] THEN 1/0 ...</code></td>
+<td>Asmt - Overall - Assessments Over Time, Teacher</td>
+<td>workbook-only</td>
+<td>Tableau parameter-driven re-banding on top of <code>percent_correct</code>; no warehouse equivalent</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Percent Correct / avg percent correct</td>
+<td>Avg</td>
+<td><code>percent_correct</code></td>
+<td>Asmt/Module Overall &amp; Standard sheets (7)</td>
+<td>cube-covered</td>
+<td><code>student_assessment_scores.avg_percent_correct</code> / <code>percent_correct</code> dim</td>
+<td>all</td>
+</tr>
+<tr>
+<td>% Completion (module completion rate)</td>
+<td>Avg/None</td>
+<td><code>{FIXED year,subject,module_type,module_number,school,grade,is_replacement}: SUM(complete)/SUM(assigned)</code></td>
+<td>Module - Overall/Links sheets (10)</td>
+<td>cube-covered (building blocks)</td>
+<td><code>count_taken</code> / <code>count_assigned</code> → <code>pct_taken</code> on <code>student_assessment_scores.yml</code>; pooling note: Illuminate-only per the measure's own description</td>
+<td>all</td>
+</tr>
+<tr>
+<td>% Complete (student-level, this week)</td>
+<td>User</td>
+<td><code>AVG({FIXED student,assessment: MAX(is_complete)})</code></td>
+<td>LP - Assess This Week</td>
+<td>cube-covered</td>
+<td><code>count_taken</code>/<code>count_assigned</code> (<code>pct_taken</code>) at student grain</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Student Count / % of Students / Student Number count</td>
+<td>User/Count/CountD</td>
+<td><code>COUNTD(student_number)</code>, <code>COUNT(student_number)/TOTAL(...)</code></td>
+<td>DKI Bars (2), Asmt/Module Band &amp; Student Distribution (9)</td>
+<td>cube-covered</td>
+<td><code>student_assessment_scores.count_students</code> / <code>count_taken</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Mastery (boolean→1/0), Module Overall Assessments Over Time &amp; Network Overview</td>
+<td>Avg/None</td>
+<td><code>IF is_mastery THEN 1 ELSEIF NOT is_mastery THEN 0 END</code></td>
+<td>Module - Overall - Assessments Over Time, Network Overview, Teacher</td>
+<td>cube-covered</td>
+<td><code>student_assessment_scores.is_mastery</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>% Mastery - IEP / Gen Ed diff (Module Overall)</td>
+<td>Avg/User</td>
+<td><code>AVG(IF CONTAINS(iep_status,'SPED') THEN Mastery ELSE NULL)</code> and the IEP-minus-GenEd diff</td>
+<td>Module - Overall - Assessments Over Time</td>
+<td>cube-covered (slice dims) + workbook-only diff arithmetic</td>
+<td>slice via <code>student_enrollment_status.is_iep</code>; the subtraction itself is workbook-only</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Performance Band Number / Label / 3-Level grouping</td>
+<td>Avg/Attribute</td>
+<td><code>performance_band_number</code>; <code>IF school_level='HS' THEN ... ELSE ...</code> banding</td>
+<td>Module Overall/RGs/Standard Student Distribution (3), DKI Assessment Mastery Bars</td>
+<td>cube-covered</td>
+<td><code>student_assessment_scores.performance_band_label_number</code> / <code>proficiency_level</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Grade / School / Region / Organization Goal (Differentiated)</td>
+<td>Avg/Max</td>
+<td><code>IF region IN ('Camden','Newark','Paterson') AND ... THEN 0.8 / grade_goal+.1 ELSE grade_goal</code></td>
+<td>Classroom/Region/School Mastery Lines &amp; Grids, DKI Grid/Table, O3 Assessment Mastery</td>
+<td>mart-ready (raw goal) / workbook-only (differentiation)</td>
+<td>raw goal: <code>dim_assessment_goals.{grade_goal,school_goal,region_goal,organization_goal}</code> (<code>src/dbt/kipptaf/models/marts/dimensions/dim_assessment_goals.sql</code>); listed in <code>cube.yml</code>'s <code>depends_on</code> but <strong>no cube file reads it yet</strong>. The 0.8/+.1 override tiers and the Miami fallback-to-raw-goal behavior exist only in the Tableau calc</td>
+<td><strong>Camden/Newark/Paterson get the differentiated override; Miami silently falls to the raw, undifferentiated <code>grade_goal</code></strong> — verify this is intended before porting</td>
+</tr>
+<tr>
+<td>Goal Distance (Grade/Subject, School, Region, i-Ready, Walkthrough)</td>
+<td>User</td>
+<td><code>MAX(goal) - AVG(is_mastery_int)</code> / fixed <code>.75</code>/<code>.80</code> thresholds for walkthrough/i-Ready</td>
+<td>Classroom/Region/School Mastery Lines/Grids, DKI, O3 (6 variants)</td>
+<td>workbook-only</td>
+<td>arithmetic over the goal/mastery pair above; no mart/cube equivalent exists</td>
+<td>all (goal asymmetry above applies)</td>
+</tr>
+<tr>
+<td>School/Grade/Walkthrough/i-Ready Goal Status (met/exceeded/not met)</td>
+<td>User</td>
+<td><code>IF goal &lt; mastery THEN 'exceeded' ELSEIF = THEN 'met' ELSE 'not met'</code></td>
+<td>DKI Grid/Table, O3 Assessment Mastery, LP2 Walkthrough, O3 i-Ready</td>
+<td>workbook-only</td>
+<td>same goal/mastery comparison, string-banded</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Bright Spot Status</td>
+<td>User</td>
+<td><code>IF AVG(is_mastery_int)-MAX(grade_goal)&gt;=.1 THEN 'Bright Spot' ELSEIF &gt;=0 THEN 'On-Track' ELSEIF &lt;=-.1 THEN 'Concern Area' ELSE 'In Range'</code></td>
+<td>Bright Spots</td>
+<td>workbook-only</td>
+<td>composite of goal (mart-ready) + mastery (cube-covered); the banding itself is Tableau-only</td>
+<td>all</td>
+</tr>
+<tr>
+<td>i-Ready lessons passed (2+/4+ threshold, raw count)</td>
+<td>Avg/Count</td>
+<td><code>CASE subject WHEN 'Text Study' THEN is_passed_iready_*_reading_int WHEN 'Mathematics' THEN ..._math_int END</code></td>
+<td>Classroom/Region/School Mastery Lines (ES/MS only), Mastery Roster, O3 - i-Ready</td>
+<td>mart-missing</td>
+<td><code>int_iready__instruction_by_lesson_union</code> (weekly-aggregated in <code>rpt_tableau__ddi_dashboard.sql</code>'s <code>iready_weekly</code>/<code>iready_pivot</code> CTEs) — no <code>dim_</code>/<code>fct_</code> mart and no cube</td>
+<td>all (HS branch of <code>rpt_tableau__ddi_dashboard</code> nulls these out — ES/MS only by construction)</td>
+</tr>
+<tr>
+<td>QBL indicator (<code>Qbl</code>, <code>Is Qbl</code>)</td>
+<td>Attribute</td>
+<td>pass-through flag: row matched a Quality Block/Lesson power-standard crosswalk</td>
+<td>O3 Standards Mastery, DKI Standards Mastery Grid, Classroom/Region/School QBL Mastery</td>
+<td>mart-missing</td>
+<td><code>stg_google_sheets__assessments__qbls_power_standards</code> (Google Sheet staging only — no intermediate/mart, no cube). <strong>Relates to Asana #5668's DDI-dashboard gaps #4167/#4168/#4176 (standards/QBL mastery)</strong> — this is the same underlying gap surfacing here</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Microgoals (walkthrough subject tag)</td>
+<td>Attribute</td>
+<td><code>IF response_type='walkthrough' THEN subject_area END</code>, backed by SchoolMint Grow tag aggregation</td>
+<td>LP2 - Walkthrough Indicators (2)</td>
+<td>mart-missing</td>
+<td><code>stg_schoolmint_grow__{users,assignments}</code> + <code>int_schoolmint_grow__{assignments__tags,microgoals}</code>, string-aggregated inline in <code>rpt_tableau__ddi_dashboard.sql</code>'s <code>microgoals</code>/<code>microgoals_long</code> CTEs — no mart</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Title (worksheet-level generic text label)</td>
+<td>Attribute</td>
+<td>tooltip-only, varies per sheet</td>
+<td>21 sheets</td>
+<td>workbook-only</td>
+<td>formatting/label helper</td>
+<td>n/a</td>
+</tr>
+<tr>
+<td>Schoolid / Section Number (raw) / Course Teachernumber</td>
+<td>Attribute</td>
+<td>pass-through identifiers, tooltip-only</td>
+<td>Asmt/Module Overall Teacher &amp; Assessments Over Time (5), School - Mastery Lines Grade</td>
+<td>cube-covered (as dimensions, see below)</td>
+<td><code>locations</code>, <code>course_sections.identifier</code>, <code>staff_lead_teacher</code> on the view</td>
+<td>all</td>
+</tr>
+<tr>
+<td><code>Student Count</code>/<code># i-Ready Lessons Passed</code> composites (AVG(ZN(...)) wrappers)</td>
+<td>User</td>
+<td>thin Tableau wrappers zero-filling nulls around the i-Ready/mastery measures above</td>
+<td>O3 - i-Ready, School - Mastery Lines Grade (3 variants)</td>
+<td>workbook-only / mart-missing (inherits status of wrapped measure)</td>
+<td>—</td>
+<td>all</td>
+</tr>
+<tr>
+<td><code>1</code> / <code>INDEX()</code> (size/sort helpers)</td>
+<td>Max/User</td>
+<td><code>1</code>; <code>INDEX()</code></td>
+<td>Bright Spots, LP - Bucket Rosters</td>
+<td>workbook-only</td>
+<td>pure layout/sort helpers, excluded per instructions</td>
+<td>n/a</td>
+</tr>
+</tbody>
+</table>
+<h3 id="dimensions_1">Dimensions</h3>
+<table>
+<thead>
+<tr>
+<th>dimension</th>
+<th>used as</th>
+<th>status</th>
+<th>where</th>
+<th>regions</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Region / Territory</td>
+<td>filter, rows/cols (26 sheets)</td>
+<td>cube-covered (<code>region</code>) / mart-missing (<code>territory</code>)</td>
+<td><code>regions.region_name</code> on <code>student_assessment_scores_view</code>; <code>territory</code> is <code>int_extracts__student_enrollments_subjects.territory</code>, no cube equivalent</td>
+<td>all</td>
+</tr>
+<tr>
+<td>School / Schoolid / School Level / Head Of School</td>
+<td>filter, rows/cols (26–28 sheets)</td>
+<td>cube-covered</td>
+<td><code>locations.location_name/abbreviation/grade_band</code>, <code>locations.region_key</code> join</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Grade Level</td>
+<td>filter, rows/cols (47 sheets)</td>
+<td>cube-covered</td>
+<td><code>student_school_enrollments.grade_level</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Academic Year</td>
+<td>filter (50 sheets)</td>
+<td>cube-covered</td>
+<td><code>dates.academic_year</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Term / Week Start Monday</td>
+<td>filter (21/20 sheets)</td>
+<td>cube-covered (<code>term</code>) / mart-ready (<code>week_start_monday</code>)</td>
+<td><code>terms.term_name</code>; <code>week_start_monday</code> comes from <code>int_students__calendar_week</code> (PowerSchool school-week grain) — the assessment-scores Cube view exposes only <code>date_day</code>/<code>academic_year</code>/<code>month</code>, not school-week, per <code>.claude/rules/cube-authoring.md</code>'s school-week note</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Subject Area / Discipline / Module Type / Module Code / Module Number</td>
+<td>filter, rows/cols (10–33 sheets)</td>
+<td>cube-covered</td>
+<td><code>student_assessments.{academic_subject,module_code,module_type}</code>; <code>discipline</code> via <code>...course_sections.courses.discipline</code> join</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Response Type (+ code/description/root description)</td>
+<td>filter (41 sheets), rows/cols</td>
+<td>cube-covered</td>
+<td><code>student_assessment_scores.{response_type,response_type_code,response_type_description,response_type_root_description}</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>IEP Status / 504 Status / ML Status / Gifted and Talented</td>
+<td>filter (26–48 sheets)</td>
+<td>cube-covered (<code>is_iep</code>) / mart-missing (504, ML, gifted)</td>
+<td><code>student_enrollment_status.is_iep</code>; 504/ML/gifted are <code>int_extracts__student_enrollments(_subjects/_weeks)</code> columns with no cube exposure</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Student Tier (Bucket 1/2/Unbucketed), Is Low 25 FL, Is SIPPS</td>
+<td>filter, rows/cols (19 sheets)</td>
+<td>mart-missing</td>
+<td><code>int_extracts__student_enrollments_subjects.{nj_student_tier,is_low_25_fl,is_sipps}</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>DIBELS Most Recent Composite / State Test Proficiency</td>
+<td>filter (22/39 sheets)</td>
+<td>mart-missing</td>
+<td>same <code>int_extracts__student_enrollments_subjects</code> source; no DIBELS/state-proficiency crosswalk in this Cube view</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Standard Code / Standard Description / Domain (Response Type Root)</td>
+<td>filter, rows/cols (5–7 sheets)</td>
+<td>cube-covered</td>
+<td><code>response_type_code</code> / <code>response_type_description</code> / <code>response_type_root_description</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Performance Band Label / Number / 3-Level group</td>
+<td>color, filter (3–4 sheets)</td>
+<td>cube-covered</td>
+<td><code>proficiency_level</code>, <code>performance_band_label_number</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Course Section / Course Teacher Name / Teacher Name / Lead Teacher</td>
+<td>filter, text (5–15 sheets)</td>
+<td>cube-covered (lead teacher) / mart-ready (course-level teacher)</td>
+<td><code>staff_lead_teacher.full_name</code> (prefixed join) on the view covers homeroom/lead teacher; a specific <strong>course</strong> teacher (<code>course_teacher_name</code>) comes from <code>base_powerschool__course_enrollments</code>, which the view does not expose today</td>
+<td>all</td>
+</tr>
+<tr>
+<td>School (School Level, Is Foundations, Is Replacement, Scope/Is Normed Scope)</td>
+<td>filter (1–14 sheets)</td>
+<td>cube-covered</td>
+<td><code>student_assessments.{is_internal_assessment,scope}</code>, <code>student_section_enrollments.courses.is_foundations</code>, <code>is_replacement</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Qbl / Is Qbl</td>
+<td>filter, rows/cols (4/9 sheets)</td>
+<td>mart-missing</td>
+<td><code>stg_google_sheets__assessments__qbls_power_standards</code> — see Notes (Asana #4167/#4168/#4176)</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Title / Assessment Id / Lastfirst (student name) / Student Name / Student Number</td>
+<td>filter, rows/cols, lod (2–16 sheets)</td>
+<td>cube-covered</td>
+<td><code>student_assessments.title</code>, <code>assessment_score_key</code>, <code>students.full_name</code>, <code>students.student_key</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Dashboard View Filter / Select Chart Type / View By (Region/School/Classroom/O3 Standards)</td>
+<td>filter, rows/cols (1–4 sheets)</td>
+<td>workbook-only</td>
+<td>pure Tableau parameter-driven view toggles</td>
+<td>n/a</td>
+</tr>
+<tr>
+<td>Exclude Future Assessments</td>
+<td>filter (21 sheets)</td>
+<td>workbook-only</td>
+<td><code>administered_at &lt;= current-week-Sunday</code> guard calc</td>
+<td>n/a</td>
+</tr>
+<tr>
+<td>Is Walkthrough Data / Walkthrough-Microgoal Visibility / Homeroom Section</td>
+<td>filter, rows/cols (1–2 sheets)</td>
+<td>mart-ready</td>
+<td><code>int_performance_management__observation_details</code> / <code>fct_staff_observations</code> fields; not cube-exposed</td>
+<td>all</td>
+</tr>
+<tr>
+<td>NJ Tutoring / Subject Area (group) / School Level (School)</td>
+<td>filter (14 sheets)</td>
+<td>mart-missing</td>
+<td><code>int_extracts__student_enrollments_subjects</code> derived groupings, no cube equivalent</td>
+<td>NJ-only by name (<code>NJ Tutoring</code>) — confirm whether Miami rows are simply null here or structurally excluded</td>
+</tr>
+</tbody>
+</table>
+<h3 id="notes_1">Notes</h3>
+<ul>
+<li><strong>Two whole dashboards in the .twb are not live.</strong> "Standards Over Time" and
+  "Module Score Distribution" carry
+  <code>repository-location path=".../workbooks/AssessmentDashboard"</code> — a different,
+  legacy Tableau workbook — rather than <code>.../workbooks/DDISuite</code>. They are
+  absent from <code>get-workbook</code>'s published <code>views</code> list, so they were treated as
+  out of scope rather than "hidden-but-live." Both are themed around standards
+  mastery, which is suggestive given the open DDI gaps below, but nothing
+  confirms they're the same logic as #4167/#4168/#4176 — flagging only.</li>
+<li><strong>Standards/QBL mastery gap (Asana #5668 → #4167, #4168, #4176).</strong> The QBL
+  (Quality Block/Lesson / power-standard) flag that drives "O3 - Standards
+  Mastery", "DKI - Standards Mastery Grid/Bars", and the Region/School/Classroom
+  "QBL Mastery" sheets resolves only from a Google Sheet
+  (<code>stg_google_sheets__assessments__qbls_power_standards</code>) with no intermediate
+  or mart model and no Cube exposure. This is very likely the same underlying
+  gap those three issues describe — any Cube-connector work on QBL/standards
+  mastery should start by reading those issues' diagnostics, not just this
+  inventory.</li>
+<li><strong>Goal differentiation silently excludes Miami.</strong>
+  <code>Grade Goal (Differentiated)</code>, <code>School Goal (Differentiated)</code>, and
+  <code>Region Goal (Differentiated)</code> all gate their override tiers (fixed 0.8 for ET
+  module type; <code>grade_goal + .1</code> for CRQ/TP) on
+  <code>region IN ('Camden', 'Newark', 'Paterson')</code>. Miami always falls to the bare
+  <code>ELSE grade_goal</code> branch — same underlying mart column
+  (<code>dim_assessment_goals.grade_goal</code>), different effective target. This is a
+  real regional difference in dashboard behavior, not a filter artifact; confirm
+  with the DDI/assessments team whether Miami is deliberately held to a flatter
+  goal or whether this is a known gap before porting goal logic to Cube.
+  <code>dim_assessment_goals</code> is listed in <code>cube.yml</code>'s
+  <code>cube_semantic_layer.depends_on</code> but no cube file currently reads it — it's a
+  declared-but-unwired dependency.</li>
+<li><strong>Walkthrough data is a second source entirely.</strong> Everything under
+  <code>response_type = 'walkthrough'</code> (the LP2 Walkthrough Indicators sheets, the
+  walkthrough branch of <code>Is Mastery Int</code>) comes from
+  <code>int_performance_management__observation_details</code> / the
+  <code>fct_staff_observation*</code> marts, not from the assessment-scores fact the rest
+  of the dashboard reads. Those marts exist and are mart-ready but have no Cube
+  cube/view yet (a <code>staff-observations</code> access tier is scaffolded in
+  <code>access.buildGroups</code> per <code>.claude/rules/cube-authoring.md</code> but unwired).</li>
+<li><strong>i-Ready lesson-passing measures are ES/MS only by construction</strong> — the HS
+  branch of <code>rpt_tableau__ddi_dashboard.sql</code> nulls them out explicitly, not a
+  display filter. Treat "all regions" as "all regions, ES/MS grades only" for
+  this specific measure family.</li>
+<li>Collapsed into the "override/goal-status/goal-distance" rows above: ~10 near-
+  identical per-level (Grade/School/Region) and per-source (i-Ready/Walkthrough)
+  variants of the same goal-distance-and-status pattern, to stay inside the line
+  budget. Same for 4 region-literal <code>'Camden'/'Miami'/'Newark'/'Paterson'</code>
+  text-concatenation helpers on <code>LP - Bucket Rosters</code> — layout only, omitted as
+  <code>workbook-only</code>/excluded.</li>
+<li><code>rpt_tableau__assessment_dashboard.sql</code> has a structurally separate Paterson
+  branch (joins course enrollments on <code>discipline</code> instead of
+  <code>illuminate_subject_area</code>, "temp pending course fixes") — a data-engineering
+  seam, not a different regional feature set from the dashboard user's
+  perspective, so it isn't broken out as its own row above.</li>
+</ul>
+<h3 id="verification_1">Verification</h3>
+<ul>
+<li>cube-covered spot-check: <code>pct_proficient</code> and <code>is_mastery</code> are defined in
+  <code>src/cube/model/cubes/student_assessments/student_assessment_scores.yml</code>
+  (lines ~89–95 for <code>is_mastery</code>, ~262–276 for <code>pct_proficient</code>), and both are
+  included on
+  <code>src/cube/model/views/student_assessments/student_assessment_scores_view.yml</code>.</li>
+<li>mart-ready spot-check: <code>grade_goal</code>, <code>school_goal</code>, <code>region_goal</code>, and
+  <code>organization_goal</code> are explicit output columns of
+  <code>src/dbt/kipptaf/models/marts/dimensions/dim_assessment_goals.sql</code>, keyed by
+  <code>academic_year, school_id, state_assessment_code, grade_level, illuminate_subject_area</code>.</li>
+<li>mart-missing spot-check: the i-Ready 2+/4+ lesson-passed flags
+  (<code>is_passed_iready_2plus_reading_int</code>, etc.) are computed inline in
+  <code>src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__ddi_dashboard.sql</code> (the
+  <code>iready_weekly</code>/<code>iready_pivot</code> CTEs) straight off
+  <code>int_iready__instruction_by_lesson_union</code>, with no dim/fct mart in between and
+  no Cube cube reading iReady data at all.</li>
+</ul>
+<h2 id="fast-iready-data-tool-fast_and_iready_data_tool">FAST &amp; iReady Data Tool (<code>fast_and_iready_data_tool</code>)</h2>
+<ul>
+<li>workbook: KIPP Miami FAST &amp; i-Ready Analysis | contentUrl
+  <code>KIPPMiamiFASTi-ReadyAnalysis_16759101332760</code> | luid
+  <code>9a4decae-3707-468f-8098-d3f625d770eb</code> (confirmed, matches hint) | project
+  Production</li>
+<li>upstream datasources (all embedded, 1 per rpt_ model):
+  <code>rpt_tableau__miami_fast</code> (kipptaf_tableau), <code>rpt_tableau__miami_k2_star</code>
+  (kipptaf_tableau), <code>rpt_tableau__miami_k2_iready</code> (kipptaf_tableau)</li>
+<li>rpt_/source models in use: <code>rpt_tableau__miami_fast</code>,
+  <code>rpt_tableau__miami_k2_iready</code>, <code>rpt_tableau__miami_k2_star</code> (all three —
+  matches the Asana task's list exactly). Upstream int_ models feeding
+  growth/placement/mastery logic: <code>int_iready__diagnostic_results</code>,
+  <code>int_iready__domain_unpivot</code>, <code>int_fldoe__all_assessments</code>,
+  <code>int_fldoe__fast_standard_performance_unpivot</code>,
+  <code>int_assessments__fast_previous_year</code>, <code>int_iready__instruction_by_lesson</code>,
+  <code>stg_renlearn__star</code>, <code>stg_renlearn__star_dashboard_standards</code>.</li>
+<li>published dashboards inventoried: Export, K-2 Teacher, Region View, School
+  View, Teacher View (5). Landing Page and "K-2 Teacher - X" contain zero
+  worksheet zones (nav buttons/images only) — excluded as non-metric.</li>
+<li>sheets excluded as hidden/scratch: 10 orphaned worksheets present in the twb
+  but placed on NO dashboard (dev/scratch copies):
+  <code>Region - FAST Growth - Table (2)</code>, <code>Region - Grade 3 Retention Risk - Donut</code>,
+  <code>Region - KPI - Diagnostic Gain</code>, <code>Region - KPI - Diagnostic Gain - TT</code>,
+  <code>Region - KPI - Distance to Prof</code>, <code>School - FAST Prof Roll-Up - Table</code>,
+  <code>School - KPI - Diagnostic Gain</code>, <code>School - KPI - Distance to Prof</code>,
+  <code>Teacher - KPI - Lessons Passed</code>, <code>Teacher - KPI - i-Ready Growth</code>. 45 of 55
+  worksheets are in scope (on one of the 5 real dashboards).</li>
+<li>regions served by this dashboard overall: <strong>Miami only — confirmed</strong>, not just
+  a hint. All three source rpt_ models filter <code>where co.region = 'Miami'</code>
+  (rpt_tableau__miami_fast.sql:250; miami_k2_iready.sql:73;
+  miami_k2_star.sql:107). The K-2 models also hard-filter <code>grade_level &lt; 3</code> and
+  current academic year only; miami_fast covers grades 3+ and current + prior
+  year.</li>
+</ul>
+<h3 id="measures_2">Measures</h3>
+<table>
+<thead>
+<tr>
+<th>metric</th>
+<th>agg</th>
+<th>source field / formula (trimmed)</th>
+<th>dashboards</th>
+<th>status</th>
+<th>where</th>
+<th>regions</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FAST proficiency rate (is_proficient; "% Proficient", pcto:cnt sublevel share)</td>
+<td>Avg / Sum</td>
+<td><code>is_proficient</code> (ft.is_proficient_int)</td>
+<td>Region View, School View, Teacher View, Export</td>
+<td>cube-covered</td>
+<td><code>student_assessment_scores.pct_proficient</code> filtered <code>student_assessments.assessment_type = 'state_fl_fast'</code></td>
+<td>Miami</td>
+</tr>
+<tr>
+<td>FAST scale score ("Scale Score", "Scale Score (LOD)" = FIXED max per student/subject/window)</td>
+<td>Avg / Sum / Max</td>
+<td><code>scale_score</code> (ft.scale_score)</td>
+<td>Region View, School View</td>
+<td>cube-covered</td>
+<td><code>student_assessment_scores.avg_scale_score</code> / <code>scale_score</code> dim, same assessment_type filter</td>
+<td>Miami</td>
+</tr>
+<tr>
+<td>FAST sublevel distribution (count of students per sublevel; "pcto:cnt" % of total)</td>
+<td>Count / CountD</td>
+<td><code>__tableau_internal_object_id__</code> row count, <code>student_number</code> CountD</td>
+<td>Region View, School View, Teacher View, Export</td>
+<td>cube-covered</td>
+<td><code>student_assessment_scores.count_scored</code> / <code>count_students</code>, broken out by <code>proficiency_level</code> (maps to FAST achievement_level band)</td>
+<td>Miami</td>
+</tr>
+<tr>
+<td>FAST sublevel ordinal rank ("Fast Sublevel Number", used for color-sort of the 8 FAST sublevels)</td>
+<td>Max</td>
+<td><code>fast_sublevel_number</code> (ft.sublevel_number)</td>
+<td>Region View, School View, Teacher View</td>
+<td>mart-missing</td>
+<td><code>performance_band_label_number</code> on the cube is hard-coded <code>cast(null as numeric)</code> for BOTH state and vendor branches (<code>fct_assessment_scores_enrollment_scoped.sql:478,571</code>) — FAST's 8-tier sublevel rank has no cube/mart equivalent today. Logic lives in <code>int_fldoe__all_assessments</code> (<code>sublevel_number</code>)</td>
+<td>Miami</td>
+</tr>
+<tr>
+<td>FLDOE Growth Achieved (is_fldoe_growth: year-over-year sublevel/scale improvement vs prior PM3)</td>
+<td>boolean flag (used as dimension + KPI donut/bar)</td>
+<td>case expr comparing <code>ft.sublevel_number</code>/<code>scale_score</code> to <code>p.prev_pm3_sublevel_number</code>/<code>prev_pm3_scale</code></td>
+<td>Region View, School View, Teacher View</td>
+<td>mart-missing</td>
+<td>computed inline in <code>rpt_tableau__miami_fast.sql:182-197</code>, sourced from <code>int_assessments__fast_previous_year</code>; no growth/YoY concept anywhere in Cube</td>
+<td>Miami</td>
+</tr>
+<tr>
+<td>Grade 3 retention risk flag (gr3_retention_flag)</td>
+<td>boolean (KPI donut + roster)</td>
+<td><code>not is_retained_year and grade_level=3 and ELA and achievement_level_int=1</code></td>
+<td>Export, School View, Teacher View</td>
+<td>mart-missing</td>
+<td><code>rpt_tableau__miami_fast.sql:171-178</code></td>
+<td>Miami</td>
+</tr>
+<tr>
+<td>Lowest 25% flag (is_low_25, FLDOE dynamic percentile rank &lt; .255)</td>
+<td>boolean dimension/filter</td>
+<td><code>p.fldoe_dynamic_percentile_rank &lt; .255</code></td>
+<td>Region View, School View</td>
+<td>mart-missing</td>
+<td><code>rpt_tableau__miami_fast.sql:169</code>, sourced from <code>int_assessments__fast_previous_year</code></td>
+<td>Miami</td>
+</tr>
+<tr>
+<td>i-Ready proficiency rate ("Is Proficient Int (i-Ready)": placement_3_level = On/Above Grade Level)</td>
+<td>Avg (0/1 calc)</td>
+<td>derived from <code>placement_3_level</code></td>
+<td>K-2 Teacher</td>
+<td>cube-covered</td>
+<td><code>student_assessment_scores.pct_proficient</code> filtered <code>assessment_type = 'iready'</code> — <code>is_mastery</code> on the mart is <code>overall_relative_placement_int &gt;= 4</code>, the same concept at finer grain (<code>int_assessments__benchmark_scores.sql:19</code>)</td>
+<td>Miami, K-2 only</td>
+</tr>
+<tr>
+<td>i-Ready diagnostic scale score ("Diagnostic Scale" = Avg overall_scale_score, "Recent Scale" = Avg most_recent_overall_scale_score)</td>
+<td>Avg</td>
+<td><code>overall_scale_score</code>, <code>most_recent_overall_scale_score</code></td>
+<td>Region View</td>
+<td>cube-covered</td>
+<td><code>student_assessment_scores.avg_scale_score</code> filtered <code>assessment_type='iready'</code>; "recent" vs "this-round" needs an administration_period filter choice, not a separate cube field</td>
+<td>Miami, K-2 only</td>
+</tr>
+<tr>
+<td>i-Ready relative placement category (relative_placement / diagnostic_overall_relative_placement)</td>
+<td>dimension, shown as KPI bars</td>
+<td><code>overall_relative_placement</code></td>
+<td>Region View, School View</td>
+<td>cube-covered</td>
+<td><code>student_assessment_scores.proficiency_level</code> for iReady rows = <code>overall_relative_placement</code> (<code>int_assessments__benchmark_scores.sql:16</code>)</td>
+<td>Miami</td>
+</tr>
+<tr>
+<td>i-Ready <strong>most-recent-diagnostic</strong> placement/scale (recent_overall_relative_placement, recent_overall_placement, recent_scale)</td>
+<td>dimension/measure, cross-round lookup</td>
+<td><code>dr.most_recent_*</code> columns</td>
+<td>Region View, School View</td>
+<td>mart-missing</td>
+<td>computed with a "most recent diagnostic" window pick inside <code>int_iready__diagnostic_results</code>, never promoted to a mart; Cube has no query-time window-function budget for this (see <code>.claude/rules/cube-authoring.md</code> "Query-time window functions... do not scale")</td>
+<td>Miami</td>
+</tr>
+<tr>
+<td>i-Ready diagnostic gain / progress to growth (diagnostic_gain, progress_to_typical, progress_to_stretch, annual_typical/stretch_growth_measure)</td>
+<td>measures, KPI "Progress to Growth"</td>
+<td><code>dr.most_recent_diagnostic_gain</code>, <code>percent_progress_to_annual_*_growth_percent</code></td>
+<td>Teacher View (K-2 variant too)</td>
+<td>mart-missing</td>
+<td><code>int_iready__diagnostic_results</code> — no growth measure anywhere in Cube</td>
+<td>Miami</td>
+</tr>
+<tr>
+<td>STAR proficiency rate ("Is Proficient Int (Star)": star_proficient = Yes/No)</td>
+<td>Avg (0/1 calc)</td>
+<td><code>state_benchmark_proficient</code></td>
+<td>K-2 Teacher</td>
+<td>cube-covered</td>
+<td><code>student_assessment_scores.pct_proficient</code> filtered <code>assessment_type='star'</code> — mart's <code>is_mastery</code> = <code>state_benchmark_proficient = 'Yes'</code> (<code>int_assessments__benchmark_scores.sql:56</code>)</td>
+<td>Miami, K-2 only</td>
+</tr>
+<tr>
+<td>STAR domain / standard percent mastery (domain_percent_mastery, standard_percent_mastery, domain/standard_mastery_level)</td>
+<td>Avg</td>
+<td><code>stg_renlearn__star_dashboard_standards</code> columns</td>
+<td>K-2 Teacher</td>
+<td>mart-missing</td>
+<td>sourced in <code>rpt_tableau__miami_k2_star.sql:28-34</code> from <code>stg_renlearn__star_dashboard_standards</code>; no domain/standard grain anywhere in the assessment Cube (score-row grain only)</td>
+<td>Miami, K-2 only</td>
+</tr>
+<tr>
+<td>STAR current SGP (Student Growth Percentile)</td>
+<td>dimension/roster value</td>
+<td><code>sub.current_sgp</code></td>
+<td>K-2 Teacher</td>
+<td>mart-missing</td>
+<td><code>rpt_tableau__miami_k2_star.sql:77</code>, sourced from <code>stg_renlearn__star</code>; no SGP/growth-percentile concept anywhere in Cube or in <code>fct_assessment_scores_enrollment_scoped</code></td>
+<td>Miami, K-2 only</td>
+</tr>
+<tr>
+<td>i-Ready domain bars (domain_name, unpivoted per-domain rows)</td>
+<td>dimension, no explicit measure beyond is_mastery reuse</td>
+<td><code>up.domain_name</code></td>
+<td>K-2 Teacher</td>
+<td>mart-missing</td>
+<td><code>int_iready__domain_unpivot</code> — domain grain not in any mart/Cube</td>
+<td>Miami, K-2 only</td>
+</tr>
+<tr>
+<td>Placeholder axis calcs (<code>AVG(0)</code> x4 on donut KPIs)</td>
+<td>User/AVG(0)</td>
+<td>literal <code>AVG(0)</code></td>
+<td>School View, Teacher View</td>
+<td>workbook-only</td>
+<td>pure Tableau dual-axis/legend placeholder, no data meaning</td>
+<td>n/a</td>
+</tr>
+</tbody>
+</table>
+<h3 id="dimensions_2">Dimensions</h3>
+<table>
+<thead>
+<tr>
+<th>dimension</th>
+<th>used as</th>
+<th>status</th>
+<th>where</th>
+<th>regions</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>School (school_abbreviation)</td>
+<td>filter, color, rows</td>
+<td>cube-covered</td>
+<td><code>student_assessment_scores_view</code> → locations.abbreviation</td>
+<td>Miami</td>
+</tr>
+<tr>
+<td>Grade level</td>
+<td>filter, rows</td>
+<td>cube-covered</td>
+<td><code>...student_school_enrollments.grade_level</code></td>
+<td>Miami</td>
+</tr>
+<tr>
+<td>Subject (fsa_subject / iready_subject → academic_subject)</td>
+<td>filter, cols</td>
+<td>cube-covered</td>
+<td><code>student_assessments.academic_subject</code></td>
+<td>Miami</td>
+</tr>
+<tr>
+<td>Administration window/round (PM1-3; BOY/MOY/EOY)</td>
+<td>filter, cols</td>
+<td>cube-covered</td>
+<td><code>student_assessment_administrations.administration_period</code></td>
+<td>Miami</td>
+</tr>
+<tr>
+<td>Academic year</td>
+<td>filter</td>
+<td>cube-covered</td>
+<td><code>dates.academic_year</code></td>
+<td>Miami</td>
+</tr>
+<tr>
+<td>Gender, Ethnicity/race, IEP status, LEP status</td>
+<td>filter</td>
+<td>cube-covered</td>
+<td><code>students.gender_identity</code>/<code>race</code>, <code>student_enrollment_status.is_iep</code>/<code>iep_classification</code>; LEP status not separately on the view — closest is <code>is_ell</code></td>
+<td>Miami</td>
+</tr>
+<tr>
+<td>Course name, section number, teacher name</td>
+<td>filter, roster</td>
+<td>cube-covered</td>
+<td><code>courses.course_title</code>/<code>course_code</code>, <code>course_sections.identifier</code>, <code>staff_lead_teacher_full_name</code></td>
+<td>Miami</td>
+</tr>
+<tr>
+<td>Enroll status / is_enrolled_fte (FLDOE FTE survey flags)</td>
+<td>filter</td>
+<td>mart-missing</td>
+<td><code>rpt_tableau__miami_fast.sql</code> (<code>co.enroll_status</code>, <code>co.is_fldoe_fte_*</code>), sourced from <code>int_extracts__student_enrollments_subjects</code> — no FTE-survey concept in Cube</td>
+<td>Miami</td>
+</tr>
+<tr>
+<td>Student Tier (nj_student_tier)</td>
+<td>filter</td>
+<td>mart-missing</td>
+<td><code>rpt_tableau__miami_fast.sql:98</code>, from <code>int_extracts__student_enrollments_subjects</code> — not in Cube</td>
+<td>Miami</td>
+</tr>
+<tr>
+<td>Territory</td>
+<td>filter</td>
+<td>mart-missing</td>
+<td><code>co.territory</code> passthrough in <code>rpt_tableau__miami_fast.sql:97</code> — sub-region/neighborhood code, not in Cube</td>
+<td>Miami</td>
+</tr>
+<tr>
+<td>Team / Advisory (co.advisory_name)</td>
+<td>roster context</td>
+<td>mart-missing</td>
+<td><code>rpt_tableau__miami_fast.sql:82</code> — not in Cube</td>
+<td>Miami</td>
+</tr>
+<tr>
+<td>Achievement level (FAST 1-5 state level)</td>
+<td>filter, roster</td>
+<td>cube-covered</td>
+<td><code>student_assessment_scores.proficiency_level</code> (state branch = <code>performance_band</code>)</td>
+<td>Miami</td>
+</tr>
+<tr>
+<td>FAST standard domain / mastery indicator (standard_domain, mastery_indicator, mastery_number)</td>
+<td>roster detail</td>
+<td>mart-missing</td>
+<td><code>int_fldoe__fast_standard_performance_unpivot</code> — standard-grain, not in Cube</td>
+<td>Miami</td>
+</tr>
+<tr>
+<td>Lexile (lexile_recent, lexile_range_recent)</td>
+<td>roster detail</td>
+<td>mart-missing</td>
+<td><code>int_iready__diagnostic_results</code> — not in Cube</td>
+<td>Miami, K-2 only</td>
+</tr>
+<tr>
+<td>Rush flag (test taken too fast)</td>
+<td>roster/filter</td>
+<td>mart-missing</td>
+<td><code>int_iready__diagnostic_results</code> (<code>most_recent_rush_flag</code>) — not in Cube</td>
+<td>Miami, K-2 only</td>
+</tr>
+<tr>
+<td>Projected sublevel / prev PM3 sublevel (year-end projection, prior-year comparison)</td>
+<td>roster, growth calc input</td>
+<td>mart-missing</td>
+<td><code>int_iready__diagnostic_results.projected_sublevel_recent</code>, <code>int_assessments__fast_previous_year.prev_pm3_sublevel_name</code> — not in Cube</td>
+<td>Miami</td>
+</tr>
+<tr>
+<td>Student identifiers (student_number, lastfirst/student_name, teacher_name)</td>
+<td>roster row identity</td>
+<td>cube-covered (PII-gated)</td>
+<td><code>student_assessment_scores_view.students.full_name</code> etc., gated by the view's <code>student</code> access_policy</td>
+<td>Miami</td>
+</tr>
+<tr>
+<td>Row-number dedup helpers (rn_test_fast, rn_subject_test, rn_subject_round_star)</td>
+<td>filter only (dedup to 1 row per test)</td>
+<td>workbook-only</td>
+<td>Tableau-side <code>row_number()</code> partition dedup, mirrors <code>int_fldoe__all_assessments</code>/<code>int_iready__diagnostic_results</code> <code>rn_*</code> columns already resolved upstream in the rpt_ model</td>
+<td>n/a</td>
+</tr>
+<tr>
+<td>View By / Student Grouping / FAST Chart Type (parameter-driven pivot dimension)</td>
+<td>rows (parameter switch)</td>
+<td>workbook-only</td>
+<td>Tableau parameter-driven CASE calc selecting among school/grade/IEP/LEP/gender</td>
+<td>n/a</td>
+</tr>
+</tbody>
+</table>
+<h3 id="notes_2">Notes</h3>
+<ul>
+<li>All three upstream rpt_ models (<code>rpt_tableau__miami_fast</code>,
+  <code>rpt_tableau__miami_k2_iready</code>, <code>rpt_tableau__miami_k2_star</code>) hard-filter
+  <code>region = 'Miami'</code> — the region hint is confirmed, not assumed. The two K-2
+  models also filter to <code>grade_level &lt; 3</code> and the current academic year only (no
+  prior-year rows), so iReady/STAR measures above are Miami + K-2 scoped and
+  FAST measures are Miami, grades 3+, current + 1 prior year.</li>
+<li>The Asana blockers (<code>fct_state_assessments</code>, <code>fct_iready_diagnostics</code> don't
+  exist) are accurate: there is no dedicated iReady-diagnostic or
+  state-assessment fact — both route through the general-purpose
+  <code>fct_assessment_scores_enrollment_scoped</code> / <code>student_assessment_scores</code> cube,
+  which covers proficiency rate, scale score, and placement/achievement band
+  well, but has NO growth/SGP/gain concept and NO domain/standard-mastery grain
+  for any source. That gap (not region or proficiency coverage) is the real
+  blocker for a 1:1 Cube swap-in of this dashboard.</li>
+<li><code>performance_band_label_number</code> (the cube's one ordinal-ranking field) is
+  hard-coded null for BOTH state (FAST) and vendor (iReady/STAR/DIBELS) branches
+  in <code>fct_assessment_scores_enrollment_scoped.sql</code> — only internal Illuminate
+  rows populate it. This silently defeats any attempt to recreate the FAST
+  8-tier sublevel color-sort or STAR/iReady mastery-level ordering purely from
+  the existing cube.</li>
+<li>Classified <code>is_fldoe_growth</code> / <code>gr3_retention_flag</code> / <code>is_low_25</code> as
+  mart-missing rather than mart-ready because the logic lives inline in the
+  <code>rpt_tableau__miami_fast.sql</code> extract itself, not in a <code>models/marts/</code>
+  dim/fact — per the task's mart-ready definition (computed in <code>marts/</code>).</li>
+<li>The "pcto:cnt" (percent-of-total) FAST sublevel-distribution bars are a
+  Tableau table calc over a cube-coverable count (<code>count_scored</code> grouped by
+  <code>proficiency_level</code>); the percent-of-total arithmetic itself would need to be
+  done client-side (Tableau/BI layer), not a missing cube primitive.</li>
+<li>Grouped near-identical per-subject/per-window variants of the same FAST/
+  iReady/STAR measure into single rows above (e.g. Region/School/Teacher "KPI -
+  FAST Growth" sheets all read the same <code>is_proficient</code> field).</li>
+</ul>
+<h3 id="verification_2">Verification</h3>
+<ul>
+<li>cube-covered spot-check: <code>pct_proficient</code> measure, defined in
+  <code>src/cube/model/cubes/student_assessments/student_assessment_scores.yml</code>
+  (lines 262-276) — filtered to
+  <code>student_assessments.assessment_type = 'state_fl_fast'</code> / <code>'iready'</code> /
+  <code>'star'</code> covers FAST/iReady/STAR proficiency rate respectively.</li>
+<li>mart-ready spot-check:
+  <code>fct_assessment_scores_enrollment_scoped.national_percentile</code>
+  (<code>src/dbt/kipptaf/models/marts/facts/fct_assessment_scores_enrollment_scoped.sql</code>,
+  populated at lines 259/562 for the vendor/iReady/STAR branch via
+  <code>int_assessments__benchmark_scores.sql</code> lines 14/50) exists as a mart column
+  but is not exposed as a dimension on the <code>student_assessment_scores</code> cube — it
+  could be added with a one-line YAML dimension, no new dbt work.</li>
+<li>mart-missing spot-check: STAR <code>current_sgp</code> (Student Growth Percentile),
+  sourced in
+  <code>src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__miami_k2_star.sql</code> line
+  77 from <code>stg_renlearn__star.current_sgp</code> — no growth-percentile concept exists
+  in any <code>models/marts/</code> model or Cube cube today.</li>
+</ul>
+<h2 id="i-ready-apm-tool-apm-dashboard-i_ready_apm_tool">i-Ready APM Tool (APM Dashboard) (<code>i_ready_apm_tool</code>)</h2>
+<ul>
+<li>workbook: APM Dashboard | contentUrl <code>APMDashboard</code> | luid
+  <code>eb91563d-760b-4f2d-b9f8-65437fe22242</code> (confirmed, matches expected) | project
+  Production</li>
+<li>upstream datasources: <code>rpt_tableau__iready_apm (kipptaf_tableau)</code> (embedded,
+  BigQuery <code>teamster-332318.kipptaf_tableau.rpt_tableau__iready_apm</code>, extract
+  behind a Hyper cache) — the workbook's only data datasource. <code>Parameters</code> is
+  an inline, dataless datasource holding 4 UI toggle parameters.</li>
+<li>rpt_/source models in use: <code>rpt_tableau__iready_apm</code> (sole source). Its own
+  upstream (confirmed by reading the SQL):
+  <code>int_extracts__student_enrollments_subjects_weeks</code> (enrollment/week spine,
+  network-wide, no region filter),
+  <code>stg_iready__personalized_instruction_summary</code> (weekly lesson/usage),
+  <code>int_iready__instruction_by_lesson_union</code> (per-lesson completion),
+  <code>int_iready__diagnostic_results</code> (diagnostic placement/growth),
+  <code>base_powerschool__course_enrollments</code> (subject teacher/section),
+  <code>stg_google_sheets__reporting__terms</code> (IREX term windows).</li>
+<li>published dashboards inventoried: <code>i-Ready</code>,
+  <code>Diagnostic and State Assessment</code>, <code>Bucket 2 Action List</code>, <code>i-Ready Roster</code>
+  (all 4 present in the .twb; see Notes — only the first 2 are confirmed live
+  server views).</li>
+<li>sheets excluded as hidden/scratch: 8 —
+  <code>APM - i-Ready - Diagnostic placement (2)</code>,
+  <code>APM - i-Ready Weekly - Median PTG (TT)</code>, <code>APM - i-Ready Weekly - Met Goals</code>,
+  <code>Lesson Detail TT</code>, <code>Sheet 11</code>, <code>Sheet 12</code>, <code>Sheet 14</code>, <code>Sheet 15</code>. None of
+  these appear in any dashboard's <code>&lt;zones&gt;</code>; all are tooltip/drill staging
+  duplicates of in-scope sheets (same fields, same formulas).</li>
+<li>regions served by this dashboard overall: <strong>all 4</strong> (Newark, Camden, Miami,
+  Paterson) — see Notes for evidence. Scope is grades K-8 only
+  (<code>grade_level &lt;= 8</code> hard filter in <code>rpt_tableau__iready_apm.sql</code>); no high
+  school i-Ready. Current + prior academic year only.</li>
+</ul>
+<h3 id="measures_3">Measures</h3>
+<table>
+<thead>
+<tr>
+<th>metric</th>
+<th>agg</th>
+<th>source field / formula (trimmed)</th>
+<th>dashboards</th>
+<th>status</th>
+<th>where</th>
+<th>regions</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Overall Scale Score</td>
+<td>raw/Avg</td>
+<td><code>overall_scale_score</code> (mart column, no Tableau calc)</td>
+<td>Diagnostic and State Assessment (Roster)</td>
+<td>cube-covered</td>
+<td><code>student_assessment_scores.scale_score</code> (assessment_type='iready') in <code>src/cube/model/cubes/student_assessments/student_assessment_scores.yml</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Overall Relative Placement (5-level)</td>
+<td>raw</td>
+<td><code>overall_relative_placement</code> / <code>overall_relative_placement_int</code></td>
+<td>Diagnostic Roster, Board - Distro by Round, Board - Growth</td>
+<td>cube-covered</td>
+<td><code>student_assessment_scores.proficiency_level</code> (iReady rows source <code>relative_placement</code> via <code>int_iready__domain_unpivot</code>, per <code>fct_assessment_scores_enrollment_scoped.sql</code>)</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Placement 3-Level (collapsed band)</td>
+<td>raw</td>
+<td><code>placement_3_level</code> (mart column, int_iready__diagnostic_results)</td>
+<td>Diagnostic Roster, color encoding on Diagnostic placement &amp; Distro-by-Round</td>
+<td>mart-ready</td>
+<td><code>int_iready__diagnostic_results.placement_3_level</code>; no exact 3-bucket equivalent in Cube (Cube's <code>is_mastery</code> is a 2-bucket proficient/not flag with a different cut)</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Is Proficient (Int) / % Proficient</td>
+<td>Avg</td>
+<td><code>IF overall_relative_placement_int &gt;= 4 THEN 1 ELSE 0</code></td>
+<td>Board - Growth</td>
+<td>cube-covered (caveat)</td>
+<td><code>student_assessment_scores.is_mastery</code> / <code>pct_proficient</code> — cube's cut comes from <code>relative_placement IN ('Early On Grade Level','Mid or Above Grade Level')</code>, not independently verified to equal the workbook's <code>&gt;= 4</code> int cut; same underlying placement data</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Student Count Unique (denominator for %-of-total placement bars)</td>
+<td>COUNTD</td>
+<td><code>COUNTD(student_number)</code></td>
+<td>Diagnostic placement, Board - Distro by Round</td>
+<td>cube-covered</td>
+<td><code>student_assessment_scores.count_students</code> / <code>count_scored</code> (both COUNTD/count on the same iReady diagnostic rows)</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Progress to Typical Growth (LOD)</td>
+<td>Avg (FIXED MAX)</td>
+<td><code>percent_progress_to_annual_typical_growth</code> (mart column)</td>
+<td>APM - i-Ready Weekly - Median PTG</td>
+<td>mart-ready</td>
+<td><code>int_iready__diagnostic_results.percent_progress_to_annual_typical_growth_percent</code>; no Cube growth measure exists</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Progress to Stretch Growth (LOD)</td>
+<td>Avg (FIXED MAX)</td>
+<td><code>percent_progress_to_annual_stretch_growth</code> (mart column)</td>
+<td>APM - i-Ready Weekly - Median PTG</td>
+<td>mart-ready</td>
+<td>same mart column, stretch variant; <code>int_topline__iready_diagnostic_weekly.is_bfb_stretch_growth_int</code> already derives a below-benchmark on-track flag from it — this is the upstream for the open Asana task <code>assessments.iready_stretch_growth_on_track_rate</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td># Lessons Completed</td>
+<td>COUNTD</td>
+<td><code>COUNTD(lesson_id)</code></td>
+<td>Roster, Roster - NJ Bucket 2 ELA</td>
+<td>mart-ready</td>
+<td><code>int_iready__instruction_by_lesson_union.lesson_id</code> (per-lesson grain already exists)</td>
+<td>all</td>
+</tr>
+<tr>
+<td># Lessons Passed (LOD) — variants: raw count, Sum, Avg across sheets</td>
+<td>Avg/Sum (FIXED MAX)</td>
+<td><code>all_lessons_passed_week</code> (mart column)</td>
+<td>Weekly Table, Table (Advisory), Roster, Bucket2 Roster</td>
+<td>mart-ready</td>
+<td><code>int_topline__iready_lessons_weekly.n_lessons_passed_week</code> already aggregates this exact source column at student-week grain; upstream for open Asana task <code>assessments.iready_lessons_passed_rate</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>% Lessons Passed (LOD)</td>
+<td>Avg (FIXED MAX)</td>
+<td><code>percent_all_lessons_passed_week</code> (mart column)</td>
+<td>Weekly Table, Table (Advisory)</td>
+<td>mart-ready</td>
+<td><code>stg_iready__personalized_instruction_summary.percent_all_lessons_passed</code> (same open Asana task as above)</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Passed &gt;= 1 / &gt;= 2 / &gt;= 4 Lessons (3 threshold-flag variants)</td>
+<td>Avg</td>
+<td><code>IF [#Lessons Passed LOD] &gt;= N THEN 1 ELSE 0</code></td>
+<td>Weekly Table, Table (Advisory), Roster (Bucket2: &gt;=4 only)</td>
+<td>mart-ready</td>
+<td>trivial threshold over the mart-ready <code>all_lessons_passed_week</code> column above; no new logic needed, no Cube measure exists</td>
+<td>all</td>
+</tr>
+<tr>
+<td>LOD Time on Task (minutes)</td>
+<td>Avg (FIXED MAX)</td>
+<td><code>total_lesson_time_on_task_min_week</code> (mart column)</td>
+<td>Weekly Table, Table (Advisory), Roster</td>
+<td>mart-ready</td>
+<td><code>int_topline__iready_lessons_weekly.time_on_task_min_week</code>; upstream for open Asana task <code>assessments.iready_time_on_task_minutes</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Passed Boolean (per-lesson pass/fail)</td>
+<td>raw</td>
+<td><code>IF passed_or_not_passed = 'Passed' THEN 1 ELSEIF 'Not Passed' THEN 0</code></td>
+<td>Roster, Roster - NJ Bucket 2 ELA (building block for # Lessons Passed)</td>
+<td>mart-ready</td>
+<td><code>int_iready__instruction_by_lesson_union.passed_or_not_passed</code> (mart already carries the raw label; boolean recast is trivial)</td>
+<td>all</td>
+</tr>
+<tr>
+<td>State Test Proficiency (tooltip/filter value)</td>
+<td>raw, tooltip-only</td>
+<td><code>state_test_proficiency</code> (mart column)</td>
+<td>Diagnostic placement, Weekly Table/Table Advisory, Roster, Median PTG</td>
+<td>cube-covered</td>
+<td><code>student_assessment_scores.proficiency_level</code> filtered to a state <code>assessment_type</code> (e.g. <code>state_nj_njsla</code>) — same fact, different <code>assessment_type</code> slice</td>
+<td>all</td>
+</tr>
+</tbody>
+</table>
+<h3 id="dimensions_3">Dimensions</h3>
+<table>
+<thead>
+<tr>
+<th>dimension</th>
+<th>used as</th>
+<th>status</th>
+<th>where</th>
+<th>regions</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Region</td>
+<td>filter, row grouping</td>
+<td>cube-covered</td>
+<td><code>regions.region_name</code> / <code>locations.region_key</code> (conformed cube)</td>
+<td>all</td>
+</tr>
+<tr>
+<td>School / School Name</td>
+<td>filter, row grouping</td>
+<td>cube-covered</td>
+<td><code>locations.abbreviation</code> / school name dims (conformed)</td>
+<td>all</td>
+</tr>
+<tr>
+<td>School Level</td>
+<td>filter</td>
+<td>cube-covered</td>
+<td><code>student_school_enrollments</code> / locations school-level dim</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Grade Level</td>
+<td>filter, row grouping</td>
+<td>cube-covered</td>
+<td><code>student_school_enrollments.grade_level</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Grade Bands (K-2 / 3-4 / 5-8, Tableau-side bucket of grade_level)</td>
+<td>row grouping</td>
+<td>workbook-only</td>
+<td>trivial bucket of grade_level; not reproduced in Cube or a mart column</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Subject (Reading/Math)</td>
+<td>filter, row grouping</td>
+<td>cube-covered</td>
+<td><code>student_assessments.academic_subject</code> (iReady subject values present per <code>assessment_type: iready</code>)</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Test Round (BOY/MOY/EOY)</td>
+<td>filter, row grouping</td>
+<td>cube-covered (unverified for iReady)</td>
+<td><code>student_assessment_administrations.administration_period</code> — description confirms NJ-state and FL-state seasons; not independently confirmed to populate for iReady rows</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Academic Year / Academic Year Display</td>
+<td>filter, row grouping</td>
+<td>cube-covered</td>
+<td><code>dates.academic_year</code> / <code>academic_year_label</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Territory</td>
+<td>dimension, filter</td>
+<td>mart-ready</td>
+<td><code>int_extracts__student_enrollments_subjects_weeks.territory</code> passthrough; no Cube equivalent found</td>
+<td>unknown</td>
+</tr>
+<tr>
+<td>Head of School</td>
+<td>filter</td>
+<td>mart-ready</td>
+<td>passthrough mart column (<code>co.hos</code>); no Cube dimension found on student assessment views</td>
+<td>all</td>
+</tr>
+<tr>
+<td>i-Ready Teacher / Subject Teacher / Subject Section / Team</td>
+<td>filter, row grouping</td>
+<td>mart-ready</td>
+<td><code>base_powerschool__course_enrollments</code> join columns in <code>rpt_tableau__iready_apm.sql</code>; staff/section dimensions exist elsewhere in Cube but not confirmed wired to this fact</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Student Name / Student Number</td>
+<td>roster row identity</td>
+<td>cube-covered (PII-gated)</td>
+<td><code>students</code> dims on the student assessment views, RLS <code>student</code> policy</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Ethnicity / Gender / Gifted and Talented</td>
+<td>filter</td>
+<td>cube-covered</td>
+<td><code>students.race</code> / <code>gender_identity</code>; GT not confirmed in Cube — flag as mart-ready if absent</td>
+<td>all</td>
+</tr>
+<tr>
+<td>IEP Status (binned: IEP / No IEP)</td>
+<td>filter</td>
+<td>cube-covered</td>
+<td><code>student_enrollment_status.is_iep</code> (binary); the workbook's own bin is a Tableau-side categorical-bin group over <code>iep_status</code>, so the exact label set is workbook-only even though the underlying flag is cube-covered</td>
+<td>all</td>
+</tr>
+<tr>
+<td>ML / LEP Status</td>
+<td>filter</td>
+<td>mart-ready</td>
+<td>passthrough mart column (<code>lep_status</code>); not confirmed in Cube on this fact</td>
+<td>all</td>
+</tr>
+<tr>
+<td>NJ Student Tier</td>
+<td>filter</td>
+<td>mart-ready</td>
+<td>passthrough mart column (<code>nj_student_tier</code>); not confirmed in Cube</td>
+<td>all (name implies NJ-only; mart column is populated network-wide per the source SQL, unverified whether non-NJ regions carry a value)</td>
+</tr>
+<tr>
+<td>Is Exempt i-Ready / Is Magoosh / Is SIPPS</td>
+<td>filter</td>
+<td>mart-ready</td>
+<td>passthrough flags in <code>int_extracts__student_enrollments_subjects_weeks</code>; program-specific, no Cube equivalent</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Completion Date / Week Start Monday / Up to Week</td>
+<td>filter, roster column</td>
+<td>mart-ready</td>
+<td>mart date columns; <code>Up to Week</code> is a workbook-only relative-date helper calc</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Lesson Id / Passed or Not Passed</td>
+<td>roster detail</td>
+<td>mart-ready</td>
+<td><code>int_iready__instruction_by_lesson_union</code> passthrough</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Advisor Name</td>
+<td>roster/filter</td>
+<td>mart-ready</td>
+<td>passthrough mart column (<code>co.advisory</code>)</td>
+<td>all</td>
+</tr>
+</tbody>
+</table>
+<h3 id="notes_3">Notes</h3>
+<ul>
+<li><strong>Workbook is mid-revision.</strong> The .twb's own <code>repository-location</code> metadata
+  names it <code>ZZ-REVIEW2026-10-01APMDashboard</code> (rev 9.6) — a "review" copy
+  convention — even though <code>list-workbooks</code> resolves <code>contentUrl: APMDashboard</code>
+  cleanly to the expected luid. <code>get-workbook</code>'s <code>views</code> list shows only 2 live
+  views (<code>i-Ready</code>, <code>Diagnostic and State Assessment</code>); the other 2 dashboards
+  in the .twb (<code>Bucket 2 Action List</code>, <code>i-Ready Roster</code>) do not appear there.
+  Their worksheets' own <code>repository-location</code> entries show they were copied in
+  from a <strong>separate</strong> workbook, <code>ZZ-REVIEW2026-09-09APMi-ReadyPaterson</code>
+  (Paterson-specific review workbook), dated 3 weeks before this inventory. Net:
+  this workbook may be mid-merge of Paterson-specific additions that are not yet
+  confirmed published as standalone views. Treated both as in-scope per the
+  "include and flag when in doubt" rule, but their presence on the live server
+  is unverified — flag for the user to confirm before relying on the Bucket 2 /
+  Roster rows above.</li>
+<li><strong>Regions</strong>: the task's "Miami may route through FAST" hint does NOT hold for
+  this workbook. The embedded <code>[Regional User Filter]</code> row-level-security group
+  explicitly enumerates <code>Camden</code>, <code>Newark</code>, <code>Miami</code>, and <code>Paterson</code> as valid
+  <code>[region]</code> members (one <code>ISMEMBEROF</code> branch per region's AD/Tableau group,
+  plus a KTAF-all-staff branch unioning all 4). No hard-coded region-exclusion
+  filter was found on any in-scope sheet. <code>rpt_tableau__miami_k2_iready.sql</code> is
+  a SEPARATE, Miami-only K-2 extract/dashboard (not part of this workbook) — its
+  existence suggests Miami may ALSO have a parallel K-2-specific i-Ready view
+  elsewhere, but does not contradict Miami data being present here too.</li>
+<li><strong>Excluded as workbook-only/non-metric</strong> (not in the Measures table): `Title</li>
+<li>Roll-Up<code>sheet is a pure cosmetic title banner ("i-Ready APM | Roll-Up"), no data.</code>Text -
+    Diagnostic Data (Most Recent)<code>,</code>Text - Progress to Growth<code>,</code>Text -
+    [Blank]<code>are literal string label calcs used only for tooltip/section-header text.</code>Academic
+    Year or Test Round<code>,</code>Board Chart Swap<code>,</code>Group By<code>,</code>View By - Team
+    Roster<code>are Tableau parameter-driven display-toggle dimensions with no independent data meaning.</code>Exclude
+    OOD<code>/</code>Test Round Set<code>/</code>School Level Set` are RLS/filter housekeeping groups
+    (exclude "Out of District" school, exclude null test round), not displayed
+    dimensions.</li>
+<li><strong>Asana blockers confirmed</strong>: <code>fct_iready_apm</code> and <code>fct_iready_diagnostics</code> do
+  not exist anywhere in <code>src/dbt</code> — confirmed by directory search. The
+  dashboard's sole source is the <code>rpt_</code> extract, built directly from
+  intermediate models, with no fact mart in between. <code>dim_students</code> /
+  <code>dim_locations</code> are not in this lineage either — the extract reads from
+  <code>int_extracts__student_enrollments_subjects_weeks</code>, a wide bespoke
+  enrollment+week spine, not the shared dimensional marts.</li>
+<li><strong>Open Asana measure tasks, mapped to concrete model evidence</strong>:
+  <code>assessments.iready_lessons_passed_rate</code> and
+  <code>assessments.iready_time_on_task_minutes</code> both already have an <code>int_topline__</code>
+  model computing the exact figure at student-week grain
+  (<code>int_topline__iready_lessons_weekly</code>);
+  <code>assessments.iready_stretch_growth_on_track_rate</code> has
+  <code>int_topline__iready_diagnostic_weekly.is_bfb_stretch_growth_int</code>. None of the
+  three are promoted to a fact mart or a Cube measure yet — consistent with
+  "mart-ready" status above. <code>assessments.iready_diagnostic_proficiency_rate</code>
+  (done) matches the cube-covered placement/proficiency rows.</li>
+<li>Variant grouping: lesson-passed threshold flags (&gt;=1/2/4), and the Avg/Sum/raw
+  aggregation variants of the same underlying LOD fields across the Weekly Table
+  / Table (Advisory) / Roster sheets, are collapsed into single rows above —
+  they are the identical mart-ready column viewed at different aggregation or
+  threshold settings, not independent metrics.</li>
+</ul>
+<h3 id="verification_3">Verification</h3>
+<ul>
+<li><strong>Cube-covered spot-check</strong>: <code>Overall Scale Score</code> → file
+  <code>src/cube/model/cubes/student_assessments/student_assessment_scores.yml</code>,
+  dimension <code>scale_score</code> (line 97-102), populated for
+  <code>assessment_type='iready'</code> per <code>student_assessments.yml</code> line 33
+  documentation.</li>
+<li><strong>Mart-ready spot-check</strong>: <code>LOD Time on Task</code> / weekly time-on-task-minutes →
+  mart column
+  <code>stg_iready__personalized_instruction_summary.total_lesson_time_on_task_min</code>,
+  already re-aggregated as <code>time_on_task_min_week</code> in
+  <code>src/dbt/kipptaf/models/topline/intermediate/int_topline__iready_lessons_weekly.sql</code>
+  (line 22).</li>
+<li><strong>Mart-missing spot-check</strong>: no concept in this dashboard was classified
+  mart-missing — every measure traced to either a Cube-exposed fact
+  (<code>fct_assessment_scores_enrollment_scoped</code> for diagnostic/placement/growth) or
+  an existing <code>int_</code>/<code>stg_</code> iReady model (<code>rpt_tableau__iready_apm.sql</code>,
+  <code>src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__iready_apm.sql</code>, for
+  weekly lesson/usage). The closest thing to mart-missing is the
+  weekly-lesson/usage DOMAIN as a whole: it has no <code>rpt_</code>/mart beyond the
+  Tableau-only extract itself and the topline intermediates — i.e., the "mart"
+  for those measures is thin (one <code>int_topline__</code> model, not a dimensional
+  fact), which is why they're <code>mart-ready</code> rather than <code>cube-covered</code> and not
+  yet a fully promoted mart.</li>
+</ul>
+<h2 id="lit-dashboard-literacy-dashboard-lit_dashboard">LIT Dashboard / Literacy Dashboard (<code>lit_dashboard</code>)</h2>
+<ul>
+<li>workbook: Literacy Dashboard | contentUrl <code>LiteracyDashboard</code> | luid
+  <code>72b16a4a-b3a9-47e5-bdff-ae641d9ee9e6</code> (confirmed, matches expected) | project
+  Production</li>
+<li>upstream datasources: <code>rpt_tableau__dibels_dashboard</code> (kipptaf_tableau,
+  embedded), <code>rpt_tableau__sight_words_dashboard</code> (kipptaf_tableau, embedded),
+  <code>stg_google_sheets__dibels_pm_goals</code> (kipptaf_google_sheets, embedded) — all
+  three embedded, none published/shared</li>
+<li>rpt_/source models in use: <code>rpt_tableau__dibels_dashboard</code>,
+  <code>rpt_tableau__sight_words_dashboard</code>, <code>stg_google_sheets__dibels_pm_goals</code>
+  (read directly by the workbook per the data model doc, not only through the
+  dashboard extract)</li>
+<li>published dashboards inventoried (9, matches Tableau Server's 9 published
+  views exactly): LIT Dashboard - Landing Page, Region Overview - Benchmark,
+  School Overview - Benchmark, Region Overview - PM, Region Overview - PM
+  Growth, Region Overview - Aimline, School Overview - Aimline, Sight Words
+  Overview, Sight Words Student Details</li>
+<li>sheets excluded as hidden/scratch: 2 orphan worksheets present in the workbook
+  but placed on no dashboard zone —
+  <code>LP - Participation Rates by Region and Grade Level (H)</code> and <code>Sheet 60</code> (both
+  not hidden on server, just unused). The other 58 of 60 worksheets are
+  dashboard components (Tableau's normal "hidden sheet" pattern for zone
+  contents); all 9 dashboards themselves are unhidden in <code>&lt;windows&gt;</code>.</li>
+<li>regions served by this dashboard overall: <strong>all 4</strong> (Newark, Camden, Miami,
+  Paterson) for every DIBELS Benchmark/PM/Aimline dashboard — verified by
+  roughly equal mention counts of all four region names in the workbook XML
+  (84-95 each) and by the data model doc ("DIBELS runs K-8 across regions").
+  <strong>Exception</strong>: <code>Sight Words Overview</code> and <code>Sight Words Student Details</code> carry
+  an <code>Image/NJ_Only 1.png</code> badge zone (confirmed via XML position — appears only
+  within those two dashboards' zone ranges), and the data model doc states
+  Paterson is additionally excluded in the sight words SQL itself. So Sight
+  Words is effectively Newark + Camden only, despite the badge literally reading
+  "NJ Only" (which would otherwise include Paterson).</li>
+</ul>
+<h3 id="measures_4">Measures</h3>
+<table>
+<thead>
+<tr>
+<th>metric</th>
+<th>agg</th>
+<th>source field / formula (trimmed)</th>
+<th>dashboards</th>
+<th>status</th>
+<th>where</th>
+<th>regions</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>% Participation (+ Numerator/Denominator variants)</td>
+<td>User (COUNTD ratio)</td>
+<td><code>SUM({INCLUDE [academic_year],[expected_test]: COUNTD(IF [completed_test_round] THEN [schedule_student_number] END)}) / SUM({INCLUDE ...: COUNTD([schedule_student_number])})</code></td>
+<td>LIT Landing Page, School Overview - Benchmark</td>
+<td>mart-ready</td>
+<td><code>completed_test_round</code>, <code>expected_row_count</code>, <code>actual_row_count</code> on <code>rpt_tableau__dibels_dashboard</code> (built from <code>int_students__dibels_participation_roster</code>)</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Benchmark measure/composite score (avg <code>measure_standard_score</code>) + level-distribution calc ("Standard Calculation/Conversion mClass Measure Level")</td>
+<td>Avg / Sum (weighted share calc)</td>
+<td><code>measure_standard_score</code>; distribution: <code>(COUNTD(student)/TOTAL(COUNTD(student))) * AVG(level&lt;=2 ? -1 : 1)</code></td>
+<td>LIT Landing, Region/School Overview - Benchmark</td>
+<td><strong>cube-covered (partial)</strong></td>
+<td><code>student_assessment_scores.avg_scale_score</code> / <code>.pct_proficient</code>, filtered <code>assessment_type = 'dibels'</code>, in <code>src/cube/model/cubes/student_assessments/student_assessment_scores.yml</code> (exposed on <code>student_assessment_scores_view</code>). Caveat: Cube's <code>is_mastery</code> for DIBELS is <code>measure_standard_level_int &gt;= 3</code> (a per-measure threshold set in <code>int_assessments__benchmark_scores.sql</code>), which is <strong>not the same definition</strong> as the dashboard's <code>aggregated_measure_standard_level = 'At/Above'</code> composite rollup — the rate will differ. Cube has Benchmark only, no goal/gap comparison.</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Composite Measure Level Score at BOY/MOY/EOY + Growth (end vs start)</td>
+<td>Sum (FIXED LOD)</td>
+<td><code>{FIXED [academic_year],[schedule_student_number]: AVG(IF [period]='BOY' AND [measure_standard]='Composite' THEN [measure_standard_level_int] END)}</code> (and MOY/EOY variants), growth = end - start</td>
+<td>Region/School Overview - Benchmark</td>
+<td>mart-ready</td>
+<td><code>measure_standard_level_int</code>, <code>boy_composite</code>, <code>moy_composite</code>, <code>eoy_composite</code> on <code>rpt_tableau__dibels_dashboard</code>. Cube has per-administration <code>scale_score</code>/<code>is_mastery</code> but no BOY-vs-EOY growth calc.</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Avg Scores by Standard, 4 grain variants (Region/School/Classroom/Grade-level FIXED avgs)</td>
+<td>Avg (FIXED LOD)</td>
+<td><code>{FIXED [academic_year],[region/school/advisory/state],[expected_test],[expected_round_number],[expected_grade_level],[expected_measure_standard]: AVG([measure_standard_score])}</code></td>
+<td>LIT Landing Page</td>
+<td>mart-ready</td>
+<td><code>measure_standard_score</code> on <code>rpt_tableau__dibels_dashboard</code>; Cube's <code>avg_scale_score</code> exists but not pre-sliced to these exact grains (advisory/classroom in particular)</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Admin Goal + N Admin Season Region/School GL All/At Above/At Above Expected/At Above Gap/BL WB (BM goal counts)</td>
+<td>Avg</td>
+<td><code>admin_goal</code>, <code>n_admin_season_region_gl_*</code>, <code>n_admin_season_school_gl_*</code></td>
+<td>Region Overview - Benchmark</td>
+<td>mart-ready</td>
+<td>columns of same name on <code>rpt_tableau__dibels_dashboard</code>, sourced from <code>rpt_gsheets__dibels_bm_goals_calculations</code> → <code>stg_google_sheets__dibels_bm_goals</code>. No Cube analog (no goal concept at all in the assessment cube).</td>
+<td>Newark/Camden/Paterson all years; Miami foundation/BM goals start AY2026 (per data model doc, <em>Known issues</em>)</td>
+</tr>
+<tr>
+<td>Benchmark Goal / Benchmark Goal Gap (UO standard)</td>
+<td>Avg / Min</td>
+<td><code>benchmark_goal</code>, <code>benchmark_goal_gap</code></td>
+<td>Region Overview - PM, School Overview - Aimline</td>
+<td>mart-ready</td>
+<td>same-name columns on <code>rpt_tableau__dibels_dashboard</code>, from <code>stg_google_sheets__dibels_goals_long</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>PM Internal: Starting Words, Cumulative Growth Words, Goal, Met Admin Benchmark Goal, Met Measure Name Code Goal, Met Measure Standard Goal, Met PM Round Overall Criteria</td>
+<td>Avg / flag</td>
+<td><code>starting_words</code>, <code>cumulative_growth_words</code>, <code>goal</code>, <code>met_*</code></td>
+<td>Region Overview - PM</td>
+<td>mart-ready</td>
+<td>same-name columns on <code>rpt_tableau__dibels_dashboard</code> (from <code>int_amplify__pm_met_criteria</code>). No PM concept anywhere in Cube.</td>
+<td>all, K-8, BOY-&gt;MOY and MOY-&gt;EOY seasons</td>
+</tr>
+<tr>
+<td>PM - Growth Value (score change, selectable start/end round)</td>
+<td>FIXED LOD</td>
+<td><code>{FIXED [hierarchy cols]: ...}</code> score at end round minus start round</td>
+<td>Region Overview - PM Growth</td>
+<td>mart-ready</td>
+<td><code>measure_standard_score</code> deltas across rounds on <code>rpt_tableau__dibels_dashboard</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Aimline BANs 1-7 (numerator + rate): Meeting Aimline (combined categories), Below Aimline, Round Incomplete, Not Tested + AL Category Share, AL Not Meeting Share, AL Repeat Miss N/Share, AL Gap to Target, AL/BAN Round Denominator</td>
+<td>COUNTD ratio</td>
+<td><code>COUNTD(IF [aimline_category] IN (...) THEN [student_number] END) / COUNTD([student_number])</code> (denominator variously <code>{EXCLUDE cohort}</code> or round-scoped)</td>
+<td>Region/School Overview - Aimline</td>
+<td>mart-ready</td>
+<td><code>aimline_category</code>, <code>missed_aimline_consecutive</code>, <code>measure_standard_score</code>, <code>goal</code> on <code>rpt_tableau__dibels_dashboard</code> (from <code>int_amplify__pm_met_criteria_aimline</code>). No aimline concept in Cube.</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Aimline Season Student Goal / Gap</td>
+<td>Min</td>
+<td><code>aimline_season_student_goal</code>, <code>aimline_season_student_goal_gap</code></td>
+<td>School Overview - Aimline</td>
+<td>mart-ready, <strong>tooltip/extract-only</strong></td>
+<td>same-name columns on <code>rpt_tableau__dibels_dashboard</code>; academics asked these not be displayed anywhere (roster shows Benchmark Goal/Gap instead per the 2026-09-24 label decisions)</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Measure Percentile</td>
+<td>Sum</td>
+<td><code>measure_percentile</code></td>
+<td>School Overview - Benchmark</td>
+<td>mart-ready</td>
+<td>same-name column on <code>rpt_tableau__dibels_dashboard</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Sight Words: Is Mastery (mastered/retested share), Number of Records (quiz-word count)</td>
+<td>Avg / Sum</td>
+<td><code>IF [Value]='Mastered' OR 'Retested' THEN 1 ELSE 0</code>; <code>[Number of Records]</code> = literal 1</td>
+<td>Sight Words Overview</td>
+<td>mart-ready</td>
+<td><code>value</code> / mastery derivation on <code>rpt_tableau__sight_words_dashboard</code> (Illuminate Sight Words Quiz, unrelated pipeline — not DIBELS data)</td>
+<td>NJ only; effectively Newark + Camden (Paterson excluded in SQL)</td>
+</tr>
+<tr>
+<td><code>rpt_tableau__dibels_dashboard</code> (bare datasource row count)</td>
+<td>Count</td>
+<td>Tableau-generated default count field</td>
+<td>School Overview - Benchmark</td>
+<td>workbook-only</td>
+<td>n/a</td>
+<td>n/a</td>
+</tr>
+</tbody>
+</table>
+<p>Excluded as pure layout/formatting helpers, not metrics (not in the table
+above): ~25 Parameter controls that pick a hierarchy column, drill level, or
+comparison window (e.g. "Region Overview BM - Hierarchy Column #1-6 Parameter",
+"School Overview - Benchmark Column #1-4 Parameter", "Aimline Comparison
+Item/Granularity Parameter", "Select Start/End Window Parameter", "PM - Met Goal
+Parameter", "PM - Starting/Ending Round Selector Parameter", "AL Roster Repeat
+Only" hardcoded to "All Students"); <code>Category Sort</code> (a CASE assigning 1/2/3 sort
+order to aimline categories); <code>Count</code>/<code>INDEX()</code> (row striping);
+<code>Positive Standard Label *</code> (two <code>ABS()</code> helpers that flip a divergent bar
+chart's label sign, one for mClass Measure Level, one for Growth End vs Start).</p>
+<h3 id="dimensions_4">Dimensions</h3>
+<table>
+<thead>
+<tr>
+<th>dimension</th>
+<th>used as</th>
+<th>status</th>
+<th>where</th>
+<th>regions</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Student Number / Student Name / Student ID</td>
+<td>row grain, roster detail</td>
+<td>cube-covered</td>
+<td><code>students.student_key</code>, <code>.full_name</code> etc. on <code>student_assessment_scores_view</code> (PII-gated by the view's <code>student</code> access-policy group)</td>
+<td>all</td>
+</tr>
+<tr>
+<td>mClass Student Number, Schedule Student Number</td>
+<td>row grain (vendor id, ELA-section-joined id)</td>
+<td>mart-ready</td>
+<td><code>mclass_student_number</code>, <code>schedule_student_number</code> on <code>rpt_tableau__dibels_dashboard</code>; DIBELS-vendor-specific ids, no Cube analog</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Region, Region (AIM copy), School / School Name, District, State, School Level</td>
+<td>slicer, grouping, hierarchy</td>
+<td>cube-covered</td>
+<td><code>locations</code>/<code>regions</code> cubes via <code>student_assessment_scores_view</code>'s Location folder (<code>region_key</code>, <code>region_name</code>, <code>abbreviation</code>, <code>location_name</code>, <code>state</code>)</td>
+<td>all</td>
+</tr>
+<tr>
+<td>HOS, Team</td>
+<td>grouping (staff-assignment attributes)</td>
+<td>mart-ready</td>
+<td><code>hos</code>, <code>team</code> on <code>rpt_tableau__dibels_dashboard</code>; not staff-domain fields the assessment-scores view exposes</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Academic Year, Term Name</td>
+<td>filter, grouping</td>
+<td>cube-covered (generically)</td>
+<td><code>dates.academic_year</code>, <code>terms.term_name</code> on <code>student_assessment_scores_view</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Testing Window (<code>period</code>: BOY/MOY/EOY), Admin Season, Round Number, Expected Round, Expected Round Selection, Expected Start/End Date, Expected Test</td>
+<td>filter, hierarchy drill, trend-window control</td>
+<td>mart-ready</td>
+<td><code>period</code>, <code>admin_season</code>, <code>round_number</code>, <code>expected_round_number</code>, <code>expected_round_selection</code>, <code>expected_start_date</code>/<code>expected_end_date</code>, <code>expected_test</code> on <code>rpt_tableau__dibels_dashboard</code>; Cube's <code>dates</code>/<code>terms</code> have no BOY/MOY/EOY or PM-round concept</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Assessment Type, Model Type (BM/Internal/Aimline)</td>
+<td>filter, branch discriminator</td>
+<td>mart-ready</td>
+<td><code>assessment_type</code>, <code>model_type</code> on <code>rpt_tableau__dibels_dashboard</code>; the PM-method split does not exist in Cube at all</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Measure Name Code, Measure Standard, Expected Measure Name Code, Expected Measure Standard</td>
+<td>hierarchy, tooltip, filter</td>
+<td><strong>cube-covered for Benchmark only</strong></td>
+<td><code>response_type_code</code> / <code>response_type_description</code> on <code>student_assessment_scores_view</code> (= <code>measure_standard</code> / <code>measure_name</code>, null on Composite rows) — Benchmark rows only, since Cube's fact never carries PM. The <code>expected_*</code> variants (populated for untested rows too) have no Cube equivalent.</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Assessment Grade, Expected Grade Level, Grade Level</td>
+<td>filter, grouping</td>
+<td>cube-covered</td>
+<td><code>grade_level_tested</code> / <code>student_school_enrollments.grade_level</code> on the view; <code>expected_grade_level_int</code> (populated even when untested) is mart-only</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Cohort, Aimline Cohort Level</td>
+<td>aimline eligibility grouping (Below / Well Below Benchmark)</td>
+<td>mart-ready</td>
+<td><code>cohort</code>, <code>aimline_cohort_level</code> on <code>rpt_tableau__dibels_dashboard</code>; no cohort concept in Cube</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Completed Test Round, Participation Group, Scheduled, Measure Test Status</td>
+<td>testing-state filter/color</td>
+<td>mart-ready</td>
+<td>same-name columns on <code>rpt_tableau__dibels_dashboard</code> (roster-driven). Cube's vendor fact only ever carries scored rows — an untested DIBELS row literally does not exist there, so this is not just unexposed but unexpressable in the current Cube fact.</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Admin Benchmark Goal Status, Aimline Category, Aimline Round Category, Measure Name Code Aimline/Benchmark Status, Measure Name Code Goal Status, Measure Standard Goal Status, Round Benchmark Status, Aimline History (<code>measure_standard_round_verdicts</code>), Missed Aimline Consecutive</td>
+<td>color, label, filter on every PM/aimline sheet</td>
+<td>mart-ready</td>
+<td>same-name columns on <code>rpt_tableau__dibels_dashboard</code> (from <code>int_amplify__pm_met_criteria</code> / <code>_aimline</code>); fully DIBELS-PM-specific, no Cube equivalent</td>
+<td>all</td>
+</tr>
+<tr>
+<td>BOY/MOY/EOY Composite, Aggregated Measure Standard Level, Foundation Measure Standard Level, Measure Semester/Year Growth</td>
+<td>grouping, growth-chart category</td>
+<td>mart-ready</td>
+<td>same-name columns on <code>rpt_tableau__dibels_dashboard</code>; Cube has per-administration <code>proficiency_level</code> only, no cross-administration composite comparison</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Gender, Ethnicity, Has IEP / IEP</td>
+<td>demographic breakdown</td>
+<td>cube-covered</td>
+<td><code>students.gender_identity</code>, <code>.race</code>, <code>student_enrollment_status.is_iep</code> on <code>student_assessment_scores_view</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>504, LEP, GT, NJ Student Tier, Tutoring NJ, Is SIPPS, MTSS Enrollment</td>
+<td>demographic/program breakdown</td>
+<td>mart-ready</td>
+<td><code>is_504</code>, <code>lep_status</code>, <code>gifted_and_talented</code>, <code>nj_student_tier</code>, <code>tutoring_nj</code>, <code>is_sipps</code>, <code>mtss_enrollment</code> on <code>rpt_tableau__dibels_dashboard</code>; not all exposed on the generic assessment view (LEP maps loosely to <code>is_ell</code> but the rest are network/DIBELS-specific programs)</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Course, Section, Teacher</td>
+<td>ELA schedule context</td>
+<td>cube-covered</td>
+<td><code>courses.course_title</code>/<code>.course_code</code>, <code>course_sections.identifier</code>, <code>staff_lead_teacher.full_name</code> via the <code>student_section_enrollments</code> join path on <code>student_assessment_scores_view</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Sight Word, Value, Value (group), Is Replacement, Title, [Grade Level (group)]</td>
+<td>sight-words detail/roster</td>
+<td>mart-ready</td>
+<td>same-name columns on <code>rpt_tableau__sight_words_dashboard</code> (Illuminate Sight Words Quiz data — a separate pipeline, not in the DIBELS-vendor Cube fact at all)</td>
+<td>NJ only; effectively Newark + Camden</td>
+</tr>
+</tbody>
+</table>
+<h3 id="notes_4">Notes</h3>
+<ul>
+<li>The workbook's upstream-datasource list (<code>get-workbook</code>) and the <code>.twb</code>'s own
+  <code>&lt;datasource&gt;</code> elements agree exactly on three sources, all embedded — there
+  is no published/shared datasource to separately inventory.</li>
+<li>Grouped aggressively per the instructions' "near-identical variants" rule: the
+  BAN 1/2/3/4/5/7 numerator+rate pairs on the Aimline dashboards are one row (7
+  nearly-identical COUNTD-ratio calcs differing only in which <code>aimline_category</code>
+  value they count); the 4 "Avg Scores by Standard" grain variants
+  (region/school/classroom/state-grade) are one row; the BOY/MOY/EOY Composite
+  trio is one row.</li>
+<li>Judgment call: Cube's generic <code>student_assessment_scores_view</code> DOES reach
+  DIBELS data (filtered <code>assessment_type = 'dibels'</code>), but <strong>only Benchmark</strong>
+  rows and <strong>only</strong> the fields every vendor source shares (<code>scale_score</code>,
+  <code>proficiency_level</code>, <code>is_mastery</code>, demographics, course/teacher, location,
+  term). None of PM, aimline, goals, participation, or sight words is reachable
+  from Cube today — confirmed by reading <code>int_assessments__benchmark_scores.sql</code>
+  (filters <code>assessment_type = 'Benchmark'</code> before DIBELS ever reaches the
+  cube-backing mart <code>fct_assessment_scores_enrollment_scoped</code>) rather than
+  inferred from the Asana task's framing.</li>
+<li>Cube's DIBELS <code>is_mastery</code> (<code>measure_standard_level_int &gt;= 3</code>, a per-measure
+  threshold) is a <strong>different definition</strong> from the dashboard's own
+  <code>aggregated_measure_standard_level = 'At/Above'</code> (a composite-level rollup).
+  Treating Cube's <code>pct_proficient</code> as a drop-in replacement for the dashboard's
+  At/Above rate would silently change the number — flagged as "cube-covered
+  (partial)" above rather than a clean cube-covered.</li>
+<li><code>fct_assessment_scores_enrollment_scoped</code>'s DIBELS branch requires
+  <code>test_date is not null</code>, meaning untested/expected rows for DIBELS <strong>never
+  reach the fact at all</strong> (unlike Illuminate, which records explicit <code>not_taken</code>
+  rows). This is why every participation/testing-state dimension is marked
+  mart-ready rather than cube-missing-but-possible: Cube's current fact design
+  cannot express "expected but not tested" for any vendor source, DIBELS
+  included, without an upstream model change — not merely a missing Cube
+  measure.</li>
+<li>Sight Words (<code>rpt_tableau__sight_words_dashboard</code>) is a separate pipeline
+  (Illuminate, not Amplify/DIBELS) sharing only the workbook; per the data model
+  doc it has no year filter in SQL and its upkeep is a yearly ask to T&amp;L's MD
+  rather than a build concern.</li>
+<li>Did not verify the two orphan worksheets' content beyond confirming they are
+  unreferenced by any dashboard zone (per Step 0's ground rule to not
+  over-read); listed as excluded scratch per Step 2.1's "hidden/scratch"
+  category even though their own <code>hidden</code> attribute is unset, since "not placed
+  on any dashboard" is the operative definition of out-of-scope here.</li>
+</ul>
+<h3 id="verification_4">Verification</h3>
+<ul>
+<li>cube-covered spot-check: <code>student_assessment_scores.avg_scale_score</code> and
+  <code>.pct_proficient</code>, defined in
+  <code>/workspaces/teamster/src/cube/model/cubes/student_assessments/student_assessment_scores.yml</code>
+  (lines ~252-266, ~296-322), exposed publicly on
+  <code>/workspaces/teamster/src/cube/model/views/student_assessments/student_assessment_scores_view.yml</code>.
+  Confirmed DIBELS reaches this cube by reading
+  <code>/workspaces/teamster/src/dbt/kipptaf/models/assessments/intermediate/int_assessments__benchmark_scores.sql</code>
+  lines 82-115 (<code>'dibels' as score_source</code>,
+  <code>measure_standard_level_int &gt;= 3 as is_mastery</code>, filtered
+  <code>assessment_type = 'Benchmark'</code>).</li>
+<li>mart-ready spot-check: <code>aimline_category</code> (plus <code>benchmark_goal</code>,
+  <code>admin_goal</code>) is a declared column on
+  <code>/workspaces/teamster/src/dbt/kipptaf/models/extracts/tableau/properties/rpt_tableau__dibels_dashboard.yml</code>
+  (line 749), with no equivalent anywhere in <code>src/cube/model/</code>.</li>
+<li>mart-missing-for-cube spot-check (participation): <code>completed_test_round</code>,
+  <code>expected_row_count</code>, <code>actual_row_count</code> are declared columns on the same
+  properties yml (lines 545-559), sourced from
+  <code>int_students__dibels_participation_roster</code> per the
+  <code>dibels-dashboard-data-model.md</code> data-flow diagram — confirming this is a mart
+  column with no feasible Cube path today (per the Notes section above), not
+  merely an unauthored Cube measure.</li>
+</ul>
+<h2 id="state-testing-analysis-tool-stat-state_testing_analysis_tool">State Testing Analysis Tool (STAT) (<code>state_testing_analysis_tool</code>)</h2>
+<ul>
+<li>workbook: State Testing Analysis Tool (STAT) | contentUrl
+  <code>StateTestingAnalysisToolSTAT_17001442186870</code> | luid
+  <code>31b6a4a9-e0ca-479b-8f44-0daaa52e109b</code> (confirmed, matches expected) | project
+  Production</li>
+<li>upstream datasources: <code>rpt_tableau__state_assessments_dashboard</code> (embedded,
+  kipptaf_tableau — drives every dashboard except Advanced Comps),
+  <code>rpt_tableau__state_assessments_dashboard_comps</code> (embedded, kipptaf_tableau —
+  drives only Advanced Comps)</li>
+<li>rpt_/source models in use: <code>rpt_tableau__state_assessments_dashboard</code>,
+  <code>rpt_tableau__state_assessments_dashboard_comps</code> (reads
+  <code>int_tableau__state_assessments_demographic_comps</code> plus a Google Sheet
+  comparison-figures input)</li>
+<li>published dashboards inventoried: State Testing Analysis Tool (STAT) - Landing
+  Page, Overview, Demographics, Teacher/Student Roster, Proficiency YoY,
+  Advanced Comps (6 of 6 server-published views — matches <code>get-workbook</code>'s
+  <code>views</code> list exactly)</li>
+<li>sheets excluded: <strong>46 hidden worksheets</strong> are in scope (embedded in the 6
+  dashboards' <code>&lt;zones&gt;</code>, excluding <code>&lt;devicelayouts&gt;</code> phone/tablet variants). <strong>3
+  non-hidden scratch sheets</strong> excluded as not on any dashboard zone:
+  <code>Permissions Check</code>, <code>Sheet 52</code>, <code>Sheet 53</code>. <strong>1 dashboard excluded as
+  out-of-scope</strong>: <code>Sarba's Report</code> — its <code>&lt;repository-location&gt;</code> points at a
+  DIFFERENT workbook id (<code>StateTestingAnalysisToolSTAT_17897475606770</code>, not this
+  workbook's <code>...186870</code>), confirming it's a copy/fork embedded in this .twb but
+  not part of the published STAT workbook on the server (also absent from
+  <code>get-workbook</code>'s views list). Not a hidden-dashboard judgment call — a
+  different content id entirely.</li>
+<li>regions served by this dashboard overall: <strong>all</strong> (Newark, Camden, Miami,
+  Paterson). No hard region filter found — every <code>region</code> filter in every
+  worksheet shows <code>member_count: 0</code> (all members selectable/relevant). A derived
+  <code>State</code> dimension (<code>IF region = 'Miami' THEN 'FL' ELSE 'NJ'</code>) splits
+  NJSLA/NJGPA (NJ: Newark/Camden/Paterson) from FAST (FL: Miami) for
+  side-by-side display, confirming the regions hint but showing it's a label
+  split, not a filter.</li>
+</ul>
+<h3 id="measures_5">Measures</h3>
+<table>
+<thead>
+<tr>
+<th>metric</th>
+<th>agg</th>
+<th>source field / formula (trimmed)</th>
+<th>dashboards</th>
+<th>status</th>
+<th>where</th>
+<th>regions</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>% Proficient (is_proficient rate; variants: plain, by grade-range group, YoY diff via LOOKUP(-1))</td>
+<td>Avg</td>
+<td><code>{INCLUDE [academic_year]: COUNTD(IF is_proficient THEN student_number)} / {INCLUDE...: COUNTD(student_number)}</code></td>
+<td>Overview, Landing Page, Proficiency YoY (incl. per-discipline Miami-mode &amp; Spring-to-Spring variants)</td>
+<td>cube-covered</td>
+<td><code>student_assessment_scores.pct_proficient</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Count of students tested / scored (COUNTD(student_number), various filter contexts)</td>
+<td>CountD</td>
+<td><code>COUNTD([student_number])</code></td>
+<td>Overview, Demographics, Landing Page, Teacher/Student Roster</td>
+<td>cube-covered</td>
+<td><code>student_assessment_scores.count_scored</code> / <code>count_students</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Scale score ("Score") shown per student</td>
+<td>—</td>
+<td>raw <code>score</code> passthrough</td>
+<td>Teacher/Student Roster (roster tables, Teacher Download)</td>
+<td>cube-covered</td>
+<td><code>student_assessment_scores.scale_score</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>State (NJ/FL derived from region)</td>
+<td>—</td>
+<td><code>IF region='Miami' THEN 'FL' ELSE 'NJ'</code> (used as a measure-shelf label in a few sheets)</td>
+<td>Overview, Landing Page</td>
+<td>cube-covered</td>
+<td><code>locations.regions.state</code> (via <code>student_assessment_scores_view</code> join)</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Performance Band Level Calculation / Conversion (stacked-bar weighting across all 4-5 performance levels, signed per <code>assessment_name</code>-specific threshold)</td>
+<td>Avg/None</td>
+<td><code>COUNTD(student_number)/TOTAL(COUNTD(student_number)) * MIN(level_conversion)</code>; conversion <code>IF assessment_name IN ('NJSLA','PARCC') AND performance_band_level&lt;=3 THEN -1 ELSEIF...</code></td>
+<td>Overview (Performance Bars/Table), Teacher/Student Roster (by Teacher)</td>
+<td>mart-missing</td>
+<td><code>rpt_tableau__state_assessments_dashboard.performance_band_level</code> + <code>.performance_band</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Below/Far Below rate + Level Calculation/Conversion (<code>Is B/FB</code>: level=1 for NJGPA else level&lt;=2 — a narrower cut than is_proficient)</td>
+<td>Avg/None</td>
+<td><code>IF performance_band_level=1 AND assessment_name='NJGPA' THEN TRUE ELSEIF performance_band_level&lt;=2 AND assessment_name!='NJGPA' THEN TRUE ELSE FALSE</code></td>
+<td>Overview, Landing Page, Proficiency YoY</td>
+<td>mart-missing</td>
+<td><code>rpt_tableau__state_assessments_dashboard.performance_band_level</code> + <code>.assessment_name</code> (cube's <code>performance_band_label_number</code> is documented <strong>null for state rows</strong>, so this threshold can't be rebuilt from the cube today)</td>
+<td>all</td>
+</tr>
+<tr>
+<td>% Met / % Met Numerator by race/ethnicity (7 groups), IEP/No IEP, ML/Not ML, FR Lunch/Paid Lunch (18 named variants, each <code>COUNTD(IF &lt;flag&gt; THEN student_number) / TOTAL(...)</code>)</td>
+<td>None</td>
+<td>e.g. <code>COUNTD(IF race_ethnicity='H' THEN student_number END) / TOTAL(...)</code></td>
+<td>Demographics (Performance/Proficiency Demographics), Overview (Finance Team, partial subset)</td>
+<td>mart-ready</td>
+<td>mart dims exist (<code>students.race</code>, <code>student_enrollment_status.is_ell</code>/<code>is_iep</code>/<code>is_meal_eligible</code>) but the rate itself isn't a published Cube measure — filter <code>pct_proficient</code> by these dims client-side instead of porting bespoke per-subgroup calcs</td>
+<td>all</td>
+</tr>
+<tr>
+<td>% Met / % Met Numerator by NJ Student Tier (Bucket 1/Bucket 2/Unbucketed) and by 504/Not 504 (6 variants)</td>
+<td>None</td>
+<td><code>COUNTD(IF nj_student_tier='Bucket 1' THEN student_number) / TOTAL(...)</code>; <code>COUNTD(IF is_504 THEN student_number)/TOTAL(...)</code></td>
+<td>Demographics</td>
+<td>mart-missing</td>
+<td><code>rpt_tableau__state_assessments_dashboard.nj_student_tier</code> / <code>.is_504</code> — no <code>marts/</code> column for either today</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Comps Selector (Avg of city/state/neighborhood-school proficiency per a parameter) + % Comps Difference (school rate − comp rate, FIXED LOD by year/test/school/proficiency-standard) + display helpers (symbol, category, string)</td>
+<td>Avg</td>
+<td><code>CASE Parameter WHEN 'City' THEN proficiency_city WHEN 'State' THEN proficiency_state WHEN 'Neighborhood Schools' THEN proficiency_neighborhood_schools END</code>; diff is <code>AVG(comp) - AVG({FIXED...: COUNTD(...)/COUNTD(...)})</code></td>
+<td>Overview (Proficiency Table, Finance Team)</td>
+<td>mart-missing</td>
+<td><code>rpt_tableau__state_assessments_dashboard.proficiency_city</code> / <code>.proficiency_state</code> / <code>.proficiency_neighborhood_schools</code> (ultimately a Google Sheet comparison-figures input, not a dbt mart)</td>
+<td>all</td>
+</tr>
+<tr>
+<td>% Proficient (Agg) / % Proficient (Demo) — aggregated and demographic-sliced comparison rate, INCLUDE LOD by comparison_entity × school_level/grade_range_band × discipline × academic_year (× demo group/subgroup for Demo)</td>
+<td>Avg</td>
+<td><code>{INCLUDE col1,col2: SUM(total_proficient_students)} / {INCLUDE col1,col2: SUM(total_students)}</code></td>
+<td>Advanced Comps</td>
+<td>mart-missing</td>
+<td><code>rpt_tableau__state_assessments_dashboard_comps</code> (<code>total_proficient_students</code>, <code>total_students</code>, <code>comparison_entity</code>) — this IS the "state/city/neighborhood comps" feature named in the Asana blockers; no Cube equivalent exists</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Total Students / Total Proficient Students (raw passthrough counts)</td>
+<td>—</td>
+<td>raw columns</td>
+<td>Advanced Comps</td>
+<td>mart-ready</td>
+<td><code>rpt_tableau__state_assessments_dashboard_comps.total_students</code> / <code>.total_proficient_students</code> — simple mart columns, just not exposed as Cube measures</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Organization Goal / Region Goal / Grade Goal / Assessment Band Goal (target % proficient thresholds)</td>
+<td>Avg</td>
+<td>raw columns, picked by a goal-type parameter/CASE</td>
+<td>Landing Page (Growth from LY to CY, Proficiency or B/FB Goals)</td>
+<td>mart-ready</td>
+<td><code>rpt_tableau__state_assessments_dashboard.organization_goal</code> / <code>.region_goal</code> / <code>.grade_goal</code> / <code>.assessment_band_goal</code> (also <code>.school_goal</code>, not directly shelved but present)</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Goal (Sarba) — hardcoded lookup of 2023 goal %s by <code>academic_year+region+discipline+test_code_grade</code></td>
+<td>Avg</td>
+<td><code>CASE ... WHEN '2023CamdenELA3-8' THEN 0.25 WHEN '2023NewarkELA3-8' THEN 0.45 ...</code> (dozens of literal cases)</td>
+<td>Landing Page, Proficiency YoY</td>
+<td>workbook-only</td>
+<td>n/a — literal values baked into the calc, stale/one-off, no warehouse source</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Met Goal / Met Goal (int) — actual rate vs. resolved goal, FIXED LOD</td>
+<td>Avg/None</td>
+<td><code>ROUND(({FIXED...}),2) &gt;= ROUND(goal,2)</code> style comparison</td>
+<td>Landing Page</td>
+<td>mart-ready</td>
+<td>depends only on the goal columns above + <code>% Proficient</code>/<code>% B/FB</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Performance/Proficiency/B-FB Level Calculation &amp; Conversion stacking helpers (duplicative of the rate measures, reshaped for 100%-stacked-bar rendering)</td>
+<td>None</td>
+<td><code>COUNTD(...)/TOTAL(COUNTD(...)) * MIN(sign_conversion)</code></td>
+<td>Overview, Teacher/Student Roster, Proficiency YoY</td>
+<td>workbook-only</td>
+<td>pure display-stacking calc layered on measures already classified above</td>
+<td>all</td>
+</tr>
+<tr>
+<td>iReady Proficiency EOY (same-year, same-discipline end-of-year i-Ready proficiency shown alongside the state score)</td>
+<td>—</td>
+<td>raw passthrough, resolved via a lead/lag join in the rpt_ model</td>
+<td>Teacher/Student Roster (Performance/Proficiency Bars by Teacher, Student Roster, Teacher Download)</td>
+<td>mart-missing</td>
+<td><code>rpt_tableau__state_assessments_dashboard.iready_proficiency_eoy</code> — a denormalized cross-assessment lookup; Cube's assessment view has i-Ready as a <em>separate row</em>, not a column joined onto the state row</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Counter (row index) / "One" (literal 1, pivot-column helper)</td>
+<td>—</td>
+<td><code>INDEX()</code> / <code>1</code></td>
+<td>Teacher/Student Roster (My Students Report, Student Roster columns)</td>
+<td>workbook-only</td>
+<td>pure Tableau display plumbing</td>
+<td>n/a</td>
+</tr>
+<tr>
+<td>Permissions (row-visibility calc gated on Tableau group membership + <code>results_type</code>)</td>
+<td>—</td>
+<td><code>IF ISMEMBEROF('State Tests - First Group') AND results_type='Preliminary' THEN TRUE ...</code></td>
+<td>all 6 dashboards</td>
+<td>workbook-only</td>
+<td>Tableau-native RLS via group membership; no warehouse concept (Cube's own <code>access_policy</code> RLS is the would-be replacement, keyed on region/school, not this ad hoc group check)</td>
+<td>all</td>
+</tr>
+</tbody>
+</table>
+<h3 id="dimensions_5">Dimensions</h3>
+<table>
+<thead>
+<tr>
+<th>dimension</th>
+<th>used as</th>
+<th>status</th>
+<th>where</th>
+<th>regions</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Region / School (+ School Current)</td>
+<td>filter, row/col, color</td>
+<td>cube-covered</td>
+<td><code>locations.region_key</code>/<code>region_name</code>, <code>locations.abbreviation</code>/<code>location_name</code> on <code>student_assessment_scores_view</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Academic Year (+ display variant)</td>
+<td>filter, row/col</td>
+<td>cube-covered</td>
+<td><code>dates.academic_year</code> / <code>academic_year_label</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Discipline</td>
+<td>filter, row/col</td>
+<td>cube-covered</td>
+<td><code>courses.discipline</code> (via <code>student_section_enrollments.course_sections.courses</code> join)</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Grade Level (+ School Lvl ES/MS/HS banding, Grade Range Band/Group, Test Code + Grade Level)</td>
+<td>filter, row/col</td>
+<td>cube-covered (base grade_level); banding/grouping logic is workbook-side CASE/bucketing on top of it</td>
+<td><code>student_school_enrollments.grade_level</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Student Number / Student Name / Student Info</td>
+<td>detail, filter, roster row</td>
+<td>cube-covered (PII-gated by the view's <code>student</code> access policy)</td>
+<td><code>students.student_key</code>/<code>full_name</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Teacher Name (test-year course)</td>
+<td>filter, row</td>
+<td>cube-covered</td>
+<td><code>staff_lead_teacher.full_name</code> (via <code>student_section_enrollments</code>)</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Teacher Name Current (current-year course, may differ from test-year)</td>
+<td>filter, row</td>
+<td>mart-missing</td>
+<td><code>rpt_tableau__state_assessments_dashboard.teacher_name_current</code> / <code>.teachernumber_current</code> / <code>.school_current</code> — no "current enrollment" join on the assessment-scores Cube view</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Course Number / Course Name</td>
+<td>tooltip, detail</td>
+<td>cube-covered</td>
+<td><code>courses.course_code</code>/<code>course_title</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>GT (gifted/talented)</td>
+<td>filter, color</td>
+<td>cube-covered</td>
+<td><code>students.is_gifted</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>IEP / ML (is_ell)</td>
+<td>filter, color</td>
+<td>cube-covered</td>
+<td><code>student_enrollment_status.is_iep</code>, <code>.is_ell</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Race/Ethnicity</td>
+<td>filter, color</td>
+<td>cube-covered</td>
+<td><code>students.race</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Lunch (lunch_status F/R/P codes)</td>
+<td>filter, color</td>
+<td>mart-ready (cube exposes <code>is_meal_eligible</code>/<code>meal_eligibility</code>, a coarser boolean/label than the raw F/R/P code the sheet keys off)</td>
+<td><code>student_enrollment_status.is_meal_eligible</code>/<code>.meal_eligibility</code>; raw codes at <code>rpt_tableau__...lunch_status</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Is 504</td>
+<td>filter</td>
+<td>mart-missing</td>
+<td><code>rpt_tableau__state_assessments_dashboard.is_504</code> — no mart or cube equivalent found</td>
+<td>all</td>
+</tr>
+<tr>
+<td>NJ Student Tier (Bucket 1/2/Unbucketed)</td>
+<td>filter, color</td>
+<td>mart-missing</td>
+<td><code>rpt_tableau__state_assessments_dashboard.nj_student_tier</code></td>
+<td>NJ only (label is NJ-specific; column present but null for FL rows)</td>
+</tr>
+<tr>
+<td>Tutoring (NJ)</td>
+<td>filter</td>
+<td>mart-missing</td>
+<td><code>rpt_tableau__state_assessments_dashboard.tutoring_nj</code></td>
+<td>NJ only</td>
+</tr>
+<tr>
+<td>Is Proficient / Proficiency Standard (Proficient/Not Proficient label)</td>
+<td>filter, color</td>
+<td>cube-covered</td>
+<td><code>student_assessment_scores.is_mastery</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Performance Band / Performance Band Level (achievement-level label + numeric ordinal)</td>
+<td>filter, color</td>
+<td>mart-missing for state rows</td>
+<td><code>rpt_tableau__state_assessments_dashboard.performance_band</code>/<code>.performance_band_level</code> (cube's <code>proficiency_level</code> covers the label; <code>performance_band_label_number</code> is documented null for state assessments, so the ordinal isn't portable)</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Is B/FB (Below/Far Below flag)</td>
+<td>filter, color</td>
+<td>mart-missing</td>
+<td>same root cause as the Below/Far Below measure above</td>
+<td>all</td>
+</tr>
+<tr>
+<td>Assessment Name / Test Code / Season / Admin (test administration period) / Results Type (Actual/Preliminary)</td>
+<td>filter, row/col</td>
+<td><strong>mixed</strong>: Admin/Season likely map to cube's <code>administration_period</code>; Assessment Name/Test Code have no confirmed 1:1 cube dimension (cube's <code>title</code>/<code>category</code>/<code>module_code</code> are Illuminate-shaped); Results Type (merging official vs. preliminary Pearson legs) has no cube equivalent at all</td>
+<td>status unconfirmed for Assessment Name/Test Code — spot-check before relying on this row; Results Type = mart-missing (<code>rpt_tableau__...results_type</code>)</td>
+<td>all</td>
+</tr>
+<tr>
+<td>MS Attended (middle school attended, from enrollment history)</td>
+<td>filter, tooltip</td>
+<td>mart-missing</td>
+<td><code>rpt_tableau__state_assessments_dashboard.ms_attended</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Cohort / Most Recent Grade Level / Year in Network</td>
+<td>filter</td>
+<td>mart-ready (cube has <code>graduation_year</code>, <code>year_in_network</code>; "most_recent_grade_level" specific window-calc not confirmed equivalent)</td>
+<td><code>student_school_enrollments.graduation_year</code>/<code>.year_in_network</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Comparison Entity (Region/KTAF NJ/KTAF FL/City/State/Neighborhood Schools)</td>
+<td>filter, row/col</td>
+<td>mart-ready</td>
+<td><code>rpt_tableau__state_assessments_dashboard_comps.comparison_entity</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Comparison Demographic Group / Subgroup</td>
+<td>filter, row/col</td>
+<td>mart-ready</td>
+<td><code>rpt_tableau__state_assessments_dashboard_comps.comparison_demographic_group</code>/<code>.comparison_demographic_subgroup</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>School Level / Grade Range Band (comps-specific)</td>
+<td>filter, column selector</td>
+<td>mart-ready</td>
+<td><code>rpt_tableau__state_assessments_dashboard_comps.school_level</code>/<code>.grade_range_band</code></td>
+<td>all</td>
+</tr>
+<tr>
+<td>Region Matched / Region Outperformed / Region Matched-or-Outperformed (flags vs. own KTAF region rate)</td>
+<td>filter, color</td>
+<td>mart-ready</td>
+<td><code>rpt_tableau__state_assessments_dashboard_comps.region_matched</code>/<code>.region_outperformed</code>/<code>.region_matched_or_outperformed</code></td>
+<td>all</td>
+</tr>
+</tbody>
+</table>
+<h3 id="notes_5">Notes</h3>
+<ul>
+<li><strong>Dashboard scoping judgment call</strong>: <code>Sarba's Report</code> was excluded as
+  out-of-scope rather than "hidden-but-in-scope" because its
+  <code>&lt;repository-location&gt;</code> carries a different workbook id entirely
+  (<code>...17897475606770</code>), not merely a hidden-tab flag. Treated this as decisive
+  rather than defaulting to "include when in doubt," since the instructions'
+  hidden-dashboard rule presumes the dashboard belongs to THIS workbook.</li>
+<li><strong>Subgroup variant explosion</strong>: ~18 near-identical "% Met (<subgroup>)" / "%
+  Met Numerator (<subgroup>)" calculated-field pairs on the Demographics
+  dashboard were collapsed into 2 rows (covered-dims vs. missing-dims) rather
+  than listed individually, per the grouping instruction.</li>
+<li><strong>Discipline-duplicate sheets</strong>: Proficiency YoY's "Miami Mode" and "Spring to
+  Spring (Updated)" worksheet families each have 4 near-identical copies
+  (ELA/Math/Science/Social Studies) driven by the same calcs filtered
+  differently; collapsed into one measure row each.</li>
+<li><strong>Ambiguous/unconfirmed cube mapping</strong>: Assessment Name and Test Code
+  dimensions were NOT confidently matched to a cube member — the
+  <code>student_assessments</code> cube's <code>title</code>/<code>category</code>/<code>module_code</code> fields read as
+  Illuminate-shaped in the YAML, and I did not query the live Cube <code>meta</code>
+  endpoint to confirm whether state-assessment rows populate them with
+  NJSLA/FAST-style values. Flagged as unconfirmed rather than guessed.</li>
+<li><strong>Goals and comps are the two biggest structural gaps</strong>, matching the Asana
+  blockers' framing: neither the proficiency goal thresholds
+  (<code>region_goal</code>/<code>organization_goal</code>/<code>grade_goal</code>/<code>assessment_band_goal</code>) nor
+  the city/state/neighborhood-school comparison figures
+  (<code>proficiency_city/state/neighborhood_schools</code>, and the entire
+  <code>rpt_tableau__state_assessments_dashboard_comps</code> model behind Advanced Comps)
+  exist anywhere under <code>src/dbt/kipptaf/models/marts/</code> today — they live only in
+  the <code>extracts/tableau/</code> rpt_ layer and, for the comps sheet, trace back to a
+  Google Sheet. A <code>fct_state_assessments</code> mart would need to carry (or join to)
+  both before Cube could replace either dashboard. <code>performance_band_level</code>'s
+  state-row nullness on the existing assessment Cube (documented in its own
+  YAML) is a related, narrower gap: it blocks Below/Far Below bucketing
+  specifically, independent of the goals/comps gap.</li>
+<li>Did not query the live Cube <code>meta</code>/<code>load</code> endpoints to verify member names at
+  runtime (MCP tool was available but not invoked, given time budget) — all
+  cube-covered/mart-ready calls here are from reading the YAML directly;
+  spot-check before treating as final.</li>
+</ul>
+<h3 id="verification_5">Verification</h3>
+<ul>
+<li><strong>cube-covered spot-check</strong>: <code>% Proficient</code> (STAT) →
+  <code>src/cube/model/cubes/student_assessments/student_assessment_scores.yml</code>,
+  measure <code>pct_proficient</code> (line 262:
+  <code>sql: "1.0 * {_sum_proficient} / NULLIF({count_scored}, 0)"</code>), exposed on
+  <code>src/cube/model/views/student_assessments/student_assessment_scores_view.yml</code>.</li>
+<li><strong>mart-ready spot-check</strong>: <code>Organization Goal</code> →
+  <code>src/dbt/kipptaf/models/extracts/tableau/properties/rpt_tableau__state_assessments_dashboard.yml</code>,
+  column <code>organization_goal</code> ("Organization-wide target percent proficient"),
+  defined in <code>rpt_tableau__state_assessments_dashboard.sql</code>; no <code>marts/</code>
+  dim/fact carries it and no Cube measure exposes it.</li>
+<li><strong>mart-missing spot-check</strong>: <code>Comps Selector</code> / <code>% Proficient (Agg)</code> →
+  <code>src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__state_assessments_dashboard_comps.sql</code>
+  (and its properties file,
+  <code>.../properties/rpt_tableau__state_assessments_dashboard_comps.yml</code>, columns
+  <code>total_proficient_students</code>/<code>total_students</code>/<code>comparison_entity</code>) — this model
+  sits under <code>extracts/tableau/</code>, not <code>marts/</code>, and has no Cube cube or view
+  anywhere under <code>src/cube/model/</code>.</li>
+</ul>
+<h2 id="testing-accommodations-tracker-testing_accommodations">Testing Accommodations Tracker (<code>testing_accommodations</code>)</h2>
+<ul>
+<li>workbook: State Testing Accommodations Tracker | contentUrl
+  <code>StateTestingAccommodationsTracker</code> | luid
+  <code>aca88e07-170f-4d1a-9a4f-a3816463ab27</code> (verified — matches expected) | project
+  Production</li>
+<li>upstream datasources:
+  <code>rpt_tableau__state_testing_accomodations (kipptaf_tableau)</code> — embedded,
+  single datasource, BigQuery connection, schema <code>kipptaf_tableau</code></li>
+<li>rpt_/source models in use: <code>rpt_tableau__state_testing_accomodations</code>
+  (<code>src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__state_testing_accomodations.sql</code>),
+  which unpivots ~34 accommodation columns from <code>stg_powerschool__s_nj_stu_x</code>
+  and joins <code>int_extracts__student_enrollments</code> for roster context.</li>
+<li>published dashboards inventoried: <strong>State Testing Accommodations Tracker</strong> (5
+  sheets: Accommodations Roster, ELA Exam Counts, Help Article, Math Exam
+  Counts, Test Format), <strong>School Roll-Up</strong> (9 sheets: School - 504 Audit/504
+  Counts/ELA Exam Counts/ELL Counts/IEP Audit/IEP Counts/Math Exam
+  Counts/Roster/Test Format). Plus one standalone published worksheet view,
+  <strong>K-2 ACCESS Testers</strong>, which is NOT a zone on either dashboard but is its own
+  server view per <code>get-workbook</code>.</li>
+<li>sheets excluded as hidden/scratch: 2 — <code>Accommodations Audit - IEP</code> and
+  <code>Accommodations Audit - 504</code>. These worksheet windows are NOT marked
+  <code>hidden='true'</code> in the .twb, but they are not zones on either dashboard and
+  are absent from the server's 3-view published list — orphaned drafts,
+  superseded by <code>School - IEP Audit</code> / <code>School - 504 Audit</code>. Included-but-
+  flagged per the instructions' "when in doubt include" rule would not apply
+  here since they are not server-published at all; excluded from the inventory
+  below.</li>
+<li>regions served by this dashboard overall: <strong>Newark, Camden only</strong> — see Notes.
+  This contradicts the task's "NJ + FL" hint; FL (Miami) never appears, and
+  Paterson (a third NJ region) is also excluded.</li>
+</ul>
+<h3 id="measures_6">Measures</h3>
+<table>
+<thead>
+<tr>
+<th>metric</th>
+<th>agg</th>
+<th>source field / formula (trimmed)</th>
+<th>dashboards</th>
+<th>status</th>
+<th>where</th>
+<th>regions</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Count of students by ELA test type (ACCESS only / ACCESS+NJSLA / ACCESS+DLM / DLM / NJSLA-NJGPA only, etc. — 2 variants: main-dash grouping vs. K-2-specific grouping)</td>
+<td>CountD(student_number)</td>
+<td>rows/cols = <code>[ELA Test (group) 1]</code> / <code>[ELA Test (group)]</code>, both <code>categorical-bin</code> calcs over <code>state_assessment_name</code></td>
+<td>ELA Exam Counts; School - ELA Exam Counts; (K-2 ACCESS Testers uses the K-2 grouping as a roster dimension, not aggregated)</td>
+<td>mart-missing</td>
+<td><code>rpt_tableau__state_testing_accomodations.sql</code> (<code>state_assessment_name</code>, sourced from <code>stg_powerschool__s_nj_stu_x</code>) — no int_/mart model carries this field at all</td>
+<td>Newark, Camden</td>
+</tr>
+<tr>
+<td>Count of students by Math test type (DLM Only / NJSLA-NJGPA only)</td>
+<td>CountD(student_number)</td>
+<td>cols = <code>[Math Assessment (group)]</code>, <code>categorical-bin</code> over <code>math_state_assessment_name</code></td>
+<td>Math Exam Counts; School - Math Exam Counts</td>
+<td>mart-missing</td>
+<td>same rpt_ model (<code>math_state_assessment_name</code>)</td>
+<td>Newark, Camden</td>
+</tr>
+<tr>
+<td>Count of students by test format (Online / Paper-ELA&amp;Math / Paper-ELA only / etc.)</td>
+<td>CountD(student_number)</td>
+<td>cols = <code>[Test Format (group)]</code>, <code>categorical-bin</code> over <code>parcc_test_format</code></td>
+<td>Test Format; School - Test Format</td>
+<td>mart-missing</td>
+<td>same rpt_ model (<code>parcc_test_format</code>)</td>
+<td>Newark, Camden</td>
+</tr>
+<tr>
+<td>Count of students by 504 status × grade (crosstab + audit-by-accommodation variant)</td>
+<td>CountD(student_number)</td>
+<td>rows = accommodation (Audit sheet only) / cols = <code>c_504_status</code> × <code>Grade (ordinal)</code></td>
+<td>School - 504 Audit; School - 504 Counts</td>
+<td>mart-missing</td>
+<td>504 flag lives only in <code>int_students__student_enrollments.is_504</code> (intermediate, not a mart); no <code>dim_student_504_status</code> exists (unlike its IEP/ELL/meal siblings)</td>
+<td>Newark, Camden</td>
+</tr>
+<tr>
+<td>Count of students by IEP status × grade (crosstab + audit-by-accommodation variant)</td>
+<td>CountD(student_number)</td>
+<td>rows = accommodation (Audit sheet only) / cols = <code>iep_status</code> (raw <code>spedlep</code>) × <code>Grade (ordinal)</code></td>
+<td>School - IEP Audit; School - IEP Counts</td>
+<td>mart-missing</td>
+<td>the generic IEP flag/classification IS cube-covered (see Verification), but sliced by accommodation it has no mart/cube path — the accommodation dimension itself is mart-missing</td>
+<td>Newark, Camden</td>
+</tr>
+<tr>
+<td>Count of students by LEP/ELL status × grade</td>
+<td>CountD(student_number)</td>
+<td>cols = <code>lep_status</code> × <code>Grade (ordinal)</code></td>
+<td>School - ELL Counts</td>
+<td>mart-missing</td>
+<td>generic ELL flag IS cube-covered (see Verification); this accommodation-roster population/grain has no existing cube or mart measure</td>
+<td>Newark, Camden</td>
+</tr>
+</tbody>
+</table>
+<p>Unused in any worksheet but present on the datasource: <code>asmt_exclude_ela</code>,
+<code>asmt_exclude_math</code> (both <code>role=measure</code>) — never placed on a shelf, filter, or
+encoding anywhere in the 17 worksheets. Flagged in Notes, not counted above.</p>
+<h3 id="dimensions_6">Dimensions</h3>
+<table>
+<thead>
+<tr>
+<th>dimension</th>
+<th>used as</th>
+<th>status</th>
+<th>where</th>
+<th>regions</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Student identifier (<code>student_number</code>)</td>
+<td>CountD basis + roster detail rows</td>
+<td>cube-covered</td>
+<td><code>student_attendance_enrollment_daily_view</code> → <code>...students</code> join_path, <code>student_key</code> (also <code>dim_students.student_key</code>)</td>
+<td>Newark, Camden</td>
+</tr>
+<tr>
+<td>Student name (<code>lastfirst</code>) [PII — field name only]</td>
+<td>roster detail</td>
+<td>cube-covered</td>
+<td>same view, <code>...students.full_name</code> (also <code>dim_students.full_name</code>)</td>
+<td>Newark, Camden</td>
+</tr>
+<tr>
+<td>School Name</td>
+<td>rows/cols/filter</td>
+<td>cube-covered</td>
+<td><code>student_attendance_enrollment_daily_view</code> → <code>...locations.location_name</code> (<code>dim_locations.name</code>)</td>
+<td>Newark, Camden</td>
+</tr>
+<tr>
+<td>Region</td>
+<td>filter (vestigial — only 2 values ever appear, see Notes)</td>
+<td>cube-covered</td>
+<td><code>...locations.regions.region_name</code> (<code>dim_regions</code>)</td>
+<td>Newark, Camden</td>
+</tr>
+<tr>
+<td>Grade Level (+ <code>Grade (ordinal)</code> display/sort alias copy)</td>
+<td>rows/cols</td>
+<td>cube-covered</td>
+<td><code>student_attendance_enrollment_daily_view</code> → <code>...student_school_enrollments.grade_level</code> (<code>dim_student_enrollments.grade_level</code>)</td>
+<td>Newark, Camden</td>
+</tr>
+<tr>
+<td>IEP Status (raw <code>spedlep</code> classification text)</td>
+<td>rows/cols/filter</td>
+<td>cube-covered (near-match)</td>
+<td><code>...student_enrollment_status.iep_classification</code> (<code>dim_student_iep_status</code>); Cube's value is <code>coalesce(spedlep, 'No IEP')</code>, workbook shows raw <code>spedlep</code> — same meaning, string domain may differ slightly</td>
+<td>Newark, Camden</td>
+</tr>
+<tr>
+<td>504 Status (<code>c_504_status</code>, boolean)</td>
+<td>rows/cols/filter</td>
+<td>mart-missing</td>
+<td><code>int_students__student_enrollments.is_504</code> — intermediate only; no <code>dim_student_504_status</code> mart or Cube dimension exists (IEP/ELL/meal all have the SCD2-dim pattern; 504 does not)</td>
+<td>Newark, Camden</td>
+</tr>
+<tr>
+<td>LEP/ELL Status (boolean)</td>
+<td>rows/cols/filter</td>
+<td>cube-covered</td>
+<td><code>...student_enrollment_status.is_ell</code> (<code>dim_student_ell_status</code>)</td>
+<td>Newark, Camden</td>
+</tr>
+<tr>
+<td>SpEd/ELL/504 composite flag (<code>Calculation_914512256929075200</code>: IEP&lt;&gt;'No IEP' OR 504 OR LEP → 1/0)</td>
+<td>filter only</td>
+<td>mart-missing</td>
+<td>workbook calc; IEP/ELL pieces are individually cube-covered but the 504 piece is not, so the composite can't be fully reproduced today</td>
+<td>Newark, Camden</td>
+</tr>
+<tr>
+<td>Accommodation (name — one of ~34 unpivoted PowerSchool fields, e.g. extended time, read aloud, translation)</td>
+<td>rows/detail</td>
+<td>mart-missing</td>
+<td><code>rpt_tableau__state_testing_accomodations.sql</code>, <code>accommodations_unpivot</code> CTE over <code>stg_powerschool__s_nj_stu_x</code></td>
+<td>Newark, Camden</td>
+</tr>
+<tr>
+<td>Accommodation Value</td>
+<td>detail/text</td>
+<td>mart-missing</td>
+<td>same unpivot CTE</td>
+<td>Newark, Camden</td>
+</tr>
+<tr>
+<td>ELA Test (group) / Math Test (group) / Test Format (group) — bin/categorical calcs</td>
+<td>rows/cols</td>
+<td>mart-missing</td>
+<td>Tableau <code>categorical-bin</code> calcs over <code>state_assessment_name</code> / <code>math_state_assessment_name</code> / <code>parcc_test_format</code>; none of the three raw fields, let alone the groupings, exist in any int_/mart model</td>
+<td>Newark, Camden</td>
+</tr>
+<tr>
+<td>Grade exclusion filters (<code>Exclude K-2</code>, <code>Exclude K-2, 10, 12 (copy)</code>)</td>
+<td>filter</td>
+<td>workbook-only</td>
+<td>Tableau filter calcs restricting School Roll-Up sheets to tested grades; underlying <code>grade_level</code> is cube-covered, the exclusion-set logic itself is display-only</td>
+<td>Newark, Camden</td>
+</tr>
+<tr>
+<td>Help Article Link (<code>Calculation_179018136805527552</code> = literal <code>'Help article'</code>)</td>
+<td>text/nav</td>
+<td>workbook-only</td>
+<td>pure navigation label, no data</td>
+<td>n/a</td>
+</tr>
+<tr>
+<td>Dashboard click-through action filters (~15 auto-generated <code>Action (...)</code> fields, e.g. <code>Action (Grade (ordinal),Accommodation,IEP)</code>)</td>
+<td>filter (dashboard interactivity plumbing)</td>
+<td>workbook-only</td>
+<td>wiring for drill-through from Roll-Up counts to the Roster/Audit detail sheets; not independently displayed dimensions</td>
+<td>n/a</td>
+</tr>
+</tbody>
+</table>
+<h3 id="notes_6">Notes</h3>
+<ul>
+<li><strong>Region finding (verified, contradicts hint)</strong>: the rpt_ model's own WHERE
+  clause is <code>co.region in ('Newark', 'Camden')</code> — hardcoded to exactly those two
+  regions. The workbook still carries a "Region" filter shelf, but it can only
+  ever show 2 values. Miami (FL) never appears, and Paterson — a third NJ region
+  — is also excluded despite the task hint reading "NJ + FL." Any Cube/mart
+  replacement must preserve this narrower scope unless a conversation with
+  Academics/Compliance confirms Paterson and Miami should be added.</li>
+<li><strong>Two orphaned worksheets</strong> (<code>Accommodations Audit - IEP</code>,
+  <code>Accommodations Audit - 504</code>) exist in the .twb, are not <code>hidden='true'</code>, but
+  are zones on no dashboard and not in the server's published-views list.
+  Treated as out of scope (see sheets-excluded line above) rather than
+  flagged-include, since "hidden on the server" doesn't quite describe them —
+  they appear to be an earlier, superseded draft of the current
+  <code>School - 504/IEP Audit</code> sheets.</li>
+<li><strong>7 datasource columns are completely unused</strong> in any of the 17 worksheets:
+  <code>advisor_name</code>, <code>team</code>, <code>specialed_classification</code>, <code>state_studentnumber</code>,
+  <code>academic_year</code>, <code>school_level</code>, plus the two <code>asmt_exclude_*</code> measure fields
+  noted above. These are candidates to drop from the rpt_ model's SELECT if no
+  other consumer needs them (not verified here — out of scope).</li>
+<li><strong>No Cube cube or view anywhere in <code>src/cube/model/</code> mentions accommodation,
+  testing-format, or state-testing-accommodation concepts</strong> — confirmed by a
+  case-insensitive grep across cubes and views for
+  <code>accommodation|state_testing</code>. Every cube-covered row above is "covered" only
+  because a DIFFERENT dashboard's cube
+  (<code>student_attendance_enrollment_daily_view</code>, built for attendance) happens to
+  expose the same generic student/grade/ school/region/IEP/ELL dimensions
+  through its nested join paths — it was not built with this dashboard's
+  population (enrolled-with-accommodation-record) in mind, so querying it for
+  this use case means pinning to a date and accepting attendance-record
+  population semantics. Flagging this as a judgment call: a reviewer could
+  reasonably call these "partial" rather than full cube-covered.</li>
+<li><strong>No mart-ready rows exist in this inventory.</strong> Every field that is
+  accommodation/test-type specific lives only in the rpt_ model's unpivot
+  (sourced straight from PowerSchool staging, no intermediate layer); every
+  field that's generic enough to already be modeled (grade, school, region, IEP,
+  ELL) is already one step further along — cube-covered — rather than sitting at
+  mart-ready. This matches the Asana blockers: no <code>fct_state_assessments</code> /
+  <code>fct_enrollment</code> exists yet to carry the accommodation-roster grain, so
+  there's no intermediate "mart but not cube" stop for these fields today.</li>
+<li><code>dim_students</code> and <code>dim_locations</code> (named in the Asana blockers as
+  not-yet-existing) <strong>do already exist</strong> in
+  <code>src/dbt/kipptaf/models/marts/dimensions/</code>. Only <code>fct_state_assessments</code> and
+  <code>fct_enrollment</code> are confirmed genuinely absent (<code>find</code>/<code>grep</code> across
+  <code>models/marts</code> returned nothing for either name).</li>
+</ul>
+<h3 id="verification_6">Verification</h3>
+<ul>
+<li><strong>cube-covered spot-check</strong>:
+  <code>src/cube/model/views/students/student_attendance_enrollment_daily_view.yml</code>,
+  <code>cubes:</code> block
+  <code>join_path: student_attendance_enrollment_daily.student_school_enrollments.student_enrollment_status</code>,
+  <code>includes: [is_ell, is_iep, iep_classification, ...]</code> — confirms the generic
+  ELL/IEP dimensions used above.</li>
+<li><strong>mart-missing spot-check</strong>:
+  <code>src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__state_testing_accomodations.sql</code>,
+  the <code>accommodations_unpivot</code> CTE (lines 2–56) unpivoting 34 named PowerSchool
+  accommodation columns from <code>stg_powerschool__s_nj_stu_x</code> — this is the sole
+  source of <code>accommodation</code> / <code>accommodation_value</code> / <code>state_assessment_name</code> /
+  <code>math_state_assessment_name</code> / <code>parcc_test_format</code>, and none of the five
+  appear anywhere under <code>models/marts/</code>.</li>
+<li><strong>504-status spot-check</strong> (supports the 504 mart-missing rows):
+  <code>src/dbt/kipptaf/models/students/intermediate/int_students__student_enrollments.sql</code>
+  line ~570,
+  <code>if(ar.region = 'Miami', ar.is_504, coalesce(njr.pid_504_tf, suf.is_504, false)) as is_504</code>
+  — confirms 504 status is computed network-wide at the intermediate layer but
+  never promoted to a <code>dim_student_*_status</code> mart the way IEP/ELL/meal were
+  (<code>dim_student_enrollment_status.sql</code> joins <code>dim_student_iep_status</code>,
+  <code>dim_student_ell_status</code>, <code>dim_student_meal_eligibility_status</code> — no 504
+  equivalent).</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

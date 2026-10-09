@@ -1,0 +1,3933 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+        <link rel="prev" href="../athletic-eligibility-data-model/">
+      
+      
+        <link rel="next" href="../grad-plan-tracking-data-model/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Academic Health Data Model - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#academic-health-data-model" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Academic Health Data Model
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../fresh-dashboard-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/launch-page-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Launch Page
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/cube-access-individual-exceptions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube Access - Individual Exceptions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/tableau-permissions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tableau Permissions (People Data)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../fresh-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FRESH Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../carat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CARAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../csgf-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CSGF Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../crdc-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CRDC Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ddi-stack-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DDI Stack Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../hs-early-warning-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HS Early Warning Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dibels-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DIBELS Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../njdoe-universal-screener-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NJDOE Universal Screener Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../athletic-eligibility-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Athletic Eligibility Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Academic Health Data Model
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Academic Health Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-it-is" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What it is
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-it-fits-together" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How it fits together
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-the-sql-treats-miami" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How the SQL treats Miami
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#terms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Terms
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Terms">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#kinds-of-gpa" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Kinds of GPA
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#weighted-and-unweighted" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Weighted and unweighted
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bands-and-flags" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bands and flags
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#populations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Populations
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#goal-terms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Goal terms
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-the-data-comes-from" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where the data comes from
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dashboard-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dashboard models
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Dashboard models">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rpt_tableau__student_course_grades-grades-and-gpa-by-course" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rpt_tableau__student_course_grades: grades and GPA by course
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rpt_tableau__gpa_goal_progress-the-cumulative-gpa-monitor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rpt_tableau__gpa_goal_progress: the Cumulative GPA Monitor
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rpt_tableau__gpa_cumulative_year-cumulative-gpa-by-year" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rpt_tableau__gpa_cumulative_year: cumulative GPA by year
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rpt_tableau__gpa_goals-school-region-and-network-against-goal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rpt_tableau__gpa_goals: school, region, and network against goal
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#process-the-gpa-goals-sheet" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Process: the GPA goals sheet
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Process: the GPA goals sheet">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-triggers-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What triggers it
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#inputs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inputs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Steps
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outputs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Outputs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#who-runs-it-and-when" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Who runs it and when
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#supporting-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Supporting models
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Supporting models">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-goal-chain" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The goal chain
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-y1-target-chain" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Y1 target chain
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-powerschool-gpa-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The PowerSchool GPA models
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#shared-upstreams" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Shared upstreams
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#inputs_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inputs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#decisions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Decisions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Decisions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cumulative-gpa-is-kept-per-school" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cumulative GPA is kept per school
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#an-unmeasured-student-is-not-a-non-achiever" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        An unmeasured student is not a non-achiever
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#populations-follow-enrollment-dates-not-status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Populations follow enrollment dates, not status
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-network-rung-defines-who-has-a-goal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The network rung defines who has a goal
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-goal-wrapper-is-a-separate-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The goal wrapper is a separate model
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#prior-year-y1-gpa-is-the-final-value" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Prior-year Y1 GPA is the final value
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-cumulative-gpa-monitor-opens-on-the-latest-graded-year" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Cumulative GPA Monitor opens on the latest graded year
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#known-issues-need-to-fix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Known issues, need to fix
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Known issues, need to fix">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#completed-year-cumulative-goal-rates-use-todays-projection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Completed-year cumulative goal rates use today's projection
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#honors-courses-read-weighted-points-as-unweighted-this-year" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Honors courses read weighted points as unweighted this year
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#some-student-years-drop-from-the-year-extract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Some student-years drop from the year extract
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#duplicate-stored-grades" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Duplicate stored grades
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#failing-count-reads-0-with-no-graded-work" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Failing count reads 0 with no graded work
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#y1-f-label-is-on-the-wrong-scale" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Y1 F* label is on the wrong scale
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#workbook-data-sources-to-confirm-with-walters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Workbook data sources to confirm with Walters
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#smaller-items" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Smaller items
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#open-work-that-touches-this-family" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open work that touches this family
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../grad-plan-tracking-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Grad Plan Tracking Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ignite-r2i-extract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IGNITE R2I Extract
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-it-is" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What it is
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-it-fits-together" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How it fits together
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-the-sql-treats-miami" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How the SQL treats Miami
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#terms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Terms
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Terms">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#kinds-of-gpa" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Kinds of GPA
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#weighted-and-unweighted" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Weighted and unweighted
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bands-and-flags" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bands and flags
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#populations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Populations
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#goal-terms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Goal terms
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-the-data-comes-from" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where the data comes from
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dashboard-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dashboard models
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Dashboard models">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rpt_tableau__student_course_grades-grades-and-gpa-by-course" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rpt_tableau__student_course_grades: grades and GPA by course
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rpt_tableau__gpa_goal_progress-the-cumulative-gpa-monitor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rpt_tableau__gpa_goal_progress: the Cumulative GPA Monitor
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rpt_tableau__gpa_cumulative_year-cumulative-gpa-by-year" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rpt_tableau__gpa_cumulative_year: cumulative GPA by year
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rpt_tableau__gpa_goals-school-region-and-network-against-goal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rpt_tableau__gpa_goals: school, region, and network against goal
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#process-the-gpa-goals-sheet" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Process: the GPA goals sheet
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Process: the GPA goals sheet">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-triggers-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What triggers it
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#inputs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inputs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Steps
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outputs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Outputs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#who-runs-it-and-when" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Who runs it and when
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#supporting-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Supporting models
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Supporting models">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-goal-chain" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The goal chain
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-y1-target-chain" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Y1 target chain
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-powerschool-gpa-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The PowerSchool GPA models
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#shared-upstreams" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Shared upstreams
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#inputs_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inputs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#decisions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Decisions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Decisions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cumulative-gpa-is-kept-per-school" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cumulative GPA is kept per school
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#an-unmeasured-student-is-not-a-non-achiever" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        An unmeasured student is not a non-achiever
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#populations-follow-enrollment-dates-not-status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Populations follow enrollment dates, not status
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-network-rung-defines-who-has-a-goal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The network rung defines who has a goal
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-goal-wrapper-is-a-separate-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The goal wrapper is a separate model
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#prior-year-y1-gpa-is-the-final-value" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Prior-year Y1 GPA is the final value
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-cumulative-gpa-monitor-opens-on-the-latest-graded-year" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Cumulative GPA Monitor opens on the latest graded year
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#known-issues-need-to-fix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Known issues, need to fix
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Known issues, need to fix">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#completed-year-cumulative-goal-rates-use-todays-projection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Completed-year cumulative goal rates use today's projection
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#honors-courses-read-weighted-points-as-unweighted-this-year" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Honors courses read weighted points as unweighted this year
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#some-student-years-drop-from-the-year-extract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Some student-years drop from the year extract
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#duplicate-stored-grades" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Duplicate stored grades
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#failing-count-reads-0-with-no-graded-work" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Failing count reads 0 with no graded work
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#y1-f-label-is-on-the-wrong-scale" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Y1 F* label is on the wrong scale
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#workbook-data-sources-to-confirm-with-walters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Workbook data sources to confirm with Walters
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#smaller-items" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Smaller items
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#open-work-that-touches-this-family" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open work that touches this family
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/models/academic-health-data-model.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="academic-health-data-model">Academic Health Data Model</h1>
+<p>How the GPA and course-grade side of the Academic &amp; Gradebook Health Suite
+works: where its data comes from, how the dbt models turn PowerSchool grades and
+the GPA goals sheet into the dashboard, and what to know before changing any of
+it.</p>
+<h2 id="what-it-is">What it is</h2>
+<p>The Academic &amp; Gradebook Health Suite is a Tableau workbook that school and
+network leaders use to watch high school and middle school grades during the
+year: GPA distributions, course failures, students near the 3.0 line, and
+progress against the network's GPA goals. Anthony Walters built it and owns it.</p>
+<p>The workbook has two halves:</p>
+<ul>
+<li><strong>Academic health (this page).</strong> Landing Page, Academic Health Home, Academic
+  Health Schools, and Cumulative GPA Monitor. They read GPA and course grades.</li>
+<li><strong>Gradebook health.</strong> Gradebook School Rollup and Gradebook Teacher View read
+  <code>rpt_tableau__gradebook_audit</code>. The elementary comments view reads
+  <code>rpt_tableau__gradebook_es_comments</code>. All three are covered on the
+  <a href="../gradebook-audit-data-model/">Gradebook Audit Data Model</a> page.</li>
+</ul>
+<p>It is declared in dbt as the exposure <code>academic_gradebook_health_suite</code>, and
+Dagster refreshes its extracts daily at 4 AM Eastern. The four <code>rpt_</code> models and
+the goal models are views, so a refresh shows whatever the PowerSchool tables
+beneath them held at their last build, not a live read of PowerSchool.</p>
+<p>This page explains the models. How to read each view, tab by tab, is in the
+end-user guides Walters drafted on open PR #5264; full view documentation is his
+to add once that lands.</p>
+<h2 id="how-it-fits-together">How it fits together</h2>
+<div class="highlight"><pre><span></span><code> PowerSchool: Newark, Camden, Paterson
+ (stored grades, live gradebook, terms, grade scales, course enrollments)
+   │
+   ├─► base_powerschool__final_grades (current-year term and Y1 grades)
+   │
+   ├─► int_powerschool__gpa_term ─────► daily snapshot ─► ..._gpa_term_lookback
+   ├─► int_powerschool__gpa_cumulative (current state, no year)
+   │     └─► int_powerschool__gpa_cumulative_year (one row per year)
+   └─► int_powerschool__student_course_grades_spine
+                        │
+          + int_extracts__student_enrollments (roster, demographics)
+                        │
+          ┌─────────────┴──────────────┐
+          ▼                            ▼
+ rpt_tableau__student_       rpt_tableau__gpa_cumulative_year
+ course_grades                         │
+          │                            │    GPA goals tab (Google Sheet)
+          │                            │      └─► stg_ ─► int_google_sheets_
+          │                            │          __gpa_goals
+          │                            │              │
+          │                            │     ┌────────┴──────────┐
+          │                            │     ▼                   ▼
+          │                            │  int_gpa__student_   int_gpa__goal_
+          │                            │  goal_definitions    student_metrics
+          │                            │     │                   ▼
+          │                            ▼     ▼                int_gpa__goal_
+          │               rpt_tableau__gpa_goal_progress      aggregations
+          │                            │                         ▼
+          │                            │              rpt_tableau__gpa_goals
+          ▼                            ▼                         ▼
+ Home and Schools tabs       Cumulative GPA Monitor     goal panels and tile
+</code></pre></div>
+<p>Three things carry the whole family:</p>
+<ul>
+<li><strong>The course-grain extract</strong>, <code>rpt_tableau__student_course_grades</code>, holds one
+  row per student, term, course, and gradebook category for this year and last
+  year. The Home and Schools tabs read it.</li>
+<li><strong>The year-grain extract</strong>, <code>rpt_tableau__gpa_cumulative_year</code>, holds each
+  student's cumulative GPA at the end of every year. The Cumulative GPA Monitor
+  reads it through <code>rpt_tableau__gpa_goal_progress</code>, which adds each student's
+  goal.</li>
+<li><strong>The goal rollup</strong>, <code>rpt_tableau__gpa_goals</code>, compares school, region, and
+  network rates against the GPA goals sheet.</li>
+</ul>
+<p>The workbook's embedded data sources are <code>rpt_tableau__gpa_goals</code>,
+<code>rpt_tableau__gpa_goal_progress</code>, <code>rpt_tableau__gradebook_audit</code>,
+<code>rpt_tableau__student_course_grades</code> (a custom-SQL source, shown in Tableau as
+<code>rpt_tableau__student_course_grades+</code>), and one named <code>GPA Goals - Y1</code> whose
+source is not yet confirmed. #5169 also records
+<code>rpt_tableau__gpa_cumulative_year</code> embedded with nothing reading it (see <em>Known
+issues, need to fix</em>).</p>
+<h2 id="how-the-sql-treats-miami">How the SQL treats Miami</h2>
+<p>Miami is not in the Health Suite. Miami's student information system moved to
+Focus, and every GPA model here is built from PowerSchool, so the models exclude
+Miami by name rather than show it empty:</p>
+<ul>
+<li><code>rpt_tableau__student_course_grades</code> keeps Newark, Camden, and Paterson.</li>
+<li><code>rpt_tableau__gpa_cumulative_year</code>, and so <code>rpt_tableau__gpa_goal_progress</code>,
+  keep Newark and Camden only. Their year-grain source unions only the three NJ
+  regions, and Paterson has no high school.</li>
+<li><code>int_gpa__goal_student_metrics</code> keeps Newark, Camden, and Paterson, and so
+  does every goal rate. Putting Miami back is tracked in #5171.</li>
+</ul>
+<p>A Miami goal row on the goals sheet would match no students and never reach the
+dashboard.</p>
+<h2 id="terms">Terms</h2>
+<h3 id="kinds-of-gpa">Kinds of GPA</h3>
+<p>"GPA" means several different numbers here, and they are not interchangeable.
+Every one is credit-weighted: each course's grade points times its credit hours,
+summed, divided by the credit hours. Courses PowerSchool marks
+<code>excludefromgpa = 1</code> (lunch, homeroom, study hall) never count.</p>
+<table>
+<thead>
+<tr>
+<th>Term</th>
+<th>Column</th>
+<th>What it is</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Term GPA</td>
+<td><code>gpa_term</code>, <code>gpa_for_quarter</code></td>
+<td>One marking period (Q1 to Q4); on the Y1 row, <code>gpa_for_quarter</code> holds the Y1 GPA</td>
+</tr>
+<tr>
+<td>Semester GPA</td>
+<td><code>gpa_semester</code></td>
+<td>S1 (Q1, Q2) or S2 (Q3, Q4), from the term rows</td>
+</tr>
+<tr>
+<td>Y1 GPA</td>
+<td><code>gpa_y1</code></td>
+<td>The year so far, from each course's running Y1 grade; for past years, the stored end-of-year Y1 grades</td>
+</tr>
+<tr>
+<td>Cumulative GPA</td>
+<td><code>cumulative_y1_gpa</code></td>
+<td>Every stored Y1 grade the student has at that school</td>
+</tr>
+<tr>
+<td>Projected</td>
+<td><code>cumulative_y1_gpa_projected</code></td>
+<td>Cumulative plus this year's in-progress Y1 grades, as if the year ended today</td>
+</tr>
+<tr>
+<td>S1 projected</td>
+<td><code>cumulative_y1_gpa_projected_s1</code></td>
+<td>Cumulative plus this year's semester 1 (as of Q2) grades</td>
+</tr>
+<tr>
+<td>Core cumulative</td>
+<td><code>core_cumulative_y1_gpa</code></td>
+<td>Cumulative over math, science, English, and social studies credit types, stored grades only</td>
+</tr>
+<tr>
+<td>Year-end cumulative</td>
+<td><code>cumulative_y1_gpa</code> on the year extract</td>
+<td>Cumulative as of the end of each past year; on the current year, the projected value</td>
+</tr>
+</tbody>
+</table>
+<p>Cumulative GPA is kept <strong>per student and school</strong>. A student's high school
+cumulative starts fresh in grade 9 and does not include middle school grades,
+and a student who changes schools starts a new series.</p>
+<p><code>is_projected</code> marks the current-year row of the year extract, where the value
+is the projection rather than a stored result. "As of today" columns
+(<code>cumulative_y1_gpa_unweighted_as_of_today</code>) carry the running value, counting
+only grades already stored; the projection is the basis for goals.</p>
+<h3 id="weighted-and-unweighted">Weighted and unweighted</h3>
+<p><strong>Weighted</strong> grade points come from the course's own PowerSchool grade scale.
+<strong>Unweighted</strong> grade points come from looking the course's percent up on that
+scale's unweighted twin. The SQL names the twins: <code>KIPP NJ 2019 (5-12) Weighted</code>
+and <code>KIPP NJ 2024 (5-12) Weighted - Honors</code> map to
+<code>KIPP NJ 2019 (5-12) Unweighted</code>, and <code>NCA Honors</code> maps to
+<code>KIPP NJ 2016 (5-12)</code>. Stored grades also map <code>NCA Honors</code> to <code>NCA 2011</code> before
+2016, and a blank scale to a default. Other scales map to themselves, so for a
+course on one the two numbers are equal.</p>
+<p>Nothing in the SQL checks school level. Weighting exists only where a course is
+on a weighted scale, and only high school courses are, so a middle school
+student's weighted and unweighted GPAs are the same by design (#4978). Weighted
+GPA can reach 5.33 and unweighted 4.33, so an unweighted GPA above 4.0 is not an
+error.</p>
+<p>Every goal and band on the dashboard uses <strong>unweighted</strong> GPA except the
+<code>y1_gpa_weighted</code> goal metric.</p>
+<h3 id="bands-and-flags">Bands and flags</h3>
+<table>
+<thead>
+<tr>
+<th>Term</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>gpa_band_label</code></td>
+<td>Cumulative unweighted band: <code>3.5+</code>, <code>3.0-3.49</code>, <code>2.5-2.99</code>, <code>2.0-2.49</code>, <code>below 2.0</code></td>
+</tr>
+<tr>
+<td><code>gpa_band_projected_...</code></td>
+<td>The same cut points as a number, 1 (below 2.0) to 5 (3.5 and up), the KIPP Foundation five-band scale</td>
+</tr>
+<tr>
+<td><code>is_on_cusp_3_0</code></td>
+<td>Cumulative unweighted GPA at least 2.75 and below 3.00</td>
+</tr>
+<tr>
+<td><code>gpa_needed_for_cumulative_3_0</code></td>
+<td>The unweighted Y1 GPA a student must average this year to finish at exactly 3.00; negative means already safe</td>
+</tr>
+<tr>
+<td><code>is_gpa_band_slide</code></td>
+<td>Projected band at least one band below last year's band</td>
+</tr>
+<tr>
+<td><code>F*</code></td>
+<td>Not a PowerSchool grade: a live gradebook grade below 50% is floored to 50% and labelled <code>F*</code>. Failure counts match <code>F%</code></td>
+</tr>
+<tr>
+<td><code>need_60</code> to <code>need_90</code>, <code>need_83</code>, <code>need_next</code></td>
+<td>The percent needed in the current term for the year-to-date course grade to reach a target</td>
+</tr>
+<tr>
+<td>Lookbacks</td>
+<td><code>gpa_y1_1_week_prior</code> and siblings: the Y1 GPA in effect at the end of the day 1, 2, or 4 weeks ago</td>
+</tr>
+</tbody>
+</table>
+<h3 id="populations">Populations</h3>
+<table>
+<thead>
+<tr>
+<th>Term</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>rn_year = 1</code></td>
+<td>A student's primary enrollment in a year; every model filters on it for one school per student-year</td>
+</tr>
+<tr>
+<td><code>is_enrolled_recent</code></td>
+<td>The enrollment ran to the end of its school year or is active today, so mid-year leavers drop and graduates stay</td>
+</tr>
+<tr>
+<td><code>enroll_status</code></td>
+<td>Current PowerSchool status, not as of the year: 0 active, 2 transferred out, 3 graduated</td>
+</tr>
+</tbody>
+</table>
+<h3 id="goal-terms">Goal terms</h3>
+<table>
+<thead>
+<tr>
+<th>Term</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Rung (<code>org_level</code>)</td>
+<td>Where a goal applies: <code>org</code> (the network), <code>region</code>, or <code>school</code></td>
+</tr>
+<tr>
+<td><code>metric</code></td>
+<td><code>y1_gpa_weighted</code>, <code>y1_gpa_unweighted</code>, <code>cumulative_gpa_unweighted</code>, or <code>on_pace</code></td>
+</tr>
+<tr>
+<td><code>threshold</code></td>
+<td>The GPA a student must reach, compared by <code>direction</code> (<code>&gt;=</code> or <code>&lt;=</code>)</td>
+</tr>
+<tr>
+<td><code>goal</code></td>
+<td>The target share of students reaching the threshold, entered as a percent (69 means 69%)</td>
+</tr>
+<tr>
+<td>Grade band</td>
+<td><code>grade_low</code> to <code>grade_high</code>; one goal row covers each grade in the band</td>
+</tr>
+<tr>
+<td><code>aggregation_hash</code></td>
+<td>The key joining a rate to its goal: <code>org_9-12</code>, <code>Newark_11-11</code>, or <code>&lt;schoolid&gt;_10-10</code></td>
+</tr>
+<tr>
+<td><code>metric_rate</code></td>
+<td>Students meeting the threshold over students with a value, rounded to three places</td>
+</tr>
+</tbody>
+</table>
+<h2 id="where-the-data-comes-from">Where the data comes from</h2>
+<table>
+<thead>
+<tr>
+<th>Source</th>
+<th>What it provides</th>
+<th>Owner</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PowerSchool, Newark, Camden, Paterson</td>
+<td>Stored grades, live gradebook grades, terms, grade scales, courses, sections, enrollments</td>
+<td>Schools enter grades; data team runs the load</td>
+</tr>
+<tr>
+<td>GPA goals tab (Google Sheet)</td>
+<td>Goal threshold and target per year, rung, grade band, and metric</td>
+<td>Data team enters; the network sets the goals</td>
+</tr>
+<tr>
+<td>Staff roster (ADP)</td>
+<td>Teacher Tableau usernames and managers, for row-level security</td>
+<td>People team</td>
+</tr>
+<tr>
+<td>Daily GPA snapshot</td>
+<td>Yesterday's and earlier Y1 GPAs, for the lookbacks</td>
+<td>Built in the warehouse</td>
+</tr>
+</tbody>
+</table>
+<p>PowerSchool reaches every model through the kipptaf union views
+(<code>int_powerschool__gpa_term</code>, <code>int_powerschool__gpa_cumulative</code>,
+<code>int_powerschool__gpa_cumulative_year</code>,
+<code>int_powerschool__student_course_grades_spine</code>), which read each region's
+district project. Two of them, <code>int_powerschool__gpa_term</code> and
+<code>int_powerschool__gpa_cumulative</code>, also union a Miami relation; the region
+filters above keep it out.</p>
+<p>The daily snapshot, <code>snapshot_powerschool__gpa_term</code>, records each student's Y1
+GPA whenever it changes, captured once a day at 11 PM. The lookbacks read the
+version in effect at the end of a past day. A lookback before the year's first
+capture reads null.</p>
+<p>Demographics, school, grade, advisory, ADA, and school leaders come from
+<code>int_extracts__student_enrollments</code>, as of each year's primary enrollment.
+Tutoring and tier flags come from <code>int_extracts__student_enrollments_subjects</code>.</p>
+<h2 id="dashboard-models">Dashboard models</h2>
+<p>Which tab reads which model, from the exposure and the workbook's data sources:</p>
+<table>
+<thead>
+<tr>
+<th>Tab</th>
+<th>Model</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Academic Health Home, Schools</td>
+<td><code>rpt_tableau__student_course_grades</code>, plus <code>rpt_tableau__gpa_goals</code> for the goal tile</td>
+</tr>
+<tr>
+<td>Cumulative GPA Monitor</td>
+<td><code>rpt_tableau__gpa_goal_progress</code></td>
+</tr>
+<tr>
+<td>Landing Page</td>
+<td>Navigation; its build is on open PR #5246</td>
+</tr>
+<tr>
+<td>Gradebook School Rollup, Teacher View</td>
+<td><code>rpt_tableau__gradebook_audit</code> (see the gradebook audit page)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="rpt_tableau__student_course_grades-grades-and-gpa-by-course"><code>rpt_tableau__student_course_grades</code>: grades and GPA by course</h3>
+<p><strong>What it shows:</strong> the Home and Schools tabs: GPA by term and year to date,
+course grades and failures, students near a grade boundary, lowest gradebook
+category per course, week-over-week GPA change, and the office hours roster.</p>
+<p><strong>Grain:</strong> one row per student, term (<code>Q1</code> to <code>Q4</code>, plus a <code>Y1</code> year row),
+course, and gradebook category, for the current and prior academic year. Terms
+that have not started yet are left out. Reads
+<code>int_extracts__student_enrollments</code> (the student roster),
+<code>int_powerschool__student_course_grades_spine</code> (course grades),
+<code>int_powerschool__gpa_term</code> (term, Y1, and prior-quarter GPA),
+<code>int_powerschool__gpa_cumulative</code> (cumulative and projected GPA),
+<code>int_powerschool__gpa_cumulative_year</code> (last year's final cumulative),
+<code>int_powerschool__gpa_term_lookback</code>,
+<code>int_extracts__student_enrollments_subjects</code>, and <code>int_people__staff_roster</code>.</p>
+<p><strong>Worth knowing:</strong></p>
+<ul>
+<li>Student-level columns repeat on every course and category row. Count students
+  with a distinct count, never by summing rows.</li>
+<li>As-of-today measures (cumulative GPA, needed GPA, lookbacks, prior-quarter and
+  prior-year comparisons) fill current-year rows only. Prior-year rows read null
+  for them by design.</li>
+<li><code>gpa_y1</code> on prior-year rows is the stored end-of-year value on every term,
+  because PowerSchool stores only the final Y1 grade.</li>
+<li><code>gpa_y1_prior_year</code> is last year's final weighted Y1 GPA, credit-weighted
+  across schools for a student who attended two.</li>
+<li><code>cumulative_y1_gpa_unweighted_change_from_prior_year</code> compares this year's
+  projection with last year's final cumulative. Both are per school, so for a
+  grade 9 student it compares a high school projection with a middle school
+  result.</li>
+<li><code>is_quarter_course_failing</code> matches <code>F%</code>, so it counts <code>F*</code>. It is null, not
+  false, on an ungraded course: divide failures by graded rows, not all rows.</li>
+<li><code>office_hours_priority_rank</code> ranks a student's courses in a term from lowest
+  percent up; filter to rank 3 or less for a three-teacher list.</li>
+<li><code>need_next</code> is the percent needed in the current term for the year-to-date
+  grade to reach the next letter on the course's own scale, not the letter for
+  the quarter alone.</li>
+<li><code>section_or_period</code> is the section number below grade 9 and the period
+  expression from grade 9.</li>
+<li>Its uniqueness test currently warns because of duplicate stored grades in
+  prior years (see <em>Known issues, need to fix</em>).</li>
+<li>Do not relate it to the year extract on <code>student_number</code> alone; the match
+  needs <code>academic_year</code> too, or a student fans out across every year.</li>
+</ul>
+<h3 id="rpt_tableau__gpa_goal_progress-the-cumulative-gpa-monitor"><code>rpt_tableau__gpa_goal_progress</code>: the Cumulative GPA Monitor</h3>
+<p><strong>What it shows:</strong> the Cumulative GPA Monitor: cumulative unweighted GPA bands
+by grade and school, students on the cusp of 3.0, whether 3.0 is still
+reachable, and each grade and school against its goal.</p>
+<p><strong>Grain:</strong> one row per student and academic year, guarded by an error-level
+uniqueness test. Reads <code>rpt_tableau__gpa_cumulative_year</code> and left joins
+<code>int_gpa__student_goal_definitions</code> for the <code>cumulative_gpa_unweighted</code> goal.</p>
+<p><strong>Worth knowing:</strong></p>
+<ul>
+<li>Every column of the year extract passes through, plus four goal columns:
+  <code>gpa_goal_threshold</code> and the target share at the network, region, and school
+  rung.</li>
+<li>The columns are listed by hand. A column added to the year extract does not
+  appear here until it is added to this model's select list and contract too.</li>
+<li>Test <code>gpa_goal_proportion_org</code> to find rows with a goal. A null region or
+  school target only means that rung has no goal; the network target still
+  applies.</li>
+<li>The threshold is the network rung's. A region or school row on the sheet with
+  a different threshold changes only that rung's target share here, while
+  <code>rpt_tableau__gpa_goals</code> uses each rung's own threshold (see <em>Decisions</em>).</li>
+<li>The goal comparison on the dashboard is <code>&gt;=</code>; the model does not carry the
+  goal's <code>direction</code>.</li>
+<li>A singular test fails if any grade 9 to 12 row in a year the sheet covers has
+  no network goal. A year counts as covered if it has a goal row for any metric,
+  so a year with only Y1 goals still fails for missing cumulative goals.</li>
+</ul>
+<h3 id="rpt_tableau__gpa_cumulative_year-cumulative-gpa-by-year"><code>rpt_tableau__gpa_cumulative_year</code>: cumulative GPA by year</h3>
+<p><strong>What it shows:</strong> no tab reads it directly. It is the base of
+<code>rpt_tableau__gpa_goal_progress</code> (see <em>Known issues, need to fix</em> for its place
+in the workbook).</p>
+<p><strong>Grain:</strong> one row per student and academic year, Newark and Camden only. Reads
+<code>int_powerschool__gpa_cumulative_year</code> for the year-end values, inner joined to
+the year's primary enrollment in <code>int_extracts__student_enrollments</code> on student,
+year, school, and district, and left joins <code>int_powerschool__gpa_cumulative</code> for
+the as-of-today values on the current year.</p>
+<p><strong>Worth knowing:</strong></p>
+<ul>
+<li>Past years are recomputed from stored Y1 grades as running totals per student
+  and school; the current year is the projection. Demographics are as of that
+  year, but <code>enroll_status</code> is today's.</li>
+<li>The population is <code>is_enrolled_recent</code>, <code>enroll_status</code> 0, 2, or 3, and not
+  out of district. A student-year whose grades were stored at a school other
+  than that year's primary enrollment school drops at the join (#4343).</li>
+<li><code>is_latest_graded_year</code> marks the most recent year with a non-null <code>gpa_y1</code> in
+  Newark or Camden. The current year's <code>gpa_y1</code> comes from the live gradebook,
+  so the flag moves to the current year as soon as any in-progress grade exists,
+  not when Y1 grades are stored. Before then the monitor opens on the prior
+  year.</li>
+<li><code>gpa_band_label</code> is filled on every year; <code>gpa_band_as_of_today_label</code> only on
+  the current year.</li>
+<li><code>gpa_needed_for_cumulative_3_0</code> and <code>is_cumulative_3_0_attainable</code> are
+  current-year only. They compute for any grade but mean something only in high
+  school.</li>
+</ul>
+<h3 id="rpt_tableau__gpa_goals-school-region-and-network-against-goal"><code>rpt_tableau__gpa_goals</code>: school, region, and network against goal</h3>
+<p><strong>What it shows:</strong> the GPA goal panels: for each goal on the sheet, the share of
+students meeting the threshold and whether that meets the goal.</p>
+<p><strong>Grain:</strong> one row per academic year, metric, and <code>aggregation_hash</code>, that is,
+one per goal row on the sheet that matched at least one student. A thin select
+over <code>int_gpa__goal_aggregations</code>.</p>
+<p><strong>Worth knowing:</strong></p>
+<ul>
+<li><code>metric_rate</code> divides students meeting the threshold by students with a value,
+  not by every student in the grain. <code>n_students_in_grain</code>,
+  <code>n_students_measured</code>, and <code>n_students_met</code> show all three counts. A rate is
+  null, not zero, before a year's grades post.</li>
+<li><code>progress_to_goal</code> is the rate over the goal, capped at 1.</li>
+<li>A grade with no goal row produces no row at all, indistinguishable from a
+  grade with no students. Two singular tests on the sheet guard against a
+  missing or unmatched goal (see <em>Process</em>).</li>
+<li>The population is high school students only, whatever grades the sheet names.</li>
+<li><code>on_pace</code> goals always read null rates: the on-pace flags are placeholders
+  that nothing populates yet.</li>
+<li>The cumulative metric reads the projected cumulative GPA, including for
+  completed years (see <em>Known issues, need to fix</em>).</li>
+</ul>
+<h2 id="process-the-gpa-goals-sheet">Process: the GPA goals sheet</h2>
+<p>The goals behind every goal line live on one tab of a Google Sheet, staged as
+<code>stg_google_sheets__gpa_goals</code>. The tab sits in the same workbook as the
+gradebook audit tabs; ask the data team for access.</p>
+<h3 id="what-triggers-it">What triggers it</h3>
+<p>The network sets GPA goals for a new school year, or changes one mid-year. Goals
+exist per academic year, so a year with no rows has no goal lines.</p>
+<h3 id="inputs">Inputs</h3>
+<p>One row per goal, with these columns in this order:</p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Holds</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>academic_year</code></td>
+<td>Start year: 2026 means SY26-27</td>
+</tr>
+<tr>
+<td><code>org_level</code></td>
+<td><code>org</code>, <code>region</code>, or <code>school</code></td>
+</tr>
+<tr>
+<td><code>region</code></td>
+<td><code>Newark</code>, <code>Camden</code>, or <code>Paterson</code>; required on region and school rows</td>
+</tr>
+<tr>
+<td><code>schoolid</code></td>
+<td>PowerSchool school number; school rows only</td>
+</tr>
+<tr>
+<td><code>grade_low</code>, <code>grade_high</code></td>
+<td>The grade band; equal for a single grade</td>
+</tr>
+<tr>
+<td><code>metric</code></td>
+<td>One of the four metrics under <em>Goal terms</em></td>
+</tr>
+<tr>
+<td><code>threshold</code></td>
+<td>The GPA to reach, for example 3.0</td>
+</tr>
+<tr>
+<td><code>direction</code></td>
+<td><code>&gt;=</code> or <code>&lt;=</code></td>
+</tr>
+<tr>
+<td><code>goal</code></td>
+<td>Target percent of students, 0 to 100</td>
+</tr>
+</tbody>
+</table>
+<h3 id="steps">Steps</h3>
+<ol>
+<li>Edit the tab. The sheet is read through a named range and by column position,
+   so a column inserted mid-tab shifts every value after it, and a row past the
+   range's end is ignored.</li>
+<li>A Dagster sensor polls the sheet every few minutes and rebuilds the staging
+   table after an edit. Its tests are error-level: one row per year, rung,
+   region, school, grade band, and metric; <code>grade_low</code> no higher than
+   <code>grade_high</code>; known values for <code>org_level</code>, <code>metric</code>, and <code>direction</code>; and
+   <code>goal</code> between 0 and 100.</li>
+<li><code>int_google_sheets__gpa_goals</code> turns the percent into a proportion, labels
+   the grade band, and builds <code>aggregation_hash</code>. Four singular tests then check
+   the sheet against the students:</li>
+<li>every region and school goal sits inside a network goal's grade band for
+     the same year and metric, or its students would lose the goal silently;</li>
+<li>every goal matches at least one student in years the student data covers,
+     which catches a mistyped school number or region;</li>
+<li>within a rung, every grain covers the same grades, which catches one school
+     missing a grade its peers have;</li>
+<li>every high school student in a goal year gets a network goal on the
+     Cumulative GPA Monitor.</li>
+<li>The goal views read the staging table directly, so the next Tableau refresh
+   at 4 AM shows the change.</li>
+</ol>
+<h3 id="outputs">Outputs</h3>
+<ul>
+<li><code>rpt_tableau__gpa_goals</code>: rates against each goal row, for the goal panels.</li>
+<li><code>rpt_tableau__gpa_goal_progress</code>: each student's cumulative goal at the three
+  rungs, for the Cumulative GPA Monitor's goal lines.</li>
+</ul>
+<h3 id="who-runs-it-and-when">Who runs it and when</h3>
+<p>The data team enters goals when the network sets them, usually before the school
+year starts, and checks the tests after the rebuild. Anthony Walters owns the
+goal models. School rows are optional: a school with no goal still shows the
+network target.</p>
+<h2 id="supporting-models">Supporting models</h2>
+<h3 id="the-goal-chain">The goal chain</h3>
+<ul>
+<li><code>int_google_sheets__gpa_goals</code>: the sheet with <code>goal_proportion</code>,
+  <code>grade_band</code>, <code>aggregation_hash</code>, and <code>higher_is_better</code> added. One row per
+  year, metric, and hash.</li>
+<li><code>int_gpa__goal_student_metrics</code>: one row per high school student, school, and
+  year, carrying Y1 GPA weighted and unweighted (from the current-term row of
+  <code>int_powerschool__gpa_term</code>) and cumulative unweighted GPA (the projection,
+  from <code>int_extracts__student_enrollments</code>). A student with no GPA yet stays in
+  with null measures, which counts in <code>n_students_in_grain</code> but not in the rate.</li>
+<li><code>int_gpa__goal_aggregations</code>: joins those students to each goal by year and
+  grade band, three times (school on school and region, region on region,
+  network on nothing more), and computes the counts, rate, <code>is_goal_met</code>, and
+  <code>progress_to_goal</code>.</li>
+<li><code>int_gpa__student_goal_definitions</code>: one row per student, year, and metric
+  with a network goal, carrying the network threshold and the target share at
+  each rung. Its only filter is <code>rn_year = 1</code>; its only reader,
+  <code>rpt_tableau__gpa_goal_progress</code>, supplies the population.</li>
+</ul>
+<h3 id="the-y1-target-chain">The Y1 target chain</h3>
+<p>Both models build in each NJ district project from the shared <code>powerschool</code>
+package and are unioned in kipptaf, like the GPA models below.</p>
+<ul>
+<li><code>int_powerschool__student_y1_target</code>: one row per current-year high school
+  student with the lowest unweighted letter whose grade points reach the needed
+  GPA, floored at B; the weighted GPA that target corresponds to on the
+  student's open courses; and a pace status of <code>on_pace</code>, <code>not_on_pace</code>,
+  <code>goal_not_attainable</code>, or <code>unknown</code>. It reads the needed GPA from
+  <code>int_powerschool__gpa_cumulative</code>, re-bases it on every scheduled course with
+  locked courses held at their current Y1 points, and decides attainability from
+  that re-solved need rather than the Monitor's flag. A course that has not
+  started yet neither blocks <code>on_pace</code> nor counts toward it; a started course
+  with no grade blocks it.</li>
+<li><code>int_powerschool__course_pace</code>: one row per current-year GPA course per
+  student with the average percent needed in each remaining term, exams
+  included, for the course Y1 to land on the target cutoff. The in-progress term
+  is a remaining term, so the pace moves only when a term closes. A course whose
+  terms have all ended is locked and has no pace. The same row carries the
+  quickest win: the student's open courses ranked by grade points gained at the
+  next letter times credits, over the percent gap to that letter's pace, with
+  below-target courses ranked first. Rank 1 is the course where the fewest
+  points buy the most GPA.</li>
+</ul>
+<p>These reach the GPA roster sheet, the Cumulative GPA Monitor through
+<code>rpt_tableau__gpa_goal_progress</code>, and the course view through
+<code>rpt_tableau__gpa_course_pace</code>. A quarter GPA target is deliberately absent:
+quarter GPAs do not average to the Y1 GPA, and course percents do.</p>
+<h3 id="the-powerschool-gpa-models">The PowerSchool GPA models</h3>
+<p>These build in each NJ district project from the shared <code>powerschool</code> package
+and are unioned in kipptaf.</p>
+<ul>
+<li><code>int_powerschool__gpa_term</code>: one row per student, school, year, and term with
+  term, semester, and Y1 GPA and the failing-course count. The current year
+  comes from the live gradebook, past years from stored grades. <code>is_current</code>
+  marks the term whose dates cover today, or Q4 for a past year.</li>
+<li><code>int_powerschool__gpa_cumulative</code>: one row per student and school, current
+  state only (no year). Stored Y1 grades give the cumulative; adding this year's
+  unstored Y1 grades for courses whose term covers today gives the projection.
+  It also computes the GPA needed for a 3.0 and whether it is attainable.
+  Through <code>int_students__gpa_cumulative</code>, it also reaches every reader of
+  <code>int_extracts__student_enrollments</code>.</li>
+<li><code>int_powerschool__gpa_cumulative_year</code>: one row per student, school, and year.
+  Completed years are running totals of stored Y1 grades per student and school;
+  the current year is the projection from <code>int_powerschool__gpa_cumulative</code>,
+  copied as is.</li>
+<li><code>int_powerschool__gpa_term_lookback</code>: current year only, one row per student
+  and school, with the Y1 GPA and failing count in effect at the end of the day
+  1, 2, and 4 weeks ago, from the daily snapshot. The snapshot never closes a
+  row for a student who leaves, so readers must scope by enrollment, which the
+  extract does.</li>
+<li><code>int_powerschool__student_course_grades_spine</code>: one row per student, course,
+  term, and category. Current-year grades come from the live gradebook, with an
+  in-progress <code>Y1</code> row from the current term; past years from stored grades. It
+  builds the <code>need_*</code> columns, the lowest-category drivers, and
+  <code>office_hours_priority_rank</code>, and drops lunch, advisory, study hall, and early
+  dismissal courses by course number.</li>
+</ul>
+<h3 id="shared-upstreams">Shared upstreams</h3>
+<ul>
+<li><code>base_powerschool__final_grades</code>: read by the GPA term, cumulative, and course
+  spine models for current-year term and running Y1 grades. The term model reads
+  it directly; the cumulative model joins enrollments to it on student and year.
+  Quarters weigh 25 each in a course with no exam; with exams, 22 per quarter
+  and 5 per exam term.</li>
+<li><code>stg_powerschool__storedgrades</code>: read for every stored grade, joined on
+  student, course, year, and store code; it also names each grade's unweighted
+  scale.</li>
+<li><code>int_powerschool__gpa_term</code>: also read by the goal metrics for Y1 GPA, joined
+  on student, school, year, and district; the daily snapshot captures its
+  current-term rows.</li>
+<li><code>int_powerschool__gpa_cumulative</code>: also read by the course extract and the
+  year extract for as-of-today values, joined on student, school, and district.</li>
+<li><code>int_students__gpa_cumulative</code>: read by <code>int_extracts__student_enrollments</code>
+  for cumulative and projected GPA, joined on student number and school only,
+  with no year. It adds Focus GPAs for Miami, which this family filters out.</li>
+<li><code>int_extracts__student_enrollments</code>: read by every model for the roster and
+  demographics, joined on student, year, school, and district, filtered to
+  <code>rn_year = 1</code>.</li>
+</ul>
+<h2 id="inputs_1">Inputs</h2>
+<p>The only hand-maintained input is the GPA goals tab described under <em>Process</em>.
+Everything else is PowerSchool as teachers and schools enter it: grade scales
+and course credit hours set up in PowerSchool decide grade points, weighting,
+and GPA eligibility.</p>
+<h2 id="decisions">Decisions</h2>
+<h3 id="cumulative-gpa-is-kept-per-school">Cumulative GPA is kept per school</h3>
+<p>Cumulative GPA accumulates per student and school, matching how PowerSchool
+computes it. High school GPA therefore starts in grade 9 without middle school
+grades, which is what the high school goals measure. The cost is that a student
+who transfers mid-career starts a new series, and a grade 9 year-over-year
+comparison sets a high school number against a middle school one.</p>
+<h3 id="an-unmeasured-student-is-not-a-non-achiever">An unmeasured student is not a non-achiever</h3>
+<p>Goal rates divide by students who have a GPA, not by every enrolled student. A
+student without grades yet is unknown, and counting them as missing the goal
+would make every rate read low in the first weeks of the year and zero before
+grades post. The in-grain count is kept beside the rate so the gap stays
+visible.</p>
+<h3 id="populations-follow-enrollment-dates-not-status">Populations follow enrollment dates, not status</h3>
+<p><code>enroll_status</code> is current and student-level, so filtering on it drops every
+graduate from every completed year and reported past senior classes at almost
+zero. The goal and year models use <code>is_enrolled_recent</code> instead, which keeps a
+year the student finished and drops a year they left partway through.</p>
+<h3 id="the-network-rung-defines-who-has-a-goal">The network rung defines who has a goal</h3>
+<p>A student has a goal when a network goal covers their grade; region and school
+targets attach to that row when they exist. So a school without its own goal
+still shows the network line, and the threshold on the Cumulative GPA Monitor is
+always the network's. School-level goals are not being set this year (#5169).</p>
+<h3 id="the-goal-wrapper-is-a-separate-model">The goal wrapper is a separate model</h3>
+<p><code>rpt_tableau__gpa_goal_progress</code> adds goal columns to the year extract instead
+of changing the extract itself. Two published dashboards read the extract
+through a Tableau relationship that declares it unique, and the extract is a
+view, so a join that fanned it out would ship without an error. Folding the
+wrapper into the extract is planned; until then its columns are maintained by
+hand.</p>
+<h3 id="prior-year-y1-gpa-is-the-final-value">Prior-year Y1 GPA is the final value</h3>
+<p>PowerSchool stores only the end-of-year Y1 grade, so there is no "last year as
+of this quarter" to compare against. Comparisons with last year use its final Y1
+and final cumulative GPA.</p>
+<h3 id="the-cumulative-gpa-monitor-opens-on-the-latest-graded-year">The Cumulative GPA Monitor opens on the latest graded year</h3>
+<p>The current year has schedules but no grades for its first weeks, so the
+monitor's default year is the most recent year with posted Y1 grades
+(<code>is_latest_graded_year</code>) rather than the current one.</p>
+<h2 id="known-issues-need-to-fix">Known issues, need to fix</h2>
+<h3 id="completed-year-cumulative-goal-rates-use-todays-projection">Completed-year cumulative goal rates use today's projection</h3>
+<p>Tracked in #5562.</p>
+<p><code>int_gpa__goal_student_metrics</code> takes <code>cumulative_gpa_unweighted</code> from
+<code>int_extracts__student_enrollments</code>, which joins cumulative GPA on student and
+school with no year. Every past year of a student at their current school
+therefore carries today's projection, not that year's final value, so the
+<code>cumulative_gpa_unweighted</code> rows of <code>rpt_tableau__gpa_goals</code> for completed years
+do not report what those years ended at. Most past-year students differ:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">    </span><span class="n">m</span><span class="p">.</span><span class="n">academic_year</span><span class="p">,</span>
+<span class="w">    </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n_students</span><span class="p">,</span>
+<span class="w">    </span><span class="n">countif</span><span class="p">(</span>
+<span class="w">        </span><span class="k">abs</span><span class="p">(</span><span class="n">m</span><span class="p">.</span><span class="n">cumulative_gpa_unweighted</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">cy</span><span class="p">.</span><span class="n">cumulative_y1_gpa_unweighted</span><span class="p">)</span>
+<span class="w">        </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">0</span><span class="p">.</span><span class="mi">005</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n_differ_from_year_end</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kipptaf_gpa</span><span class="p">.</span><span class="n">int_gpa__goal_student_metrics</span><span class="o">`</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">m</span>
+<span class="k">left</span><span class="w"> </span><span class="k">join</span>
+<span class="w">    </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kipptaf_tableau</span><span class="p">.</span><span class="n">rpt_tableau__gpa_cumulative_year</span><span class="o">`</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">cy</span>
+<span class="w">    </span><span class="k">on</span><span class="w"> </span><span class="n">m</span><span class="p">.</span><span class="n">student_number</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cy</span><span class="p">.</span><span class="n">student_number</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">m</span><span class="p">.</span><span class="n">academic_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cy</span><span class="p">.</span><span class="n">academic_year</span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">m</span><span class="p">.</span><span class="n">academic_year</span>
+</code></pre></div>
+<p>The fix is to read the year-end value from
+<code>int_powerschool__gpa_cumulative_year</code> for completed years. The Cumulative GPA
+Monitor is not affected: it reads the year extract.</p>
+<h3 id="honors-courses-read-weighted-points-as-unweighted-this-year">Honors courses read weighted points as unweighted this year</h3>
+<p>Tracked in #5563.</p>
+<p>Stored grades map the <code>KIPP NJ 2024 (5-12) Weighted - Honors</code> scale to its
+unweighted twin by name, but the current-year path maps unweighted scales by id
+in <code>base_powerschool__sections</code>, and only covers the 2016 and 2019 weighted
+scales. Honors courses on the 2024 scale therefore carry weighted points in
+every current-year unweighted GPA: in-progress Y1, projected cumulative, and the
+needed-GPA columns. Scale 1075 tops out at 4.83, so this year's unweighted
+honors GPA can pass 4.33. Stored past years are correct.</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">    </span><span class="n">_dbt_source_project</span><span class="p">,</span>
+<span class="w">    </span><span class="n">academic_year</span><span class="p">,</span>
+<span class="w">    </span><span class="k">count</span><span class="p">(</span><span class="k">distinct</span><span class="w"> </span><span class="n">course_number</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n_courses</span><span class="p">,</span>
+<span class="w">    </span><span class="n">countif</span><span class="p">(</span><span class="n">y1_grade_points</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">y1_grade_points_unweighted</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n_rows_differing</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kipptaf_powerschool</span><span class="p">.</span><span class="n">base_powerschool__final_grades</span><span class="o">`</span>
+<span class="k">where</span><span class="w"> </span><span class="n">courses_gradescaleid_unweighted</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1075</span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">_dbt_source_project</span><span class="p">,</span><span class="w"> </span><span class="n">academic_year</span>
+</code></pre></div>
+<p><code>n_rows_differing</code> reads 0 for every honors course. The mapping change belongs
+with the grade-scale work in #5092, which rewrites the same <code>case</code>.</p>
+<h3 id="some-student-years-drop-from-the-year-extract">Some student-years drop from the year extract</h3>
+<p>The year extract's inner join to the year's primary enrollment includes the
+school, so a year whose grades were stored at another school, and a year with no
+primary enrollment row, drop out. The student's GPA history shows a gap for
+those years. Tracked in #4343.</p>
+<h3 id="duplicate-stored-grades">Duplicate stored grades</h3>
+<p>PowerSchool holds more than one stored grade for some student, course, year, and
+store code, each a real record (#5221). In the course extract they surface as
+duplicate prior-year rows, so its uniqueness test is at warn until the cleanup
+lands (<code>TODO(#3915)</code> in the model's YAML). Count them with:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">    </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="k">count</span><span class="p">(</span>
+<span class="w">        </span><span class="k">distinct</span><span class="w"> </span><span class="n">format</span><span class="p">(</span>
+<span class="w">            </span><span class="s1">'%T|%T|%T|%T|%T|%T'</span><span class="p">,</span>
+<span class="w">            </span><span class="n">_dbt_source_relation</span><span class="p">,</span>
+<span class="w">            </span><span class="n">studentid</span><span class="p">,</span>
+<span class="w">            </span><span class="n">academic_year</span><span class="p">,</span>
+<span class="w">            </span><span class="o">`</span><span class="n">quarter</span><span class="o">`</span><span class="p">,</span>
+<span class="w">            </span><span class="n">course_number</span><span class="p">,</span>
+<span class="w">            </span><span class="n">category_name_code</span>
+<span class="w">        </span><span class="p">)</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n_duplicate_rows</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kipptaf_tableau</span><span class="p">.</span><span class="n">rpt_tableau__student_course_grades</span><span class="o">`</span>
+</code></pre></div>
+<h3 id="failing-count-reads-0-with-no-graded-work">Failing count reads 0 with no graded work</h3>
+<p><code>n_failing_y1</code> sums a flag, so a student with a GPA row but no graded Y1 course
+reads 0 failures instead of unknown. It reaches <code>gpa_n_failing_y1</code> and
+<code>n_failing_y1_prior_quarter</code> on the course extract. The lookbacks already guard
+it. Tracked, with its query, in #5173.</p>
+<h3 id="y1-f-label-is-on-the-wrong-scale">Y1 <code>F*</code> label is on the wrong scale</h3>
+<p>Tracked in #5564.</p>
+<p><code>base_powerschool__final_grades</code> labels a Y1 grade <code>F*</code> when
+<code>y1_percent_grade &lt; 0.500</code>, but that column is on a 0 to 100 scale, so only a Y1
+of 0% gets the label. Other failing Y1 grades read <code>F</code>. Failure counts match
+<code>F%</code>, so they are unaffected; only the label differs from the term grades, where
+<code>F*</code> means below 50%.</p>
+<h3 id="workbook-data-sources-to-confirm-with-walters">Workbook data sources to confirm with Walters</h3>
+<ul>
+<li>The exposure lists <code>rpt_tableau__gpa_cumulative_year</code>, but no tab reads it
+  directly. #5169 records it embedded as its own data source and related into
+  <code>rpt_tableau__student_course_grades+</code>, with no worksheet reading a column from
+  either, and proposes removing both. Once decided, drop it from the exposure or
+  keep it.</li>
+<li>The data source <code>GPA Goals - Y1</code> has no known model behind it. Confirm what it
+  reads and add that model to the exposure.</li>
+<li>Two more exposures read this family: <code>gpa_goals_dashboard</code>
+  (<code>rpt_tableau__gpa_goals</code>) and <code>cumulative_gpa_monitor</code>
+  (<code>rpt_tableau__gpa_goal_progress</code>). Both carry placeholder URLs
+  (<code>TODO(#4581)</code>, <code>TODO(#4619)</code>). Confirm whether they are separate published
+  workbooks or the Health Suite tabs, and retire or fill them.</li>
+</ul>
+<h3 id="smaller-items">Smaller items</h3>
+<ul>
+<li><code>on_pace</code> has no data: <code>is_on_pace</code> and its denominator are nulls pending
+  follow-on work (<code>TODO(#4581)</code>), so an <code>on_pace</code> goal row reads a null rate.</li>
+<li>Miami is out of the goal population until its GPA data is available (#5171).</li>
+<li><code>base_powerschool__sections</code> tests <code>case cou.gradescaleid when null</code>, which
+  never matches, so the blank-scale default that stored grades apply never
+  applies to current-year courses.</li>
+<li>Past-year <code>gpa_term</code> multiplies by stored <code>potentialcrhrs</code> in the numerator
+  but divides by course <code>credit_hours</code> (<code>int_powerschool__gpa_term.sql</code>). Impact
+  not measured; a likely bug where the two differ.</li>
+<li>The singular test <code>int_google_sheets__gpa_goals__every_goal_aggregates</code> and
+  its YAML description say Paterson is excluded from the student metrics. It is
+  not any more; the reasoning (Paterson has no high school, so a Paterson goal
+  matches nobody) still holds. Correct the wording.</li>
+</ul>
+<h3 id="open-work-that-touches-this-family">Open work that touches this family</h3>
+<ul>
+<li>
+<h1 id="5183-names-the-school-on-rpt_tableau__gpa_goals-and-labels-every-rung">5183 names the school on <code>rpt_tableau__gpa_goals</code> and labels every rung.</h1>
+</li>
+<li>
+<h1 id="5140-adds-the-projected-four-year-college-enrollment-goal-beside-the">5140 adds the projected four-year college enrollment goal beside the</h1>
+  cumulative GPA goal.</li>
+<li>
+<h1 id="5092-supports-passfail-courses-without-dropping-them-from-grade-reporting">5092 supports pass/fail courses without dropping them from grade reporting.</h1>
+</li>
+<li>
+<h1 id="4655-adds-a-missing-assignment-count-to-the-course-extract">4655 adds a missing-assignment count to the course extract.</h1>
+</li>
+<li>
+<h1 id="4978-proposes-a-glossary-of-gpa-terms-and-the-high-school-only-weighting">4978 proposes a glossary of GPA terms and the high-school-only weighting</h1>
+  rule.</li>
+<li>
+<h1 id="5169-5174-5190-with-pr-5198-and-pr-5246-are-dashboard-changes-open">5169, #5174, #5190 (with PR #5198), and PR #5246 are dashboard changes: open</h1>
+  decisions on the Academic Health tabs, gaps against the HS GPA monitoring
+  protocol, cards and captions on the Cumulative GPA Monitor, and the landing
+  page.</li>
+</ul>
+<h2 id="the-gradebook-and-gpa-dashboard">The Gradebook and GPA Dashboard</h2>
+<p>The older Tableau workbook, exposure <code>gradebook_and_gpa_dashboard</code>, reads
+<code>rpt_tableau__gradebook_gpa</code> and <code>rpt_tableau__gradebook_gpa_cumulative</code>. The
+Health Suite replaced it. Dagster no longer refreshes its extracts: the exposure
+carries no refresh schedule. Anthony Walters decides when to retire it; retiring
+a model here means disabling it, never deleting it.</p>
+<h2 id="yearly-upkeep">Yearly upkeep</h2>
+<table>
+<thead>
+<tr>
+<th>Who</th>
+<th>Does what</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>The network</td>
+<td>Sets GPA goals and grading policy for the year</td>
+</tr>
+<tr>
+<td>T&amp;L</td>
+<td>Usually sends a grading-policy Google Doc for the next year</td>
+</tr>
+<tr>
+<td>Data team</td>
+<td>Enters goals on the sheet, reads the policy for code changes, checks the tests and dashboard</td>
+</tr>
+<tr>
+<td>Automatic</td>
+<td><code>current_academic_year</code> rolls over in July; sheet edits rebuild staging; Tableau refreshes daily</td>
+</tr>
+</tbody>
+</table>
+<p>Each school year:</p>
+<ol>
+<li><strong>Grading policy.</strong> T&amp;L usually send a grading-policy document for the next
+   year, and it decides whether code changes: term weights, grade scales,
+   failing rules, excluded courses. None exists for this year yet; Walters adds
+   it here when it arrives.</li>
+<li><strong>Goals.</strong> Enter the new year's rows on the goals tab, network rung first,
+   and confirm the four singular tests pass.</li>
+<li><strong>Rollover.</strong> In July <code>current_academic_year</code> moves forward, and the course
+   extract's two-year window, the projection, and the lookbacks move with it.
+   The dashboard keeps opening on the last graded year until new grades post.</li>
+<li><strong>Grade scales.</strong> A new weighted scale in PowerSchool needs its unweighted
+   twin mapped in both <code>stg_powerschool__storedgrades</code> (by name) and
+   <code>base_powerschool__sections</code> (by id), or its unweighted GPA equals the
+   weighted one.</li>
+<li><strong>Regions.</strong> A Paterson high school appears in the course extract and goal
+   metrics on its own, but the year extract lists Newark and Camden by name.
+   Miami returns when #5171 lands.</li>
+</ol>
+<h2 id="owner">Owner</h2>
+<p>The Data Team. Anthony Walters owns the Academic &amp; Gradebook Health Suite and
+this model family; questions about the dashboard or the goals go to him.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

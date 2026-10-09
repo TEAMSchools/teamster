@@ -1,0 +1,3578 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+        <link rel="prev" href="../cube-access-individual-exceptions/">
+      
+      
+        <link rel="next" href="../../troubleshooting/dagster/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Tableau Permissions (People Data) - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#tableau-permissions-people-data-dashboards" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Tableau Permissions (People Data)
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../models/fresh-dashboard-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../launch-page-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Launch Page
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cube-access-individual-exceptions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube Access - Individual Exceptions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tableau Permissions (People Data)
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tableau Permissions (People Data)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#part-1-behavior-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Part 1 — Behavior reference
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Part 1 — Behavior reference">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-five-ways-you-can-be-shown-a-row" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The five ways you can be shown a row
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-central-office-can-and-cannot-see" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What central office can and cannot see
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#senior-leaders-are-shielded-further" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Senior leaders are shielded further
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#senior-leaders-stipends-are-shielded-wider" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Senior leaders' stipends are shielded wider
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#where-a-workbook-differs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where a workbook differs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-intent-to-return-survey-is-different" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Intent to Return survey is different
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The Intent to Return survey is different">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#if-you-answered-who-sees-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        If you answered, who sees it
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#if-you-are-a-viewer-what-you-see" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        If you are a viewer, what you see
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#three-limits-worth-knowing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Three limits worth knowing
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-support-surveys-are-scoped-by-the-department-being-rated" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The support surveys are scoped by the department being rated
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The support surveys are scoped by the department being rated">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-department-groups" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The department groups
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-walkthrough-sheets-scope-by-the-school-walked" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The walkthrough sheets scope by the school walked
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rooms-do-not-grant-access" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rooms do not grant access
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#no-by-name-grants" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        No by-name grants
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#group-names" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Group names
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Group names">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#your-entity-everyone-has-one" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Your entity — everyone has one
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#your-school" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Your school
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#your-role-needed-for-route-5-on-top-of-entity-and-school" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Your role — needed for route 5, on top of entity and school
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#paterson-wide-remits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Paterson-wide remits
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#regional-operations-and-leadership" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Regional operations and leadership
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#network-wide-functional-groups" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Network-wide functional groups
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-2-what-the-fields-are" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Part 2 — What the fields are
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Part 2 — What the fields are">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-five-fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The five fields
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-gated-workbooks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The gated workbooks
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#related" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Related
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/fresh-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FRESH Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/carat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CARAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/csgf-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CSGF Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/crdc-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CRDC Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/ddi-stack-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DDI Stack Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/hs-early-warning-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HS Early Warning Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/dibels-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DIBELS Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/stat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/njdoe-universal-screener-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NJDOE Universal Screener Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/athletic-eligibility-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Athletic Eligibility Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/academic-health-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Academic Health Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/grad-plan-tracking-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Grad Plan Tracking Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/ignite-r2i-extract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IGNITE R2I Extract
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#part-1-behavior-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Part 1 — Behavior reference
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Part 1 — Behavior reference">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-five-ways-you-can-be-shown-a-row" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The five ways you can be shown a row
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-central-office-can-and-cannot-see" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What central office can and cannot see
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#senior-leaders-are-shielded-further" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Senior leaders are shielded further
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#senior-leaders-stipends-are-shielded-wider" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Senior leaders' stipends are shielded wider
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#where-a-workbook-differs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where a workbook differs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-intent-to-return-survey-is-different" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Intent to Return survey is different
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The Intent to Return survey is different">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#if-you-answered-who-sees-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        If you answered, who sees it
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#if-you-are-a-viewer-what-you-see" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        If you are a viewer, what you see
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#three-limits-worth-knowing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Three limits worth knowing
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-support-surveys-are-scoped-by-the-department-being-rated" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The support surveys are scoped by the department being rated
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The support surveys are scoped by the department being rated">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-department-groups" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The department groups
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-walkthrough-sheets-scope-by-the-school-walked" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The walkthrough sheets scope by the school walked
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rooms-do-not-grant-access" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rooms do not grant access
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#no-by-name-grants" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        No by-name grants
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#group-names" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Group names
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Group names">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#your-entity-everyone-has-one" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Your entity — everyone has one
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#your-school" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Your school
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#your-role-needed-for-route-5-on-top-of-entity-and-school" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Your role — needed for route 5, on top of entity and school
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#paterson-wide-remits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Paterson-wide remits
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#regional-operations-and-leadership" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Regional operations and leadership
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#network-wide-functional-groups" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Network-wide functional groups
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-2-what-the-fields-are" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Part 2 — What the fields are
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Part 2 — What the fields are">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-five-fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The five fields
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-gated-workbooks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The gated workbooks
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#related" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Related
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/guides/tableau-permissions.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="tableau-permissions-people-data-dashboards">Tableau Permissions — People Data Dashboards</h1>
+<p>The Tableau developer reference for row-level security on the dashboards built
+from <strong>people data</strong> — staff surveys, observations, coaching, compensation, and
+operations walkthroughs. It records exactly who can see whose data, and how the
+workbooks implement it.</p>
+<p><strong>Staff asking what they can see, or how to get access, belong on the help
+center article instead:</strong>
+<a href="https://teamschools.zendesk.com/hc/en-us/articles/360009686434">How to access Tableau</a>.
+It carries the plain-language version of Part 1 and the request steps. When
+behavior changes, update both.</p>
+<p>Student-data dashboards are <strong>not</strong> governed by this page. The nine workbooks
+listed in Part 2 are the full scope: every row in each of them is about a member
+of staff.</p>
+<p><strong>Part 1</strong> is the behavior reference: the routes, the per-workbook differences,
+and the exact group names. <strong>Part 2</strong> describes the field structure and points
+at the build reference.</p>
+<p><strong>Status: live</strong> on nine workbooks, listed in Part 2. Last checked against the
+calculations in the published workbooks on 2026-09-29.</p>
+<hr />
+<h2 id="part-1-behavior-reference">Part 1 — Behavior reference</h2>
+<p>Access is decided <strong>per row</strong>, from the viewer's Tableau group membership, never
+from their job title or roster row. So access changes by changing a group, with
+no workbook edit.</p>
+<h3 id="the-five-ways-you-can-be-shown-a-row">The five ways you can be shown a row</h3>
+<p>You see a row if <strong>any one</strong> of these is true. They are additive.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Route</th>
+<th>You see</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><strong>You, or your manager</strong></td>
+<td>Your own row. Your direct reports' rows.</td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong>A network-wide group</strong></td>
+<td>Everything, for a small number of functional groups such as the data team and Employee Relations.</td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>Regional operations</strong></td>
+<td>Your region's rows, if you are in a regional ops group.</td>
+</tr>
+<tr>
+<td>4</td>
+<td><strong>Regional leadership</strong></td>
+<td>Your region's rows, if you are a regional leader.</td>
+</tr>
+<tr>
+<td>5</td>
+<td><strong>Your school</strong></td>
+<td>Your school's rows, if you are in that school's staff group <em>and</em> hold a role that permits it.</td>
+</tr>
+</tbody>
+</table>
+<p>Route 5 needs all three of the right entity, the right school, and a qualifying
+role. Missing any one of them means no access by that route. On most workbooks
+an assistant principal's route 5 reaches only the teachers and learning
+specialists at their school, not every row there.</p>
+<p>Most workbooks follow these five routes exactly. The ones that do not are listed
+under <em>Where a workbook differs</em>.</p>
+<div class="admonition note">
+<p class="admonition-title">A sixth route exists for one named group</p>
+<p><code>Paterson TEAM Staff</code> reaches both Paterson Prep schools' rows directly,
+without the three-part route-5 test. Membership of the group is itself the
+qualification, and it is scoped to the same rows a school leader or director
+of school operations at those schools would see.</p>
+<p>It works this way because the remit spans both Paterson schools rather than
+sitting at one of them. It is the only group scoped like this; everyone else
+goes through routes 1 to 5.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Route 3 does not currently reach Paterson</p>
+<p>The regional operations route names TEAM and KIPP Cooper Norcross for NJ, and
+Miami for Miami. Paterson appears in the entity and school routes but not in
+route 3, so NJ regional ops staff do not reach Paterson rows by that route.
+Whether Paterson joins the NJ group or gets its own is an open decision.</p>
+</div>
+<h3 id="what-central-office-can-and-cannot-see">What central office can and cannot see</h3>
+<p>Central office (KTAF) staff have <strong>oversight of the regions, not of each
+other</strong>.</p>
+<p>Being in the central office group grants visibility into TEAM, KIPP Cooper
+Norcross, KIPP Miami, and KIPP Paterson rows. It does <strong>not</strong> grant visibility
+into other central office rows. Those are reachable only by being the person
+themselves, being their direct manager, or belonging to one of the network-wide
+groups in route 2.</p>
+<div class="admonition note">
+<p class="admonition-title">A known consequence</p>
+<p>A central office director does not see their reports' reports. Route 1 covers
+only the <em>direct</em> manager. This is accepted rather than accidental — the
+reasoning is in the design spec linked at the end of this page.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">The exception: Survey Dashboard completion tracking</p>
+<p>On the completion tracking sheets the central office group sees every row in
+every region, other central office staff included. This is deliberate.</p>
+<p>The support sheets start from the same grant but limit central office staff
+to the questions about their own department. See <em>The support surveys are
+scoped by the department being rated</em>.</p>
+</div>
+<h3 id="senior-leaders-are-shielded-further">Senior leaders are shielded further</h3>
+<p>On Manager Survey Reports, Manager Survey Rollup and Leadership Development,
+rows about chief-level staff are hidden from TEAM Council. Most chiefs sit on
+TEAM Council, so this is what stops them seeing each other's rows. The rows stay
+visible to the person, their manager, and the data, Employee Relations and
+Leadership Development groups. A central office chief's row is outside the
+regional routes already, so those are the only people who see it.</p>
+<p>Seniority is read from the ADP job function rather than from job title text, so
+a newly created senior title is covered automatically without anyone editing a
+workbook.</p>
+<p>Where the job function is missing, a job-title fallback applies instead: chief
+titles, president, and executive director. The job function is missing on most
+historical rows, so the fallback does the work on older data rather than being a
+rare edge case. It is deliberately a shade broader than the job function itself,
+which places executive directors and deputy chiefs one tier below chief level.</p>
+<h3 id="senior-leaders-stipends-are-shielded-wider">Senior leaders' stipends are shielded wider</h3>
+<p>The Stipend and Bonus Dashboard hides a larger group, from more routes. Stipends
+paid to anyone whose job function is chief level, "EDs, HOSs, MDOs", or "KTAF or
+Regional Managing Director" are hidden from TEAM Council, regional operations,
+regional leadership and school-based viewers.</p>
+<p>They stay visible to the person, their manager, and the data and Employee
+Relations groups, which process payments. Where the job function is missing,
+titles containing chief, president, managing director, head of schools or
+executive director count instead.</p>
+<h3 id="where-a-workbook-differs">Where a workbook differs</h3>
+<table>
+<thead>
+<tr>
+<th>Workbook</th>
+<th>Difference from the five routes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Coaching Conversation Tool</td>
+<td>You see your own observations only once they are released: a score form once it is locked, other observations once the coaching-conversation window opens. Observations outside a tracked cycle show straight away. Your manager sees them immediately.</td>
+</tr>
+<tr>
+<td>SchoolMint Grow Dashboard</td>
+<td>Route 1 is your manager only. Your own observations are in the Coaching Conversation Tool. The norming sheets widen route 4: school leaders see their whole region on every norming sheet, and APs and DSOs see their region on the summary norming sheets. On the norming sheets that name individual teachers, APs and DSOs stay at their own school.</td>
+</tr>
+<tr>
+<td>Survey Dashboard</td>
+<td>Three gates, one each for Intent to Return, the support surveys and completion tracking. Intent to Return has its own section below. Support and completion tracking have no route 1, grant central office every region (limited to their own department on the support sheets), and add region-wide access for Teaching and Learning, Technology, School Support Directors and Special Education Directors. APs see every row at their school.</td>
+</tr>
+<tr>
+<td>Operations Systems</td>
+<td>The performance-management sheets follow the five routes, but APs do not qualify for route 5. The walkthrough sheets work differently; see <em>The walkthrough sheets scope by the school walked</em>.</td>
+</tr>
+<tr>
+<td>Stipend and Bonus Dashboard</td>
+<td>The stipend shield above. The HR download sheets are narrower still: only the data and Employee Relations groups see them.</td>
+</tr>
+<tr>
+<td>Miami Instructional Rubrics</td>
+<td>New Teacher Development sees everything. NTN coordinators qualify for route 5 alongside school leaders, DSOs and APs.</td>
+</tr>
+<tr>
+<td>Personalized Survey Links</td>
+<td>Your own link only. Nobody else sees it, including your manager.</td>
+</tr>
+<tr>
+<td>Leadership Development (archived)</td>
+<td>Only school leaders qualify for route 5.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="the-intent-to-return-survey-is-different">The Intent to Return survey is different</h3>
+<p>Intent to Return answers reach fewer people than anything else on Tableau, and
+who they reach depends on your own level. <strong>Nobody at your own level ever sees
+them.</strong> This is the most complicated gate in the network, so it is worth reading
+from both sides.</p>
+<h4 id="if-you-answered-who-sees-it">If you answered, who sees it</h4>
+<table>
+<thead>
+<tr>
+<th>If you are</th>
+<th>Your answers reach</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A teacher or learning specialist</td>
+<td>Your manager, your school's assistant principals, your school leader and director of school operations, your regional leadership, and the Employee Relations, Recruiting and Leadership Development teams</td>
+</tr>
+<tr>
+<td>An assistant school leader</td>
+<td>Your manager, your school leader and director of school operations, your regional leadership, and those three teams — <strong>not</strong> other assistant principals</td>
+</tr>
+<tr>
+<td>A school leader or director of school operations</td>
+<td>Your manager, your regional leadership, and those three teams — <strong>not</strong> other school leaders or DSOs</td>
+</tr>
+<tr>
+<td>A departmental director</td>
+<td>Your manager, your region's senior leadership, and those three teams — <strong>not</strong> other directors in your department</td>
+</tr>
+<tr>
+<td>Regional leadership</td>
+<td>Your manager and those three teams — <strong>not</strong> other regional leaders</td>
+</tr>
+<tr>
+<td>Central office staff</td>
+<td>Your manager and those three teams. No regional leader sees central office answers</td>
+</tr>
+</tbody>
+</table>
+<p>Two audiences are on every row above and are easy to miss. <strong>The data team</strong>
+administers the survey and reaches every response. <strong>TEAM Council</strong> reaches
+every response too, with one exception — answers from chief-level staff, which
+it does not see.</p>
+<h4 id="if-you-are-a-viewer-what-you-see">If you are a viewer, what you see</h4>
+<p>Eight routes, and the peer exclusion differs on each because "your own level"
+means something different depending on where you sit.</p>
+<table>
+<thead>
+<tr>
+<th>Route</th>
+<th>Who</th>
+<th>Reaches</th>
+<th>Minus</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>You, and the manager recorded on the response</td>
+<td>that response</td>
+<td>nothing — you see your own answers, and your manager sees yours, even when you are both director-rank</td>
+</tr>
+<tr>
+<td>2</td>
+<td>The administrators of the process — the Data, Employee Relations, Recruiting, and Leadership Development teams</td>
+<td>everything, network-wide</td>
+<td>nothing</td>
+</tr>
+<tr>
+<td>3a</td>
+<td>Managing directors of school operations, heads of schools, managing directors of operations</td>
+<td>your region</td>
+<td>regional-leadership respondents. Directors stay visible — you sit above them</td>
+</tr>
+<tr>
+<td>3b</td>
+<td>The Syndicate</td>
+<td>your region</td>
+<td>regional leadership, and director-rank peers — <strong>except</strong> school operations directors, who are your own line of report</td>
+</tr>
+<tr>
+<td>3c</td>
+<td>School Support Directors</td>
+<td>your region</td>
+<td>regional leadership, and every director rank</td>
+</tr>
+<tr>
+<td>4</td>
+<td>School leaders and directors of school operations</td>
+<td>your school</td>
+<td>each other</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Assistant principals</td>
+<td>teachers and learning specialists at your school</td>
+<td>everyone else at that school</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Special Education Directors, KIPP Forward Directors</td>
+<td>your own department, in your own region</td>
+<td>director-rank peers. Associate directors stay visible</td>
+</tr>
+<tr>
+<td>7</td>
+<td>TEAM Council</td>
+<td>everyone, network-wide</td>
+<td>chief-level respondents</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Paterson TEAM Staff</td>
+<td>both Paterson Prep schools</td>
+<td>school leadership, the same people a Paterson school leader cannot see</td>
+</tr>
+</tbody>
+</table>
+<p>Routes 3a, 3b and 3c look redundant and are not. They are three groups sitting
+at three different heights, so one shared exclusion would hide the wrong people:
+a managing director should still see their directors, while a Syndicate member
+should not see director-rank peers — but should still see the school operations
+directors who report to them.</p>
+<p>Roles in training are treated as the level they are developing into, not the
+level above: a school leader in residence, a school operations fellow and an
+associate director of school operations are all visible to their school's
+leadership, the same as an assistant school leader is.</p>
+<p>Two further protections apply to everyone. A manager who changes roles does not
+keep access to your older answers, and a new manager does not gain access to
+answers you gave before they managed you. And the free-text boxes carry the same
+restriction as the rest — there is no wider audience for comments.</p>
+<div class="admonition warning">
+<p class="admonition-title">Peer exclusions match the title you held when you answered</p>
+<p>Every attribute on a survey response is a snapshot from the moment it was
+given, while Tableau group membership is always current. So a school leader
+sees three years of their school's answers, including their predecessor's
+staff — and someone who changes schools leaves their old answers with the old
+school's leadership.</p>
+</div>
+<h4 id="three-limits-worth-knowing">Three limits worth knowing</h4>
+<p>These are accepted, not undiscovered. Each is a place the gate is approximate.</p>
+<ul>
+<li><strong>The TEAM Council shield hides chief-level titles, not council membership.</strong>
+  Tableau can only ask which groups the <em>viewer</em> belongs to, never the
+  respondent, so route 7's exclusion has to be inferred from job title. A
+  council member whose title is senior but not chief level therefore stays
+  visible to fellow members.</li>
+<li><strong>Miami's KIPP Forward staff have no departmental viewer.</strong> Route 6 is scoped
+  by region, and Miami has KIPP Forward respondents but no KIPP Forward director
+  of its own, so those answers reach only their manager and the route-2 teams.</li>
+<li><strong>Two titles cannot be ranked from text.</strong> Bare <code>Fellow</code> and bare <code>Director</code>
+  say nothing about seniority on their own, so the peer exclusions cannot place
+  them. <a href="https://github.com/TEAMSchools/teamster/issues/4631">#4631</a> replaces
+  every title test with a job-function code and removes this whole class of
+  guesswork.</li>
+</ul>
+<h3 id="the-support-surveys-are-scoped-by-the-department-being-rated">The support surveys are scoped by the department being rated</h3>
+<p>The Survey Dashboard's support sheets ask staff to rate how well a central
+office department supports them. Each of those questions is tagged with the
+department it rates. What you see depends on where you sit.</p>
+<table>
+<thead>
+<tr>
+<th>You are</th>
+<th>You see</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>School-based leadership — school leader, DSO, AP, or <code>Paterson TEAM Staff</code></td>
+<td>Every question, every department, for your own school</td>
+</tr>
+<tr>
+<td>Regional staff outside central office — regional ops, AcOps, School Support Directors, Special Education Directors, regional Technology</td>
+<td>Your own department's questions, for your region. Nothing else — not the questions that rate no department</td>
+</tr>
+<tr>
+<td>Central office staff</td>
+<td>Your own department's questions, from every region. Nothing else — not the questions that rate no department</td>
+</tr>
+</tbody>
+</table>
+<p>For regional and central office staff, the department test applies <strong>on top of</strong>
+entity, region and school. Belonging to the Operations group does not show you
+Operations feedback from a region you cannot otherwise reach — both tests have
+to pass. The central office group passes the entity, region and school tests for
+every row, so for central office staff the department is the only thing that
+narrows. Anyone outside school-based leadership who is in no department group
+sees nothing on these sheets.</p>
+<p>Four groups see every department regardless: the data team, TEAM Council,
+managing directors of school operations, and heads of schools. The last two sit
+across departments, so scoping them to one would hide most of what they oversee.
+On these sheets TEAM Council is <code>KNJ-SG-Tableau TC</code>, not the <code>Group Staff TC</code>
+group the other workbooks use.</p>
+<h4 id="the-department-groups">The department groups</h4>
+<p>For central office and regional staff: ask for the one matching the department
+whose feedback you need to read. School-based leadership does not need one.</p>
+<table>
+<thead>
+<tr>
+<th>Department rated</th>
+<th>Group</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Compliance</td>
+<td><code>KNJ-SG-Tableau All Compliance</code></td>
+</tr>
+<tr>
+<td>Data</td>
+<td><code>KNJ-SG-Tableau All Data</code></td>
+</tr>
+<tr>
+<td>Development</td>
+<td><code>TS-DL-Advancement</code></td>
+</tr>
+<tr>
+<td>Finance, including Purchasing</td>
+<td><code>TS-SG-R9 Finance</code> or <code>TS-SG-R9 Purchasing</code></td>
+</tr>
+<tr>
+<td>Human Resources - Employee Relations</td>
+<td><code>Group Staff Employee Relations</code></td>
+</tr>
+<tr>
+<td>Leadership Development</td>
+<td><code>KNJ-SG-Tableau All Leadership Development</code></td>
+</tr>
+<tr>
+<td>Marketing, Comms and Enrollment</td>
+<td><code>KNJ-SG-Tableau All Marketing Comms and Enrollment</code></td>
+</tr>
+<tr>
+<td>Operations</td>
+<td><code>KNJ-SG-Tableau All Operations</code></td>
+</tr>
+<tr>
+<td>Real Estate and Facilities</td>
+<td><code>TS-SG-R9 Facilities</code></td>
+</tr>
+<tr>
+<td>Special Education</td>
+<td><code>KNJ-SG-Tableau Special Education Directors</code></td>
+</tr>
+<tr>
+<td>Talent Acquisition</td>
+<td><code>KNJ-SG-Tableau All Recruiting</code></td>
+</tr>
+<tr>
+<td>Teacher Development</td>
+<td><code>KNJ-SG-Tableau All New Teacher Development</code></td>
+</tr>
+<tr>
+<td>Teaching and Learning</td>
+<td><code>KNJ-SG-Tableau All T&amp;L</code></td>
+</tr>
+<tr>
+<td>Technology</td>
+<td><code>TS-SG-R9 Technology</code></td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="admonition-title">Questions that rate no department</p>
+<p>Some questions rate the organisation rather than a department — whether your
+region is headed in the right direction, and the free-text boxes asking for
+any other feedback. Those carry no department, so nobody who is scoped by
+department sees them. They reach only school-based leadership, for their own
+school, and the four groups above that see every department.</p>
+</div>
+<p>!!! warning "The support sheets do not show respondent names, and that is not
+the same as anonymous"</p>
+<pre><code>The department gate drops the respondent-name question from every support
+sheet, so none of them displays a respondent's name. Treat that as the
+normal reading experience rather than as a guarantee, because two things sit
+outside it.
+
+The underlying data still carries the name, along with employee number and
+email. Tableau has no way to hide a column from someone who can download the
+data or edit the workbook on the web, so those two permissions reach it
+whatever any sheet shows. Web editing also lets a person take the permission
+filter off a sheet, which is why that permission is the one worth being
+careful with.
+
+And a respondent can name themselves inside their own free-text answer.
+Nothing in the permissions model can strip that. Anyone who can reach the
+row can read the words in it.
+</code></pre>
+<h3 id="the-walkthrough-sheets-scope-by-the-school-walked">The walkthrough sheets scope by the school walked</h3>
+<p>On Operations Systems, a row from the Operations EKG walkthrough form is about
+<strong>the school that was walked</strong>, not about the person who filled the form in. So
+school leaders and DSOs see their own school's walkthroughs regardless of who
+carried them out — and they do not see walkthroughs they carried out at other
+schools.</p>
+<p>The broader operations groups — the data team, TEAM Council, managing directors
+and the Syndicate — see every region here on purpose, because walkthroughs are a
+cross-regional practice.</p>
+<h3 id="rooms-do-not-grant-access">Rooms do not grant access</h3>
+<p>Working in a Room — the office locations rather than a school — does not grant
+visibility of that Room's occupants. Room-based staff reach data through the
+network-wide and regional-leadership routes instead.</p>
+<p>This matters because Rooms are shared: Room 9 has occupants from more than one
+entity, so treating a Room like a school would hand people access across entity
+lines.</p>
+<h3 id="no-by-name-grants">No by-name grants</h3>
+<p>Individual, by-name grants inside a workbook are <strong>not permitted</strong>. They are
+invisible to anyone auditing group membership, and they survive the person
+changing roles. Grant access by group only. One by-name grant is still live, on
+the Stipend and Bonus Dashboard's HR download sheets, and is tracked for removal
+in the playbook linked in Part 2.</p>
+<h3 id="group-names">Group names</h3>
+<p>These are the exact names the calculations test. <code>ISMEMBEROF</code> against a name
+that does not exist cannot fail loudly: the branch never matches, so the viewer
+sees nothing and there is no error to chase. Check a new name against the
+Tableau site's group list before putting it in a calculation.</p>
+<h4 id="your-entity-everyone-has-one">Your entity — everyone has one</h4>
+<table>
+<thead>
+<tr>
+<th>Entity</th>
+<th>Group</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TEAM (Newark)</td>
+<td><code>KNJ-SG-Tableau All Staff TEAM Schools</code></td>
+</tr>
+<tr>
+<td>KIPP Cooper Norcross (Camden)</td>
+<td><code>KNJ-SG-Tableau All Staff KCNA</code></td>
+</tr>
+<tr>
+<td>KIPP Miami</td>
+<td><code>KNJ-SG-Tableau All Staff MIA</code></td>
+</tr>
+<tr>
+<td>KIPP Paterson</td>
+<td><code>KNJ-SG-Tableau All Staff Paterson</code></td>
+</tr>
+<tr>
+<td>Central office</td>
+<td><code>KNJ-SG-Tableau All Staff KTAF</code></td>
+</tr>
+</tbody>
+</table>
+<h4 id="your-school">Your school</h4>
+<p>The rule is <code>KNJ-SG-Tableau All Staff</code> followed by the school name — <strong>with
+five exceptions where the group kept an older name</strong>. Ask for the group in the
+right column, not the name in the left.</p>
+<table>
+<thead>
+<tr>
+<th>School</th>
+<th>Group</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>KIPP BOLD Academy</td>
+<td><code>KNJ-SG-Tableau All Staff KIPP BOLD Academy</code></td>
+</tr>
+<tr>
+<td>KIPP Cooper Norcross High</td>
+<td><code>KNJ-SG-Tableau All Staff KIPP Cooper Norcross High</code></td>
+</tr>
+<tr>
+<td>KIPP Courage Academy</td>
+<td><code>KNJ-SG-Tableau All Staff KIPP Courage Academy</code></td>
+</tr>
+<tr>
+<td>KIPP Hatch Middle</td>
+<td><code>KNJ-SG-Tableau All Staff KIPP Hatch Academy</code></td>
+</tr>
+<tr>
+<td>KIPP Justice Academy</td>
+<td><code>KNJ-SG-Tableau All Staff KIPP Justice Academy</code></td>
+</tr>
+<tr>
+<td>KIPP Lanning Square Middle</td>
+<td><code>KNJ-SG-Tableau All Staff KIPP Lanning Square Middle</code></td>
+</tr>
+<tr>
+<td>KIPP Lanning Square Primary</td>
+<td><code>KNJ-SG-Tableau All Staff KIPP Lanning Square Primary</code></td>
+</tr>
+<tr>
+<td>KIPP Legacy Elementary</td>
+<td><code>KNJ-SG-Tableau All Staff KIPP Legacy Elementary</code></td>
+</tr>
+<tr>
+<td>KIPP Legacy Middle</td>
+<td><code>KNJ-SG-Tableau All Staff KIPP Legacy Middle</code></td>
+</tr>
+<tr>
+<td>KIPP Life Academy</td>
+<td><code>KNJ-SG-Tableau All Staff KIPP Life Academy</code></td>
+</tr>
+<tr>
+<td>KIPP Miami - North Campus</td>
+<td><code>KNJ-SG-Tableau All Staff KIPP Miami - North Campus</code></td>
+</tr>
+<tr>
+<td>KIPP Miami - Poinciana Campus</td>
+<td><code>KNJ-SG-Tableau All Staff Poinciana Campus</code></td>
+</tr>
+<tr>
+<td>KIPP Miami Technical High</td>
+<td><code>KNJ-SG-Tableau All Staff KIPP Miami Technical High</code></td>
+</tr>
+<tr>
+<td>KIPP Newark Collegiate Academy</td>
+<td><code>KNJ-SG-Tableau All Staff KIPP Newark Collegiate Academy</code></td>
+</tr>
+<tr>
+<td>KIPP Newark Lab High School</td>
+<td><code>KNJ-SG-Tableau All Staff KIPP Newark Lab High School</code></td>
+</tr>
+<tr>
+<td>KIPP Purpose Academy</td>
+<td><code>KNJ-SG-Tableau All Staff KIPP Purpose Academy</code></td>
+</tr>
+<tr>
+<td>KIPP Rise Academy</td>
+<td><code>KNJ-SG-Tableau All Staff KIPP Rise Academy</code></td>
+</tr>
+<tr>
+<td>KIPP Royalty Academy</td>
+<td><code>KNJ-SG-Tableau All Staff KIPP Royalty Academy</code></td>
+</tr>
+<tr>
+<td>KIPP SPARK Academy</td>
+<td><code>KNJ-SG-Tableau All Staff KIPP SPARK Academy</code></td>
+</tr>
+<tr>
+<td>KIPP Seek Academy</td>
+<td><code>KNJ-SG-Tableau All Staff KIPP Seek Academy</code></td>
+</tr>
+<tr>
+<td>KIPP Sumner Elementary</td>
+<td><code>KNJ-SG-Tableau All Staff KIPP Sumner Academy</code></td>
+</tr>
+<tr>
+<td>KIPP TEAM Academy</td>
+<td><code>KNJ-SG-Tableau All Staff KIPP TEAM Academy</code></td>
+</tr>
+<tr>
+<td>KIPP THRIVE Academy</td>
+<td><code>KNJ-SG-Tableau All Staff KIPP THRIVE Academy</code></td>
+</tr>
+<tr>
+<td>KIPP Upper Roseville Academy</td>
+<td><code>KNJ-SG-Tableau All Staff KIPP Upper Roseville Academy</code></td>
+</tr>
+<tr>
+<td>Paterson Prep Elementary School</td>
+<td><code>KNJ-SG-Tableau All Staff KIPP Paterson Prep Elementary</code></td>
+</tr>
+<tr>
+<td>Paterson Prep Middle School</td>
+<td><code>KNJ-SG-Tableau All Staff KIPP Paterson Prep Middle</code></td>
+</tr>
+</tbody>
+</table>
+<p>The five where the names differ are Hatch, Poinciana, Sumner, and both Paterson
+Prep schools.</p>
+<p>Rooms are deliberately absent — see <em>Rooms do not grant access</em>.</p>
+<h4 id="your-role-needed-for-route-5-on-top-of-entity-and-school">Your role — needed for route 5, on top of entity and school</h4>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>Group</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>School leader</td>
+<td><code>KNJ-SG-Tableau All SL</code></td>
+</tr>
+<tr>
+<td>Director of school operations</td>
+<td><code>KNJ-SG-Tableau All DSO</code></td>
+</tr>
+<tr>
+<td>Assistant principal</td>
+<td><code>KNJ-SG-Tableau All AP</code></td>
+</tr>
+<tr>
+<td>NTN coordinator</td>
+<td><code>TS-DL-NTN Coordinators</code></td>
+</tr>
+</tbody>
+</table>
+<p>The NTN coordinator group qualifies on Miami Instructional Rubrics only. Which
+roles qualify on the other workbooks is in <em>Where a workbook differs</em>.</p>
+<h4 id="paterson-wide-remits">Paterson-wide remits</h4>
+<table>
+<thead>
+<tr>
+<th>Who</th>
+<th>Group</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>School-leader-equivalent across both Paterson Prep schools</td>
+<td><code>Paterson TEAM Staff</code></td>
+</tr>
+</tbody>
+</table>
+<p>This one grants on its own — no entity or school group is needed alongside it,
+because the two Paterson Prep locations belong to KIPP Paterson and nobody else.
+Note it has no <code>KNJ-SG-Tableau</code> prefix; that is the real name.</p>
+<h4 id="regional-operations-and-leadership">Regional operations and leadership</h4>
+<table>
+<thead>
+<tr>
+<th>Who</th>
+<th>Group</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>NJ regional operations</td>
+<td><code>Group Staff NJ Regional</code></td>
+</tr>
+<tr>
+<td>Miami regional operations</td>
+<td><code>Group Staff MIA Regional</code></td>
+</tr>
+<tr>
+<td>Managing director of school operations</td>
+<td><code>KNJ-SG-Tableau All MDSO</code></td>
+</tr>
+<tr>
+<td>Head of schools</td>
+<td><code>KNJ-SG-Tableau All HOS</code></td>
+</tr>
+<tr>
+<td>Managing director of operations</td>
+<td><code>KNJ-SG-Tableau All MDO</code></td>
+</tr>
+<tr>
+<td>Academic operations</td>
+<td><code>KNJ-SG-Tableau AcOps</code></td>
+</tr>
+<tr>
+<td>The Syndicate</td>
+<td><code>KNJ-SG-Tableau The Syndicate</code></td>
+</tr>
+<tr>
+<td>School support directors</td>
+<td><code>KNJ-SG-Tableau School Support Directors</code></td>
+</tr>
+<tr>
+<td>Special education directors</td>
+<td><code>KNJ-SG-Tableau Special Education Directors</code></td>
+</tr>
+<tr>
+<td>KIPP Forward directors</td>
+<td><code>KNJ-SG-Tableau KIPP Forward Directors</code></td>
+</tr>
+<tr>
+<td>Teaching and Learning</td>
+<td><code>KNJ-SG-Tableau All T&amp;L</code></td>
+</tr>
+<tr>
+<td>Technology</td>
+<td><code>TS-SG-R9 Technology</code></td>
+</tr>
+</tbody>
+</table>
+<p>The last two are region-wide on the Survey Dashboard's support and completion
+sheets only, and both also rate as a department on the support sheets.
+<code>KNJ-SG-Tableau All T&amp;L</code> matches the roster's Teaching and Learning department
+exactly. Use it rather than <code>NJ Teaching and Learning</code> or <code>Teaching &amp; Learning</code>,
+which cover only part of the department.</p>
+<h4 id="network-wide-functional-groups">Network-wide functional groups</h4>
+<p>These grant broadly and are not added on request from an individual — they
+follow from the function you sit in.</p>
+<table>
+<thead>
+<tr>
+<th>Group</th>
+<th>Sees everything on</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>KNJ-SG-Tableau All Data</code></td>
+<td>every workbook except Personalized Survey Links</td>
+</tr>
+<tr>
+<td><code>Group Staff Employee Relations</code></td>
+<td>every workbook except Operations Systems, Personalized Survey Links, and the Survey Dashboard's support and completion sheets</td>
+</tr>
+<tr>
+<td><code>Leadership Development</code></td>
+<td>Manager Survey Reports and Rollup, Coaching Conversation Tool, SchoolMint Grow, Miami Instructional Rubrics, Intent to Return</td>
+</tr>
+<tr>
+<td><code>Group Staff TC</code> (TEAM Council)</td>
+<td>most workbooks; see the senior-leader and stipend shields</td>
+</tr>
+<tr>
+<td><code>KNJ-SG-Tableau TC</code> (TEAM Council)</td>
+<td>the Survey Dashboard's support and completion sheets</td>
+</tr>
+<tr>
+<td><code>KNJ-SG-Tableau All Recruiting</code></td>
+<td>Intent to Return</td>
+</tr>
+<tr>
+<td><code>KNJ-SG-Tableau All New Teacher Development</code></td>
+<td>Miami Instructional Rubrics</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="admonition-title">Not every workbook grants every group</p>
+<p>The network-wide list above is the one tier that legitimately differs per
+workbook, so membership of one of these does not guarantee access to all nine.
+The entity and school groups behave the same way everywhere.</p>
+</div>
+<hr />
+<h2 id="part-2-what-the-fields-are">Part 2 — What the fields are</h2>
+<p>Row-level security is implemented as Tableau calculated fields inside each
+workbook. This section is enough to read a workbook and know what you are
+looking at. It is not enough to build one.</p>
+<p><strong>To build, repair, or audit a workbook, use the playbook</strong> —
+<code>docs/superpowers/plans/2026-07-31-tableau-workbook-remediation.md</code>. It carries
+the paste-ready text of every field, the order to create them in, how to resolve
+field names, where to attach the filter, the per-workbook variants, the
+verification personas, and the outstanding work. Calc text lives only there, not
+on this page. The playbook can still fall behind the workbooks: where the two
+disagree, the published workbook is what runs, so audit from its <code>.twbx</code>.</p>
+<h3 id="the-five-fields">The five fields</h3>
+<p>Four are needed in every gated workbook; the fifth only where senior leaders are
+shielded from each other.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Answers</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>RLS - Entity Gate</code></td>
+<td>Is the viewer in the staff group for this row's entity?</td>
+</tr>
+<tr>
+<td><code>RLS - Location Gate</code></td>
+<td>Is the viewer in the staff group for this row's location?</td>
+</tr>
+<tr>
+<td><code>RLS - Role Gate</code></td>
+<td>Does the viewer hold a role that may see school-based rows?</td>
+</tr>
+<tr>
+<td><code>RLS - Subject Is Senior Leader</code></td>
+<td>Should this row be shielded from peers?</td>
+</tr>
+<tr>
+<td><code>Permissions</code></td>
+<td>The five routes from Part 1. <strong>This is the field that gets applied as a filter.</strong></td>
+</tr>
+</tbody>
+</table>
+<p>They are separate fields rather than one calculation because the entity gate is
+needed by two different routes, because a per-workbook difference becomes a
+one-line edit to a small field instead of surgery inside a long one, and because
+each gate can be put on a sheet by itself and compared against a row — which is
+how you find out why someone sees the wrong thing.</p>
+<p><strong>The gates read group membership, never the viewer's own roster row.</strong> That is
+what makes cross-entity supervision work: someone employed by TEAM who oversees
+Paterson schools gets Paterson visibility by being added to the Paterson group,
+with no change to any workbook.</p>
+<p>A workbook can hold <strong>more than one</strong> permission field, where particular sheets
+need a different rule. So "the <code>Permissions</code> field is correct" does not by
+itself mean a workbook is correctly gated, and the per-sheet answer is in the
+playbook rather than here.</p>
+<table>
+<thead>
+<tr>
+<th>Workbook</th>
+<th>Permission fields</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Survey Dashboard</td>
+<td><code>Permissions - Completion</code>, <code>Permissions - Support</code> with <code>RLS - Department Gate</code> beside it, <code>Permissions - ITR</code></td>
+</tr>
+<tr>
+<td>SchoolMint Grow Dashboard</td>
+<td><code>Permissions</code>, <code>Permissions - Norming</code>, <code>Permissions  - Norming - Individual Data</code> (two spaces before the first hyphen)</td>
+</tr>
+<tr>
+<td>Stipend and Bonus Dashboard</td>
+<td><code>Permissions</code>, <code>Permissions HR Download</code></td>
+</tr>
+<tr>
+<td>Operations Systems</td>
+<td>one <code>Permissions</code> per datasource, with different text</td>
+</tr>
+<tr>
+<td>Personalized Survey Links</td>
+<td><code>Permissions - Self</code> only, with none of the gate fields</td>
+</tr>
+</tbody>
+</table>
+<h3 id="the-gated-workbooks">The gated workbooks</h3>
+<p>Nine workbooks carry a <code>Permissions</code> field. All sit in the <code>Production</code> project
+and all are tagged <code>entra-ready</code> on Tableau Server. <strong>A gated workbook without
+that tag is either unfinished or was built without following the playbook.</strong></p>
+<p>The reverse does not hold. Querying the tag returns <strong>11</strong>, not nine, because
+the two workbooks described below the table carry it as well. The table is the
+inventory; the tag is a superset of it.</p>
+<table>
+<thead>
+<tr>
+<th>Workbook</th>
+<th>Datasource</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Manager Survey Reports</td>
+<td><code>rpt_tableau__manager_survey_details</code></td>
+</tr>
+<tr>
+<td>Manager Survey Rollup</td>
+<td><code>rpt_tableau__manager_survey_details</code></td>
+</tr>
+<tr>
+<td>Coaching Conversation Tool</td>
+<td><code>rpt_tableau__schoolmint_grow_observation_details</code></td>
+</tr>
+<tr>
+<td>SchoolMint Grow Dashboard</td>
+<td><code>rpt_tableau__schoolmint_grow_observation_details</code>, <code>rpt_tableau__schoolmint_grow_goals</code>, <code>rpt_tableau__teacher_observations</code></td>
+</tr>
+<tr>
+<td>Survey Dashboard</td>
+<td><code>rpt_tableau__survey_responses</code>, <code>rpt_tableau__survey_completion</code></td>
+</tr>
+<tr>
+<td>Miami Instructional Rubrics</td>
+<td><code>rpt_tableau__content_team</code></td>
+</tr>
+<tr>
+<td>Operations Systems</td>
+<td><code>rpt_tableau__operations_pm</code>, <code>rpt_tableau__operations_ekg</code></td>
+</tr>
+<tr>
+<td>Stipend and Bonus Dashboard</td>
+<td><code>rpt_tableau__stipend_and_bonus_app</code></td>
+</tr>
+<tr>
+<td>Personalized Survey Links</td>
+<td><code>rpt_tableau__survey_completion</code></td>
+</tr>
+</tbody>
+</table>
+<p>Two workbooks sit outside the table. Federal Grants Timesheet Approval reads a
+live Google Sheet rather than a dbt extract, so it has no gated datasource.
+Leadership Development is archive-only, leader performance management having
+moved to Lattice; it is one of three workbooks that shield senior leaders from
+each other. Neither is a gap.</p>
+<p>Each of these uses an <strong>embedded</strong> extract rather than a published datasource,
+so this table is the readable mapping. It is not the only one: Tableau Server
+does report a workbook's upstream datasources, embedded ones included, so the
+table can be checked against the server rather than trusted on faith. Do check
+it after any repoint — a repoint that adds the new datasource without detaching
+the old one leaves both attached, and only the server shows that. Manager Survey
+Rollup is in that state now: <code>int_surveys__manager_survey_details</code> is still
+attached with its old permission fields, though no sheet reads it. Per-workbook
+variants, and the two archived workbooks that predate this model, are in the
+playbook.</p>
+<h3 id="related">Related</h3>
+<ul>
+<li>Build, repair, and audit reference, with all calc text and the outstanding
+  work: <code>docs/superpowers/plans/2026-07-31-tableau-workbook-remediation.md</code></li>
+<li>How to read and change these calculations programmatically, and how to
+  republish without dropping the <code>entra-ready</code> tag this page treats as the
+  inventory: the <code>tableau-workbook-xml</code> skill</li>
+<li>Design rationale for each tier and each peer-exclusion helper:
+  <code>docs/superpowers/specs/2026-07-30-tableau-rls-entra-migration-design.md</code></li>
+<li><a href="https://github.com/TEAMSchools/teamster/issues/4631">#4631</a> — replaces every
+  job-title test with a job-function code, which removes the title fallbacks
+  this page describes as approximate</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

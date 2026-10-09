@@ -1,0 +1,4270 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+        <link rel="prev" href="../../reference/automation-conditions/">
+      
+      
+        <link rel="next" href="../carat-dashboard-data-model/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>FRESH Dashboard Data Model - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#fresh-dashboard-data-model" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              FRESH Dashboard Data Model
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="./" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/launch-page-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Launch Page
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/cube-access-individual-exceptions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube Access - Individual Exceptions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/tableau-permissions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tableau Permissions (People Data)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FRESH Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FRESH Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-is-fresh" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What is FRESH?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-model-overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data model overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#terms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Terms
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-the-data-comes-from" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where the data comes from
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-dashboard-views" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The dashboard views
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The dashboard views">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#progress-to-goals-rpt_tableau__fresh_dashboard_progress_to_goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Progress to Goals: rpt_tableau__fresh_dashboard_progress_to_goals
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#aggregated-rpt_tableau__fresh_dashboard_aggregated" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Aggregated: rpt_tableau__fresh_dashboard_aggregated
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-qc-worklist-rpt_tableau__fresh_dashboard_qc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The QC worklist: rpt_tableau__fresh_dashboard_qc
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-scaffold-int_tableau__fresh_enrollment_scaffold" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The scaffold: int_tableau__fresh_enrollment_scaffold
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The scaffold: int_tableau__fresh_enrollment_scaffold">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#how-the-spine-is-built" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How the spine is built
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-three-row-types-the-sis-cant-produce-directly" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The three row types the SIS can't produce directly
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#school_level-is-banded-per-grade-and-may-disagree-with-the-goals-sheet" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        school_level is banded per grade, and may disagree with the goals sheet
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#miami-is-focus-sourced" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Miami is Focus-sourced
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-current-academic-year-a-dedicated-var-not-current_academic_year" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The current academic year: a dedicated var, not current_academic_year
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#goal-definitions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Goal definitions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Goal definitions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#which-goals-exist-at-which-granularity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Which goals exist at which granularity
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#conversion-goals-are-a-flat-per-grade-lookup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conversion goals are a flat per-grade lookup
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sourced-vs-derived-goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sourced vs derived goals
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a-new-school-is-not-necessarily-recruiting-miami-tech" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A new school is not necessarily recruiting: Miami Tech
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#full-grouped_status-goal_type-goal_name-crosswalk" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Full grouped_status → goal_type / goal_name crosswalk
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-finalsites-latest_status-becomes-an-expected-enrollment-status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How Finalsite's latest_status becomes an expected enrollment status
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="How Finalsite&#39;s latest_status becomes an expected enrollment status">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#first-day-of-school-is-hardcoded-per-region" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        First day of school is hardcoded per region
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-qc-worklist-flags" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The QC worklist flags
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The QC worklist flags">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-five-flags-in-plain-language" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The five flags, in plain language
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#implementation-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Implementation notes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#supporting-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Supporting models
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#inputs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inputs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#decisions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Decisions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#known-data-model-caveats" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Known data model caveats
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#open-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open questions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Open questions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#known-issues-need-to-fix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Known issues, need to fix
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rolling-the-dashboard-over-to-a-new-cycle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rolling the dashboard over to a new cycle
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Rolling the dashboard over to a new cycle">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#steps-in-order" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Steps, in order
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Steps, in order">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-2-new-schools-and-grades-come-from-finalsite" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1-2. New schools and grades come from Finalsite
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-status_crosswalk" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. status_crosswalk
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-5-goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4-5. Goals
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#8-the-var-bump" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. The var bump
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#status_crosswalk-column-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        status_crosswalk column reference
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../carat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CARAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../csgf-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CSGF Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../crdc-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CRDC Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ddi-stack-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DDI Stack Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../hs-early-warning-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HS Early Warning Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dibels-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DIBELS Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../njdoe-universal-screener-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NJDOE Universal Screener Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../athletic-eligibility-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Athletic Eligibility Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../academic-health-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Academic Health Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../grad-plan-tracking-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Grad Plan Tracking Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ignite-r2i-extract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IGNITE R2I Extract
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-is-fresh" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What is FRESH?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-model-overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data model overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#terms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Terms
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-the-data-comes-from" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where the data comes from
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-dashboard-views" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The dashboard views
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The dashboard views">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#progress-to-goals-rpt_tableau__fresh_dashboard_progress_to_goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Progress to Goals: rpt_tableau__fresh_dashboard_progress_to_goals
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#aggregated-rpt_tableau__fresh_dashboard_aggregated" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Aggregated: rpt_tableau__fresh_dashboard_aggregated
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-qc-worklist-rpt_tableau__fresh_dashboard_qc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The QC worklist: rpt_tableau__fresh_dashboard_qc
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-scaffold-int_tableau__fresh_enrollment_scaffold" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The scaffold: int_tableau__fresh_enrollment_scaffold
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The scaffold: int_tableau__fresh_enrollment_scaffold">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#how-the-spine-is-built" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How the spine is built
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-three-row-types-the-sis-cant-produce-directly" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The three row types the SIS can't produce directly
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#school_level-is-banded-per-grade-and-may-disagree-with-the-goals-sheet" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        school_level is banded per grade, and may disagree with the goals sheet
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#miami-is-focus-sourced" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Miami is Focus-sourced
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-current-academic-year-a-dedicated-var-not-current_academic_year" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The current academic year: a dedicated var, not current_academic_year
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#goal-definitions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Goal definitions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Goal definitions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#which-goals-exist-at-which-granularity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Which goals exist at which granularity
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#conversion-goals-are-a-flat-per-grade-lookup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conversion goals are a flat per-grade lookup
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sourced-vs-derived-goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sourced vs derived goals
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a-new-school-is-not-necessarily-recruiting-miami-tech" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A new school is not necessarily recruiting: Miami Tech
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#full-grouped_status-goal_type-goal_name-crosswalk" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Full grouped_status → goal_type / goal_name crosswalk
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-finalsites-latest_status-becomes-an-expected-enrollment-status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How Finalsite's latest_status becomes an expected enrollment status
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="How Finalsite&#39;s latest_status becomes an expected enrollment status">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#first-day-of-school-is-hardcoded-per-region" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        First day of school is hardcoded per region
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-qc-worklist-flags" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The QC worklist flags
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The QC worklist flags">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-five-flags-in-plain-language" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The five flags, in plain language
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#implementation-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Implementation notes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#supporting-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Supporting models
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#inputs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inputs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#decisions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Decisions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#known-data-model-caveats" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Known data model caveats
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#open-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open questions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Open questions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#known-issues-need-to-fix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Known issues, need to fix
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rolling-the-dashboard-over-to-a-new-cycle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rolling the dashboard over to a new cycle
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Rolling the dashboard over to a new cycle">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#steps-in-order" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Steps, in order
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Steps, in order">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-2-new-schools-and-grades-come-from-finalsite" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1-2. New schools and grades come from Finalsite
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-status_crosswalk" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. status_crosswalk
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-5-goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4-5. Goals
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#8-the-var-bump" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. The var bump
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#status_crosswalk-column-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        status_crosswalk column reference
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/models/fresh-dashboard-data-model.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="fresh-dashboard-data-model">FRESH Dashboard Data Model</h1>
+<h2 id="what-is-fresh">What is FRESH?</h2>
+<p>FRESH is the network's enrollment recruitment dashboard. It tracks progress
+against recruitment targets (seats, new students, and the inquiry, application,
+offer and enrollment funnel) by region, school and grade. The Student
+Recruitment and Enrollment team (SRE) and school operations teams use it to see
+where each school stands against its goals and which student records need
+cleanup.</p>
+<ul>
+<li>Owner: the data team, with Anthony Walters as owner.</li>
+<li>Stakeholder: Maria-Cristina Ventresca, Managing Director, Marketing, Comms,
+  and Enrollment.</li>
+<li>Targets: owned by SRE. SRE's own workbook is hand-maintained; the Finalsite
+  goals Google Sheet is the copy dbt reads.</li>
+</ul>
+<p>The Tableau workbook has four tabs: <strong>Landing Page</strong> (the default view),
+<strong>Progress to Goals</strong>, <strong>School Ops Team</strong> and <strong>SRE Team</strong>. It reads three
+reporting models, all in the <code>fresh_dashboard</code> exposure:</p>
+<ul>
+<li><code>rpt_tableau__fresh_dashboard_progress_to_goals</code>: enrolled students against
+  enrollment targets.</li>
+<li><code>rpt_tableau__fresh_dashboard_aggregated</code>: funnel counts against funnel goals.</li>
+<li><code>rpt_tableau__fresh_dashboard_qc</code>: a worklist of students whose Finalsite
+  record disagrees with the SIS.</li>
+</ul>
+<p>The exposure also reads <code>int_tableau__finalsite_student_scaffold</code> directly (see
+<em>Known issues, need to fix</em>). Which tab reads which data source, and who opens
+each tab, is an open question (see <em>Open questions</em>).</p>
+<h2 id="data-model-overview">Data model overview</h2>
+<div class="highlight"><pre><span></span><code>1. THE SPINE (one row per school x grade)
+
+  stg_powerschool__schools ─────────────┐
+  stg_powerschool__students ────────────┤
+  int_focus__schools ───────────────────┤
+  int_focus__student_enrollment_roster ─┼─▶ int_tableau__fresh_enrollment_scaffold
+  stg_google_sheets__people__locations ─┤
+  int_finalsite__status_report_unpivot ─┘   (net-new schools/grades only)
+
+2. THE GOALS (numeric targets)
+
+  stg_google_sheets__finalsite__goals ─┬─▶ int_tableau__fresh_goals_scaffold
+                                       │     (funnel goals, inner-joined to the spine)
+                                       └─▶ int_google_sheets__finalsite__goals_pivot
+                                             (the five Enrollment targets as columns;
+                                              consumers filter goal_type)
+
+3. THE ACTUALS (where students are in the funnel)
+
+  stg_finalsite__status_report ─▶ int_finalsite__status_report_unpivot ────────┐
+  stg_google_sheets__finalsite__status_crosswalk                              │
+    └─▶ int_google_sheets__finalsite__status_crosswalk_unpivot ───────────────┤
+  int_extracts__student_enrollments (NJ regions; SIS side) ───────────────────┼─▶ int_tableau__finalsite_student_scaffold
+  int_focus__student_enrollment_roster (Miami; SIS side) ─────────────────────┤
+  int_finalsite__contact_id_attributes (Focus &lt;-&gt; Finalsite id bridge) ───────┘
+
+4. THE CONSUMERS (the fresh_dashboard exposure)
+
+  int_tableau__fresh_enrollment_scaffold ────┐
+  int_google_sheets__finalsite__goals_pivot ─┤
+  int_people__location_crosswalk ────────────┼─▶ rpt_tableau__fresh_dashboard_progress_to_goals
+  int_tableau__finalsite_student_scaffold ───┘
+
+  int_tableau__fresh_goals_scaffold ─────────┐
+  int_tableau__finalsite_student_scaffold ───┴─▶ rpt_tableau__fresh_dashboard_aggregated
+
+  int_tableau__finalsite_student_scaffold ───┐
+  int_extracts__student_enrollments ─────────┤
+  int_finalsite__contact_id_attributes ──────┼─▶ rpt_tableau__fresh_dashboard_qc
+  stg_finalsite__status_report ──────────────┘
+
+  int_tableau__finalsite_student_scaffold ─────▶ fresh_dashboard (read directly)
+</code></pre></div>
+<p>The spine and the goals are two independent inputs joined together. The actuals
+come from a separate Finalsite pipeline and join in at the reporting layer.</p>
+<h2 id="terms">Terms</h2>
+<table>
+<thead>
+<tr>
+<th>term</th>
+<th>meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SRE</td>
+<td>Student Recruitment and Enrollment, the team that owns recruitment targets and Finalsite data entry.</td>
+</tr>
+<tr>
+<td>Spine / scaffold</td>
+<td><code>int_tableau__fresh_enrollment_scaffold</code>: one row per school and grade being reported on, so the dashboard has a row even where no student or goal exists.</td>
+</tr>
+<tr>
+<td>Recruitment year</td>
+<td>The <code>finalsite_recruitment_year</code> dbt var: the Finalsite cycle FRESH reports on. Start-year form (AY2026-2027 = <code>2026</code>).</td>
+</tr>
+<tr>
+<td><code>grade_level = -9</code></td>
+<td>A whole-school total row. A reporting convention, not a SIS grade.</td>
+</tr>
+<tr>
+<td><code>grade_level = -1</code></td>
+<td>Pre-K (K is <code>0</code>, grades 1-12 are <code>1</code>-<code>12</code>).</td>
+</tr>
+<tr>
+<td><code>schoolid = 0</code></td>
+<td>A region rollup row (spine and goals) or a Finalsite record with no assigned school yet (actuals, <code>school = 'No School Assigned'</code>).</td>
+</tr>
+<tr>
+<td><code>goal_granularity</code></td>
+<td><code>School</code> (<code>grade_level = -9</code>), <code>School/Grade Level</code>, or <code>Region/Grade Level</code> (<code>schoolid = 0</code>).</td>
+</tr>
+<tr>
+<td><code>goal_type</code> / <code>goal_name</code></td>
+<td>The goal family and the specific goal. Funnel goal names come from the status crosswalk; Enrollment goal names are typed into the goals sheet.</td>
+</tr>
+<tr>
+<td><code>grouped_status</code></td>
+<td>The funnel stage a Finalsite status maps to, from the crosswalk's <code>status_group_value</code>.</td>
+</tr>
+<tr>
+<td><code>grouped_status_timeframe</code></td>
+<td><code>Ever</code> counts a student who ever reached the stage; <code>Current</code> counts only a student whose latest status is in the stage.</td>
+</tr>
+<tr>
+<td><code>latest_status</code></td>
+<td>A student's most recent Finalsite status: latest status date, ties broken by <code>status_order</code> (highest wins).</td>
+</tr>
+<tr>
+<td><code>status_order</code></td>
+<td>A hardcoded rank per Finalsite status field in <code>int_finalsite__status_report_unpivot</code>, mirroring the crosswalk's <code>detailed_status_ranking</code>.</td>
+</tr>
+<tr>
+<td><code>enrollment_type</code></td>
+<td><code>New</code> or <code>Returning</code>, from Finalsite. <code>aligned_enrollment_type</code> is the constant <code>All</code>, used to add New and Returning together.</td>
+</tr>
+<tr>
+<td><code>enroll_status</code></td>
+<td>The SIS enrollment code: <code>0</code> enrolled, <code>2</code> withdrawn, <code>3</code> graduated, <code>-1</code> pre-registered. <code>1</code> is treated as invalid in this repo.</td>
+</tr>
+<tr>
+<td><code>finalsite_expected_enroll_status</code></td>
+<td>What the SIS should show if Finalsite is right: <code>0</code>, <code>2</code> or NULL. See <em>How Finalsite's <code>latest_status</code> becomes an expected enrollment status</em>.</td>
+</tr>
+<tr>
+<td>Persistence</td>
+<td>A current student returning next year (<code>Re-Enroll Projection</code>). "Retention" means grade repetition in this network, a different thing.</td>
+</tr>
+<tr>
+<td>Reset Protocol</td>
+<td>SRE's fix for a same-day status tie: move the student to another status, wait a day, then set the status you want.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="where-the-data-comes-from">Where the data comes from</h2>
+<table>
+<thead>
+<tr>
+<th>source</th>
+<th>reaches FRESH through</th>
+<th>owner</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Finalsite status report (SFTP file drop, all four regions)</td>
+<td><code>stg_finalsite__status_report</code> → <code>int_finalsite__status_report_unpivot</code></td>
+<td>SRE enters the data; data team owns ingestion</td>
+</tr>
+<tr>
+<td>Finalsite contact ids</td>
+<td><code>int_finalsite__contact_id_attributes</code> (bridges Focus ids to Finalsite ids)</td>
+<td>data team</td>
+</tr>
+<tr>
+<td>PowerSchool (Newark, Camden, Paterson)</td>
+<td><code>stg_powerschool__schools</code>, <code>stg_powerschool__students</code>, <code>int_extracts__student_enrollments</code></td>
+<td>school operations enter; data team ingests</td>
+</tr>
+<tr>
+<td>Focus (Miami)</td>
+<td><code>int_focus__schools</code>, <code>int_focus__student_enrollment_roster</code></td>
+<td>school operations enter; data team ingests</td>
+</tr>
+<tr>
+<td>Finalsite goals Google Sheet</td>
+<td><code>stg_google_sheets__finalsite__goals</code></td>
+<td>SRE supplies values; data team pastes them</td>
+</tr>
+<tr>
+<td>Finalsite status crosswalk Google Sheet</td>
+<td><code>stg_google_sheets__finalsite__status_crosswalk</code></td>
+<td>data team, with SRE confirming the mapping</td>
+</tr>
+<tr>
+<td>Finalsite exclude-ids Google Sheet</td>
+<td><code>stg_google_sheets__finalsite__exclude_ids</code>, applied inside <code>stg_finalsite__status_report</code></td>
+<td>data team</td>
+</tr>
+<tr>
+<td>Locations Google Sheet</td>
+<td><code>stg_google_sheets__people__locations</code>, <code>int_people__location_crosswalk</code></td>
+<td>data team</td>
+</tr>
+</tbody>
+</table>
+<p><code>stg_finalsite__status_report</code>'s cleaning (grade decode, <code>enrollment_type</code>
+default, name casing, <code>active_school_year_display</code>) lives in the <code>finalsite</code>
+source-system package; the kipptaf model of the same name is a thin
+<code>union_relations</code> wrapper over the four district sources that adds <code>region</code>,
+<code>_dbt_source_project</code> and the <code>exclude_ids</code> filter.
+<code>int_focus__student_enrollment_roster</code> is likewise a thin kipptaf wrapper over a
+<code>focus</code> package model.</p>
+<h2 id="the-dashboard-views">The dashboard views</h2>
+<h3 id="progress-to-goals-rpt_tableau__fresh_dashboard_progress_to_goals">Progress to Goals: <code>rpt_tableau__fresh_dashboard_progress_to_goals</code></h3>
+<p>What it shows: Enrolled and in-progress students counted against the five
+Enrollment targets (<code>Seat Target</code>, <code>FDOS Target</code>, <code>Budget Target</code>,
+<code>New Student Target</code>, <code>Re-Enroll Projection</code>), per school and per school and
+grade.</p>
+<p>Grain: One row per scaffold row (<code>academic_year</code>, <code>region</code>, <code>schoolid</code>,
+<code>grade_level</code>, <code>enrollment_type</code> in <code>All</code>/<code>New</code>/<code>Returning</code>) per matched student
+or goal record. <code>row_type</code> is <code>Student</code> (with <code>student_count = 1</code>) or <code>Goal</code>.</p>
+<p>Reads:</p>
+<ul>
+<li><code>int_tableau__fresh_enrollment_scaffold</code>: the rows. <code>School</code> rows are the
+  <code>grade_level = -9</code> rows; <code>School/Grade Level</code> rows are every other row except
+  region rollups (<code>schoolid != 0</code>). There are no region rows in this view.</li>
+<li><code>int_people__location_crosswalk</code>: <code>school_level</code> for the <code>-9</code> rows, from
+  <code>location_grade_band</code>. Grade rows take <code>school_level</code> from the scaffold.</li>
+<li><code>int_tableau__finalsite_student_scaffold</code>: students whose <code>latest_status</code> is
+  <code>Enrolled</code> or <code>Enrollment In Progress</code>.</li>
+<li><code>int_google_sheets__finalsite__goals_pivot</code>: Enrollment targets at <code>School</code>
+  and <code>School/Grade Level</code>, for the recruitment year.</li>
+</ul>
+<p>Worth knowing:</p>
+<ul>
+<li>Each student is unioned in twice, once on their real <code>enrollment_type</code> and
+  once on <code>aligned_enrollment_type = 'All'</code>, so the <code>All</code> rows add New and
+  Returning together. Goals follow the same split: <code>New Student Target</code> lands on
+  <code>New</code>, <code>Re-Enroll Projection</code> on <code>Returning</code>, everything else on <code>All</code>.</li>
+<li>A student with no assigned school (<code>schoolid = 0</code>) has no scaffold row to land
+  on and does not appear.</li>
+<li>A student Finalsite has no record for never appears here. Those students are
+  what <code>is_missing_finalsite_record</code> on the QC worklist catches.</li>
+</ul>
+<h3 id="aggregated-rpt_tableau__fresh_dashboard_aggregated">Aggregated: <code>rpt_tableau__fresh_dashboard_aggregated</code></h3>
+<p>What it shows: Funnel counts (inquiries, applications, offers, pending offers by
+age, waitlisted, deferred, enrollment in progress, conversion rates) against
+funnel goals. Which goals and granularities reach it depends on the branch that
+selects them (table below).</p>
+<p>Grain: One row per goals-scaffold row per matched student. A goal with no
+matching student keeps one row with NULL student columns.</p>
+<p>Reads:</p>
+<ul>
+<li><code>int_tableau__fresh_goals_scaffold</code>: the goal rows (every non-Enrollment goal
+  whose key exists in the spine).</li>
+<li><code>int_tableau__finalsite_student_scaffold</code>: the students, left-joined in five
+  branches:</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>branch</th>
+<th>goals</th>
+<th>student join</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Deferred / Waitlisted</td>
+<td><code>Current</code>, <code>goal_name in ('Deferred', 'Waitlisted')</code></td>
+<td>school, grade, <code>goal_type</code>, and <code>goal_name = latest_status</code></td>
+</tr>
+<tr>
+<td>Enrollment In Progress</td>
+<td><code>Current</code>, <code>School/Grade Level</code> only</td>
+<td>school, grade, <code>goal_type</code>, and <code>goal_name = latest_status</code></td>
+</tr>
+<tr>
+<td>Pending Offers / Offers</td>
+<td>all granularities</td>
+<td>school, grade, <code>goal_type</code>, <code>goal_name</code></td>
+</tr>
+<tr>
+<td>Inquiries / Applications</td>
+<td><code>Region/Grade Level</code> only</td>
+<td>region and grade only (these students have no school yet)</td>
+</tr>
+<tr>
+<td>Conversion</td>
+<td><code>Ever</code></td>
+<td>school, grade, <code>goal_type</code>, <code>goal_name</code>, plus the matching <code>Num</code> row for the numerator</td>
+</tr>
+</tbody>
+</table>
+<p>Worth knowing:</p>
+<ul>
+<li><code>school_level</code> here comes from the goals sheet, not the scaffold, so it can
+  differ from Progress to Goals for the same school and grade (see
+  <em><code>school_level</code> is banded per grade, and may disagree with the goals sheet</em>).</li>
+<li><code>goal_name_value</code> is a Finalsite id column for counting. In the first four
+  branches it is the matched student's <code>finalsite_id</code>. In the Conversion branch
+  it is filled only when the same student also has the matching <code>Current</code>
+  <code>... Num</code> row, restricted to <code>enrollment_type = 'New'</code>. A <code>... Num</code> status
+  marks a student who reached the later stage of a conversion (for
+  <code>Offers to Enrolled</code>, the enrolled ones), so counting <code>goal_name_value</code> gives
+  the rate's numerator and counting <code>finalsite_id</code> its denominator.</li>
+<li>Region rollup goals carry <code>schoolid = 0</code>, and so does a Finalsite student with
+  no assigned school. A branch that joins on <code>schoolid</code> therefore matches a
+  <code>Region/Grade Level</code> goal only to unassigned students, never to the region's
+  students as a whole. Only the Inquiries/Applications branch skips <code>schoolid</code>,
+  so it is the only one where a region goal counts every student in the region
+  and grade (see <em>Known issues, need to fix</em>).</li>
+<li>The <code>School</code>-granularity goals that reach this view are only <code>Offers</code> and
+  <code>Pending Offers</code>, and they never match a student (see <em>Known issues, need to
+  fix</em>).</li>
+<li>Only what the five branches select reaches this view: <code>Accepted</code> never does,
+  and <code>Inquiries</code> and <code>App Target</code> only at <code>Region/Grade Level</code> (see <em>Known
+  issues, need to fix</em>).</li>
+</ul>
+<h3 id="the-qc-worklist-rpt_tableau__fresh_dashboard_qc">The QC worklist: <code>rpt_tableau__fresh_dashboard_qc</code></h3>
+<p>What it shows: A worklist, not a report: one row per student per problem, where
+Finalsite and the SIS disagree. An empty result is the good outcome.</p>
+<p>Grain: One row per student per fired flag (<code>flag_name</code>, with <code>flag_value</code> always
+<code>true</code>).</p>
+<p>Reads:</p>
+<ul>
+<li><code>int_tableau__finalsite_student_scaffold</code> at
+  <code>grouped_status_timeframe = 'Current'</code>: four flags, unpivoted into
+  <code>(flag_name, flag_value)</code>, keeping only the rows where a flag fired.</li>
+<li><code>int_extracts__student_enrollments</code>, <code>int_finalsite__contact_id_attributes</code>
+  and <code>stg_finalsite__status_report</code>: the fifth flag,
+  <code>is_missing_finalsite_record</code>, unioned on.</li>
+</ul>
+<p>Worth knowing: see <em>The five flags, in plain language</em> and <em>Implementation
+notes</em> below.</p>
+<h2 id="the-scaffold-int_tableau__fresh_enrollment_scaffold">The scaffold: <code>int_tableau__fresh_enrollment_scaffold</code></h2>
+<p>One row per <code>(enrollment_academic_year, region, schoolid, grade_level)</code>, the
+spine everything else joins against. The <code>rpt_tableau__fresh_dashboard_*</code> views
+alias the year to <code>academic_year</code>. The scaffold is derived entirely from the SIS
+and Finalsite; no hand-maintained sheet feeds it.</p>
+<h3 id="how-the-spine-is-built">How the spine is built</h3>
+<ol>
+<li><strong><code>school_directory</code></strong>: one row per reporting school, from two SIS sources.
+   NJ comes from <code>stg_powerschool__schools</code> at <code>state_excludefromreporting = 0</code>,
+   which drops administrative rows such as the graduated-students school. Miami
+   comes from <code>int_focus__schools</code> at <code>max_syear is null</code> (open schools only),
+   inner-joined to <code>stg_google_sheets__people__locations</code> on <code>focus_school_id</code>
+   to get the abbreviation and the PowerSchool-space <code>schoolid</code>. Focus's own
+   school number is a Focus code, not a PowerSchool id, so this join is what
+   puts Miami in the same id space. The join also requires <code>not is_pathways</code>:
+   Pathways locations are not schools FRESH recruits into.</li>
+<li><strong><code>current_grade_levels</code></strong>: which grades each school serves, from current
+   enrollment. NJ: <code>stg_powerschool__students</code> at <code>enroll_status = 0</code> (that
+   table is current-state only). Miami: <code>int_focus__student_enrollment_roster</code>
+   at <code>enroll_status = 0</code>, <code>academic_year = current_academic_year</code> and
+   <code>rn_year = 1</code> (Focus carries several years, so the year filter scopes it).
+   There is no explicit Miami exclusion on the PowerSchool branches; the kipptaf
+   PowerSchool unions carry no Miami rows.</li>
+<li><strong><code>sis_scaffold</code></strong>: the directory joined to grade membership on
+   <code>(schoolid, _dbt_source_project)</code>. Each PowerSchool instance assigns
+   <code>schoolid</code> independently, so the source project is part of the key.</li>
+</ol>
+<h3 id="the-three-row-types-the-sis-cant-produce-directly">The three row types the SIS can't produce directly</h3>
+<ul>
+<li><strong>Whole-school totals (<code>grade_level = -9</code>)</strong>: one row per school in the spine,
+  with <code>school_level</code> NULL because a whole-school row spans bands.
+  <code>scaffold_source</code> is <code>sis</code> if any of the school's grade rows came from the
+  SIS, else <code>finalsite</code>.</li>
+<li><strong>Region rollups (<code>schoolid = 0</code>)</strong>: a <code>select distinct</code> over
+  <code>(region, grade_level, school_level)</code>, with <code>school</code> set to the region name.
+  This is safe only because <code>school_level</code> is a function of grade alone.</li>
+<li><strong>Net-new schools/grades</strong>: <code>finalsite_new</code>. School/grade pairs Finalsite has
+  records for in the recruitment year, with an assigned school
+  (<code>schoolid != 0</code>), that are not already in the SIS spine. The anti-join key is
+  <code>(region, schoolid, grade_level)</code>.</li>
+</ul>
+<p>The CTE is gated by <code>finalsite_recruitment_year != current_academic_year</code>.
+  While the two vars are equal the gate is closed and <code>finalsite_new</code> returns no
+  rows. So a grade that is being recruited for, with nobody enrolled in the SIS
+  yet, gets no scaffold row: its goals drop out of
+  <code>int_tableau__fresh_goals_scaffold</code>'s inner join, and its Finalsite students
+  have no row to land on in either reporting view. The gate opens only when the
+  recruitment year runs ahead of <code>current_academic_year</code>. Both vars are in
+  <code>src/dbt/kipptaf/dbt_project.yml</code>.</p>
+<h3 id="school_level-is-banded-per-grade-and-may-disagree-with-the-goals-sheet"><code>school_level</code> is banded per grade, and may disagree with the goals sheet</h3>
+<p><code>school_level</code> is computed from grade (<code>&gt;= 9</code> HS, <code>&gt;= 5</code> MS, else ES), not read
+from either SIS's per-school field. A per-grade value keeps the region rollup at
+one row per grade, and some schools report different levels for different
+grades.</p>
+<p>These are NJ bands. Miami's real ES/MS boundary is 5/6, so Miami ES schools
+serving grade 5 report their grade-5 rows as <code>MS</code> here, while the goals sheet
+reports them as <code>ES</code>. This is accepted: the goals sheet stays hand-entered
+because some goals are standard by grade across the network.</p>
+<p>Consequence: Progress to Goals takes grade-row <code>school_level</code> from this
+scaffold, and Aggregated takes it from the goals sheet (through
+<code>int_tableau__fresh_goals_scaffold</code>), so Miami grade 5 can show different
+<code>school_level</code> values on the two views.</p>
+<h3 id="miami-is-focus-sourced">Miami is Focus-sourced</h3>
+<p>Miami's schools and grade membership come from <code>int_focus__schools</code> and
+<code>int_focus__student_enrollment_roster</code>. The scaffold labels schoolid <code>30200805</code>
+<code>Miami Tech</code>, the same label <code>int_finalsite__status_report_unpivot</code> resolves to
+through <code>int_people__location_crosswalk</code>. No join in the chain keys on the
+school name.</p>
+<h2 id="the-current-academic-year-a-dedicated-var-not-current_academic_year">The current academic year: a dedicated var, not <code>current_academic_year</code></h2>
+<p>"The current Finalsite recruitment cycle" is the <code>finalsite_recruitment_year</code>
+dbt var, read at every FRESH site that needs it. It is separate from
+<code>current_academic_year</code> because Finalsite can carry two academic years of live
+student data at once during a transition, and students and regions roll over on
+their own timeline. There is no signal in the ingested data for "which year is
+current now", and SRE's cycle has no fixed date. Always confirm the new year
+with SRE before changing it; the fresh-dashboard skill has the file list.</p>
+<p>The status crosswalk holds config for exactly one academic year at a time,
+guarded by <code>test_stg_google_sheets__finalsite__status_crosswalk_single_year</code>
+(<code>count(distinct file_year) = 1</code>).</p>
+<h2 id="goal-definitions">Goal definitions</h2>
+<p>The <code>Enrollment</code> goal_type group is plain numeric targets typed into the goals
+sheet. It reaches the dashboard through
+<code>int_google_sheets__finalsite__goals_pivot</code>, never through the status crosswalk:</p>
+<table>
+<thead>
+<tr>
+<th><code>goal_name</code></th>
+<th>Definition</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Seat Target</code></td>
+<td>Total seats the school is targeting for the year.</td>
+</tr>
+<tr>
+<td><code>FDOS Target</code></td>
+<td>Enrollment target as of the first day of school.</td>
+</tr>
+<tr>
+<td><code>New Student Target</code></td>
+<td>Target count of new (not returning) students.</td>
+</tr>
+<tr>
+<td><code>Budget Target</code></td>
+<td>The enrollment number the school's budget was built against.</td>
+</tr>
+<tr>
+<td><code>Re-Enroll Projection</code></td>
+<td>Projected count of current students expected to persist (return) next year.</td>
+</tr>
+</tbody>
+</table>
+<p>Every other goal is a roll-up of the Finalsite funnel through the status
+crosswalk. <code>Ever</code> goal types are <code>Inquiries</code>, <code>Applications</code>, <code>Offers</code>,
+<code>Assigned School</code>, <code>Accepted</code> and the three <code>Conversion</code> rates; everything else
+is <code>Current</code>.</p>
+<table>
+<thead>
+<tr>
+<th><code>goal_name</code> (<code>goal_type</code>)</th>
+<th>Timeframe</th>
+<th>Definition</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Inquiries</code></td>
+<td>Ever</td>
+<td>Family ever submitted an inquiry.</td>
+</tr>
+<tr>
+<td><code>App Target</code> (<code>Applications</code>)</td>
+<td>Ever</td>
+<td>Family ever completed an application.</td>
+</tr>
+<tr>
+<td><code>Offers Target</code> (<code>Offers</code>)</td>
+<td>Ever</td>
+<td>Student was ever offered a seat.</td>
+</tr>
+<tr>
+<td><code>Accepted</code></td>
+<td>Ever</td>
+<td>Family ever accepted an offered seat.</td>
+</tr>
+<tr>
+<td><code>Waitlisted</code></td>
+<td>Current</td>
+<td>Current status is waitlisted.</td>
+</tr>
+<tr>
+<td><code>Deferred</code></td>
+<td>Current</td>
+<td>Current status is deferred.</td>
+</tr>
+<tr>
+<td><code>Enrollment In Progress</code></td>
+<td>Current</td>
+<td>Student is mid-enrollment.</td>
+</tr>
+<tr>
+<td><code>Pending Offers</code> (+ <code>&lt;= 4 Days</code> / <code>&gt;= 5 &amp; &lt;= 10 Days</code> / <code>&gt; 10 Days</code>)</td>
+<td>Current</td>
+<td>Outstanding offer awaiting a family response, bucketed by days pending.</td>
+</tr>
+<tr>
+<td><code>Conversion</code>: <code>Accepted to Enrolled</code> / <code>Offers to Accepted</code> / <code>Offers to Enrolled</code></td>
+<td>Ever</td>
+<td>Conversion rate between two funnel stages.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="which-goals-exist-at-which-granularity">Which goals exist at which granularity</h3>
+<p>Not every goal exists at every level. Expecting a value at a level a goal does
+not live at produces a phantom gap, so check this before treating a missing row
+as a problem. "scaffold" means the sheet carries rows for the combination with
+no <code>goal_value</code>: they give the dashboard grid a row per school, grade and
+status, and are never expected to receive a value. The table reflects the sheet
+for AY2026; re-check it each cycle with the query below.</p>
+<table>
+<thead>
+<tr>
+<th><code>goal_name</code></th>
+<th style="text-align: center;"><code>School</code></th>
+<th style="text-align: center;"><code>School/Grade Level</code></th>
+<th style="text-align: center;"><code>Region/Grade Level</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Budget Target</code></td>
+<td style="text-align: center;">yes</td>
+<td style="text-align: center;">--</td>
+<td style="text-align: center;">--</td>
+</tr>
+<tr>
+<td><code>FDOS Target</code></td>
+<td style="text-align: center;">yes</td>
+<td style="text-align: center;">yes</td>
+<td style="text-align: center;">--</td>
+</tr>
+<tr>
+<td><code>Seat Target</code></td>
+<td style="text-align: center;">yes</td>
+<td style="text-align: center;">yes</td>
+<td style="text-align: center;">--</td>
+</tr>
+<tr>
+<td><code>Conversion</code> (3 names)</td>
+<td style="text-align: center;">--</td>
+<td style="text-align: center;">yes</td>
+<td style="text-align: center;">--</td>
+</tr>
+<tr>
+<td><code>Enrollment In Progress</code></td>
+<td style="text-align: center;">--</td>
+<td style="text-align: center;">scaffold only</td>
+<td style="text-align: center;">--</td>
+</tr>
+<tr>
+<td><code>New Student Target</code></td>
+<td style="text-align: center;">yes</td>
+<td style="text-align: center;">yes</td>
+<td style="text-align: center;">yes</td>
+</tr>
+<tr>
+<td><code>Re-Enroll Projection</code></td>
+<td style="text-align: center;">yes</td>
+<td style="text-align: center;">yes</td>
+<td style="text-align: center;">yes</td>
+</tr>
+<tr>
+<td><code>App Target</code></td>
+<td style="text-align: center;">yes</td>
+<td style="text-align: center;">yes</td>
+<td style="text-align: center;">yes</td>
+</tr>
+<tr>
+<td><code>Offers Target</code></td>
+<td style="text-align: center;">yes</td>
+<td style="text-align: center;">yes</td>
+<td style="text-align: center;">yes</td>
+</tr>
+<tr>
+<td><code>Accepted</code></td>
+<td style="text-align: center;">scaffold</td>
+<td style="text-align: center;">scaffold</td>
+<td style="text-align: center;">scaffold</td>
+</tr>
+<tr>
+<td><code>Pending Offers</code> (4 names)</td>
+<td style="text-align: center;">scaffold</td>
+<td style="text-align: center;">scaffold</td>
+<td style="text-align: center;">scaffold</td>
+</tr>
+<tr>
+<td><code>Inquiries</code></td>
+<td style="text-align: center;">--</td>
+<td style="text-align: center;">--</td>
+<td style="text-align: center;">scaffold only</td>
+</tr>
+<tr>
+<td><code>Deferred</code></td>
+<td style="text-align: center;">--</td>
+<td style="text-align: center;">--</td>
+<td style="text-align: center;">scaffold only</td>
+</tr>
+<tr>
+<td><code>Waitlisted</code></td>
+<td style="text-align: center;">--</td>
+<td style="text-align: center;">--</td>
+<td style="text-align: center;">scaffold only</td>
+</tr>
+</tbody>
+</table>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">    </span><span class="n">goal_granularity</span><span class="p">,</span>
+<span class="w">    </span><span class="n">goal_type</span><span class="p">,</span>
+<span class="w">    </span><span class="n">goal_name</span><span class="p">,</span>
+<span class="w">    </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">sheet_rows</span><span class="p">,</span>
+<span class="w">    </span><span class="n">countif</span><span class="p">(</span><span class="n">goal_value</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">populated_rows</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="o">`</span><span class="p">.</span><span class="n">kipptaf_google_sheets</span><span class="p">.</span><span class="n">stg_google_sheets__finalsite__goals</span>
+<span class="k">where</span><span class="w"> </span><span class="n">enrollment_academic_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="k">year</span><span class="o">&gt;</span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">goal_granularity</span><span class="p">,</span><span class="w"> </span><span class="n">goal_type</span><span class="p">,</span><span class="w"> </span><span class="n">goal_name</span>
+</code></pre></div>
+<p>A NULL inside an otherwise populated combination is ambiguous: it may mean "no
+goal here" or "nobody filled this in". Ask SRE rather than infer.</p>
+<h3 id="conversion-goals-are-a-flat-per-grade-lookup"><code>Conversion</code> goals are a flat per-grade lookup</h3>
+<p>SRE supplies the three <code>Conversion</code> rates by grade, identical across schools.
+For AY2026 they collapse to two tiers: Kindergarten, and grades 1-12. A rate
+change is a small uniform edit, and a reconciliation should check the shape (one
+value per grade) rather than diff every row:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="n">grade_level</span><span class="p">,</span><span class="w"> </span><span class="n">goal_name</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="k">distinct</span><span class="w"> </span><span class="n">goal_value</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">distinct_values</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="o">`</span><span class="p">.</span><span class="n">kipptaf_google_sheets</span><span class="p">.</span><span class="n">stg_google_sheets__finalsite__goals</span>
+<span class="k">where</span><span class="w"> </span><span class="n">enrollment_academic_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="k">year</span><span class="o">&gt;</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">goal_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'Conversion'</span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">grade_level</span><span class="p">,</span><span class="w"> </span><span class="n">goal_name</span>
+</code></pre></div>
+<p>Anything other than <code>1</code> means a school has drifted off the common rate. The
+<code>Conversion Rate</code> column on each region tab of SRE's workbook is a different
+thing: an input used to derive "apps needed" from "new students needed".</p>
+<h3 id="sourced-vs-derived-goals">Sourced vs derived goals</h3>
+<p>Where SRE's workbook states a goal, the goals sheet matches it. Where the
+workbook states nothing, the data team derives the value. At
+<code>Region/Grade Level</code>, <code>App Target</code> is sourced from the cover sheet's region
+grid, while <code>New Student Target</code> and <code>Re-Enroll Projection</code> are derived as the
+rounded sum of the school rows.</p>
+<p>So a region row need not equal the sum of its school rows. A gap of 1 is
+rounding. <code>App Target</code> can differ by more, because the cover sheet can leave out
+a grade that is new mid-expansion; do not "fix" it by summing. The
+fresh-dashboard skill has the reconciliation procedure.</p>
+<h3 id="a-new-school-is-not-necessarily-recruiting-miami-tech">A new school is not necessarily recruiting: Miami Tech</h3>
+<p><code>Re-Enroll Projection</code> measures persistence in the network, not at one school,
+so a school that did not exist last year can have returners. Miami Tech opened
+to take KIPP's own grade-8 students into grade 9, with no external recruitment.
+Its goals look broken and are correct:</p>
+<table>
+<thead>
+<tr>
+<th>goal</th>
+<th>expected</th>
+<th>why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Re-Enroll Projection</code></td>
+<td>a real figure</td>
+<td>the incoming cohort persists internally</td>
+</tr>
+<tr>
+<td><code>New Student Target</code></td>
+<td>NULL</td>
+<td>not recruiting externally</td>
+</tr>
+<tr>
+<td><code>App Target</code></td>
+<td>NULL</td>
+<td>no application funnel</td>
+</tr>
+<tr>
+<td><code>Offers Target</code></td>
+<td>NULL</td>
+<td>no lottery, so no offers</td>
+</tr>
+</tbody>
+</table>
+<p>This is also why Miami Tech lacks the lottery categories (<code>Accepted</code>, <code>Offers</code>,
+<code>Pending Offers</code>) at <code>School</code> granularity. Do not move the returners figure into
+<code>New Student Target</code>.</p>
+<h3 id="full-grouped_status-goal_type-goal_name-crosswalk">Full <code>grouped_status</code> → <code>goal_type</code> / <code>goal_name</code> crosswalk</h3>
+<p><code>int_tableau__finalsite_student_scaffold</code>'s <code>roster</code> CTE renames
+<code>grouped_status</code> into <code>goal_type</code> and <code>goal_name</code>. Only these change:</p>
+<ul>
+<li><code>Ever</code>: <code>Applications</code> → <code>goal_name</code> <code>App Target</code>; <code>Offers</code> → <code>goal_name</code>
+  <code>Offers Target</code>; <code>Accepted to Enrolled</code>, <code>Offers to Accepted</code> and
+  <code>Offers to Enrolled</code> → <code>goal_type</code> <code>Conversion</code>.</li>
+<li><code>Current</code>: the three <code>... Num</code> statuses → <code>goal_type</code> <code>Conversion</code>. A
+  <code>... Num</code> status is the numerator of a conversion rate: the students who
+  reached the rate's later stage. <code>goal_name</code> is never renamed for <code>Current</code>
+  rows.</li>
+<li><code>Current</code> <code>Pending Offers</code> also expands into the three day buckets.</li>
+</ul>
+<p>Every other <code>grouped_status</code> passes through unchanged as both <code>goal_type</code> and
+<code>goal_name</code>. To list the current <code>grouped_status</code> values:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="k">distinct</span><span class="w"> </span><span class="n">grouped_status_timeframe</span><span class="p">,</span><span class="w"> </span><span class="n">status_group_value</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="o">`</span><span class="p">.</span><span class="n">kipptaf_google_sheets</span><span class="p">.</span><span class="n">int_google_sheets__finalsite__status_crosswalk_unpivot</span>
+</code></pre></div>
+<p><code>int_finalsite__status_report_unpivot</code> resolves <code>assigned_school</code> to a
+PowerSchool <code>schoolid</code> and abbreviation through
+<code>int_people__location_crosswalk</code>. Before Finalsite assigns a school (inquiries,
+applications), the row falls back to <code>schoolid = 0</code> and
+<code>school = 'No School Assigned'</code>, which is how those rows meet
+<code>Region/Grade Level</code> goals. <code>int_tableau__finalsite_student_scaffold</code> also sets
+<code>school</code> to the region for <code>Inquiries</code> and <code>Applications</code> rows.</p>
+<h2 id="how-finalsites-latest_status-becomes-an-expected-enrollment-status">How Finalsite's <code>latest_status</code> becomes an expected enrollment status</h2>
+<p><code>int_tableau__finalsite_student_scaffold</code> carries two enrollment-status columns:
+<code>enroll_status</code> from the SIS, and <code>finalsite_expected_enroll_status</code>, derived
+from <code>latest_status</code> alone. <code>rpt_tableau__fresh_dashboard_qc</code> exposes
+<code>enroll_status</code> as <code>sis_enroll_status</code>.</p>
+<p>The SIS side is <code>enrollment_lookup</code>, a <code>union all</code> of
+<code>int_extracts__student_enrollments</code> (rows with an <code>infosnap_id</code>, which excludes
+Miami's rows there) and <code>int_focus__student_enrollment_roster</code> bridged to
+Finalsite through <code>int_finalsite__contact_id_attributes</code> on the Focus student
+id. Both branches are scoped to the recruitment year, deduplicated per
+<code>(academic_year, infosnap_id)</code> preferring an active record.</p>
+<table>
+<thead>
+<tr>
+<th><code>latest_status</code></th>
+<th>expected</th>
+<th>meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Enrolled</code></td>
+<td><code>0</code></td>
+<td>should be active in the SIS</td>
+</tr>
+<tr>
+<td><code>Mid Year Withdrawal</code>, <code>Never Attended</code>, <code>Summer Withdraw</code> ("left")</td>
+<td><code>2</code></td>
+<td>should not be active</td>
+</tr>
+<tr>
+<td><code>Accepted</code>, <code>Assigned School</code>, <code>Did Not Enroll</code>, <code>Campus Transfer Requested</code>, <code>Parent Declined</code>, <code>Enrollment In Progress</code> ("pending")</td>
+<td><code>2</code></td>
+<td>should not be active</td>
+</tr>
+<tr>
+<td>anything else</td>
+<td><code>NULL</code></td>
+<td>no expectation</td>
+</tr>
+</tbody>
+</table>
+<p>The values mirror the SIS's own <code>enroll_status</code> codes on purpose, because the
+two columns are compared. The NULL case covers most of the funnel: a waitlisted
+or deferred applicant has no business having an SIS record yet.</p>
+<p><code>is_enroll_status_mismatch</code> fires in two directions:</p>
+<ol>
+<li>Finalsite says enrolled (<code>0</code>) but the SIS says withdrawn or graduated
+   (<code>enroll_status in (2, 3)</code>).</li>
+<li>Finalsite says the student should not be active (<code>2</code>) but the SIS says
+   enrolled (<code>enroll_status = 0</code>). This covers both the "left" and the "pending"
+   statuses; <code>latest_status</code> tells SRE which situation a row is.</li>
+</ol>
+<p>SIS <code>1</code> and <code>-1</code> never trigger a mismatch. Beware the word "inactive": a
+withdrawn student (<code>2</code>) often displays as inactive in the SIS and is caught,
+while <code>enroll_status = 1</code> is also called inactive and is excluded on purpose.
+Name the code, or say "withdrawn" and "graduated".</p>
+<p>The pending list is SRE-owned. <code>Did Not Enroll</code> and <code>Parent Declined</code> read as
+exits rather than pending states, and a bare <code>Accepted</code> may match no rows.
+Confirm with SRE before changing the list.</p>
+<h3 id="first-day-of-school-is-hardcoded-per-region">First day of school is hardcoded per region</h3>
+<p><code>is_enrolled_fdos</code> is computed in <code>int_tableau__finalsite_student_scaffold</code> from
+a first-day date hardcoded in that model:</p>
+<table>
+<thead>
+<tr>
+<th>region</th>
+<th>first day</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Newark, Paterson</td>
+<td>August 28</td>
+</tr>
+<tr>
+<td>Camden</td>
+<td>August 24</td>
+</tr>
+<tr>
+<td>Miami</td>
+<td>August 14</td>
+</tr>
+</tbody>
+</table>
+<p>The year comes from <code>var("finalsite_recruitment_year")</code>; month and day are
+hardcoded and exposed as <code>custom_fdos_date</code>. The dates came from SRE and move
+from year to year, so re-confirming them is a required rollover step.</p>
+<p>The flag is <code>sis_entry_date &lt;= custom_fdos_date</code>, where <code>sis_entry_date</code> is
+<code>entrydate</code> (PowerSchool) or <code>startdate</code> (Focus). It checks entry only: a
+student who enrolled before the first day and left before it still reads <code>true</code>.
+It is a bare comparison, so a student with no SIS record reads NULL rather than
+<code>false</code>. Do not wrap it in <code>if()</code> to match its siblings.</p>
+<p>Expect no visible effect until school starts: at rollover both SISs give every
+student the same bulk entry date, before any first day, so the flag reads <code>true</code>
+for everyone with a record.</p>
+<p><code>int_extracts__student_enrollments</code> and <code>int_focus__student_enrollment_roster</code>
+still compute their own <code>is_enrolled_fdos</code> for other consumers; this model reads
+their entry dates instead. Their <code>is_enrolled_oct01</code> / <code>oct15</code> / <code>mar15</code> flags
+pass through unchanged.</p>
+<h3 id="the-qc-worklist-flags">The QC worklist flags</h3>
+<h4 id="the-five-flags-in-plain-language">The five flags, in plain language</h4>
+<p>Each row is one student with one problem; a student with several problems
+appears once per problem. Listed in SRE's triage order, most urgent first:</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>flag</th>
+<th>what it means</th>
+<th>how it gets fixed</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>is_missing_sis_record</code></td>
+<td>Finalsite says enrolled and the SIS has no enrollment record to compare against.</td>
+<td>Create or link the SIS record.</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>is_school_mismatch</code></td>
+<td>Finalsite's assigned school is not the SIS school, so the student counts against the wrong school's targets.</td>
+<td>Confirm the true school, then fix whichever system is wrong.</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>is_enroll_status_mismatch</code></td>
+<td>Finalsite and the SIS disagree about whether the student is enrolled (the two directions above).</td>
+<td>Decide which system is right, then correct the other.</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>is_grade_level_mismatch</code></td>
+<td>Finalsite's grade is not the SIS grade.</td>
+<td>Confirm the true grade, then fix whichever system is wrong.</td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>is_missing_finalsite_record</code></td>
+<td>Enrolled in the SIS for the recruitment year, but Finalsite has no record at all. These make the dashboard count low.</td>
+<td>Create or restore the Finalsite record. Until then the student is invisible on Progress to Goals.</td>
+</tr>
+</tbody>
+</table>
+<h4 id="implementation-notes">Implementation notes</h4>
+<ul>
+<li>Three flags come from <code>int_tableau__finalsite_student_scaffold</code>.
+  <code>is_missing_sis_record</code> is computed in the QC model as
+  <code>finalsite_expected_enroll_status = 0 and enroll_status is null</code>, so it only
+  fires for <code>Enrolled</code>: a student who should have an SIS record but was never
+  advanced to <code>Enrolled</code> in Finalsite is invisible to it.</li>
+<li><code>is_missing_finalsite_record</code> is unioned on rather than unpivoted because it
+  describes a student Finalsite has never heard of, who cannot be in a
+  Finalsite-sourced roster. It starts from <code>int_extracts__student_enrollments</code>
+  (<code>enroll_status = 0</code>, recruitment year), takes the Finalsite id from
+  <code>infosnap_id</code> or, for Miami, from <code>int_finalsite__contact_id_attributes</code>, and
+  anti-joins against every <code>stg_finalsite__status_report</code> record, unscoped by
+  year: a record under any cycle means Finalsite knows the student.</li>
+<li>The two absence flags are mirror images: for one Finalsite id, only one can
+  fire. A child whose Finalsite record and SIS record are not linked by id (no
+  or a wrong <code>infosnap_id</code>, or no Focus bridge row) fires both, on two rows: the
+  Finalsite side looks for an SIS record and finds none, and the SIS side looks
+  for a Finalsite record and finds none. See the "absent from the SIS" and
+  "present but unlinked" question under <em>Open questions</em>.</li>
+<li><code>is_grade_level_mismatch</code> and <code>is_school_mismatch</code> use
+  <code>if(&lt;cmp&gt;, true, false)</code>, so they read <code>false</code>, not NULL, when the SIS side is
+  missing. Do not use <code>is null</code> on them as a missing-SIS proxy. A student with
+  no SIS record surfaces once, under <code>is_missing_sis_record</code>.</li>
+<li>During the window after the recruitment year moves ahead of the SIS (see
+  <em>Known data model caveats</em>), the comparison flags fall silent network-wide and
+  <code>is_missing_sis_record</code> carries the volume.</li>
+</ul>
+<h2 id="supporting-models">Supporting models</h2>
+<p>In the family:</p>
+<table>
+<thead>
+<tr>
+<th>model</th>
+<th>role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>int_tableau__fresh_enrollment_scaffold</code></td>
+<td>The school x grade spine (above).</td>
+</tr>
+<tr>
+<td><code>int_tableau__fresh_goals_scaffold</code></td>
+<td>Non-Enrollment goals inner-joined to the spine on <code>(enrollment_academic_year, region, schoolid, grade_level)</code>; adds <code>grouped_status_timeframe</code>.</td>
+</tr>
+<tr>
+<td><code>int_tableau__finalsite_student_scaffold</code></td>
+<td>One row per student per <code>goal_type</code>/<code>goal_name</code>, with <code>latest_status</code>, days in status, SIS comparison columns and the QC flags. Materialized as a table.</td>
+</tr>
+<tr>
+<td><code>int_google_sheets__finalsite__goals_pivot</code></td>
+<td>Every goals-sheet row pivoted to one column per Enrollment target, with <code>enrollment_type</code> derived from the goal name. No <code>goal_type</code> filter: Progress to Goals filters to <code>Enrollment</code>. The pivot takes <code>avg(goal_value)</code>, so a duplicate goal row is averaged, not doubled. Table.</td>
+</tr>
+<tr>
+<td><code>int_google_sheets__finalsite__status_crosswalk_unpivot</code></td>
+<td>The crosswalk unpivoted to one row per status per goal group; adds <code>grouped_status_order</code> (1-8 funnel sequence, 0 otherwise) and <code>grouped_status_timeframe</code>. Table.</td>
+</tr>
+<tr>
+<td><code>stg_google_sheets__finalsite__goals</code></td>
+<td><code>select *</code> over the goals sheet. Table.</td>
+</tr>
+<tr>
+<td><code>stg_google_sheets__finalsite__status_crosswalk</code></td>
+<td><code>select *</code> over the crosswalk sheet, plus <code>file_year</code> from the partition key. Table.</td>
+</tr>
+<tr>
+<td><code>int_finalsite__status_report_unpivot</code></td>
+<td>The 24 status-date columns of the status report as one row per enrollment, status and load partition, with <code>schoolid</code>, <code>school</code> and <code>status_order</code>. Also read by <code>rpt_gsheets__finalsite__log</code>, a retirement candidate pending a check with its user.</td>
+</tr>
+</tbody>
+</table>
+<p>Shared upstreams (outside the family):</p>
+<ul>
+<li><code>stg_finalsite__status_report</code>: read by <code>int_finalsite__status_report_unpivot</code>
+  for every status date, and by the QC model for Finalsite record existence,
+  joined on <code>finalsite_enrollment_id</code>.</li>
+<li><code>stg_google_sheets__finalsite__exclude_ids</code>: read by
+  <code>stg_finalsite__status_report</code> to drop test records
+  (<code>finalsite_enrollment_id not in</code> the sheet's <code>finalsite_student_id</code>).</li>
+<li><code>int_finalsite__contact_id_attributes</code>: read by the student scaffold and the
+  QC model for the Focus-to-Finalsite id bridge, joined on the Focus student id
+  and <code>_dbt_source_project</code>.</li>
+<li><code>int_extracts__student_enrollments</code>: read by the student scaffold and the QC
+  model for NJ SIS enrollment, joined on <code>infosnap_id</code> and <code>academic_year</code>.</li>
+<li><code>int_focus__schools</code>: read by the scaffold for Miami's school list, joined to
+  the locations sheet on <code>focus_school_id</code>.</li>
+<li><code>int_focus__student_enrollment_roster</code>: read by the scaffold for Miami grade
+  membership (on <code>ps_schoolid</code>, <code>_dbt_source_project</code>) and by the student
+  scaffold for Miami SIS enrollment (on the Focus student id).</li>
+<li><code>stg_powerschool__schools</code> / <code>stg_powerschool__students</code>: read by the scaffold
+  for the NJ school list and grade membership, joined on
+  <code>(schoolid, _dbt_source_project)</code>.</li>
+<li><code>stg_google_sheets__people__locations</code>: read by the scaffold for Miami school
+  abbreviations and PowerSchool-space ids, joined on <code>focus_school_id</code>.</li>
+<li><code>int_people__location_crosswalk</code>: read by
+  <code>int_finalsite__status_report_unpivot</code> for <code>schoolid</code> (on
+  <code>assigned_school = location_name</code>) and by Progress to Goals for <code>-9</code> row
+  <code>school_level</code> (on <code>location_powerschool_school_id</code>).</li>
+</ul>
+<h2 id="inputs">Inputs</h2>
+<p>All three sheets are Google Sheets external tables; ask the data team for the
+links.</p>
+<ul>
+<li><strong>Finalsite goals sheet</strong> (<code>src_google_sheets__finalsite__goals</code>): one row per
+  year, region, school, grade, granularity, goal type and goal name, with the
+  value. SRE supplies values in a new workbook each cycle; the data team pastes
+  them in. The external table reads the sheet live, but
+  <code>stg_google_sheets__finalsite__goals</code> and the pivot are tables frozen at their
+  last build, so an edit is invisible until they rebuild. A dashboard number
+  that doesn't match the sheet usually means the sheet changed after the last
+  build: compare the sheet's Drive modified time against the table's
+  <code>last_modified_time</code> in <code>kipptaf_google_sheets.__TABLES__</code>.</li>
+<li><strong>Finalsite status crosswalk sheet</strong>: maps each Finalsite status and
+  <code>enrollment_type</code> to funnel goal groups, for one year at a time. Column
+  reference under <em>Rolling the dashboard over to a new cycle</em>.</li>
+<li><strong>Finalsite exclude-ids sheet</strong>: Finalsite test and fake records to drop. A
+  test record created today counts until its id is added.</li>
+<li><strong>SRE's goals workbook</strong>: not read by dbt. It is the source the goals sheet is
+  reconciled against (see <em>Sourced vs derived goals</em>).</li>
+</ul>
+<h2 id="decisions">Decisions</h2>
+<ul>
+<li><strong>Grade membership comes from current enrollment, not the declared grade
+  span.</strong> PowerSchool's <code>low_grade</code> is below what some schools serve, so
+  <code>generate_array(low_grade, high_grade)</code> would add phantom grades, and nobody
+  maintains it when a school's band shifts. Enrollment is self-maintaining. The
+  cost: a newly opening grade with no enrolled student has no row until
+  <code>finalsite_new</code> supplies it.</li>
+<li><strong>The net-new gate compares the two year vars.</strong> Equal vars mean Finalsite and
+  the SIS are on the same cycle, so a Finalsite school/grade missing from the
+  SIS is treated as a data-entry error. Diverging vars mean Finalsite is
+  recruiting ahead, which is when not-yet-enrolled grades should be trusted. The
+  predicate is plain SQL, not a Jinja <code>if</code>, so the model compiles the same way
+  every cycle.</li>
+<li><strong>First day of school is regional and hardcoded.</strong> Focus computes its own flag
+  against one network-wide first day, which marked most Miami students late;
+  PowerSchool's is per school. The enrollment team reports against a regional
+  date, so the date lives in this one model. One date per region is coarser than
+  PowerSchool's per-school date for NJ; that imprecision is accepted.</li>
+<li><strong><code>finalsite_expected_enroll_status</code> uses the SIS's own codes</strong> so the two
+  compared columns never give one number two meanings. <code>2</code> slightly overstates
+  the pending statuses (truer: "no active record"), but the check only tests
+  against SIS <code>0</code>, so no outcome changes.</li>
+<li><strong>Same-day status ties are not a QC flag.</strong> The pending statuses in direction
+  2 of <code>is_enroll_status_mismatch</code> cover the cases SRE needs to act on; the tie
+  itself is handled with the Reset Protocol.</li>
+</ul>
+<h2 id="known-data-model-caveats">Known data model caveats</h2>
+<p>These are properties of how Finalsite works, not defects. They explain recurring
+gaps between raw Finalsite numbers and the dashboard.</p>
+<ul>
+<li><strong>Concurrent academic years, non-standardized rollover.</strong> Two years of live
+  student data can coexist; students and regions roll over on their own
+  timeline.</li>
+<li><strong>Status dates are mutable and student-scoped, not year-scoped.</strong> Editing a
+  status in the Finalsite UI can overwrite its date. It is not an audit trail.</li>
+<li><strong><code>grouped_status_order</code> (the 8-stage funnel sequence) is a best-assumption
+  ordering.</strong> Students can skip steps or move backward.</li>
+<li><strong><code>detailed_status_ranking</code> (crosswalk sheet) is hand-duplicated into the
+  <code>status_order</code> <code>CASE</code> in <code>int_finalsite__status_report_unpivot.sql</code></strong>, per the
+  repo's rule against staging-layer joins to Google Sheets.
+  <code>test_int_finalsite__status_order_matches_crosswalk_ranking</code> compares the
+  sheet against a static list mirroring the <code>CASE</code>. Edit the <code>CASE</code>, the test's
+  list and the sheet together.</li>
+<li><strong>Same-day status ties can pick the wrong latest status.</strong> The pipeline
+  compares dates, not timestamps, and breaks ties with <code>status_order desc</code>,
+  which picks wrong for an exit status (<code>Parent Declined</code>, rank 15) against an
+  in-progress one (<code>Enrollment In Progress</code>, rank 16) set the same day. The fix
+  is the Reset Protocol. To find them, use the Progress to Goals tab's OPEN
+  ROSTER button to see every student's current status, or the Finalsite Log
+  sheet (<code>rpt_gsheets__finalsite__log</code>), which lists students with two or more
+  statuses on their latest date. To prevent them, avoid two status changes for
+  one student on the same day.</li>
+<li><strong>Ingestion lag.</strong> <code>stg_finalsite__status_report</code> loads on a file-drop sensor,
+  not a fixed schedule, so a cleanup done late in someone's day may not show
+  until the next day's file. Whether this applies to Miami is unconfirmed.</li>
+<li><strong>SIS comparison columns go NULL for a while after the recruitment year moves
+  forward.</strong> Both branches of <code>enrollment_lookup</code> are scoped to the recruitment
+  year, and neither SIS has rows for a year it has not rolled into. Until each
+  SIS catches up, <code>enroll_status</code>, <code>sis_entry_date</code> and the <code>is_enrolled_*</code>
+  flags are NULL for every student in that region. Expected; no action needed.</li>
+<li><strong>Fake or test Finalsite records inflate counts until someone adds their ids
+  to the exclude-ids sheet.</strong></li>
+</ul>
+<h2 id="open-questions">Open questions</h2>
+<ul>
+<li><strong>What is each dashboard tab for, who opens it, and which data source feeds
+  it?</strong> Landing Page, Progress to Goals, School Ops Team and SRE Team. This is
+  an open request with the stakeholder. The answer decides which reporting
+  models each audience depends on and whether the direct read of
+  <code>int_tableau__finalsite_student_scaffold</code> can move to a <code>rpt_</code> model.</li>
+<li><strong>What is KIPP Purpose's new student target?</strong> SRE's workbook states two
+  different values for it on different tabs. Asked of the stakeholder; tracked
+  on #5436.</li>
+<li><strong>A stray seat-target value on SRE's Miami tab</strong> inflates SRE's own Legacy MS
+  total. Only SRE can fix their workbook; tracked on #5436.</li>
+<li><strong>How should the QC checks handle retained students?</strong> Retention can put
+  Finalsite and the SIS legitimately out of step: Finalsite may carry the
+  student at the next grade while the SIS has them repeating
+  (<code>is_grade_level_mismatch</code>), and a repeated grade can keep a student at a
+  school they would otherwise have left (<code>is_school_mismatch</code>, most likely at
+  the grade 5/6 boundary). Options: suppress them, label them, or leave them
+  firing. Choosing needs agreement on who records retention and when, and
+  whether Finalsite's <code>Retained Date</code> is populated anywhere. Pending SRE.</li>
+<li><strong>QC questions from the AY2026 definitions review, pending SRE:</strong> should the
+  <code>Enrolled</code>-only gate on <code>is_missing_sis_record</code> widen? Should "absent from the
+  SIS" and "present but unlinked" be separate flags (they need different fixes)?
+  Is the triage order in <em>The five flags, in plain language</em> still right?</li>
+<li><strong>Could <code>stg_finalsite__status_report.active_school_year</code> give a per-record
+  rollover signal?</strong> It is the school year a record is active under, and it is
+  mixed at any moment. Comparing it to the recruitment year could replace the
+  single network-wide anchor. An idea, not a design.</li>
+<li><strong>Historical or multi-year scaffold reporting is not supported.</strong> Both SIS
+  sources are scoped to the current cycle. Needs its own design if it becomes a
+  requirement.</li>
+</ul>
+<h3 id="known-issues-need-to-fix">Known issues, need to fix</h3>
+<ul>
+<li><strong>School-granularity goals never match students in Aggregated.</strong> Goals at
+  <code>goal_granularity = 'School'</code> carry <code>grade_level = -9</code>, and every branch of
+  <code>rpt_tableau__fresh_dashboard_aggregated</code> except Inquiries/Applications joins
+  students on <code>grade_level</code> (lines 58, 108, 161, 261), which no student has as
+  <code>-9</code>. The Inquiries/Applications branch is limited to <code>Region/Grade Level</code>. So
+  <code>School</code> goal rows always show zero students:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">    </span><span class="n">goal_granularity</span><span class="p">,</span>
+<span class="w">    </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">goal_rows</span><span class="p">,</span>
+<span class="w">    </span><span class="n">countif</span><span class="p">(</span><span class="n">finalsite_id</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">rows_with_student</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="o">`</span><span class="p">.</span><span class="n">kipptaf_tableau</span><span class="p">.</span><span class="n">rpt_tableau__fresh_dashboard_aggregated</span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">goal_granularity</span>
+</code></pre></div>
+<p><code>rows_with_student</code> is <code>0</code> for <code>School</code>.</p>
+<ul>
+<li><strong>Accepted goals, and App Target goals below region level, never reach
+  Aggregated.</strong> <code>int_tableau__fresh_goals_scaffold</code> carries them, but none of
+  Aggregated's five branches selects <code>goal_type = 'Accepted'</code>, and the
+  Inquiries/Applications branch keeps only
+  <code>goal_granularity = 'Region/Grade Level'</code>, so <code>App Target</code> goals at <code>School</code>
+  and <code>School/Grade Level</code> are dropped too. Compare the two models:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">    </span><span class="s1">'goals_scaffold'</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">model</span><span class="p">,</span><span class="w"> </span><span class="n">goal_type</span><span class="p">,</span><span class="w"> </span><span class="n">goal_granularity</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">goal_rows</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="o">`</span><span class="p">.</span><span class="n">kipptaf_tableau</span><span class="p">.</span><span class="n">int_tableau__fresh_goals_scaffold</span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">goal_type</span><span class="p">,</span><span class="w"> </span><span class="n">goal_granularity</span>
+<span class="k">union</span><span class="w"> </span><span class="k">all</span>
+<span class="k">select</span>
+<span class="w">    </span><span class="s1">'aggregated'</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">model</span><span class="p">,</span><span class="w"> </span><span class="n">goal_type</span><span class="p">,</span><span class="w"> </span><span class="n">goal_granularity</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">goal_rows</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="o">`</span><span class="p">.</span><span class="n">kipptaf_tableau</span><span class="p">.</span><span class="n">rpt_tableau__fresh_dashboard_aggregated</span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">goal_type</span><span class="p">,</span><span class="w"> </span><span class="n">goal_granularity</span>
+</code></pre></div>
+<p><code>Accepted</code> at every granularity, and <code>Applications</code> at <code>School</code> and
+  <code>School/Grade Level</code>, appear for the goals scaffold only.</p>
+<p>Confirm with the stakeholder whether any tab expects them before adding a
+  branch.</p>
+<ul>
+<li><strong>Region goals in the Offers, Pending Offers, Deferred and Waitlisted branches
+  count only unassigned students.</strong> These branches join students on <code>schoolid</code>
+  (<code>rpt_tableau__fresh_dashboard_aggregated.sql</code> lines 57 and 160). A
+  <code>Region/Grade Level</code> goal row has <code>schoolid = 0</code>, which matches only students
+  with no school assigned, so the region-level count for these goals reads far
+  too low. Most students at these stages have a school:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">    </span><span class="n">goal_type</span><span class="p">,</span>
+<span class="w">    </span><span class="n">countif</span><span class="p">(</span><span class="n">schoolid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">unassigned_students</span><span class="p">,</span>
+<span class="w">    </span><span class="n">countif</span><span class="p">(</span><span class="n">schoolid</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">assigned_students</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="o">`</span><span class="p">.</span><span class="n">kipptaf_tableau</span><span class="p">.</span><span class="n">int_tableau__finalsite_student_scaffold</span>
+<span class="k">where</span><span class="w"> </span><span class="n">goal_type</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span><span class="s1">'Offers'</span><span class="p">,</span><span class="w"> </span><span class="s1">'Pending Offers'</span><span class="p">,</span><span class="w"> </span><span class="s1">'Deferred'</span><span class="p">,</span><span class="w"> </span><span class="s1">'Waitlisted'</span><span class="p">)</span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">goal_type</span>
+</code></pre></div>
+<p>Only <code>unassigned_students</code> can reach a region row. The fix is to join region
+  rows on region and grade only, as the Inquiries/Applications branch does.</p>
+<ul>
+<li>
+<p><strong>The <code>fresh_dashboard</code> exposure reads
+  <code>int_tableau__finalsite_student_scaffold</code> directly</strong>, with no <code>rpt_</code> model
+  buffering it (<code>src/dbt/kipptaf/models/exposures/tableau.yml</code>). The repo rule
+  is that an external tool never reads an intermediate model directly.</p>
+</li>
+<li>
+<p><strong><code>int_tableau__fresh_goals_scaffold</code>'s uniqueness test includes
+  <code>goal_value</code>.</strong> Two goals-sheet rows with the same key and different values
+  pass the test and double the goal. The staging test on
+  <code>stg_google_sheets__finalsite__goals</code> (key without <code>goal_value</code>) is what
+  currently prevents it. Check the scaffold on its own key:</p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">duplicate_keys</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="k">select</span><span class="w"> </span><span class="n">enrollment_academic_year</span><span class="p">,</span>
+<span class="w">    </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="o">`</span><span class="p">.</span><span class="n">kipptaf_tableau</span><span class="p">.</span><span class="n">int_tableau__fresh_goals_scaffold</span>
+<span class="w">    </span><span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">enrollment_academic_year</span><span class="p">,</span><span class="w"> </span><span class="n">region</span><span class="p">,</span><span class="w"> </span><span class="n">schoolid</span><span class="p">,</span><span class="w"> </span><span class="n">grade_level</span><span class="p">,</span>
+<span class="w">        </span><span class="n">goal_granularity</span><span class="p">,</span><span class="w"> </span><span class="n">goal_type</span><span class="p">,</span><span class="w"> </span><span class="n">goal_name</span><span class="p">,</span><span class="w"> </span><span class="n">grouped_status_timeframe</span>
+<span class="w">    </span><span class="k">having</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">1</span>
+<span class="p">)</span>
+</code></pre></div>
+<p>The fix is to drop <code>goal_value</code> from the test's columns.</p>
+<ul>
+<li><strong><code>int_finalsite__status_report_unpivot.latest_status_date</code> ignores the load
+  partition.</strong> The model's grain includes <code>_dagster_partition_key</code>, but the
+  window partitions by <code>finalsite_enrollment_id, enrollment_academic_year</code> only,
+  so a record loaded in several partitions gets one date across all of them.
+  <code>_dagster_partition_key</code> names the Finalsite export file a row came from.
+  There is one file per school year, and the key is that year in <code>2025_26</code> form,
+  taken from the file name. Finalsite carries an enrollment into more than one
+  school year's export, so the same record repeats across loads. Nothing reads
+  the column today (<code>rpt_gsheets__finalsite__log</code> computes its own). Records
+  loaded in several partitions:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">ids_in_several_partitions</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="k">select</span><span class="w"> </span><span class="n">finalsite_enrollment_id</span><span class="p">,</span><span class="w"> </span><span class="n">enrollment_academic_year</span><span class="p">,</span>
+<span class="w">    </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="o">`</span><span class="p">.</span><span class="n">kipptaf_finalsite</span><span class="p">.</span><span class="n">int_finalsite__status_report_unpivot</span>
+<span class="w">    </span><span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">finalsite_enrollment_id</span><span class="p">,</span><span class="w"> </span><span class="n">enrollment_academic_year</span>
+<span class="w">    </span><span class="k">having</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="k">distinct</span><span class="w"> </span><span class="n">_dagster_partition_key</span><span class="p">)</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">1</span>
+<span class="p">)</span>
+</code></pre></div>
+<p>Fix or drop the column.</p>
+<ul>
+<li>
+<p><strong><code>detailed_status_branched_ranking</code> is read by nothing.</strong> It is declared in
+  <code>stg_google_sheets__finalsite__status_crosswalk</code> and
+  <code>int_google_sheets__finalsite__status_crosswalk_unpivot</code> and passed through,
+  but no model reads it. Either wire up its intended use or remove it from both
+  models and the sheet.</p>
+</li>
+<li>
+<p><strong>Pre-K: is it in scope?</strong> The goals staging <code>accepted_values</code> test on
+  <code>grade_level</code> rejects <code>-1</code>, so no Pre-K goal can be entered. The enrollment
+  scaffold has no filter excluding <code>-1</code>, so a school with enrolled Pre-K
+  students would get Pre-K spine rows with no possible goals. To check for Pre-K
+  spine rows:</p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">prek_rows</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="o">`</span><span class="p">.</span><span class="n">kipptaf_tableau</span><span class="p">.</span><span class="n">int_tableau__fresh_enrollment_scaffold</span>
+<span class="k">where</span><span class="w"> </span><span class="n">grade_level</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">-</span><span class="mi">1</span>
+</code></pre></div>
+<p>Decide with the stakeholder whether FRESH reports Pre-K, then either allow
+  <code>-1</code> in the goals test or filter it out of the scaffold.</p>
+<h2 id="rolling-the-dashboard-over-to-a-new-cycle">Rolling the dashboard over to a new cycle</h2>
+<p>There is no fixed date. The rollover starts when SRE says its cycle has
+advanced, not when <code>current_academic_year</code> bumps on July 1.</p>
+<p>Order matters. <code>finalsite_recruitment_year</code> repoints the whole pipeline, and
+several models inner-join sheets scoped to that year. Flipping the var before
+the sheets carry the new year's rows does not error; it silently returns zero
+rows.</p>
+<h3 id="steps-in-order">Steps, in order</h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Step</th>
+<th>Owner</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Enter any new schools/grades in Finalsite under the new FS year</td>
+<td>SRE</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Agree which Finalsite enrollment year is now active</td>
+<td>SRE + data team</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Update <code>status_crosswalk</code>'s partition key and confirm its columns</td>
+<td>Analyst + SRE</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Supply the new goals workbook</td>
+<td>SRE</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Reconcile the goals sheet against SRE's workbook</td>
+<td>Data team + SRE</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Review <code>exclude_ids</code> for the new cycle's test records</td>
+<td>Analyst</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Re-confirm the four first-day-of-school dates</td>
+<td>Data team + SRE</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Bump <code>finalsite_recruitment_year</code> in <code>dbt_project.yml</code></td>
+<td>Data team</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Build and verify the FRESH models</td>
+<td>Data team</td>
+</tr>
+</tbody>
+</table>
+<h4 id="1-2-new-schools-and-grades-come-from-finalsite">1-2. New schools and grades come from Finalsite</h4>
+<p>A school or grade being recruited for with nobody enrolled yet is entered in
+Finalsite by SRE under the new Finalsite year. Once the recruitment year is
+bumped ahead of <code>current_academic_year</code>, <code>finalsite_new</code> brings those rows in
+(see <em>The three row types the SIS can't produce directly</em>). Agreeing on the
+active year is the real gate on the rollover.</p>
+<h4 id="3-status_crosswalk">3. <code>status_crosswalk</code></h4>
+<ul>
+<li>Replace the <code>_dagster_partition_key</code> value (column A) with the new year. The
+  sheet holds one year at a time.</li>
+<li>Confirm with SRE that columns D, H, and I-P still make sense for the new
+  cycle. They encode judgment about the funnel; there is no way to derive them.</li>
+</ul>
+<p>This is the loudest failure mode: <code>latest_status_calc</code> inner-joins the crosswalk
+on <code>_dagster_partition_key</code>, and the <code>Current</code> roster branch joins it on
+<code>file_year</code>, so a key that doesn't match the Finalsite data drops every status
+and the dashboard goes empty.</p>
+<h4 id="4-5-goals">4-5. Goals</h4>
+<p>SRE supplies a new workbook each cycle, so ask for it rather than assume last
+cycle's. Then:</p>
+<ul>
+<li>Confirm goal names are unchanged: the join is on <code>goal_name</code>, so a renamed
+  goal silently stops matching.</li>
+<li>Reconcile the workbook against <code>stg_google_sheets__finalsite__goals</code> at all
+  three granularities; grade-level goals change independently of the cover
+  sheet's school totals.</li>
+<li>Rebuild <code>stg_google_sheets__finalsite__goals</code> between rounds; it is a table.</li>
+</ul>
+<p>Run this reconciliation whenever goals change, not only at rollover. SRE does
+not always flag mid-year changes. The fresh-dashboard skill has the procedure.</p>
+<h4 id="8-the-var-bump">8. The var bump</h4>
+<p>One line in one file. Every model and test reads
+<code>var("finalsite_recruitment_year")</code>.</p>
+<p>After the bump, expect the SIS comparison columns to be NULL until each SIS
+rolls over (see <em>Known data model caveats</em>).</p>
+<h3 id="status_crosswalk-column-reference"><code>status_crosswalk</code> column reference</h3>
+<p>The staging model is <code>select *</code>, so sheet columns map straight to model columns.
+Bold rows are the ones SRE re-confirms each cycle.</p>
+<table>
+<thead>
+<tr>
+<th>col</th>
+<th>column</th>
+<th>what it drives</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A</td>
+<td><code>_dagster_partition_key</code></td>
+<td>The cycle year. Replaced at rollover; <code>file_year</code> is derived from it.</td>
+</tr>
+<tr>
+<td>B</td>
+<td><code>enrollment_type</code></td>
+<td>New vs Returning.</td>
+</tr>
+<tr>
+<td>C</td>
+<td><code>detailed_status</code></td>
+<td>The Finalsite status name being mapped.</td>
+</tr>
+<tr>
+<td><strong>D</strong></td>
+<td><code>detailed_status_ranking</code></td>
+<td>Orders statuses. Hand-mirrored by the <code>status_order</code> <code>CASE</code>; change both.</td>
+</tr>
+<tr>
+<td>E</td>
+<td><code>detailed_status_branched_ranking</code></td>
+<td>Read by nothing (see <em>Known issues, need to fix</em>).</td>
+</tr>
+<tr>
+<td>F</td>
+<td><code>valid_detailed_status</code></td>
+<td><code>false</code> silently drops the row. "Is this status legitimate for this <code>enrollment_type</code>."</td>
+</tr>
+<tr>
+<td>G</td>
+<td><code>fs_status_field</code></td>
+<td>The Finalsite date column the status came from.</td>
+</tr>
+<tr>
+<td><strong>H</strong></td>
+<td><code>qa_flag</code></td>
+<td><code>true</code> silently drops the row.</td>
+</tr>
+<tr>
+<td><strong>I-P</strong></td>
+<td><code>status_enrollment</code>, <code>status_group_numerator</code>, <code>status_group_denominator</code>, <code>conversion_metric_numerator_1..3</code>, <code>conversion_metric_denominator_1..2</code></td>
+<td>The goal-group mapping. Unpivoted into <code>status_group_name</code> / <code>status_group_value</code>, which is how a raw status becomes a <code>goal_type</code> / <code>goal_name</code>.</td>
+</tr>
+<tr>
+<td>Q</td>
+<td><code>file_year</code></td>
+<td>Derived in the staging model from column A; not in the sheet.</td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>
