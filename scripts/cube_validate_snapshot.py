@@ -1237,16 +1237,36 @@ class Coverage:
         return self._count(ds, parent) == self._count(ds, [*parent, (caption, value)])
 
 
+def pending(states: list[State], manifest: Manifest) -> list[State]:
+    """States a resumed session still has to export: missing, failed or ignored."""
+    return [
+        st for st in states if (manifest.states.get(st.id) or {}).get("status") != "ok"
+    ]
+
+
 def _open(a) -> int:
     checks = _load_checks(a.checks)
     server, auth = _server()
     at = dt.datetime.now(dt.UTC)
-    snapdir = new_snapshot_dir(checks["workbook"], at)
+    resume = None
+    if a.resume:
+        snapdir = latest_snapshot(checks["workbook"])
+        resume = read_manifest(snapdir / "manifest.json")
+        if not resume.closed:
+            raise SessionError(
+                "the latest session is still open; export into it instead"
+            )
+    else:
+        snapdir = new_snapshot_dir(checks["workbook"], at)
     with server.auth.sign_in(auth):
         session = Session(server, checks["review_project_luid"], auth=auth)
         print("swept:", session.sweep(checks["workbook"]) or "nothing")
         live_updated = server.workbooks.get_by_id(checks["workbook_luid"]).updated_at
         live_at = live_updated.isoformat() if live_updated else ""
+        if resume is not None and resume.live_updated_at != live_at:
+            raise SessionError(
+                "the live workbook changed since that snapshot; open without --resume"
+            )
         live = Path(
             server.workbooks.download(
                 checks["workbook_luid"],
@@ -1270,6 +1290,14 @@ def _open(a) -> int:
             for c in wb.filters
             if c.dashboard in checks["dashboards"]
         }
+        if resume is not None:
+            # Same live revision: earlier exports still hold; only the copy is new.
+            resume.copy_luid, resume.closed = copy, False
+            write_manifest(snapdir / "manifest.json", resume)
+            todo = pending(_states_for(checks, a.states), resume)
+            print(f"resuming: {len(todo)} states to export")
+            _export_all(session, resume, snapdir, wb, checks, todo)
+            return 0
         m = Manifest(
             checks["workbook"],
             checks["workbook_luid"],
@@ -1356,6 +1384,12 @@ def main(argv: list[str] | None = None) -> int:
         s = sub.add_parser(name)
         s.add_argument("checks")
         s.add_argument("--states", help="a YAML list of states, or a plan file")
+        if name == "open":
+            s.add_argument(
+                "--resume",
+                action="store_true",
+                help="reuse the latest closed snapshot if the live workbook is unchanged",
+            )
     cl = sub.add_parser("close")
     cl.add_argument("checks")
     a = p.parse_args(argv)

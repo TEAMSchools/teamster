@@ -836,3 +836,18 @@ def test_a_filter_set_to_its_saved_default_covers_the_parent(tmp_path, demo_hype
     m.defaults = {"Overview": {"Region": ["North"]}}
     with snap.Coverage(m, tmp_path) as covers:
         assert covers(snap.State("Overview", filters=(("Region", "North"),)))
+
+
+def test_a_resumed_session_exports_only_what_is_missing_or_not_ok():
+    m = _manifest()
+    done, ignored, failed = (
+        snap.State("Overview", filters=(("Region", v),))
+        for v in ("North", "South", "East")
+    )
+    m.states = {
+        done.id: {"status": "ok"},
+        ignored.id: {"status": "filter_ignored"},
+        failed.id: {"status": "export_failed"},
+    }
+    new = snap.State("Overview")
+    assert snap.pending([done, ignored, failed, new], m) == [ignored, failed, new]
