@@ -1,0 +1,112 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<workbook source-build='2024.2.0' version='18.1' xmlns:user='http://www.tableausoftware.com/xml/user'>
+  <datasources>
+    <datasource hasconnection='false' inline='true' name='Parameters' version='18.1'>
+      <column caption='Group By' datatype='string' name='[Group By (copy)]' param-domain-type='list' role='measure' type='nominal' value='&quot;School&quot;'>
+        <calculation class='tableau' formula='&quot;School&quot;' />
+        <members>
+          <member value='&quot;School&quot;' />
+          <member value='&quot;Teacher&quot;' />
+          <member value='&quot;Student&quot;' />
+        </members>
+      </column>
+      <column caption='Goal %' datatype='real' name='[Goal]' param-domain-type='range' role='measure' type='quantitative' value='0.8'>
+        <calculation class='tableau' formula='0.8' />
+      </column>
+    </datasource>
+    <datasource caption='rpt_demo (kipptaf_tableau)' inline='true' name='federated.demo1' version='18.1'>
+      <connection class='federated'>
+        <named-connections />
+      </connection>
+      <extract count='-1' enabled='true' units='records'>
+        <connection class='hyper' dbname='Data/Extracts/federated_demo1.hyper' update-time='10/08/2026 05:39:00 AM' />
+      </extract>
+      <column datatype='string' name='[region]' role='dimension' type='nominal' />
+      <column caption='School Name' datatype='string' name='[school]' role='dimension' type='nominal' />
+      <column datatype='integer' name='[grade_level]' role='dimension' type='ordinal' />
+      <column datatype='integer' name='[academic_year]' role='dimension' type='ordinal' />
+      <column datatype='string' name='[iep_status]' role='dimension' type='nominal' />
+      <column datatype='string' name='[student_name]' role='dimension' type='nominal' />
+      <column caption='Is Tested' datatype='string' name='[Calculation_1]' role='dimension' type='nominal'>
+        <calculation class='tableau' formula='IF [percent_correct] &gt;= 0 THEN &quot;Yes&quot; ELSE &quot;No&quot; END' />
+      </column>
+    </datasource>
+  </datasources>
+  <actions>
+    <action caption='Table to Detail' name='[Action1]'>
+      <activation auto-clear='true' type='on-select' />
+      <source dashboard='Overview' type='sheet' worksheet='Overview - Table' />
+      <command command='tsc:tsl-filter'>
+        <param name='exclude' value='Overview - Table' />
+        <param name='on-empty' value='none' />
+        <param name='special-fields' value='all' />
+        <param name='target' value='Overview' />
+      </command>
+    </action>
+    <action caption='Open Report' name='[Action2]'>
+      <activation type='on-select' />
+      <source dashboard='Overview' type='sheet' worksheet='Overview - Table' />
+      <link caption='Open Report' expression='https://example.org' />
+    </action>
+  </actions>
+  <worksheets>
+    <worksheet name='Overview - Table'>
+      <table>
+        <view>
+          <datasources />
+          <filter class='categorical' column='[federated.demo1].[none:iep_status:nk]'>
+            <groupfilter function='member' level='[none:iep_status:nk]' member='&quot;No IEP&quot;' user:ui-enumeration='inclusive' />
+          </filter>
+          <filter class='categorical' column='[federated.demo1].[none:region:nk]'>
+            <groupfilter function='level-members' level='[none:region:nk]' user:ui-enumeration='all' />
+          </filter>
+        </view>
+      </table>
+    </worksheet>
+    <worksheet name='Overview - Detail'>
+      <table>
+        <view>
+          <datasources />
+          <filter class='categorical' column='[federated.demo1].[Action (Table to Detail)]'>
+            <groupfilter function='level-members' level='[none:school:nk]' />
+          </filter>
+          <slices>
+            <column>[federated.demo1].[Action (Table to Detail)]</column>
+          </slices>
+        </view>
+      </table>
+    </worksheet>
+    <worksheet name='Scratch Sheet'>
+      <table>
+        <view>
+          <datasources />
+        </view>
+      </table>
+    </worksheet>
+  </worksheets>
+  <dashboards>
+    <dashboard name='Overview'>
+      <zones>
+        <zone h='100000' id='1' type-v2='layout-basic' w='100000' x='0' y='0'>
+          <zone h='40000' id='2' name='Overview - Table' w='50000' x='0' y='0' />
+          <zone h='40000' id='3' name='Overview - Detail' w='50000' x='50000' y='0' />
+          <zone h='5000' id='4' mode='checkdropdown' name='Overview - Table' param='[federated.demo1].[none:region:nk]' type-v2='filter' w='10000' x='0' y='90000' />
+          <zone h='5000' id='5' mode='checkdropdown' name='Overview - Table' param='[federated.demo1].[none:school:nk]' type-v2='filter' w='10000' x='10000' y='90000' />
+          <zone h='5000' id='6' mode='checkdropdown' name='Overview - Table' param='[federated.demo1].[none:grade_level:ok]' type-v2='filter' w='10000' x='20000' y='90000' />
+          <zone h='5000' id='7' mode='checkdropdown' name='Overview - Table' param='[federated.demo1].[none:iep_status:nk]' type-v2='filter' w='10000' x='30000' y='90000' />
+          <zone h='5000' id='8' mode='checkdropdown' name='Overview - Table' param='[federated.demo1].[none:student_name:nk]' type-v2='filter' w='10000' x='40000' y='90000' />
+          <zone h='5000' id='9' mode='checkdropdown' name='Overview - Table' param='[federated.demo1].[none:Calculation_1:nk]' type-v2='filter' w='10000' x='50000' y='90000' />
+          <zone h='5000' id='10' mode='checkdropdown' name='Overview - Table' param='[federated.demo1].[none:academic_year:ok]' type-v2='filter' w='10000' x='60000' y='90000' />
+          <zone h='5000' id='11' mode='list' param='[Parameters].[Group By (copy)]' type-v2='paramctrl' w='10000' x='70000' y='90000' />
+          <zone h='5000' id='12' mode='slider' param='[Parameters].[Goal]' type-v2='paramctrl' w='10000' x='80000' y='90000' />
+        </zone>
+      </zones>
+    </dashboard>
+  </dashboards>
+  <windows>
+    <window class='dashboard' name='Overview' />
+    <window class='worksheet' hidden='true' name='Overview - Table' />
+    <window class='worksheet' hidden='true' name='Overview - Detail' />
+    <window class='worksheet' name='Scratch Sheet' />
+  </windows>
+</workbook>
