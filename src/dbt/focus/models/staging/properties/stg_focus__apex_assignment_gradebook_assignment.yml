@@ -2,7 +2,9 @@ models:
   - name: stg_focus__apex_assignment_gradebook_assignment
     description: >-
       Links between Focus Apex assignments and Focus gradebook assignments — one
-      row per gradebook assignment an Apex assignment posts scores to.
+      row per gradebook assignment an Apex assignment posts scores to. Focus
+      does not cascade soft deletes, so join to
+      stg_focus__apex_assigned_assessments to keep only live assignments.
     columns:
       - name: id
         description:

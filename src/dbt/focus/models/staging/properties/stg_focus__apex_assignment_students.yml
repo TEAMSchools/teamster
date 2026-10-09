@@ -4,7 +4,9 @@ models:
       Focus Apex per-student assignment rows — one row per student on an Apex
       assignment, carrying that student's testing window and attempt rules,
       which override the assignment's defaults
-      (stg_focus__apex_assigned_assessments).
+      (stg_focus__apex_assigned_assessments). Focus does not cascade soft
+      deletes, so join to stg_focus__apex_assigned_assessments to keep only live
+      assignments.
     columns:
       - name: id
         description: >-

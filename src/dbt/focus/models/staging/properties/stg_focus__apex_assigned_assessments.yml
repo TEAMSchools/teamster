@@ -41,6 +41,9 @@ models:
           assignment reaches. grouper is one of school, grade_level, teacher, or
           student, and ids lists the matching Focus ids.
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: auto_sync_audience
         description: >-
           Whether the audience refreshes automatically as rosters change.

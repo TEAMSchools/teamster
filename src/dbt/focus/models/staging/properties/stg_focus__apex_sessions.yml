@@ -4,7 +4,9 @@ models:
       Focus Apex sessions — one row per student attempt at an assessment, with
       its overall score and status. Teacher notes and discard or excuse reasons
       (free text) are dropped. Use the session score for a student's overall
-      result; summed response scores do not always reconcile.
+      result; summed response scores do not always reconcile. Focus does not
+      cascade soft deletes, so join to stg_focus__apex_assigned_assessments to
+      drop attempts on deleted assignments.
     columns:
       - name: id
         description: Primary key — Focus apex_sessions id.

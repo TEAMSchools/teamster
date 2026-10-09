@@ -3,7 +3,8 @@ models:
     description: >-
       Focus Apex assessment items — one row per item placed on an assessment,
       with its position and point value. An item groups one or more questions
-      (stg_focus__apex_item_questions).
+      (stg_focus__apex_item_questions). Focus does not cascade soft deletes, so
+      join to stg_focus__apex_assessments to keep only live assessments.
     columns:
       - name: id
         description: Primary key — Focus apex_assessment_items id.
