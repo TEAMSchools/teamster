@@ -15,7 +15,7 @@ with
             relative_placement,
             scale_score,
         from
-            {{ ref("int_iready__diagnostic_results") }} unpivot (
+            {{ ref("int_assessments__iready_diagnostic_results") }} unpivot (
                 (placement, relative_placement, scale_score) for domain_name in (
                     (
                         phonics_placement,

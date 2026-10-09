@@ -79,7 +79,7 @@ with
 
             academic_year_int + 1 as academic_year_plus,
 
-        from {{ ref("int_iready__diagnostic_results") }}
+        from {{ ref("int_assessments__iready_diagnostic_results") }}
         where rn_subj_round = 1 and test_round = 'EOY'
     ),
 

@@ -1,5 +1,5 @@
 models:
-  - name: int_iready__domain_unpivot
+  - name: int_assessments__iready_domain_unpivot
     description:
       Unpivots per-domain placement, relative placement, and scale score from
       i-Ready diagnostic results into one row per domain per test
@@ -119,9 +119,9 @@ unit_tests:
       included, just with a null scale_score. Also verifies test_round and
       _dbt_source_project pass through unchanged onto every unpivoted domain
       row.
-    model: int_iready__domain_unpivot
+    model: int_assessments__iready_domain_unpivot
     given:
-      - input: ref('int_iready__diagnostic_results')
+      - input: ref('int_assessments__iready_diagnostic_results')
         format: sql
         rows: |
           select
