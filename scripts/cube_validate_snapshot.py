@@ -806,23 +806,34 @@ def _workbooks_in(server, project: str) -> list:
 
 
 class Session:
-    def __init__(self, server, project_luid: str, now=lambda: dt.datetime.now(dt.UTC)):
+    def __init__(
+        self,
+        server,
+        project_luid: str,
+        now=lambda: dt.datetime.now(dt.UTC),
+        auth=None,
+        sleep=time.sleep,
+    ):
         if project_luid not in NON_PRODUCTION_PROJECTS:
             raise SessionError(
                 f"{project_luid} is not an agreed non-production project"
             )
         self.server, self.project, self.now = server, project_luid, now
+        # Kept to sign in again: a PAT allows one session, so another sign-in with
+        # the same token (a scheduled refresh, the Tableau MCP) ends this one.
+        self.auth, self.sleep = auth, sleep
         self._views: dict = {}
 
-    def sweep(self) -> list[str]:
-        """Delete review copies older than STALE_COPY: leftovers of failed sessions."""
+    def sweep(self, workbook: str) -> list[str]:
+        """Delete this tool's copies of this workbook older than STALE_COPY: leftovers
+        of failed sessions. Other ZZ-REVIEW copies (other work uses the prefix too)
+        are never touched; the name must be exactly what publish gives this tool's."""
+        mine = re.compile(
+            rf"^{re.escape(REVIEW_PREFIX)}\d{{4}}-\d{{2}}-\d{{2}} \d{{4}} {re.escape(workbook)}$"
+        )
         cutoff, gone = self.now() - STALE_COPY, []
         for w in _workbooks_in(self.server, self.project):
-            if (
-                w.name.startswith(REVIEW_PREFIX)
-                and w.created_at
-                and w.created_at < cutoff
-            ):
+            if mine.match(w.name or "") and w.created_at and w.created_at < cutoff:
                 self.server.workbooks.delete(w.id)
                 gone.append(w.name)
         return gone
@@ -860,10 +871,15 @@ class Session:
                 opts = opts.vf(k, v)
             for k, v in params:
                 opts = opts.parameter(k, v)
-            self.server.views.populate_csv(view, opts)
+            try:
+                self.server.views.populate_csv(view, opts)
+            except Exception as e:
+                if "401002" in str(e) and self.auth is not None:
+                    self.server.auth.sign_in(self.auth)
+                raise
             return b"".join(view.csv)
 
-        return retry(fetch)
+        return retry(fetch, sleep=self.sleep)
 
     def check_refresh(self, live_luid: str, recorded: str) -> None:
         now = self.server.workbooks.get_by_id(live_luid).updated_at
@@ -1214,7 +1230,8 @@ class Coverage:
         kept = [
             (c, v)
             for c, v in (self.m.defaults.get(state.dashboard) or {}).items()
-            if c not in own and c != caption
+            # The default view shows only each saved default, this caption's included.
+            if c not in own
         ]
         parent = [*kept, *own.items()]
         return self._count(ds, parent) == self._count(ds, [*parent, (caption, value)])
@@ -1226,8 +1243,8 @@ def _open(a) -> int:
     at = dt.datetime.now(dt.UTC)
     snapdir = new_snapshot_dir(checks["workbook"], at)
     with server.auth.sign_in(auth):
-        session = Session(server, checks["review_project_luid"])
-        print("swept:", session.sweep() or "nothing")
+        session = Session(server, checks["review_project_luid"], auth=auth)
+        print("swept:", session.sweep(checks["workbook"]) or "nothing")
         live_updated = server.workbooks.get_by_id(checks["workbook_luid"]).updated_at
         live_at = live_updated.isoformat() if live_updated else ""
         live = Path(
@@ -1302,7 +1319,7 @@ def _export(a) -> int:
         raise SessionError("this snapshot has no review copy; open a new session")
     server, auth = _server()
     with server.auth.sign_in(auth):
-        session = Session(server, checks["review_project_luid"])
+        session = Session(server, checks["review_project_luid"], auth=auth)
         session.copy = server.workbooks.get_by_id(m.copy_luid)
         wb = read_workbook(
             (snapdir / "review.twb").read_text(encoding="utf-8", newline="")

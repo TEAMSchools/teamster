@@ -533,8 +533,22 @@ def test_sweep_deletes_only_old_review_copies(monkeypatch):
         created_at=dt.datetime(2026, 1, 1, tzinfo=dt.UTC),
         project_id=snap.TEMP_CB,
     )
-    s, wbs = _session(monkeypatch, [old, fresh, mine])
-    assert s.sweep() == ["ZZ-REVIEW 2026-10-07 0800 DDI Suite"]
+    # Review copies other work made (the tableau-workbook-xml skill uses the same
+    # prefix), and this tool's copies of other workbooks, are never swept.
+    other_work = SimpleNamespace(
+        id="d",
+        name="ZZ-REVIEW 2026-09-09 Survey Dashboard dept gate",
+        created_at=dt.datetime(2026, 9, 9, tzinfo=dt.UTC),
+        project_id=snap.TEMP_CB,
+    )
+    other_book = SimpleNamespace(
+        id="e",
+        name="ZZ-REVIEW 2026-10-07 0800 Attendance Dashboard",
+        created_at=dt.datetime(2026, 10, 7, 8, tzinfo=dt.UTC),
+        project_id=snap.TEMP_CB,
+    )
+    s, wbs = _session(monkeypatch, [old, fresh, mine, other_work, other_book])
+    assert s.sweep("DDI Suite") == ["ZZ-REVIEW 2026-10-07 0800 DDI Suite"]
     assert wbs.deleted == ["a"]
 
 
@@ -791,3 +805,34 @@ def test_value_maps_skip_fields_the_extract_does_not_have(tmp_path, demo_hyper):
 def test_click_values_lose_tableau_formatting():
     data = b"Day,Score\r\n9/15/2026,80\r\n1/2/2026,20\r\n"
     assert snap.pick_click_row(data, "largest", ["Day"]) == {"Day": "2026-09-15"}
+
+
+def test_export_signs_in_again_when_tableau_drops_the_session():
+    # A PAT allows one session: another sign-in with it ends ours (401002).
+    calls = {"populate": 0, "sign_in": 0}
+    view = SimpleNamespace(name="S1", csv=[b"A\r\n1\r\n"])
+
+    def populate_csv(v, opts):
+        calls["populate"] += 1
+        if calls["populate"] == 1:
+            raise RuntimeError("401002: Unauthorized Access")
+
+    server = SimpleNamespace(
+        views=SimpleNamespace(populate_csv=populate_csv),
+        auth=SimpleNamespace(
+            sign_in=lambda a: calls.__setitem__("sign_in", calls["sign_in"] + 1)
+        ),
+    )
+    s = snap.Session(server, snap.TEMP_CB, auth="pat", sleep=lambda w: None)
+    s._views = {"S1": view}
+    assert s.export_view("S1", []) == b"A\r\n1\r\n"
+    assert calls == {"populate": 2, "sign_in": 1}
+
+
+def test_a_filter_set_to_its_saved_default_covers_the_parent(tmp_path, demo_hyper):
+    # The default view already shows only the saved default, so a state that sets
+    # the same value exports the same thing: expected, not an ignored filter.
+    m = _coverage_manifest(tmp_path, demo_hyper)
+    m.defaults = {"Overview": {"Region": ["North"]}}
+    with snap.Coverage(m, tmp_path) as covers:
+        assert covers(snap.State("Overview", filters=(("Region", "North"),)))
