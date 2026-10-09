@@ -6,7 +6,7 @@ with
             `subject`,
             overall_relative_placement_int,
             completion_date,
-        from {{ ref("int_iready__diagnostic_results") }}
+        from {{ ref("int_assessments__iready_diagnostic_results") }}
         where baseline_diagnostic_y_n = 'Y'
     ),
 
@@ -63,7 +63,7 @@ inner join
     and cw.week_start_monday between rt.start_date and rt.end_date
     and rt.type = 'IREX'
 left join
-    {{ ref("int_iready__diagnostic_results") }} as ir
+    {{ ref("int_assessments__iready_diagnostic_results") }} as ir
     on cw.student_number = ir.student_id
     and cw.academic_year = ir.academic_year_int
     and cw.iready_subject = ir.subject

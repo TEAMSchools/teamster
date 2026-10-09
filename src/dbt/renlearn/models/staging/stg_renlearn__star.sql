@@ -20,7 +20,6 @@ select
     courserenaissanceid as course_renaissance_id,
     coursesourcedid as course_sourced_id,
     currentgrade as current_grade,
-    deactivationreason as deactivation_reason,
     districtbenchmarkcategoryname as district_benchmark_category_name,
     districtbenchmarkproficient as district_benchmark_proficient,
     districtidentifier as district_identifier,
@@ -179,4 +178,63 @@ select
     cast(
         cast(statebenchmarknumberofcategorylevels as numeric) as int
     ) as state_benchmark_number_of_category_levels,
+
+    cast(left(completeddatelocal, 10) as date) as completed_date_value,
+
+    _dagster_partition_fiscal_year - 1 as academic_year,
+
+    safe_cast(if(grade = 'K', '0', grade) as int) as grade_level,
+
+    case
+        when _dagster_partition_subject = 'SM'
+        then 'Math'
+        when _dagster_partition_subject = 'SR'
+        then 'Reading'
+        when _dagster_partition_subject = 'SEL'
+        then 'Early Literacy'
+    end as star_subject,
+
+    case
+        when _dagster_partition_subject = 'SM'
+        then 'Math'
+        when grade = 'K' and _dagster_partition_subject = 'SEL'
+        then 'ELA'
+        when _dagster_partition_subject = 'SR'
+        then 'ELA'
+    end as star_discipline,
+
+    case
+        _dagster_partition_subject
+        when 'SR'
+        then 'Reading'
+        when 'SM'
+        then 'Math'
+        when 'SEL'
+        then 'Reading'
+    end as `subject`,
+
+    case
+        screeningperiodwindowname
+        when 'Fall'
+        then 'BOY'
+        when 'Winter'
+        then 'MOY'
+        when 'Spring'
+        then 'EOY'
+    end as administration_window,
+
+    case
+        when districtbenchmarkproficient = 'Yes'
+        then 1
+        when districtbenchmarkproficient = 'No'
+        then 0
+    end as is_district_benchmark_proficient_int,
+
+    case
+        when statebenchmarkproficient = 'Yes'
+        then 1
+        when statebenchmarkproficient = 'No'
+        then 0
+    end as is_state_benchmark_proficient_int,
 from {{ source("renlearn", "src_renlearn__star") }}
+where deactivationreason is null

@@ -23,6 +23,7 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: read # For repo checkout. Nothing here writes.
+      issues: read # --check-issues looks up each baseline issue's state.
     strategy:
       fail-fast: false
       matrix:
@@ -63,6 +64,8 @@ jobs:
           uv run dbt parse --project-dir "${project_dir}" --profiles-dir "${project_dir}"
 
       - name: Check the standard
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: >-
           uv run python scripts/check_dbt_standard.py --project-dir
-          "${project_dir}" --diff "${RUNNER_TEMP}/pr.diff"
+          "${project_dir}" --diff "${RUNNER_TEMP}/pr.diff" --check-issues

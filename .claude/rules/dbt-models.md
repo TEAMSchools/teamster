@@ -65,11 +65,14 @@ materializations before flattening SQL. When flipping views to cron tables:
 
 ### Table→view materialization conversion needs a drop
 
-`create or replace view` does not drop a pre-existing table at the same path —
-the conversion silently keeps serving the stale table. Ship table→view
-conversions with either an explicit
-`DROP TABLE IF EXISTS <project>.<dataset>.<model>` at deploy time, or run
-`dbt build --select <model> --full-refresh` once after merge.
+dbt-bigquery's view materialization drops a pre-existing table at the same path
+only under `--full-refresh`; otherwise it raises `relation_wrong_type`
+(`bigquery__handle_existing_table`). Dagster's dbt runs never pass
+`--full-refresh`, so until someone does, the model keeps serving the old table
+and every triggered rebuild fails. A properties-yml-only flip also never fires a
+rebuild on its own (see above), so a flipped union view sits frozen at merge-day
+data. Run `dbt build --select <models> --full-refresh` right after the deploy
+lands.
 
 ### Snapshot meta-column config changes need a manual DDL migration
 

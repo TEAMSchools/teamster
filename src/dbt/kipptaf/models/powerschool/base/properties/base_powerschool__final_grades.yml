@@ -1,7 +1,6 @@
 models:
   - name: base_powerschool__final_grades
     config:
-      materialized: table
       meta:
         contains_pii: true
     columns:

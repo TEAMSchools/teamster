@@ -1,0 +1,37 @@
+models:
+  - name: stg_focus__apex_question_standards
+    description: >-
+      Focus Apex question-standard alignments — one row per standard a question
+      is tagged to. A question can carry several standards.
+    columns:
+      - name: id
+        description: Primary key — Focus apex_question_standards id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: question_id
+        description: Focus apex_questions id.
+        data_type: int
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: standard_id
+        description:
+          Focus id of the learning standard the question is tagged to.
+        data_type: int
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp

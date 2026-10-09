@@ -57,7 +57,10 @@ specifics live there.
   `git worktree add /workspaces/teamster/.claude/worktrees/<branch> <branch>`.
   The path must be absolute; a relative one nests one worktree inside another.
   Keep worktrees under `.claude/worktrees/`: `.claude/rules/worktrees.md` loads
-  on the first read there and nowhere else.
+  on the first read there and nowhere else. Merging a linked branch's PR closes
+  the issue whatever the body says, so when the issue must outlive the PR (it
+  tracks `standard-baseline.tsv` rows or deferred work), use the no-issue form
+  below and write `Refs #N`.
 - Create, without an issue (user declined):
   `git worktree add -b <branch> <abs-path> origin/main` or
   `git checkout -b <branch>`. Name `origin/main`; local `main` is often behind.
@@ -120,6 +123,13 @@ accept a subagent's self-report without the checks there.
 - Invoke `superpowers:receiving-code-review` before processing `claude-review`
   findings, and post a per-finding verdict as a PR comment. Everything else
   about review and CI: invoke `pr-ci-review`.
+- A finding you do not fix is declined (give the reason; nothing to record) or
+  deferred. A deferred finding links its record when you report it: an open
+  issue, a comment on one, a `standard-baseline.tsv` row, or a `TODO(#N)`. If
+  none covers it, file the issue first. "Out of scope", "backlog", or "left to
+  the author" with no link drops the work, since the user reads the verdict as
+  handled. This covers `claude-review` verdicts and executing-plans "Deferred
+  minors", whose ledger is deleted at finish.
 
 ## Tooling
 
@@ -171,12 +181,13 @@ accept a subagent's self-report without the checks there.
 
 ## Linting
 
-- Do not run `trunk fmt` or `trunk check` as a routine; the commit and push
-  hooks do. But a clean commit hook is not lint-clean. Before pushing SQL, YAML,
-  or markdown (specs and plans included), run
+- Do not run `trunk fmt` or `trunk check` as a routine. The commit hook only
+  formats, so before pushing SQL, YAML, or markdown (specs and plans included),
+  run
   `/workspaces/teamster/.trunk/tools/trunk check --force --no-fix <files> </dev/null`
-  with cwd inside the edited checkout. `--force` is required or committed files
-  are skipped and markdownlint under-reports.
+  with cwd inside the edited checkout and fix lint findings; formatting is the
+  hook's. `--force` is required or committed files are skipped and markdownlint
+  under-reports.
 - Suppress with `trunk-ignore(linter/rule): reason` on the line before the
   flagged line, never linter-native syntax.
 - Binary paths, worktree invocation, CI-only markdownlint rules: invoke

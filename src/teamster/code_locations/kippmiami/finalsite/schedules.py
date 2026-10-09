@@ -1,5 +1,3 @@
-from dagster import ScheduleDefinition
-
 from teamster.code_locations.kippmiami import CODE_LOCATION, LOCAL_TIMEZONE
 from teamster.code_locations.kippmiami.finalsite.assets import contacts
 from teamster.libraries.finalsite.api.schedules import (
@@ -27,33 +25,6 @@ finalsite_contacts_daily_asset_job_schedule = build_finalsite_contacts_schedule(
     # snapshots would have been ~46 min.
 )
 
-finalsite_enrollment_lifecycle_backstop_schedule = ScheduleDefinition(
-    name=(
-        f"{CODE_LOCATION}__finalsite__enrollment_lifecycle__backstop_asset_job_schedule"
-    ),
-    # A backstop for a race the eager automation condition cannot close on its
-    # own. int_finalsite__enrollment_lifecycle joins the contacts API pull to the
-    # manually-pushed SFTP status-report drop (see the comment above), and those
-    # rebuild in separate concurrent runs. When they interleave, the model is
-    # built from a status report older than the one on disk: enrollment_start_date
-    # comes back null while assigned_school, from the same row, comes through. Its
-    # eager any_deps_updated trigger is SINCE-wrapped, so the reset can consume
-    # the trigger in the same tick that set it, and then nothing re-requests the
-    # model -- observed 2026-08-11, stale for 75+ min across the delivery. #4834
-    #
-    # The eager condition still does all the normal work; this only guarantees
-    # one rebuild lands before the 13:15 delivery, which is a plain cron and
-    # reports nothing when the model is stale. 40 min of lead against a ~3s
-    # build, and late enough that the worst-case SFTP chain (~12:26) has landed.
-    #
-    # A rebuild on a day when nothing was stale is accepted waste: one scan of a
-    # small table, against silently dropping a student from the Focus import.
-    cron_schedule="35 12 * * *",
-    execution_timezone=str(LOCAL_TIMEZONE),
-    target=[f"{CODE_LOCATION}/finalsite/int_finalsite__enrollment_lifecycle"],
-)
-
 schedules = [
     finalsite_contacts_daily_asset_job_schedule,
-    finalsite_enrollment_lifecycle_backstop_schedule,
 ]

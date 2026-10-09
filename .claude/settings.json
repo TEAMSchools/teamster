@@ -40,6 +40,7 @@
       "mcp__dagster__list_schedules",
       "mcp__dagster__list_sensors",
       "mcp__dagster-plus__get_run",
+      "mcp__dagster-plus__launch_asset_run",
       "mcp__dbt__get_job_details",
       "mcp__dbt__get_job_run_details",
       "mcp__dbt__get_job_run_error",

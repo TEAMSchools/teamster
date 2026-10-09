@@ -58,6 +58,14 @@ models:
           Florida district number is not populated, and for TAF, which is not a
           district.
 
+      - name: state_school_id
+        data_type: string
+        description: >-
+          State-issued school identifier: the NJ DOE school code (Newark 965,
+          Camden 111, Paterson 925). Each NJ region is one charter school to
+          NJDOE, so every campus in the region shares this code. NULL for Miami
+          and TAF.
+
       - name: legal_entity
         data_type: string
         description: >-

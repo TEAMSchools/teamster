@@ -218,6 +218,17 @@ def test_stg_union_view_over_district_stg_source_passes() -> None:
     assert violations(district_stg, union) == []
 
 
+@pytest.mark.parametrize("table", ["int_renlearn__star", "base_renlearn__star"])
+def test_stg_over_district_int_source_is_a1(table) -> None:
+    district_int = source("kippmiami_renlearn", table)
+    stg = model(
+        "stg_renlearn__star", "models/renlearn/staging/b.sql", [uid(district_int)]
+    )
+    assert violations(district_int, stg) == [
+        ("kipptaf.stg_renlearn__star", "A1", f"source.kippmiami_renlearn.{table}")
+    ]
+
+
 def test_int_reading_two_source_folders_outside_domain_is_source_int() -> None:
     node = model(
         "int_kippadb__roster",
@@ -552,23 +563,47 @@ def test_load_baseline_and_compare(tmp_path) -> None:
         "model\trule\tdetail\tissue\n"
         "kipptaf.a\tA1\tkipptaf.p\t#1\n"
         "kipptaf.b\tA1\tkipptaf.p\t\n"
+        "kipptaf.c\tA1\tkipptaf.p\t#58o6\n"
         "kipptaf.gone\tA1\tkipptaf.p\t#2\n"
     )
     baseline = mod.load_baseline(f)
     v = [
         mod.Violation(m_, "A1", "kipptaf.p", "error", "")
-        for m_ in ("kipptaf.a", "kipptaf.b", "kipptaf.new")
+        for m_ in ("kipptaf.a", "kipptaf.b", "kipptaf.c", "kipptaf.new")
     ]
     new, stale, missing = mod.compare(v, baseline)
     assert [x.model for x in new] == ["kipptaf.new"]
     assert stale == [("kipptaf.gone", "A1", "kipptaf.p")]
-    assert missing == [("kipptaf.b", "A1", "kipptaf.p")]
+    # a cell that isn't #N names no issue either
+    assert missing == [
+        ("kipptaf.b", "A1", "kipptaf.p"),
+        ("kipptaf.c", "A1", "kipptaf.p"),
+    ]
 
 
 def test_load_baseline_skips_blank_lines(tmp_path) -> None:
     f = tmp_path / "b.tsv"
     f.write_text("model\trule\tdetail\tissue\nkipptaf.a\tA1\tkipptaf.p\t#1\n\n")
     assert mod.load_baseline(f) == {("kipptaf.a", "A1", "kipptaf.p"): "#1"}
+
+
+def test_closed_issues_counts_rows_per_closed_issue() -> None:
+    baseline = {
+        ("kipptaf.a", "A1", "kipptaf.p"): "#1",
+        ("kipptaf.b", "A1", "kipptaf.p"): "#1",
+        ("kipptaf.c", "A1", "kipptaf.p"): "#2",
+        ("kipptaf.d", "A8", "kipptaf.p"): "",
+        ("kipptaf.e", "A8", "kipptaf.p"): "#58o6",
+    }
+    asked = []
+
+    def is_open(n: int) -> bool:
+        asked.append(n)
+        return n != 1
+
+    assert mod.closed_issues(baseline, is_open) == [("#1", 2)]
+    # one lookup per issue; a row with no issue is compare()'s to report
+    assert sorted(asked) == [1, 2]
 
 
 DIFF = """diff --git a/src/dbt/kipptaf/models/a.sql b/src/dbt/kipptaf/models/a.sql
