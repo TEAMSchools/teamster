@@ -587,9 +587,12 @@ kipptaf.rpt_zendesk__users	A1	kipptaf.stg_zendesk__users	#5810
 kipptaf.stg_amplify__mclass__sftp__pm_student_summary_aimline	A1	kipptaf.int_people__location_crosswalk	#5807
 kipptaf.stg_finalsite__status_report	A1	kipptaf.stg_google_sheets__finalsite__exclude_ids	#5807
 kipptaf.stg_nsc__student_tracker	A1	kipptaf.stg_kippadb__contact	#5807
+kipptaf.stg_pearson__njsla	A1	source.kipppaterson_pearson.int_pearson__njsla	#5854
+kipptaf.stg_pearson__njsla_science	A1	source.kipppaterson_pearson.int_pearson__njsla_science	#5854
 kipptaf.stg_people__employee_numbers	A1	kipptaf.stg_adp_workforce_now__workers	#5807
 kipptaf.stg_people__student_logins	A1	kipptaf.int_finalsite__contact_id_attributes	#5807
 kipptaf.stg_people__student_logins	A1	kipptaf.stg_finalsite__contacts	#5807
 kipptaf.stg_people__student_logins	A1	kipptaf.stg_powerschool__students	#5807
 kipptaf.stg_powerschool__storedgrades	A1	kipptaf.int_people__location_crosswalk	#5807
 kipptaf.stg_renlearn__star	A1	kipptaf.int_people__location_crosswalk	#5807
+kipptaf.stg_renlearn__star	A1	source.kippmiami_renlearn.int_renlearn__star	#5854

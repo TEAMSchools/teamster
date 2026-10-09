@@ -142,8 +142,13 @@ def _allowed(
 ) -> bool:
     if parent_layer == "other":
         return True
-    # stg_ may read any source(), including a district stg_ it unions
-    if child_layer == "stg" and parent["resource_type"] == "source":
+    # stg_ may read any source(), including a district stg_ it unions, but not
+    # a district int_: that union belongs in a source int_
+    if (
+        child_layer == "stg"
+        and parent["resource_type"] == "source"
+        and parent_layer != "source_int"
+    ):
         return True
     if child_layer == "rpt" and project != "kipptaf":
         reads_extracts = any(
