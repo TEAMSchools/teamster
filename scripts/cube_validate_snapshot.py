@@ -182,3 +182,97 @@ def _action(a) -> Action:
         p.get("target", ""),
         exclude,
     )
+
+
+class ReviewCopyError(ValueError):
+    """The review copy could not be built safely."""
+
+
+_SELF_CLOSING_ACTION = re.compile(r"<filter [^>]*\[Action \([^>]*/>\s*")
+_PAIRED_ACTION = re.compile(r"<filter [^>]*\[Action \([^>]*[^/]>.*?</filter>\s*", re.S)
+_ACTION_SLICE = re.compile(r"<column>\[[^\]]+\]\.\[Action \([^\]]*\]</column>\s*")
+
+
+def _hidden(text: str) -> dict[str, bool]:
+    root = SafeET.fromstring(text)
+    return {
+        w.get("name") or "": w.get("hidden") == "true"
+        for w in root.iter("window")
+        if w.get("class") == "worksheet"
+    }
+
+
+def _expose(text: str, sheets: list[str]) -> str:
+    for name in sheets:
+        pattern = re.compile(
+            r"(<window class='worksheet') hidden='true'( name='"
+            + re.escape(name)
+            + r"')"
+        )
+        text, n = pattern.subn(r"\1\2", text)
+        if n > 1:
+            raise ReviewCopyError(f"{name}: {n} windows matched, expected at most 1")
+    return text
+
+
+def _strip_click_filters(text: str, sheet: str) -> str:
+    start = text.find(f"<worksheet name='{sheet}'>")
+    if start < 0:
+        return text
+    end = text.index("</worksheet>", start)
+    block = _SELF_CLOSING_ACTION.sub("", text[start:end])
+    block = _PAIRED_ACTION.sub("", block)
+    block = _ACTION_SLICE.sub("", block)
+    if "[Action (" in block:
+        raise ReviewCopyError(f"{sheet}: a saved click filter survived")
+    return text[:start] + block + text[end:]
+
+
+def review_copy(twb_text: str, dashboards: list[str]) -> str:
+    """The workbook with each named dashboard's sheets exposed and clicks reproducible."""
+    wb = read_workbook(twb_text)
+    missing = [d for d in dashboards if d not in wb.dashboards]
+    if missing:
+        raise ReviewCopyError(f"no dashboard named {', '.join(missing)}")
+    sheets = [s for d in dashboards for s in wb.dashboards[d]]
+    before = _hidden(twb_text)
+
+    out = _expose(twb_text, sheets)
+    n_none = out.count("<param name='on-empty' value='none' />")
+    out = out.replace(
+        "<param name='on-empty' value='none' />",
+        "<param name='on-empty' value='all' />",
+    )
+    if out.count("<param name='on-empty' value='none' />"):
+        raise ReviewCopyError("an on-empty setting is still none")
+    targets = {
+        s
+        for a in wb.actions
+        if a.kind == "filter" and a.dashboard in dashboards
+        for s in wb.dashboards.get(a.target, [])
+        if s not in a.exclude
+    }
+    for s in sorted(targets):
+        out = _strip_click_filters(out, s)
+
+    after = _hidden(out)
+    still = [s for s in sheets if after.get(s)]
+    if still:
+        raise ReviewCopyError(f"still hidden: {', '.join(still)}")
+    changed = [s for s in before if s not in sheets and before[s] != after.get(s)]
+    if changed:
+        raise ReviewCopyError(f"other windows changed: {', '.join(changed)}")
+    if n_none and "<param name='on-empty' value='all' />" not in out:
+        raise ReviewCopyError("on-empty edit did not land")
+    return out
+
+
+def views_to_hide(twb_text: str, keep: set[str]) -> list[str]:
+    """Publishable windows to hide on publish, so only the review views go live."""
+    root = SafeET.fromstring(twb_text)
+    publishable = [
+        w.get("name") or ""
+        for w in root.iter("window")
+        if w.get("class") in ("worksheet", "dashboard") and w.get("hidden") != "true"
+    ]
+    return sorted(n for n in publishable if n not in keep)

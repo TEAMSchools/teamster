@@ -86,3 +86,46 @@ def test_actions_are_filter_or_link():
 )
 def test_default_caption(field, caption):
     assert snap.default_caption(field) == caption
+
+
+def test_review_copy_exposes_dashboard_sheets_only():
+    out = snap.review_copy(TWB, ["Overview"])
+    assert "<window class='worksheet' name='Overview - Table' />" in out
+    assert "<window class='worksheet' name='Overview - Detail' />" in out
+    assert "hidden='true'" not in out
+    # A sheet on no named dashboard keeps its window untouched.
+    assert "<window class='worksheet' name='Scratch Sheet' />" in out
+
+
+def test_review_copy_sets_on_empty_all_and_strips_click_filters():
+    out = snap.review_copy(TWB, ["Overview"])
+    assert "<param name='on-empty' value='all' />" in out
+    assert "value='none'" not in out
+    assert "[Action (" not in out
+
+
+def test_review_copy_is_valid_xml_and_leaves_the_rest_alone():
+    out = snap.review_copy(TWB, ["Overview"])
+    snap.SafeET.fromstring(out)
+    # The saved "No IEP" filter on the table is not a click filter: it stays.
+    assert "member='&quot;No IEP&quot;'" in out
+
+
+def test_review_copy_refuses_a_dashboard_it_cannot_find():
+    with pytest.raises(snap.ReviewCopyError, match="Nope"):
+        snap.review_copy(TWB, ["Nope"])
+
+
+def test_review_copy_detects_a_sheet_left_hidden(monkeypatch):
+    # Break the expose step: the check must catch it, not pass it silently.
+    monkeypatch.setattr(snap, "_expose", lambda text, sheets: text)
+    with pytest.raises(snap.ReviewCopyError, match="still hidden"):
+        snap.review_copy(TWB, ["Overview"])
+
+
+def test_views_to_hide_keeps_only_the_named_views():
+    out = snap.review_copy(TWB, ["Overview"])
+    hide = snap.views_to_hide(
+        out, {"Overview", "Overview - Table", "Overview - Detail"}
+    )
+    assert hide == ["Scratch Sheet"]
