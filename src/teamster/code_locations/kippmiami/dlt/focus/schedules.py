@@ -33,7 +33,7 @@ focus_dlt_daily_asset_job_schedule = ScheduleDefinition(
     # reload. Everything else has a verified-reliable `updated_at`
     # (`docs/superpowers/specs/2026-08-10-focus-dlt-probe-gated-sync-design.md`),
     # so `kippmiami__dlt__focus__intraday_sensor` fully gates it and this tier
-    # no longer touches it -- the sensor still probes all 79 tables every 15
+    # no longer touches it -- the sensor still probes every table every 15
     # minutes and catches adds/removes on the count-only ones too, just not a
     # silent in-place edit.
     #
@@ -49,10 +49,10 @@ focus_dlt_daily_asset_job_schedule = ScheduleDefinition(
     # The sensor's in-flight guard (probe.py::in_flight_run) skips every tick
     # while a run launched by this schedule is non-terminal, so a hung run
     # here can still wedge intraday syncing. 900 is deliberate, not copied:
-    # this tier now loads one small table (100s of rows, not 79), so the
-    # bound isn't sized to load time anymore -- it's sized to roughly one
-    # sensor interval (900s), so a hung run can't wedge intraday syncing for
-    # longer than about one tick.
+    # this tier loads only the small count-only tables, not the whole config,
+    # so the bound is sized to roughly one sensor interval (900s), not to load
+    # time -- a hung run can't wedge intraday syncing for longer than about
+    # one tick.
     tags={"dagster/max_runtime": "900"},
 )
 

@@ -167,3 +167,30 @@ assets:
     cursor_column: updated_at
   - table_name: test_history_score_ranges
     cursor_column: updated_at
+  # Apex
+  - table_name: apex_assessments
+    cursor_column: updated_at
+  - table_name: apex_assigned_assessments
+    cursor_column: updated_at
+  - table_name: apex_assignment_students
+    cursor_column: updated_at
+  - table_name: apex_sessions
+    cursor_column: updated_at
+  - table_name: apex_session_responses
+    cursor_column: updated_at
+  - table_name: apex_assessment_items
+    cursor_column: updated_at
+  - table_name: apex_item_questions
+    cursor_column: updated_at
+  - table_name: apex_questions
+    cursor_column: updated_at
+  - table_name: apex_question_standards
+    cursor_column: updated_at
+  - table_name: apex_band_sets
+    cursor_column: updated_at
+  - table_name: apex_band_levels
+    cursor_column: updated_at
+  - table_name: apex_band_set_assessments
+    cursor_column: updated_at
+  - table_name: apex_assignment_gradebook_assignment
+    cursor_column: updated_at
