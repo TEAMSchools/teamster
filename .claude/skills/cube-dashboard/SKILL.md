@@ -28,6 +28,28 @@ source problem the domain owner has not ruled on), `missing_member` (every gap
 is explained by a member Cube lacks), `pass`. Each comment lists the missing
 Cube members, the cube issues and the truth issues, with the cells they explain.
 
+## Truth issue or cube issue?
+
+Both rest on the same evidence: a second formula that reproduces Cube's numbers
+over the extract. The label is a judgment about which formula is the intended
+definition.
+
+|                 | Truth issue                                      | Cube issue                              |
+| --------------- | ------------------------------------------------ | --------------------------------------- |
+| Who is wrong    | The dashboard, its `rpt_` model or the source    | Cube's measure definition               |
+| The variant SQL | The dashboard's calculation, corrected           | Cube's formula, copied over the extract |
+| Asana tag       | `needs-review`                                   | `mismatch`                              |
+| Who decides     | The domain owner: `cube-correct` or `cube-wrong` | No ruling: the fix is in Cube           |
+| Done when       | The owner rules, or the dashboard is fixed       | Cube is fixed and the next run passes   |
+
+Pick by what is intended:
+
+- The dashboard's formula is plainly broken (DDI's % Completion reads 100%
+  everywhere): truth issue.
+- The dashboard is the agreed definition and Cube drifted from it (Cube counts
+  rows where the dashboard counts students): cube issue.
+- You cannot tell which is intended: truth issue, so the owner decides.
+
 ## Validate a dashboard
 
 1. Rows. Read the dashboard task's subtasks from Asana; keep the completed ones
