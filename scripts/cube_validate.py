@@ -888,9 +888,9 @@ def workbook_exclusions(checks: dict, twb) -> list[dict]:
 CUBE_LIMIT = 50_000
 # An average is a rate on its own scale (a scale score): compared in its units.
 KINDS = {"count", "rate", "average"}
-# Where a truth issue lives, and the two answers a domain owner can give.
-TRUTH_WHERE = ("dashboard", "rpt", "source")
-RULINGS = ("cube-correct", "cube-wrong")
+# Who fixes an explained mismatch, and where a dashboard fix lands.
+FIX_SIDES = ("cube", "dashboard", "undecided")
+DASHBOARD_WHERE = ("tableau", "rpt", "source")
 
 
 class CheckError(ValueError):
@@ -1023,46 +1023,31 @@ def load_checks(path) -> dict:
     for f in data["hard_filters"]:
         if f["dim"] not in dims:
             raise CheckError(f"{path}: hard filter on unknown dimension '{f['dim']}'")
-    # Gaps the dashboard, its rpt_ model or the source causes, for the domain owner.
-    issues = data.get("truth_issues") or {}
-    if not isinstance(issues, dict):
-        raise CheckError(f"{path}: truth_issues is a map of slug to entry")
-    for slug, t in issues.items():
-        at = f"{path}: truth issue '{slug}'"
-        missing = [k for k in ("title", "what", "where") if not (t or {}).get(k)]
+    # Gaps a second formula explains, and who fixes each: the cube builder or the
+    # dashboard maintainer.
+    for old in ("truth_issues", "cube_issues"):
+        if old in data:
+            raise CheckError(f"{path}: rename {old} to mismatches, with fix: on each")
+    mismatches = data.get("mismatches") or {}
+    if not isinstance(mismatches, dict):
+        raise CheckError(f"{path}: mismatches is a map of slug to entry")
+    for slug, t in mismatches.items():
+        at = f"{path}: mismatch '{slug}'"
+        missing = [k for k in ("title", "what", "fix") if not (t or {}).get(k)]
         if missing:
             raise CheckError(f"{at} is missing {missing}")
-        if t["where"] not in TRUTH_WHERE:
-            raise CheckError(f"{at}: where must be one of {', '.join(TRUTH_WHERE)}")
-        if t.get("issue") is not None and not isinstance(t["issue"], int):
-            raise CheckError(f"{at}: issue is the GitHub issue number")
-        r = t.get("ruling")
-        if r is not None and not (
-            isinstance(r, dict)
-            and r.get("call") in RULINGS
-            and r.get("by")
-            and r.get("on")
-        ):
-            raise CheckError(
-                f"{at}: ruling needs call (cube-correct or cube-wrong), by and on"
-            )
-        t["labels"] = list(t.get("labels") or [])
-        t["related"] = _related(at, t.get("related"))
-    data["truth_issues"] = issues
-    # Gaps Cube's own formula causes: its variant copies Cube's definition.
-    cube_issues = data.get("cube_issues") or {}
-    if not isinstance(cube_issues, dict):
-        raise CheckError(f"{path}: cube_issues is a map of slug to entry")
-    for slug, t in cube_issues.items():
-        at = f"{path}: cube issue '{slug}'"
-        missing = [k for k in ("title", "what") if not (t or {}).get(k)]
-        if missing:
-            raise CheckError(f"{at} is missing {missing}")
+        if t["fix"] not in FIX_SIDES:
+            raise CheckError(f"{at}: fix is cube, dashboard or undecided")
+        if t.get("where") is not None and t["fix"] != "dashboard":
+            raise CheckError(f"{at}: where is for dashboard fixes")
+        t.setdefault("where", "tableau" if t["fix"] == "dashboard" else None)
+        if t["fix"] == "dashboard" and t["where"] not in DASHBOARD_WHERE:
+            raise CheckError(f"{at}: where is tableau, rpt or source")
         if t.get("issue") is not None and not isinstance(t["issue"], int):
             raise CheckError(f"{at}: issue is the GitHub issue number")
         t["labels"] = list(t.get("labels") or [])
         t["related"] = _related(at, t.get("related"))
-    data["cube_issues"] = cube_issues
+    data["mismatches"] = mismatches
     data["open_issues_task"] = (
         str(data["open_issues_task"]) if data.get("open_issues_task") else None
     )
@@ -1118,12 +1103,12 @@ def load_checks(path) -> dict:
                 if m["kind"] == "count"
                 else ("explains", "num", "den")
             )
-            names = [*issues, *cube_issues, *set(m.get("missing_members") or [])]
-            twice = sorted({n for n in names if names.count(n) > 1})
+            members = set(m.get("missing_members") or [])
+            twice = sorted(members & set(mismatches))
             if twice:
                 raise CheckError(
-                    f"{where}: {', '.join(twice)} is named as more than one of a "
-                    "truth issue, a cube issue and a missing member"
+                    f"{where}: {', '.join(twice)} is named as both a mismatch and a "
+                    "missing member"
                 )
             for v in variants:
                 if not isinstance(v, dict) or any(not v.get(k) for k in need):
@@ -1131,14 +1116,12 @@ def load_checks(path) -> dict:
                         f"{where}: metric {m.get('cube')}: each variant needs "
                         f"{list(need)}"
                     )
-                known = (
-                    set(issues) | set(cube_issues) | set(m.get("missing_members") or [])
-                )
+                known = set(mismatches) | members
                 unknown = [n for n in v["explains"] if n not in known]
                 if unknown:
                     raise CheckError(
                         f"{where}: metric {m.get('cube')}: a variant explains unknown "
-                        f"{unknown}; name a missing member or a truth issue"
+                        f"{unknown}; name a missing member or a mismatch"
                     )
             m["variants"] = variants
         for m in row["metrics"]:
@@ -1658,24 +1641,17 @@ def without_index(m: dict) -> int | None:
     )
 
 
-def summarize(
-    cells,
-    kind,
-    without=None,
-    accepted=frozenset(),
-    open_issues=frozenset(),
-    cube_issues=frozenset(),
-) -> dict:
+def summarize(cells, kind, without=None, sides=None) -> dict:
     """One metric at one grain.
 
-    A cell explained only by truth issues ruled cube-correct is accepted: the
-    dashboard is wrong there and Cube is right, so it counts as a match.
+    A cell explained only by `fix: dashboard` mismatches counts as a match: Cube is
+    right there and the dashboard is the one to fix.
     """
+    sides = sides or {}
+    dashboard = sides.get("dashboard", frozenset())
 
     def is_accepted(c):
-        # An owner's cube-correct never clears a cell Cube's own formula explains.
-        names = set(c.explained_by)
-        return c.explained and names <= accepted and not names & cube_issues
+        return c.explained and set(c.explained_by) <= dashboard
 
     bad = sorted(
         (c for c in cells if not c.ok and not c.explained), key=lambda c: -c.delta
@@ -1695,8 +1671,14 @@ def summarize(
         "cells": len(cells),
         "bad": len(bad),
         "explained": len(explained),
-        "review": sum(1 for c in explained if set(c.explained_by) & open_issues),
-        "cube": sum(1 for c in explained if set(c.explained_by) & cube_issues),
+        **{
+            side: sum(
+                1
+                for c in explained
+                if set(c.explained_by) & sides.get(side, frozenset())
+            )
+            for side in ("cube", "undecided")
+        },
         "accepted": sum(1 for c in cells if is_accepted(c)),
         "explained_by": by,
         "only": only,
@@ -1714,7 +1696,7 @@ def row_verdict(grains) -> str:
         return "fail"
     if "error" in statuses:
         return "incomplete"
-    for s in ("cube_issue", "truth_issue", "missing_member"):
+    for s in ("fix_cube", "undecided", "missing_member"):
         if s in statuses:
             return s
     if "pass" not in statuses:
@@ -1722,17 +1704,12 @@ def row_verdict(grains) -> str:
     return "pass"
 
 
-def issue_states(checks) -> tuple[frozenset, frozenset, frozenset]:
-    """Truth issues the owner ruled cube-correct, ruled cube-wrong, and not yet ruled."""
-    calls = {
-        s: (t.get("ruling") or {}).get("call")
-        for s, t in (checks.get("truth_issues") or {}).items()
-    }
-    return (
-        frozenset(s for s, c in calls.items() if c == "cube-correct"),
-        frozenset(s for s, c in calls.items() if c == "cube-wrong"),
-        frozenset(s for s, c in calls.items() if c is None),
-    )
+def fix_sides(checks) -> dict[str, frozenset]:
+    """Mismatch slugs by who fixes them: cube, dashboard, or undecided."""
+    by: dict[str, set] = {side: set() for side in FIX_SIDES}
+    for slug, t in (checks.get("mismatches") or {}).items():
+        by[t["fix"]].add(slug)
+    return {side: frozenset(v) for side, v in by.items()}
 
 
 # ---------------------------------------------------------------- clients
@@ -2254,8 +2231,7 @@ def run_dashboard(
 
     truth_lock, progress = threading.Lock(), threading.Lock()
     finished = [0]
-    accepted, rejected, open_issues = issue_states(checks)
-    cube_slugs = frozenset(checks["cube_issues"])
+    sides = fix_sides(checks)
 
     def say(text: str) -> None:
         with progress:
@@ -2313,15 +2289,12 @@ def run_dashboard(
                     cube_cells(crows, view, grain, m["cube"]),
                     truth_cells(trows, len(g), i, m["kind"]),
                 )
-                # A variant the owner ruled cube-wrong explains nothing.
                 alts = {
                     j: truth_cells(trows, len(g), i, m["kind"], f"_v{j}")
                     for j in range(len(m["variants"]))
                 }
                 variants = [
-                    (v["explains"], alts[j])
-                    for j, v in enumerate(m["variants"])
-                    if not set(v["explains"]) & rejected
+                    (v["explains"], alts[j]) for j, v in enumerate(m["variants"])
                 ]
                 explain(cells, m["kind"], variants)
                 w = without_index(m)
@@ -2329,9 +2302,7 @@ def run_dashboard(
                     cells,
                     m["kind"],
                     None if w is None else alts[w],
-                    accepted,
-                    open_issues,
-                    cube_slugs,
+                    sides,
                 )
             # A cell keyed by a person (a student or a teacher) never names them.
             person = {
@@ -2419,21 +2390,21 @@ def run_dashboard(
                             name, 0
                         )
                         mm["changes_total"] = mm["changes_total"] or moves
-                review = sum(s["review"] for s in ms.values())
                 cube = sum(s["cube"] for s in ms.values())
+                undecided = sum(s["undecided"] for s in ms.values())
                 entry.update(
                     status="fail"
                     if bad
-                    else "cube_issue"
+                    else "fix_cube"
                     if cube
-                    else "truth_issue"
-                    if review
+                    else "undecided"
+                    if undecided
                     else ("missing_member" if explained else "pass"),
                     cells=sum(s["cells"] for s in ms.values()),
                     bad=bad,
                     explained=explained,
-                    review=review,
                     cube=cube,
+                    undecided=undecided,
                     accepted=sum(s["accepted"] for s in ms.values()),
                     metrics=ms,
                     pre_aggregations=o["pre_aggregations"],
@@ -2457,52 +2428,32 @@ def run_dashboard(
         if (a.get("unaccounted") or a.get("error")) and verdict in (
             "pass",
             "missing_member",
-            "truth_issue",
-            "cube_issue",
+            "fix_cube",
+            "undecided",
         ):
             # A construct nobody accounted for may change what the sheet shows.
             verdict = "incomplete"
-        truth = {}
-        named = {
-            n
-            for m in row["metrics"]
-            for v in m["variants"]
-            for n in v["explains"]
-            if n in checks["truth_issues"]
-        }
-        for slug in sorted(named):
-            t = checks["truth_issues"][slug]
-            n = sum(
-                s["explained_by"].get(slug, 0)
-                for g in grains
-                for s in g.get("metrics", {}).values()
-            )
-            truth[slug] = {
-                "explains_cells": n,
-                "issue": t.get("issue"),
-                "ruling": (t.get("ruling") or {}).get("call"),
-                # A closed issue that explains nothing any more: remove its entry.
-                "stale": bool(t.get("closed_on")) and not n,
-            }
-        cube_found = {}
+        found = {}
         for slug in sorted(
             {
                 n
                 for m in row["metrics"]
                 for v in m["variants"]
                 for n in v["explains"]
-                if n in checks["cube_issues"]
+                if n in checks["mismatches"]
             }
         ):
-            t = checks["cube_issues"][slug]
+            t = checks["mismatches"][slug]
             n = sum(
                 s["explained_by"].get(slug, 0)
                 for g in grains
                 for s in g.get("metrics", {}).values()
             )
-            cube_found[slug] = {
+            found[slug] = {
                 "explains_cells": n,
+                "fix": t["fix"],
                 "issue": t.get("issue"),
+                # A closed issue that explains nothing any more: remove its entry.
                 "stale": bool(t.get("closed_on")) and not n,
             }
         result["rows"][str(row["row_gid"])] = {
@@ -2510,8 +2461,7 @@ def run_dashboard(
             "verdict": verdict,
             "grains": grains,
             **({"diagnosis": diagnosis} if diagnosis else {}),
-            **({"truth_issues": truth} if truth else {}),
-            **({"cube_issues": cube_found} if cube_found else {}),
+            **({"mismatches": found} if found else {}),
             "missing_members": {
                 k: v
                 for k, v in missing.items()
@@ -2569,7 +2519,7 @@ def _total_line(s_: dict, kind: str, members: list[str]) -> list[str]:
     return lines
 
 
-_COMPARED = ("pass", "fail", "missing_member", "truth_issue", "cube_issue")
+_COMPARED = ("pass", "fail", "missing_member", "fix_cube", "undecided")
 
 
 def _missing_text(missing: dict, full: bool = False) -> str:
@@ -2630,6 +2580,20 @@ def _construct_lines(items: list[dict], with_why: bool) -> list[str]:
     return out
 
 
+# Who fixes a mismatch, as the comment and the digest name it.
+_SIDE_LABELS = (
+    ("cube", "Fix in Cube"),
+    ("dashboard", "Fix in the dashboard"),
+    ("undecided", "Waiting on the domain owner"),
+)
+# The second formula, as the digest names it for each side.
+_SIDE_FORMULA = {
+    "cube": "Cube, reproduced over the extract",
+    "dashboard": "Corrected",
+    "undecided": "The other formula, which Cube matches",
+}
+
+
 def _issue_ref(t: dict) -> str:
     return f"#{t['issue']}" if t.get("issue") else "draft"
 
@@ -2652,35 +2616,30 @@ def comment_text(row, result) -> str:
     ]
     if add:
         lines.append(f"Add to Cube: {', '.join(add)}.")
-    owner = [
-        f"{slug} ({_issue_ref(t)}, {t['explains_cells']} cells)"
-        for slug, t in row.get("truth_issues", {}).items()
-        if t["explains_cells"] and not t["ruling"]
-    ]
-    if owner:
-        lines.append(f"Dashboard issues for the domain owner: {', '.join(owner)}.")
-    wrong = [
-        f"{slug} ({_issue_ref(t)})"
-        for slug, t in row.get("truth_issues", {}).items()
-        if t["ruling"] == "cube-wrong"
-    ]
-    if wrong:
-        lines.append(f"Ruled cube-wrong, so Cube must change: {', '.join(wrong)}.")
-    fix = [
-        f"{slug} ({_issue_ref(t)}, {t['explains_cells']} cells)"
-        for slug, t in row.get("cube_issues", {}).items()
-        if t["explains_cells"]
-    ]
-    if fix:
-        lines.insert(1, f"Fix in Cube: {', '.join(fix)}.")
+    # Who fixes each explained mismatch, right after the verdict line.
+    side_lines = []
+    for side, label in _SIDE_LABELS:
+        named = [
+            f"{slug} ({_issue_ref(t)}, {t['explains_cells']} cells)"
+            for slug, t in row.get("mismatches", {}).items()
+            if t["fix"] == side and t["explains_cells"]
+        ]
+        if named:
+            side_lines.append(f"{label}: {', '.join(named)}.")
+    lines[1:1] = side_lines
     if bad:
         n = sum(1 for g in compared if g["bad"])
         lines.append(
             f"Investigate: {bad} cells across {_plural(n, 'grain')}; details in the "
             f"{result['dashboard']} fix digest."
         )
-    elif row["verdict"] in ("missing_member", "truth_issue", "cube_issue"):
+    elif row["verdict"] in ("missing_member", "fix_cube", "undecided"):
         lines.append("Nothing else to investigate.")
+    elif row["verdict"] == "pass" and any(
+        t["fix"] == "dashboard" and t["explains_cells"]
+        for t in row.get("mismatches", {}).values()
+    ):
+        lines.append("Cube matches the dashboard once its fixes land.")
     elif row["verdict"] == "pass":
         lines.append("Every compared cell matches.")
     errors = [g for g in grains if g["status"] == "error"]
@@ -2754,20 +2713,27 @@ def digest_markdown(result, checks, cube_defs) -> str:
             for v in m.get("variants", []):
                 for n in v["explains"]:
                     defs_by_slug.setdefault(n, (m, v))
-    fixes: dict[str, dict] = {}
+    merged: dict[str, dict] = {}
     for gid, row in rows.items():
-        for slug, t in row.get("cube_issues", {}).items():
-            i = fixes.setdefault(slug, {"cells": 0, "rows": [], "stale": True, **t})
+        for slug, t in row.get("mismatches", {}).items():
+            i = merged.setdefault(slug, {**t, "cells": 0, "rows": [], "stale": True})
             i["cells"] += t["explains_cells"]
             i["stale"] = i["stale"] and t["stale"]
             if t["explains_cells"]:
                 i["rows"].append(gid)
-    shown_fix = {s: i for s, i in fixes.items() if i["cells"] or i["stale"]}
-    if shown_fix:
-        out += ["## Fix in Cube", ""]
-        stem = f"{result['run_date']}-{result['dashboard']}"
-        for slug, i in sorted(shown_fix.items(), key=lambda kv: -kv[1]["cells"]):
-            doc = (checks.get("cube_issues") or {}).get(slug, {})
+    stem = f"{result['run_date']}-{result['dashboard']}"
+    docs = checks.get("mismatches") or {}
+    for side, label in _SIDE_LABELS:
+        shown = {
+            s_: i
+            for s_, i in merged.items()
+            if i["fix"] == side and (i["cells"] or i["stale"])
+        }
+        if not shown:
+            continue
+        out += [f"## {label}", ""]
+        for slug, i in sorted(shown.items(), key=lambda kv: -kv[1]["cells"]):
+            doc = docs.get(slug, {})
             names = ", ".join(rows[g]["name"] for g in i["rows"])
             out.append(
                 f"### {slug}: explains {_plural(i['cells'], 'cell')} in "
@@ -2777,12 +2743,13 @@ def digest_markdown(result, checks, cube_defs) -> str:
                 out.append(f"- {doc['title']}")
             if doc.get("what"):
                 out.append(f"- What: {doc['what']}")
+            if doc.get("where") not in (None, "tableau"):
+                out.append(f"- Where: the {doc['where']} side, not the workbook")
             if slug in defs_by_slug:
                 m, v = defs_by_slug[slug]
                 out.append(f"- Dashboard: {_metric_sql(m)}")
                 out.append(
-                    "- Cube, reproduced over the extract: "
-                    f"{_metric_sql({**v, 'kind': m['kind']})}"
+                    f"- {_SIDE_FORMULA[side]}: {_metric_sql({**v, 'kind': m['kind']})}"
                 )
             if i["stale"]:
                 out.append(
@@ -2791,47 +2758,6 @@ def digest_markdown(result, checks, cube_defs) -> str:
                 )
             elif i.get("issue"):
                 out.append(f"- Issue: #{i['issue']}")
-            else:
-                out.append(f"- Draft: `{stem}-issues/{slug}.md`")
-            out.append("")
-    issues: dict[str, dict] = {}
-    for gid, row in rows.items():
-        for slug, t in row.get("truth_issues", {}).items():
-            i = issues.setdefault(slug, {"cells": 0, "rows": [], "stale": True, **t})
-            i["cells"] += t["explains_cells"]
-            i["stale"] = i["stale"] and t["stale"]
-            if t["explains_cells"]:
-                i["rows"].append(gid)
-    shown = {
-        s: i
-        for s, i in issues.items()
-        if i["cells"] or i["stale"] or i.get("ruling") == "cube-wrong"
-    }
-    if shown:
-        out += ["## Dashboard, model or source issues", ""]
-        stem = f"{result['run_date']}-{result['dashboard']}"
-        for slug, i in sorted(shown.items(), key=lambda kv: -kv[1]["cells"]):
-            doc = (checks.get("truth_issues") or {}).get(slug, {})
-            names = ", ".join(rows[g]["name"] for g in i["rows"])
-            out.append(
-                f"### {slug} ({doc.get('where', '?')}): explains "
-                f"{_plural(i['cells'], 'cell')} in {_plural(len(i['rows']), 'row')}"
-                + (f" ({names})" if names else "")
-            )
-            if doc.get("title"):
-                out.append(f"- {doc['title']}")
-            if doc.get("what"):
-                out.append(f"- What: {doc['what']}")
-            if i["stale"]:
-                out.append(
-                    "- Stale: the issue is closed and explains no cell now; "
-                    "remove its entry."
-                )
-            elif i.get("issue"):
-                call = (
-                    f", ruled {i['ruling']}" if i.get("ruling") else ", not ruled yet"
-                )
-                out.append(f"- Issue: #{i['issue']}{call}")
             else:
                 out.append(f"- Draft: `{stem}-issues/{slug}.md`")
             out.append("")
@@ -3004,20 +2930,12 @@ def report_markdown(result) -> str:
                 f"Missing Cube members: {_missing_text(row['missing_members'], full=True)}.",
                 "",
             ]
-        if row.get("truth_issues"):
+        if row.get("mismatches"):
             parts = [
-                f"{s} ({t['explains_cells']} cells; {_issue_ref(t)}"
-                + (f"; {t['ruling']}" if t["ruling"] else "")
-                + ")"
-                for s, t in row["truth_issues"].items()
+                f"{s_} ({t['explains_cells']} cells; fix {t['fix']}; {_issue_ref(t)})"
+                for s_, t in row["mismatches"].items()
             ]
-            out += [f"Truth issues: {', '.join(parts)}.", ""]
-        if row.get("cube_issues"):
-            parts = [
-                f"{s} ({t['explains_cells']} cells; {_issue_ref(t)})"
-                for s, t in row["cube_issues"].items()
-            ]
-            out += [f"Cube issues: {', '.join(parts)}.", ""]
+            out += [f"Explained mismatches: {', '.join(parts)}.", ""]
         for label, key in (
             ("Unaccounted", "unaccounted"),
             ("Not checked", "not_checked"),
@@ -3079,61 +2997,66 @@ def draft_sql(m: dict, v: dict, checks: dict, window, alias="corrected") -> str:
     return f"select {', '.join(cols)}\nfrom `{table}`\nwhere " + "\n  and ".join(where)
 
 
-def _issue_labels(t: dict, kind: str = "truth") -> list[str]:
+def _issue_labels(t: dict) -> list[str]:
     head = re.match(r"^([a-z]+)", t["title"])
     labels = [head.group(1)] if head else []
-    if kind == "cube":
+    if t["fix"] == "cube":
         labels.append("cube")
-    else:
-        labels += {"dashboard": ["tableau"], "rpt": ["dbt"]}.get(t["where"], [])
+    elif t["fix"] == "dashboard":
+        labels += {"tableau": ["tableau"], "rpt": ["dbt"]}.get(t["where"], [])
     return list(dict.fromkeys([*labels, *t["labels"], "validation"]))
 
 
-def _example_text(c: dict, kind: str = "truth") -> str:
+def _example_text(c: dict, fix: str) -> str:
     if c["n_students"] is None or c["n_students"] < SMALL_CELL:
         return "small cell"
     k = c["kind"]
-    other = (
-        "Cube's formula over the extract gives"
-        if kind == "cube"
-        else "the corrected calculation gives"
-    )
+    other = {
+        "cube": "Cube's formula over the extract gives",
+        "dashboard": "the corrected calculation gives",
+        "undecided": "the other formula gives",
+    }[fix]
     return (
         f"the dashboard shows {_fmt(c['truth'], k)}, {other} "
         f"{_fmt(c['variant'], k)}, and Cube gives {_fmt(c['cube'], k)}"
     )
 
 
-_TRUTH_ANSWER = (
-    "Add one label from the Labels menu on the right of this issue, or, if you "
-    "cannot add labels, write a comment that starts with the word. `cube-correct` "
-    "means the dashboard is wrong and Cube's number is right. `cube-wrong` means the "
-    "dashboard is right and Cube must change. If you fix the dashboard or the model "
-    "instead, close this issue; the next validation run checks the fix."
-)
-_CUBE_ANSWER = (
-    "Fix the Cube definition to compute what the dashboard shows, then close this "
-    "issue; the next validation run checks the fix. If you think the dashboard is "
-    "the one that is wrong, say so in a comment."
-)
+_OTHER_SIDE = "If you think the other side is wrong, say so in a comment."
+_ANSWERS = {
+    "cube": (
+        "Fix the Cube definition to compute what the dashboard shows, then close "
+        "this issue; the next validation run checks the fix. " + _OTHER_SIDE
+    ),
+    "dashboard": (
+        "Fix the dashboard (or its model or source) to compute the corrected "
+        "formula, then close this issue; the next validation run checks the fix. "
+        "Cube already matches the corrected formula. " + _OTHER_SIDE
+    ),
+    "undecided": (
+        "Decide which formula is the intended definition. Add the label `fix-cube` "
+        "if the dashboard's formula is right and Cube must change, or "
+        "`fix-dashboard` if the other formula is right and the dashboard must "
+        "change. If you cannot add labels, write a comment that starts with the "
+        "word. This issue then becomes the fix ticket for the side you chose."
+    ),
+}
 
 
 def issue_drafts(result, checks) -> dict[str, dict]:
-    """One GitHub issue draft per unfiled truth or cube issue that explains cells."""
+    """One GitHub issue draft per unfiled mismatch that explains cells."""
     window = resolve_window(checks, dt.date.fromisoformat(result["run_date"]))
-    entries = [("truth", s, t) for s, t in (checks.get("truth_issues") or {}).items()]
-    entries += [("cube", s, t) for s, t in (checks.get("cube_issues") or {}).items()]
     out = {}
-    for kind, slug, t in entries:
-        key = "truth_issues" if kind == "truth" else "cube_issues"
+    for slug, t in (checks.get("mismatches") or {}).items():
         hits = [
             (gid, row)
             for gid, row in result["rows"].items()
-            if row.get(key, {}).get(slug, {}).get("explains_cells")
+            if row.get("mismatches", {}).get(slug, {}).get("explains_cells")
         ]
         if t.get("issue") or not hits:
             continue
-        cells = sum(row[key][slug]["explains_cells"] for _, row in hits)
+        fix = t["fix"]
+        cells = sum(row["mismatches"][slug]["explains_cells"] for _, row in hits)
         m, v = next(
             (m, v)
             for r in checks["rows"]
@@ -3155,32 +3078,37 @@ def issue_drafts(result, checks) -> dict[str, dict]:
         )[:3]
         rows_text = ", ".join(f"{row['name']} ({gid})" for gid, row in hits)
         measure = f"`{checks['view']}.{m['cube']}`"
-        if kind == "cube":
-            alias = "cube_formula"
-            place = f"the Cube definition of {measure} under src/cube/model"
-            found = (
-                f"In {_plural(cells, 'cell')} across {_plural(len(hits), 'row')}, Cube "
-                "gives what its own formula gives over the extract, and the dashboard "
-                "shows something else."
-            )
-            step1 = (
-                "`as_written` is the dashboard's calculation and `cube_formula` is "
-                "Cube's, over the same rows."
-            )
-            answer = _CUBE_ANSWER
-        else:
-            alias = "corrected"
-            place = {
-                "dashboard": f"the Tableau workbook behind {result['dashboard']}",
-                "rpt": f"the kipptaf dbt model behind `{m['datasource']}`",
-                "source": f"the source data feeding `{m['datasource']}`",
-            }[t["where"]]
-            found = (
+        workbook = f"the Tableau workbook behind {result['dashboard']}"
+        alias = {
+            "cube": "cube_formula",
+            "dashboard": "corrected",
+            "undecided": "matches_cube",
+        }[fix]
+        found = {
+            "cube": (
+                f"In {_plural(cells, 'cell')} across {_plural(len(hits), 'row')}, "
+                "Cube gives what its own formula gives over the extract, and the "
+                "dashboard shows something else."
+            ),
+            "dashboard": (
                 "With the dashboard's calculation corrected, Cube matches it in "
                 f"{_plural(cells, 'cell')} across {_plural(len(hits), 'row')}."
-            )
-            step1 = "`as_written` is the dashboard's calculation and `corrected` is the fix."
-            answer = _TRUTH_ANSWER
+            ),
+            "undecided": (
+                f"In {_plural(cells, 'cell')} across {_plural(len(hits), 'row')}, "
+                "Cube matches the other formula below and not the dashboard's. "
+                "Which one is the intended definition is still open."
+            ),
+        }[fix]
+        place = {
+            "cube": f"the Cube definition of {measure} under src/cube/model",
+            "undecided": f"the Cube definition of {measure}, or {workbook}",
+            "dashboard": {
+                "tableau": workbook,
+                "rpt": f"the kipptaf dbt model behind `{m['datasource']}`",
+                "source": f"the source data feeding `{m['datasource']}`",
+            }.get(t.get("where") or "tableau", workbook),
+        }[fix]
         related = ", ".join(f"#{n}" for n in t["related"])
         body = [
             "## What's happening",
@@ -3191,7 +3119,7 @@ def issue_drafts(result, checks) -> dict[str, dict]:
             f"extract on {result['run_date']}. {found}",
             "",
             *[
-                f"- {' / '.join(c['key']) or 'All'}: {_example_text(c, kind)}."
+                f"- {' / '.join(c['key']) or 'All'}: {_example_text(c, fix)}."
                 for _, c in examples
             ],
             *(["", t["evidence"]] if t.get("evidence") else []),
@@ -3199,7 +3127,8 @@ def issue_drafts(result, checks) -> dict[str, dict]:
             "",
             "## Steps to reproduce",
             "",
-            f"1. Run this query in BigQuery. {step1}",
+            f"1. Run this query in BigQuery. `as_written` is the dashboard's "
+            f"calculation and `{alias}` is the other formula, over the same rows.",
             "",
             "   ```sql",
             *[
@@ -3219,21 +3148,22 @@ def issue_drafts(result, checks) -> dict[str, dict]:
             "",
             "## How to answer",
             "",
-            answer,
+            _ANSWERS[fix],
             "",
             "<details>",
             "<summary>For Claude</summary>",
             "",
             f"> Checks file `.claude/skills/cube-dashboard/checks/"
-            f"{Path(checks['path']).name}`, {kind} issue `{slug}`. As written: "
-            f"{_metric_sql(m)}. Variant: {_metric_sql({**v, 'kind': m['kind']})}. "
-            "Digest: the run's `-fixes.md` under `~/asana-sync/validation/`.",
+            f"{Path(checks['path']).name}`, mismatch `{slug}` (fix: {fix}). As "
+            f"written: {_metric_sql(m)}. Other formula: "
+            f"{_metric_sql({**v, 'kind': m['kind']})}. Digest: the run's "
+            "`-fixes.md` under `~/asana-sync/validation/`.",
             "",
             "</details>",
         ]
         out[slug] = {
             "title": t["title"],
-            "labels": _issue_labels(t, kind),
+            "labels": _issue_labels(t),
             "body": "\n".join(body),
         }
     return out
@@ -3269,14 +3199,14 @@ def write_outputs(result, out_dir: Path, checks=None, cube_defs=None) -> Path:
             "name": row["name"],
             "missing_members": sorted(row.get("missing_members", {})),
             "reopen_for": reopen_for(row),
-            "truth_issues": sorted(
-                s
-                for s, t in row.get("truth_issues", {}).items()
-                if t["explains_cells"] and not t["ruling"]
-            ),
-            "cube_issues": sorted(
-                s for s, t in row.get("cube_issues", {}).items() if t["explains_cells"]
-            ),
+            **{
+                f"fix_{side}" if side != "undecided" else side: sorted(
+                    s_
+                    for s_, t in row.get("mismatches", {}).items()
+                    if t["fix"] == side and t["explains_cells"]
+                )
+                for side in FIX_SIDES
+            },
         }
     latest_path.write_text(json.dumps(latest, indent=2))
     return report

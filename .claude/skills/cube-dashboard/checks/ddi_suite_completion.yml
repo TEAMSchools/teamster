@@ -211,12 +211,12 @@ handled:
     "missing_members untagged_assessments: the variant that explains it keeps
     tagged assessments only."
 open_issues_task: "1219086050133309"
-truth_issues:
+mismatches:
   completion_always_100:
     title:
       "fix(tableau): DDI Suite Module Dashboard % Completion reads 100% in every
       module"
-    where: dashboard
+    fix: dashboard
     what:
       The Module Dashboard's % Completion divides "# Students Complete -
       Overall" by "# Students Possible - Overall". Both count only rows whose

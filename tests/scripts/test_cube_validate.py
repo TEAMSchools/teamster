@@ -2034,13 +2034,13 @@ def test_summarize_counts_explained_cells_by_cause():
     assert s["explained"] == 2 and s["explained_by"] == {"team": 2}
 
 
-# ---------------------------------------------------------------- truth issues
-def _add_truth_issue(d, **extra):
-    d["truth_issues"] = {
+# ---------------------------------------------------------------- explained mismatches
+def _add_mismatch(d, fix="dashboard", **extra):
+    d["mismatches"] = {
         "tardy_formula": {
             "title": "fix(tableau): the demo dashboard counts half days as tardy",
             "what": "The dashboard's tardy count includes half days.",
-            "where": "dashboard",
+            "fix": fix,
             **extra,
         }
     }
@@ -2049,96 +2049,122 @@ def _add_truth_issue(d, **extra):
     ]
 
 
-def _truth_run(tmp_path, mutate=_add_truth_issue):
+def _fix_cube(d, **extra):
+    _add_mismatch(d, fix="cube", **extra)
+    d["mismatches"]["tardy_formula"]["title"] = (
+        "fix(cube): count_tardy_days counts rows, not tardy days"
+    )
+
+
+def _mismatch_run(tmp_path, mutate=_add_mismatch, bq=None):
     checks = cv.load_checks(_write_variant(tmp_path, mutate))
-    return checks, cv.run_dashboard(checks, FakeCube(), AltBQ(), TODAY, snapshots=SNAPS)
+    return checks, cv.run_dashboard(
+        checks, FakeCube(), bq or AltBQ(), TODAY, snapshots=SNAPS
+    )
 
 
-def test_load_checks_truth_issue_needs_title_what_where(tmp_path):
+@pytest.mark.parametrize(
+    ("change", "message"),
+    [
+        (lambda t: t.pop("fix"), "missing \\['fix'\\]"),
+        (lambda t: t.update(fix="maybe"), "fix is cube, dashboard or undecided"),
+        (lambda t: t.update(where="sheet"), "where is tableau, rpt or source"),
+        (lambda t: t.update(fix="cube", where="rpt"), "where is for dashboard fixes"),
+    ],
+)
+def test_load_checks_checks_each_mismatch(tmp_path, change, message):
     def m(d):
-        _add_truth_issue(d)
-        del d["truth_issues"]["tardy_formula"]["where"]
+        _add_mismatch(d)
+        change(d["mismatches"]["tardy_formula"])
 
-    with pytest.raises(cv.CheckError, match="missing \\['where'\\]"):
+    with pytest.raises(cv.CheckError, match=message):
         cv.load_checks(_write_variant(tmp_path, m))
 
 
-def test_load_checks_ruling_call_must_be_cube_correct_or_wrong(tmp_path):
+@pytest.mark.parametrize("old", ["truth_issues", "cube_issues"])
+def test_load_checks_asks_to_rename_the_old_keys(tmp_path, old):
     def m(d):
-        _add_truth_issue(d, ruling={"call": "maybe", "by": "x", "on": "2026-10-09"})
+        _add_mismatch(d)
+        d[old] = d.pop("mismatches")
 
-    with pytest.raises(cv.CheckError, match="cube-correct or cube-wrong"):
+    with pytest.raises(cv.CheckError, match=f"rename {old} to mismatches"):
         cv.load_checks(_write_variant(tmp_path, m))
 
 
 def test_load_checks_variant_must_explain_known_names(tmp_path):
     def m(d):
-        _add_truth_issue(d)
+        _add_mismatch(d)
         d["rows"][0]["metrics"][0]["variants"][0]["explains"] = ["nobody"]
 
     with pytest.raises(cv.CheckError, match="explains unknown \\['nobody'\\]"):
         cv.load_checks(_write_variant(tmp_path, m))
 
 
-def test_unruled_truth_issue_makes_the_row_truth_issue(tmp_path):
-    _, result = _truth_run(tmp_path)
+def test_a_mismatch_slug_is_not_a_missing_member(tmp_path):
+    def m(d):
+        _add_mismatch(d)
+        d["rows"][0]["metrics"][0]["missing_members"] = ["tardy_formula"]
+
+    with pytest.raises(cv.CheckError, match="tardy_formula.*both a mismatch"):
+        cv.load_checks(_write_variant(tmp_path, m))
+
+
+def test_a_dashboard_fix_counts_its_cells_as_matches(tmp_path):
+    _, result = _mismatch_run(tmp_path)
     row = result["rows"]["1"]
-    assert row["verdict"] == "truth_issue"
+    assert row["verdict"] == "pass"
     school = next(g for g in row["grains"] if g["grain"] == ["region", "school"])
-    assert school["status"] == "truth_issue" and school["review"] == 2
-    assert row["truth_issues"] == {
+    assert school["status"] == "pass" and school["accepted"] == 2
+    assert row["mismatches"] == {
         "tardy_formula": {
             "explains_cells": 2,
+            "fix": "dashboard",
             "issue": None,
-            "ruling": None,
             "stale": False,
         }
     }
 
 
-def test_cube_correct_ruling_counts_the_cells_as_matches(tmp_path):
-    ruling = {"call": "cube-correct", "by": "owner", "on": "2026-10-09"}
-    _, result = _truth_run(tmp_path, lambda d: _add_truth_issue(d, ruling=ruling))
+def test_a_cube_fix_makes_the_row_fix_cube(tmp_path):
+    _, result = _mismatch_run(tmp_path, _fix_cube)
     row = result["rows"]["1"]
-    assert row["verdict"] == "pass"
-    assert row["truth_issues"]["tardy_formula"]["ruling"] == "cube-correct"
+    assert row["verdict"] == "fix_cube"
+    school = next(g for g in row["grains"] if g["grain"] == ["region", "school"])
+    assert school["status"] == "fix_cube" and school["cube"] == 2
 
 
-def test_cube_wrong_ruling_leaves_the_cells_unexplained(tmp_path):
-    ruling = {"call": "cube-wrong", "by": "owner", "on": "2026-10-09"}
-    _, result = _truth_run(tmp_path, lambda d: _add_truth_issue(d, ruling=ruling))
-    assert result["rows"]["1"]["verdict"] == "fail"
-
-
-def test_a_variant_can_explain_a_member_and_a_truth_issue_together(tmp_path):
+@pytest.mark.parametrize(
+    ("fix", "verdict"), [("cube", "fix_cube"), ("dashboard", "missing_member")]
+)
+def test_a_variant_can_explain_a_mismatch_and_a_member_together(tmp_path, fix, verdict):
     def m(d):
-        _add_truth_issue(d)
+        _add_mismatch(d, fix=fix)
         mm = d["rows"][0]["metrics"][0]
         mm["missing_members"] = ["team"]
         mm["variants"][0]["explains"] = ["tardy_formula", "team"]
 
-    _, result = _truth_run(tmp_path, m)
+    _, result = _mismatch_run(tmp_path, m)
     row = result["rows"]["1"]
-    assert row["verdict"] == "truth_issue"
+    assert row["verdict"] == verdict
     assert row["missing_members"]["team"]["explains_cells"] == 2
-    assert row["truth_issues"]["tardy_formula"]["explains_cells"] == 2
+    assert row["mismatches"]["tardy_formula"]["explains_cells"] == 2
 
 
 @pytest.mark.parametrize(
     ("statuses", "verdict"),
     [
-        (["truth_issue", "missing_member"], "truth_issue"),
-        (["truth_issue", "fail"], "fail"),
-        (["truth_issue", "error"], "incomplete"),
-        (["pass", "truth_issue"], "truth_issue"),
+        (["fix_cube", "missing_member"], "fix_cube"),
+        (["fix_cube", "fail"], "fail"),
+        (["fix_cube", "error"], "incomplete"),
+        (["pass", "fix_cube"], "fix_cube"),
     ],
 )
-def test_row_verdict_truth_issue(statuses, verdict):
+def test_row_verdict_fix_cube(statuses, verdict):
     assert cv.row_verdict([{"status": s} for s in statuses]) == verdict
 
 
-def test_unaccounted_construct_overrides_truth_issue(tmp_path):
-    checks, _ = _truth_run(tmp_path)
+def test_unaccounted_construct_overrides_fix_cube(tmp_path):
+    checks, _ = _mismatch_run(tmp_path, _fix_cube)
     audit = {"1": {"unaccounted": [{"ref": "group: X [abc123]"}]}}
     result = cv.run_dashboard(checks, FakeCube(), AltBQ(), TODAY, audit=audit)
     assert result["rows"]["1"]["verdict"] == "incomplete"
@@ -2146,10 +2172,10 @@ def test_unaccounted_construct_overrides_truth_issue(tmp_path):
 
 def test_explained_examples_never_name_a_student(tmp_path):
     def m(d):
-        _add_truth_issue(d)
+        _fix_cube(d)
         d["dimensions"]["school"]["person"] = True
 
-    _, result = _truth_run(tmp_path, m)
+    _, result = _mismatch_run(tmp_path, m)
     grain = next(
         g for g in result["rows"]["1"]["grains"] if g["grain"] == ["region", "school"]
     )
@@ -2157,35 +2183,40 @@ def test_explained_examples_never_name_a_student(tmp_path):
     assert examples and all(c["key"][1] == "a student" for c in examples)
 
 
-def test_comment_names_dashboard_issues_for_the_owner(tmp_path):
-    _, result = _truth_run(tmp_path)
-    assert cv.comment_text(result["rows"]["1"], result).splitlines()[1:] == [
-        "Dashboard issues for the domain owner: tardy_formula (draft, 2 cells).",
+def test_comment_says_who_fixes_what(tmp_path):
+    _, cube = _mismatch_run(tmp_path, _fix_cube)
+    assert cv.comment_text(cube["rows"]["1"], cube).splitlines()[1:] == [
+        "Fix in Cube: tardy_formula (draft, 2 cells).",
         "Nothing else to investigate.",
+    ]
+    _, dash = _mismatch_run(tmp_path, lambda d: _add_mismatch(d, issue=123))
+    assert cv.comment_text(dash["rows"]["1"], dash).splitlines()[1:] == [
+        "Fix in the dashboard: tardy_formula (#123, 2 cells).",
+        "Cube matches the dashboard once its fixes land.",
     ]
 
 
-def test_comment_gives_a_filed_issue_its_number(tmp_path):
-    _, result = _truth_run(tmp_path, lambda d: _add_truth_issue(d, issue=123))
-    line = cv.comment_text(result["rows"]["1"], result).splitlines()[1]
-    assert line == (
-        "Dashboard issues for the domain owner: tardy_formula (#123, 2 cells)."
-    )
-
-
-def test_digest_lists_dashboard_issues_before_cube_additions(tmp_path):
-    checks, result = _truth_run(tmp_path)
+@pytest.mark.parametrize(
+    ("mutate", "section", "other"),
+    [
+        (_fix_cube, "## Fix in Cube", "- Cube, reproduced over the extract: "),
+        (_add_mismatch, "## Fix in the dashboard", "- Corrected: "),
+    ],
+)
+def test_digest_lists_mismatches_by_who_fixes(tmp_path, mutate, section, other):
+    checks, result = _mismatch_run(tmp_path, mutate)
     md = cv.digest_markdown(result, checks, {})
-    assert md.index("## Dashboard, model or source issues") < md.index("## Add to Cube")
-    assert "### tardy_formula (dashboard): explains 2 cells in 1 row (# Tardy)" in md
+    assert md.index(section) < md.index("## Add to Cube")
+    assert "### tardy_formula: explains 2 cells in 1 row (# Tardy)" in md
+    assert "- Dashboard: `sum(is_tardy)`" in md
+    assert f"{other}`countif(att_code = 'T')`" in md
     assert "- Draft: `2026-10-08-demo_dashboard-issues/tardy_formula.md`" in md
 
 
-def test_digest_has_no_issue_section_without_truth_issues():
+def test_digest_has_no_fix_section_without_mismatches():
     result = cv.run_dashboard(_checks(), FakeCube(), FakeBQ(), TODAY)
-    assert "Dashboard, model or source issues" not in cv.digest_markdown(
-        result, _checks(), {}
-    )
+    md = cv.digest_markdown(result, _checks(), {})
+    assert "## Fix in" not in md
 
 
 class SameBQ(AltBQ):
@@ -2197,23 +2228,23 @@ class SameBQ(AltBQ):
         ]
 
 
-def test_closed_issue_explaining_nothing_is_stale_and_open_one_is_silent(tmp_path):
+def test_closed_mismatch_explaining_nothing_is_stale_and_open_one_is_silent(tmp_path):
     for extra, stale in (({"closed_on": "2026-10-09"}, True), ({}, False)):
-        checks = cv.load_checks(
-            _write_variant(tmp_path, lambda d: _add_truth_issue(d, **extra))
+        checks, result = _mismatch_run(
+            tmp_path, lambda d: _fix_cube(d, **extra), SameBQ()
         )
-        result = cv.run_dashboard(checks, FakeCube(), SameBQ(), TODAY)
-        assert result["rows"]["1"]["truth_issues"]["tardy_formula"]["stale"] is stale
+        assert result["rows"]["1"]["mismatches"]["tardy_formula"]["stale"] is stale
         md = cv.digest_markdown(result, checks, {})
         assert ("- Stale: the issue is closed" in md) is stale
 
 
-def test_latest_json_lists_open_truth_issues(tmp_path):
-    checks, result = _truth_run(tmp_path)
+def test_latest_json_lists_mismatches_by_who_fixes(tmp_path):
+    checks, result = _mismatch_run(tmp_path, _fix_cube)
     cv.write_outputs(result, tmp_path / "out", checks, {})
     latest = json.loads((tmp_path / "out" / "latest.json").read_text())
-    assert latest["rows"]["1"]["verdict"] == "truth_issue"
-    assert latest["rows"]["1"]["truth_issues"] == ["tardy_formula"]
+    assert latest["rows"]["1"]["verdict"] == "fix_cube"
+    assert latest["rows"]["1"]["fix_cube"] == ["tardy_formula"]
+    assert latest["rows"]["1"]["fix_dashboard"] == []
 
 
 # ---------------------------------------------------------------- issue drafts
@@ -2225,8 +2256,8 @@ def test_live_table_reads_the_datasource_caption():
         cv.live_table("rpt_demo")
 
 
-def test_issue_draft_follows_the_bug_template(tmp_path):
-    checks, result = _truth_run(tmp_path)
+def test_dashboard_fix_draft_goes_to_the_dashboard_maintainer(tmp_path):
+    checks, result = _mismatch_run(tmp_path)
     d = cv.issue_drafts(result, checks)["tardy_formula"]
     assert d["title"] == "fix(tableau): the demo dashboard counts half days as tardy"
     assert d["labels"] == ["fix", "tableau", "validation"]
@@ -2240,19 +2271,55 @@ def test_issue_draft_follows_the_bug_template(tmp_path):
         "as_written",
         "corrected",
         "# Tardy (1)",
-        "`cube-correct`",
+        "Fix the dashboard",
+        "the other side is wrong",
         "checks/checks.yml",
     ):
         assert part in d["body"], part
 
 
-def test_a_filed_issue_gets_no_new_draft(tmp_path):
-    checks, result = _truth_run(tmp_path, lambda d: _add_truth_issue(d, issue=123))
+def test_an_rpt_fix_draft_is_labeled_dbt(tmp_path):
+    checks, result = _mismatch_run(tmp_path, lambda d: _add_mismatch(d, where="rpt"))
+    assert cv.issue_drafts(result, checks)["tardy_formula"]["labels"] == [
+        "fix",
+        "dbt",
+        "validation",
+    ]
+
+
+def test_cube_fix_draft_goes_to_the_cube_builder(tmp_path):
+    checks, result = _mismatch_run(tmp_path, _fix_cube)
+    d = cv.issue_drafts(result, checks)["tardy_formula"]
+    assert d["labels"] == ["fix", "cube", "validation"]
+    for part in (
+        "cube_formula",
+        "Cube's formula over the extract gives",
+        "Fix the Cube definition",
+        "`demo_view.count_tardy_days`",
+        "the other side is wrong",
+    ):
+        assert part in d["body"], part
+
+
+@pytest.mark.parametrize("mutate", [_add_mismatch, _fix_cube])
+def test_a_filed_mismatch_gets_no_new_draft(tmp_path, mutate):
+    checks, result = _mismatch_run(tmp_path, lambda d: mutate(d, issue=123))
     assert cv.issue_drafts(result, checks) == {}
 
 
+def test_drafts_list_only_the_related_issues_named(tmp_path):
+    checks, result = _mismatch_run(
+        tmp_path, lambda d: _add_mismatch(d, related=[3801, 5668])
+    )
+    body = cv.issue_drafts(result, checks)["tardy_formula"]["body"]
+    assert "Related: #3801, #5668" in body
+    plain_checks, plain = _mismatch_run(tmp_path)
+    plain_body = cv.issue_drafts(plain, plain_checks)["tardy_formula"]["body"]
+    assert "Related:" not in plain_body
+
+
 def test_draft_sql_leaves_out_test_record_filters(tmp_path):
-    checks, result = _truth_run(tmp_path)
+    checks, result = _mismatch_run(tmp_path)
     checks["truth_filters"] = [
         *checks["truth_filters"],
         {"sql": "student_number not in (987654)", "private": True},
@@ -2261,13 +2328,53 @@ def test_draft_sql_leaves_out_test_record_filters(tmp_path):
     assert "987654" not in body and "student_number not in" not in body
 
 
-def test_write_outputs_writes_one_draft_per_issue(tmp_path):
-    checks, result = _truth_run(tmp_path)
+def test_write_outputs_writes_one_draft_per_mismatch(tmp_path):
+    checks, result = _mismatch_run(tmp_path)
     cv.write_outputs(result, tmp_path / "out", checks, {})
     p = tmp_path / "out" / "2026-10-08-demo_dashboard-issues" / "tardy_formula.md"
     text = p.read_text()
     assert text.startswith("Title: fix(tableau): the demo dashboard")
     assert "Labels: fix, tableau, validation" in text.splitlines()[1]
+
+
+@pytest.mark.parametrize("related", ["5668", 5668, ["#5668"]])
+def test_related_is_a_list_of_issue_numbers(tmp_path, related):
+    with pytest.raises(
+        cv.CheckError, match="related is a list of GitHub issue numbers"
+    ):
+        cv.load_checks(
+            _write_variant(tmp_path, lambda d: _add_mismatch(d, related=related))
+        )
+
+
+def test_a_member_listed_twice_still_loads(tmp_path):
+    def m(d):
+        _add_missing_member(d)
+        d["rows"][0]["metrics"][0]["missing_members"] = ["team", "team"]
+
+    cv.load_checks(_write_variant(tmp_path, m))
+
+
+class TotalMovesBQ(AltBQ):
+    """The variant moves the dashboard's total as well as the school cells."""
+
+    def __call__(self, sql):
+        rows = super().__call__(sql)
+        return [
+            dict(r, m0_v0=r["m0_v0"] + 5) if "m0_v0" in r and "g0" not in r else r
+            for r in rows
+        ]
+
+
+def test_members_with_only_variants_never_borrow_a_mismatch_variant(tmp_path):
+    def m(d):
+        _add_mismatch(d)
+        d["rows"][0]["metrics"][0]["missing_members"] = ["team"]
+
+    checks, result = _mismatch_run(tmp_path, m, TotalMovesBQ())
+    # The mismatch's variant moves the total; that says nothing about team.
+    assert cv.reopen_for(result["rows"]["1"]) == []
+    cv.write_outputs(result, tmp_path / "out", checks, {})  # no KeyError
 
 
 # ---------------------------------------------------------------- settle
@@ -2304,7 +2411,7 @@ def test_settle_drift_with_no_change_recommends_one_day():
 
 def test_settle_sql_groups_every_metric_by_the_settle_date(tmp_path):
     def m(d):
-        _add_truth_issue(d)
+        _add_mismatch(d)
         d["settle"] = {
             "days": 7,
             "date": "calendardate",
@@ -2344,44 +2451,7 @@ def test_settle_text_labels_columns_by_metric():
     assert "days: 2" in text
 
 
-# ---------------------------------------------------------------- review fixes
-class TotalMovesBQ(AltBQ):
-    """The variant moves the dashboard's total as well as the school cells."""
-
-    def __call__(self, sql):
-        rows = super().__call__(sql)
-        return [
-            dict(r, m0_v0=r["m0_v0"] + 5) if "m0_v0" in r and "g0" not in r else r
-            for r in rows
-        ]
-
-
-def _members_with_only_variants(d):
-    _add_truth_issue(d)
-    d["rows"][0]["metrics"][0]["missing_members"] = ["team"]
-
-
-def test_members_with_only_variants_never_borrow_a_truth_variant(tmp_path):
-    checks = cv.load_checks(_write_variant(tmp_path, _members_with_only_variants))
-    result = cv.run_dashboard(checks, FakeCube(), TotalMovesBQ(), TODAY)
-    # The truth issue's variant moves the total; that says nothing about team.
-    assert cv.reopen_for(result["rows"]["1"]) == []
-    cv.write_outputs(result, tmp_path / "out", checks, {})  # no KeyError
-
-
-def test_cube_wrong_issue_stays_in_the_digest_and_comment(tmp_path):
-    ruling = {"call": "cube-wrong", "by": "owner", "on": "2026-10-09"}
-    checks, result = _truth_run(
-        tmp_path, lambda d: _add_truth_issue(d, issue=123, ruling=ruling)
-    )
-    md = cv.digest_markdown(result, checks, {})
-    assert "### tardy_formula (dashboard)" in md
-    assert "- Issue: #123, ruled cube-wrong" in md
-    text = cv.comment_text(result["rows"]["1"], result)
-    assert "Ruled cube-wrong, so Cube must change: tardy_formula (#123)." in text
-
-
-def test_total_line_names_the_truth_issue_that_explains_it():
+def test_total_line_names_the_mismatch_that_explains_it():
     s_ = {
         "bad": 0,
         "explained": 1,
@@ -2397,10 +2467,10 @@ def test_total_line_names_the_truth_issue_that_explains_it():
 
 def test_a_staff_dimension_is_masked_with_its_own_label(tmp_path):
     def m(d):
-        _add_truth_issue(d)
+        _add_mismatch(d)
         d["dimensions"]["school"]["person"] = "a teacher"
 
-    _, result = _truth_run(tmp_path, m)
+    _, result = _mismatch_run(tmp_path, m)
     grain = next(
         g for g in result["rows"]["1"]["grains"] if g["grain"] == ["region", "school"]
     )
@@ -2436,162 +2506,58 @@ def test_a_cube_filter_can_apply_to_one_extract_only(tmp_path):
     assert len(wpp) == 3
 
 
-# ---------------------------------------------------------------- cube issues
-def _add_cube_issue(d, **extra):
-    d["cube_issues"] = {
-        "rows_not_pairs": {
-            "title": "fix(cube): count_tardy_days counts rows, not tardy days",
-            "what": "Cube's measure counts every row where the dashboard counts days.",
-            **extra,
-        }
-    }
-    d["rows"][0]["metrics"][0]["variants"] = [
-        {"explains": ["rows_not_pairs"], "sql": "countif(att_code = 'T')"}
-    ]
+# ---------------------------------------------------------------- undecided
+def _undecided(d, **extra):
+    _add_mismatch(d, fix="undecided", **extra)
 
 
-def test_cube_issue_makes_the_row_cube_issue(tmp_path):
-    _, result = _truth_run(tmp_path, _add_cube_issue)
+def test_an_undecided_fix_holds_the_row_at_undecided(tmp_path):
+    _, result = _mismatch_run(tmp_path, _undecided)
     row = result["rows"]["1"]
-    assert row["verdict"] == "cube_issue"
+    assert row["verdict"] == "undecided"
     school = next(g for g in row["grains"] if g["grain"] == ["region", "school"])
-    assert school["status"] == "cube_issue" and school["cube"] == 2
-    assert row["cube_issues"] == {
-        "rows_not_pairs": {"explains_cells": 2, "issue": None, "stale": False}
-    }
-
-
-def test_a_slug_is_one_kind_of_thing(tmp_path):
-    def m(d):
-        _add_cube_issue(d)
-        _add_truth_issue(d)
-        d["truth_issues"]["rows_not_pairs"] = d["truth_issues"].pop("tardy_formula")
-
-    with pytest.raises(cv.CheckError, match="rows_not_pairs.*more than one"):
-        cv.load_checks(_write_variant(tmp_path, m))
-
-
-def test_a_cube_issue_slug_is_not_a_missing_member(tmp_path):
-    def m(d):
-        _add_cube_issue(d)
-        d["rows"][0]["metrics"][0]["missing_members"] = ["rows_not_pairs"]
-
-    with pytest.raises(cv.CheckError, match="rows_not_pairs.*more than one"):
-        cv.load_checks(_write_variant(tmp_path, m))
-
-
-def test_a_cube_issue_and_a_member_explain_a_cell_together(tmp_path):
-    def m(d):
-        _add_cube_issue(d)
-        mm = d["rows"][0]["metrics"][0]
-        mm["missing_members"] = ["team"]
-        mm["variants"][0]["explains"] = ["rows_not_pairs", "team"]
-
-    _, result = _truth_run(tmp_path, m)
-    row = result["rows"]["1"]
-    assert row["verdict"] == "cube_issue"
-    assert row["missing_members"]["team"]["explains_cells"] == 2
-
-
-def test_an_accepted_truth_issue_does_not_hide_a_cube_issue(tmp_path):
-    ruling = {"call": "cube-correct", "by": "owner", "on": "2026-10-09"}
-
-    def m(d):
-        _add_truth_issue(d, ruling=ruling)
-        _add_cube_issue(d)
-        d["rows"][0]["metrics"][0]["variants"] = [
-            {
-                "explains": ["tardy_formula", "rows_not_pairs"],
-                "sql": "countif(att_code = 'T')",
-            }
-        ]
-
-    _, result = _truth_run(tmp_path, m)
-    assert result["rows"]["1"]["verdict"] == "cube_issue"
+    assert school["status"] == "undecided" and school["undecided"] == 2
+    assert row["mismatches"]["tardy_formula"]["fix"] == "undecided"
 
 
 @pytest.mark.parametrize(
     ("statuses", "verdict"),
     [
-        (["cube_issue", "truth_issue"], "cube_issue"),
-        (["cube_issue", "fail"], "fail"),
-        (["cube_issue", "error"], "incomplete"),
+        (["undecided", "missing_member"], "undecided"),
+        (["undecided", "fix_cube"], "fix_cube"),
+        (["undecided", "fail"], "fail"),
     ],
 )
-def test_row_verdict_cube_issue(statuses, verdict):
+def test_row_verdict_undecided(statuses, verdict):
     assert cv.row_verdict([{"status": s} for s in statuses]) == verdict
 
 
-def test_comment_says_what_to_fix_in_cube(tmp_path):
-    _, result = _truth_run(tmp_path, _add_cube_issue)
+def test_comment_says_the_owner_decides(tmp_path):
+    _, result = _mismatch_run(tmp_path, _undecided)
     assert cv.comment_text(result["rows"]["1"], result).splitlines()[1:] == [
-        "Fix in Cube: rows_not_pairs (draft, 2 cells).",
+        "Waiting on the domain owner: tardy_formula (draft, 2 cells).",
         "Nothing else to investigate.",
     ]
 
 
-def test_digest_puts_fix_in_cube_first(tmp_path):
-    checks, result = _truth_run(tmp_path, _add_cube_issue)
+def test_digest_lists_undecided_mismatches(tmp_path):
+    checks, result = _mismatch_run(tmp_path, _undecided)
     md = cv.digest_markdown(result, checks, {})
-    assert md.index("## Fix in Cube") < md.index("## Add to Cube")
-    assert "### rows_not_pairs: explains 2 cells in 1 row (# Tardy)" in md
-    assert "- Dashboard: `sum(is_tardy)`" in md
-    assert "- Cube, reproduced over the extract: `countif(att_code = 'T')`" in md
-    assert "- Draft: `2026-10-08-demo_dashboard-issues/rows_not_pairs.md`" in md
+    assert md.index("## Waiting on the domain owner") < md.index("## Add to Cube")
+    assert "- The other formula, which Cube matches: " in md
 
 
-def test_latest_json_lists_cube_issues(tmp_path):
-    checks, result = _truth_run(tmp_path, _add_cube_issue)
+def test_undecided_draft_asks_the_owner_to_choose(tmp_path):
+    checks, result = _mismatch_run(tmp_path, _undecided)
+    d = cv.issue_drafts(result, checks)["tardy_formula"]
+    assert d["labels"] == ["fix", "validation"]
+    for part in ("matches_cube", "`fix-cube`", "`fix-dashboard`", "fix ticket"):
+        assert part in d["body"], part
+
+
+def test_latest_json_lists_undecided_mismatches(tmp_path):
+    checks, result = _mismatch_run(tmp_path, _undecided)
     cv.write_outputs(result, tmp_path / "out", checks, {})
     latest = json.loads((tmp_path / "out" / "latest.json").read_text())
-    assert latest["rows"]["1"]["verdict"] == "cube_issue"
-    assert latest["rows"]["1"]["cube_issues"] == ["rows_not_pairs"]
-
-
-def test_cube_issue_draft_asks_for_a_cube_fix(tmp_path):
-    checks, result = _truth_run(tmp_path, _add_cube_issue)
-    d = cv.issue_drafts(result, checks)["rows_not_pairs"]
-    assert d["labels"] == ["fix", "cube", "validation"]
-    for part in (
-        "cube_formula",
-        "as_written",
-        "Cube's formula over the extract gives",
-        "Fix the Cube definition",
-        "`demo_view.count_tardy_days`",
-    ):
-        assert part in d["body"], part
-    assert "cube-correct" not in d["body"]
-
-
-def test_a_filed_cube_issue_gets_no_new_draft(tmp_path):
-    checks, result = _truth_run(tmp_path, lambda d: _add_cube_issue(d, issue=77))
-    assert cv.issue_drafts(result, checks) == {}
-
-
-def test_drafts_list_only_the_related_issues_named(tmp_path):
-    checks, result = _truth_run(
-        tmp_path, lambda d: _add_truth_issue(d, related=[3801, 5668])
-    )
-    body = cv.issue_drafts(result, checks)["tardy_formula"]["body"]
-    assert "Related: #3801, #5668" in body
-    plain_checks, plain = _truth_run(tmp_path)
-    plain_body = cv.issue_drafts(plain, plain_checks)["tardy_formula"]["body"]
-    assert "Related:" not in plain_body
-
-
-@pytest.mark.parametrize("related", ["5668", 5668, ["#5668"]])
-def test_related_is_a_list_of_issue_numbers(tmp_path, related):
-    with pytest.raises(
-        cv.CheckError, match="related is a list of GitHub issue numbers"
-    ):
-        cv.load_checks(
-            _write_variant(tmp_path, lambda d: _add_truth_issue(d, related=related))
-        )
-
-
-def test_a_member_listed_twice_still_loads(tmp_path):
-    def m(d):
-        _add_missing_member(d)
-        d["rows"][0]["metrics"][0]["missing_members"] = ["team", "team"]
-
-    cv.load_checks(_write_variant(tmp_path, m))
+    assert latest["rows"]["1"]["verdict"] == "undecided"
+    assert latest["rows"]["1"]["undecided"] == ["tardy_formula"]
