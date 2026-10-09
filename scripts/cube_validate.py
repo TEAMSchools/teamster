@@ -520,6 +520,10 @@ class Sheet:
     drill_paths: list[list[str]] = field(default_factory=list)
     subtotal_dims: list[str] = field(default_factory=list)
     constructs: list[Construct] = field(default_factory=list)
+    # Where each measure appears: rows, cols, an encoding (text, tooltip, color,
+    # lod...) or "measure values". A tooltip or a drill-down panel is not on screen
+    # until someone hovers or clicks, so check those with a render.
+    measure_places: dict[str, list[str]] = field(default_factory=dict)
 
 
 def _attr(e: ET.Element, key: str) -> str:
@@ -584,6 +588,12 @@ def _classify(ds: str, inner: str, columns) -> tuple[str, str, str]:
     return "other", caption, formula
 
 
+def _place(s: Sheet, label: str, place: str) -> None:
+    places = s.measure_places.setdefault(label, [])
+    if place not in places:
+        places.append(place)
+
+
 def parse_twb(path: str | Path, dashboards: list[str]) -> list[Sheet]:
     """Every worksheet placed on one of `dashboards`, with its shelves and filters."""
     root = SafeET.parse(path).getroot()  # defusedxml: no entity expansion
@@ -612,7 +622,9 @@ def parse_twb(path: str | Path, dashboards: list[str]) -> list[Sheet]:
         # (datasource, '[field]') on the shelves: a hierarchy belongs to one field.
         on_shelf: set[tuple[str, str]] = set()
 
-        def take(text: str, dims: list[str], s=s, raw=raw, on_shelf=on_shelf) -> None:
+        def take(
+            text: str, dims: list[str], place: str, s=s, raw=raw, on_shelf=on_shelf
+        ) -> None:
             for ds, inner in _TOKEN.findall(text):
                 if m := _INSTANCE.match(_strip_visual_total(inner)[0]):
                     on_shelf.add((ds, f"[{m.group(2)}]"))
@@ -636,18 +648,18 @@ def parse_twb(path: str | Path, dashboards: list[str]) -> list[Sheet]:
                         s.param_dims[label] = branches
                 elif kind == "measure":
                     s.measures.setdefault(label, formula)
+                    _place(s, label, place)
                     # A parameter that swaps measures: the sheet shows each branch.
                     for b in (branches or {}).get("branches", {}).values():
                         if b:
                             s.measures.setdefault(b, "")
+                            _place(s, b, place)
 
-        take(w.findtext("table/rows") or "", s.rows_dims)
-        take(w.findtext("table/cols") or "", s.cols_dims)
+        take(w.findtext("table/rows") or "", s.rows_dims, "rows")
+        take(w.findtext("table/cols") or "", s.cols_dims, "cols")
         s.shelf_dims = list(dict.fromkeys(s.rows_dims + s.cols_dims))
-        take(
-            " ".join(_attr(e, "column") for e in w.findall(".//encodings/*")),
-            s.shelf_dims,
-        )
+        for e in w.findall(".//encodings/*"):
+            take(_attr(e, "column"), s.shelf_dims, e.tag)
         for ds in raw:
             for fields in book.drill_paths.get(ds, []):
                 labels = [_resolve(columns, ds, n.strip("[]"))[0] for n in fields]
@@ -657,6 +669,15 @@ def parse_twb(path: str | Path, dashboards: list[str]) -> list[Sheet]:
             " ".join(c.text or "" for c in w.findall("table/subtotals/column"))
         ):
             s.subtotal_dims.append(_classify(ds, inner, columns)[1])
+        # Measure Values shows its members only when Measure Names sits on a shelf.
+        shelves = " ".join(
+            [
+                w.findtext("table/rows") or "",
+                w.findtext("table/cols") or "",
+                *(_attr(e, "column") for e in w.findall(".//encodings/*")),
+            ]
+        )
+        names_placed = "[:Measure Names]" in shelves
         for f in w.iter("filter"):
             if _attr(f, "column").endswith("[:Measure Names]"):
                 # Measure Values: the sheet's measures are this filter's members.
@@ -665,6 +686,13 @@ def parse_twb(path: str | Path, dashboards: list[str]) -> list[Sheet]:
                         kind, label, formula = _classify(ds, inner, columns)
                         if kind == "measure":
                             s.measures.setdefault(label, formula)
+                            _place(
+                                s,
+                                label,
+                                "measure values"
+                                if names_placed
+                                else "measure values, not on a shelf",
+                            )
                 continue
             for ds, inner in _TOKEN.findall(_attr(f, "column")):
                 kind, label, _ = _classify(ds, inner, columns)
@@ -3540,6 +3568,14 @@ def _grains_command(a) -> int:
             ),
             "sheets": [_sheet_out(s) for s in using],
             "grains": propose_grains(sheets, a.measure),
+            # Where each sheet shows it: a tooltip or drill-down needs a render.
+            "where": {
+                s.name: s.measure_places.get(
+                    s.measure_aliases.get(measure, measure), []
+                )
+                or s.measure_places.get(measure, [])
+                for s in using
+            },
             "constructs": [
                 dict(_public(c), **_snippet(c)) for c in merge_constructs(using)
             ],

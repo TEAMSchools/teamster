@@ -213,16 +213,18 @@ open_issues_task: "1219086050133309"
 mismatches:
   completion_always_100:
     title:
-      "fix(tableau): DDI Suite Module Dashboard % Completion reads 100% in every
-      module"
+      "fix(tableau): DDI Module Dashboard's 75% completion filter never hides a
+      module, because % Completion reads 100% everywhere"
     fix: dashboard
     what:
-      The Module Dashboard's % Completion divides "# Students Complete -
+      'The Module Dashboard''s % Completion divides "# Students Complete -
       Overall" by "# Students Possible - Overall". Both count only rows whose
       response type is overall, and every overall row has a score, so a student
-      who never tested counts in neither. The rate is 100% in every module,
-      school and grade where anyone tested, and the sheets' "75% completion or
-      more" filter never hides a module.
+      who never tested counts in neither. The value is 100% wherever anyone
+      tested. People see it in two places: the "% Completion: From 75%" filter
+      at the top, which is meant to hide low-completion modules and never hides
+      one, and the Summary column in the drill-down panel after clicking an
+      assessment, which always reads 100%.'
     evidence:
       In the extract, no module x school x grade group in Camden, Newark or
       Paterson falls below 100%.
@@ -812,204 +814,24 @@ rows:
                   - "226306"
                   - "226804"
     grains:
-      - []
-      - - module_type
-        - module_code
+      - - assessment_id
+      - - assessment_id
+        - school
+      - - assessment_id
+        - region
+      - - assessment_id
         - grade_level
       - - module_type
         - module_code
         - grade_level
-        - tutoring
       - - module_type
         - module_code
         - grade_level
-        - academic_year
-      - - module_type
-        - module_code
-        - grade_level
-        - dibels
-      - - module_type
-        - module_code
-        - grade_level
-        - head_of_school
-      - - module_type
-        - module_code
-        - grade_level
-        - is_foundations
-      - - module_type
-        - module_code
-        - grade_level
-        - low_25
-      - - module_type
-        - module_code
-        - grade_level
-        - is_normed
-      - - module_type
-        - module_code
-        - grade_level
-        - is_replacement
-      - - module_type
-        - module_code
-        - grade_level
-        - other_context
-      - - module_type
-        - module_code
-        - grade_level
-        - ml
-      - - module_type
-        - module_code
-        - grade_level
-        - bucket
+        - school
       - - module_type
         - module_code
         - grade_level
         - region
-      - - module_type
-        - module_code
-        - grade_level
-        - school
-      - - module_type
-        - module_code
-        - grade_level
-        - subject_area
-      - - module_type
-        - module_code
-        - grade_level
-        - team
-      - - title
-        - assessment_id
-      - - title
-        - assessment_id
-        - tutoring
-      - - title
-        - assessment_id
-        - academic_year
-      - - title
-        - assessment_id
-        - dibels
-      - - title
-        - assessment_id
-        - grade_level
-      - - title
-        - assessment_id
-        - head_of_school
-      - - title
-        - assessment_id
-        - is_foundations
-      - - title
-        - assessment_id
-        - low_25
-      - - title
-        - assessment_id
-        - is_replacement
-      - - title
-        - assessment_id
-        - other_context
-      - - title
-        - assessment_id
-        - ml
-      - - title
-        - assessment_id
-        - module_code
-      - - title
-        - assessment_id
-        - module_type
-      - - title
-        - assessment_id
-        - bucket
-      - - title
-        - assessment_id
-        - region
-      - - title
-        - assessment_id
-        - school
-      - - title
-        - assessment_id
-        - subject_area
-      - - title
-        - assessment_id
-        - team
-      - - assessment_id
-        - title
-        - school
-        - tutoring
-      - - assessment_id
-        - title
-        - school
-        - academic_year
-      - - assessment_id
-        - title
-        - school
-        - dibels
-      - - assessment_id
-        - title
-        - school
-        - grade_level
-      - - assessment_id
-        - title
-        - school
-        - head_of_school
-      - - assessment_id
-        - title
-        - school
-        - is_foundations
-      - - assessment_id
-        - title
-        - school
-        - low_25
-      - - assessment_id
-        - title
-        - school
-        - is_replacement
-      - - assessment_id
-        - title
-        - school
-        - other_context
-      - - assessment_id
-        - title
-        - school
-        - ml
-      - - assessment_id
-        - title
-        - school
-        - module_code
-      - - assessment_id
-        - title
-        - school
-        - module_type
-      - - assessment_id
-        - title
-        - school
-        - bucket
-      - - assessment_id
-        - title
-        - school
-        - region
-      - - assessment_id
-        - title
-        - school
-        - subject_area
-      - - assessment_id
-        - title
-        - school
-        - team
-      - - tutoring
-      - - academic_year
-      - - dibels
-      - - grade_level
-      - - head_of_school
-      - - is_foundations
-      - - low_25
-      - - is_replacement
-      - - other_context
-      - - ml
-      - - module_code
-      - - module_type
-      - - bucket
-      - - region
-      - - school
-      - - subject_area
-      - - team
     not_checked:
       - construct: "filter: Subject Area (group) (copy) [07c576]"
         why:

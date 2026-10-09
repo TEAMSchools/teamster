@@ -2755,3 +2755,31 @@ def test_a_cube_side_draft_shows_the_cube_filters(tmp_path):
         "source_assessment_id" in body
         and "Cube without the affected rows gives" in body
     )
+
+
+# ---------------------------------------------------------------- where a measure appears
+def test_parse_twb_labels_where_each_measure_appears():
+    tardy = cv.parse_twb(FIX / "mini.twb", ["Live"])[0]
+    assert tardy.measure_places == {"# Tardy": ["text"]}
+    (counts,) = cv.parse_twb(FIX / "mini.twb", ["Counts"])
+    assert counts.measure_places["# Tardy"] == ["measure values"]
+
+
+def test_grains_cli_says_where_the_measure_appears(capsys):
+    cv.main(
+        ["grains", str(FIX / "mini.twb"), "--dashboard", "Live", "--measure", "# Tardy"]
+    )
+    out = json.loads(capsys.readouterr().out)
+    assert out["where"] == {"Tardy by School": ["text"]}
+
+
+def test_measure_values_off_every_shelf_are_not_on_screen(tmp_path):
+    twb = (
+        (FIX / "mini.twb")
+        .read_text()
+        .replace("<cols>[federated.abc].[:Measure Names]</cols>", "<cols></cols>")
+    )
+    p = tmp_path / "off.twb"
+    p.write_text(twb)
+    (counts,) = cv.parse_twb(p, ["Counts"])
+    assert counts.measure_places["# Tardy"] == ["measure values, not on a shelf"]
