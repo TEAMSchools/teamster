@@ -512,3 +512,117 @@ def test_cells_round_trip(tmp_path):
     cell = cv.Cell("S", "s1", {"A": "x"}, "M", "1", 1.0, 1.0, 20, "match")
     cv.write_cells(tmp_path / "cells.jsonl", [cell])
     assert cv.read_cells(tmp_path / "cells.jsonl") == [cell]
+
+
+TREES = {DS: {"region": ["region", "school", "grade_level"]}}
+CROSS = {DS: ["iep_status"]}
+FIELDS = {
+    "Region": {"field": "region", "datasource": DS},
+    "School Name": {"field": "school", "datasource": DS},
+    "Grade Level": {"field": "grade_level", "datasource": DS},
+    "IEP": {"field": "iep_status", "datasource": DS},
+}
+KIDS = {
+    "school": [("Alpha", 30), ("Beta", 20), ("Gamma", 12), ("Tiny", 4)],
+    "grade_level": [("5", 15), ("6", 15)],
+    "iep_status": [("No IEP", 25), ("Has IEP", 5)],
+}
+
+
+def _entry(filters, status="ok"):
+    return {
+        "state": {"dashboard": "Overview", "filters": filters},
+        "status": status,
+        "sheets": {},
+    }
+
+
+def children(ds, where, f):
+    return KIDS[f]
+
+
+def test_a_matching_node_samples_its_largest_and_smallest_children():
+    states = {"n": _entry({"Region": "North"})}
+    out = cv.next_states(states, {"n": "match"}, TREES, CROSS, FIELDS, children)
+    assert [s["filters"]["School Name"] for s in out] == ["Alpha", "Gamma"]
+
+
+def test_a_mismatching_node_gets_every_child_above_the_small_cell_size():
+    states = {"n": _entry({"Region": "North"})}
+    out = cv.next_states(states, {"n": "mismatch"}, TREES, CROSS, FIELDS, children)
+    assert [s["filters"]["School Name"] for s in out] == ["Alpha", "Beta", "Gamma"]
+
+
+def test_a_narrowed_gap_is_split_by_each_cross_cut():
+    states = {
+        "n": _entry({"Region": "North"}),
+        "a": _entry({"Region": "North", "School Name": "Alpha"}),
+        "b": _entry({"Region": "North", "School Name": "Beta"}),
+    }
+    out = cv.next_states(
+        states,
+        {"n": "mismatch", "a": "match", "b": "match"},
+        TREES,
+        CROSS,
+        FIELDS,
+        children,
+    )
+    iep = [
+        s
+        for s in out
+        if "IEP" in s["filters"] and s["filters"].get("School Name") is None
+    ]
+    assert [s["filters"]["IEP"] for s in iep] == ["No IEP"]  # "Has IEP" has 5 students
+
+
+def test_states_already_exported_are_not_proposed_again():
+    states = {
+        "n": _entry({"Region": "North"}),
+        "a": _entry({"Region": "North", "School Name": "Alpha"}),
+        "g": _entry({"Region": "North", "School Name": "Gamma"}),
+    }
+    out = cv.next_states(
+        states,
+        {"n": "match", "a": "match", "g": "match"},
+        TREES,
+        CROSS,
+        FIELDS,
+        children,
+    )
+    assert all(
+        s["filters"].get("School Name") not in ("Alpha", "Gamma")
+        or "Grade Level" in s["filters"]
+        for s in out
+    )
+
+
+def test_non_tree_states_and_failed_exports_do_not_descend():
+    states = {
+        "p": {
+            "state": {"dashboard": "Overview", "params": {"Group By": "Teacher"}},
+            "status": "ok",
+            "sheets": {},
+        },
+        "x": _entry({"Region": "North"}, status="filter_ignored"),
+    }
+    assert (
+        cv.next_states(
+            states, {"p": "mismatch", "x": "mismatch"}, TREES, CROSS, FIELDS, children
+        )
+        == []
+    )
+
+
+def test_state_status():
+    cells = [
+        cv.Cell("S", "a", {}, "M", "1", 1, 1, 20, "match"),
+        cv.Cell("S", "a", {}, "M", "1", 1, 2, 20, "mismatch"),
+        cv.Cell("S", "b", {}, "M", "1", 1, 1, 20, "match"),
+    ]
+    assert cv.state_status(cells) == {"a": "mismatch", "b": "match"}
+
+
+def test_child_values_sql_filters_and_groups():
+    sql = cv.child_values_sql([("region", "North"), ("iep_status", cv.BLANK)], "school")
+    assert "cast(region as string) = 'North'" in sql and "iep_status is null" in sql
+    assert sql.rstrip().endswith("group by 1")

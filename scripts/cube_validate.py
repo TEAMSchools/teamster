@@ -767,3 +767,128 @@ def read_cells(path: Path) -> list[Cell]:
     if not p.exists():
         return []
     return [Cell(**json.loads(line)) for line in p.read_text().splitlines() if line]
+
+
+SMALL_CELL = 10
+
+
+def state_status(cells: list[Cell]) -> dict[str, str]:
+    out: dict[str, str] = {}
+    for c in cells:
+        if c.status == "mismatch":
+            out[c.state] = "mismatch"
+        else:
+            out.setdefault(c.state, "match")
+    return out
+
+
+def _sql_lit(v) -> str:
+    return "'" + str(v).replace("\\", "\\\\").replace("'", "\\'") + "'"
+
+
+def _cond(field_sql: str, value) -> str | None:
+    if value == ALL:
+        return None
+    if value == BLANK:
+        return f"{field_sql} is null"
+    return f"cast({field_sql} as string) = {_sql_lit(value)}"
+
+
+def child_values_sql(where, field, student="student_number") -> str:
+    conds = [c for f, v in where if (c := _cond(f, v))]
+    cond = " and ".join(conds) or "true"
+    return (
+        f"select cast({field} as string) as v, count(distinct {student}) as n "
+        f"from `{EXTRACT_TABLE}` where {cond} group by 1"
+    )
+
+
+def _sig(st: dict) -> tuple:
+    return (
+        st["dashboard"],
+        tuple(sorted((st.get("filters") or {}).items())),
+        tuple(sorted((st.get("params") or {}).items())),
+        tuple(sorted((st.get("click") or {}).items())),
+    )
+
+
+def _is_child(k: dict, st: dict) -> bool:
+    kf, sf = k.get("filters") or {}, st.get("filters") or {}
+    return (
+        k["dashboard"] == st["dashboard"]
+        and not k.get("params")
+        and not k.get("click")
+        and len(kf) == len(sf) + 1
+        and all(kf.get(c) == v for c, v in sf.items())
+    )
+
+
+def _tree_path(st, trees, fields):
+    if st.get("params") or st.get("click") or not st.get("filters"):
+        return None
+    caps = list(st["filters"])
+    if any(c not in fields for c in caps):
+        return None
+    ds = fields[caps[0]]["datasource"]
+    fs = [fields[c]["field"] for c in caps]
+    for levels in (trees.get(ds) or {}).values():
+        if levels[: len(fs)] == fs:
+            return ds, levels
+    return None
+
+
+def _ends_pair(kids):
+    if not kids:
+        return []
+    big = max(kids, key=lambda x: x[1])
+    small = min(kids, key=lambda x: x[1])
+    return [big] if big == small else [big, small]
+
+
+def next_states(states, status, trees, cross_cuts, fields, children) -> list[dict]:
+    caption_of = {(f["datasource"], f["field"]): c for c, f in fields.items()}
+    have = {_sig(e["state"]) for e in states.values()}
+    out: list[dict] = []
+
+    def add(st):
+        if _sig(st) not in have:
+            have.add(_sig(st))
+            out.append(st)
+
+    for sid, e in sorted(states.items()):
+        st = e["state"]
+        path = _tree_path(st, trees, fields)
+        if e.get("status") != "ok" or path is None:
+            continue
+        ds, levels = path
+        where = [(fields[c]["field"], v) for c, v in st["filters"].items()]
+        bad = status.get(sid) == "mismatch"
+        depth = len(st["filters"])
+        kids_done = [s for s, k in states.items() if _is_child(k["state"], st)]
+        if bad and (
+            depth == len(levels)
+            or (kids_done and all(status.get(s) != "mismatch" for s in kids_done))
+        ):
+            for cut in cross_cuts.get(ds, []):
+                cap = caption_of.get((ds, cut))
+                for v, n in children(ds, where, cut) if cap else []:
+                    if v is not None and n >= SMALL_CELL:
+                        add(
+                            {
+                                "dashboard": st["dashboard"],
+                                "filters": {**st["filters"], cap: v},
+                            }
+                        )
+        if kids_done or depth >= len(levels):
+            continue
+        cap = caption_of.get((ds, levels[depth]))
+        if not cap:
+            continue
+        kids = [
+            (v, n)
+            for v, n in children(ds, where, levels[depth])
+            if v is not None and n >= SMALL_CELL
+        ]
+        for v, _ in kids if bad else _ends_pair(kids):
+            add({"dashboard": st["dashboard"], "filters": {**st["filters"], cap: v}})
+    return out
