@@ -12,9 +12,14 @@ Runbook: .claude/skills/cube-dashboard/SKILL.md.
 
 from __future__ import annotations
 
+import csv
+import datetime as dt
+import io
 import itertools
+import json
 import re
-from dataclasses import dataclass, field
+import shutil
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 import defusedxml.ElementTree as SafeET
@@ -590,3 +595,76 @@ def plan_yaml(items: list[PlanItem]) -> str:
         for tier in ("must", "optional", "skipped")
     }
     return yaml.safe_dump(out, sort_keys=False, allow_unicode=True)
+
+
+SNAPSHOT_ROOT = Path.home() / ".cache" / "cube-validate"
+KEEP_SNAPSHOTS = 2
+
+
+def new_snapshot_dir(
+    workbook: str, at: dt.datetime, root: Path = SNAPSHOT_ROOT
+) -> Path:
+    """A fresh snapshot folder; older ones beyond the newest KEEP_SNAPSHOTS - 1 go.
+
+    Snapshots hold student-level rows, so they are kept outside the repo and few.
+    """
+    base = Path(root) / slug(workbook)
+    base.mkdir(parents=True, exist_ok=True)
+    old = sorted(p for p in base.iterdir() if p.is_dir())
+    for p in old[: max(0, len(old) - (KEEP_SNAPSHOTS - 1))]:
+        shutil.rmtree(p)
+    out = base / at.strftime("%Y-%m-%dT%H%M")
+    (out / "csv").mkdir(parents=True)
+    (out / "extract").mkdir()
+    return out
+
+
+def latest_snapshot(workbook: str, root: Path = SNAPSHOT_ROOT) -> Path:
+    base = Path(root) / slug(workbook)
+    dirs = sorted(p for p in base.iterdir() if p.is_dir()) if base.exists() else []
+    if not dirs:
+        raise FileNotFoundError(f"no snapshot for {workbook} under {base}")
+    return dirs[-1]
+
+
+@dataclass
+class Manifest:
+    workbook: str
+    workbook_luid: str
+    copy_luid: str | None
+    opened_at: str
+    live_updated_at: str
+    extracts: dict[str, dict]
+    fields: dict[str, dict]
+    states: dict[str, dict]
+    closed: bool = False
+
+
+def write_manifest(path: Path, m: Manifest) -> None:
+    Path(path).write_text(json.dumps(asdict(m), indent=2, sort_keys=True))
+
+
+def read_manifest(path: Path) -> Manifest:
+    return Manifest(**json.loads(Path(path).read_text()))
+
+
+def csv_rows(data: bytes) -> int:
+    text = data.decode("utf-8-sig")
+    return max(len(list(csv.reader(io.StringIO(text)))) - 1, 0)
+
+
+def filter_ignored(
+    parent: dict[str, bytes], current: dict[str, bytes], covers_all: bool
+) -> bool:
+    """A filter whose state exports exactly what its parent did, though it should not."""
+    if covers_all or not current:
+        return False
+    if all(csv_rows(v) == 0 for v in current.values()):
+        return False
+    return all(current.get(s) == parent.get(s) for s in current)
+
+
+def parent_of(state: State) -> State:
+    if state.click or (state.params and not state.filters):
+        return State(state.dashboard, (), (), None)
+    return State(state.dashboard, state.filters[:-1], state.params, None)

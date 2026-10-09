@@ -363,3 +363,73 @@ def test_tree_levels_below_the_top_are_left_to_the_descent():
 def test_plan_yaml_groups_by_tier():
     text = snap.plan_yaml(_plan())
     assert text.index("must:") < text.index("optional:") < text.index("skipped:")
+
+
+import datetime as dt
+
+
+def test_new_snapshot_dir_keeps_the_latest_two(tmp_path):
+    t0 = dt.datetime(2026, 10, 9, 8, 0)
+    dirs = [
+        snap.new_snapshot_dir("DDI Suite", t0 + dt.timedelta(hours=h), tmp_path)
+        for h in range(3)
+    ]
+    left = sorted(p.name for p in (tmp_path / "ddi-suite").iterdir())
+    assert left == [dirs[1].name, dirs[2].name]
+    assert snap.latest_snapshot("DDI Suite", tmp_path) == dirs[2]
+
+
+def test_manifest_round_trips(tmp_path):
+    m = snap.Manifest(
+        workbook="DDI Suite",
+        workbook_luid="w1",
+        copy_luid="c1",
+        opened_at="2026-10-09T08:00:00+00:00",
+        live_updated_at="2026-10-09T05:00:00+00:00",
+        extracts={
+            DS: {
+                "file": "federated_demo1.hyper",
+                "refreshed": "2026-10-08T05:39:00+00:00",
+            }
+        },
+        fields={"Region": {"field": "region", "datasource": DS}},
+        states={},
+    )
+    snap.write_manifest(tmp_path / "manifest.json", m)
+    assert snap.read_manifest(tmp_path / "manifest.json") == m
+
+
+def test_csv_rows_counts_data_rows_and_survives_empty_exports():
+    assert snap.csv_rows(b"\xef\xbb\xbfA,B\r\n1,2\r\n3,4\r\n") == 2
+    assert snap.csv_rows(b"A,B\r\n") == 0
+    assert snap.csv_rows(b"") == 0
+
+
+def test_filter_ignored_when_every_sheet_is_unchanged():
+    parent = {"S1": b"a\r\n1\r\n", "S2": b"b\r\n2\r\n"}
+    assert snap.filter_ignored(parent, dict(parent), covers_all=False) is True
+    assert (
+        snap.filter_ignored(
+            parent, {"S1": b"a\r\n9\r\n", "S2": parent["S2"]}, covers_all=False
+        )
+        is False
+    )
+
+
+def test_filter_unchanged_is_fine_when_the_value_covers_every_row():
+    parent = {"S1": b"a\r\n1\r\n"}
+    assert snap.filter_ignored(parent, dict(parent), covers_all=True) is False
+
+
+def test_empty_exports_on_both_sides_are_not_read_as_ignored():
+    # A state can legitimately empty a sheet the parent also left empty.
+    parent = {"S1": b"a\r\n"}
+    assert snap.filter_ignored(parent, {"S1": b"a\r\n"}, covers_all=False) is False
+
+
+def test_parent_of_drops_the_last_filter():
+    s = snap.State("Overview", filters=(("Region", "North"), ("School Name", "Alpha")))
+    assert snap.parent_of(s) == snap.State("Overview", filters=(("Region", "North"),))
+    assert snap.parent_of(
+        snap.State("Overview", params=(("Group By", "Teacher"),))
+    ) == snap.State("Overview")
