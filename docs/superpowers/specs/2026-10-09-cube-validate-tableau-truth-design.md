@@ -475,3 +475,23 @@ old checks files.
   mid-session refresh check.
 - Whether `tableauhyperapi` installs cleanly as a PEP 723 dependency in the
   Codespace (it did with `uv run --with` during the spike).
+
+## Revision 2026-10-09: timing checked against the live table
+
+Settled with the user after the plan was written. Tableau's export cannot leave
+out recent days without a date list on every export and a calculated field added
+to the review copy, and cutting those days leaves bugs in recent rows unchecked.
+
+- The settle window, the `settle` command and the `settle:` checks-file block
+  are dropped.
+- For a mismatched cell whose extract SQL reproduces Tableau, `explain` runs the
+  same SQL on the live `rpt_` table in BigQuery. If Cube equals it, the gap is
+  only the extract's age: `pass`, with the reason "timing".
+- Freshness guard: Cube's `/load` answer carries `lastRefreshTime`; BigQuery
+  gives the live table's last-modified time. An unexplained cell whose Cube data
+  is older than the live table is `incomplete` ("re-run explain after Cube
+  refreshes"), not `fail`. Any other unexplained cell is `fail`, with both times
+  in its reason.
+- A cell the extract SQL cannot reproduce is `incomplete`, not unexplained.
+- In the offline replay, the gap "the extract leaves out rows" is `fail` (an
+  unexplained gap), correcting Section 9's table.

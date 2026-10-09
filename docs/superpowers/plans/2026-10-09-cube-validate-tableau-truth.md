@@ -63,11 +63,11 @@ run with `uv run --with`), `httpx` + `pyjwt` (Cube REST), `sqlglot`,
   showed one workbook-level tree.
 - The cells file is `cells.jsonl`, not Parquet: no new dependency, and Claude
   can read it with `jq`.
-- **Settle window moves into `explain`.** The spec says both sides leave out the
-  settle window, but Tableau's export cannot be filtered by date after the fact.
-  Instead, `explain` reruns a mismatched cell on the extract and on Cube with
-  the window left out; if they then agree, the cell is `incomplete` ("timing"),
-  never `fail`. Same goal: timing never blames Cube.
+- **Timing is checked against the live table** (spec revision 2026-10-09). When
+  the extract SQL reproduces Tableau but Cube differs, `explain` runs the same
+  SQL on the live `rpt_` table. If Cube equals it, the gap is only the extract's
+  age: `pass`, noted as timing. If Cube's data is older than the live table, the
+  cell is `incomplete`. The settle window and the `settle` command are dropped.
 - **A cell the extract SQL cannot reproduce is `incomplete`**, not "unexplained"
   (`fail`), following the spec's rule that a gap the tool cannot attribute
   blames nobody.
@@ -2382,12 +2382,15 @@ Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>"
     1916, 1952-1991); `ExtractSource(path)` is a context manager and
     `__call__(sql) -> list[dict]`
   - `bigquery_rows`, `_CAPTION`, `live_table` (v1 lines 1893-1913)
-  - `_fill`, `settle_drift`, `settle_text` (v1 lines 1317-1325, 1361-1416)
   - `FIX_SIDES = ("cube", "dashboard", "source", "undecided")` (v1 line 920),
     `fix_sides(checks) -> dict[str, frozenset]` (v1 lines 1802-1808)
   - `CheckError(ValueError)` (v1 lines 924-926)
-- Produces (new): `norm_dim(v) -> str` (`norm_key` plus Tableau's `M/D/YYYY`
-  dates and `1,234` integers)
+- Produces (new):
+  - `norm_dim(v) -> str` (`norm_key` plus Tableau's `M/D/YYYY` dates and `1,234`
+    integers)
+  - `CubeClient.last_refresh: str | None` (the `lastRefreshTime` of the last
+    `/load` answer: when the data behind it was last refreshed)
+  - `table_modified(table: str, client=None) -> dt.datetime | None`
 
 - [ ] **Step 1: Fetch the v1 branch and save the source**
 
@@ -2395,12 +2398,11 @@ Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>"
 cd /workspaces/teamster && git fetch origin cristinabaldor/feat/claude-cube-validate-skill
 git show 51f4f21e4a:scripts/cube_validate.py > /tmp/v1_cube_validate.py
 git show 51f4f21e4a:tests/scripts/test_cube_validate.py > /tmp/v1_test_cube_validate.py
-grep -n "^class CubeClient\|^def settle_drift\|^def _filtered\|^class ExtractSource" /tmp/v1_cube_validate.py
+grep -n "^class CubeClient\|^def _filtered\|^class ExtractSource" /tmp/v1_cube_validate.py
 ```
 
-Expected: `CubeClient` at 1833, `settle_drift` at 1361, `_filtered` at 947,
-`ExtractSource` at 1967. If the numbers differ, stop and report: the ranges
-below would be wrong.
+Expected: `CubeClient` at 1833, `_filtered` at 947, `ExtractSource` at 1967. If
+the numbers differ, stop and report: the ranges below would be wrong.
 
 - [ ] **Step 2: Write the failing tests**
 
@@ -2450,8 +2452,6 @@ Copy verbatim (v1 test line ranges):
 - `test_py_value_converts_hyper_dates` (704-711)
 - `StatusHttp`, `test_cube_client_backs_off_when_cube_is_overloaded`,
   `test_cube_client_gives_each_thread_its_own_http_client` (1872-1910)
-- `test_settle_drift_recommends_the_oldest_change_plus_one`,
-  `test_settle_drift_with_no_change_recommends_one_day` (2386-2416)
 - `test_filtered_handles_count_star_and_countif` (2664-2667)
 
 Then add these new tests:
@@ -2473,6 +2473,22 @@ def test_norm_dim_reads_tableau_formats(value, expected):
 def test_fix_sides_groups_mismatches():
     sides = cv.fix_sides({"mismatches": {"a": {"fix": "cube"}, "b": {"fix": "dashboard"}}})
     assert sides["cube"] == {"a"} and sides["dashboard"] == {"b"} and sides["source"] == frozenset()
+
+
+def test_cube_client_keeps_the_last_refresh_time():
+    http = FakeHttp([{"data": [], "lastRefreshTime": "2026-10-09T10:00:00.000Z"}])
+    client = cv.CubeClient("u", SECRET, "e", http=http, sleep=lambda _: None)
+    assert client.last_refresh is None
+    client.load({"measures": []})
+    assert client.last_refresh == "2026-10-09T10:00:00.000Z"
+
+
+def test_table_modified_reads_bigquery_metadata():
+    from types import SimpleNamespace
+
+    at = dt.datetime(2026, 10, 9, 10, tzinfo=dt.UTC)
+    fake = SimpleNamespace(get_table=lambda t: SimpleNamespace(modified=at))
+    assert cv.table_modified("p.d.t", client=fake) == at
 ```
 
 - [ ] **Step 3: Run the tests to verify they fail**
@@ -2485,10 +2501,16 @@ Expected: FAIL, `FileNotFoundError` (the script does not exist yet).
 
 Create `scripts/cube_validate.py` with this header, then paste the v1 blocks
 listed under **Interfaces** verbatim, in this order: constants, `CheckError`,
-`FIX_SIDES`, `norm_key` block, `_filtered`, `_fill`, `settle_drift`,
-`settle_text`, `fix_sides`, the Cube client block, `bigquery_rows` and
-`live_table`, the extract block (`EXTRACT_TABLE` through `ExtractSource`),
-`_user_email`.
+`FIX_SIDES`, `norm_key` block, `_filtered`, `fix_sides`, the Cube client block,
+`bigquery_rows` and `live_table`, the extract block (`EXTRACT_TABLE` through
+`ExtractSource`), `_user_email`.
+
+Then make one change to the copied `CubeClient`: end `__init__` with
+`self.last_refresh: str | None = None`, and in `load`, set
+`self.last_refresh = body.get("lastRefreshTime")` on the line before
+`rows = body.get("data", [])`. Cube's `/load` answer carries `lastRefreshTime`,
+when the data behind it was last refreshed; `explain` compares it with the live
+table's build time.
 
 ```python
 """The Cube side of Cube validation: compare, explain, report.
@@ -2496,11 +2518,11 @@ listed under **Interfaces** verbatim, in this order: constants, `CheckError`,
     uv run --with tableauhyperapi scripts/cube_validate.py compare <checks.yml>
     uv run --with tableauhyperapi scripts/cube_validate.py explain <checks.yml>
     uv run --with tableauhyperapi scripts/cube_validate.py drafts <checks.yml>
-    uv run --with tableauhyperapi scripts/cube_validate.py settle <checks.yml>
 
 Reads the latest snapshot cube_validate_snapshot.py wrote. `compare` and
 `explain` need CUBE_API_SECRET, which only the pytest secrets fixture provides,
-so they run inside a throwaway tests/test_zz_*.py. `settle` needs only ADC.
+so they run inside a throwaway tests/test_zz_*.py. `explain` also reads the live
+`rpt_` tables in BigQuery through ADC.
 Runbook: .claude/skills/cube-dashboard/SKILL.md.
 """
 
@@ -2517,6 +2539,7 @@ import sys
 import threading
 import time
 from collections import Counter
+from collections.abc import Callable
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
@@ -2539,6 +2562,15 @@ def norm_dim(v) -> str:
         if _GROUPED_INT.match(s):
             return s.replace(",", "")
     return norm_key(v)
+
+
+def table_modified(table: str, client=None) -> dt.datetime | None:
+    """When a BigQuery table last changed (UTC)."""
+    if client is None:
+        from google.cloud import bigquery
+
+        client = bigquery.Client(project=BQ_PROJECT)
+    return client.get_table(table).modified
 ```
 
 - [ ] **Step 5: Run the tests to verify they pass**
@@ -2546,14 +2578,14 @@ def norm_dim(v) -> str:
 Run:
 `uv run --with tableauhyperapi pytest tests/scripts/test_cube_validate.py -q 2>&1 | tail -n 30`
 Expected: all pass (10 from `test_norm_key_` parameters, 5 Cube client, 1
-`_py_value`, 2 settle, 1 `_filtered`, 1 Hyper SQL, 5 `norm_dim`, 1 `fix_sides`:
-26 passed).
+`_py_value`, 1 `_filtered`, 1 Hyper SQL, 5 `norm_dim`, 1 `fix_sides`, 1
+`last_refresh`, 1 `table_modified`: 26 passed).
 
 - [ ] **Step 6: Commit**
 
 ```bash
 git add scripts/cube_validate.py tests/scripts/test_cube_validate.py
-git commit -m "feat(cube): port the Cube client, extract reader and settle math from v1
+git commit -m "feat(cube): port the Cube client and extract reader from v1
 
 Refs #5856
 
@@ -2578,8 +2610,6 @@ Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>"
   - `load_checks(path) -> dict`: the YAML with `sheets` as `{name: SheetMap}`
     and defaults filled for `mismatches`, `rows`, `filters`, `param_filters`,
     `cube_filters`, `extract_filters`
-  - `settle_filters(checks, extract_date) -> tuple[str, list]` (v1 lines
-    1328-1333, verbatim)
 
 `round` says how many decimals the dashboard shows a value with when the export
 carries no `%` sign. Without it, a plain number is compared as a raw value.
@@ -2660,27 +2690,17 @@ def test_load_checks_rows_must_name_mapped_members(tmp_path):
     bad["rows"] = {"111": ["demo.nope"]}
     with pytest.raises(cv.CheckError, match="demo.nope"):
         cv.load_checks(_write(tmp_path, bad))
-
-
-def test_settle_filters_fill_the_cutoff(tmp_path):
-    d = json.loads(json.dumps(CHECKS))
-    d["settle"] = {"days": 5, "date": "date_taken", "truth": "date_taken < '{cutoff}'",
-                   "cube": [{"member": "demo.date_taken", "operator": "beforeDate", "values": ["{cutoff}"]}]}
-    c = cv.load_checks(_write(tmp_path, d))
-    truth, cube = cv.settle_filters(c, dt.date(2026, 10, 9))
-    assert truth == "date_taken < '2026-10-04'"
-    assert cube[0]["values"] == ["2026-10-04"]
 ```
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
 Run:
-`uv run --with tableauhyperapi pytest tests/scripts/test_cube_validate.py -q -k "load_checks or settle_filters" 2>&1 | tail -n 30`
+`uv run --with tableauhyperapi pytest tests/scripts/test_cube_validate.py -q -k "load_checks" 2>&1 | tail -n 30`
 Expected: FAIL, `AttributeError: ... has no attribute 'load_checks'`.
 
 - [ ] **Step 3: Write the implementation**
 
-Append (and paste `settle_filters` from v1 lines 1328-1333 right after it):
+Append:
 
 ```python
 TABLE_CALCS = {"percent_of_total", "running_sum"}
@@ -2769,10 +2789,6 @@ def load_checks(path) -> dict:
         unknown = set(ms) - members
         if unknown:
             raise CheckError(f"row {gid}: {', '.join(sorted(unknown))} is not mapped on any sheet")
-    if "settle" in raw:
-        for k in ("days", "date", "truth", "cube"):
-            if k not in raw["settle"]:
-                raise CheckError(f"settle: missing '{k}'")
     return {
         **raw,
         "sheets": sheets,
@@ -2789,7 +2805,7 @@ def load_checks(path) -> dict:
 
 Run:
 `uv run --with tableauhyperapi pytest tests/scripts/test_cube_validate.py -q 2>&1 | tail -n 30`
-Expected: 31 passed.
+Expected: 30 passed.
 
 - [ ] **Step 5: Commit**
 
@@ -2946,7 +2962,7 @@ def matches_raw(a: float | None, b: float | None) -> bool:
 
 Run:
 `uv run --with tableauhyperapi pytest tests/scripts/test_cube_validate.py -q 2>&1 | tail -n 30`
-Expected: 46 passed.
+Expected: 45 passed.
 
 - [ ] **Step 5: Commit**
 
@@ -3104,7 +3120,7 @@ def scope_guard(load, checks: dict, extract_counts: dict[str, int]) -> None:
 
 Run:
 `uv run --with tableauhyperapi pytest tests/scripts/test_cube_validate.py -q 2>&1 | tail -n 30`
-Expected: 51 passed.
+Expected: 50 passed.
 
 - [ ] **Step 5: Commit**
 
@@ -3398,7 +3414,7 @@ def read_cells(path: Path) -> list[Cell]:
 
 Run:
 `uv run --with tableauhyperapi pytest tests/scripts/test_cube_validate.py -q 2>&1 | tail -n 30`
-Expected: 59 passed.
+Expected: 58 passed.
 
 - [ ] **Step 5: Commit**
 
@@ -3645,7 +3661,7 @@ def next_states(states, status, trees, cross_cuts, fields, children) -> list[dic
 
 Run:
 `uv run --with tableauhyperapi pytest tests/scripts/test_cube_validate.py -q 2>&1 | tail -n 30`
-Expected: 66 passed.
+Expected: 65 passed.
 
 - [ ] **Step 5: Commit**
 
@@ -3669,13 +3685,18 @@ Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>"
 
 - Consumes: `Cell`, `apply_calc` (Task 13), `state_filters`, `hard_filters`
   (Task 12), `parse_shown`, `matches_shown`, `matches_raw` (Task 11),
-  `_filtered`, `settle_filters`, `fix_sides` (Tasks 9-10), `_cond` (Task 14)
+  `_filtered`, `fix_sides`, `table_modified` (Tasks 9-10), `_cond` (Task 14)
 - Produces:
   - `state_where(entry: dict, checks: dict, fields: dict, sheet: SheetMap, public_only: bool = False) -> list[str]`
   - `extract_sql(sheet: SheetMap, meas: Measure, grain: list[str], where: list[str]) -> str`
   - `extract_values(rows: list[dict], n_grain: int) -> dict[tuple, float | None]`
   - `cell_verdict(c: Cell, sides: dict[str, frozenset], meas: Measure) -> str`
-  - `explain_cells(cells: list[Cell], checks: dict, states: dict[str, dict], fields: dict, run_extract, load, refreshed: dict[str, dt.date] | None = None) -> None`
+  - `Live(rows, modified, cube_refreshed)`: 3 callables.
+    `rows(datasource, sql) -> list[dict]` runs extract SQL on the live `rpt_`
+    table; `modified(datasource) -> dt.datetime | None` is when that table last
+    changed; `cube_refreshed(query) -> dt.datetime | None` is Cube's
+    `lastRefreshTime` for a query
+  - `explain_cells(cells: list[Cell], checks: dict, states: dict[str, dict], fields: dict, run_extract, load, live: Live | None = None) -> None`
     (`run_extract(datasource, sql) -> list[dict]`; sets `verdict`, `reason`,
     `extract`, `explained_by`, `variant`, `cube_variant` on each cell)
 
@@ -3685,11 +3706,13 @@ Order of judgement for a mismatched cell:
    reproduce Tableau for this measure".
 2. The extract SQL does not reproduce this cell: `incomplete`, "extract SQL does
    not reproduce this cell".
-3. With a `settle` block, the extract and Cube agree once both leave out the
-   settle window: `incomplete`, "timing: ...".
+3. With `live` given, the same SQL on the live `rpt_` table equals Cube: `pass`,
+   "timing: the extract is older than Cube; Cube matches the live table".
 4. The first variant whose dashboard side equals its Cube side explains the
    cell; `cell_verdict` turns its `explains` into a verdict.
-5. Nothing explains it: `fail`.
+5. Nothing explains it: `incomplete` when Cube's data is older than the live
+   table ("re-run explain after Cube refreshes"), else `fail` with both refresh
+   times in the reason.
 
 A matching cell is `pass`; a `missing_member` cell is `missing_member`; a
 `not_comparable` cell gets no verdict.
@@ -3741,6 +3764,34 @@ def test_cell_verdict_by_who_fixes():
     assert cv.cell_verdict(cell(["d"]), sides, meas) == "undecided"
     assert cv.cell_verdict(cell(["demo.extra"]), sides, meas) == "missing_member"
     assert cv.cell_verdict(cell(["b"]), sides, meas) == "pass"
+
+
+def _timing(tmp_path, live_value, cube_at):
+    c = _checks(tmp_path)
+    cell = cv.Cell("Overview - Table", "s", {}, "Avg Score", "48.50", 48.5, 49.0, 40, "mismatch")
+    states = {"s": {"state": {"dashboard": "Overview"}, "status": "ok", "sheets": {}}}
+    live = cv.Live(
+        rows=lambda ds, sql: [{"m": live_value}],
+        modified=lambda ds: dt.datetime(2026, 10, 9, 10, tzinfo=dt.UTC),
+        cube_refreshed=lambda q: cube_at,
+    )
+    cv.explain_cells([cell], c, states, {}, lambda ds, sql: [{"m": 48.5}], lambda q: ([], []), live)
+    return cell
+
+
+def test_cube_matching_the_live_table_is_a_timing_pass(tmp_path):
+    cell = _timing(tmp_path, 49.0, dt.datetime(2026, 10, 9, 11, tzinfo=dt.UTC))
+    assert cell.verdict == "pass" and cell.reason.startswith("timing")
+
+
+def test_stale_cube_is_incomplete_not_fail(tmp_path):
+    cell = _timing(tmp_path, 48.0, dt.datetime(2026, 10, 9, 8, tzinfo=dt.UTC))
+    assert cell.verdict == "incomplete" and "older than the live table" in cell.reason
+
+
+def test_fresh_cube_that_differs_from_the_live_table_fails(tmp_path):
+    cell = _timing(tmp_path, 48.0, dt.datetime(2026, 10, 9, 11, tzinfo=dt.UTC))
+    assert cell.verdict == "fail" and "2026-10-09 10:00" in cell.reason
 ```
 
 The end-to-end behaviour of `explain_cells` (trust gate, variants, verdicts) is
@@ -3749,7 +3800,7 @@ pinned by the replay in Task 19, which runs real SQL over a synthetic extract.
 - [ ] **Step 2: Run the tests to verify they fail**
 
 Run:
-`uv run --with tableauhyperapi pytest tests/scripts/test_cube_validate.py -q -k "extract_sql or extract_values or state_where or cell_verdict" 2>&1 | tail -n 30`
+`uv run --with tableauhyperapi pytest tests/scripts/test_cube_validate.py -q -k "extract_sql or extract_values or state_where or cell_verdict or timing or live_table or stale_cube" 2>&1 | tail -n 30`
 Expected: FAIL, `AttributeError: ... has no attribute 'extract_sql'`.
 
 - [ ] **Step 3: Write the implementation**
@@ -3881,7 +3932,16 @@ def _variant(v, sheet, meas, grain, where, base, run_extract, load):
     return v["explains"], dash, cube
 
 
-def explain_cells(cells, checks, states, fields, run_extract, load, refreshed=None) -> None:
+@dataclass
+class Live:
+    """The live warehouse side of the timing check."""
+
+    rows: Callable[[str, str], list[dict]]  # extract SQL run on the live rpt_ table
+    modified: Callable[[str], dt.datetime | None]  # when that table last changed
+    cube_refreshed: Callable[[dict], dt.datetime | None]  # Cube's lastRefreshTime
+
+
+def explain_cells(cells, checks, states, fields, run_extract, load, live=None) -> None:
     sides = fix_sides(checks)
     batches: dict[tuple, list[Cell]] = {}
     for c in cells:
@@ -3904,12 +3964,13 @@ def explain_cells(cells, checks, states, fields, run_extract, load, refreshed=No
         base = state_filters(entry, checks)[0] + hard_filters(checks, sheet.datasource)
         rows = run_extract(sheet.datasource, extract_sql(sheet, meas, list(grain), where))
         ext = apply_calc(meas, extract_values(rows, len(grain)), 1.0)
-        settled = None
-        if checks.get("settle") and refreshed and sheet.datasource in refreshed:
-            truth, cube_f = settle_filters(checks, refreshed[sheet.datasource])
-            srows = run_extract(sheet.datasource, extract_sql(sheet, meas, list(grain), [*where, truth]))
-            settled = (apply_calc(meas, extract_values(srows, len(grain)), 1.0),
-                       _cube_at(load, sheet, meas, grain, base + cube_f))
+        live_v, times = None, (None, None)
+        if live is not None:
+            lrows = live.rows(sheet.datasource, extract_sql(sheet, meas, list(grain), where))
+            live_v = apply_calc(meas, extract_values(lrows, len(grain)), 1.0)
+            q = {"measures": [meas.cube], "dimensions": [sheet.dims[d].cube for d in grain],
+                 "filters": base, "limit": CUBE_LIMIT}
+            times = (live.cube_refreshed(q), live.modified(sheet.datasource))
         variants = [_variant(v, sheet, meas, grain, where, base, run_extract, load) for v in meas.variants]
         for c in batch:
             k = _key(c, grain)
@@ -3917,10 +3978,9 @@ def explain_cells(cells, checks, states, fields, run_extract, load, refreshed=No
             if not _reproduces(c.extract, c, meas):
                 c.verdict, c.reason = "incomplete", "extract SQL does not reproduce this cell"
                 continue
-            if settled and matches_raw(settled[0].get(k), settled[1].get(k)):
-                days = checks["settle"]["days"]
-                c.verdict = "incomplete"
-                c.reason = f"timing: rows from the {days} days before the extract refresh changed"
+            if live_v is not None and matches_raw(live_v.get(k), c.cube):
+                c.verdict = "pass"
+                c.reason = "timing: the extract is older than Cube; Cube matches the live table"
                 continue
             for names, dash, cube in variants:
                 d_v = c.extract if dash is None else dash.get(k)
@@ -3930,13 +3990,26 @@ def explain_cells(cells, checks, states, fields, run_extract, load, refreshed=No
                     c.cube_variant = None if cube is None else c_v
                     break
             c.verdict = cell_verdict(c, sides, meas)
+            cube_at, table_at = times
+            if c.verdict == "fail" and cube_at and table_at:
+                if cube_at < table_at:
+                    c.verdict = "incomplete"
+                    c.reason = (
+                        f"Cube's data (refreshed {cube_at:%Y-%m-%d %H:%M}) is older than the live "
+                        f"table (built {table_at:%Y-%m-%d %H:%M}); re-run explain after Cube refreshes"
+                    )
+                else:
+                    c.reason = (
+                        f"Cube refreshed {cube_at:%Y-%m-%d %H:%M}; the live table was built "
+                        f"{table_at:%Y-%m-%d %H:%M}"
+                    )
 ```
 
 - [ ] **Step 4: Run the tests to verify they pass**
 
 Run:
 `uv run --with tableauhyperapi pytest tests/scripts/test_cube_validate.py -q 2>&1 | tail -n 30`
-Expected: 70 passed.
+Expected: 72 passed.
 
 - [ ] **Step 5: Commit**
 
@@ -4056,7 +4129,7 @@ def write_latest(path: Path, workbook: str, run_date: str, rows: dict) -> None:
 
 Run:
 `uv run --with tableauhyperapi pytest tests/scripts/test_cube_validate.py -q 2>&1 | tail -n 30`
-Expected: 73 passed.
+Expected: 75 passed.
 
 - [ ] **Step 5: Commit**
 
@@ -4352,7 +4425,7 @@ def write_outputs(out_dir, workbook, run_date, cells, checks, states, fields) ->
 
 Run:
 `uv run --with tableauhyperapi pytest tests/scripts/test_cube_validate.py -q 2>&1 | tail -n 30`
-Expected: 79 passed. If `test_one_draft_per_unfiled_mismatch...` fails on the
+Expected: 81 passed. If `test_one_draft_per_unfiled_mismatch...` fails on the
 labels line, read v1's `_issue_labels`: it orders labels as type, side,
 `labels`, then `validation`; fix the test's expected line to that order, not the
 function.
@@ -4368,7 +4441,7 @@ Refs #5856
 Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>"
 ```
 
-### Task 18: the command line (`compare`, `explain`, `drafts`, `settle`)
+### Task 18: the command line (`compare`, `explain`, `drafts`)
 
 **Files:**
 
@@ -4387,7 +4460,6 @@ Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>"
     `__call__(datasource, sql) -> list[dict]`; `close()`)
   - `run_compare(checks, snapdir: Path, load, extracts) -> tuple[list[Cell], list[dict]]`
     (new cells for states not yet compared, and the next states)
-  - `settle_sql(checks, datasource) -> tuple[str, dict[str, str]]`
   - `main(argv: list[str] | None = None) -> int`
 
 Outputs inside the snapshot: `cells.jsonl`, `next_states.yml` (the list
@@ -4422,15 +4494,6 @@ def test_run_compare_compares_new_states_and_proposes_the_next(tmp_path):
     assert cv.run_compare(c, snapdir, cube, extracts)[0] == []
 
 
-def test_settle_sql_selects_every_measure_on_the_datasource_by_date(tmp_path):
-    d = json.loads(json.dumps(CHECKS))
-    d["settle"] = {"days": 5, "date": "date_taken", "truth": "x", "cube": []}
-    c = cv.load_checks(_write(tmp_path, d))
-    sql, labels = cv.settle_sql(c, DS)
-    assert sql.startswith("select date_taken as g0, avg(score) as m0")
-    assert sql.endswith("group by 1") and labels["m0"] == "Avg Score"
-
-
 def test_main_needs_a_command():
     with pytest.raises(SystemExit):
         cv.main([])
@@ -4439,7 +4502,7 @@ def test_main_needs_a_command():
 - [ ] **Step 2: Run the tests to verify they fail**
 
 Run:
-`uv run --with tableauhyperapi pytest tests/scripts/test_cube_validate.py -q -k "run_compare or settle_sql or main_needs" 2>&1 | tail -n 30`
+`uv run --with tableauhyperapi pytest tests/scripts/test_cube_validate.py -q -k "run_compare or main_needs" 2>&1 | tail -n 30`
 Expected: FAIL, `AttributeError: ... has no attribute 'run_compare'`.
 
 - [ ] **Step 3: Write the implementation**
@@ -4503,36 +4566,29 @@ def run_compare(checks, snapdir, load, extracts):
     return cells, nxt
 
 
-def settle_sql(checks, datasource) -> tuple[str, dict[str, str]]:
-    sel, labels, seen = [f"{checks['settle']['date']} as g0"], {"n_students": "students"}, set()
-    for s in checks["sheets"].values():
-        if s.datasource != datasource:
-            continue
-        for meas in s.measures.values():
-            if meas.caption in seen:
-                continue
-            i = len(seen)
-            seen.add(meas.caption)
-            if meas.sql:
-                sel.append(f"{meas.sql} as m{i}")
-                labels[f"m{i}"] = meas.caption
-            else:
-                sel += [f"{meas.num} as m{i}_num", f"{meas.den} as m{i}_den"]
-                labels[f"m{i}_num"], labels[f"m{i}_den"] = f"{meas.caption} (num)", f"{meas.caption} (den)"
-    return f"select {', '.join(sel)} from `{EXTRACT_TABLE}` group by 1", labels
-
-
 def _client() -> CubeClient:
     url = os.environ.get("CUBE_API_URL", DEFAULT_CUBE_URL)
     return CubeClient(url, os.environ["CUBE_API_SECRET"], _user_email(None))
 
 
-def _refreshed(m: dict) -> dict[str, dt.date]:
-    return {
-        ds: dt.datetime.fromisoformat(e["refreshed"]).date()
-        for ds, e in m["extracts"].items()
-        if e.get("refreshed")
-    }
+def _live(client: CubeClient) -> Live:
+    """Extract SQL on each datasource's live rpt_ table, with both sides' refresh times."""
+    built: dict[str, dt.datetime | None] = {}
+
+    def rows(ds, sql):
+        return bigquery_rows(sql.replace(EXTRACT_TABLE, live_table(ds)))
+
+    def modified(ds):
+        if ds not in built:
+            built[ds] = table_modified(live_table(ds))
+        return built[ds]
+
+    def cube_refreshed(q):
+        client.load(q)
+        t = client.last_refresh
+        return dt.datetime.fromisoformat(t.replace("Z", "+00:00")) if t else None
+
+    return Live(rows, modified, cube_refreshed)
 
 
 def _compare(a) -> int:
@@ -4564,7 +4620,7 @@ def _explain(a) -> int:
     cells = read_cells(snapdir / "cells.jsonl")
     client, extracts = _client(), Extracts(snapdir, m["extracts"])
     try:
-        explain_cells(cells, checks, m["states"], m["fields"], extracts, client.load, _refreshed(m))
+        explain_cells(cells, checks, m["states"], m["fields"], extracts, client.load, _live(client))
     finally:
         extracts.close()
     write_cells(snapdir / "cells.jsonl", cells)
@@ -4584,35 +4640,16 @@ def _drafts(a) -> int:
     return 0
 
 
-def _settle(a) -> int:
-    checks = load_checks(a.checks)
-    if "settle" not in checks:
-        sys.exit("the checks file has no settle block (days, date, truth, cube)")
-    snapdir = latest_snapshot(checks["workbook"])
-    m = json.loads((snapdir / "manifest.json").read_text())
-    extracts = Extracts(snapdir, m["extracts"])
-    try:
-        for ds, e in m["extracts"].items():
-            sql, labels = settle_sql(checks, ds)
-            ext = extracts(ds, sql)
-            live = bigquery_rows(sql.replace(EXTRACT_TABLE, live_table(ds)))
-            drift = settle_drift(ext, live, dt.datetime.fromisoformat(e["refreshed"]).date())
-            print(settle_text(ds, drift, labels))
-    finally:
-        extracts.close()
-    return 0
-
-
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="cube_validate")
     sub = p.add_subparsers(dest="cmd", required=True)
-    for name in ("compare", "explain", "settle"):
+    for name in ("compare", "explain"):
         sub.add_parser(name).add_argument("checks")
     d = sub.add_parser("drafts")
     d.add_argument("checks")
     d.add_argument("--out", default=str(DEFAULT_OUT))
     a = p.parse_args(argv)
-    return {"compare": _compare, "explain": _explain, "drafts": _drafts, "settle": _settle}[a.cmd](a)
+    return {"compare": _compare, "explain": _explain, "drafts": _drafts}[a.cmd](a)
 
 
 if __name__ == "__main__":
@@ -4623,13 +4660,13 @@ if __name__ == "__main__":
 
 Run:
 `uv run --with tableauhyperapi pytest tests/scripts/test_cube_validate.py -q 2>&1 | tail -n 30`
-Expected: 82 passed.
+Expected: 83 passed.
 
 - [ ] **Step 5: Commit**
 
 ```bash
 git add -u scripts/cube_validate.py tests/scripts/test_cube_validate.py
-git commit -m "feat(cube): compare, explain, drafts and settle commands
+git commit -m "feat(cube): compare, explain and drafts commands
 
 Refs #5856
 
@@ -4777,7 +4814,7 @@ edit the expected verdicts to make it pass.
 
 Run:
 `uv run --with tableauhyperapi pytest tests/scripts/test_cube_validate.py tests/scripts/test_cube_validate_snapshot.py -q 2>&1 | tail -n 30`
-Expected: 129 passed.
+Expected: 130 passed.
 
 - [ ] **Step 4: Commit**
 
@@ -4813,8 +4850,7 @@ name: cube-dashboard
 description:
   Use when validating Cube against a Tableau dashboard, re-checking one after a
   Cube or workbook fix, mapping a dashboard's sheets to Cube members, filing or
-  following up on the GitHub issues a validation drafted, or measuring a
-  dashboard's settle window. Triggers: "validate <dashboard> against Cube",
+  following up on the GitHub issues a validation drafted. Triggers: "validate <dashboard> against Cube",
   "does Cube match Tableau", "follow up on <dashboard>", cube_validate,
   ZZ-REVIEW copies in TEMP-CB, or any file under
   .claude/skills/cube-dashboard/checks/.
@@ -4925,12 +4961,13 @@ Read each filed issue's state, labels and comments. A closed issue gets
 a comment starting with the word, sets `fix`. Then open a new session for the
 states those cells came from, compare, explain, and report again.
 
-## Settle window
+## Timing
 
-`cube_validate.py settle <checks>` (needs only ADC) compares each extract with
-its live `rpt_` table by date and recommends `settle.days`. Run it late in the
-day, after the fact's later rebuilds. With `settle` set, `explain` marks a gap
-that disappears outside the window as `incomplete` (timing), never `fail`.
+The extract is a snapshot; Cube reads current data. When Cube differs from
+Tableau but equals the same SQL run on the live `rpt_` table, the gap is only
+the extract's age: `explain` marks it `pass` with a timing note. When Cube's
+data is older than the live table, the cell is `incomplete`: re-run `explain`
+after Cube refreshes. `explain` reads BigQuery through ADC as well as Cube.
 
 ## Rules
 
@@ -4946,17 +4983,9 @@ that disappears outside the window as `incomplete` (timing), never `fail`.
 In `scripts/CLAUDE.md`, add these rows to the Script Catalog table, in
 alphabetical position after `cube-rest-mcp-launch.sh`:
 
-```markdown
-| `cube_validate.py` | Compare Cube with a Tableau dashboard's own exports:
-`compare` diffs each exported sheet with Cube and proposes the next descent
-level, `explain` judges gaps with SQL over the extract (trusted only once it
-reproduces Tableau), `drafts` writes the digest, issue drafts and `latest.json`,
-`settle` measures the settle window. Runbook: the `cube-dashboard` skill. | |
-`cube_validate_snapshot.py` | The Tableau side of the same check: `plan`
-proposes states from the workbook and extract, `open` publishes a `ZZ-REVIEW`
-copy to TEMP-CB and exports states, `export` adds states, `close` deletes the
-copy. Credentialed steps run inside a throwaway pytest. Runbook: the
-`cube-dashboard` skill. |
+```text
+| `cube_validate.py`            | Compare Cube with a Tableau dashboard's own exports: `compare` diffs each exported sheet with Cube and proposes the next descent level, `explain` judges gaps with SQL over the extract (trusted only once it reproduces Tableau) and checks timing against the live `rpt_` table, `drafts` writes the digest, issue drafts and `latest.json`. Runbook: the `cube-dashboard` skill. |
+| `cube_validate_snapshot.py`   | The Tableau side of the same check: `plan` proposes states from the workbook and extract, `open` publishes a `ZZ-REVIEW` copy to TEMP-CB and exports states, `export` adds states, `close` deletes the copy. Credentialed steps run inside a throwaway pytest. Runbook: the `cube-dashboard` skill. |
 ```
 
 - [ ] **Step 3: Lint**
