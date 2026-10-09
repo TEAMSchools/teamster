@@ -459,6 +459,32 @@ assigns to the owner.
   variant for the pair. The existing `sql_without` / `num_without` /
   `den_without` fields load as a variant that explains the metric's
   `missing_members`.
+- `explains` is authored in the checks file, never computed. The run uses it to
+  label cells; the labels are what `latest.json`, the digest, the comment and
+  the drafts report. DDI's % Completion, for example:
+
+  ```yaml
+  truth_issues:
+    completion_always_100:
+      title:
+        "fix(tableau): DDI Module Dashboard % Completion reads 100% in every
+        module"
+      where: dashboard
+  rows:
+    - name: "% Completion (module completion rate)"
+      metrics:
+        - cube: pct_taken
+          num: ... # the dashboard's formula as written
+          den: ...
+          variants:
+            - explains: [completion_always_100]
+              num: ... # corrected: students who did not test count
+              den: ...
+            - explains: [completion_always_100, untagged_assessments]
+              num: ... # corrected, tagged assessments only
+              den: ...
+  ```
+
 - A file-level `open_issues_task: <gid>` names the domain's Open Issues task in
   Asana ("Data Marts + Semantic Layer", one per domain section). Every truth
   issue filed from that file is listed there.
