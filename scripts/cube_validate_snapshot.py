@@ -12,6 +12,7 @@ Runbook: .claude/skills/cube-dashboard/SKILL.md.
 
 from __future__ import annotations
 
+import argparse
 import csv
 import datetime as dt
 import io
@@ -886,3 +887,302 @@ def unpack_extracts(twbx: Path, out_dir: Path) -> dict[str, dict]:
             )
             out[ds.get("caption")] = {"file": name, "refreshed": at}
     return out
+
+
+def _csv_path(snapdir: Path, sheet: str, state_id: str) -> Path:
+    p = Path(snapdir) / "csv" / slug(sheet) / f"{state_id}.csv"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    return p
+
+
+def _read_state(snapdir: Path, entry: dict | None) -> dict[str, bytes]:
+    if not entry:
+        return {}
+    return {
+        s: (Path(snapdir) / v["file"]).read_bytes() for s, v in entry["sheets"].items()
+    }
+
+
+def export_state(
+    session, manifest, snapdir, wb, state, all_values, covers_all, dims_for
+) -> dict:
+    filters = [(k, vf_value(v, all_values.get(k, []))) for k, v in state.filters]
+    filters += list(state.params)
+    sheets = list(wb.dashboards[state.dashboard])
+    click_filters: dict[str, str] = {}
+    entry = {
+        "state": state.as_dict(),
+        "sheets": {},
+        "status": "ok",
+        "click_filters": {},
+    }
+    try:
+        if state.click:
+            action = next(a for a in wb.actions if a.caption == state.click[0])
+            source = session.export_view(action.source_sheet, filters)
+            click_filters = pick_click_row(
+                source, state.click[1], dims_for.get(action.source_sheet)
+            )
+            filters += [(k, vf_value(v, [])) for k, v in click_filters.items()]
+            sheets = [
+                s for s in wb.dashboards[action.target] if s not in action.exclude
+            ]
+        data = {s: session.export_view(s, filters) for s in sheets}
+    except Exception as e:  # noqa: BLE001 - recorded per state, the run goes on
+        entry["status"], entry["error"] = (
+            "export_failed",
+            f"{type(e).__name__}: {str(e)[:300]}",
+        )
+        return entry
+    for s, b in data.items():
+        p = _csv_path(snapdir, s, state.id)
+        p.write_bytes(b)
+        entry["sheets"][s] = {"file": str(p.relative_to(snapdir)), "rows": csv_rows(b)}
+    entry["click_filters"] = click_filters
+    if state.filters and not state.click:
+        parent = manifest.states.get(parent_of(state).id)
+        last = state.filters[-1]
+        covers = last[1] in covers_all.get(last[0], set())
+        if filter_ignored(_read_state(snapdir, parent), data, covers):
+            entry["status"] = "filter_ignored"
+    return entry
+
+
+def _load_checks(path: str) -> dict:
+    return yaml.safe_load(Path(path).read_text()) or {}
+
+
+def _profiles_for(wb, extracts, snapdir, where_year=True):
+    """Profiles and nesting per datasource, over the dashboard filter fields."""
+    profiles, scores = {}, {}
+    for ds, meta in extracts.items():
+        fields = sorted(
+            {c.field for c in wb.filters if c.datasource == ds and not c.calculated}
+        )
+        if not fields:
+            continue
+        with Hyper(Path(snapdir) / meta["file"]) as h:
+            cols = set(h.columns())
+            fields = [f for f in fields if f in cols]
+            where = None
+            if where_year and YEAR_FIELD in cols:
+                where = f'"{YEAR_FIELD}" = (select max("{YEAR_FIELD}") from {EXTRACT})'
+            profiles[ds] = profile(h, fields)
+            scores[ds] = nesting(h, [f for f in fields if f != YEAR_FIELD], where)
+    return profiles, scores
+
+
+def _plan(a) -> int:
+    checks = _load_checks(a.checks)
+    out_dir = Path(a.out).parent if a.out else SNAPSHOT_ROOT / slug(checks["workbook"])
+    out_dir.mkdir(parents=True, exist_ok=True)
+    twbx = Path(a.twbx) if a.twbx else _download(checks["workbook_luid"], out_dir)[0]
+    with zipfile.ZipFile(twbx) as z:
+        twb = z.read(next(n for n in z.namelist() if n.endswith(".twb"))).decode(
+            "utf-8"
+        )
+    wb = read_workbook(twb)
+    keep = set(checks.get("dashboards") or wb.dashboards)
+    wb = Workbook(
+        {d: s for d, s in wb.dashboards.items() if d in keep},
+        [c for c in wb.filters if c.dashboard in keep],
+        [p for p in wb.params if p.dashboard in keep],
+        [x for x in wb.actions if x.dashboard in keep],
+    )
+    extracts = unpack_extracts(twbx, out_dir)
+    profiles, scores = _profiles_for(wb, extracts, out_dir)
+    accept = {tuple(p) for p in checks.get("accept_nesting") or []}
+    trees = {
+        ds: derive_trees(
+            [f for f in profiles[ds] if f != YEAR_FIELD], *scores[ds], accept=accept
+        )
+        for ds in profiles
+    }
+    years = sorted(
+        {v for ds in profiles for v, _ in profiles[ds].get(YEAR_FIELD, []) if v},
+        reverse=True,
+    )[:2]
+    items = plan_states(wb, profiles, trees, tuple(years))
+    doc = {
+        "trees": {ds: t.trees for ds, t in trees.items()},
+        "cross_cuts": {ds: t.cross_cuts for ds, t in trees.items()},
+        "borderline": {ds: [list(b) for b in t.borderline] for ds, t in trees.items()},
+    }
+    text = yaml.safe_dump(doc, sort_keys=False, allow_unicode=True) + plan_yaml(items)
+    Path(a.out or out_dir / "plan.yml").write_text(text)
+    print(
+        f"plan: {sum(i.tier == 'must' for i in items)} must, "
+        f"{sum(i.tier == 'optional' for i in items)} optional, "
+        f"{sum(i.tier == 'skipped' for i in items)} skipped -> {a.out or out_dir / 'plan.yml'}"
+    )
+    return 0
+
+
+def _server():
+    import tableauserverclient as tsc
+
+    auth = tsc.PersonalAccessTokenAuth(
+        token_name=os.environ["TABLEAU_TOKEN_NAME"],
+        personal_access_token=os.environ["TABLEAU_PERSONAL_ACCESS_TOKEN"],
+        site_id=os.environ["TABLEAU_SITE_ID"],
+    )
+    return tsc.Server(
+        os.environ["TABLEAU_SERVER_ADDRESS"], use_server_version=True
+    ), auth
+
+
+def _download(luid: str, out_dir: Path) -> tuple[Path, str]:
+    server, auth = _server()
+
+    def fetch():
+        with server.auth.sign_in(auth):
+            at = server.workbooks.get_by_id(luid).updated_at
+            path = server.workbooks.download(
+                luid, filepath=str(out_dir / "live"), include_extract=True
+            )
+        return Path(path), at.isoformat()
+
+    return retry(fetch)
+
+
+def _states_for(checks: dict, path: str | None) -> list[State]:
+    raw = yaml.safe_load(Path(path).read_text()) if path else checks.get("states")
+    if isinstance(raw, dict):  # a plan file: take its must and optional lists
+        raw = (raw.get("must") or []) + (raw.get("optional") or [])
+    return [State.from_dict(d) for d in raw or []]
+
+
+def _value_maps(manifest: Manifest, snapdir: Path):
+    """Every value of each filter caption, and the values that cover every row."""
+    all_values, covers = {}, {}
+    by_ds: dict[str, list[tuple[str, str]]] = {}
+    for caption, f in manifest.fields.items():
+        by_ds.setdefault(f["datasource"], []).append((caption, f["field"]))
+    for ds, pairs in by_ds.items():
+        with Hyper(snapdir / manifest.extracts[ds]["file"]) as h:
+            prof = profile(h, [f for _, f in pairs])
+        for caption, f in pairs:
+            vals = prof[f]
+            total = sum(n for _, n in vals)
+            all_values[caption] = [v for v, _ in vals if v is not None]
+            covers[caption] = {ALL} | {
+                v for v, n in vals if v is not None and n == total
+            }
+    return all_values, covers
+
+
+def _open(a) -> int:
+    checks = _load_checks(a.checks)
+    server, auth = _server()
+    at = dt.datetime.now(dt.UTC)
+    snapdir = new_snapshot_dir(checks["workbook"], at)
+    with server.auth.sign_in(auth):
+        session = Session(server, checks["review_project_luid"])
+        print("swept:", session.sweep() or "nothing")
+        live_at = server.workbooks.get_by_id(
+            checks["workbook_luid"]
+        ).updated_at.isoformat()
+        live = Path(
+            server.workbooks.download(
+                checks["workbook_luid"],
+                filepath=str(snapdir / "live"),
+                include_extract=True,
+            )
+        )
+        extracts = unpack_extracts(live, snapdir / "extract")
+        extracts = {
+            ds: {**m, "file": f"extract/{m['file']}"} for ds, m in extracts.items()
+        }
+        twbx, hidden = build_review_twbx(live, snapdir, checks["dashboards"])
+        wb = read_workbook(
+            (snapdir / "review.twb").read_text(encoding="utf-8", newline="")
+        )
+        name = f"{REVIEW_PREFIX}{at:%Y-%m-%d %H%M} {checks['workbook']}"
+        copy = session.publish(twbx, name, hidden)
+        print(f"published {name} ({copy}) to TEMP-CB")
+        fields = {
+            c.caption: {"field": c.field, "datasource": c.datasource}
+            for c in wb.filters
+            if c.dashboard in checks["dashboards"]
+        }
+        m = Manifest(
+            checks["workbook"],
+            checks["workbook_luid"],
+            copy,
+            at.isoformat(),
+            live_at,
+            extracts,
+            fields,
+            {},
+        )
+        write_manifest(snapdir / "manifest.json", m)
+        _export_all(session, m, snapdir, wb, checks, _states_for(checks, a.states))
+    return 0
+
+
+def _export_all(session, m, snapdir, wb, checks, states) -> None:
+    all_values, covers = _value_maps(m, snapdir)
+    dims_for = {
+        s: list((v.get("dims") or {})) for s, v in (checks.get("sheets") or {}).items()
+    }
+    # Parents first, so the filter-took-effect check has something to compare with.
+    for state in sorted(states, key=lambda s: (len(s.filters), s.id)):
+        session.check_refresh(m.workbook_luid, m.live_updated_at)
+        m.states[state.id] = export_state(
+            session, m, snapdir, wb, state, all_values, covers, dims_for
+        )
+        write_manifest(snapdir / "manifest.json", m)
+        print(f"  {state.id}: {m.states[state.id]['status']}")
+
+
+def _export(a) -> int:
+    checks = _load_checks(a.checks)
+    snapdir = latest_snapshot(checks["workbook"])
+    m = read_manifest(snapdir / "manifest.json")
+    if m.closed:
+        raise SessionError("this snapshot's session is closed; open a new one")
+    server, auth = _server()
+    with server.auth.sign_in(auth):
+        session = Session(server, checks["review_project_luid"])
+        session.copy = server.workbooks.get_by_id(m.copy_luid)
+        wb = read_workbook(
+            (snapdir / "review.twb").read_text(encoding="utf-8", newline="")
+        )
+        _export_all(session, m, snapdir, wb, checks, _states_for(checks, a.states))
+    return 0
+
+
+def _close(a) -> int:
+    checks = _load_checks(a.checks)
+    snapdir = latest_snapshot(checks["workbook"])
+    m = read_manifest(snapdir / "manifest.json")
+    server, auth = _server()
+    with server.auth.sign_in(auth):
+        Session(server, checks["review_project_luid"]).close(m.copy_luid)
+    m.closed = True
+    write_manifest(snapdir / "manifest.json", m)
+    for p in (snapdir / "live.twbx", snapdir / "review.twbx"):
+        p.unlink(missing_ok=True)
+    print(f"closed: review copy {m.copy_luid} deleted and confirmed gone")
+    return 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    p = argparse.ArgumentParser(prog="cube_validate_snapshot")
+    sub = p.add_subparsers(dest="cmd", required=True)
+    pl = sub.add_parser("plan")
+    pl.add_argument("checks")
+    pl.add_argument("--twbx")
+    pl.add_argument("--out")
+    for name in ("open", "export"):
+        s = sub.add_parser(name)
+        s.add_argument("checks")
+        s.add_argument("--states", help="a YAML list of states, or a plan file")
+    cl = sub.add_parser("close")
+    cl.add_argument("checks")
+    a = p.parse_args(argv)
+    return {"plan": _plan, "open": _open, "export": _export, "close": _close}[a.cmd](a)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

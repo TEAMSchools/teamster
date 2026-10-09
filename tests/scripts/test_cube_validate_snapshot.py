@@ -576,3 +576,101 @@ def test_retry_recovers_then_gives_up():
         snap.retry(
             lambda: (_ for _ in ()).throw(RuntimeError("x")), sleep=lambda s: None
         )
+
+
+class FakeSession:
+    def __init__(self, exports):
+        self.exports, self.calls = exports, []
+
+    def export_view(self, sheet, filters):
+        self.calls.append((sheet, tuple(filters)))
+        return self.exports(sheet, dict(filters))
+
+
+def _manifest():
+    return snap.Manifest(
+        "Demo",
+        "w1",
+        "copy-1",
+        "t",
+        "t",
+        {},
+        {"Region": {"field": "region", "datasource": DS}},
+        {},
+    )
+
+
+def test_export_state_writes_csvs_and_marks_ok(tmp_path):
+    snapdir = tmp_path
+    (snapdir / "csv").mkdir()
+    wb = snap.read_workbook(TWB)
+
+    def exports(sheet, f):
+        return f"Region,N\r\n{f.get('Region', 'All')},1\r\n".encode()
+
+    s, m = FakeSession(exports), _manifest()
+    default = snap.State("Overview")
+    m.states[default.id] = snap.export_state(s, m, snapdir, wb, default, {}, {}, {})
+    north = snap.State("Overview", filters=(("Region", "North"),))
+    entry = snap.export_state(s, m, snapdir, wb, north, {}, {}, {})
+    assert entry["status"] == "ok"
+    assert entry["sheets"]["Overview - Table"]["rows"] == 1
+    assert (snapdir / "csv" / "overview-table" / f"{north.id}.csv").exists()
+
+
+def test_export_state_flags_an_ignored_filter(tmp_path):
+    (tmp_path / "csv").mkdir()
+    wb = snap.read_workbook(TWB)
+    s, m = FakeSession(lambda sheet, f: b"Region,N\r\nAll,9\r\n"), _manifest()
+    default = snap.State("Overview")
+    m.states[default.id] = snap.export_state(s, m, tmp_path, wb, default, {}, {}, {})
+    north = snap.State("Overview", filters=(("Region", "North"),))
+    assert (
+        snap.export_state(s, m, tmp_path, wb, north, {}, {}, {})["status"]
+        == "filter_ignored"
+    )
+
+
+def test_export_state_marks_a_failing_export(tmp_path):
+    (tmp_path / "csv").mkdir()
+    wb = snap.read_workbook(TWB)
+
+    def boom(sheet, f):
+        raise RuntimeError("429")
+
+    entry = snap.export_state(
+        FakeSession(boom), _manifest(), tmp_path, wb, snap.State("Overview"), {}, {}, {}
+    )
+    assert entry["status"] == "export_failed"
+
+
+def test_click_state_exports_targets_with_the_clicked_marks_values(tmp_path):
+    (tmp_path / "csv").mkdir()
+    wb = snap.read_workbook(TWB)
+
+    def exports(sheet, f):
+        if sheet == "Overview - Table" and not f:
+            return b"Title,Score\r\nT1,80\r\nT2,20\r\n"
+        return b"Title,Score\r\nT1,80\r\n"
+
+    s = FakeSession(exports)
+    state = snap.State("Overview", click=("Table to Detail", "largest"))
+    entry = snap.export_state(
+        s, _manifest(), tmp_path, wb, state, {}, {}, {"Overview - Table": ["Title"]}
+    )
+    assert entry["click_filters"] == {"Title": "T1"}
+    assert ("Overview - Detail", (("Title", "T1"),)) in s.calls
+    assert list(entry["sheets"]) == ["Overview - Detail"]
+
+
+def test_plan_command_writes_a_proposal_from_a_local_twbx(tmp_path, demo_hyper):
+    twbx = tmp_path / "demo.twbx"
+    with snap.zipfile.ZipFile(twbx, "w") as z:
+        z.writestr("Demo.twb", TWB)
+        z.write(demo_hyper, "Data/Extracts/federated_demo1.hyper")
+    checks = tmp_path / "checks.yml"
+    checks.write_text("workbook: Demo\nworkbook_luid: w1\ndashboards: [Overview]\n")
+    out = tmp_path / "plan.yml"
+    assert snap.main(["plan", str(checks), "--twbx", str(twbx), "--out", str(out)]) == 0
+    text = out.read_text()
+    assert "overview--default" in text and "trees:" in text
