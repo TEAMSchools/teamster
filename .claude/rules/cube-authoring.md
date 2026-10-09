@@ -98,14 +98,11 @@ and diagnostics are in the `cube-ops` skill.
   description routes single-date and range filters there.
   `fct_student_attendance_enrollment_daily` is
   `PARTITION BY DATE_TRUNC(date_key, MONTH)` and
-  `student_attendance_enrollment_daily.attendance_date` is that member:
-  measured, single-date network headcount reads **63 MiB / 0.7 slot-seconds**
-  via `attendance_date` against **1,257 MiB / 24–82 slot-seconds** via
-  `dates_date_day`, identical rows. A `CAST` around the partitioning column does
-  NOT block pruning (verified: bare and CAST-wrapped predicates both read 34,224
-  bytes against 38,659,756 unfiltered). Keep the `dates_*` members for grouping
-  and for academic-year / month / week-of questions, where they are the only
-  path.
+  `student_attendance_enrollment_daily.attendance_date` is that member: a
+  single-date headcount through it reads about 20x fewer bytes than through
+  `dates_date_day`, for identical rows. A `CAST` around the partitioning column
+  does NOT block pruning. Keep the `dates_*` members for grouping and for
+  academic-year / month / week-of questions, where they are the only path.
 - **Hidden helper measures** prefix with `_` and set `public: false` (see
   `_sum_attendance_value` building blocks).
 - **`meta.folders` is the only Cube-rendered `meta.*` key.** Put guidance in
@@ -115,9 +112,7 @@ and diagnostics are in the `cube-ops` skill.
   never what a member used to be.** These strings reach the chat agent and
   analysts through `/v1/meta`, so a reference to a deleted member sends a caller
   at nothing; deleting a member means deleting every description that names it,
-  not annotating them as retired. Twice now a deletion has shipped with
-  `meta`-visible descriptions still pointing at removed members
-  (`count_students_year_end`, the anchor dimensions) — after a member removal,
+  not annotating them as retired. After a member removal,
   `grep -rn '<member>' model/` and clear every hit, including the ones in prose.
 - **Measure grain: query-time vs pre-agg.** At query time Cube recomputes every
   measure fresh at the requested grain — including `count_distinct` (a valid
@@ -143,31 +138,27 @@ and diagnostics are in the `cube-ops` skill.
 - **Partitioned pre-aggregations need explicit `build_range_start` /
   `build_range_end`.** Without them Cube derives the range from the
   `time_dimension` min/max — and a `dates.date_day` anchor routes through
-  `dim_dates` (calendar spine to 9999), so the refresh worker enumerates ~8,000
-  empty yearly partitions on the post-merge prod redeploy (incident: #4460 →
-  revert #4462 → bounded #4463). Bound to real data (`SELECT DATE('2015-07-01')`
-  to `CURRENT_DATE`). Cube rebuilds a changed pre-agg on merge to `main`, so
-  validate the build stays bounded on a branch staging deployment FIRST —
-  confirm the partition count via `JOBS_BY_PROJECT` for
-  `cube-cloud@teamster-332318`.
+  `dim_dates` (calendar spine to 9999), so the refresh worker enumerates
+  thousands of empty yearly partitions on the post-merge prod redeploy (#4460).
+  Bound to real data (`SELECT DATE('2015-07-01')` to `CURRENT_DATE`). Cube
+  rebuilds a changed pre-agg on merge to `main`, so validate the build stays
+  bounded on a branch staging deployment FIRST — confirm the partition count via
+  `JOBS_BY_PROJECT` for `cube-cloud@teamster-332318`.
 - **Measure Cube's own overhead before proposing a pre-aggregation.** It runs
-  0.9s–1.5s per query on the student views (planning, Cube Store transport,
+  about a second per query on the student views (planning, Cube Store transport,
   connection) and exceeds BigQuery execution time on most of them, so a pre-agg
-  removes the smaller half. Worst measured query on
-  `student_attendance_enrollment_daily_view` at 29.6M rows: 3.62s wall, 2.17s of
-  it BigQuery — a _perfect_ pre-agg buys ~2.1s of a 55-second budget. Also check
-  additivity first: `count_distinct` is non-additive as a **rollup** property,
-  so a day-grain rollup serves day-grain queries and cannot reaggregate to month
-  or year — you would need one pre-agg per grain, or `count_distinct_approx`
-  (HLL, wrong for a reported headcount). Partitioning the underlying mart is
-  usually the cheaper win; see the partition-pruning rule under Authoring
-  conventions.
+  removes the smaller half: even a perfect one saves a few seconds of the MCP's
+  55-second budget. Also check additivity first: `count_distinct` is
+  non-additive as a **rollup** property, so a day-grain rollup serves day-grain
+  queries and cannot reaggregate to month or year — you would need one pre-agg
+  per grain, or `count_distinct_approx` (HLL, wrong for a reported headcount).
+  Partitioning the underlying mart is usually the cheaper win; see the
+  partition-pruning rule under Authoring conventions.
 - **Custom granularities were evaluated and rejected.** `offset: -6 months` on
-  `dates.date_day` does work on 1.7.14 and returns correct July-anchored
-  buckets, but it costs 58.7 slot-seconds against the `academic_year`
-  dimension's 31.1 for an identical answer (10,158 / 10,849 / 11,260), and the
-  July bucketing already lives in `dim_dates`. `origin` is silently ignored —
-  two different origin values both bucket on the calendar year, with no error.
+  `dates.date_day` returns correct July-anchored buckets, but costs about twice
+  the slot time of the `academic_year` dimension for an identical answer, and
+  the July bucketing already lives in `dim_dates`. `origin` is silently ignored
+  — two different origin values both bucket on the calendar year, with no error.
 
 ## View access policies
 
@@ -203,11 +194,10 @@ reason about.
     region. FERPA binds student records to the employing LEA, and region maps
     1:1 to legal entity, so the value is still a region key.
   - **A KTAF employee is always network-scoped on student data.** KTAF's own
-    legal entity enrolls no students and all 149 of its staff sit in a per-city
-    office room, so a role-mapped `region` or `school` scope resolved to an
-    empty allow-list and denied outright. `dim_staff_cube_access` resolves any
-    granted KTAF scope to `network`; a KTAF viewer mapped to `none` stays
-    `none`.
+    legal entity enrolls no students and its staff sit in per-city office rooms,
+    so a role-mapped `region` or `school` scope would resolve to an empty
+    allow-list and deny outright. `dim_staff_cube_access` resolves any granted
+    KTAF scope to `network`; a KTAF viewer mapped to `none` stays `none`.
 - **Staff views are split.** `staff_directory` (roster/employment/work-contact
   fields — no personal or sensitive data) has one open block:
   `member_level: { includes: "*" }` under `staff-directory`, no `row_level` —
@@ -256,15 +246,15 @@ bracketed form: `values: ["{ securityContext.region_key }"]`.
 `operator: equals` + array value compiles to SQL `IN`. An **empty** array does
 NOT compile to `IN ()`/zero rows — Cube (Tesseract) throws "Values required for
 filter" and fails the query (fail-closed, but a hard error, not a clean deny;
-verified empirically, #4269). `access.buildGroups` therefore does not emit a
-staff-pii group whose remit/chain array resolved empty, so such a viewer takes
-the no-group default-deny path instead of hitting that error.
+#4269). `access.buildGroups` therefore does not emit a staff-pii group whose
+remit/chain array resolved empty, so such a viewer takes the no-group
+default-deny path instead of hitting that error.
 
 **Scope selection is group-based, not `conditions.if`-based.** `conditions.if`
 only compiles a bare truthy reference (`if: "{ userAttributes.x }"`) — a `==`
-comparison does not compile (Task 1 spike finding). That's why `buildGroups`
-emits one scope-specific group per enum value instead of a single group gated by
-a `conditions.if` branch.
+comparison does not compile. That's why `buildGroups` emits one scope-specific
+group per enum value instead of a single group gated by a `conditions.if`
+branch.
 
 When adding a sensitive staff field, decide PII status per
 `.claude/rules/ferpa-pii.md`. If PII, or a sensitive HR field that is not an
@@ -298,18 +288,17 @@ access policies above). `cube.js` exports exactly `driverFactory`,
   signature against `CUBEJS_API_SECRET` itself, reads the `email` claim, and
   sets `req.securityContext = await resolveAccess(email)`. No/invalid token →
   `jwt.verify` throws → Cube rejects the request; no `Authorization` header
-  resolves to the empty default-deny context. **It runs in developer mode too**
-  (verified on Cube 1.6.59 and 1.7.14) — so the local REST Playground resolves a
-  pasted `{"email": ...}`; do not assume `NODE_ENV=production` is needed.
-  `jwt.verify` also enforces `maxAge: "12h"` derived from `iat`, which rejects a
-  stale cached Playground token and any token with no `iat` at all. Cube Cloud's
-  `iss: "cubecloud"` context never reaches `jwt.verify` — it bypasses
-  `checkAuth` entirely and is handled in `contextToGroups` (#4526). **Every 403
-  names the failed check** via `jwtRejectionReason` (too-old-from-`iat` with the
-  re-mint step / expired past `exp` / bad signature pointing at this
-  deployment's `CUBEJS_API_SECRET` / missing `iat`); a bare "Invalid token" for
-  all of them is what made the `maxAge` cap read as an access bug. Keep them
-  distinguishable.
+  resolves to the empty default-deny context. **It runs in developer mode too**,
+  so the local REST Playground resolves a pasted `{"email": ...}`; do not assume
+  `NODE_ENV=production` is needed. `jwt.verify` also enforces `maxAge: "12h"`
+  derived from `iat`, which rejects a stale cached Playground token and any
+  token with no `iat` at all. Cube Cloud's `iss: "cubecloud"` context never
+  reaches `jwt.verify` — it bypasses `checkAuth` entirely and is handled in
+  `contextToGroups` (#4526). **Every 403 names the failed check** via
+  `jwtRejectionReason` (too-old-from-`iat` with the re-mint step / expired past
+  `exp` / bad signature pointing at this deployment's `CUBEJS_API_SECRET` /
+  missing `iat`); a bare "Invalid token" for all of them is what made the
+  `maxAge` cap read as an access bug. Keep them distinguishable.
 - **`checkSqlAuth` (SQL API)** returns
   `{ password: process.env.CUBEJS_SQL_PASSWORD, securityContext }` — Cube
   validates the presented password against the RETURNED one, so returning `null`
@@ -415,10 +404,9 @@ only on `student_attendance_enrollment_daily_view`; chronic absence, tier mix
 and truancy exist only on `student_attendance_enrollment_periods_view`; a
 question wanting both is two queries. A day-weighted cumulative ADA on the
 periods cube would equal the daily view's ADA at year grain and be wrong summed
-across month or week rows — 1.65M membership days at year grain against 9.43M
-summing the eleven AY2025 month rows — which is why it is not there. A
-student-weighted one diverges from the daily view's ADA by 0.66 points (0.9141
-against 0.9207, AY2025), so it must not reuse the name.
+across month or week rows, because each row's cumulative days repeat the prior
+rows', which is why it is not there. A student-weighted one diverges from the
+daily view's ADA, so it must not reuse the name.
 
 **Point-in-time enrollment headcount is a pinned date on
 `student_attendance_enrollment_daily_view`.** The fact carries a row for every
@@ -426,12 +414,11 @@ enrolled calendar day, break days included, so any date resolves — no anchor
 flag, and none available. Pin `attendance_date`, not `dates_date_day` (see the
 partition-pruning rule above).
 
-Query-time **window functions** over the daily fact were measured and do not
-scale: multi-stage `rank` timed out past 150s, and scoping to one month did not
-help, which is what proved the cost structural rather than volume. A plain
-additive aggregate by academic year ran 14.3s. Any query-time period-end
-computation on this fact lands within a factor of the Cube MCP server's
-55-second poll deadline — the same failure
+Query-time **window functions** over the daily fact do not scale: multi-stage
+`rank` timed out, and scoping to one month did not help, so the cost is
+structural rather than volume. Even a plain additive aggregate by academic year
+is slow, so any query-time period-end computation on this fact lands within a
+factor of the Cube MCP server's 55-second poll deadline — the same failure
 [#4333](https://github.com/TEAMSchools/teamster/issues/4333) fixed for the
 assessment cubes. Precompute in dbt instead.
 
@@ -439,14 +426,13 @@ assessment cubes. Precompute in dbt instead.
 `add_group_by` + `reduce_by` compiles to a two-level GROUP BY (no window
 functions in the SQL) and is the only way to express a second aggregation level
 — mean-of-school-rates, or a count of schools past a threshold — over a row the
-periods fact already precomputed. Measured on
-`student_attendance_enrollment_periods_view`, AY2025 year grain: identical bytes
-to the flat query, **22x the slot-seconds (1.9 → 42.8) but only 1.75s**, because
-the base is small. Nothing on either view answers that question today. The catch
-is semantic, not performance: a mean-of-school-rates measure beside the pooled
-`pct_chronically_absent` puts two different network numbers on one view (26.09%
-vs 27.21% for AY2025), so it needs a `description` naming which question each
-answers.
+periods fact already precomputed. On
+`student_attendance_enrollment_periods_view` it reads the same bytes as the flat
+query and burns far more slot time, but still returns in a couple of seconds
+because the base is small. Nothing on either view answers that question today.
+The catch is semantic, not performance: a mean-of-school-rates measure beside
+the pooled `pct_chronically_absent` puts two different network numbers on one
+view, so it needs a `description` naming which question each answers.
 
 ## Jinja in cube YAML
 
@@ -473,8 +459,8 @@ expressed in Cube — materialize that classification upstream in dbt.
 ## School weeks vs ISO weeks
 
 PowerSchool's per-school school week (`week_start_monday`) is NOT a clean
-Monday-Sunday grid — weeks split at month/term boundaries (~14% of calendar days
-diverge from ISO Monday). Both topline surfaces key on school weeks:
+Monday-Sunday grid — weeks split at month/term boundaries, so many days diverge
+from ISO Monday. Both topline surfaces key on school weeks:
 `int_topline__ada_running_weekly` (attendance) and
 `int_extracts__student_enrollments_weeks` (enrollment) both group by
 `week_start_monday`. Use `dim_dates.school_week_start_date` (same values, routed
@@ -489,9 +475,7 @@ is no query-time guard; the caller has to group correctly.
 
 **The same trap exists at year grain on `dates.date_day`**: a native
 `granularity: "year"` buckets on the CALENDAR year and splits every academic
-year across two buckets. Measured on `student_attendance_enrollment_daily_view`
-— 12,847 / 13,163 / 10,726 by year granularity against 10,158 / 10,849 / 11,260
-by academic year. Group by `dates_academic_year_label` for anything
+year across two buckets. Group by `dates_academic_year_label` for anything
 school-year-shaped.
 
 ## `prefix: true` join member names
@@ -517,19 +501,19 @@ different copy. Two traps:
   schema**, whose symptom is `Table or CTE with name '<view>' not found` — the
   same string as an RLS denial. Count the `../` segments from `src/cube`.
 - Set `CUBEJS_REFRESH_WORKER=false` or the refresh worker starts building the
-  `student_assessment_scores` pre-agg off the ~14.2M-row fact.
+  `student_assessment_scores` pre-agg, a full scan of the scores fact per
+  partition.
 
-**Cube caches a query result by its text, so a repeat run measures the cache**
-(0.25s vs 2-4s). To time anything, append a unique never-matching predicate per
-run (`AND academic_year <> <counter>`), seeded from the clock so a second
-PROCESS does not replay the first one's values — that defeats BigQuery's 24-hour
-results cache too. Confirm with `cache_hit = false` in `JOBS_BY_PROJECT`. Schema
-compilation is per-process and lands on the first query (8s–22s): pay it with a
-throwaway warmup query before timing.
+**Cube caches a query result by its text, so a repeat run measures the cache.**
+To time anything, append a unique never-matching predicate per run
+(`AND academic_year <> <counter>`), seeded from the clock so a second PROCESS
+does not replay the first one's values — that defeats BigQuery's 24-hour results
+cache too. Confirm with `cache_hit = false` in `JOBS_BY_PROJECT`. Schema
+compilation is per-process and lands on the first query: pay it with a throwaway
+warmup query before timing.
 
-**`src/cube/node_modules` can lag the lockfile.** Observed 1.7.14 installed
-while `package-lock.json` pinned 1.7.30, which silently invalidates any "on
-version X" claim from a local run. Check
+**`src/cube/node_modules` can lag the lockfile**, which silently invalidates any
+"on version X" claim from a local run. Check
 `node -e "console.log(require('./node_modules/@cubejs-backend/server/package.json').version)"`
 before attributing behaviour to a version; `npm ci` in `src/cube` closes the
 gap.

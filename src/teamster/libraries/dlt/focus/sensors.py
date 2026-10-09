@@ -7,6 +7,7 @@ from dagster import (
     sensor,
 )
 from dlt.common.configuration.specs import ConnectionStringCredentials
+from dlt.common.configuration.utils import get_resolved_traces
 
 from teamster.libraries.dlt.focus.assets import (
     FOCUS_SOURCE_NAME,
@@ -42,7 +43,13 @@ def _build_run_request(
                 }
             }
         },
-        tags={"dagster/max_runtime": "3600"},
+        # The in-flight guard skips every tick while this run is non-terminal,
+        # so a hung run (e.g. an evicted step pod whose replacement exits on
+        # the duplicate-start guard) freezes intraday syncing until this cap.
+        # Not tighter: a tick after downtime can select every changed table,
+        # and a cap that kills that run keeps the old baselines, so the next
+        # tick selects the same tables and is killed again.
+        tags={"dagster/max_runtime": "1800"},
     )
 
 
@@ -79,6 +86,13 @@ def build_focus_dlt_intraday_sensor(
         in_flight = in_flight_run(context.instance, sensor_name, nightly_schedule_name)
         if in_flight is not None:
             return SkipReason(f"run {in_flight.dagster_run.run_id} in flight")
+
+        # dlt logs every config resolution to a per-thread list that it clears
+        # only when a traced pipeline step ends, and a tick runs none. Each entry
+        # pins that tick's whole pipeline, so without this the long-lived code
+        # server grows until OOM-killed. Clearing here, not after the dlt calls,
+        # also covers ticks that raised before reaching them.
+        get_resolved_traces().clear()
 
         dlt_pipeline = build_focus_dlt_pipeline(code_location)
 

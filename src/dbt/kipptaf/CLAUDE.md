@@ -20,16 +20,11 @@ any tab change. Archive tabs must be converted to BQ-native sources.
 
 ### Cross-region joins (critical)
 
-Union models carry `_dbt_source_relation` but values differ across models (they
-include schema + table name). **Never join on
-`a._dbt_source_relation = b._dbt_source_relation`** — join the materialized
-`_dbt_source_project` column:
-
-```sql
-inner join {{ ref("other_union_model") }} as b
-    on a.id = b.id
-    and a._dbt_source_project = b._dbt_source_project
-```
+Join unioned models on `_dbt_source_project` (A10 in
+`.claude/rules/dbt-architecture.md`). Union models also carry
+`_dbt_source_relation`, but its values differ across models (they include
+schema + table name). **Never join on
+`a._dbt_source_relation = b._dbt_source_relation`.**
 
 The `union_dataset_join_clause` macro that wrapped this comparison was deleted
 in [#3142](https://github.com/TEAMSchools/teamster/issues/3142). Five stale
@@ -446,9 +441,9 @@ snapshot — before removing it.
 - **`rpt_`** — analyst-built reporting views for external tools. Live in
   `models/extracts/`.
 - **`dim_*` / `fct_*`** — dimensional marts for semantic layer. Live in
-  `models/marts/`. Actively being developed; see
-  `src/dbt/kipptaf/models/marts/CLAUDE.md` for column-naming rubric, hash-change
-  discipline, and strict-chain rules.
+  `models/marts/`. The column-naming rubric and strict-chain rules are in
+  `.claude/rules/dbt-marts.md`; hash-change discipline and mart operations are
+  in `src/dbt/kipptaf/models/marts/CLAUDE.md`.
 
 New KIPP Forward Google Sheets extracts take the `rpt_gsheets__kfwd_` prefix.
 Existing models use both `kfwd_` and `kippfwd_`; `kfwd_` is the going-forward

@@ -129,6 +129,7 @@ with
             enr.year_in_network,
             enr.rn_undergrad,
             enr.is_self_contained as is_pathways,
+            enr.is_hs_honors_program,
             enr.is_out_of_district,
             enr.is_retained_year,
             enr.is_retained_ever,
@@ -343,6 +344,7 @@ select
     s.rn_undergrad,
     s.is_out_of_district,
     s.is_pathways,
+    s.is_hs_honors_program,
     s.is_retained_year,
     s.is_retained_ever,
     s.student_slideback,
@@ -465,6 +467,9 @@ select
 
     s.gpa_band_projected_unweighted
     - s.gpa_band_unweighted_prior_year as gpa_band_change_from_prior_year,
+
+    /* the B cutoff, by the same affine identity need_next uses below */
+    g.need_60 + (83 - 60) / 10 * (g.need_70 - g.need_60) as need_83,
 
     g.need_next,
 

@@ -170,7 +170,7 @@ with
 
             sum(points) as points,
 
-            array_agg(distinct assessment_id) as assessment_ids,
+            array_agg(distinct assessment_id order by assessment_id) as assessment_ids,
 
             round(
                 safe_divide(sum(points), sum(points_possible)) * 100, 1

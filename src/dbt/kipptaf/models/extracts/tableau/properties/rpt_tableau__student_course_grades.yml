@@ -135,6 +135,14 @@ models:
         config:
           meta:
             contains_pii: true
+      - name: is_hs_honors_program
+        data_type: boolean
+        description:
+          High School Honors Program flag, from
+          `int_extracts__student_enrollments`. Null for Miami.
+        config:
+          meta:
+            contains_pii: true
       - name: is_retained_year
         data_type: boolean
         description: Retained in the row's academic year.
@@ -707,6 +715,16 @@ models:
       - name: need_80
         data_type: float64
         description: Percent needed to reach an 80 (current-year rows only).
+        config:
+          meta:
+            contains_pii: true
+      - name: need_83
+        data_type: float64
+        description: >-
+          Percent needed in the current term for the course's year-to-date grade
+          to reach 83, the B cutoff (current-year rows only). Derived from
+          `need_60` and `need_70` by the affine identity the model documents at
+          `need_next`.
         config:
           meta:
             contains_pii: true

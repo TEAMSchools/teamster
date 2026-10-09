@@ -73,15 +73,21 @@ jobs:
             has read-only repo access, so report these as review findings only;
             do not apply or commit fixes.
 
-            For SQL and dbt changes, read src/dbt/CLAUDE.md (and the nearest
-            per-project CLAUDE.md) and verify the code follows its SQL
-            conventions, SQL column ordering (ST06), and SQL formatting
-            sections. Examples (not exhaustive): max one level of function
-            nesting, no QUALIFY, no ORDER BY in models, no SELECT DISTINCT or
-            row_number() = 1 to mask upstream duplicates, no subqueries against
-            tables or CTEs, cast early and once, correct ON vs WHERE placement,
-            and no pass-through import CTEs. Cite the specific convention for
-            each violation.
+            For SQL and dbt changes, read .claude/rules/dbt-architecture.md and
+            .claude/rules/dbt-sql.md with the Read tool, plus src/dbt/CLAUDE.md
+            and the nearest per-project CLAUDE.md; for a mart change, also read
+            .claude/rules/dbt-marts.md. Check the changed models against every
+            rule (A1-A11, S1-S18, and R1-R4, R6-R10 for marts) and the review
+            rubric in dbt-sql.md. Cite the rule ID (for example "S10") in every
+            SQL or dbt finding. Do not report a violation of a rule enforced
+            only by sqlfluff, sql-banned-syntax, or dbt-layer-check; the Trunk
+            check and the dbt standard workflow report those. Apply the rules to
+            lines the PR adds or changes only; an old violation on an untouched
+            line is not a finding, and never ask for a sweep of untouched
+            models. For the edge rules (A1, A2, A8), flag only an edge the PR
+            adds; an edge the model already had is known backlog. Apply A11 only
+            to a folder the PR adds, and A7 only to an entity that already has a
+            key macro under src/dbt/kipptaf/macros/.
 
             Also check model altitude: derive a model in the source-system
             package at the same layer the source system derives it, not at
@@ -100,13 +106,14 @@ jobs:
 
             Review what is checkable statically: SQL and Jinja logic,
             ref()/source() wiring, incremental and materialization config, join
-            grain inferred from schema, test coverage, and PII exposure. Before
-            reporting a repo-convention violation, confirm the convention
-            against existing models with the Grep tool; do not invent naming or
-            style rules the codebase does not already follow. Report every issue
-            you find, including ones you are uncertain about; do not withhold
-            lower-severity findings. Include a confidence level and a severity
-            label for each finding so a human can rank them.
+            grain inferred from schema, test coverage, and PII exposure. A rule
+            with an ID in the rule files is the authority even where existing
+            models break it. For any other convention, confirm it against
+            existing models with the Grep tool before reporting it; do not
+            invent naming or style rules the codebase does not already follow.
+            Report every issue you find, including ones you are uncertain about;
+            do not withhold lower-severity findings. Include a confidence level
+            and a severity label for each finding so a human can rank them.
 
             Response format: lead the comment with a short, plain-language
             summary for human skimming — the overall verdict and only the

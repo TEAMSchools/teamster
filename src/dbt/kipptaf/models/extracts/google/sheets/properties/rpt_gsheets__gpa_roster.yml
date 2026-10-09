@@ -70,8 +70,87 @@ models:
           Weighted projected cumulative Y1 GPA, incorporating current
           in-progress grades not yet stored.
         data_type: float64
+      - name: pace_status
+        data_type: string
+        description: >-
+          on_pace, not_on_pace, goal_not_attainable, or unknown. High school
+          only.
+        config:
+          meta:
+            contains_pii: true
+      - name: gpa_needed_unweighted
+        data_type: float64
+        description: >-
+          Unweighted Y1 GPA needed this year to finish at a 3.0 unweighted
+          cumulative.
+        config:
+          meta:
+            contains_pii: true
+      - name: gpa_needed_weighted
+        data_type: float64
+        description: >-
+          The same target on the weighted scale PowerSchool shows, for
+          reconciliation.
+        config:
+          meta:
+            contains_pii: true
+      - name: target_letter_grade
+        data_type: string
+        description: >-
+          Lowest letter in every GPA course that reaches the needed GPA, floored
+          at B.
+        config:
+          meta:
+            contains_pii: true
+      - name: target_cutoff_percent
+        data_type: float64
+        config:
+          meta:
+            contains_pii: true
+      - name: n_courses_below_target
+        data_type: int64
+        config:
+          meta:
+            contains_pii: true
+      - name: courses_below_target
+        data_type: string
+        description: >-
+          Course name and current Y1 percent for each unlocked course below the
+          target, separated by semicolons.
+        config:
+          meta:
+            contains_pii: true
+      - name: quickest_win_course
+        data_type: string
+        description: >-
+          The course where the fewest percent points this year buy the biggest
+          unweighted grade-point gain.
+        config:
+          meta:
+            contains_pii: true
+      - name: quickest_win_pace_percent
+        data_type: float64
+        description: >-
+          Percent needed in each remaining term of that course to reach its next
+          letter.
+        config:
+          meta:
+            contains_pii: true
+      - name: quickest_win_next_letter
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: salesforce_contact_id
         description:
           Salesforce contact ID for the student, used to join this roster to
           KIPP Forward records in Salesforce.
         data_type: string
+      - name: is_hs_honors_program
+        description:
+          High School Honors Program flag, from
+          `int_extracts__student_enrollments`. Null for Miami.
+        data_type: boolean
+        config:
+          meta:
+            contains_pii: true

@@ -95,6 +95,9 @@ markdown_extensions:
   - attr_list
   - pymdownx.details
   - pymdownx.keys
+  - pymdownx.snippets:
+      base_path: [.]
+      check_paths: true
   - pymdownx.superfences:
       custom_fences:
         - name: mermaid

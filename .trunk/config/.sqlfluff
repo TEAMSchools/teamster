@@ -4,6 +4,7 @@ templater = jinja
 max_line_length = 88
 exclude_rules = layout.indent, layout.select_targets, layout.end_of_file, layout.keyword_newline
 ignore = templating, parsing
+large_file_skip_byte_limit = 0
 
 [sqlfluff:templater:jinja]
 apply_dbt_builtins = True
@@ -13,3 +14,9 @@ select_clause_trailing_comma = require
 
 [sqlfluff:rules:convention.quoted_literals]
 preferred_quoted_literal_style = single_quotes
+
+[sqlfluff:rules:ambiguous.column_references]
+group_by_and_order_by_style = explicit
+
+[sqlfluff:rules:structure.subquery]
+forbid_subquery_in = both

@@ -186,6 +186,25 @@ def test_coarse_grain_pre_aggregations_require_aligned_date_ranges() -> None:
     )
 
 
+def test_refresh_key_sql_names_its_cubes_table() -> None:
+    # A refresh_key sql that reads table metadata repeats the cube's table name
+    # as a string. Rename the table and update sql_table but not that string,
+    # and the metadata query returns no rows, its value never changes, and the
+    # rollup silently stops refreshing.
+    offenders = []
+    for path in CUBE_MODEL_DIR.rglob("cubes/**/*.yml"):
+        doc = yaml.safe_load(path.read_text()) or {}
+        for cube in doc.get("cubes", []) or []:
+            table = (cube.get("sql_table") or "").split(".")[-1]
+            for pre_agg in cube.get("pre_aggregations", []) or []:
+                sql = (pre_agg.get("refresh_key") or {}).get("sql")
+                if sql and table not in sql:
+                    offenders.append(f"{path}: {cube['name']}.{pre_agg['name']}")
+    assert not offenders, (
+        "refresh_key sql does not name its cube's sql_table:\n" + "\n".join(offenders)
+    )
+
+
 def test_row_level_filter_members_are_exposed_by_their_view() -> None:
     # A row_level filter naming a member the view doesn't (or no longer)
     # expose compiles fine but silently never matches -- Cube has no

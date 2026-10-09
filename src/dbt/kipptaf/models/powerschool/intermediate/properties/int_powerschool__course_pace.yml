@@ -1,0 +1,66 @@
+models:
+  - name: int_powerschool__course_pace
+    description: >-
+      Union of the NJ districts' `int_powerschool__course_pace`, one row per
+      current-year GPA course per student with the pace to the student's target
+      and the quickest-win ranking. Column semantics live on the package model.
+    config:
+      materialized: table
+      meta:
+        contains_pii: true
+    columns:
+      - name: _dbt_source_relation
+        data_type: string
+      - name: studentid
+        data_type: int64
+      - name: schoolid
+        data_type: int64
+      - name: course_number
+        data_type: string
+      - name: course_name
+        data_type: string
+      - name: potential_credit_hours
+        data_type: float64
+      - name: courses_gradescaleid_unweighted
+        data_type: int64
+      - name: target_cutoff_percent
+        data_type: float64
+      - name: y1_percent_current
+        data_type: float64
+      - name: y1_grade_points_unweighted_current
+        data_type: float64
+      - name: term_percent_current
+        data_type: float64
+      - name: total_weight
+        data_type: float64
+      - name: points_banked
+        data_type: float64
+      - name: remaining_weight
+        data_type: float64
+      - name: is_locked
+        data_type: boolean
+      - name: pace_percent
+        data_type: float64
+      - name: is_below_target
+        data_type: boolean
+      - name: is_secured
+        data_type: boolean
+      - name: next_cutoff_percent
+        data_type: float64
+      - name: next_letter_grade
+        data_type: string
+      - name: next_grade_points
+        data_type: float64
+      - name: points_gained
+        data_type: float64
+      - name: pace_percent_to_next
+        data_type: float64
+      - name: need_gap
+        data_type: float64
+      - name: score
+        data_type: float64
+      - name: quickest_win_rank
+        data_type: int64
+      - name: _dbt_source_project
+        data_type: string
+        description: District code location derived from `_dbt_source_relation`.

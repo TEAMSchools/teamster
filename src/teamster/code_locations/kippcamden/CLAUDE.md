@@ -16,7 +16,7 @@ LOCAL_TIMEZONE = ZoneInfo("America/New_York")
 | `cambium`     | SFTP assets       | `AutomationConditionSensor`                                           |
 | `deanslist`   | API assets        | schedule (nightly)                                                    |
 | `edplan`      | SFTP asset        | sensor (`build_edplan_sftp_sensor`)                                   |
-| `finalsite`   | API + SFTP assets | schedule (`contacts`, 4am) + sensor (`status_report`)                 |
+| `finalsite`   | API + SFTP assets | schedule (`contacts`, 00:15 + 12:00 ET) + sensor (`status_report`)    |
 | `overgrad`    | API assets        | schedule                                                              |
 | `pearson`     | SFTP assets       | manual only (retired; Cambium replaced it)                            |
 | `titan`       | SFTP assets       | sensor (`build_titan_sftp_sensor`)                                    |
