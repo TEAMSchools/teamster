@@ -627,3 +627,13 @@ into evidence and a filed fix.
 `cube_issue` gets the `mismatch` validation tag: Cube's numbers are wrong, so
 the row is never ticked. Status still comes from evidence alone; a cube issue
 neither adds nor removes `cube-partial`.
+
+### Related issues (truth issues, cube issues and unexplained gaps)
+
+Requested by the user: before anything is filed, check whether GitHub already
+tracks it. In the review step, for each draft and each row under "Investigate",
+Claude searches the repo's issues (open and closed) with the GitHub MCP on the
+problem's words, the metric, and the models and dashboard involved, and lists
+the matches beside it. A match that is the same problem becomes the entry's
+`issue:` (no new draft is filed); a related one goes in the new draft's body as
+`Related: #N`. The script stays offline: the search is a skill step.
