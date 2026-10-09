@@ -1,0 +1,486 @@
+dashboard: ddi_suite_completion
+task_gid: "1213823831345180"
+extract:
+  workbook_luid: 6d82b643-59a8-4106-b2f9-97ddf7f638e7
+  datasource: rpt_tableau__assessment_dashboard (kipptaf_tableau)
+cube_source_table: teamster-332318.kipptaf_marts.fct_assessment_scores_enrollment_scoped
+view: student_assessment_scores_view
+dashboards:
+  - Landing Page
+  - Mastery Over Time [Region]
+  - Mastery Over Time [School]
+  - Mastery Over Time [Classroom]
+  - O3 View
+  - DKI View
+  - Module Dashboard
+  - Assessment Dashboard
+window:
+  academic_years:
+    - 2026
+dimensions:
+  region:
+    cube: region_name
+    sql: region
+  school:
+    cube: abbreviation
+    sql: school
+  grade_level:
+    cube: grade_level
+    sql: grade_level
+  academic_year:
+    cube: academic_year
+    sql: academic_year
+  response_type:
+    cube: response_type
+    sql: coalesce(response_type, 'not_taken')
+  assessment_id:
+    cube: source_assessment_id
+    sql: cast(assessment_id as string)
+  title:
+    cube: title
+    sql: title
+  module_type:
+    cube: module_type
+    sql: module_type
+  module_code:
+    cube: module_code
+    sql: concat(module_type, module_number)
+    sql_by_datasource:
+      rpt_tableau__ddi_dashboard (kipptaf_tableau): module_code
+  subject_area:
+    cube: academic_subject
+    sql: subject_area
+  standard_code:
+    cube: response_type_code
+    sql: standard_code
+    sql_by_datasource:
+      rpt_tableau__ddi_dashboard (kipptaf_tableau): response_type_code
+  section:
+    cube: identifier
+    sql: section_number
+    sql_by_datasource:
+      rpt_tableau__ddi_dashboard (kipptaf_tableau): course_section
+  teacher:
+    cube: staff_lead_teacher_full_name
+    sql: teacher_name
+    sql_by_datasource:
+      rpt_tableau__ddi_dashboard (kipptaf_tableau): course_teacher_name
+  iep:
+    cube: is_iep
+    sql: iep_status like '%SPED%'
+    sql_by_datasource:
+      rpt_tableau__ddi_dashboard (kipptaf_tableau): iep_status = 'Has IEP'
+  performance_band:
+    cube: performance_band_label_number
+    sql: performance_band_number
+    sql_by_datasource:
+      rpt_tableau__ddi_dashboard (kipptaf_tableau):
+        performance_band_label_number
+  student_number:
+    cube: lea_student_identifier
+    sql: student_number
+    person: true
+  week_start:
+    cube: null
+    sql: week_start_monday
+  term:
+    cube: null
+    sql: term
+  discipline:
+    cube: null
+    sql: subject_area
+  grade_subject:
+    cube: null
+    sql: concat(grade_level, subject_area)
+  standard_label:
+    cube: null
+    sql: standard_code
+  domain:
+    cube: null
+    sql: response_type_root_description
+  bucket:
+    cube: null
+    sql: nj_student_tier
+  ml:
+    cube: null
+    sql: lep_status
+    sql_by_datasource:
+      rpt_tableau__ddi_dashboard (kipptaf_tableau): ml_status
+  team:
+    cube: null
+    sql: team
+  school_level:
+    cube: grade_band
+    sql: school_level
+  head_of_school:
+    cube: null
+    sql: head_of_school
+  scope:
+    cube: null
+    sql: scope
+  is_normed:
+    cube: null
+    sql: is_normed_scope
+  view_by:
+    cube: null
+    sql: school
+  goal:
+    cube: null
+    sql: grade_goal
+  is_foundations:
+    cube: is_foundations
+    sql: is_foundations
+  is_replacement:
+    cube: is_replacement
+    sql: is_replacement
+  tutoring:
+    cube: null
+    sql: tutoring_nj
+  low_25:
+    cube: null
+    sql: is_low_25_fl
+  dibels:
+    cube: null
+    sql: dibels_most_recent_composite
+  gifted:
+    cube: is_gifted
+    sql: gifted_and_talented = 'Y'
+  other_context:
+    cube: null
+    sql: state_test_proficiency
+hard_filters:
+  - dim: region
+    values:
+      - Camden
+      - Newark
+      - Paterson
+cube_filters:
+  - member: assessment_type
+    operator: equals
+    values:
+      - illuminate
+  - member: response_type
+    operator: equals
+    values:
+      - overall
+      - not_taken
+truth_filters:
+  - sql: student_number is not null
+    datasource: rpt_tableau__ddi_dashboard (kipptaf_tableau)
+  - sql: coalesce(response_type, '') != 'walkthrough'
+    datasource: rpt_tableau__ddi_dashboard (kipptaf_tableau)
+  - (response_type is null or response_type = 'overall')
+handled:
+  "filter: Response Type [c06d56]":
+    response_type is in every grain, so each response type is compared on its
+    own.
+  "filter: Academic Year [170633]": "window: academic_years [2026]."
+  "filter: Response Type [c1aae5]":
+    response_type is in every grain, so each response type is compared on its
+    own.
+  "filter: Is Normed Scope [fa09b8]":
+    "missing_members untagged_assessments: the *_without SQL keeps tagged
+    assessments only."
+rows:
+  - row_gid: "1219284654682073"
+    name: "% Complete (student-level, this week)"
+    metrics:
+      - cube: pct_taken
+        kind: rate
+        tableau:
+          - "% Complete"
+        datasource: rpt_tableau__ddi_dashboard (kipptaf_tableau)
+        num:
+          count(distinct if(is_complete = 1, concat(student_number, '-',
+          assessment_id), null))
+        den: count(distinct concat(student_number, '-', assessment_id))
+    grains:
+      - []
+      - - region
+        - grade_subject
+        - module_code
+        - title
+        - assessment_id
+      - - region
+        - module_code
+        - title
+        - assessment_id
+    not_checked:
+      - construct: "set: Exclude NULL Assessment ID [3982af]"
+        why:
+          A Tableau-only calculation, parameter or grouping with no Cube
+          counterpart.
+      - construct: "filter: is_current_week [fa09b8]"
+        why:
+          Narrows this sheet to a slice by a field Cube has no member for (term,
+          discipline group, bright-spot status and the like), or hides future
+          assessments; the check compares the unfiltered population.
+      - construct: "lod: % Complete [d8a41a]"
+        why:
+          A Tableau-only calculation, parameter or grouping with no Cube
+          counterpart.
+  - row_gid: "1219087843079530"
+    name: "% Completion (module completion rate)"
+    metrics:
+      - cube: pct_taken
+        kind: rate
+        tableau:
+          - "% Completion"
+          - \% Completion (copy)
+        num:
+          count(distinct if(response_type is not null, concat(student_number,
+          '-', assessment_id), null))
+        den: count(distinct concat(student_number, '-', assessment_id))
+        missing_members:
+          - untagged_assessments
+        num_without:
+          count(distinct if(is_normed_scope and response_type is not null,
+          concat(student_number, '-', assessment_id), null))
+        den_without:
+          count(distinct if(is_normed_scope, concat(student_number, '-',
+          assessment_id), null))
+    grains:
+      - []
+      - - module_type
+        - module_code
+        - grade_level
+      - - module_type
+        - module_code
+        - grade_level
+        - tutoring
+      - - module_type
+        - module_code
+        - grade_level
+        - academic_year
+      - - module_type
+        - module_code
+        - grade_level
+        - dibels
+      - - module_type
+        - module_code
+        - grade_level
+        - head_of_school
+      - - module_type
+        - module_code
+        - grade_level
+        - is_foundations
+      - - module_type
+        - module_code
+        - grade_level
+        - low_25
+      - - module_type
+        - module_code
+        - grade_level
+        - is_normed
+      - - module_type
+        - module_code
+        - grade_level
+        - is_replacement
+      - - module_type
+        - module_code
+        - grade_level
+        - other_context
+      - - module_type
+        - module_code
+        - grade_level
+        - ml
+      - - module_type
+        - module_code
+        - grade_level
+        - bucket
+      - - module_type
+        - module_code
+        - grade_level
+        - region
+      - - module_type
+        - module_code
+        - grade_level
+        - school
+      - - module_type
+        - module_code
+        - grade_level
+        - subject_area
+      - - module_type
+        - module_code
+        - grade_level
+        - team
+      - - title
+        - assessment_id
+      - - title
+        - assessment_id
+        - tutoring
+      - - title
+        - assessment_id
+        - academic_year
+      - - title
+        - assessment_id
+        - dibels
+      - - title
+        - assessment_id
+        - grade_level
+      - - title
+        - assessment_id
+        - head_of_school
+      - - title
+        - assessment_id
+        - is_foundations
+      - - title
+        - assessment_id
+        - low_25
+      - - title
+        - assessment_id
+        - is_replacement
+      - - title
+        - assessment_id
+        - other_context
+      - - title
+        - assessment_id
+        - ml
+      - - title
+        - assessment_id
+        - module_code
+      - - title
+        - assessment_id
+        - module_type
+      - - title
+        - assessment_id
+        - bucket
+      - - title
+        - assessment_id
+        - region
+      - - title
+        - assessment_id
+        - school
+      - - title
+        - assessment_id
+        - subject_area
+      - - title
+        - assessment_id
+        - team
+      - - assessment_id
+        - title
+        - school
+        - tutoring
+      - - assessment_id
+        - title
+        - school
+        - academic_year
+      - - assessment_id
+        - title
+        - school
+        - dibels
+      - - assessment_id
+        - title
+        - school
+        - grade_level
+      - - assessment_id
+        - title
+        - school
+        - head_of_school
+      - - assessment_id
+        - title
+        - school
+        - is_foundations
+      - - assessment_id
+        - title
+        - school
+        - low_25
+      - - assessment_id
+        - title
+        - school
+        - is_replacement
+      - - assessment_id
+        - title
+        - school
+        - other_context
+      - - assessment_id
+        - title
+        - school
+        - ml
+      - - assessment_id
+        - title
+        - school
+        - module_code
+      - - assessment_id
+        - title
+        - school
+        - module_type
+      - - assessment_id
+        - title
+        - school
+        - bucket
+      - - assessment_id
+        - title
+        - school
+        - region
+      - - assessment_id
+        - title
+        - school
+        - subject_area
+      - - assessment_id
+        - title
+        - school
+        - team
+      - - tutoring
+      - - academic_year
+      - - dibels
+      - - grade_level
+      - - head_of_school
+      - - is_foundations
+      - - low_25
+      - - is_replacement
+      - - other_context
+      - - ml
+      - - module_code
+      - - module_type
+      - - bucket
+      - - region
+      - - school
+      - - subject_area
+      - - team
+    not_checked:
+      - construct: "filter: Subject Area (group) (copy) [07c576]"
+        why:
+          Narrows this sheet to a slice by a field Cube has no member for (term,
+          discipline group, bright-spot status and the like), or hides future
+          assessments; the check compares the unfiltered population.
+      - construct: "filter: % Completion [104887]"
+        why:
+          Narrows this sheet to a slice by a field Cube has no member for (term,
+          discipline group, bright-spot status and the like), or hides future
+          assessments; the check compares the unfiltered population.
+      - construct: "lod: % Completion [a8125f]"
+        why:
+          A Tableau-only calculation, parameter or grouping with no Cube
+          counterpart.
+      - construct: "lod: # Students Complete - Overall [c95b20]"
+        why:
+          A Tableau-only calculation, parameter or grouping with no Cube
+          counterpart.
+      - construct: "lod: # Students Possible - Overall [c99405]"
+        why:
+          A Tableau-only calculation, parameter or grouping with no Cube
+          counterpart.
+      - construct: "filter: Dashboard View Filter [7b1f53]"
+        why:
+          Narrows this sheet to a slice by a field Cube has no member for (term,
+          discipline group, bright-spot status and the like), or hides future
+          assessments; the check compares the unfiltered population.
+      - construct: "parameter: Dashboard View Filter [4f8acd]"
+        why:
+          A Tableau-only calculation, parameter or grouping with no Cube
+          counterpart.
+members:
+  untagged_assessments:
+    what:
+      Illuminate assessments with no AppSheet tag (is_normed_scope false). The
+      Assessment Dashboard view shows them; the Module Dashboard and DKI views
+      do not.
+    lives_in:
+      rpt_tableau__assessment_dashboard carries every Illuminate assessment;
+      fct_assessment_scores_enrollment_scoped's internal branch carries tagged
+      ones only.
+    suggested_edit:
+      Decide whether Cube should answer for untagged assessments. If so, carry
+      them in the fact (or a sibling fact) with is_internal_assessment false; if
+      not, scope the Assessment Dashboard rebuild to tagged assessments.

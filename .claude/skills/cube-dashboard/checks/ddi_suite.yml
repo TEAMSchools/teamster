@@ -1,0 +1,5476 @@
+dashboard: ddi_suite
+task_gid: "1213823831345180"
+extract:
+  workbook_luid: 6d82b643-59a8-4106-b2f9-97ddf7f638e7
+  datasource: rpt_tableau__assessment_dashboard (kipptaf_tableau)
+cube_source_table: teamster-332318.kipptaf_marts.fct_assessment_scores_enrollment_scoped
+view: student_assessment_scores_view
+dashboards:
+  - Landing Page
+  - Mastery Over Time [Region]
+  - Mastery Over Time [School]
+  - Mastery Over Time [Classroom]
+  - O3 View
+  - DKI View
+  - Module Dashboard
+  - Assessment Dashboard
+window:
+  academic_years:
+    - 2026
+dimensions:
+  region:
+    cube: region_name
+    sql: region
+  school:
+    cube: abbreviation
+    sql: school
+  grade_level:
+    cube: grade_level
+    sql: grade_level
+  academic_year:
+    cube: academic_year
+    sql: academic_year
+  response_type:
+    cube: response_type
+    sql: coalesce(response_type, 'not_taken')
+  assessment_id:
+    cube: source_assessment_id
+    sql: cast(assessment_id as string)
+  title:
+    cube: title
+    sql: title
+  module_type:
+    cube: module_type
+    sql: module_type
+  module_code:
+    cube: module_code
+    sql: concat(module_type, module_number)
+    sql_by_datasource:
+      rpt_tableau__ddi_dashboard (kipptaf_tableau): module_code
+  subject_area:
+    cube: academic_subject
+    sql: subject_area
+  standard_code:
+    cube: response_type_code
+    sql: standard_code
+    sql_by_datasource:
+      rpt_tableau__ddi_dashboard (kipptaf_tableau): response_type_code
+  section:
+    cube: identifier
+    sql: section_number
+    sql_by_datasource:
+      rpt_tableau__ddi_dashboard (kipptaf_tableau): course_section
+  teacher:
+    cube: staff_lead_teacher_full_name
+    sql: teacher_name
+    sql_by_datasource:
+      rpt_tableau__ddi_dashboard (kipptaf_tableau): course_teacher_name
+  iep:
+    cube: is_iep
+    sql: iep_status like '%SPED%'
+    sql_by_datasource:
+      rpt_tableau__ddi_dashboard (kipptaf_tableau): iep_status = 'Has IEP'
+  performance_band:
+    cube: performance_band_label_number
+    sql: performance_band_number
+    sql_by_datasource:
+      rpt_tableau__ddi_dashboard (kipptaf_tableau):
+        performance_band_label_number
+  student_number:
+    cube: lea_student_identifier
+    sql: student_number
+    person: true
+  week_start:
+    cube: null
+    sql: week_start_monday
+  term:
+    cube: null
+    sql: term
+  discipline:
+    cube: null
+    sql: subject_area
+  grade_subject:
+    cube: null
+    sql: concat(grade_level, subject_area)
+  standard_label:
+    cube: null
+    sql: standard_code
+  domain:
+    cube: null
+    sql: response_type_root_description
+  bucket:
+    cube: null
+    sql: nj_student_tier
+  ml:
+    cube: null
+    sql: lep_status
+    sql_by_datasource:
+      rpt_tableau__ddi_dashboard (kipptaf_tableau): ml_status
+  team:
+    cube: null
+    sql: team
+  school_level:
+    cube: grade_band
+    sql: school_level
+  head_of_school:
+    cube: null
+    sql: head_of_school
+  scope:
+    cube: null
+    sql: scope
+  is_normed:
+    cube: null
+    sql: is_normed_scope
+  view_by:
+    cube: null
+    sql: school
+  goal:
+    cube: null
+    sql: grade_goal
+  is_foundations:
+    cube: is_foundations
+    sql: is_foundations
+  is_replacement:
+    cube: is_replacement
+    sql: is_replacement
+  tutoring:
+    cube: null
+    sql: tutoring_nj
+  low_25:
+    cube: null
+    sql: is_low_25_fl
+  dibels:
+    cube: null
+    sql: dibels_most_recent_composite
+  gifted:
+    cube: is_gifted
+    sql: gifted_and_talented = 'Y'
+  other_context:
+    cube: null
+    sql: state_test_proficiency
+hard_filters:
+  - dim: region
+    values:
+      - Camden
+      - Newark
+      - Paterson
+cube_filters:
+  - member: assessment_type
+    operator: equals
+    values:
+      - illuminate
+truth_filters:
+  - sql: student_number is not null
+    datasource: rpt_tableau__ddi_dashboard (kipptaf_tableau)
+  - sql: coalesce(response_type, '') != 'walkthrough'
+    datasource: rpt_tableau__ddi_dashboard (kipptaf_tableau)
+handled:
+  "filter: Academic Year [170633]": "window: academic_years [2026]."
+  "filter: Response Type [c1aae5]":
+    response_type is in every grain, so each response type is compared on its
+    own.
+  "filter: Is Normed Scope [fa09b8]":
+    "missing_members untagged_assessments: the *_without SQL keeps tagged
+    assessments only."
+  "filter: Module Type [7188f9]":
+    A slice of a field the grains compare value by value.
+  "filter: Response Type [58f457]":
+    response_type is in every grain, so each response type is compared on its
+    own.
+  "alias: % Mastery (Overall) [770f79]":
+    The same measure (Is Mastery Int) shown under another name.
+  "filter: Response Type [b23dd6]":
+    response_type is in every grain, so each response type is compared on its
+    own.
+  "filter: School [86b944]":
+    A slice of a field the grains compare value by value.
+  "filter: Academic Year [5ae12d]": "window: academic_years [2026]."
+  "alias: % Mastery (Gen Ed) [275e47]":
+    The same measure (Is Mastery Int - Gen Ed) shown under another name.
+  "alias: % Mastery (IEP) [b8798d]":
+    The same measure (Is Mastery Int - IEP) shown under another name.
+  "filter: Subject Area [08a78a]":
+    A slice of a field the grains compare value by value.
+  "filter: Response Type [dc0a33]":
+    response_type is in every grain, so each response type is compared on its
+    own.
+  "filter: Standard Description [00893b]":
+    A slice of a field the grains compare value by value.
+  "filter: Response Type [dc40c8]":
+    response_type is in every grain, so each response type is compared on its
+    own.
+  "filter: Standard Code [00893b]":
+    A slice of a field the grains compare value by value.
+  "filter: Performance Band Number [3aabe9]":
+    A slice of a field the grains compare value by value.
+  "filter: Performance Band Number [cbaa84]":
+    A slice of a field the grains compare value by value.
+rows:
+  - row_gid: "1219284585998983"
+    name: Mastery, Module Overall Assessments Over Time & Network Overview
+    metrics:
+      - cube: pct_proficient
+        kind: rate
+        tableau:
+          - Mastery
+        num: count(if(is_mastery, 1, null))
+        den: count(is_mastery)
+        missing_members:
+          - untagged_assessments
+        num_without: count(if(is_mastery and is_normed_scope, 1, null))
+        den_without: count(if(is_normed_scope, is_mastery, null))
+        diagnose_by:
+          cube: module_code
+          sql: concat(module_type, module_number)
+    grains:
+      - []
+      - - response_type
+      - - title
+        - assessment_id
+      - - title
+        - assessment_id
+        - response_type
+      - - title
+        - assessment_id
+        - tutoring
+      - - title
+        - assessment_id
+        - tutoring
+        - response_type
+      - - title
+        - assessment_id
+        - academic_year
+      - - title
+        - assessment_id
+        - academic_year
+        - response_type
+      - - title
+        - assessment_id
+        - dibels
+      - - title
+        - assessment_id
+        - dibels
+        - response_type
+      - - title
+        - assessment_id
+        - grade_level
+      - - title
+        - assessment_id
+        - grade_level
+        - response_type
+      - - title
+        - assessment_id
+        - head_of_school
+      - - title
+        - assessment_id
+        - head_of_school
+        - response_type
+      - - title
+        - assessment_id
+        - is_foundations
+      - - title
+        - assessment_id
+        - is_foundations
+        - response_type
+      - - title
+        - assessment_id
+        - low_25
+      - - title
+        - assessment_id
+        - low_25
+        - response_type
+      - - title
+        - assessment_id
+        - is_replacement
+      - - title
+        - assessment_id
+        - is_replacement
+        - response_type
+      - - title
+        - assessment_id
+        - other_context
+      - - title
+        - assessment_id
+        - other_context
+        - response_type
+      - - title
+        - assessment_id
+        - ml
+      - - title
+        - assessment_id
+        - ml
+        - response_type
+      - - title
+        - assessment_id
+        - module_code
+      - - title
+        - assessment_id
+        - module_code
+        - response_type
+      - - title
+        - assessment_id
+        - module_type
+      - - title
+        - assessment_id
+        - module_type
+        - response_type
+      - - title
+        - assessment_id
+        - bucket
+      - - title
+        - assessment_id
+        - bucket
+        - response_type
+      - - title
+        - assessment_id
+        - region
+      - - title
+        - assessment_id
+        - region
+        - response_type
+      - - title
+        - assessment_id
+        - school
+      - - title
+        - assessment_id
+        - school
+        - response_type
+      - - title
+        - assessment_id
+        - subject_area
+      - - title
+        - assessment_id
+        - subject_area
+        - response_type
+      - - title
+        - assessment_id
+        - team
+      - - title
+        - assessment_id
+        - team
+        - response_type
+      - - assessment_id
+        - title
+        - school
+        - tutoring
+      - - assessment_id
+        - title
+        - school
+        - tutoring
+        - response_type
+      - - assessment_id
+        - title
+        - school
+        - academic_year
+      - - assessment_id
+        - title
+        - school
+        - academic_year
+        - response_type
+      - - assessment_id
+        - title
+        - school
+        - dibels
+      - - assessment_id
+        - title
+        - school
+        - dibels
+        - response_type
+      - - assessment_id
+        - title
+        - school
+        - grade_level
+      - - assessment_id
+        - title
+        - school
+        - grade_level
+        - response_type
+      - - assessment_id
+        - title
+        - school
+        - head_of_school
+      - - assessment_id
+        - title
+        - school
+        - head_of_school
+        - response_type
+      - - assessment_id
+        - title
+        - school
+        - is_foundations
+      - - assessment_id
+        - title
+        - school
+        - is_foundations
+        - response_type
+      - - assessment_id
+        - title
+        - school
+        - low_25
+      - - assessment_id
+        - title
+        - school
+        - low_25
+        - response_type
+      - - assessment_id
+        - title
+        - school
+        - is_replacement
+      - - assessment_id
+        - title
+        - school
+        - is_replacement
+        - response_type
+      - - assessment_id
+        - title
+        - school
+        - other_context
+      - - assessment_id
+        - title
+        - school
+        - other_context
+        - response_type
+      - - assessment_id
+        - title
+        - school
+        - ml
+      - - assessment_id
+        - title
+        - school
+        - ml
+        - response_type
+      - - assessment_id
+        - title
+        - school
+        - module_code
+      - - assessment_id
+        - title
+        - school
+        - module_code
+        - response_type
+      - - assessment_id
+        - title
+        - school
+        - module_type
+      - - assessment_id
+        - title
+        - school
+        - module_type
+        - response_type
+      - - assessment_id
+        - title
+        - school
+        - bucket
+      - - assessment_id
+        - title
+        - school
+        - bucket
+        - response_type
+      - - assessment_id
+        - title
+        - school
+        - region
+      - - assessment_id
+        - title
+        - school
+        - region
+        - response_type
+      - - assessment_id
+        - title
+        - school
+        - subject_area
+      - - assessment_id
+        - title
+        - school
+        - subject_area
+        - response_type
+      - - assessment_id
+        - title
+        - school
+        - team
+      - - assessment_id
+        - title
+        - school
+        - team
+        - response_type
+      - - module_type
+        - module_code
+        - grade_level
+      - - module_type
+        - module_code
+        - grade_level
+        - response_type
+      - - module_type
+        - module_code
+        - grade_level
+        - tutoring
+      - - module_type
+        - module_code
+        - grade_level
+        - tutoring
+        - response_type
+      - - module_type
+        - module_code
+        - grade_level
+        - academic_year
+      - - module_type
+        - module_code
+        - grade_level
+        - academic_year
+        - response_type
+      - - module_type
+        - module_code
+        - grade_level
+        - dibels
+      - - module_type
+        - module_code
+        - grade_level
+        - dibels
+        - response_type
+      - - module_type
+        - module_code
+        - grade_level
+        - head_of_school
+      - - module_type
+        - module_code
+        - grade_level
+        - head_of_school
+        - response_type
+      - - module_type
+        - module_code
+        - grade_level
+        - is_foundations
+      - - module_type
+        - module_code
+        - grade_level
+        - is_foundations
+        - response_type
+      - - module_type
+        - module_code
+        - grade_level
+        - low_25
+      - - module_type
+        - module_code
+        - grade_level
+        - low_25
+        - response_type
+      - - module_type
+        - module_code
+        - grade_level
+        - is_normed
+      - - module_type
+        - module_code
+        - grade_level
+        - is_normed
+        - response_type
+      - - module_type
+        - module_code
+        - grade_level
+        - is_replacement
+      - - module_type
+        - module_code
+        - grade_level
+        - is_replacement
+        - response_type
+      - - module_type
+        - module_code
+        - grade_level
+        - other_context
+      - - module_type
+        - module_code
+        - grade_level
+        - other_context
+        - response_type
+      - - module_type
+        - module_code
+        - grade_level
+        - ml
+      - - module_type
+        - module_code
+        - grade_level
+        - ml
+        - response_type
+      - - module_type
+        - module_code
+        - grade_level
+        - bucket
+      - - module_type
+        - module_code
+        - grade_level
+        - bucket
+        - response_type
+      - - module_type
+        - module_code
+        - grade_level
+        - region
+      - - module_type
+        - module_code
+        - grade_level
+        - region
+        - response_type
+      - - module_type
+        - module_code
+        - grade_level
+        - school
+      - - module_type
+        - module_code
+        - grade_level
+        - school
+        - response_type
+      - - module_type
+        - module_code
+        - grade_level
+        - subject_area
+      - - module_type
+        - module_code
+        - grade_level
+        - subject_area
+        - response_type
+      - - module_type
+        - module_code
+        - grade_level
+        - team
+      - - module_type
+        - module_code
+        - grade_level
+        - team
+        - response_type
+      - - school
+        - grade_level
+      - - school
+        - grade_level
+        - response_type
+      - - school
+        - grade_level
+        - tutoring
+      - - school
+        - grade_level
+        - tutoring
+        - response_type
+      - - school
+        - grade_level
+        - academic_year
+      - - school
+        - grade_level
+        - academic_year
+        - response_type
+      - - school
+        - grade_level
+        - dibels
+      - - school
+        - grade_level
+        - dibels
+        - response_type
+      - - school
+        - grade_level
+        - head_of_school
+      - - school
+        - grade_level
+        - head_of_school
+        - response_type
+      - - school
+        - grade_level
+        - is_foundations
+      - - school
+        - grade_level
+        - is_foundations
+        - response_type
+      - - school
+        - grade_level
+        - low_25
+      - - school
+        - grade_level
+        - low_25
+        - response_type
+      - - school
+        - grade_level
+        - is_replacement
+      - - school
+        - grade_level
+        - is_replacement
+        - response_type
+      - - school
+        - grade_level
+        - other_context
+      - - school
+        - grade_level
+        - other_context
+        - response_type
+      - - school
+        - grade_level
+        - ml
+      - - school
+        - grade_level
+        - ml
+        - response_type
+      - - school
+        - grade_level
+        - module_code
+      - - school
+        - grade_level
+        - module_code
+        - response_type
+      - - school
+        - grade_level
+        - module_type
+      - - school
+        - grade_level
+        - module_type
+        - response_type
+      - - school
+        - grade_level
+        - bucket
+      - - school
+        - grade_level
+        - bucket
+        - response_type
+      - - school
+        - grade_level
+        - region
+      - - school
+        - grade_level
+        - region
+        - response_type
+      - - school
+        - grade_level
+        - subject_area
+      - - school
+        - grade_level
+        - subject_area
+        - response_type
+      - - school
+        - grade_level
+        - team
+      - - school
+        - grade_level
+        - team
+        - response_type
+      - - tutoring
+      - - tutoring
+        - response_type
+      - - academic_year
+      - - academic_year
+        - response_type
+      - - dibels
+      - - dibels
+        - response_type
+      - - grade_level
+      - - grade_level
+        - response_type
+      - - head_of_school
+      - - head_of_school
+        - response_type
+      - - is_foundations
+      - - is_foundations
+        - response_type
+      - - low_25
+      - - low_25
+        - response_type
+      - - is_replacement
+      - - is_replacement
+        - response_type
+      - - other_context
+      - - other_context
+        - response_type
+      - - ml
+      - - ml
+        - response_type
+      - - module_code
+      - - module_code
+        - response_type
+      - - module_type
+      - - module_type
+        - response_type
+      - - bucket
+      - - bucket
+        - response_type
+      - - region
+      - - region
+        - response_type
+      - - school
+      - - school
+        - response_type
+      - - subject_area
+      - - subject_area
+        - response_type
+      - - team
+      - - team
+        - response_type
+      - - grade_level
+        - module_code
+        - section
+        - school
+      - - grade_level
+        - module_code
+        - section
+        - school
+        - response_type
+      - - grade_level
+        - module_code
+        - section
+        - school
+        - tutoring
+      - - grade_level
+        - module_code
+        - section
+        - school
+        - tutoring
+        - response_type
+      - - grade_level
+        - module_code
+        - section
+        - school
+        - academic_year
+      - - grade_level
+        - module_code
+        - section
+        - school
+        - academic_year
+        - response_type
+      - - grade_level
+        - module_code
+        - section
+        - school
+        - dibels
+      - - grade_level
+        - module_code
+        - section
+        - school
+        - dibels
+        - response_type
+      - - grade_level
+        - module_code
+        - section
+        - school
+        - head_of_school
+      - - grade_level
+        - module_code
+        - section
+        - school
+        - head_of_school
+        - response_type
+      - - grade_level
+        - module_code
+        - section
+        - school
+        - is_foundations
+      - - grade_level
+        - module_code
+        - section
+        - school
+        - is_foundations
+        - response_type
+      - - grade_level
+        - module_code
+        - section
+        - school
+        - low_25
+      - - grade_level
+        - module_code
+        - section
+        - school
+        - low_25
+        - response_type
+      - - grade_level
+        - module_code
+        - section
+        - school
+        - is_replacement
+      - - grade_level
+        - module_code
+        - section
+        - school
+        - is_replacement
+        - response_type
+      - - grade_level
+        - module_code
+        - section
+        - school
+        - other_context
+      - - grade_level
+        - module_code
+        - section
+        - school
+        - other_context
+        - response_type
+      - - grade_level
+        - module_code
+        - section
+        - school
+        - ml
+      - - grade_level
+        - module_code
+        - section
+        - school
+        - ml
+        - response_type
+      - - grade_level
+        - module_code
+        - section
+        - school
+        - module_type
+      - - grade_level
+        - module_code
+        - section
+        - school
+        - module_type
+        - response_type
+      - - grade_level
+        - module_code
+        - section
+        - school
+        - bucket
+      - - grade_level
+        - module_code
+        - section
+        - school
+        - bucket
+        - response_type
+      - - grade_level
+        - module_code
+        - section
+        - school
+        - region
+      - - grade_level
+        - module_code
+        - section
+        - school
+        - region
+        - response_type
+      - - grade_level
+        - module_code
+        - section
+        - school
+        - subject_area
+      - - grade_level
+        - module_code
+        - section
+        - school
+        - subject_area
+        - response_type
+      - - grade_level
+        - module_code
+        - section
+        - school
+        - team
+      - - grade_level
+        - module_code
+        - section
+        - school
+        - team
+        - response_type
+    not_checked:
+      - construct: "filter: Subject Area (group) (copy) [07c576]"
+        why:
+          Narrows this sheet to a slice by a field Cube has no member for (term,
+          discipline group, bright-spot status and the like), or hides future
+          assessments; the check compares the unfiltered population.
+      - construct: "filter: % Completion [104887]"
+        why:
+          Narrows this sheet to a slice by a field Cube has no member for (term,
+          discipline group, bright-spot status and the like), or hides future
+          assessments; the check compares the unfiltered population.
+      - construct: "lod: % Completion [a8125f]"
+        why:
+          A Tableau-only calculation, parameter or grouping with no Cube
+          counterpart.
+      - construct: "lod: # Students Complete - Overall [c95b20]"
+        why:
+          A Tableau-only calculation, parameter or grouping with no Cube
+          counterpart.
+      - construct: "lod: # Students Possible - Overall [c99405]"
+        why:
+          A Tableau-only calculation, parameter or grouping with no Cube
+          counterpart.
+      - construct: "filter: Dashboard View Filter [7b1f53]"
+        why:
+          Narrows this sheet to a slice by a field Cube has no member for (term,
+          discipline group, bright-spot status and the like), or hides future
+          assessments; the check compares the unfiltered population.
+      - construct: "parameter: Dashboard View Filter [4f8acd]"
+        why:
+          A Tableau-only calculation, parameter or grouping with no Cube
+          counterpart.
+      - construct: "filter: Dashboard View Filter [747a2f]"
+        why:
+          Narrows this sheet to a slice by a field Cube has no member for (term,
+          discipline group, bright-spot status and the like), or hides future
+          assessments; the check compares the unfiltered population.
+      - construct: "table_calc: Mastery [774b8e]"
+        why:
+          Computed from the table on screen (share of total, rank or running
+          value); the base aggregate is checked.
+      - construct: "group: School Level (School) [5ba400]"
+        why:
+          A Tableau-only calculation, parameter or grouping with no Cube
+          counterpart.
+  - row_gid: "1214075610424624"
+    name: Mastery rate (is_mastery_int), overall/standard toggle
+    metrics:
+      - cube: pct_proficient
+        kind: rate
+        tableau:
+          - Is Mastery Int
+        datasource: rpt_tableau__ddi_dashboard (kipptaf_tableau)
+        num: sum(is_mastery_int)
+        den: count(is_mastery_int)
+        diagnose_by:
+          cube: module_code
+          sql: module_code
+    grains:
+      - []
+      - - response_type
+      - - school
+        - grade_subject
+        - module_code
+      - - school
+        - grade_subject
+        - module_code
+        - response_type
+      - - school
+        - module_code
+      - - school
+        - module_code
+        - response_type
+      - - school
+        - grade_subject
+        - teacher
+        - module_code
+      - - school
+        - grade_subject
+        - teacher
+        - module_code
+        - response_type
+      - - school
+        - teacher
+        - module_code
+      - - school
+        - teacher
+        - module_code
+        - response_type
+      - - school
+        - grade_subject
+        - module_code
+        - academic_year
+      - - school
+        - grade_subject
+        - module_code
+        - academic_year
+        - response_type
+      - - school
+        - module_code
+        - academic_year
+      - - school
+        - module_code
+        - academic_year
+        - response_type
+      - - school
+        - grade_subject
+        - module_code
+        - module_type
+      - - school
+        - grade_subject
+        - module_code
+        - module_type
+        - response_type
+      - - school
+        - module_code
+        - module_type
+      - - school
+        - module_code
+        - module_type
+        - response_type
+      - - school
+        - grade_subject
+        - module_code
+        - region
+      - - school
+        - grade_subject
+        - module_code
+        - region
+        - response_type
+      - - school
+        - module_code
+        - region
+      - - school
+        - module_code
+        - region
+        - response_type
+      - - school
+        - grade_subject
+        - module_code
+        - term
+      - - school
+        - grade_subject
+        - module_code
+        - term
+        - response_type
+      - - grade_subject
+        - week_start
+        - module_code
+        - school
+      - - grade_subject
+        - week_start
+        - module_code
+        - school
+        - response_type
+      - - grade_subject
+        - week_start
+        - module_code
+      - - grade_subject
+        - week_start
+        - module_code
+        - response_type
+      - - module_code
+      - - module_code
+        - response_type
+      - - grade_subject
+        - week_start
+        - module_code
+        - school
+        - academic_year
+      - - grade_subject
+        - week_start
+        - module_code
+        - school
+        - academic_year
+        - response_type
+      - - grade_subject
+        - week_start
+        - module_code
+        - school
+        - dibels
+      - - grade_subject
+        - week_start
+        - module_code
+        - school
+        - dibels
+        - response_type
+      - - grade_subject
+        - week_start
+        - module_code
+        - school
+        - gifted
+      - - grade_subject
+        - week_start
+        - module_code
+        - school
+        - gifted
+        - response_type
+      - - module_code
+        - school
+        - gifted
+      - - module_code
+        - school
+        - gifted
+        - response_type
+      - - grade_subject
+        - week_start
+        - module_code
+        - school
+        - grade_level
+      - - grade_subject
+        - week_start
+        - module_code
+        - school
+        - grade_level
+        - response_type
+      - - module_code
+        - school
+        - grade_level
+      - - module_code
+        - school
+        - grade_level
+        - response_type
+      - - grade_subject
+        - week_start
+        - module_code
+        - school
+        - head_of_school
+      - - grade_subject
+        - week_start
+        - module_code
+        - school
+        - head_of_school
+        - response_type
+      - - grade_subject
+        - week_start
+        - module_code
+        - school
+        - iep
+      - - grade_subject
+        - week_start
+        - module_code
+        - school
+        - iep
+        - response_type
+      - - module_code
+        - school
+        - iep
+      - - module_code
+        - school
+        - iep
+        - response_type
+      - - grade_subject
+        - week_start
+        - module_code
+        - school
+        - low_25
+      - - grade_subject
+        - week_start
+        - module_code
+        - school
+        - low_25
+        - response_type
+      - - grade_subject
+        - week_start
+        - module_code
+        - school
+        - other_context
+      - - grade_subject
+        - week_start
+        - module_code
+        - school
+        - other_context
+        - response_type
+      - - grade_subject
+        - week_start
+        - module_code
+        - school
+        - bucket
+      - - grade_subject
+        - week_start
+        - module_code
+        - school
+        - bucket
+        - response_type
+      - - grade_subject
+        - week_start
+        - module_code
+        - school
+        - region
+      - - grade_subject
+        - week_start
+        - module_code
+        - school
+        - region
+        - response_type
+      - - grade_subject
+        - week_start
+        - module_code
+        - school
+        - school_level
+      - - grade_subject
+        - week_start
+        - module_code
+        - school
+        - school_level
+        - response_type
+      - - module_code
+        - school
+        - school_level
+      - - module_code
+        - school
+        - school_level
+        - response_type
+      - - grade_subject
+        - week_start
+        - module_code
+        - school
+        - subject_area
+      - - grade_subject
+        - week_start
+        - module_code
+        - school
+        - subject_area
+        - response_type
+      - - module_code
+        - school
+        - subject_area
+      - - module_code
+        - school
+        - subject_area
+        - response_type
+      - - grade_subject
+        - week_start
+        - module_code
+        - school
+        - term
+      - - grade_subject
+        - week_start
+        - module_code
+        - school
+        - term
+        - response_type
+      - - grade_subject
+        - school
+      - - grade_subject
+        - school
+        - response_type
+      - - school
+      - - school
+        - response_type
+      - - grade_subject
+        - school
+        - academic_year
+      - - grade_subject
+        - school
+        - academic_year
+        - response_type
+      - - school
+        - academic_year
+      - - school
+        - academic_year
+        - response_type
+      - - grade_subject
+        - school
+        - dibels
+      - - grade_subject
+        - school
+        - dibels
+        - response_type
+      - - grade_subject
+        - school
+        - gifted
+      - - grade_subject
+        - school
+        - gifted
+        - response_type
+      - - school
+        - gifted
+      - - school
+        - gifted
+        - response_type
+      - - grade_subject
+        - school
+        - grade_level
+      - - grade_subject
+        - school
+        - grade_level
+        - response_type
+      - - school
+        - grade_level
+      - - school
+        - grade_level
+        - response_type
+      - - grade_subject
+        - school
+        - head_of_school
+      - - grade_subject
+        - school
+        - head_of_school
+        - response_type
+      - - grade_subject
+        - school
+        - iep
+      - - grade_subject
+        - school
+        - iep
+        - response_type
+      - - school
+        - iep
+      - - school
+        - iep
+        - response_type
+      - - grade_subject
+        - school
+        - low_25
+      - - grade_subject
+        - school
+        - low_25
+        - response_type
+      - - grade_subject
+        - school
+        - other_context
+      - - grade_subject
+        - school
+        - other_context
+        - response_type
+      - - grade_subject
+        - school
+        - bucket
+      - - grade_subject
+        - school
+        - bucket
+        - response_type
+      - - grade_subject
+        - school
+        - region
+      - - grade_subject
+        - school
+        - region
+        - response_type
+      - - school
+        - region
+      - - school
+        - region
+        - response_type
+      - - grade_subject
+        - school
+        - school_level
+      - - grade_subject
+        - school
+        - school_level
+        - response_type
+      - - school
+        - school_level
+      - - school
+        - school_level
+        - response_type
+      - - grade_subject
+        - school
+        - subject_area
+      - - grade_subject
+        - school
+        - subject_area
+        - response_type
+      - - school
+        - subject_area
+      - - school
+        - subject_area
+        - response_type
+      - - grade_subject
+        - school
+        - term
+      - - grade_subject
+        - school
+        - term
+        - response_type
+      - - grade_subject
+        - school
+        - week_start
+      - - grade_subject
+        - school
+        - week_start
+        - response_type
+      - - standard_label
+        - week_start
+        - module_code
+        - school
+      - - standard_label
+        - week_start
+        - module_code
+        - school
+        - response_type
+      - - standard_label
+        - week_start
+        - module_code
+      - - standard_label
+        - week_start
+        - module_code
+        - response_type
+      - - standard_label
+        - week_start
+        - module_code
+        - school
+        - academic_year
+      - - standard_label
+        - week_start
+        - module_code
+        - school
+        - academic_year
+        - response_type
+      - - standard_label
+        - week_start
+        - module_code
+        - school
+        - dibels
+      - - standard_label
+        - week_start
+        - module_code
+        - school
+        - dibels
+        - response_type
+      - - standard_label
+        - week_start
+        - module_code
+        - school
+        - gifted
+      - - standard_label
+        - week_start
+        - module_code
+        - school
+        - gifted
+        - response_type
+      - - standard_label
+        - week_start
+        - module_code
+        - school
+        - grade_level
+      - - standard_label
+        - week_start
+        - module_code
+        - school
+        - grade_level
+        - response_type
+      - - standard_label
+        - week_start
+        - module_code
+        - school
+        - head_of_school
+      - - standard_label
+        - week_start
+        - module_code
+        - school
+        - head_of_school
+        - response_type
+      - - standard_label
+        - week_start
+        - module_code
+        - school
+        - iep
+      - - standard_label
+        - week_start
+        - module_code
+        - school
+        - iep
+        - response_type
+      - - standard_label
+        - week_start
+        - module_code
+        - school
+        - low_25
+      - - standard_label
+        - week_start
+        - module_code
+        - school
+        - low_25
+        - response_type
+      - - standard_label
+        - week_start
+        - module_code
+        - school
+        - other_context
+      - - standard_label
+        - week_start
+        - module_code
+        - school
+        - other_context
+        - response_type
+      - - standard_label
+        - week_start
+        - module_code
+        - school
+        - bucket
+      - - standard_label
+        - week_start
+        - module_code
+        - school
+        - bucket
+        - response_type
+      - - standard_label
+        - week_start
+        - module_code
+        - school
+        - region
+      - - standard_label
+        - week_start
+        - module_code
+        - school
+        - region
+        - response_type
+      - - standard_label
+        - week_start
+        - module_code
+        - school
+        - school_level
+      - - standard_label
+        - week_start
+        - module_code
+        - school
+        - school_level
+        - response_type
+      - - standard_label
+        - week_start
+        - module_code
+        - school
+        - subject_area
+      - - standard_label
+        - week_start
+        - module_code
+        - school
+        - subject_area
+        - response_type
+      - - standard_label
+        - week_start
+        - module_code
+        - school
+        - term
+      - - standard_label
+        - week_start
+        - module_code
+        - school
+        - term
+        - response_type
+      - - domain
+        - week_start
+      - - domain
+        - week_start
+        - response_type
+      - - domain
+        - week_start
+        - teacher
+      - - domain
+        - week_start
+        - teacher
+        - response_type
+      - - teacher
+      - - teacher
+        - response_type
+      - - domain
+        - week_start
+        - school
+      - - domain
+        - week_start
+        - school
+        - response_type
+      - - domain
+        - week_start
+        - term
+      - - domain
+        - week_start
+        - term
+        - response_type
+      - - view_by
+        - week_start
+        - module_code
+      - - view_by
+        - week_start
+        - module_code
+        - response_type
+      - - view_by
+        - week_start
+        - module_code
+        - academic_year
+      - - view_by
+        - week_start
+        - module_code
+        - academic_year
+        - response_type
+      - - module_code
+        - academic_year
+      - - module_code
+        - academic_year
+        - response_type
+      - - view_by
+        - week_start
+        - module_code
+        - teacher
+      - - view_by
+        - week_start
+        - module_code
+        - teacher
+        - response_type
+      - - module_code
+        - teacher
+      - - module_code
+        - teacher
+        - response_type
+      - - view_by
+        - week_start
+        - module_code
+        - dibels
+      - - view_by
+        - week_start
+        - module_code
+        - dibels
+        - response_type
+      - - view_by
+        - week_start
+        - module_code
+        - gifted
+      - - view_by
+        - week_start
+        - module_code
+        - gifted
+        - response_type
+      - - module_code
+        - gifted
+      - - module_code
+        - gifted
+        - response_type
+      - - view_by
+        - week_start
+        - module_code
+        - grade_level
+      - - view_by
+        - week_start
+        - module_code
+        - grade_level
+        - response_type
+      - - module_code
+        - grade_level
+      - - module_code
+        - grade_level
+        - response_type
+      - - view_by
+        - week_start
+        - module_code
+        - iep
+      - - view_by
+        - week_start
+        - module_code
+        - iep
+        - response_type
+      - - module_code
+        - iep
+      - - module_code
+        - iep
+        - response_type
+      - - view_by
+        - week_start
+        - module_code
+        - low_25
+      - - view_by
+        - week_start
+        - module_code
+        - low_25
+        - response_type
+      - - view_by
+        - week_start
+        - module_code
+        - other_context
+      - - view_by
+        - week_start
+        - module_code
+        - other_context
+        - response_type
+      - - view_by
+        - week_start
+        - module_code
+        - module_type
+      - - view_by
+        - week_start
+        - module_code
+        - module_type
+        - response_type
+      - - module_code
+        - module_type
+      - - module_code
+        - module_type
+        - response_type
+      - - view_by
+        - week_start
+        - module_code
+        - bucket
+      - - view_by
+        - week_start
+        - module_code
+        - bucket
+        - response_type
+      - - view_by
+        - week_start
+        - module_code
+        - school
+      - - view_by
+        - week_start
+        - module_code
+        - school
+        - response_type
+      - - view_by
+        - week_start
+        - module_code
+        - subject_area
+      - - view_by
+        - week_start
+        - module_code
+        - subject_area
+        - response_type
+      - - module_code
+        - subject_area
+      - - module_code
+        - subject_area
+        - response_type
+      - - view_by
+        - week_start
+        - module_code
+        - term
+      - - view_by
+        - week_start
+        - module_code
+        - term
+        - response_type
+      - - standard_label
+        - week_start
+        - module_code
+        - academic_year
+      - - standard_label
+        - week_start
+        - module_code
+        - academic_year
+        - response_type
+      - - standard_label
+        - week_start
+        - module_code
+        - teacher
+      - - standard_label
+        - week_start
+        - module_code
+        - teacher
+        - response_type
+      - - standard_label
+        - week_start
+        - module_code
+        - dibels
+      - - standard_label
+        - week_start
+        - module_code
+        - dibels
+        - response_type
+      - - standard_label
+        - week_start
+        - module_code
+        - gifted
+      - - standard_label
+        - week_start
+        - module_code
+        - gifted
+        - response_type
+      - - standard_label
+        - week_start
+        - module_code
+        - grade_level
+      - - standard_label
+        - week_start
+        - module_code
+        - grade_level
+        - response_type
+      - - standard_label
+        - week_start
+        - module_code
+        - iep
+      - - standard_label
+        - week_start
+        - module_code
+        - iep
+        - response_type
+      - - standard_label
+        - week_start
+        - module_code
+        - low_25
+      - - standard_label
+        - week_start
+        - module_code
+        - low_25
+        - response_type
+      - - standard_label
+        - week_start
+        - module_code
+        - other_context
+      - - standard_label
+        - week_start
+        - module_code
+        - other_context
+        - response_type
+      - - standard_label
+        - week_start
+        - module_code
+        - module_type
+      - - standard_label
+        - week_start
+        - module_code
+        - module_type
+        - response_type
+      - - standard_label
+        - week_start
+        - module_code
+        - bucket
+      - - standard_label
+        - week_start
+        - module_code
+        - bucket
+        - response_type
+      - - standard_label
+        - week_start
+        - module_code
+        - subject_area
+      - - standard_label
+        - week_start
+        - module_code
+        - subject_area
+        - response_type
+      - - standard_label
+        - week_start
+        - module_code
+        - term
+      - - standard_label
+        - week_start
+        - module_code
+        - term
+        - response_type
+    not_checked:
+      - construct: "set: Bright Spots Modules [3723fb]"
+        why:
+          A Tableau-only calculation, parameter or grouping with no Cube
+          counterpart.
+      - construct: "filter: Term [cef684]"
+        why:
+          Narrows this sheet to a slice by a field Cube has no member for (term,
+          discipline group, bright-spot status and the like), or hides future
+          assessments; the check compares the unfiltered population.
+      - construct: "filter: Bright Spot Status [a25668]"
+        why:
+          Narrows this sheet to a slice by a field Cube has no member for (term,
+          discipline group, bright-spot status and the like), or hides future
+          assessments; the check compares the unfiltered population.
+      - construct: "table_calc: Is Mastery Int [84dd5f]"
+        why:
+          Computed from the table on screen (share of total, rank or running
+          value); the base aggregate is checked.
+      - construct: "filter: Discipline [bf7fa1]"
+        why:
+          Narrows this sheet to a slice by a field Cube has no member for (term,
+          discipline group, bright-spot status and the like), or hides future
+          assessments; the check compares the unfiltered population.
+      - construct: "filter: Exclude Future Assessments [7b1f53]"
+        why:
+          Narrows this sheet to a slice by a field Cube has no member for (term,
+          discipline group, bright-spot status and the like), or hides future
+          assessments; the check compares the unfiltered population.
+      - construct: "filter: Walkthrough/Microgoal Visibility [fa09b8]"
+        why:
+          Narrows this sheet to a slice by a field Cube has no member for (term,
+          discipline group, bright-spot status and the like), or hides future
+          assessments; the check compares the unfiltered population.
+      - construct: "filter: Response Type [267a89]"
+        why:
+          Staff walkthrough rows; Cube's assessment view carries none
+          (truth_filters drop them).
+      - construct: "viewer_function: Walkthrough/Microgoal Visibility [49d180]"
+        why:
+          Varies by viewer; the run uses a network identity on the full extract.
+      - construct: "filter: Discipline [907649]"
+        why:
+          Narrows this sheet to a slice by a field Cube has no member for (term,
+          discipline group, bright-spot status and the like), or hides future
+          assessments; the check compares the unfiltered population.
+      - construct: "filter: Exclude Future Assessments [fa09b8]"
+        why:
+          Narrows this sheet to a slice by a field Cube has no member for (term,
+          discipline group, bright-spot status and the like), or hides future
+          assessments; the check compares the unfiltered population.
+      - construct: "parameter: View By - Classroom - Field [a9eac5]"
+        why:
+          A Tableau-only calculation, parameter or grouping with no Cube
+          counterpart.
+  - row_gid: "1219284448611732"
+    name: Mastery rate sliced by IEP / Gen Ed
+    metrics:
+      - cube: pct_proficient
+        kind: rate
+        tableau:
+          - Is Mastery Int - IEP
+          - Is Mastery Int - Gen Ed
+        datasource: rpt_tableau__ddi_dashboard (kipptaf_tableau)
+        num: sum(is_mastery_int)
+        den: count(is_mastery_int)
+    grains:
+      - - iep
+      - - response_type
+        - iep
+      - - school
+        - grade_subject
+        - module_code
+        - iep
+      - - school
+        - grade_subject
+        - module_code
+        - response_type
+        - iep
+      - - school
+        - module_code
+        - iep
+      - - school
+        - module_code
+        - response_type
+        - iep
+      - - school
+        - grade_subject
+        - teacher
+        - module_code
+        - iep
+      - - school
+        - grade_subject
+        - teacher
+        - module_code
+        - response_type
+        - iep
+      - - school
+        - teacher
+        - module_code
+        - iep
+      - - school
+        - teacher
+        - module_code
+        - response_type
+        - iep
+      - - school
+        - grade_subject
+        - module_code
+        - academic_year
+        - iep
+      - - school
+        - grade_subject
+        - module_code
+        - academic_year
+        - response_type
+        - iep
+      - - school
+        - module_code
+        - academic_year
+        - iep
+      - - school
+        - module_code
+        - academic_year
+        - response_type
+        - iep
+      - - school
+        - grade_subject
+        - module_code
+        - module_type
+        - iep
+      - - school
+        - grade_subject
+        - module_code
+        - module_type
+        - response_type
+        - iep
+      - - school
+        - module_code
+        - module_type
+        - iep
+      - - school
+        - module_code
+        - module_type
+        - response_type
+        - iep
+      - - school
+        - grade_subject
+        - module_code
+        - region
+        - iep
+      - - school
+        - grade_subject
+        - module_code
+        - region
+        - response_type
+        - iep
+      - - school
+        - module_code
+        - region
+        - iep
+      - - school
+        - module_code
+        - region
+        - response_type
+        - iep
+      - - school
+        - grade_subject
+        - module_code
+        - term
+        - iep
+      - - school
+        - grade_subject
+        - module_code
+        - term
+        - response_type
+        - iep
+      - - grade_subject
+        - week_start
+        - module_code
+        - school
+        - iep
+      - - grade_subject
+        - week_start
+        - module_code
+        - school
+        - response_type
+        - iep
+      - - grade_subject
+        - week_start
+        - module_code
+        - iep
+      - - grade_subject
+        - week_start
+        - module_code
+        - response_type
+        - iep
+      - - module_code
+        - iep
+      - - module_code
+        - response_type
+        - iep
+      - - grade_subject
+        - week_start
+        - module_code
+        - school
+        - academic_year
+        - iep
+      - - grade_subject
+        - week_start
+        - module_code
+        - school
+        - academic_year
+        - response_type
+        - iep
+      - - grade_subject
+        - week_start
+        - module_code
+        - school
+        - dibels
+        - iep
+      - - grade_subject
+        - week_start
+        - module_code
+        - school
+        - dibels
+        - response_type
+        - iep
+      - - grade_subject
+        - week_start
+        - module_code
+        - school
+        - gifted
+        - iep
+      - - grade_subject
+        - week_start
+        - module_code
+        - school
+        - gifted
+        - response_type
+        - iep
+      - - module_code
+        - school
+        - gifted
+        - iep
+      - - module_code
+        - school
+        - gifted
+        - response_type
+        - iep
+      - - grade_subject
+        - week_start
+        - module_code
+        - school
+        - grade_level
+        - iep
+      - - grade_subject
+        - week_start
+        - module_code
+        - school
+        - grade_level
+        - response_type
+        - iep
+      - - module_code
+        - school
+        - grade_level
+        - iep
+      - - module_code
+        - school
+        - grade_level
+        - response_type
+        - iep
+      - - grade_subject
+        - week_start
+        - module_code
+        - school
+        - head_of_school
+        - iep
+      - - grade_subject
+        - week_start
+        - module_code
+        - school
+        - head_of_school
+        - response_type
+        - iep
+      - - grade_subject
+        - week_start
+        - module_code
+        - school
+        - low_25
+        - iep
+      - - grade_subject
+        - week_start
+        - module_code
+        - school
+        - low_25
+        - response_type
+        - iep
+      - - grade_subject
+        - week_start
+        - module_code
+        - school
+        - other_context
+        - iep
+      - - grade_subject
+        - week_start
+        - module_code
+        - school
+        - other_context
+        - response_type
+        - iep
+      - - grade_subject
+        - week_start
+        - module_code
+        - school
+        - bucket
+        - iep
+      - - grade_subject
+        - week_start
+        - module_code
+        - school
+        - bucket
+        - response_type
+        - iep
+      - - grade_subject
+        - week_start
+        - module_code
+        - school
+        - region
+        - iep
+      - - grade_subject
+        - week_start
+        - module_code
+        - school
+        - region
+        - response_type
+        - iep
+      - - grade_subject
+        - week_start
+        - module_code
+        - school
+        - school_level
+        - iep
+      - - grade_subject
+        - week_start
+        - module_code
+        - school
+        - school_level
+        - response_type
+        - iep
+      - - module_code
+        - school
+        - school_level
+        - iep
+      - - module_code
+        - school
+        - school_level
+        - response_type
+        - iep
+      - - grade_subject
+        - week_start
+        - module_code
+        - school
+        - subject_area
+        - iep
+      - - grade_subject
+        - week_start
+        - module_code
+        - school
+        - subject_area
+        - response_type
+        - iep
+      - - module_code
+        - school
+        - subject_area
+        - iep
+      - - module_code
+        - school
+        - subject_area
+        - response_type
+        - iep
+      - - grade_subject
+        - week_start
+        - module_code
+        - school
+        - term
+        - iep
+      - - grade_subject
+        - week_start
+        - module_code
+        - school
+        - term
+        - response_type
+        - iep
+      - - standard_label
+        - week_start
+        - module_code
+        - school
+        - iep
+      - - standard_label
+        - week_start
+        - module_code
+        - school
+        - response_type
+        - iep
+      - - standard_label
+        - week_start
+        - module_code
+        - iep
+      - - standard_label
+        - week_start
+        - module_code
+        - response_type
+        - iep
+      - - standard_label
+        - week_start
+        - module_code
+        - school
+        - academic_year
+        - iep
+      - - standard_label
+        - week_start
+        - module_code
+        - school
+        - academic_year
+        - response_type
+        - iep
+      - - standard_label
+        - week_start
+        - module_code
+        - school
+        - dibels
+        - iep
+      - - standard_label
+        - week_start
+        - module_code
+        - school
+        - dibels
+        - response_type
+        - iep
+      - - standard_label
+        - week_start
+        - module_code
+        - school
+        - gifted
+        - iep
+      - - standard_label
+        - week_start
+        - module_code
+        - school
+        - gifted
+        - response_type
+        - iep
+      - - standard_label
+        - week_start
+        - module_code
+        - school
+        - grade_level
+        - iep
+      - - standard_label
+        - week_start
+        - module_code
+        - school
+        - grade_level
+        - response_type
+        - iep
+      - - standard_label
+        - week_start
+        - module_code
+        - school
+        - head_of_school
+        - iep
+      - - standard_label
+        - week_start
+        - module_code
+        - school
+        - head_of_school
+        - response_type
+        - iep
+      - - standard_label
+        - week_start
+        - module_code
+        - school
+        - low_25
+        - iep
+      - - standard_label
+        - week_start
+        - module_code
+        - school
+        - low_25
+        - response_type
+        - iep
+      - - standard_label
+        - week_start
+        - module_code
+        - school
+        - other_context
+        - iep
+      - - standard_label
+        - week_start
+        - module_code
+        - school
+        - other_context
+        - response_type
+        - iep
+      - - standard_label
+        - week_start
+        - module_code
+        - school
+        - bucket
+        - iep
+      - - standard_label
+        - week_start
+        - module_code
+        - school
+        - bucket
+        - response_type
+        - iep
+      - - standard_label
+        - week_start
+        - module_code
+        - school
+        - region
+        - iep
+      - - standard_label
+        - week_start
+        - module_code
+        - school
+        - region
+        - response_type
+        - iep
+      - - standard_label
+        - week_start
+        - module_code
+        - school
+        - school_level
+        - iep
+      - - standard_label
+        - week_start
+        - module_code
+        - school
+        - school_level
+        - response_type
+        - iep
+      - - standard_label
+        - week_start
+        - module_code
+        - school
+        - subject_area
+        - iep
+      - - standard_label
+        - week_start
+        - module_code
+        - school
+        - subject_area
+        - response_type
+        - iep
+      - - standard_label
+        - week_start
+        - module_code
+        - school
+        - term
+        - iep
+      - - standard_label
+        - week_start
+        - module_code
+        - school
+        - term
+        - response_type
+        - iep
+      - - standard_label
+        - week_start
+        - module_code
+        - academic_year
+        - iep
+      - - standard_label
+        - week_start
+        - module_code
+        - academic_year
+        - response_type
+        - iep
+      - - module_code
+        - academic_year
+        - iep
+      - - module_code
+        - academic_year
+        - response_type
+        - iep
+      - - standard_label
+        - week_start
+        - module_code
+        - teacher
+        - iep
+      - - standard_label
+        - week_start
+        - module_code
+        - teacher
+        - response_type
+        - iep
+      - - module_code
+        - teacher
+        - iep
+      - - module_code
+        - teacher
+        - response_type
+        - iep
+      - - standard_label
+        - week_start
+        - module_code
+        - dibels
+        - iep
+      - - standard_label
+        - week_start
+        - module_code
+        - dibels
+        - response_type
+        - iep
+      - - standard_label
+        - week_start
+        - module_code
+        - gifted
+        - iep
+      - - standard_label
+        - week_start
+        - module_code
+        - gifted
+        - response_type
+        - iep
+      - - module_code
+        - gifted
+        - iep
+      - - module_code
+        - gifted
+        - response_type
+        - iep
+      - - standard_label
+        - week_start
+        - module_code
+        - grade_level
+        - iep
+      - - standard_label
+        - week_start
+        - module_code
+        - grade_level
+        - response_type
+        - iep
+      - - module_code
+        - grade_level
+        - iep
+      - - module_code
+        - grade_level
+        - response_type
+        - iep
+      - - standard_label
+        - week_start
+        - module_code
+        - low_25
+        - iep
+      - - standard_label
+        - week_start
+        - module_code
+        - low_25
+        - response_type
+        - iep
+      - - standard_label
+        - week_start
+        - module_code
+        - other_context
+        - iep
+      - - standard_label
+        - week_start
+        - module_code
+        - other_context
+        - response_type
+        - iep
+      - - standard_label
+        - week_start
+        - module_code
+        - module_type
+        - iep
+      - - standard_label
+        - week_start
+        - module_code
+        - module_type
+        - response_type
+        - iep
+      - - module_code
+        - module_type
+        - iep
+      - - module_code
+        - module_type
+        - response_type
+        - iep
+      - - standard_label
+        - week_start
+        - module_code
+        - bucket
+        - iep
+      - - standard_label
+        - week_start
+        - module_code
+        - bucket
+        - response_type
+        - iep
+      - - standard_label
+        - week_start
+        - module_code
+        - subject_area
+        - iep
+      - - standard_label
+        - week_start
+        - module_code
+        - subject_area
+        - response_type
+        - iep
+      - - module_code
+        - subject_area
+        - iep
+      - - module_code
+        - subject_area
+        - response_type
+        - iep
+      - - standard_label
+        - week_start
+        - module_code
+        - term
+        - iep
+      - - standard_label
+        - week_start
+        - module_code
+        - term
+        - response_type
+        - iep
+    not_checked:
+      - construct: "set: Bright Spots Modules [3723fb]"
+        why:
+          A Tableau-only calculation, parameter or grouping with no Cube
+          counterpart.
+      - construct: "filter: Term [cef684]"
+        why:
+          Narrows this sheet to a slice by a field Cube has no member for (term,
+          discipline group, bright-spot status and the like), or hides future
+          assessments; the check compares the unfiltered population.
+      - construct: "filter: Bright Spot Status [a25668]"
+        why:
+          Narrows this sheet to a slice by a field Cube has no member for (term,
+          discipline group, bright-spot status and the like), or hides future
+          assessments; the check compares the unfiltered population.
+      - construct: "filter: Discipline [bf7fa1]"
+        why:
+          Narrows this sheet to a slice by a field Cube has no member for (term,
+          discipline group, bright-spot status and the like), or hides future
+          assessments; the check compares the unfiltered population.
+      - construct: "filter: Exclude Future Assessments [7b1f53]"
+        why:
+          Narrows this sheet to a slice by a field Cube has no member for (term,
+          discipline group, bright-spot status and the like), or hides future
+          assessments; the check compares the unfiltered population.
+      - construct: "filter: Discipline [907649]"
+        why:
+          Narrows this sheet to a slice by a field Cube has no member for (term,
+          discipline group, bright-spot status and the like), or hides future
+          assessments; the check compares the unfiltered population.
+      - construct: "filter: Exclude Future Assessments [fa09b8]"
+        why:
+          Narrows this sheet to a slice by a field Cube has no member for (term,
+          discipline group, bright-spot status and the like), or hides future
+          assessments; the check compares the unfiltered population.
+  - row_gid: "1219284654739730"
+    name: "% Mastery - IEP / Gen Ed diff (Module Overall)"
+    metrics:
+      - cube: pct_proficient
+        kind: rate
+        tableau:
+          - "% Mastery - IEP"
+          - "% Mastery - Gen Ed"
+          - "% Mastery - IEP Diff from GenEd"
+        num: count(if(is_mastery, 1, null))
+        den: count(is_mastery)
+        missing_members:
+          - untagged_assessments
+        num_without: count(if(is_mastery and is_normed_scope, 1, null))
+        den_without: count(if(is_normed_scope, is_mastery, null))
+    grains:
+      - - iep
+      - - response_type
+        - iep
+      - - module_type
+        - module_code
+        - grade_level
+        - iep
+      - - module_type
+        - module_code
+        - grade_level
+        - response_type
+        - iep
+      - - module_type
+        - module_code
+        - grade_level
+        - tutoring
+        - iep
+      - - module_type
+        - module_code
+        - grade_level
+        - tutoring
+        - response_type
+        - iep
+      - - module_type
+        - module_code
+        - grade_level
+        - academic_year
+        - iep
+      - - module_type
+        - module_code
+        - grade_level
+        - academic_year
+        - response_type
+        - iep
+      - - module_type
+        - module_code
+        - grade_level
+        - dibels
+        - iep
+      - - module_type
+        - module_code
+        - grade_level
+        - dibels
+        - response_type
+        - iep
+      - - module_type
+        - module_code
+        - grade_level
+        - head_of_school
+        - iep
+      - - module_type
+        - module_code
+        - grade_level
+        - head_of_school
+        - response_type
+        - iep
+      - - module_type
+        - module_code
+        - grade_level
+        - is_foundations
+        - iep
+      - - module_type
+        - module_code
+        - grade_level
+        - is_foundations
+        - response_type
+        - iep
+      - - module_type
+        - module_code
+        - grade_level
+        - low_25
+        - iep
+      - - module_type
+        - module_code
+        - grade_level
+        - low_25
+        - response_type
+        - iep
+      - - module_type
+        - module_code
+        - grade_level
+        - is_normed
+        - iep
+      - - module_type
+        - module_code
+        - grade_level
+        - is_normed
+        - response_type
+        - iep
+      - - module_type
+        - module_code
+        - grade_level
+        - is_replacement
+        - iep
+      - - module_type
+        - module_code
+        - grade_level
+        - is_replacement
+        - response_type
+        - iep
+      - - module_type
+        - module_code
+        - grade_level
+        - other_context
+        - iep
+      - - module_type
+        - module_code
+        - grade_level
+        - other_context
+        - response_type
+        - iep
+      - - module_type
+        - module_code
+        - grade_level
+        - ml
+        - iep
+      - - module_type
+        - module_code
+        - grade_level
+        - ml
+        - response_type
+        - iep
+      - - module_type
+        - module_code
+        - grade_level
+        - bucket
+        - iep
+      - - module_type
+        - module_code
+        - grade_level
+        - bucket
+        - response_type
+        - iep
+      - - module_type
+        - module_code
+        - grade_level
+        - region
+        - iep
+      - - module_type
+        - module_code
+        - grade_level
+        - region
+        - response_type
+        - iep
+      - - module_type
+        - module_code
+        - grade_level
+        - school
+        - iep
+      - - module_type
+        - module_code
+        - grade_level
+        - school
+        - response_type
+        - iep
+      - - module_type
+        - module_code
+        - grade_level
+        - subject_area
+        - iep
+      - - module_type
+        - module_code
+        - grade_level
+        - subject_area
+        - response_type
+        - iep
+      - - module_type
+        - module_code
+        - grade_level
+        - team
+        - iep
+      - - module_type
+        - module_code
+        - grade_level
+        - team
+        - response_type
+        - iep
+    not_checked:
+      - construct: "filter: Subject Area (group) (copy) [07c576]"
+        why:
+          Narrows this sheet to a slice by a field Cube has no member for (term,
+          discipline group, bright-spot status and the like), or hides future
+          assessments; the check compares the unfiltered population.
+      - construct: "filter: % Completion [104887]"
+        why:
+          Narrows this sheet to a slice by a field Cube has no member for (term,
+          discipline group, bright-spot status and the like), or hides future
+          assessments; the check compares the unfiltered population.
+      - construct: "filter: Dashboard View Filter [7b1f53]"
+        why:
+          Narrows this sheet to a slice by a field Cube has no member for (term,
+          discipline group, bright-spot status and the like), or hides future
+          assessments; the check compares the unfiltered population.
+      - construct: "lod: % Completion [a8125f]"
+        why:
+          A Tableau-only calculation, parameter or grouping with no Cube
+          counterpart.
+      - construct: "parameter: Dashboard View Filter [4f8acd]"
+        why:
+          A Tableau-only calculation, parameter or grouping with no Cube
+          counterpart.
+      - construct: "lod: # Students Complete - Overall [c95b20]"
+        why:
+          A Tableau-only calculation, parameter or grouping with no Cube
+          counterpart.
+      - construct: "lod: # Students Possible - Overall [c99405]"
+        why:
+          A Tableau-only calculation, parameter or grouping with no Cube
+          counterpart.
+  - row_gid: "1219284654652796"
+    name: Student Count / % of Students / Student Number count
+    metrics:
+      - cube: count_students
+        kind: count
+        tableau:
+          - Student Number
+          - "% of Students"
+        sql: count(distinct student_number)
+        missing_members:
+          - untagged_assessments
+        sql_without: count(distinct if(is_normed_scope, student_number, null))
+      - cube: count_students
+        kind: count
+        tableau:
+          - Student Count
+        datasource: rpt_tableau__ddi_dashboard (kipptaf_tableau)
+        sql: count(distinct student_number)
+    grains:
+      - []
+      - - response_type
+      - - academic_year
+      - - academic_year
+        - response_type
+      - - grade_level
+      - - grade_level
+        - response_type
+      - - ml
+      - - ml
+        - response_type
+      - - school
+      - - school
+        - response_type
+      - - scope
+      - - scope
+        - response_type
+      - - subject_area
+      - - subject_area
+        - response_type
+      - - team
+      - - team
+        - response_type
+      - - region
+      - - region
+        - response_type
+      - - title
+      - - title
+        - response_type
+      - - standard_label
+        - standard_code
+      - - standard_label
+        - standard_code
+        - response_type
+      - - standard_code
+      - - standard_code
+        - response_type
+      - - standard_label
+        - standard_code
+        - academic_year
+      - - standard_label
+        - standard_code
+        - academic_year
+        - response_type
+      - - standard_code
+        - academic_year
+      - - standard_code
+        - academic_year
+        - response_type
+      - - standard_label
+        - standard_code
+        - grade_level
+      - - standard_label
+        - standard_code
+        - grade_level
+        - response_type
+      - - standard_code
+        - grade_level
+      - - standard_code
+        - grade_level
+        - response_type
+      - - standard_label
+        - standard_code
+        - ml
+      - - standard_label
+        - standard_code
+        - ml
+        - response_type
+      - - standard_label
+        - standard_code
+        - school
+      - - standard_label
+        - standard_code
+        - school
+        - response_type
+      - - standard_code
+        - school
+      - - standard_code
+        - school
+        - response_type
+      - - standard_label
+        - standard_code
+        - scope
+      - - standard_label
+        - standard_code
+        - scope
+        - response_type
+      - - standard_label
+        - standard_code
+        - subject_area
+      - - standard_label
+        - standard_code
+        - subject_area
+        - response_type
+      - - standard_code
+        - subject_area
+      - - standard_code
+        - subject_area
+        - response_type
+      - - standard_label
+        - standard_code
+        - team
+      - - standard_label
+        - standard_code
+        - team
+        - response_type
+      - - standard_label
+        - standard_code
+        - region
+      - - standard_label
+        - standard_code
+        - region
+        - response_type
+      - - standard_code
+        - region
+      - - standard_code
+        - region
+        - response_type
+      - - standard_label
+        - standard_code
+        - title
+      - - standard_label
+        - standard_code
+        - title
+        - response_type
+      - - standard_code
+        - title
+      - - standard_code
+        - title
+        - response_type
+      - - standard_code
+        - ml
+      - - standard_code
+        - ml
+        - response_type
+      - - standard_code
+        - scope
+      - - standard_code
+        - scope
+        - response_type
+      - - standard_code
+        - team
+      - - standard_code
+        - team
+        - response_type
+      - - performance_band
+      - - performance_band
+        - response_type
+      - - performance_band
+        - tutoring
+      - - performance_band
+        - tutoring
+        - response_type
+      - - performance_band
+        - academic_year
+      - - performance_band
+        - academic_year
+        - response_type
+      - - performance_band
+        - dibels
+      - - performance_band
+        - dibels
+        - response_type
+      - - performance_band
+        - grade_level
+      - - performance_band
+        - grade_level
+        - response_type
+      - - performance_band
+        - head_of_school
+      - - performance_band
+        - head_of_school
+        - response_type
+      - - performance_band
+        - is_foundations
+      - - performance_band
+        - is_foundations
+        - response_type
+      - - performance_band
+        - low_25
+      - - performance_band
+        - low_25
+        - response_type
+      - - performance_band
+        - is_replacement
+      - - performance_band
+        - is_replacement
+        - response_type
+      - - performance_band
+        - other_context
+      - - performance_band
+        - other_context
+        - response_type
+      - - performance_band
+        - ml
+      - - performance_band
+        - ml
+        - response_type
+      - - performance_band
+        - module_code
+      - - performance_band
+        - module_code
+        - response_type
+      - - performance_band
+        - module_type
+      - - performance_band
+        - module_type
+        - response_type
+      - - performance_band
+        - bucket
+      - - performance_band
+        - bucket
+        - response_type
+      - - performance_band
+        - region
+      - - performance_band
+        - region
+        - response_type
+      - - performance_band
+        - school
+      - - performance_band
+        - school
+        - response_type
+      - - performance_band
+        - subject_area
+      - - performance_band
+        - subject_area
+        - response_type
+      - - performance_band
+        - team
+      - - performance_band
+        - team
+        - response_type
+      - - standard_label
+        - standard_code
+        - tutoring
+      - - standard_label
+        - standard_code
+        - tutoring
+        - response_type
+      - - standard_label
+        - standard_code
+        - dibels
+      - - standard_label
+        - standard_code
+        - dibels
+        - response_type
+      - - standard_label
+        - standard_code
+        - head_of_school
+      - - standard_label
+        - standard_code
+        - head_of_school
+        - response_type
+      - - standard_label
+        - standard_code
+        - is_foundations
+      - - standard_label
+        - standard_code
+        - is_foundations
+        - response_type
+      - - standard_code
+        - is_foundations
+      - - standard_code
+        - is_foundations
+        - response_type
+      - - standard_label
+        - standard_code
+        - low_25
+      - - standard_label
+        - standard_code
+        - low_25
+        - response_type
+      - - standard_label
+        - standard_code
+        - is_replacement
+      - - standard_label
+        - standard_code
+        - is_replacement
+        - response_type
+      - - standard_code
+        - is_replacement
+      - - standard_code
+        - is_replacement
+        - response_type
+      - - standard_label
+        - standard_code
+        - other_context
+      - - standard_label
+        - standard_code
+        - other_context
+        - response_type
+      - - standard_label
+        - standard_code
+        - module_code
+      - - standard_label
+        - standard_code
+        - module_code
+        - response_type
+      - - standard_code
+        - module_code
+      - - standard_code
+        - module_code
+        - response_type
+      - - standard_label
+        - standard_code
+        - module_type
+      - - standard_label
+        - standard_code
+        - module_type
+        - response_type
+      - - standard_code
+        - module_type
+      - - standard_code
+        - module_type
+        - response_type
+      - - standard_label
+        - standard_code
+        - bucket
+      - - standard_label
+        - standard_code
+        - bucket
+        - response_type
+      - - standard_label
+        - standard_code
+        - performance_band
+      - - standard_label
+        - standard_code
+        - performance_band
+        - response_type
+      - - standard_code
+        - performance_band
+      - - standard_code
+        - performance_band
+        - response_type
+      - - standard_label
+      - - standard_label
+        - response_type
+      - - standard_label
+        - tutoring
+      - - standard_label
+        - tutoring
+        - response_type
+      - - standard_label
+        - academic_year
+      - - standard_label
+        - academic_year
+        - response_type
+      - - standard_label
+        - dibels
+      - - standard_label
+        - dibels
+        - response_type
+      - - standard_label
+        - grade_level
+      - - standard_label
+        - grade_level
+        - response_type
+      - - standard_label
+        - head_of_school
+      - - standard_label
+        - head_of_school
+        - response_type
+      - - standard_label
+        - is_foundations
+      - - standard_label
+        - is_foundations
+        - response_type
+      - - is_foundations
+      - - is_foundations
+        - response_type
+      - - standard_label
+        - low_25
+      - - standard_label
+        - low_25
+        - response_type
+      - - standard_label
+        - is_replacement
+      - - standard_label
+        - is_replacement
+        - response_type
+      - - is_replacement
+      - - is_replacement
+        - response_type
+      - - standard_label
+        - other_context
+      - - standard_label
+        - other_context
+        - response_type
+      - - standard_label
+        - ml
+      - - standard_label
+        - ml
+        - response_type
+      - - standard_label
+        - module_code
+      - - standard_label
+        - module_code
+        - response_type
+      - - module_code
+      - - module_code
+        - response_type
+      - - standard_label
+        - module_type
+      - - standard_label
+        - module_type
+        - response_type
+      - - module_type
+      - - module_type
+        - response_type
+      - - standard_label
+        - bucket
+      - - standard_label
+        - bucket
+        - response_type
+      - - standard_label
+        - region
+      - - standard_label
+        - region
+        - response_type
+      - - standard_label
+        - school
+      - - standard_label
+        - school
+        - response_type
+      - - standard_label
+        - subject_area
+      - - standard_label
+        - subject_area
+        - response_type
+      - - standard_label
+        - team
+      - - standard_label
+        - team
+        - response_type
+      - - standard_code
+        - tutoring
+      - - standard_code
+        - tutoring
+        - response_type
+      - - standard_code
+        - dibels
+      - - standard_code
+        - dibels
+        - response_type
+      - - standard_code
+        - head_of_school
+      - - standard_code
+        - head_of_school
+        - response_type
+      - - standard_code
+        - low_25
+      - - standard_code
+        - low_25
+        - response_type
+      - - standard_code
+        - other_context
+      - - standard_code
+        - other_context
+        - response_type
+      - - standard_code
+        - bucket
+      - - standard_code
+        - bucket
+        - response_type
+      - - school
+        - grade_subject
+        - module_code
+      - - school
+        - grade_subject
+        - module_code
+        - response_type
+      - - school
+        - module_code
+      - - school
+        - module_code
+        - response_type
+      - - school
+        - grade_subject
+        - module_code
+        - academic_year
+      - - school
+        - grade_subject
+        - module_code
+        - academic_year
+        - response_type
+      - - school
+        - module_code
+        - academic_year
+      - - school
+        - module_code
+        - academic_year
+        - response_type
+      - - school
+        - grade_subject
+        - module_code
+        - dibels
+      - - school
+        - grade_subject
+        - module_code
+        - dibels
+        - response_type
+      - - school
+        - grade_subject
+        - module_code
+        - gifted
+      - - school
+        - grade_subject
+        - module_code
+        - gifted
+        - response_type
+      - - school
+        - module_code
+        - gifted
+      - - school
+        - module_code
+        - gifted
+        - response_type
+      - - school
+        - grade_subject
+        - module_code
+        - grade_level
+      - - school
+        - grade_subject
+        - module_code
+        - grade_level
+        - response_type
+      - - school
+        - module_code
+        - grade_level
+      - - school
+        - module_code
+        - grade_level
+        - response_type
+      - - school
+        - grade_subject
+        - module_code
+        - head_of_school
+      - - school
+        - grade_subject
+        - module_code
+        - head_of_school
+        - response_type
+      - - school
+        - grade_subject
+        - module_code
+        - iep
+      - - school
+        - grade_subject
+        - module_code
+        - iep
+        - response_type
+      - - school
+        - module_code
+        - iep
+      - - school
+        - module_code
+        - iep
+        - response_type
+      - - school
+        - grade_subject
+        - module_code
+        - low_25
+      - - school
+        - grade_subject
+        - module_code
+        - low_25
+        - response_type
+      - - school
+        - grade_subject
+        - module_code
+        - other_context
+      - - school
+        - grade_subject
+        - module_code
+        - other_context
+        - response_type
+      - - school
+        - grade_subject
+        - module_code
+        - bucket
+      - - school
+        - grade_subject
+        - module_code
+        - bucket
+        - response_type
+      - - school
+        - grade_subject
+        - module_code
+        - region
+      - - school
+        - grade_subject
+        - module_code
+        - region
+        - response_type
+      - - school
+        - module_code
+        - region
+      - - school
+        - module_code
+        - region
+        - response_type
+      - - school
+        - grade_subject
+        - module_code
+        - school_level
+      - - school
+        - grade_subject
+        - module_code
+        - school_level
+        - response_type
+      - - school
+        - module_code
+        - school_level
+      - - school
+        - module_code
+        - school_level
+        - response_type
+      - - school
+        - grade_subject
+        - module_code
+        - subject_area
+      - - school
+        - grade_subject
+        - module_code
+        - subject_area
+        - response_type
+      - - school
+        - module_code
+        - subject_area
+      - - school
+        - module_code
+        - subject_area
+        - response_type
+      - - school
+        - grade_subject
+        - module_code
+        - term
+      - - school
+        - grade_subject
+        - module_code
+        - term
+        - response_type
+      - - school
+        - grade_subject
+        - module_code
+        - week_start
+      - - school
+        - grade_subject
+        - module_code
+        - week_start
+        - response_type
+      - - school
+        - module_code
+        - standard_label
+      - - school
+        - module_code
+        - standard_label
+        - response_type
+      - - school
+        - module_code
+        - standard_label
+        - academic_year
+      - - school
+        - module_code
+        - standard_label
+        - academic_year
+        - response_type
+      - - school
+        - module_code
+        - standard_label
+        - dibels
+      - - school
+        - module_code
+        - standard_label
+        - dibels
+        - response_type
+      - - school
+        - module_code
+        - standard_label
+        - gifted
+      - - school
+        - module_code
+        - standard_label
+        - gifted
+        - response_type
+      - - school
+        - module_code
+        - standard_label
+        - grade_level
+      - - school
+        - module_code
+        - standard_label
+        - grade_level
+        - response_type
+      - - school
+        - module_code
+        - standard_label
+        - head_of_school
+      - - school
+        - module_code
+        - standard_label
+        - head_of_school
+        - response_type
+      - - school
+        - module_code
+        - standard_label
+        - iep
+      - - school
+        - module_code
+        - standard_label
+        - iep
+        - response_type
+      - - school
+        - module_code
+        - standard_label
+        - low_25
+      - - school
+        - module_code
+        - standard_label
+        - low_25
+        - response_type
+      - - school
+        - module_code
+        - standard_label
+        - other_context
+      - - school
+        - module_code
+        - standard_label
+        - other_context
+        - response_type
+      - - school
+        - module_code
+        - standard_label
+        - bucket
+      - - school
+        - module_code
+        - standard_label
+        - bucket
+        - response_type
+      - - school
+        - module_code
+        - standard_label
+        - region
+      - - school
+        - module_code
+        - standard_label
+        - region
+        - response_type
+      - - school
+        - module_code
+        - standard_label
+        - school_level
+      - - school
+        - module_code
+        - standard_label
+        - school_level
+        - response_type
+      - - school
+        - module_code
+        - standard_label
+        - subject_area
+      - - school
+        - module_code
+        - standard_label
+        - subject_area
+        - response_type
+      - - school
+        - module_code
+        - standard_label
+        - term
+      - - school
+        - module_code
+        - standard_label
+        - term
+        - response_type
+      - - school
+        - module_code
+        - standard_label
+        - week_start
+      - - school
+        - module_code
+        - standard_label
+        - week_start
+        - response_type
+    not_checked:
+      - construct: "filter: Academic Year [6005b6]"
+        why: Shows another academic year; the check covers 2026-27 only.
+      - construct: "table_calc: % of Students [d06edd]"
+        why:
+          Computed from the table on screen (share of total, rank or running
+          value); the base aggregate is checked.
+      - construct: "parameter: Performance Band - Override [4eaf2c]"
+        why:
+          A Tableau-only calculation, parameter or grouping with no Cube
+          counterpart.
+      - construct: "lod: Performance Band - Overall (LOD) - Override [3cc2d9]"
+        why:
+          A Tableau-only calculation, parameter or grouping with no Cube
+          counterpart.
+      - construct: "table_calc: Student Number [4996ee]"
+        why:
+          Computed from the table on screen (share of total, rank or running
+          value); the base aggregate is checked.
+      - construct: "table_calc: Student Number [1a82b9]"
+        why:
+          Computed from the table on screen (share of total, rank or running
+          value); the base aggregate is checked.
+      - construct: "viewer_function: Region User Filter [3fe0a9]"
+        why:
+          Varies by viewer; the run uses a network identity on the full extract.
+      - construct: "table_calc: Student Count [4996ee]"
+        why:
+          Computed from the table on screen (share of total, rank or running
+          value); the base aggregate is checked.
+      - construct: "filter: Discipline [bf7fa1]"
+        why:
+          Narrows this sheet to a slice by a field Cube has no member for (term,
+          discipline group, bright-spot status and the like), or hides future
+          assessments; the check compares the unfiltered population.
+      - construct: "filter: Exclude Future Assessments [7b1f53]"
+        why:
+          Narrows this sheet to a slice by a field Cube has no member for (term,
+          discipline group, bright-spot status and the like), or hides future
+          assessments; the check compares the unfiltered population.
+      - construct: "group: Performance Band Label Number (HS) [9864f0]"
+        why:
+          A Tableau-only calculation, parameter or grouping with no Cube
+          counterpart.
+      - construct: "group: Performance Band Label Number (ES/MS) [93a3b6]"
+        why:
+          A Tableau-only calculation, parameter or grouping with no Cube
+          counterpart.
+      - construct: "filter: Subject Area (group) (copy) [07c576]"
+        why:
+          Narrows this sheet to a slice by a field Cube has no member for (term,
+          discipline group, bright-spot status and the like), or hides future
+          assessments; the check compares the unfiltered population.
+      - construct: "filter: % Completion [104887]"
+        why:
+          Narrows this sheet to a slice by a field Cube has no member for (term,
+          discipline group, bright-spot status and the like), or hides future
+          assessments; the check compares the unfiltered population.
+      - construct: "lod: Performance Band - Overall (LOD) [2aa0b3]"
+        why:
+          A Tableau-only calculation, parameter or grouping with no Cube
+          counterpart.
+      - construct: "lod: % Completion [a8125f]"
+        why:
+          A Tableau-only calculation, parameter or grouping with no Cube
+          counterpart.
+      - construct: "lod: # Students Complete - Overall [c95b20]"
+        why:
+          A Tableau-only calculation, parameter or grouping with no Cube
+          counterpart.
+      - construct: "lod: # Students Possible - Overall [c99405]"
+        why:
+          A Tableau-only calculation, parameter or grouping with no Cube
+          counterpart.
+  - row_gid: "1219087779591458"
+    name: Percent Correct / avg percent correct
+    metrics:
+      - cube: avg_percent_correct
+        kind: average
+        tableau:
+          - Percent Correct
+        num: sum(percent_correct)
+        den: count(percent_correct)
+        missing_members:
+          - untagged_assessments
+        num_without: sum(if(is_normed_scope, percent_correct, null))
+        den_without: count(if(is_normed_scope, percent_correct, null))
+    grains:
+      - []
+      - - response_type
+      - - title
+        - assessment_id
+      - - title
+        - assessment_id
+        - response_type
+      - - title
+        - assessment_id
+        - academic_year
+      - - title
+        - assessment_id
+        - academic_year
+        - response_type
+      - - title
+        - assessment_id
+        - grade_level
+      - - title
+        - assessment_id
+        - grade_level
+        - response_type
+      - - title
+        - assessment_id
+        - ml
+      - - title
+        - assessment_id
+        - ml
+        - response_type
+      - - title
+        - assessment_id
+        - school
+      - - title
+        - assessment_id
+        - school
+        - response_type
+      - - title
+        - assessment_id
+        - scope
+      - - title
+        - assessment_id
+        - scope
+        - response_type
+      - - title
+        - assessment_id
+        - subject_area
+      - - title
+        - assessment_id
+        - subject_area
+        - response_type
+      - - title
+        - assessment_id
+        - team
+      - - title
+        - assessment_id
+        - team
+        - response_type
+      - - title
+        - assessment_id
+        - region
+      - - title
+        - assessment_id
+        - region
+        - response_type
+      - - assessment_id
+        - title
+        - school
+        - academic_year
+      - - assessment_id
+        - title
+        - school
+        - academic_year
+        - response_type
+      - - assessment_id
+        - title
+        - school
+        - grade_level
+      - - assessment_id
+        - title
+        - school
+        - grade_level
+        - response_type
+      - - assessment_id
+        - title
+        - school
+        - ml
+      - - assessment_id
+        - title
+        - school
+        - ml
+        - response_type
+      - - assessment_id
+        - title
+        - school
+        - scope
+      - - assessment_id
+        - title
+        - school
+        - scope
+        - response_type
+      - - assessment_id
+        - title
+        - school
+        - subject_area
+      - - assessment_id
+        - title
+        - school
+        - subject_area
+        - response_type
+      - - assessment_id
+        - title
+        - school
+        - team
+      - - assessment_id
+        - title
+        - school
+        - team
+        - response_type
+      - - assessment_id
+        - title
+        - school
+        - region
+      - - assessment_id
+        - title
+        - school
+        - region
+        - response_type
+      - - standard_code
+      - - standard_code
+        - response_type
+      - - standard_code
+        - academic_year
+      - - standard_code
+        - academic_year
+        - response_type
+      - - standard_code
+        - grade_level
+      - - standard_code
+        - grade_level
+        - response_type
+      - - standard_code
+        - ml
+      - - standard_code
+        - ml
+        - response_type
+      - - standard_code
+        - school
+      - - standard_code
+        - school
+        - response_type
+      - - standard_code
+        - scope
+      - - standard_code
+        - scope
+        - response_type
+      - - standard_code
+        - subject_area
+      - - standard_code
+        - subject_area
+        - response_type
+      - - standard_code
+        - team
+      - - standard_code
+        - team
+        - response_type
+      - - standard_code
+        - region
+      - - standard_code
+        - region
+        - response_type
+      - - standard_code
+        - title
+      - - standard_code
+        - title
+        - response_type
+      - - academic_year
+      - - academic_year
+        - response_type
+      - - grade_level
+      - - grade_level
+        - response_type
+      - - ml
+      - - ml
+        - response_type
+      - - school
+      - - school
+        - response_type
+      - - scope
+      - - scope
+        - response_type
+      - - subject_area
+      - - subject_area
+        - response_type
+      - - team
+      - - team
+        - response_type
+      - - region
+      - - region
+        - response_type
+      - - title
+      - - title
+        - response_type
+      - - standard_code
+        - standard_label
+      - - standard_code
+        - standard_label
+        - response_type
+      - - standard_code
+        - standard_label
+        - academic_year
+      - - standard_code
+        - standard_label
+        - academic_year
+        - response_type
+      - - standard_code
+        - standard_label
+        - grade_level
+      - - standard_code
+        - standard_label
+        - grade_level
+        - response_type
+      - - standard_code
+        - standard_label
+        - ml
+      - - standard_code
+        - standard_label
+        - ml
+        - response_type
+      - - standard_code
+        - standard_label
+        - school
+      - - standard_code
+        - standard_label
+        - school
+        - response_type
+      - - standard_code
+        - standard_label
+        - scope
+      - - standard_code
+        - standard_label
+        - scope
+        - response_type
+      - - standard_code
+        - standard_label
+        - subject_area
+      - - standard_code
+        - standard_label
+        - subject_area
+        - response_type
+      - - standard_code
+        - standard_label
+        - team
+      - - standard_code
+        - standard_label
+        - team
+        - response_type
+      - - standard_code
+        - standard_label
+        - region
+      - - standard_code
+        - standard_label
+        - region
+        - response_type
+      - - standard_code
+        - standard_label
+        - title
+      - - standard_code
+        - standard_label
+        - title
+        - response_type
+      - - title
+        - assessment_id
+        - tutoring
+      - - title
+        - assessment_id
+        - tutoring
+        - response_type
+      - - title
+        - assessment_id
+        - dibels
+      - - title
+        - assessment_id
+        - dibels
+        - response_type
+      - - title
+        - assessment_id
+        - head_of_school
+      - - title
+        - assessment_id
+        - head_of_school
+        - response_type
+      - - title
+        - assessment_id
+        - is_foundations
+      - - title
+        - assessment_id
+        - is_foundations
+        - response_type
+      - - title
+        - assessment_id
+        - low_25
+      - - title
+        - assessment_id
+        - low_25
+        - response_type
+      - - title
+        - assessment_id
+        - is_replacement
+      - - title
+        - assessment_id
+        - is_replacement
+        - response_type
+      - - title
+        - assessment_id
+        - other_context
+      - - title
+        - assessment_id
+        - other_context
+        - response_type
+      - - title
+        - assessment_id
+        - module_code
+      - - title
+        - assessment_id
+        - module_code
+        - response_type
+      - - title
+        - assessment_id
+        - module_type
+      - - title
+        - assessment_id
+        - module_type
+        - response_type
+      - - title
+        - assessment_id
+        - bucket
+      - - title
+        - assessment_id
+        - bucket
+        - response_type
+      - - assessment_id
+        - title
+        - school
+        - tutoring
+      - - assessment_id
+        - title
+        - school
+        - tutoring
+        - response_type
+      - - assessment_id
+        - title
+        - school
+        - dibels
+      - - assessment_id
+        - title
+        - school
+        - dibels
+        - response_type
+      - - assessment_id
+        - title
+        - school
+        - head_of_school
+      - - assessment_id
+        - title
+        - school
+        - head_of_school
+        - response_type
+      - - assessment_id
+        - title
+        - school
+        - is_foundations
+      - - assessment_id
+        - title
+        - school
+        - is_foundations
+        - response_type
+      - - assessment_id
+        - title
+        - school
+        - low_25
+      - - assessment_id
+        - title
+        - school
+        - low_25
+        - response_type
+      - - assessment_id
+        - title
+        - school
+        - is_replacement
+      - - assessment_id
+        - title
+        - school
+        - is_replacement
+        - response_type
+      - - assessment_id
+        - title
+        - school
+        - other_context
+      - - assessment_id
+        - title
+        - school
+        - other_context
+        - response_type
+      - - assessment_id
+        - title
+        - school
+        - module_code
+      - - assessment_id
+        - title
+        - school
+        - module_code
+        - response_type
+      - - assessment_id
+        - title
+        - school
+        - module_type
+      - - assessment_id
+        - title
+        - school
+        - module_type
+        - response_type
+      - - assessment_id
+        - title
+        - school
+        - bucket
+      - - assessment_id
+        - title
+        - school
+        - bucket
+        - response_type
+      - - tutoring
+      - - tutoring
+        - response_type
+      - - dibels
+      - - dibels
+        - response_type
+      - - head_of_school
+      - - head_of_school
+        - response_type
+      - - is_foundations
+      - - is_foundations
+        - response_type
+      - - low_25
+      - - low_25
+        - response_type
+      - - is_replacement
+      - - is_replacement
+        - response_type
+      - - other_context
+      - - other_context
+        - response_type
+      - - module_code
+      - - module_code
+        - response_type
+      - - module_type
+      - - module_type
+        - response_type
+      - - bucket
+      - - bucket
+        - response_type
+      - - standard_label
+      - - standard_label
+        - response_type
+      - - standard_label
+        - tutoring
+      - - standard_label
+        - tutoring
+        - response_type
+      - - standard_label
+        - academic_year
+      - - standard_label
+        - academic_year
+        - response_type
+      - - standard_label
+        - dibels
+      - - standard_label
+        - dibels
+        - response_type
+      - - standard_label
+        - grade_level
+      - - standard_label
+        - grade_level
+        - response_type
+      - - standard_label
+        - head_of_school
+      - - standard_label
+        - head_of_school
+        - response_type
+      - - standard_label
+        - is_foundations
+      - - standard_label
+        - is_foundations
+        - response_type
+      - - standard_label
+        - low_25
+      - - standard_label
+        - low_25
+        - response_type
+      - - standard_label
+        - is_replacement
+      - - standard_label
+        - is_replacement
+        - response_type
+      - - standard_label
+        - other_context
+      - - standard_label
+        - other_context
+        - response_type
+      - - standard_label
+        - ml
+      - - standard_label
+        - ml
+        - response_type
+      - - standard_label
+        - module_code
+      - - standard_label
+        - module_code
+        - response_type
+      - - standard_label
+        - module_type
+      - - standard_label
+        - module_type
+        - response_type
+      - - standard_label
+        - bucket
+      - - standard_label
+        - bucket
+        - response_type
+      - - standard_label
+        - region
+      - - standard_label
+        - region
+        - response_type
+      - - standard_label
+        - school
+      - - standard_label
+        - school
+        - response_type
+      - - standard_label
+        - subject_area
+      - - standard_label
+        - subject_area
+        - response_type
+      - - standard_label
+        - team
+      - - standard_label
+        - team
+        - response_type
+      - - standard_code
+        - tutoring
+      - - standard_code
+        - tutoring
+        - response_type
+      - - standard_code
+        - dibels
+      - - standard_code
+        - dibels
+        - response_type
+      - - standard_code
+        - head_of_school
+      - - standard_code
+        - head_of_school
+        - response_type
+      - - standard_code
+        - is_foundations
+      - - standard_code
+        - is_foundations
+        - response_type
+      - - standard_code
+        - low_25
+      - - standard_code
+        - low_25
+        - response_type
+      - - standard_code
+        - is_replacement
+      - - standard_code
+        - is_replacement
+        - response_type
+      - - standard_code
+        - other_context
+      - - standard_code
+        - other_context
+        - response_type
+      - - standard_code
+        - module_code
+      - - standard_code
+        - module_code
+        - response_type
+      - - standard_code
+        - module_type
+      - - standard_code
+        - module_type
+        - response_type
+      - - standard_code
+        - bucket
+      - - standard_code
+        - bucket
+        - response_type
+      - - standard_code
+        - performance_band
+      - - standard_code
+        - performance_band
+        - response_type
+      - - standard_code
+        - standard_label
+        - tutoring
+      - - standard_code
+        - standard_label
+        - tutoring
+        - response_type
+      - - standard_code
+        - standard_label
+        - dibels
+      - - standard_code
+        - standard_label
+        - dibels
+        - response_type
+      - - standard_code
+        - standard_label
+        - head_of_school
+      - - standard_code
+        - standard_label
+        - head_of_school
+        - response_type
+      - - standard_code
+        - standard_label
+        - is_foundations
+      - - standard_code
+        - standard_label
+        - is_foundations
+        - response_type
+      - - standard_code
+        - standard_label
+        - low_25
+      - - standard_code
+        - standard_label
+        - low_25
+        - response_type
+      - - standard_code
+        - standard_label
+        - is_replacement
+      - - standard_code
+        - standard_label
+        - is_replacement
+        - response_type
+      - - standard_code
+        - standard_label
+        - other_context
+      - - standard_code
+        - standard_label
+        - other_context
+        - response_type
+      - - standard_code
+        - standard_label
+        - module_code
+      - - standard_code
+        - standard_label
+        - module_code
+        - response_type
+      - - standard_code
+        - standard_label
+        - module_type
+      - - standard_code
+        - standard_label
+        - module_type
+        - response_type
+      - - standard_code
+        - standard_label
+        - bucket
+      - - standard_code
+        - standard_label
+        - bucket
+        - response_type
+    not_checked:
+      - construct: "filter: Academic Year [6005b6]"
+        why: Shows another academic year; the check covers 2026-27 only.
+      - construct: "viewer_function: Region User Filter [3fe0a9]"
+        why:
+          Varies by viewer; the run uses a network identity on the full extract.
+      - construct: "parameter: Performance Band - Override [4eaf2c]"
+        why:
+          A Tableau-only calculation, parameter or grouping with no Cube
+          counterpart.
+      - construct: "filter: Subject Area (group) (copy) [07c576]"
+        why:
+          Narrows this sheet to a slice by a field Cube has no member for (term,
+          discipline group, bright-spot status and the like), or hides future
+          assessments; the check compares the unfiltered population.
+      - construct: "filter: % Completion [104887]"
+        why:
+          Narrows this sheet to a slice by a field Cube has no member for (term,
+          discipline group, bright-spot status and the like), or hides future
+          assessments; the check compares the unfiltered population.
+      - construct: "lod: % Completion [a8125f]"
+        why:
+          A Tableau-only calculation, parameter or grouping with no Cube
+          counterpart.
+      - construct: "lod: # Students Complete - Overall [c95b20]"
+        why:
+          A Tableau-only calculation, parameter or grouping with no Cube
+          counterpart.
+      - construct: "lod: # Students Possible - Overall [c99405]"
+        why:
+          A Tableau-only calculation, parameter or grouping with no Cube
+          counterpart.
+  - row_gid: "1219284586306631"
+    name: Performance Band Number / Label / 3-Level grouping
+    metrics:
+      - cube: count_taken
+        kind: count
+        tableau:
+          - Performance Band Number
+        sql: count(response_type)
+        missing_members:
+          - untagged_assessments
+        sql_without: count(if(is_normed_scope, response_type, null))
+    grains:
+      - - performance_band
+      - - response_type
+        - performance_band
+      - - tutoring
+        - performance_band
+      - - tutoring
+        - response_type
+        - performance_band
+      - - academic_year
+        - performance_band
+      - - academic_year
+        - response_type
+        - performance_band
+      - - dibels
+        - performance_band
+      - - dibels
+        - response_type
+        - performance_band
+      - - grade_level
+        - performance_band
+      - - grade_level
+        - response_type
+        - performance_band
+      - - head_of_school
+        - performance_band
+      - - head_of_school
+        - response_type
+        - performance_band
+      - - is_foundations
+        - performance_band
+      - - is_foundations
+        - response_type
+        - performance_band
+      - - low_25
+        - performance_band
+      - - low_25
+        - response_type
+        - performance_band
+      - - is_replacement
+        - performance_band
+      - - is_replacement
+        - response_type
+        - performance_band
+      - - other_context
+        - performance_band
+      - - other_context
+        - response_type
+        - performance_band
+      - - ml
+        - performance_band
+      - - ml
+        - response_type
+        - performance_band
+      - - module_code
+        - performance_band
+      - - module_code
+        - response_type
+        - performance_band
+      - - module_type
+        - performance_band
+      - - module_type
+        - response_type
+        - performance_band
+      - - bucket
+        - performance_band
+      - - bucket
+        - response_type
+        - performance_band
+      - - region
+        - performance_band
+      - - region
+        - response_type
+        - performance_band
+      - - school
+        - performance_band
+      - - school
+        - response_type
+        - performance_band
+      - - subject_area
+        - performance_band
+      - - subject_area
+        - response_type
+        - performance_band
+      - - team
+        - performance_band
+      - - team
+        - response_type
+        - performance_band
+      - - standard_label
+        - performance_band
+      - - standard_label
+        - response_type
+        - performance_band
+      - - standard_label
+        - tutoring
+        - performance_band
+      - - standard_label
+        - tutoring
+        - response_type
+        - performance_band
+      - - standard_label
+        - academic_year
+        - performance_band
+      - - standard_label
+        - academic_year
+        - response_type
+        - performance_band
+      - - standard_label
+        - dibels
+        - performance_band
+      - - standard_label
+        - dibels
+        - response_type
+        - performance_band
+      - - standard_label
+        - grade_level
+        - performance_band
+      - - standard_label
+        - grade_level
+        - response_type
+        - performance_band
+      - - standard_label
+        - head_of_school
+        - performance_band
+      - - standard_label
+        - head_of_school
+        - response_type
+        - performance_band
+      - - standard_label
+        - is_foundations
+        - performance_band
+      - - standard_label
+        - is_foundations
+        - response_type
+        - performance_band
+      - - standard_label
+        - low_25
+        - performance_band
+      - - standard_label
+        - low_25
+        - response_type
+        - performance_band
+      - - standard_label
+        - is_replacement
+        - performance_band
+      - - standard_label
+        - is_replacement
+        - response_type
+        - performance_band
+      - - standard_label
+        - other_context
+        - performance_band
+      - - standard_label
+        - other_context
+        - response_type
+        - performance_band
+      - - standard_label
+        - ml
+        - performance_band
+      - - standard_label
+        - ml
+        - response_type
+        - performance_band
+      - - standard_label
+        - module_code
+        - performance_band
+      - - standard_label
+        - module_code
+        - response_type
+        - performance_band
+      - - standard_label
+        - module_type
+        - performance_band
+      - - standard_label
+        - module_type
+        - response_type
+        - performance_band
+      - - standard_label
+        - bucket
+        - performance_band
+      - - standard_label
+        - bucket
+        - response_type
+        - performance_band
+      - - standard_label
+        - region
+        - performance_band
+      - - standard_label
+        - region
+        - response_type
+        - performance_band
+      - - standard_label
+        - school
+        - performance_band
+      - - standard_label
+        - school
+        - response_type
+        - performance_band
+      - - standard_label
+        - subject_area
+        - performance_band
+      - - standard_label
+        - subject_area
+        - response_type
+        - performance_band
+      - - standard_label
+        - team
+        - performance_band
+      - - standard_label
+        - team
+        - response_type
+        - performance_band
+      - - standard_code
+        - standard_label
+        - performance_band
+      - - standard_code
+        - standard_label
+        - response_type
+        - performance_band
+      - - standard_code
+        - performance_band
+      - - standard_code
+        - response_type
+        - performance_band
+      - - standard_code
+        - standard_label
+        - tutoring
+        - performance_band
+      - - standard_code
+        - standard_label
+        - tutoring
+        - response_type
+        - performance_band
+      - - standard_code
+        - standard_label
+        - academic_year
+        - performance_band
+      - - standard_code
+        - standard_label
+        - academic_year
+        - response_type
+        - performance_band
+      - - standard_code
+        - academic_year
+        - performance_band
+      - - standard_code
+        - academic_year
+        - response_type
+        - performance_band
+      - - standard_code
+        - standard_label
+        - dibels
+        - performance_band
+      - - standard_code
+        - standard_label
+        - dibels
+        - response_type
+        - performance_band
+      - - standard_code
+        - standard_label
+        - grade_level
+        - performance_band
+      - - standard_code
+        - standard_label
+        - grade_level
+        - response_type
+        - performance_band
+      - - standard_code
+        - grade_level
+        - performance_band
+      - - standard_code
+        - grade_level
+        - response_type
+        - performance_band
+      - - standard_code
+        - standard_label
+        - head_of_school
+        - performance_band
+      - - standard_code
+        - standard_label
+        - head_of_school
+        - response_type
+        - performance_band
+      - - standard_code
+        - standard_label
+        - is_foundations
+        - performance_band
+      - - standard_code
+        - standard_label
+        - is_foundations
+        - response_type
+        - performance_band
+      - - standard_code
+        - is_foundations
+        - performance_band
+      - - standard_code
+        - is_foundations
+        - response_type
+        - performance_band
+      - - standard_code
+        - standard_label
+        - low_25
+        - performance_band
+      - - standard_code
+        - standard_label
+        - low_25
+        - response_type
+        - performance_band
+      - - standard_code
+        - standard_label
+        - is_replacement
+        - performance_band
+      - - standard_code
+        - standard_label
+        - is_replacement
+        - response_type
+        - performance_band
+      - - standard_code
+        - is_replacement
+        - performance_band
+      - - standard_code
+        - is_replacement
+        - response_type
+        - performance_band
+      - - standard_code
+        - standard_label
+        - other_context
+        - performance_band
+      - - standard_code
+        - standard_label
+        - other_context
+        - response_type
+        - performance_band
+      - - standard_code
+        - standard_label
+        - ml
+        - performance_band
+      - - standard_code
+        - standard_label
+        - ml
+        - response_type
+        - performance_band
+      - - standard_code
+        - standard_label
+        - module_code
+        - performance_band
+      - - standard_code
+        - standard_label
+        - module_code
+        - response_type
+        - performance_band
+      - - standard_code
+        - module_code
+        - performance_band
+      - - standard_code
+        - module_code
+        - response_type
+        - performance_band
+      - - standard_code
+        - standard_label
+        - module_type
+        - performance_band
+      - - standard_code
+        - standard_label
+        - module_type
+        - response_type
+        - performance_band
+      - - standard_code
+        - module_type
+        - performance_band
+      - - standard_code
+        - module_type
+        - response_type
+        - performance_band
+      - - standard_code
+        - standard_label
+        - bucket
+        - performance_band
+      - - standard_code
+        - standard_label
+        - bucket
+        - response_type
+        - performance_band
+      - - standard_code
+        - standard_label
+        - region
+        - performance_band
+      - - standard_code
+        - standard_label
+        - region
+        - response_type
+        - performance_band
+      - - standard_code
+        - region
+        - performance_band
+      - - standard_code
+        - region
+        - response_type
+        - performance_band
+      - - standard_code
+        - standard_label
+        - school
+        - performance_band
+      - - standard_code
+        - standard_label
+        - school
+        - response_type
+        - performance_band
+      - - standard_code
+        - school
+        - performance_band
+      - - standard_code
+        - school
+        - response_type
+        - performance_band
+      - - standard_code
+        - standard_label
+        - subject_area
+        - performance_band
+      - - standard_code
+        - standard_label
+        - subject_area
+        - response_type
+        - performance_band
+      - - standard_code
+        - subject_area
+        - performance_band
+      - - standard_code
+        - subject_area
+        - response_type
+        - performance_band
+      - - standard_code
+        - standard_label
+        - team
+        - performance_band
+      - - standard_code
+        - standard_label
+        - team
+        - response_type
+        - performance_band
+    not_checked:
+      - construct: "viewer_function: Region User Filter [3fe0a9]"
+        why:
+          Varies by viewer; the run uses a network identity on the full extract.
+      - construct: "filter: Subject Area (group) (copy) [07c576]"
+        why:
+          Narrows this sheet to a slice by a field Cube has no member for (term,
+          discipline group, bright-spot status and the like), or hides future
+          assessments; the check compares the unfiltered population.
+      - construct: "filter: % Completion [104887]"
+        why:
+          Narrows this sheet to a slice by a field Cube has no member for (term,
+          discipline group, bright-spot status and the like), or hides future
+          assessments; the check compares the unfiltered population.
+      - construct: "lod: % Completion [a8125f]"
+        why:
+          A Tableau-only calculation, parameter or grouping with no Cube
+          counterpart.
+      - construct: "lod: # Students Complete - Overall [c95b20]"
+        why:
+          A Tableau-only calculation, parameter or grouping with no Cube
+          counterpart.
+      - construct: "lod: # Students Possible - Overall [c99405]"
+        why:
+          A Tableau-only calculation, parameter or grouping with no Cube
+          counterpart.
+  - row_gid: "1219284528742290"
+    name: Schoolid / Section Number (raw) / Course Teachernumber
+    metrics:
+      - cube: pct_proficient
+        kind: rate
+        tableau:
+          - Mastery
+        num: count(if(is_mastery, 1, null))
+        den: count(is_mastery)
+        missing_members:
+          - untagged_assessments
+        num_without: count(if(is_mastery and is_normed_scope, 1, null))
+        den_without: count(if(is_normed_scope, is_mastery, null))
+    grains:
+      - - title
+        - assessment_id
+        - school
+      - - title
+        - assessment_id
+        - school
+        - response_type
+      - - assessment_id
+        - title
+        - school
+        - tutoring
+      - - assessment_id
+        - title
+        - school
+        - tutoring
+        - response_type
+      - - assessment_id
+        - title
+        - school
+        - academic_year
+      - - assessment_id
+        - title
+        - school
+        - academic_year
+        - response_type
+      - - assessment_id
+        - title
+        - school
+        - dibels
+      - - assessment_id
+        - title
+        - school
+        - dibels
+        - response_type
+      - - assessment_id
+        - title
+        - school
+        - grade_level
+      - - assessment_id
+        - title
+        - school
+        - grade_level
+        - response_type
+      - - assessment_id
+        - title
+        - school
+        - head_of_school
+      - - assessment_id
+        - title
+        - school
+        - head_of_school
+        - response_type
+      - - assessment_id
+        - title
+        - school
+        - is_foundations
+      - - assessment_id
+        - title
+        - school
+        - is_foundations
+        - response_type
+      - - assessment_id
+        - title
+        - school
+        - low_25
+      - - assessment_id
+        - title
+        - school
+        - low_25
+        - response_type
+      - - assessment_id
+        - title
+        - school
+        - is_replacement
+      - - assessment_id
+        - title
+        - school
+        - is_replacement
+        - response_type
+      - - assessment_id
+        - title
+        - school
+        - other_context
+      - - assessment_id
+        - title
+        - school
+        - other_context
+        - response_type
+      - - assessment_id
+        - title
+        - school
+        - ml
+      - - assessment_id
+        - title
+        - school
+        - ml
+        - response_type
+      - - assessment_id
+        - title
+        - school
+        - module_code
+      - - assessment_id
+        - title
+        - school
+        - module_code
+        - response_type
+      - - assessment_id
+        - title
+        - school
+        - module_type
+      - - assessment_id
+        - title
+        - school
+        - module_type
+        - response_type
+      - - assessment_id
+        - title
+        - school
+        - bucket
+      - - assessment_id
+        - title
+        - school
+        - bucket
+        - response_type
+      - - assessment_id
+        - title
+        - school
+        - region
+      - - assessment_id
+        - title
+        - school
+        - region
+        - response_type
+      - - assessment_id
+        - title
+        - school
+        - subject_area
+      - - assessment_id
+        - title
+        - school
+        - subject_area
+        - response_type
+      - - assessment_id
+        - title
+        - school
+        - team
+      - - assessment_id
+        - title
+        - school
+        - team
+        - response_type
+      - - module_type
+        - module_code
+        - grade_level
+        - school
+      - - module_type
+        - module_code
+        - grade_level
+        - school
+        - response_type
+      - - school
+        - grade_level
+      - - school
+        - grade_level
+        - response_type
+      - - school
+        - grade_level
+        - tutoring
+      - - school
+        - grade_level
+        - tutoring
+        - response_type
+      - - school
+        - grade_level
+        - academic_year
+      - - school
+        - grade_level
+        - academic_year
+        - response_type
+      - - school
+        - grade_level
+        - dibels
+      - - school
+        - grade_level
+        - dibels
+        - response_type
+      - - school
+        - grade_level
+        - head_of_school
+      - - school
+        - grade_level
+        - head_of_school
+        - response_type
+      - - school
+        - grade_level
+        - is_foundations
+      - - school
+        - grade_level
+        - is_foundations
+        - response_type
+      - - school
+        - grade_level
+        - low_25
+      - - school
+        - grade_level
+        - low_25
+        - response_type
+      - - school
+        - grade_level
+        - is_replacement
+      - - school
+        - grade_level
+        - is_replacement
+        - response_type
+      - - school
+        - grade_level
+        - other_context
+      - - school
+        - grade_level
+        - other_context
+        - response_type
+      - - school
+        - grade_level
+        - ml
+      - - school
+        - grade_level
+        - ml
+        - response_type
+      - - school
+        - grade_level
+        - module_code
+      - - school
+        - grade_level
+        - module_code
+        - response_type
+      - - school
+        - grade_level
+        - module_type
+      - - school
+        - grade_level
+        - module_type
+        - response_type
+      - - school
+        - grade_level
+        - bucket
+      - - school
+        - grade_level
+        - bucket
+        - response_type
+      - - school
+        - grade_level
+        - region
+      - - school
+        - grade_level
+        - region
+        - response_type
+      - - school
+        - grade_level
+        - subject_area
+      - - school
+        - grade_level
+        - subject_area
+        - response_type
+      - - school
+        - grade_level
+        - team
+      - - school
+        - grade_level
+        - team
+        - response_type
+      - - school
+      - - school
+        - response_type
+      - - grade_level
+        - module_code
+        - section
+        - school
+      - - grade_level
+        - module_code
+        - section
+        - school
+        - response_type
+      - - grade_level
+        - module_code
+        - section
+        - school
+        - tutoring
+      - - grade_level
+        - module_code
+        - section
+        - school
+        - tutoring
+        - response_type
+      - - grade_level
+        - module_code
+        - section
+        - school
+        - academic_year
+      - - grade_level
+        - module_code
+        - section
+        - school
+        - academic_year
+        - response_type
+      - - grade_level
+        - module_code
+        - section
+        - school
+        - dibels
+      - - grade_level
+        - module_code
+        - section
+        - school
+        - dibels
+        - response_type
+      - - grade_level
+        - module_code
+        - section
+        - school
+        - head_of_school
+      - - grade_level
+        - module_code
+        - section
+        - school
+        - head_of_school
+        - response_type
+      - - grade_level
+        - module_code
+        - section
+        - school
+        - is_foundations
+      - - grade_level
+        - module_code
+        - section
+        - school
+        - is_foundations
+        - response_type
+      - - grade_level
+        - module_code
+        - section
+        - school
+        - low_25
+      - - grade_level
+        - module_code
+        - section
+        - school
+        - low_25
+        - response_type
+      - - grade_level
+        - module_code
+        - section
+        - school
+        - is_replacement
+      - - grade_level
+        - module_code
+        - section
+        - school
+        - is_replacement
+        - response_type
+      - - grade_level
+        - module_code
+        - section
+        - school
+        - other_context
+      - - grade_level
+        - module_code
+        - section
+        - school
+        - other_context
+        - response_type
+      - - grade_level
+        - module_code
+        - section
+        - school
+        - ml
+      - - grade_level
+        - module_code
+        - section
+        - school
+        - ml
+        - response_type
+      - - grade_level
+        - module_code
+        - section
+        - school
+        - module_type
+      - - grade_level
+        - module_code
+        - section
+        - school
+        - module_type
+        - response_type
+      - - grade_level
+        - module_code
+        - section
+        - school
+        - bucket
+      - - grade_level
+        - module_code
+        - section
+        - school
+        - bucket
+        - response_type
+      - - grade_level
+        - module_code
+        - section
+        - school
+        - region
+      - - grade_level
+        - module_code
+        - section
+        - school
+        - region
+        - response_type
+      - - grade_level
+        - module_code
+        - section
+        - school
+        - subject_area
+      - - grade_level
+        - module_code
+        - section
+        - school
+        - subject_area
+        - response_type
+      - - grade_level
+        - module_code
+        - section
+        - school
+        - team
+      - - grade_level
+        - module_code
+        - section
+        - school
+        - team
+        - response_type
+    not_checked:
+      - construct: "filter: Subject Area (group) (copy) [07c576]"
+        why:
+          Narrows this sheet to a slice by a field Cube has no member for (term,
+          discipline group, bright-spot status and the like), or hides future
+          assessments; the check compares the unfiltered population.
+      - construct: "filter: % Completion [104887]"
+        why:
+          Narrows this sheet to a slice by a field Cube has no member for (term,
+          discipline group, bright-spot status and the like), or hides future
+          assessments; the check compares the unfiltered population.
+      - construct: "lod: % Completion [a8125f]"
+        why:
+          A Tableau-only calculation, parameter or grouping with no Cube
+          counterpart.
+      - construct: "lod: # Students Complete - Overall [c95b20]"
+        why:
+          A Tableau-only calculation, parameter or grouping with no Cube
+          counterpart.
+      - construct: "lod: # Students Possible - Overall [c99405]"
+        why:
+          A Tableau-only calculation, parameter or grouping with no Cube
+          counterpart.
+      - construct: "filter: Dashboard View Filter [7b1f53]"
+        why:
+          Narrows this sheet to a slice by a field Cube has no member for (term,
+          discipline group, bright-spot status and the like), or hides future
+          assessments; the check compares the unfiltered population.
+      - construct: "parameter: Dashboard View Filter [4f8acd]"
+        why:
+          A Tableau-only calculation, parameter or grouping with no Cube
+          counterpart.
+      - construct: "filter: Dashboard View Filter [747a2f]"
+        why:
+          Narrows this sheet to a slice by a field Cube has no member for (term,
+          discipline group, bright-spot status and the like), or hides future
+          assessments; the check compares the unfiltered population.
+      - construct: "table_calc: Mastery [774b8e]"
+        why:
+          Computed from the table on screen (share of total, rank or running
+          value); the base aggregate is checked.
+      - construct: "group: School Level (School) [5ba400]"
+        why:
+          A Tableau-only calculation, parameter or grouping with no Cube
+          counterpart.
+members:
+  untagged_assessments:
+    what:
+      Illuminate assessments with no AppSheet tag (is_normed_scope false). The
+      Assessment Dashboard view shows them; the Module Dashboard and DKI views
+      do not.
+    lives_in:
+      rpt_tableau__assessment_dashboard carries every Illuminate assessment;
+      fct_assessment_scores_enrollment_scoped's internal branch carries tagged
+      ones only.
+    suggested_edit:
+      Decide whether Cube should answer for untagged assessments. If so, carry
+      them in the fact (or a sibling fact) with is_internal_assessment false; if
+      not, scope the Assessment Dashboard rebuild to tagged assessments.
