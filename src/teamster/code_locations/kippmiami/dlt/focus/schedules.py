@@ -10,10 +10,10 @@ config = yaml.safe_load(config_file.read_text())
 
 asset_key_prefix = f"{CODE_LOCATION}/dlt/focus"
 
-# Only the count-only tables (no `cursor_column` -- as of writing, just
-# co_teachers) belong in this tier. Derived from config rather than
-# hardcoded so a table that later loses its cursor joins automatically, and
-# one that gains a real cursor drops out without a code change here.
+# Only the count-only tables (`cursor_column: null`) belong in this tier.
+# Derived from config rather than hardcoded so a table that later loses its
+# cursor joins automatically, and one that gains a real cursor drops out
+# without a code change here.
 daily_full_refresh_targets = [
     f"{asset_key_prefix}/{a['table_name']}"
     for a in config["assets"]

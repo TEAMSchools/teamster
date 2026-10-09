@@ -112,16 +112,15 @@ of them a run carries. A table is loaded only when its probed signature
 (`COUNT(*)` + `MAX(updated_at)`) differs from the one the last successful load
 wrote to dlt `resource_state`.
 
-- **Tiering**: `0 4 * * *` targets only the count-only tables (`co_teachers` as
-  of writing — derived from `cursor_column: null` in `config/focus.yaml`, not
-  hardcoded) and is their unconditional daily reload, because a count-only probe
-  can't see an in-place edit that leaves row count unchanged. Every other table
-  is gated by the intraday sensor's probe alone and gets no separate
-  unconditional reload, so its `updated_at` must move on every edit. Before
-  adding a table with a cursor, confirm edited rows show
-  `updated_at > created_at`; if they don't, give it `cursor_column: null`. The
-  sensor probes every table in `config/focus.yaml` every 15 minutes regardless
-  of tier.
+- **Tiering**: `0 4 * * *` targets only the count-only tables (derived from
+  `cursor_column: null` in `config/focus.yaml`, not hardcoded) and is their
+  unconditional daily reload, because a count-only probe can't see an in-place
+  edit that leaves row count unchanged. Every other table is gated by the
+  intraday sensor's probe alone and gets no separate unconditional reload, so
+  its `updated_at` must move on every edit. Before adding a table with a cursor,
+  confirm edited rows show `updated_at > created_at`; if they don't, give it
+  `cursor_column: null`. The sensor probes every table in `config/focus.yaml`
+  every 15 minutes regardless of tier.
 - **Gating cannot move into the op**: a zero-row `replace` truncates (see
   `../CLAUDE.md`), and probing in the op would plan every asset every tick and
   emit `ASSET_FAILED_TO_MATERIALIZE` for the skipped ones. Signature state

@@ -167,7 +167,8 @@ assets:
     cursor_column: updated_at
   - table_name: test_history_score_ranges
     cursor_column: updated_at
-  # Apex
+  # Apex. The null-cursor tables have no row with updated_at > created_at, so an
+  # in-place edit can't be shown to move it; the 04:00 tier reloads them nightly.
   - table_name: apex_assessments
     cursor_column: updated_at
   - table_name: apex_assigned_assessments
@@ -185,12 +186,12 @@ assets:
   - table_name: apex_questions
     cursor_column: updated_at
   - table_name: apex_question_standards
-    cursor_column: updated_at
+    cursor_column: null
   - table_name: apex_band_sets
     cursor_column: updated_at
   - table_name: apex_band_levels
-    cursor_column: updated_at
+    cursor_column: null
   - table_name: apex_band_set_assessments
-    cursor_column: updated_at
+    cursor_column: null
   - table_name: apex_assignment_gradebook_assignment
-    cursor_column: updated_at
+    cursor_column: null
