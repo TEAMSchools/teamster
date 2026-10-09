@@ -939,3 +939,46 @@ def test_write_outputs_writes_every_file(tmp_path):
     assert digest.exists() and (out / "2026-10-09-demo-coverage.md").exists()
     assert (out / "2026-10-09-demo-issues" / "dup.md").exists()
     assert json.loads((out / "latest.json").read_text())["111"]["verdict"] == "fail"
+
+
+def test_run_compare_compares_new_states_and_proposes_the_next(tmp_path):
+    c = _checks(
+        tmp_path, trees={DS: {"region": ["region", "school"]}}, cross_cuts={DS: []}
+    )
+    snapdir = tmp_path / "snap"
+    (snapdir / "csv").mkdir(parents=True)
+    (snapdir / "csv" / "n.csv").write_bytes(b"School Name,Avg Score\r\nAlpha,48.50\r\n")
+    manifest = {
+        "workbook": "Demo",
+        "extracts": {DS: {"file": "x.hyper", "refreshed": None}},
+        "fields": {
+            "Region": {"field": "region", "datasource": DS},
+            "School Name": {"field": "school", "datasource": DS},
+        },
+        "states": {
+            "n": {
+                "state": {
+                    "id": "n",
+                    "dashboard": "Overview",
+                    "filters": {"Region": "North"},
+                },
+                "status": "ok",
+                "click_filters": {},
+                "sheets": {"Overview - Table": {"file": "csv/n.csv", "rows": 1}},
+            }
+        },
+    }
+    (snapdir / "manifest.json").write_text(json.dumps(manifest))
+    cube = FakeCube({"Alpha": _row(47.0)}, _row(0))
+    extracts = lambda ds, sql: [{"v": "Alpha", "n": 30}, {"v": "Beta", "n": 12}]  # noqa: E731
+    cells, nxt = cv.run_compare(c, snapdir, cube, extracts)
+    assert [x.status for x in cells] == ["mismatch"]
+    assert [s["filters"]["School Name"] for s in nxt] == ["Alpha", "Beta"]
+    # A second run compares nothing new.
+    cv.write_cells(snapdir / "cells.jsonl", cells)
+    assert cv.run_compare(c, snapdir, cube, extracts)[0] == []
+
+
+def test_main_needs_a_command():
+    with pytest.raises(SystemExit):
+        cv.main([])

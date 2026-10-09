@@ -1442,3 +1442,194 @@ def write_outputs(out_dir, workbook, run_date, cells, checks, states, fields) ->
             (out / f"{stem}-issues" / f"{s}.md").write_text(text)
     write_latest(out / "latest.json", workbook, run_date, row_results(cells, checks))
     return digest
+
+
+SNAPSHOT_ROOT = Path.home() / ".cache" / "cube-validate"
+
+
+def latest_snapshot(workbook: str, root: Path = SNAPSHOT_ROOT) -> Path:
+    base = Path(root) / _slug(workbook)
+    dirs = sorted(p for p in base.iterdir() if p.is_dir()) if base.exists() else []
+    if not dirs:
+        raise FileNotFoundError(
+            f"no snapshot for {workbook} under {base}; run the snapshot open step"
+        )
+    return dirs[-1]
+
+
+class Extracts:
+    """One ExtractSource per datasource, opened on first use."""
+
+    def __init__(self, snapdir: Path, extracts: dict[str, dict]):
+        self.snapdir, self.meta, self.open = Path(snapdir), extracts, {}
+
+    def __call__(self, datasource: str, sql: str) -> list[dict]:
+        if datasource not in self.open:
+            src = ExtractSource(self.snapdir / self.meta[datasource]["file"])
+            self.open[datasource] = src.__enter__()
+        return self.open[datasource](sql)
+
+    def close(self) -> None:
+        for src in self.open.values():
+            src.__exit__(None, None, None)
+        self.open = {}
+
+
+def run_compare(checks, snapdir, load, extracts):
+    snapdir = Path(snapdir)
+    m = json.loads((snapdir / "manifest.json").read_text())
+    done = {c.state for c in read_cells(snapdir / "cells.jsonl")}
+    cells: list[Cell] = []
+    for sid, e in sorted(m["states"].items()):
+        if e.get("status") != "ok" or sid in done:
+            continue
+        filters, missing = state_filters(e, checks)
+        for sheet_name, meta in e["sheets"].items():
+            sheet = checks["sheets"].get(sheet_name)
+            if sheet is None:
+                cells.append(
+                    Cell(
+                        sheet_name,
+                        sid,
+                        {},
+                        "",
+                        None,
+                        None,
+                        None,
+                        None,
+                        "not_comparable",
+                        "unmapped sheet",
+                    )
+                )
+                continue
+            export = read_export((snapdir / meta["file"]).read_bytes())
+            cells += compare_export(sheet, sid, export, load, filters, missing, checks)
+    every = read_cells(snapdir / "cells.jsonl") + cells
+
+    def children(ds, where, f):
+        rows = extracts(ds, child_values_sql(where, f))
+        return [(r["v"], int(r["n"])) for r in rows]
+
+    nxt = next_states(
+        m["states"],
+        state_status(every),
+        checks.get("trees") or {},
+        checks.get("cross_cuts") or {},
+        m["fields"],
+        children,
+    )
+    return cells, nxt
+
+
+def _client() -> CubeClient:
+    url = os.environ.get("CUBE_API_URL", DEFAULT_CUBE_URL)
+    return CubeClient(url, os.environ["CUBE_API_SECRET"], _user_email(None))
+
+
+def _live(client: CubeClient) -> Live:
+    """Extract SQL on each datasource's live rpt_ table, with both sides' refresh times."""
+    built: dict[str, dt.datetime | None] = {}
+
+    def rows(ds, sql):
+        return bigquery_rows(sql.replace(EXTRACT_TABLE, live_table(ds)))
+
+    def modified(ds):
+        if ds not in built:
+            built[ds] = table_modified(live_table(ds))
+        return built[ds]
+
+    def cube_refreshed(q):
+        client.load(q)
+        t = client.last_refresh
+        return dt.datetime.fromisoformat(t.replace("Z", "+00:00")) if t else None
+
+    return Live(rows, modified, cube_refreshed)
+
+
+def _compare(a) -> int:
+    checks = load_checks(a.checks)
+    snapdir = latest_snapshot(checks["workbook"])
+    m = json.loads((snapdir / "manifest.json").read_text())
+    client, extracts = _client(), Extracts(snapdir, m["extracts"])
+    try:
+        if checks.get("scope"):
+            cap = checks["scope"]["filter"]
+            f = m["fields"][cap]
+            rows = extracts(f["datasource"], child_values_sql([], f["field"]))
+            scope_guard(
+                client.load,
+                checks,
+                {r["v"]: int(r["n"]) for r in rows if r["v"] is not None},
+            )
+        cells, nxt = run_compare(checks, snapdir, client.load, extracts)
+    finally:
+        extracts.close()
+    write_cells(snapdir / "cells.jsonl", read_cells(snapdir / "cells.jsonl") + cells)
+    (snapdir / "next_states.yml").write_text(
+        yaml.safe_dump(nxt, sort_keys=False, allow_unicode=True)
+    )
+    counts = Counter(c.status for c in cells)
+    print(
+        f"compared {len(cells)} cells: "
+        + ", ".join(f"{k} {v}" for k, v in counts.most_common())
+    )
+    print(f"next descent level: {len(nxt)} states -> {snapdir / 'next_states.yml'}")
+    return 0
+
+
+def _explain(a) -> int:
+    checks = load_checks(a.checks)
+    snapdir = latest_snapshot(checks["workbook"])
+    m = json.loads((snapdir / "manifest.json").read_text())
+    cells = read_cells(snapdir / "cells.jsonl")
+    client, extracts = _client(), Extracts(snapdir, m["extracts"])
+    try:
+        explain_cells(
+            cells,
+            checks,
+            m["states"],
+            m["fields"],
+            extracts,
+            client.load,
+            _live(client),
+        )
+    finally:
+        extracts.close()
+    write_cells(snapdir / "cells.jsonl", cells)
+    counts = Counter(c.verdict for c in cells if c.verdict)
+    print("verdicts: " + ", ".join(f"{k} {v}" for k, v in counts.most_common()))
+    return 0
+
+
+def _drafts(a) -> int:
+    checks = load_checks(a.checks)
+    snapdir = latest_snapshot(checks["workbook"])
+    m = json.loads((snapdir / "manifest.json").read_text())
+    cells = read_cells(snapdir / "cells.jsonl")
+    digest = write_outputs(
+        Path(a.out),
+        checks["workbook"],
+        dt.date.today().isoformat(),
+        cells,
+        checks,
+        m["states"],
+        m["fields"],
+    )
+    print(f"digest: {digest}")
+    return 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    p = argparse.ArgumentParser(prog="cube_validate")
+    sub = p.add_subparsers(dest="cmd", required=True)
+    for name in ("compare", "explain"):
+        sub.add_parser(name).add_argument("checks")
+    d = sub.add_parser("drafts")
+    d.add_argument("checks")
+    d.add_argument("--out", default=str(DEFAULT_OUT))
+    a = p.parse_args(argv)
+    return {"compare": _compare, "explain": _explain, "drafts": _drafts}[a.cmd](a)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
