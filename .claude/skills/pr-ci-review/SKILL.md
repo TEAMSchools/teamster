@@ -76,10 +76,12 @@ description:
   and longest first. It posts as **`github-actions[bot]`**, not a `claude`-named
   user, so filtering by a "claude" login returns nothing. It may leave TWO
   comments (a "Reviewing…" stub plus a findings comment) or instead EDIT the
-  stub in place minutes AFTER the check-run reports `success`, and a re-fired
+  stub in place, before or after the check-run reports `success`, and a re-fired
   run creates a NEW comment even with `use_sticky_comment: true`. So gate a
-  findings-poll on the body no longer matching "in progress" — never on a cached
-  comment id, a length threshold, or the check-run conclusion.
+  findings-poll on the body STARTING with the completion header
+  `**Claude finished @` — never on the absence of "in progress" (a finding can
+  quote that phrase and hang the poll), a cached comment id, a length threshold,
+  or the check-run conclusion.
 
 - **A merged PR's CI status is not evidence the change was validated** — a PR
   merged mid-CI leaves a permanent `dbt Cloud: failure` that is a cancellation,
