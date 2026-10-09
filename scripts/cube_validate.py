@@ -1594,8 +1594,21 @@ def _cell_out(c, kind) -> dict:
     }
 
 
+def without_index(m: dict) -> int | None:
+    """The variant that is the SQL without the missing members, if the metric has one."""
+    members = set(m.get("missing_members") or [])
+    return next(
+        (
+            j
+            for j, v in enumerate(m.get("variants", []))
+            if members and set(v["explains"]) == members
+        ),
+        None,
+    )
+
+
 def summarize(
-    cells, kind, variants=(), accepted=frozenset(), open_issues=frozenset()
+    cells, kind, without=None, accepted=frozenset(), open_issues=frozenset()
 ) -> dict:
     """One metric at one grain.
 
@@ -1617,9 +1630,8 @@ def summarize(
     only = None
     if len(cells) == 1:
         only = {"cube": cells[0].cube, "truth": cells[0].truth}
-        if variants:
-            # Variant 0 is the SQL without the missing members, when there are any.
-            only["without"] = variants[0][1].get(cells[0].key, (None, None))[0]
+        if without is not None:
+            only["without"] = without.get(cells[0].key, (None, None))[0]
     shown = sorted((c for c in cells if c.explained), key=lambda c: -c.delta)
     return {
         "cells": len(cells),
@@ -2242,14 +2254,23 @@ def run_dashboard(
                     truth_cells(trows, len(g), i, m["kind"]),
                 )
                 # A variant the owner ruled cube-wrong explains nothing.
+                alts = {
+                    j: truth_cells(trows, len(g), i, m["kind"], f"_v{j}")
+                    for j in range(len(m["variants"]))
+                }
                 variants = [
-                    (v["explains"], truth_cells(trows, len(g), i, m["kind"], f"_v{j}"))
+                    (v["explains"], alts[j])
                     for j, v in enumerate(m["variants"])
                     if not set(v["explains"]) & rejected
                 ]
                 explain(cells, m["kind"], variants)
+                w = without_index(m)
                 summaries[m["key"]] = summarize(
-                    cells, m["kind"], variants, accepted, open_issues
+                    cells,
+                    m["kind"],
+                    None if w is None else alts[w],
+                    accepted,
+                    open_issues,
                 )
             # A cell keyed by a person (a per-student grain) never names them.
             person = {i for i, d in enumerate(grain) if d.person}
@@ -2439,9 +2460,8 @@ def _total_line(s_: dict, kind: str, members: list[str]) -> list[str]:
     if s_["bad"]:
         lines = [f"- Total differs: Cube {c}, Tableau {t}."]
     elif s_["explained"]:
-        lines = [
-            f"- Total differs, explained by {', '.join(members)}: Cube {c}, Tableau {t}."
-        ]
+        causes = ", ".join(s_.get("explained_by") or {}) or ", ".join(members)
+        lines = [f"- Total differs, explained by {causes}: Cube {c}, Tableau {t}."]
     else:
         lines = [f"- Total matches: Cube {c}, Tableau {t}."]
     w, truth = only.get("without"), only.get("truth")
@@ -2550,6 +2570,13 @@ def comment_text(row, result) -> str:
     ]
     if owner:
         lines.append(f"Dashboard issues for the domain owner: {', '.join(owner)}.")
+    wrong = [
+        f"{slug} ({_issue_ref(t)})"
+        for slug, t in row.get("truth_issues", {}).items()
+        if t["ruling"] == "cube-wrong"
+    ]
+    if wrong:
+        lines.append(f"Ruled cube-wrong, so Cube must change: {', '.join(wrong)}.")
     if bad:
         n = sum(1 for g in compared if g["bad"])
         lines.append(
@@ -2587,6 +2614,11 @@ def _cell_text(c: dict, kind: str) -> str:
 
 
 def _metric_sql(m: dict, without: bool = False) -> str:
+    if without and not m.get("sql_without" if m["kind"] == "count" else "num_without"):
+        w = without_index(m)
+        if w is None:
+            return "(no SQL without it)"
+        return _metric_sql({**m["variants"][w], "kind": m["kind"]})
     suffix = "_without" if without else ""
     if m["kind"] == "count":
         return f"`{m['sql' + suffix]}`"
@@ -2628,7 +2660,11 @@ def digest_markdown(result, checks, cube_defs) -> str:
             i["stale"] = i["stale"] and t["stale"]
             if t["explains_cells"]:
                 i["rows"].append(gid)
-    shown = {s: i for s, i in issues.items() if i["cells"] or i["stale"]}
+    shown = {
+        s: i
+        for s, i in issues.items()
+        if i["cells"] or i["stale"] or i.get("ruling") == "cube-wrong"
+    }
     if shown:
         out += ["## Dashboard, model or source issues", ""]
         stem = f"{result['run_date']}-{result['dashboard']}"

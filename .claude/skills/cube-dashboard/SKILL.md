@@ -34,13 +34,13 @@ Cube members and the truth issues, with the cells they explain.
 2. Checks. Open `checks/<dashboard>.yml`. For any done row with no entry, author
    one (below). Show new or changed entries to the user and wait for approval
    before running.
-3. Rulings. For each `truth_issues:` entry with `issue:` and no `ruling:`, read
-   the issue with `mcp__github__issue_read` (`get`, then `get_labels`). A
-   `cube-correct` or `cube-wrong` label becomes
+3. Rulings. For every `truth_issues:` entry with `issue:`, ruled or not, read
+   the issue with `mcp__github__issue_read` (`get`, then `get_labels`). A closed
+   issue gets `closed_on: <date closed>`, so a fixed one shows as stale. On an
+   entry with no `ruling:`, a `cube-correct` or `cube-wrong` label becomes
    `ruling: {call, by: <assignee login, or "unassigned">, on: <today>, note: <first line of the latest comment>}`.
-   A closed issue gets `closed_on: <date closed>`. Keep a ruling already in the
-   file; if a label contradicts it, tell the user instead of changing it. Commit
-   the checks file.
+   Keep a ruling already in the file; if a label contradicts it, tell the user
+   instead of changing it. Commit the checks file.
 4. Run. Write `tests/test_zz_cube_dashboard_run.py` (template below), run
    `uv run pytest tests/test_zz_cube_dashboard_run.py -s -q --tb=short`, then
    delete it. The run downloads the workbook with its extracts and compares Cube

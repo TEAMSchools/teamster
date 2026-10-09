@@ -2342,3 +2342,54 @@ def test_settle_text_labels_columns_by_metric():
     text = cv.settle_text("rpt_demo", drift, {"m0": "count_tardy_days"})
     assert "2026-10-08    1  count_tardy_days +1" in text
     assert "days: 2" in text
+
+
+# ---------------------------------------------------------------- review fixes
+class TotalMovesBQ(AltBQ):
+    """The variant moves the dashboard's total as well as the school cells."""
+
+    def __call__(self, sql):
+        rows = super().__call__(sql)
+        return [
+            dict(r, m0_v0=r["m0_v0"] + 5) if "m0_v0" in r and "g0" not in r else r
+            for r in rows
+        ]
+
+
+def _members_with_only_variants(d):
+    _add_truth_issue(d)
+    d["rows"][0]["metrics"][0]["missing_members"] = ["team"]
+
+
+def test_members_with_only_variants_never_borrow_a_truth_variant(tmp_path):
+    checks = cv.load_checks(_write_variant(tmp_path, _members_with_only_variants))
+    result = cv.run_dashboard(checks, FakeCube(), TotalMovesBQ(), TODAY)
+    # The truth issue's variant moves the total; that says nothing about team.
+    assert cv.reopen_for(result["rows"]["1"]) == []
+    cv.write_outputs(result, tmp_path / "out", checks, {})  # no KeyError
+
+
+def test_cube_wrong_issue_stays_in_the_digest_and_comment(tmp_path):
+    ruling = {"call": "cube-wrong", "by": "owner", "on": "2026-10-09"}
+    checks, result = _truth_run(
+        tmp_path, lambda d: _add_truth_issue(d, issue=123, ruling=ruling)
+    )
+    md = cv.digest_markdown(result, checks, {})
+    assert "### tardy_formula (dashboard)" in md
+    assert "- Issue: #123, ruled cube-wrong" in md
+    text = cv.comment_text(result["rows"]["1"], result)
+    assert "Ruled cube-wrong, so Cube must change: tardy_formula (#123)." in text
+
+
+def test_total_line_names_the_truth_issue_that_explains_it():
+    s_ = {
+        "bad": 0,
+        "explained": 1,
+        "explained_by": {"completion_always_100": 1},
+        "worst": [],
+        "only": {"cube": 0.8, "truth": 1.0},
+    }
+    assert cv._total_line(s_, "rate", [])[0] == (
+        "- Total differs, explained by completion_always_100: Cube 80.0%, "
+        "Tableau 100.0%."
+    )
