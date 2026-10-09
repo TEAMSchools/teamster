@@ -18,8 +18,8 @@ def _build_dbt_condition(
 ) -> AutomationCondition:
     """Build a dbt automation condition with the shared structure.
 
-    All three dbt conditions (view, union_relations, table) share the same
-    skeleton — they differ only in what additional triggers (beyond
+    All four dbt conditions (view, union_relations, table, cron) share the
+    same skeleton — they differ only in what additional triggers (beyond
     newly_missing) cause a materialization request.
 
     The shared structure is a fork of AutomationCondition.eager() with:

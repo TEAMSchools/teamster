@@ -60,8 +60,8 @@ Four dbt-specific `AutomationCondition` builders, all sharing a common skeleton
 via `_build_dbt_condition()`:
 
 - `dbt_view_automation_condition()` — for VIEW models: re-runs on
-  `newly_missing`, `code_version_changed`, or `execution_failed`. Intentionally
-  omits `any_deps_updated` since views are computed on read.
+  `newly_missing` or `code_version_changed`. Intentionally omits
+  `any_deps_updated` since views are computed on read.
 - `dbt_union_relations_automation_condition()` — for views using the
   `union_relations` macro: adds one trigger to the view condition, firing on the
   tick a parent's post-code-change materialization lands (parent's own code or
