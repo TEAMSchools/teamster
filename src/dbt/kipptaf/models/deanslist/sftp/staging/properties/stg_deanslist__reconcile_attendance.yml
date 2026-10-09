@@ -6,8 +6,8 @@ models:
         data_tests:
           - relationships:
               arguments:
-                to: ref("stg_google_sheets__people__location_crosswalk")
-                field: name
+                to: ref("int_people__location_crosswalk")
+                field: location_name
               config:
                 severity: error
       - name: student_id
