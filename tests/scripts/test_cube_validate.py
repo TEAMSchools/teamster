@@ -2434,3 +2434,89 @@ def test_a_cube_filter_can_apply_to_one_extract_only(tmp_path):
     ]
     # One query per comparable grain of the row with the weekly metric; no other.
     assert len(wpp) == 3
+
+
+# ---------------------------------------------------------------- cube issues
+def _add_cube_issue(d, **extra):
+    d["cube_issues"] = {
+        "rows_not_pairs": {
+            "title": "fix(cube): count_tardy_days counts rows, not tardy days",
+            "what": "Cube's measure counts every row where the dashboard counts days.",
+            **extra,
+        }
+    }
+    d["rows"][0]["metrics"][0]["variants"] = [
+        {"explains": ["rows_not_pairs"], "sql": "countif(att_code = 'T')"}
+    ]
+
+
+def test_cube_issue_makes_the_row_cube_issue(tmp_path):
+    _, result = _truth_run(tmp_path, _add_cube_issue)
+    row = result["rows"]["1"]
+    assert row["verdict"] == "cube_issue"
+    school = next(g for g in row["grains"] if g["grain"] == ["region", "school"])
+    assert school["status"] == "cube_issue" and school["cube"] == 2
+    assert row["cube_issues"] == {
+        "rows_not_pairs": {"explains_cells": 2, "issue": None, "stale": False}
+    }
+
+
+def test_a_slug_is_one_kind_of_thing(tmp_path):
+    def m(d):
+        _add_cube_issue(d)
+        _add_truth_issue(d)
+        d["truth_issues"]["rows_not_pairs"] = d["truth_issues"].pop("tardy_formula")
+
+    with pytest.raises(cv.CheckError, match="rows_not_pairs.*more than one"):
+        cv.load_checks(_write_variant(tmp_path, m))
+
+
+def test_a_cube_issue_slug_is_not_a_missing_member(tmp_path):
+    def m(d):
+        _add_cube_issue(d)
+        d["rows"][0]["metrics"][0]["missing_members"] = ["rows_not_pairs"]
+
+    with pytest.raises(cv.CheckError, match="rows_not_pairs.*more than one"):
+        cv.load_checks(_write_variant(tmp_path, m))
+
+
+def test_a_cube_issue_and_a_member_explain_a_cell_together(tmp_path):
+    def m(d):
+        _add_cube_issue(d)
+        mm = d["rows"][0]["metrics"][0]
+        mm["missing_members"] = ["team"]
+        mm["variants"][0]["explains"] = ["rows_not_pairs", "team"]
+
+    _, result = _truth_run(tmp_path, m)
+    row = result["rows"]["1"]
+    assert row["verdict"] == "cube_issue"
+    assert row["missing_members"]["team"]["explains_cells"] == 2
+
+
+def test_an_accepted_truth_issue_does_not_hide_a_cube_issue(tmp_path):
+    ruling = {"call": "cube-correct", "by": "owner", "on": "2026-10-09"}
+
+    def m(d):
+        _add_truth_issue(d, ruling=ruling)
+        _add_cube_issue(d)
+        d["rows"][0]["metrics"][0]["variants"] = [
+            {
+                "explains": ["tardy_formula", "rows_not_pairs"],
+                "sql": "countif(att_code = 'T')",
+            }
+        ]
+
+    _, result = _truth_run(tmp_path, m)
+    assert result["rows"]["1"]["verdict"] == "cube_issue"
+
+
+@pytest.mark.parametrize(
+    ("statuses", "verdict"),
+    [
+        (["cube_issue", "truth_issue"], "cube_issue"),
+        (["cube_issue", "fail"], "fail"),
+        (["cube_issue", "error"], "incomplete"),
+    ],
+)
+def test_row_verdict_cube_issue(statuses, verdict):
+    assert cv.row_verdict([{"status": s} for s in statuses]) == verdict

@@ -1033,7 +1033,22 @@ def load_checks(path) -> dict:
                 f"{at}: ruling needs call (cube-correct or cube-wrong), by and on"
             )
         t["labels"] = list(t.get("labels") or [])
+        t["related"] = list(t.get("related") or [])
     data["truth_issues"] = issues
+    # Gaps Cube's own formula causes: its variant copies Cube's definition.
+    cube_issues = data.get("cube_issues") or {}
+    if not isinstance(cube_issues, dict):
+        raise CheckError(f"{path}: cube_issues is a map of slug to entry")
+    for slug, t in cube_issues.items():
+        at = f"{path}: cube issue '{slug}'"
+        missing = [k for k in ("title", "what") if not (t or {}).get(k)]
+        if missing:
+            raise CheckError(f"{at} is missing {missing}")
+        if t.get("issue") is not None and not isinstance(t["issue"], int):
+            raise CheckError(f"{at}: issue is the GitHub issue number")
+        t["labels"] = list(t.get("labels") or [])
+        t["related"] = list(t.get("related") or [])
+    data["cube_issues"] = cube_issues
     data["open_issues_task"] = (
         str(data["open_issues_task"]) if data.get("open_issues_task") else None
     )
@@ -1089,13 +1104,22 @@ def load_checks(path) -> dict:
                 if m["kind"] == "count"
                 else ("explains", "num", "den")
             )
+            names = [*issues, *cube_issues, *(m.get("missing_members") or [])]
+            twice = sorted({n for n in names if names.count(n) > 1})
+            if twice:
+                raise CheckError(
+                    f"{where}: {', '.join(twice)} is named as more than one of a "
+                    "truth issue, a cube issue and a missing member"
+                )
             for v in variants:
                 if not isinstance(v, dict) or any(not v.get(k) for k in need):
                     raise CheckError(
                         f"{where}: metric {m.get('cube')}: each variant needs "
                         f"{list(need)}"
                     )
-                known = set(issues) | set(m.get("missing_members") or [])
+                known = (
+                    set(issues) | set(cube_issues) | set(m.get("missing_members") or [])
+                )
                 unknown = [n for n in v["explains"] if n not in known]
                 if unknown:
                     raise CheckError(
@@ -1621,7 +1645,12 @@ def without_index(m: dict) -> int | None:
 
 
 def summarize(
-    cells, kind, without=None, accepted=frozenset(), open_issues=frozenset()
+    cells,
+    kind,
+    without=None,
+    accepted=frozenset(),
+    open_issues=frozenset(),
+    cube_issues=frozenset(),
 ) -> dict:
     """One metric at one grain.
 
@@ -1630,7 +1659,9 @@ def summarize(
     """
 
     def is_accepted(c):
-        return c.explained and set(c.explained_by) <= accepted
+        # An owner's cube-correct never clears a cell Cube's own formula explains.
+        names = set(c.explained_by)
+        return c.explained and names <= accepted and not names & cube_issues
 
     bad = sorted(
         (c for c in cells if not c.ok and not c.explained), key=lambda c: -c.delta
@@ -1651,6 +1682,7 @@ def summarize(
         "bad": len(bad),
         "explained": len(explained),
         "review": sum(1 for c in explained if set(c.explained_by) & open_issues),
+        "cube": sum(1 for c in explained if set(c.explained_by) & cube_issues),
         "accepted": sum(1 for c in cells if is_accepted(c)),
         "explained_by": by,
         "only": only,
@@ -1668,7 +1700,7 @@ def row_verdict(grains) -> str:
         return "fail"
     if "error" in statuses:
         return "incomplete"
-    for s in ("truth_issue", "missing_member"):
+    for s in ("cube_issue", "truth_issue", "missing_member"):
         if s in statuses:
             return s
     if "pass" not in statuses:
@@ -2209,6 +2241,7 @@ def run_dashboard(
     truth_lock, progress = threading.Lock(), threading.Lock()
     finished = [0]
     accepted, rejected, open_issues = issue_states(checks)
+    cube_slugs = frozenset(checks["cube_issues"])
 
     def say(text: str) -> None:
         with progress:
@@ -2284,6 +2317,7 @@ def run_dashboard(
                     None if w is None else alts[w],
                     accepted,
                     open_issues,
+                    cube_slugs,
                 )
             # A cell keyed by a person (a student or a teacher) never names them.
             person = {
@@ -2372,9 +2406,12 @@ def run_dashboard(
                         )
                         mm["changes_total"] = mm["changes_total"] or moves
                 review = sum(s["review"] for s in ms.values())
+                cube = sum(s["cube"] for s in ms.values())
                 entry.update(
                     status="fail"
                     if bad
+                    else "cube_issue"
+                    if cube
                     else "truth_issue"
                     if review
                     else ("missing_member" if explained else "pass"),
@@ -2382,6 +2419,7 @@ def run_dashboard(
                     bad=bad,
                     explained=explained,
                     review=review,
+                    cube=cube,
                     accepted=sum(s["accepted"] for s in ms.values()),
                     metrics=ms,
                     pre_aggregations=o["pre_aggregations"],
@@ -2406,6 +2444,7 @@ def run_dashboard(
             "pass",
             "missing_member",
             "truth_issue",
+            "cube_issue",
         ):
             # A construct nobody accounted for may change what the sheet shows.
             verdict = "incomplete"
@@ -2431,12 +2470,34 @@ def run_dashboard(
                 # A closed issue that explains nothing any more: remove its entry.
                 "stale": bool(t.get("closed_on")) and not n,
             }
+        cube_found = {}
+        for slug in sorted(
+            {
+                n
+                for m in row["metrics"]
+                for v in m["variants"]
+                for n in v["explains"]
+                if n in checks["cube_issues"]
+            }
+        ):
+            t = checks["cube_issues"][slug]
+            n = sum(
+                s["explained_by"].get(slug, 0)
+                for g in grains
+                for s in g.get("metrics", {}).values()
+            )
+            cube_found[slug] = {
+                "explains_cells": n,
+                "issue": t.get("issue"),
+                "stale": bool(t.get("closed_on")) and not n,
+            }
         result["rows"][str(row["row_gid"])] = {
             "name": row["name"],
             "verdict": verdict,
             "grains": grains,
             **({"diagnosis": diagnosis} if diagnosis else {}),
             **({"truth_issues": truth} if truth else {}),
+            **({"cube_issues": cube_found} if cube_found else {}),
             "missing_members": {
                 k: v
                 for k, v in missing.items()
@@ -2494,7 +2555,7 @@ def _total_line(s_: dict, kind: str, members: list[str]) -> list[str]:
     return lines
 
 
-_COMPARED = ("pass", "fail", "missing_member", "truth_issue")
+_COMPARED = ("pass", "fail", "missing_member", "truth_issue", "cube_issue")
 
 
 def _missing_text(missing: dict, full: bool = False) -> str:
