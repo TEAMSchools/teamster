@@ -2581,6 +2581,64 @@ def test_table_dep_update_during_own_run_triggers_follow_up():
     assert result.get_num_requested(table) == 0
 
 
+def test_table_two_feed_race_triggers_follow_up():
+    """kippmiami int_finalsite__enrollment_lifecycle joins two feeds that
+    rebuild in separate concurrent runs (#4834). A run triggered by one feed
+    must not swallow the other feed's update when it lands in the same tick
+    the run finishes, even after the run's materialization.
+    """
+
+    @asset(tags=_TABLE_TAG)
+    def contacts_feed():
+        return 1
+
+    @asset(tags=_TABLE_TAG)
+    def status_report_feed():
+        return 1
+
+    @asset(
+        deps=[contacts_feed, status_report_feed],
+        automation_condition=_get_table_condition(),
+        tags=_TABLE_TAG,
+    )
+    def two_feed_table():
+        return 2
+
+    instance = DagsterInstance.ephemeral()
+    all_assets = [contacts_feed, status_report_feed, two_feed_table]
+    defs = Definitions(assets=all_assets)
+    table = AssetKey("two_feed_table")
+
+    materialize(assets=all_assets, instance=instance)
+    result = evaluate_automation_conditions(defs=defs, instance=instance)
+
+    materialize(assets=all_assets, instance=instance, selection=[contacts_feed])
+    result = evaluate_automation_conditions(
+        defs=defs, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(table) == 1
+
+    result = evaluate_automation_conditions(
+        defs=defs, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(table) == 0
+
+    # run finishes on the old status report, then the new one lands, one tick
+    materialize(assets=all_assets, instance=instance, selection=[two_feed_table])
+    materialize(assets=all_assets, instance=instance, selection=[status_report_feed])
+    result = evaluate_automation_conditions(
+        defs=defs, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(table) == 1
+
+    # exactly one follow-up
+    materialize(assets=all_assets, instance=instance, selection=[two_feed_table])
+    result = evaluate_automation_conditions(
+        defs=defs, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(table) == 0
+
+
 def test_table_not_rerun_after_dep_updated_in_same_run():
     """A dep updated by the same run as the table must not re-trigger it:
     any_deps_updated drops updates from runs that targeted this asset.
