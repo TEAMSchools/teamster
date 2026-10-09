@@ -22,10 +22,11 @@ that is the case this exists to catch (#5692).
 
 Verdicts, strongest first: `fail` (a gap nothing explains), `incomplete` (a
 grain errored, or a Tableau construct on the row's sheets is unaccounted),
+`cube_issue` (every gap is explained, and at least one by Cube's own formula),
 `truth_issue` (every gap is explained, and at least one by a dashboard, model or
 source problem the domain owner has not ruled on), `missing_member` (every gap
 is explained by a member Cube lacks), `pass`. Each comment lists the missing
-Cube members and the truth issues, with the cells they explain.
+Cube members, the cube issues and the truth issues, with the cells they explain.
 
 ## Validate a dashboard
 
@@ -42,6 +43,7 @@ Cube members and the truth issues, with the cells they explain.
    `ruling: {call, by: <the commenter, else the assignee login, else "unassigned">, on: <today>, note: <first line of the latest comment>}`.
    Owners without permission to label use the comment. Keep a ruling already in
    the file; if a label contradicts it, tell the user instead of changing it.
+   Every `cube_issues:` entry with `issue:` gets `closed_on` the same way.
    Commit the checks file.
 4. Run. Write `tests/test_zz_cube_dashboard_run.py` (template below), run
    `uv run pytest tests/test_zz_cube_dashboard_run.py -s -q --tb=short`, then
@@ -60,23 +62,35 @@ Cube members and the truth issues, with the cells they explain.
    a label back to its value from the column's `<aliases>` in the `.twb` before
    comparing.
 6. Review. Walk the user through
-   `~/asana-sync/validation/<date>-<dashboard>-fixes.md`, the fix digest.
-   "Dashboard, model or source issues" comes first: each truth issue with the
-   cells it explains and its draft, issue number or ruling; a stale one is
-   closed and explains nothing, so remove its entry. "Add to Cube" lists each
-   missing member that explains gaps, merged across rows, with what it is, where
-   it lives and the suggested edit. "Investigate" lists each row's gaps nothing
-   explains, with the breakdown by its `diagnose_by` field and the dashboard and
-   Cube definitions side by side: enough to name the cube or model edit. Note
-   any pre-aggregations on failed grains (a stale rollup is a different fix from
-   a mart gap). "Unaccounted Tableau constructs" lists what the checks file must
+   `~/asana-sync/validation/<date>-<dashboard>-fixes.md`, the fix digest. "Fix
+   in Cube" comes first: each cube issue with the cells it explains, the
+   dashboard's formula and Cube's, and its draft or issue number. "Dashboard,
+   model or source issues" follows: each truth issue with the cells it explains
+   and its draft, issue number or ruling. A stale entry is closed and explains
+   nothing, so remove it. Before the user picks anything to file, search the
+   repo's issues (open and closed) with `mcp__github__search_issues` for each
+   draft and each row under "Investigate": the problem in plain words, the
+   metric, the models and the dashboard. List the matches beside each. The same
+   problem becomes the entry's `issue:` instead of a new filing; a related one
+   goes in the entry's `related:`, and the draft is rewritten with its
+   `Related:` line on the next run. "Add to Cube" lists each missing member that
+   explains gaps, merged across rows, with what it is, where it lives and the
+   suggested edit. "Investigate" lists each row's gaps nothing explains, with
+   the breakdown by its `diagnose_by` field and the dashboard and Cube
+   definitions side by side: enough to name the cube or model edit. Note any
+   pre-aggregations on failed grains (a stale rollup is a different fix from a
+   mart gap). "Unaccounted Tableau constructs" lists what the checks file must
    account for before the row can pass; "Not checked" lists what the check
    deliberately skips, with why.
 7. Post. After the user agrees, post the digest once on the dashboard's Asana
    task, then each row's three-line `comment` from
    `~/asana-sync/validation/<date>-<dashboard>.json` verbatim, both with
    `mcp__claude_ai_Asana__add_comment`.
-8. Issues. List each draft in
+8. Issues. File no draft, truth issue or cube issue, until the related-issue
+   search in step 6 has run for it and the user has seen its matches. A draft
+   whose problem an existing issue already tracks is not filed: write that
+   number into the entry's `issue:` and comment on the existing issue with the
+   new evidence (cells, rows, run date). List each draft in
    `~/asana-sync/validation/<date>-<dashboard>-issues/` with its title and cell
    count; the user picks which to file. For each pick: create it with
    `mcp__github__issue_write` (`title` and `labels` from the draft's first two
@@ -88,11 +102,11 @@ Cube members and the truth issues, with the cells they explain.
    each issue to the domain owner.
 9. Tags. Tell the user to run `~/asana-sync/sync.py` (preview, then `--apply`).
    It reads `latest.json` and gives every row exactly one validation tag: `pass`
-   → `matched`; `fail` or `missing_member` → `mismatch` (a `missing_member` row
-   also becomes `cube-partial`); `truth_issue` → `needs-review`; `incomplete` or
-   never run → `unvalidated`. It ticks a row only when it is both `cube-covered`
-   and `matched`, and unticks every other done row. The skill never changes tags
-   or ticks itself.
+   → `matched`; `fail`, `cube_issue` or `missing_member` → `mismatch` (a
+   `missing_member` row also becomes `cube-partial`); `truth_issue` →
+   `needs-review`; `incomplete` or never run → `unvalidated`. It ticks a row
+   only when it is both `cube-covered` and `matched`, and unticks every other
+   done row. The skill never changes tags or ticks itself.
 
 Run template:
 
@@ -166,7 +180,12 @@ def test_run() -> None:
    `evidence` and `labels`) and give the metric a `variants:` entry with the
    corrected SQL and `explains: [<slug>]`. A variant may explain a member and a
    truth issue together. A cell Cube matches only through a variant is explained
-   by the names in its `explains`, not reported as a bug. Set the file's
+   by the names in its `explains`, not reported as a bug. When Cube's own
+   formula is what differs (it counts rows where the dashboard counts students,
+   say), describe it under `cube_issues:` (`title`, `what`, optional `evidence`,
+   `labels`, `related`) and give the metric a variant whose SQL copies Cube's
+   definition over the extract, with `explains: [<slug>]`. A slug names one
+   thing only: a truth issue, a cube issue or a missing member. Set the file's
    `open_issues_task:` to the domain's Open Issues task gid (Assessments:
    `1219086050133309`).
 7. `count` for sums and distinct counts, `rate` with `num`/`den` for shares
