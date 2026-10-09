@@ -1,9 +1,2 @@
 models:
   - name: int_deanslist__incidents
-    columns:
-      - name: location_key
-        data_type: string
-        description: >
-          MD5 surrogate key for the canonical school location. Null when
-          school_id does not match any deanslist_school_id in
-          stg_google_sheets__people__locations.

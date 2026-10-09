@@ -21,15 +21,24 @@ models:
           config:
             severity: error
     columns:
+      - name: location_key
+        description: >-
+          Canonical location_key from the people locations sheet, matched on the
+          PowerSchool school id for New Jersey and on Focus's school code for
+          Miami. Null for a New Jersey school with no sheet match, such as the
+          999999 "Graduated Students" sentinel.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_locations')
+                field: location_key
+              config:
+                severity: error
       - name: school_number
         description: Canonical network school number.
       - name: name
         quote: true
         description: School name.
-      - name: location_key
-        description: >-
-          Canonical location_key. For Miami, resolved via the people locations
-          sheet on Focus's school code.
       - name: abbreviation
         description: Short school name from the people locations sheet.
       - name: school_level
