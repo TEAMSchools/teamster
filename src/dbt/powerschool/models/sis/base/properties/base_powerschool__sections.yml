@@ -1,11 +1,12 @@
 models:
   - name: base_powerschool__sections
-    data_tests:
-      - unique:
-          column_name: sections_dcid
-          config:
-            severity: error
     columns:
+      - name: sections_dcid
+        data_type: int64
+        data_tests:
+          - unique:
+              config:
+                severity: error
       - name: sections_section_number
         data_type: string
       - name: sections_course_number
@@ -72,8 +73,6 @@ models:
         data_type: timestamp
       - name: sections_executionid
         data_type: string
-      - name: sections_dcid
-        data_type: int64
       - name: sections_id
         data_type: int64
       - name: sections_teacher
