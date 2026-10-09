@@ -885,6 +885,9 @@ def workbook_exclusions(checks: dict, twb) -> list[str]:
 CUBE_LIMIT = 50_000
 # An average is a rate on its own scale (a scale score): compared in its units.
 KINDS = {"count", "rate", "average"}
+# Where a truth issue lives, and the two answers a domain owner can give.
+TRUTH_WHERE = ("dashboard", "rpt", "source")
+RULINGS = ("cube-correct", "cube-wrong")
 
 
 class CheckError(ValueError):
@@ -1000,6 +1003,34 @@ def load_checks(path) -> dict:
     for f in data["hard_filters"]:
         if f["dim"] not in dims:
             raise CheckError(f"{path}: hard filter on unknown dimension '{f['dim']}'")
+    # Gaps the dashboard, its rpt_ model or the source causes, for the domain owner.
+    issues = data.get("truth_issues") or {}
+    if not isinstance(issues, dict):
+        raise CheckError(f"{path}: truth_issues is a map of slug to entry")
+    for slug, t in issues.items():
+        at = f"{path}: truth issue '{slug}'"
+        missing = [k for k in ("title", "what", "where") if not (t or {}).get(k)]
+        if missing:
+            raise CheckError(f"{at} is missing {missing}")
+        if t["where"] not in TRUTH_WHERE:
+            raise CheckError(f"{at}: where must be one of {', '.join(TRUTH_WHERE)}")
+        if t.get("issue") is not None and not isinstance(t["issue"], int):
+            raise CheckError(f"{at}: issue is the GitHub issue number")
+        r = t.get("ruling")
+        if r is not None and not (
+            isinstance(r, dict)
+            and r.get("call") in RULINGS
+            and r.get("by")
+            and r.get("on")
+        ):
+            raise CheckError(
+                f"{at}: ruling needs call (cube-correct or cube-wrong), by and on"
+            )
+        t["labels"] = list(t.get("labels") or [])
+    data["truth_issues"] = issues
+    data["open_issues_task"] = (
+        str(data["open_issues_task"]) if data.get("open_issues_task") else None
+    )
     for row in data["rows"]:
         where = f"{path}: row {row.get('row_gid')} ({row.get('name')})"
         for key in ("row_gid", "name", "metrics", "grains"):
@@ -1057,6 +1088,13 @@ def load_checks(path) -> dict:
                     raise CheckError(
                         f"{where}: metric {m.get('cube')}: each variant needs "
                         f"{list(need)}"
+                    )
+                known = set(issues) | set(m.get("missing_members") or [])
+                unknown = [n for n in v["explains"] if n not in known]
+                if unknown:
+                    raise CheckError(
+                        f"{where}: metric {m.get('cube')}: a variant explains unknown "
+                        f"{unknown}; name a missing member or a truth issue"
                     )
             m["variants"] = variants
         for m in row["metrics"]:
@@ -1441,10 +1479,22 @@ def _cell_out(c, kind) -> dict:
     }
 
 
-def summarize(cells, kind, variants=()) -> dict:
+def summarize(
+    cells, kind, variants=(), accepted=frozenset(), open_issues=frozenset()
+) -> dict:
+    """One metric at one grain.
+
+    A cell explained only by truth issues ruled cube-correct is accepted: the
+    dashboard is wrong there and Cube is right, so it counts as a match.
+    """
+
+    def is_accepted(c):
+        return c.explained and set(c.explained_by) <= accepted
+
     bad = sorted(
         (c for c in cells if not c.ok and not c.explained), key=lambda c: -c.delta
     )
+    explained = [c for c in cells if c.explained and not is_accepted(c)]
     by: dict[str, int] = {}
     for c in cells:
         for n in c.explained_by:
@@ -1455,13 +1505,20 @@ def summarize(cells, kind, variants=()) -> dict:
         if variants:
             # Variant 0 is the SQL without the missing members, when there are any.
             only["without"] = variants[0][1].get(cells[0].key, (None, None))[0]
+    shown = sorted((c for c in cells if c.explained), key=lambda c: -c.delta)
     return {
         "cells": len(cells),
         "bad": len(bad),
-        "explained": sum(1 for c in cells if c.explained),
+        "explained": len(explained),
+        "review": sum(1 for c in explained if set(c.explained_by) & open_issues),
+        "accepted": sum(1 for c in cells if is_accepted(c)),
         "explained_by": by,
         "only": only,
         "worst": [_cell_out(c, kind) for c in bad[:5]],
+        "examples": [
+            dict(_cell_out(c, kind), variant=c.variant, explains=list(c.explained_by))
+            for c in shown[:3]
+        ],
     }
 
 
@@ -1471,11 +1528,25 @@ def row_verdict(grains) -> str:
         return "fail"
     if "error" in statuses:
         return "incomplete"
-    if "missing_member" in statuses:
-        return "missing_member"
+    for s in ("truth_issue", "missing_member"):
+        if s in statuses:
+            return s
     if "pass" not in statuses:
         return "incomplete"
     return "pass"
+
+
+def issue_states(checks) -> tuple[frozenset, frozenset, frozenset]:
+    """Truth issues the owner ruled cube-correct, ruled cube-wrong, and not yet ruled."""
+    calls = {
+        s: (t.get("ruling") or {}).get("call")
+        for s, t in (checks.get("truth_issues") or {}).items()
+    }
+    return (
+        frozenset(s for s, c in calls.items() if c == "cube-correct"),
+        frozenset(s for s, c in calls.items() if c == "cube-wrong"),
+        frozenset(s for s, c in calls.items() if c is None),
+    )
 
 
 # ---------------------------------------------------------------- clients
@@ -1983,6 +2054,7 @@ def run_dashboard(
 
     truth_lock, progress = threading.Lock(), threading.Lock()
     finished = [0]
+    accepted, rejected, open_issues = issue_states(checks)
 
     def say(text: str) -> None:
         with progress:
@@ -2040,16 +2112,20 @@ def run_dashboard(
                     cube_cells(crows, view, grain, m["cube"]),
                     truth_cells(trows, len(g), i, m["kind"]),
                 )
+                # A variant the owner ruled cube-wrong explains nothing.
                 variants = [
                     (v["explains"], truth_cells(trows, len(g), i, m["kind"], f"_v{j}"))
                     for j, v in enumerate(m["variants"])
+                    if not set(v["explains"]) & rejected
                 ]
                 explain(cells, m["kind"], variants)
-                summaries[m["key"]] = summarize(cells, m["kind"], variants)
+                summaries[m["key"]] = summarize(
+                    cells, m["kind"], variants, accepted, open_issues
+                )
             # A cell keyed by a person (a per-student grain) never names them.
             person = {i for i, d in enumerate(grain) if d.person}
             for s_ in summaries.values() if person else []:
-                for c in s_["worst"]:
+                for c in [*s_["worst"], *s_["examples"]]:
                     c["key"] = [
                         "a student" if i in person else k
                         for i, k in enumerate(c["key"])
@@ -2131,13 +2207,18 @@ def run_dashboard(
                             name, 0
                         )
                         mm["changes_total"] = mm["changes_total"] or moves
+                review = sum(s["review"] for s in ms.values())
                 entry.update(
                     status="fail"
                     if bad
+                    else "truth_issue"
+                    if review
                     else ("missing_member" if explained else "pass"),
                     cells=sum(s["cells"] for s in ms.values()),
                     bad=bad,
                     explained=explained,
+                    review=review,
+                    accepted=sum(s["accepted"] for s in ms.values()),
                     metrics=ms,
                     pre_aggregations=o["pre_aggregations"],
                 )
@@ -2160,14 +2241,38 @@ def run_dashboard(
         if (a.get("unaccounted") or a.get("error")) and verdict in (
             "pass",
             "missing_member",
+            "truth_issue",
         ):
             # A construct nobody accounted for may change what the sheet shows.
             verdict = "incomplete"
+        truth = {}
+        named = {
+            n
+            for m in row["metrics"]
+            for v in m["variants"]
+            for n in v["explains"]
+            if n in checks["truth_issues"]
+        }
+        for slug in sorted(named):
+            t = checks["truth_issues"][slug]
+            n = sum(
+                s["explained_by"].get(slug, 0)
+                for g in grains
+                for s in g.get("metrics", {}).values()
+            )
+            truth[slug] = {
+                "explains_cells": n,
+                "issue": t.get("issue"),
+                "ruling": (t.get("ruling") or {}).get("call"),
+                # A closed issue that explains nothing any more: remove its entry.
+                "stale": bool(t.get("closed_on")) and not n,
+            }
         result["rows"][str(row["row_gid"])] = {
             "name": row["name"],
             "verdict": verdict,
             "grains": grains,
             **({"diagnosis": diagnosis} if diagnosis else {}),
+            **({"truth_issues": truth} if truth else {}),
             "missing_members": {
                 k: v
                 for k, v in missing.items()
@@ -2226,7 +2331,7 @@ def _total_line(s_: dict, kind: str, members: list[str]) -> list[str]:
     return lines
 
 
-_COMPARED = ("pass", "fail", "missing_member")
+_COMPARED = ("pass", "fail", "missing_member", "truth_issue")
 
 
 def _missing_text(missing: dict, full: bool = False) -> str:

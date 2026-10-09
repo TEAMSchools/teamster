@@ -2032,3 +2032,126 @@ def test_summarize_counts_explained_cells_by_cause():
     cv.explain(cells, "count", [(["team"], {("B",): (15.0, 120), ("C",): (5.0, 80)})])
     s = cv.summarize(cells, "count")
     assert s["explained"] == 2 and s["explained_by"] == {"team": 2}
+
+
+# ---------------------------------------------------------------- truth issues
+def _add_truth_issue(d, **extra):
+    d["truth_issues"] = {
+        "tardy_formula": {
+            "title": "fix(tableau): the demo dashboard counts half days as tardy",
+            "what": "The dashboard's tardy count includes half days.",
+            "where": "dashboard",
+            **extra,
+        }
+    }
+    d["rows"][0]["metrics"][0]["variants"] = [
+        {"explains": ["tardy_formula"], "sql": "countif(att_code = 'T')"}
+    ]
+
+
+def _truth_run(tmp_path, mutate=_add_truth_issue):
+    checks = cv.load_checks(_write_variant(tmp_path, mutate))
+    return checks, cv.run_dashboard(checks, FakeCube(), AltBQ(), TODAY, snapshots=SNAPS)
+
+
+def test_load_checks_truth_issue_needs_title_what_where(tmp_path):
+    def m(d):
+        _add_truth_issue(d)
+        del d["truth_issues"]["tardy_formula"]["where"]
+
+    with pytest.raises(cv.CheckError, match="missing \\['where'\\]"):
+        cv.load_checks(_write_variant(tmp_path, m))
+
+
+def test_load_checks_ruling_call_must_be_cube_correct_or_wrong(tmp_path):
+    def m(d):
+        _add_truth_issue(d, ruling={"call": "maybe", "by": "x", "on": "2026-10-09"})
+
+    with pytest.raises(cv.CheckError, match="cube-correct or cube-wrong"):
+        cv.load_checks(_write_variant(tmp_path, m))
+
+
+def test_load_checks_variant_must_explain_known_names(tmp_path):
+    def m(d):
+        _add_truth_issue(d)
+        d["rows"][0]["metrics"][0]["variants"][0]["explains"] = ["nobody"]
+
+    with pytest.raises(cv.CheckError, match="explains unknown \\['nobody'\\]"):
+        cv.load_checks(_write_variant(tmp_path, m))
+
+
+def test_unruled_truth_issue_makes_the_row_truth_issue(tmp_path):
+    _, result = _truth_run(tmp_path)
+    row = result["rows"]["1"]
+    assert row["verdict"] == "truth_issue"
+    school = next(g for g in row["grains"] if g["grain"] == ["region", "school"])
+    assert school["status"] == "truth_issue" and school["review"] == 2
+    assert row["truth_issues"] == {
+        "tardy_formula": {
+            "explains_cells": 2,
+            "issue": None,
+            "ruling": None,
+            "stale": False,
+        }
+    }
+
+
+def test_cube_correct_ruling_counts_the_cells_as_matches(tmp_path):
+    ruling = {"call": "cube-correct", "by": "owner", "on": "2026-10-09"}
+    _, result = _truth_run(tmp_path, lambda d: _add_truth_issue(d, ruling=ruling))
+    row = result["rows"]["1"]
+    assert row["verdict"] == "pass"
+    assert row["truth_issues"]["tardy_formula"]["ruling"] == "cube-correct"
+
+
+def test_cube_wrong_ruling_leaves_the_cells_unexplained(tmp_path):
+    ruling = {"call": "cube-wrong", "by": "owner", "on": "2026-10-09"}
+    _, result = _truth_run(tmp_path, lambda d: _add_truth_issue(d, ruling=ruling))
+    assert result["rows"]["1"]["verdict"] == "fail"
+
+
+def test_a_variant_can_explain_a_member_and_a_truth_issue_together(tmp_path):
+    def m(d):
+        _add_truth_issue(d)
+        mm = d["rows"][0]["metrics"][0]
+        mm["missing_members"] = ["team"]
+        mm["variants"][0]["explains"] = ["tardy_formula", "team"]
+
+    _, result = _truth_run(tmp_path, m)
+    row = result["rows"]["1"]
+    assert row["verdict"] == "truth_issue"
+    assert row["missing_members"]["team"]["explains_cells"] == 2
+    assert row["truth_issues"]["tardy_formula"]["explains_cells"] == 2
+
+
+@pytest.mark.parametrize(
+    ("statuses", "verdict"),
+    [
+        (["truth_issue", "missing_member"], "truth_issue"),
+        (["truth_issue", "fail"], "fail"),
+        (["truth_issue", "error"], "incomplete"),
+        (["pass", "truth_issue"], "truth_issue"),
+    ],
+)
+def test_row_verdict_truth_issue(statuses, verdict):
+    assert cv.row_verdict([{"status": s} for s in statuses]) == verdict
+
+
+def test_unaccounted_construct_overrides_truth_issue(tmp_path):
+    checks, _ = _truth_run(tmp_path)
+    audit = {"1": {"unaccounted": [{"ref": "group: X [abc123]"}]}}
+    result = cv.run_dashboard(checks, FakeCube(), AltBQ(), TODAY, audit=audit)
+    assert result["rows"]["1"]["verdict"] == "incomplete"
+
+
+def test_explained_examples_never_name_a_student(tmp_path):
+    def m(d):
+        _add_truth_issue(d)
+        d["dimensions"]["school"]["person"] = True
+
+    _, result = _truth_run(tmp_path, m)
+    grain = next(
+        g for g in result["rows"]["1"]["grains"] if g["grain"] == ["region", "school"]
+    )
+    examples = [c for s in grain["metrics"].values() for c in s["examples"]]
+    assert examples and all(c["key"][1] == "a student" for c in examples)
