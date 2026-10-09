@@ -2268,3 +2268,77 @@ def test_write_outputs_writes_one_draft_per_issue(tmp_path):
     text = p.read_text()
     assert text.startswith("Title: fix(tableau): the demo dashboard")
     assert "Labels: fix, tableau, validation" in text.splitlines()[1]
+
+
+# ---------------------------------------------------------------- settle
+def test_settle_drift_recommends_the_oldest_change_plus_one():
+    d = dt.date
+    ext = [
+        {"g0": d(2026, 10, 1), "m0": 5},
+        {"g0": d(2026, 10, 6), "m0": 5},
+        {"g0": d(2026, 10, 8), "m0": 3},
+        {"g0": None, "m0": 7},
+    ]
+    live = [
+        {"g0": d(2026, 10, 1), "m0": 5},
+        {"g0": d(2026, 10, 6), "m0": 6},
+        {"g0": d(2026, 10, 8), "m0": 4},
+        {"g0": d(2026, 10, 10), "m0": 2},  # after the refresh: settled by any window
+        {"g0": None, "m0": 9},  # no date: no cutoff can settle it
+    ]
+    out = cv.settle_drift(ext, live, d(2026, 10, 9))
+    assert [(x["day"], x["age"]) for x in out["days"]] == [
+        ("2026-10-06", 3),
+        ("2026-10-08", 1),
+        ("2026-10-10", -1),
+    ]
+    assert out["undated"] == {"m0": 2.0}
+    assert out["oldest_age"] == 3 and out["recommend"] == 4
+
+
+def test_settle_drift_with_no_change_recommends_one_day():
+    rows = [{"g0": dt.date(2026, 10, 8), "m0": 3}]
+    out = cv.settle_drift(rows, rows, dt.date(2026, 10, 9))
+    assert out["days"] == [] and out["oldest_age"] is None and out["recommend"] == 1
+
+
+def test_settle_sql_groups_every_metric_by_the_settle_date(tmp_path):
+    def m(d):
+        _add_truth_issue(d)
+        d["settle"] = {
+            "days": 7,
+            "date": "calendardate",
+            "truth": "calendardate < '{cutoff}'",
+            "cube": [],
+        }
+
+    c = cv.load_checks(_write_variant(tmp_path, m))
+    sql = cv.settle_sql(c, "rpt_demo", "proj.ds.rpt_demo", WINDOW)
+    assert "calendardate as g0" in sql and sql.endswith("group by 1")
+    assert "sum(is_tardy) as m0" in sql and "sum(is_present) as m1_num" in sql
+    assert "_v0" not in sql  # variants are not drift
+
+
+def test_load_checks_settle_date_is_sql(tmp_path):
+    def m(d):
+        d["settle"] = {"days": 7, "date": 3, "truth": "x", "cube": []}
+
+    with pytest.raises(cv.CheckError, match="settle needs"):
+        cv.load_checks(_write_variant(tmp_path, m))
+
+
+def test_settle_cli_needs_a_settle_date():
+    with pytest.raises(SystemExit, match="settle.date"):
+        cv.main(["settle", str(FIX / "checks.yml")])
+
+
+def test_settle_text_labels_columns_by_metric():
+    drift = {
+        "days": [{"day": "2026-10-08", "age": 1, "changes": {"m0": 1.0}}],
+        "undated": None,
+        "oldest_age": 1,
+        "recommend": 2,
+    }
+    text = cv.settle_text("rpt_demo", drift, {"m0": "count_tardy_days"})
+    assert "2026-10-08    1  count_tardy_days +1" in text
+    assert "days: 2" in text

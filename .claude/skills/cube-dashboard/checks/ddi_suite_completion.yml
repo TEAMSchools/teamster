@@ -20,6 +20,7 @@ window:
     - 2026
 settle:
   days: 7
+  date: coalesce(date_taken, administered_at)
   truth: coalesce(date_taken, administered_at) < '{cutoff}'
   cube:
     - or:

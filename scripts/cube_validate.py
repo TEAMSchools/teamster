@@ -2,10 +2,12 @@
 
     uv run scripts/cube_validate.py grains <workbook.twb> --dashboard "<name>" [...] [--measure "<caption>"]
     uv run scripts/cube_validate.py run <checks.yml> [--rows <gid,...>] [--scope-only]
+    uv run scripts/cube_validate.py settle <checks.yml>
 
 `grains` reads a downloaded .twb and proposes the grains for one measure's check entry.
 `run` needs CUBE_API_SECRET, which only the pytest secrets fixture provides, so it runs
-inside a throwaway tests/test_zz_*.py. Runbook: .claude/skills/cube-dashboard/SKILL.md.
+inside a throwaway tests/test_zz_*.py. `settle` compares each extract with its live
+warehouse table by date and recommends `settle.days`. Runbook: .claude/skills/cube-dashboard/SKILL.md.
 """
 
 from __future__ import annotations
@@ -1180,10 +1182,11 @@ def load_checks(path) -> dict:
         and isinstance(settle.get("days"), int)
         and isinstance(settle.get("truth"), str)
         and isinstance(settle.get("cube"), list)
+        and isinstance(settle.get("date", ""), str)
     ):
         raise CheckError(
-            f"{path}: settle needs days (an integer), truth (SQL with {{cutoff}}) and "
-            "cube (filters with {cutoff})"
+            f"{path}: settle needs days (an integer), truth (SQL with {{cutoff}}), "
+            "cube (filters with {cutoff}) and, for the settle command, date (SQL)"
         )
     # Several academic years are compared year by year, never pooled.
     if window and len(window["academic_years"]) > 1:
@@ -1224,6 +1227,105 @@ def settle_filters(checks: dict, extract_date: dt.date) -> tuple[str, list]:
     settle = checks["settle"]
     cutoff = (extract_date - dt.timedelta(days=settle["days"])).isoformat()
     return _fill(settle["truth"], cutoff), _fill(settle["cube"], cutoff)
+
+
+def settle_sql(checks: dict, datasource: str, table: str, window) -> str:
+    """Every metric on one extract, by the settle date: what drift is measured on."""
+    seen: dict[str, dict] = {}
+    for r in checks["rows"]:
+        for m in r["metrics"]:
+            if m["datasource"] == datasource:
+                # A variant is a correction, not data: it is not drift.
+                seen.setdefault(m["key"], {**m, "variants": []})
+    dims = {
+        **checks["dimensions"],
+        "_day": Dim("_day", None, checks["settle"]["date"]),
+    }
+    return truth_sql(
+        table,
+        list(seen.values()),
+        ["_day"],
+        dims,
+        checks["hard_filters"],
+        window,
+        checks["students_sql"],
+        checks["truth_filters"],
+        datasource,
+    )
+
+
+def settle_drift(extract_rows, live_rows, refreshed: dt.date) -> dict:
+    """Which days changed between the extract and the live table, by age."""
+
+    def by_day(rows):
+        return {
+            norm_key(r["g0"]): {k: _num(v) or 0.0 for k, v in r.items() if k != "g0"}
+            for r in rows
+        }
+
+    ext, live = by_day(extract_rows), by_day(live_rows)
+    days, undated = [], None
+    for day in sorted(set(ext) | set(live)):
+        a, b = ext.get(day, {}), live.get(day, {})
+        changes = {
+            k: b.get(k, 0.0) - a.get(k, 0.0)
+            for k in sorted(set(a) | set(b))
+            if abs(b.get(k, 0.0) - a.get(k, 0.0)) > 1e-9
+        }
+        if not changes:
+            continue
+        if day == "∅":
+            undated = changes
+            continue
+        age = (refreshed - dt.date.fromisoformat(day)).days
+        days.append({"day": day, "age": age, "changes": changes})
+    # A row dated after the refresh is past the cutoff of any window, so it never
+    # sets the window's length.
+    past = [x["age"] for x in days if x["age"] >= 0]
+    oldest = max(past) if past else None
+    return {
+        "days": days,
+        "undated": undated,
+        "oldest_age": oldest,
+        "recommend": max(1, (oldest if oldest is not None else 0) + 1),
+    }
+
+
+def settle_text(datasource: str, drift: dict, labels: dict) -> str:
+    def changes(c: dict) -> str:
+        return "; ".join(f"{labels.get(k, k)} {v:+,.0f}" for k, v in c.items())
+
+    out = [f"{datasource}:", "  day         age  changes"]
+    out += [
+        f"  {x['day']}  {x['age']:>3}  {changes(x['changes'])}" for x in drift["days"]
+    ]
+    if drift["undated"]:
+        out.append(
+            f"  rows with no date (no cutoff settles them): {changes(drift['undated'])}"
+        )
+    oldest = drift["oldest_age"]
+    out.append(
+        "  oldest change: "
+        + (f"{oldest} days before the refresh" if oldest is not None else "none")
+        + f"; days: {drift['recommend']}"
+    )
+    return "\n".join(out)
+
+
+def _settle_labels(checks: dict, datasource: str) -> dict:
+    labels, seen = {"n_students": "students"}, []
+    for r in checks["rows"]:
+        for m in r["metrics"]:
+            if m["datasource"] != datasource or m["key"] in seen:
+                continue
+            i = len(seen)
+            seen.append(m["key"])
+            if m["kind"] == "count":
+                labels[f"m{i}"] = m["key"]
+            else:
+                labels[f"m{i}_num"] = f"{m['key']} numerator"
+                labels[f"m{i}_den"] = f"{m['key']} denominator"
+    return labels
 
 
 def resolve_window(checks: dict, today: dt.date):
@@ -3044,6 +3146,49 @@ def _run_command(a) -> int:
     return 0 if all(r["verdict"] == "pass" for r in result["rows"].values()) else 1
 
 
+def _settle_command(a) -> int:
+    checks = load_checks(a.checks)
+    if not (checks.get("settle") or {}).get("date"):
+        sys.exit(
+            f"{a.checks}: add settle.date (the SQL for a row's date) before measuring"
+        )
+    datasources = list(
+        dict.fromkeys(m["datasource"] for r in checks["rows"] for m in r["metrics"])
+    )
+    try:
+        tables = {ds: live_table(ds) for ds in datasources}
+    except CheckError as e:
+        sys.exit(str(e))
+    extracts = download_extract(
+        checks["extract"]["workbook_luid"], datasources, SCRATCH / checks["dashboard"]
+    )
+    checks["truth_filters"] = checks["truth_filters"] + workbook_exclusions(
+        checks, SCRATCH / checks["dashboard"] / "workbook.twb"
+    )
+    default_at = extracts[checks["extract"]["datasource"]][1]
+    window = resolve_window(checks, snapshot_date(default_at))
+    now = dt.datetime.now(default_at.tzinfo)
+    recommend, oldest = 1, None
+    for ds in datasources:
+        hyper, at = extracts[ds]
+        with ExtractSource(hyper) as q:
+            ext = q(settle_sql(checks, ds, EXTRACT_TABLE, window))
+        live = bigquery_rows(settle_sql(checks, ds, tables[ds], window))
+        drift = settle_drift(ext, live, snapshot_date(at))
+        print(settle_text(ds, drift, _settle_labels(checks, ds)))
+        recommend = max(recommend, drift["recommend"])
+        if drift["oldest_age"] is not None:
+            oldest = max(oldest or 0, drift["oldest_age"])
+    hours = round((now - default_at).total_seconds() / 3600)
+    print(
+        f"\n# settle measured {now.date()}: live tables {hours} hours after the "
+        "extract refresh; oldest change "
+        + (f"{oldest} days before it" if oldest is not None else "none")
+        + f"; days {recommend}"
+    )
+    return 0
+
+
 def _snippet(c: Construct) -> dict:
     """A checks-file dimension to paste for a group or bin on a plain column."""
     d = c.detail
@@ -3115,8 +3260,17 @@ def main(argv: list[str] | None = None) -> int:
         help="Cube queries in flight at once (default 4; 1 runs them in order)",
     )
     r.add_argument("--out", type=Path, default=DEFAULT_OUT)
+    s = sub.add_parser(
+        "settle", help="measure how many days before a refresh scores still change"
+    )
+    s.add_argument("checks")
     a = p.parse_args(argv)
-    return _grains_command(a) if a.cmd == "grains" else _run_command(a)
+    commands = {
+        "grains": _grains_command,
+        "run": _run_command,
+        "settle": _settle_command,
+    }
+    return commands[a.cmd](a)
 
 
 if __name__ == "__main__":
