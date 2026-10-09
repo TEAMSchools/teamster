@@ -34,7 +34,7 @@ extracts. Cross-region business logic lives only in kipptaf.
 
 | Model         | May read                                                                                                                                                                                                                   |
 | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `stg_`        | `source()`                                                                                                                                                                                                                 |
+| `stg_`        | `source()`, except a district `int_` or `base_`                                                                                                                                                                            |
 | Source `int_` | `stg_`, source `int_`, and `snapshot_` of a model in the same source folder; `source()` for district union wrappers                                                                                                        |
 | Domain `int_` | `stg_`, any source `int_`, domain `int_`, `snapshot_`                                                                                                                                                                      |
 | Marts         | Domain `int_`, other marts                                                                                                                                                                                                 |

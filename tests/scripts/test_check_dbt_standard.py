@@ -218,6 +218,17 @@ def test_stg_union_view_over_district_stg_source_passes() -> None:
     assert violations(district_stg, union) == []
 
 
+@pytest.mark.parametrize("table", ["int_renlearn__star", "base_renlearn__star"])
+def test_stg_over_district_int_source_is_a1(table) -> None:
+    district_int = source("kippmiami_renlearn", table)
+    stg = model(
+        "stg_renlearn__star", "models/renlearn/staging/b.sql", [uid(district_int)]
+    )
+    assert violations(district_int, stg) == [
+        ("kipptaf.stg_renlearn__star", "A1", f"source.kippmiami_renlearn.{table}")
+    ]
+
+
 def test_int_reading_two_source_folders_outside_domain_is_source_int() -> None:
     node = model(
         "int_kippadb__roster",
