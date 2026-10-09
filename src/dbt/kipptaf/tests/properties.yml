@@ -1110,3 +1110,20 @@ data_tests:
         dagster:
           ref:
             name: stg_adp_workforce_now__workers
+
+  - name: int_iready__diagnostic_results__one_region_per_student_year
+    description: >-
+      Each student's i-Ready Diagnostics for one subject and academic year must
+      all resolve to one region. The package computes the most_recent_* columns
+      and rn_subj_year per student, subject and year without a region, because
+      the NJ i-Ready table holds Newark, Camden and Paterson together and the
+      region is only known once kipptaf maps each school through the location
+      crosswalk. A student tested under two regions in one year would get the
+      other region's latest values and lose rn_subj_year = 1 in one region, so
+      region-scoped reports would drop them without an error.
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: int_iready__diagnostic_results

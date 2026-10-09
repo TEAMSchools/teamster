@@ -828,8 +828,9 @@ models:
         data_type: date
         description: >-
           completion_date from the student's most recent Diagnostic in the
-          subject and academic year, broadcast to every row in that partition
-          via a window max over the unioned staging tables.
+          subject and academic year, broadcast to every row in that partition by
+          the district int_iready__diagnostic_results, on the vendor student_id
+          before the Focus conversion.
       - name: most_recent_diagnostic_gain
         data_type: int64
         config:
@@ -837,8 +838,9 @@ models:
             contains_pii: true
         description: >-
           diagnostic_gain from the student's most recent Diagnostic in the
-          subject and academic year, broadcast to every row in that partition
-          via a window max over the unioned staging tables.
+          subject and academic year, broadcast to every row in that partition by
+          the district int_iready__diagnostic_results, on the vendor student_id
+          before the Focus conversion.
       - name: most_recent_lexile_measure
         data_type: string
         config:
@@ -846,8 +848,9 @@ models:
             contains_pii: true
         description: >-
           lexile_measure from the student's most recent Diagnostic in the
-          subject and academic year, broadcast to every row in that partition
-          via a window max over the unioned staging tables.
+          subject and academic year, broadcast to every row in that partition by
+          the district int_iready__diagnostic_results, on the vendor student_id
+          before the Focus conversion.
       - name: most_recent_lexile_range
         data_type: string
         config:
@@ -855,8 +858,9 @@ models:
             contains_pii: true
         description: >-
           lexile_range from the student's most recent Diagnostic in the subject
-          and academic year, broadcast to every row in that partition via a
-          window max over the unioned staging tables.
+          and academic year, broadcast to every row in that partition by the
+          district int_iready__diagnostic_results, on the vendor student_id
+          before the Focus conversion.
       - name: most_recent_overall_placement
         data_type: string
         config:
@@ -864,8 +868,9 @@ models:
             contains_pii: true
         description: >-
           overall_placement from the student's most recent Diagnostic in the
-          subject and academic year, broadcast to every row in that partition
-          via a window max over the unioned staging tables.
+          subject and academic year, broadcast to every row in that partition by
+          the district int_iready__diagnostic_results, on the vendor student_id
+          before the Focus conversion.
       - name: most_recent_overall_relative_placement
         data_type: string
         config:
@@ -874,7 +879,8 @@ models:
         description: >-
           overall_relative_placement from the student's most recent Diagnostic
           in the subject and academic year, broadcast to every row in that
-          partition via a window max over the unioned staging tables.
+          partition by the district int_iready__diagnostic_results, on the
+          vendor student_id before the Focus conversion.
       - name: most_recent_overall_scale_score
         data_type: int64
         config:
@@ -882,8 +888,9 @@ models:
             contains_pii: true
         description: >-
           overall_scale_score from the student's most recent Diagnostic in the
-          subject and academic year, broadcast to every row in that partition
-          via a window max over the unioned staging tables.
+          subject and academic year, broadcast to every row in that partition by
+          the district int_iready__diagnostic_results, on the vendor student_id
+          before the Focus conversion.
       - name: most_recent_rush_flag
         data_type: string
         config:
@@ -891,8 +898,9 @@ models:
             contains_pii: true
         description: >-
           rush_flag from the student's most recent Diagnostic in the subject and
-          academic year, broadcast to every row in that partition via a window
-          max over the unioned staging tables.
+          academic year, broadcast to every row in that partition by the
+          district int_iready__diagnostic_results, on the vendor student_id
+          before the Focus conversion.
       - name: student_grade_int
         data_type: int64
         config:
@@ -919,7 +927,8 @@ models:
         description: >-
           Rank of the student's diagnostics in a subject within a school year
           (academic_year string), latest completion date first, ties broken by
-          rn_subj_day.
+          rn_subj_day. Computed by the district int_iready__diagnostic_results,
+          on the vendor student_id before the Focus conversion.
       - name: school_abbreviation
         data_type: string
         description: >-
