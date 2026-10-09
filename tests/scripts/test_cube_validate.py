@@ -626,3 +626,104 @@ def test_child_values_sql_filters_and_groups():
     sql = cv.child_values_sql([("region", "North"), ("iep_status", cv.BLANK)], "school")
     assert "cast(region as string) = 'North'" in sql and "iep_status is null" in sql
     assert sql.rstrip().endswith("group by 1")
+
+
+def test_extract_sql_selects_grain_and_measure():
+    _, sheet = _sheet_plain()
+    sql = cv.extract_sql(
+        sheet,
+        sheet.measures["% Complete"],
+        ["School Name"],
+        ["(cast(region as string) = 'North')"],
+    )
+    assert sql.startswith("select school as g0, count(distinct if(is_complete = 1")
+    assert "as m_num" in sql and "as m_den" in sql and sql.endswith("group by 1")
+
+
+def _sheet_plain():
+    import tempfile
+
+    d = Path(tempfile.mkdtemp())
+    c = cv.load_checks(_write(d, CHECKS))
+    return c, c["sheets"]["Overview - Table"]
+
+
+def test_extract_values_divides_num_by_den():
+    rows = [
+        {"g0": "Alpha", "m_num": 16, "m_den": 20},
+        {"g0": "Beta", "m_num": 0, "m_den": 0},
+    ]
+    assert cv.extract_values(rows, 1) == {("Alpha",): 0.8, ("Beta",): None}
+
+
+def test_state_where_translates_filters_and_hides_private_ones(tmp_path):
+    c = _checks(
+        tmp_path,
+        extract_filters=[{"sql": "not is_test", "private": True}, {"sql": "enrolled"}],
+    )
+    sheet = c["sheets"]["Overview - Table"]
+    entry = {
+        "state": {"dashboard": "Overview", "filters": {"Region": "North"}},
+        "click_filters": {"School Name": "Alpha"},
+    }
+    fields = {"Region": {"field": "region", "datasource": DS}}
+    assert cv.state_where(entry, c, fields, sheet) == [
+        "cast(region as string) = 'North'",
+        "cast(school as string) = 'Alpha'",
+        "not is_test",
+        "enrolled",
+    ]
+    assert "not is_test" not in cv.state_where(
+        entry, c, fields, sheet, public_only=True
+    )
+
+
+def test_cell_verdict_by_who_fixes():
+    sides = {
+        "cube": frozenset({"a"}),
+        "dashboard": frozenset({"b"}),
+        "source": frozenset({"c"}),
+        "undecided": frozenset({"d"}),
+    }
+    meas = cv.Measure("M", "demo.m", sql="x", missing_members=["demo.extra"])
+    cell = lambda names: cv.Cell(
+        "S", "s", {}, "M", "1", 1, 2, 20, "mismatch", explained_by=names
+    )  # noqa: E731
+    assert cv.cell_verdict(cell([]), sides, meas) == "fail"
+    assert cv.cell_verdict(cell(["a", "b"]), sides, meas) == "fix_cube"
+    assert cv.cell_verdict(cell(["c"]), sides, meas) == "fix_source"
+    assert cv.cell_verdict(cell(["d"]), sides, meas) == "undecided"
+    assert cv.cell_verdict(cell(["demo.extra"]), sides, meas) == "missing_member"
+    assert cv.cell_verdict(cell(["b"]), sides, meas) == "pass"
+
+
+def _timing(tmp_path, live_value, cube_at):
+    c = _checks(tmp_path)
+    cell = cv.Cell(
+        "Overview - Table", "s", {}, "Avg Score", "48.50", 48.5, 49.0, 40, "mismatch"
+    )
+    states = {"s": {"state": {"dashboard": "Overview"}, "status": "ok", "sheets": {}}}
+    live = cv.Live(
+        rows=lambda ds, sql: [{"m": live_value}],
+        modified=lambda ds: dt.datetime(2026, 10, 9, 10, tzinfo=dt.UTC),
+        cube_refreshed=lambda q: cube_at,
+    )
+    cv.explain_cells(
+        [cell], c, states, {}, lambda ds, sql: [{"m": 48.5}], lambda q: ([], []), live
+    )
+    return cell
+
+
+def test_cube_matching_the_live_table_is_a_timing_pass(tmp_path):
+    cell = _timing(tmp_path, 49.0, dt.datetime(2026, 10, 9, 11, tzinfo=dt.UTC))
+    assert cell.verdict == "pass" and cell.reason.startswith("timing")
+
+
+def test_stale_cube_is_incomplete_not_fail(tmp_path):
+    cell = _timing(tmp_path, 48.0, dt.datetime(2026, 10, 9, 8, tzinfo=dt.UTC))
+    assert cell.verdict == "incomplete" and "older than the live table" in cell.reason
+
+
+def test_fresh_cube_that_differs_from_the_live_table_fails(tmp_path):
+    cell = _timing(tmp_path, 48.0, dt.datetime(2026, 10, 9, 11, tzinfo=dt.UTC))
+    assert cell.verdict == "fail" and "2026-10-09 10:00" in cell.reason

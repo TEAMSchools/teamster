@@ -892,3 +892,261 @@ def next_states(states, status, trees, cross_cuts, fields, children) -> list[dic
         for v, _ in kids if bad else _ends_pair(kids):
             add({"dashboard": st["dashboard"], "filters": {**st["filters"], cap: v}})
     return out
+
+
+def state_where(entry, checks, fields, sheet, public_only=False) -> list[str]:
+    st = entry["state"]
+    dims_sql = {c: d.sql for c, d in sheet.dims.items()}
+    out = []
+    pairs = list((st.get("filters") or {}).items()) + list(
+        (entry.get("click_filters") or {}).items()
+    )
+    for caption, value in pairs:
+        f = (fields.get(caption) or {}).get("field") or dims_sql.get(caption)
+        if f and (c := _cond(f, value)):
+            out.append(c)
+    for f in checks["extract_filters"]:
+        if f.get("datasource") not in (None, sheet.datasource):
+            continue
+        if public_only and f.get("private"):
+            continue
+        out.append(f["sql"])
+    return out
+
+
+def extract_sql(sheet, meas, grain, where) -> str:
+    sel = [f"{sheet.dims[d].sql} as g{i}" for i, d in enumerate(grain)]
+    sel += (
+        [f"{meas.sql} as m"]
+        if meas.sql
+        else [f"{meas.num} as m_num", f"{meas.den} as m_den"]
+    )
+    # Backticks: sqlglot quotes the name, which to_hyper_sql swaps for the extract table.
+    sql = f"select {', '.join(sel)} from `{EXTRACT_TABLE}`"
+    if where:
+        sql += " where " + " and ".join(f"({w})" for w in where)
+    if grain:
+        sql += " group by " + ", ".join(str(i + 1) for i in range(len(grain)))
+    return sql
+
+
+def extract_values(rows, n_grain) -> dict:
+    out = {}
+    for r in rows:
+        k = tuple(norm_dim(r[f"g{i}"]) for i in range(n_grain))
+        if "m" in r:
+            out[k] = _num(r["m"])
+        else:
+            num, den = _num(r["m_num"]), _num(r["m_den"])
+            out[k] = None if not den else (num or 0.0) / den
+    return out
+
+
+def cell_verdict(c, sides, meas) -> str:
+    names = set(c.explained_by)
+    if not names:
+        return "fail"
+    for side, verdict in (
+        ("cube", "fix_cube"),
+        ("source", "fix_source"),
+        ("undecided", "undecided"),
+    ):
+        if names & sides.get(side, frozenset()):
+            return verdict
+    if names & set(meas.missing_members):
+        return "missing_member"
+    return "pass"  # every cause is a dashboard fix: Cube is right
+
+
+def _grain(c: Cell) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    return (
+        tuple(d for d, v in c.key.items() if v != TOTAL),
+        tuple(d for d, v in c.key.items() if v == TOTAL),
+    )
+
+
+def _key(c: Cell, grain) -> tuple:
+    return tuple(norm_dim(c.key[d]) for d in grain)
+
+
+def _reproduces(value, c: Cell, meas: Measure) -> bool:
+    if (c.shown or "").strip():
+        return matches_shown(value, parse_shown(c.shown, meas.round))
+    return value in (None, 0.0)
+
+
+def _has_state(st: dict) -> bool:
+    return bool(st.get("filters") or st.get("params") or st.get("click"))
+
+
+def _trust(cells, checks, states, fields, run_extract) -> dict[tuple[str, str], bool]:
+    """A measure's SQL is trusted once it reproduces every comparable cell of one state."""
+    pools: dict[tuple[str, str], dict[str, list[Cell]]] = {}
+    for c in cells:
+        if c.status in ("match", "mismatch") and (c.shown or "").strip():
+            pools.setdefault((c.sheet, c.measure), {}).setdefault(c.state, []).append(c)
+    out = {}
+    for (sname, mname), by_state in pools.items():
+        defaults = sorted(s for s in by_state if not _has_state(states[s]["state"]))
+        state = defaults[0] if defaults else sorted(by_state)[0]
+        sheet = checks["sheets"][sname]
+        meas = sheet.measures[mname]
+        where = state_where(states[state], checks, fields, sheet)
+        ok = True
+        groups: dict[tuple, list[Cell]] = {}
+        for c in by_state[state]:
+            groups.setdefault(_grain(c)[0], []).append(c)
+        for grain, group in groups.items():
+            rows = run_extract(
+                sheet.datasource, extract_sql(sheet, meas, list(grain), where)
+            )
+            ext = apply_calc(meas, extract_values(rows, len(grain)), 1.0)
+            ok = ok and all(
+                _reproduces(ext.get(_key(c, grain)), c, meas) for c in group
+            )
+        out[(sname, mname)] = ok
+    return out
+
+
+def _cube_at(load, sheet, meas, grain, filters) -> dict:
+    q = {
+        "measures": [meas.cube],
+        "dimensions": [sheet.dims[d].cube for d in grain],
+        "filters": filters,
+        "limit": CUBE_LIMIT,
+    }
+    rows, _ = load(q)
+    raw = {
+        tuple(norm_dim(r.get(sheet.dims[d].cube)) for d in grain): _num(
+            r.get(meas.cube)
+        )
+        for r in rows
+    }
+    return apply_calc(meas, raw, meas.scale)
+
+
+def _variant(v, sheet, meas, grain, where, base, run_extract, load):
+    dash = None
+    if v.get("where"):
+        alt = Measure(
+            meas.caption,
+            meas.cube,
+            table_calc=meas.table_calc,
+            sql=_filtered(meas.sql, v["where"]) if meas.sql else None,
+            num=None if meas.sql else _filtered(meas.num, v["where"]),
+            den=None if meas.sql else _filtered(meas.den, v["where"]),
+        )
+    elif v.get("sql") or v.get("num"):
+        alt = Measure(
+            meas.caption,
+            meas.cube,
+            sql=v.get("sql"),
+            num=v.get("num"),
+            den=v.get("den"),
+            table_calc=meas.table_calc,
+        )
+    else:
+        alt = None
+    if alt is not None:
+        rows = run_extract(
+            sheet.datasource, extract_sql(sheet, alt, list(grain), where)
+        )
+        dash = apply_calc(alt, extract_values(rows, len(grain)), 1.0)
+    cube = (
+        _cube_at(load, sheet, meas, grain, base + v["cube_filters"])
+        if v.get("cube_filters")
+        else None
+    )
+    return v["explains"], dash, cube
+
+
+@dataclass
+class Live:
+    """The live warehouse side of the timing check."""
+
+    rows: Callable[[str, str], list[dict]]  # extract SQL run on the live rpt_ table
+    modified: Callable[[str], dt.datetime | None]  # when that table last changed
+    cube_refreshed: Callable[[dict], dt.datetime | None]  # Cube's lastRefreshTime
+
+
+def explain_cells(cells, checks, states, fields, run_extract, load, live=None) -> None:
+    sides = fix_sides(checks)
+    batches: dict[tuple, list[Cell]] = {}
+    for c in cells:
+        if c.status == "match":
+            c.verdict = "pass"
+        elif c.status == "missing_member":
+            c.verdict = "missing_member"
+        elif c.status == "mismatch":
+            batches.setdefault((c.sheet, c.state, _grain(c)[0], c.measure), []).append(
+                c
+            )
+    trusted = _trust(cells, checks, states, fields, run_extract)
+    for (sname, state, grain, mname), batch in batches.items():
+        sheet = checks["sheets"][sname]
+        meas = sheet.measures[mname]
+        if not trusted.get((sname, mname)):
+            for c in batch:
+                c.verdict, c.reason = (
+                    "incomplete",
+                    "extract SQL does not reproduce Tableau for this measure",
+                )
+            continue
+        entry = states[state]
+        where = state_where(entry, checks, fields, sheet)
+        base = state_filters(entry, checks)[0] + hard_filters(checks, sheet.datasource)
+        rows = run_extract(
+            sheet.datasource, extract_sql(sheet, meas, list(grain), where)
+        )
+        ext = apply_calc(meas, extract_values(rows, len(grain)), 1.0)
+        live_v, times = None, (None, None)
+        if live is not None:
+            lrows = live.rows(
+                sheet.datasource, extract_sql(sheet, meas, list(grain), where)
+            )
+            live_v = apply_calc(meas, extract_values(lrows, len(grain)), 1.0)
+            q = {
+                "measures": [meas.cube],
+                "dimensions": [sheet.dims[d].cube for d in grain],
+                "filters": base,
+                "limit": CUBE_LIMIT,
+            }
+            times = (live.cube_refreshed(q), live.modified(sheet.datasource))
+        variants = [
+            _variant(v, sheet, meas, grain, where, base, run_extract, load)
+            for v in meas.variants
+        ]
+        for c in batch:
+            k = _key(c, grain)
+            c.extract = ext.get(k)
+            if not _reproduces(c.extract, c, meas):
+                c.verdict, c.reason = (
+                    "incomplete",
+                    "extract SQL does not reproduce this cell",
+                )
+                continue
+            if live_v is not None and matches_raw(live_v.get(k), c.cube):
+                c.verdict = "pass"
+                c.reason = "timing: the extract is older than Cube; Cube matches the live table"
+                continue
+            for names, dash, cube in variants:
+                d_v = c.extract if dash is None else dash.get(k)
+                c_v = c.cube if cube is None else cube.get(k)
+                if matches_raw(c_v, d_v):
+                    c.explained_by, c.variant = list(names), d_v
+                    c.cube_variant = None if cube is None else c_v
+                    break
+            c.verdict = cell_verdict(c, sides, meas)
+            cube_at, table_at = times
+            if c.verdict == "fail" and cube_at and table_at:
+                if cube_at < table_at:
+                    c.verdict = "incomplete"
+                    c.reason = (
+                        f"Cube's data (refreshed {cube_at:%Y-%m-%d %H:%M}) is older than the live "
+                        f"table (built {table_at:%Y-%m-%d %H:%M}); re-run explain after Cube refreshes"
+                    )
+                else:
+                    c.reason = (
+                        f"Cube refreshed {cube_at:%Y-%m-%d %H:%M}; the live table was built "
+                        f"{table_at:%Y-%m-%d %H:%M}"
+                    )
