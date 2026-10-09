@@ -252,6 +252,18 @@ rows:
             where:
               cast(assessment_id as string) not in ('185525', '186256',
               '188349', '188353', '189131', '189344', '189353', '189354')
+            cube_filters:
+              - member: source_assessment_id
+                operator: notEquals
+                values:
+                  - "185525"
+                  - "186256"
+                  - "188349"
+                  - "188353"
+                  - "189131"
+                  - "189344"
+                  - "189353"
+                  - "189354"
           - explains:
               - untagged_assessments
               - illuminate_dates_disagree
@@ -263,6 +275,18 @@ rows:
               count(IF(NOT CAST(assessment_id AS STRING) IN ('185525', '186256',
               '188349', '188353', '189131', '189344', '189353', '189354'),
               IF(is_normed_scope, is_mastery, NULL), NULL))
+            cube_filters:
+              - member: source_assessment_id
+                operator: notEquals
+                values:
+                  - "185525"
+                  - "186256"
+                  - "188349"
+                  - "188353"
+                  - "189131"
+                  - "189344"
+                  - "189353"
+                  - "189354"
     grains:
       - []
       - - response_type
@@ -1064,6 +1088,18 @@ rows:
             where:
               cast(assessment_id as string) not in ('185525', '186256',
               '188349', '188353', '189131', '189344', '189353', '189354')
+            cube_filters:
+              - member: source_assessment_id
+                operator: notEquals
+                values:
+                  - "185525"
+                  - "186256"
+                  - "188349"
+                  - "188353"
+                  - "189131"
+                  - "189344"
+                  - "189353"
+                  - "189354"
     grains:
       - []
       - - response_type
@@ -2017,6 +2053,18 @@ rows:
             where:
               cast(assessment_id as string) not in ('185525', '186256',
               '188349', '188353', '189131', '189344', '189353', '189354')
+            cube_filters:
+              - member: source_assessment_id
+                operator: notEquals
+                values:
+                  - "185525"
+                  - "186256"
+                  - "188349"
+                  - "188353"
+                  - "189131"
+                  - "189344"
+                  - "189353"
+                  - "189354"
     grains:
       - - iep
       - - response_type
@@ -2740,6 +2788,18 @@ rows:
             where:
               cast(assessment_id as string) not in ('185525', '186256',
               '188349', '188353', '189131', '189344', '189353', '189354')
+            cube_filters:
+              - member: source_assessment_id
+                operator: notEquals
+                values:
+                  - "185525"
+                  - "186256"
+                  - "188349"
+                  - "188353"
+                  - "189131"
+                  - "189344"
+                  - "189353"
+                  - "189354"
           - explains:
               - untagged_assessments
               - illuminate_dates_disagree
@@ -2751,6 +2811,18 @@ rows:
               count(IF(NOT CAST(assessment_id AS STRING) IN ('185525', '186256',
               '188349', '188353', '189131', '189344', '189353', '189354'),
               IF(is_normed_scope, is_mastery, NULL), NULL))
+            cube_filters:
+              - member: source_assessment_id
+                operator: notEquals
+                values:
+                  - "185525"
+                  - "186256"
+                  - "188349"
+                  - "188353"
+                  - "189131"
+                  - "189344"
+                  - "189353"
+                  - "189354"
     grains:
       - - iep
       - - response_type
@@ -2979,6 +3051,18 @@ rows:
             where:
               cast(assessment_id as string) not in ('185525', '186256',
               '188349', '188353', '189131', '189344', '189353', '189354')
+            cube_filters:
+              - member: source_assessment_id
+                operator: notEquals
+                values:
+                  - "185525"
+                  - "186256"
+                  - "188349"
+                  - "188353"
+                  - "189131"
+                  - "189344"
+                  - "189353"
+                  - "189354"
           - explains:
               - untagged_assessments
               - illuminate_dates_disagree
@@ -2986,6 +3070,18 @@ rows:
               count(DISTINCT IF(NOT CAST(assessment_id AS STRING) IN ('185525',
               '186256', '188349', '188353', '189131', '189344', '189353',
               '189354'), IF(is_normed_scope, student_number, NULL), NULL))
+            cube_filters:
+              - member: source_assessment_id
+                operator: notEquals
+                values:
+                  - "185525"
+                  - "186256"
+                  - "188349"
+                  - "188353"
+                  - "189131"
+                  - "189344"
+                  - "189353"
+                  - "189354"
       - cube: count_students
         kind: count
         tableau:
@@ -2998,6 +3094,18 @@ rows:
             where:
               cast(assessment_id as string) not in ('185525', '186256',
               '188349', '188353', '189131', '189344', '189353', '189354')
+            cube_filters:
+              - member: source_assessment_id
+                operator: notEquals
+                values:
+                  - "185525"
+                  - "186256"
+                  - "188349"
+                  - "188353"
+                  - "189131"
+                  - "189344"
+                  - "189353"
+                  - "189354"
     grains:
       - []
       - - response_type
@@ -3875,6 +3983,18 @@ rows:
             where:
               cast(assessment_id as string) not in ('185525', '186256',
               '188349', '188353', '189131', '189344', '189353', '189354')
+            cube_filters:
+              - member: source_assessment_id
+                operator: notEquals
+                values:
+                  - "185525"
+                  - "186256"
+                  - "188349"
+                  - "188353"
+                  - "189131"
+                  - "189344"
+                  - "189353"
+                  - "189354"
           - explains:
               - untagged_assessments
               - illuminate_dates_disagree
@@ -3886,6 +4006,18 @@ rows:
               count(IF(NOT CAST(assessment_id AS STRING) IN ('185525', '186256',
               '188349', '188353', '189131', '189344', '189353', '189354'),
               IF(is_normed_scope, percent_correct, NULL), NULL))
+            cube_filters:
+              - member: source_assessment_id
+                operator: notEquals
+                values:
+                  - "185525"
+                  - "186256"
+                  - "188349"
+                  - "188353"
+                  - "189131"
+                  - "189344"
+                  - "189353"
+                  - "189354"
     grains:
       - []
       - - response_type
@@ -4606,6 +4738,18 @@ rows:
             where:
               cast(assessment_id as string) not in ('185525', '186256',
               '188349', '188353', '189131', '189344', '189353', '189354')
+            cube_filters:
+              - member: source_assessment_id
+                operator: notEquals
+                values:
+                  - "185525"
+                  - "186256"
+                  - "188349"
+                  - "188353"
+                  - "189131"
+                  - "189344"
+                  - "189353"
+                  - "189354"
           - explains:
               - untagged_assessments
               - illuminate_dates_disagree
@@ -4613,6 +4757,18 @@ rows:
               count(IF(NOT CAST(assessment_id AS STRING) IN ('185525', '186256',
               '188349', '188353', '189131', '189344', '189353', '189354'),
               IF(is_normed_scope, response_type, NULL), NULL))
+            cube_filters:
+              - member: source_assessment_id
+                operator: notEquals
+                values:
+                  - "185525"
+                  - "186256"
+                  - "188349"
+                  - "188353"
+                  - "189131"
+                  - "189344"
+                  - "189353"
+                  - "189354"
     grains:
       - - performance_band
       - - response_type
@@ -5099,6 +5255,18 @@ rows:
             where:
               cast(assessment_id as string) not in ('185525', '186256',
               '188349', '188353', '189131', '189344', '189353', '189354')
+            cube_filters:
+              - member: source_assessment_id
+                operator: notEquals
+                values:
+                  - "185525"
+                  - "186256"
+                  - "188349"
+                  - "188353"
+                  - "189131"
+                  - "189344"
+                  - "189353"
+                  - "189354"
           - explains:
               - untagged_assessments
               - illuminate_dates_disagree
@@ -5110,6 +5278,18 @@ rows:
               count(IF(NOT CAST(assessment_id AS STRING) IN ('185525', '186256',
               '188349', '188353', '189131', '189344', '189353', '189354'),
               IF(is_normed_scope, is_mastery, NULL), NULL))
+            cube_filters:
+              - member: source_assessment_id
+                operator: notEquals
+                values:
+                  - "185525"
+                  - "186256"
+                  - "188349"
+                  - "188353"
+                  - "189131"
+                  - "189344"
+                  - "189353"
+                  - "189354"
     grains:
       - - title
         - assessment_id

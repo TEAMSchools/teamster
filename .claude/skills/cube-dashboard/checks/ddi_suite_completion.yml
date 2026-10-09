@@ -185,8 +185,8 @@ cube_filters:
     values:
       - overall
       - not_taken
-    # rpt_tableau__ddi_dashboard drops WPP assessments (its module_type != 'WPP'
-    # filter), so Cube leaves them out beside that extract only.
+        # rpt_tableau__ddi_dashboard drops WPP assessments (its module_type != 'WPP'
+        # filter), so Cube leaves them out beside that extract only.
   - member: module_type
     operator: notEquals
     values:
@@ -251,6 +251,26 @@ mismatches:
     evidence:
       Assessments 185525, 186256, 188349, 188353, 189131, 189344, 189353,
       189354.
+  fact_repeats_rows:
+    title:
+      "fix(cube): the assessment fact has more rows than students on 49 DDI
+      assessments"
+    what:
+      "On 49 Illuminate assessments in 2025-26 and 2026-27, the assessment fact
+      behind Cube has more rows than students: 6,476 extra rows. They count as
+      assigned, so Cube's % Complete runs low. On 2026-27's three largest, the
+      tested counts match the dashboard and the extra rows are not-tested
+      placeholders."
+    fix: cube
+    evidence:
+      "2026-27 % Complete: Cube 71.9%, the DDI weekly extract 73.5%; without
+      these assessments and the misdated ones, Cube 73.0%. Assessments: 186226,
+      189859, 189866, 203401, 203403, 203406, 203409, 203413, 203416, 203417,
+      203420, 203424, 203427, 203435, 203437, 203439, 203441, 203449, 203639,
+      204224, 204251, 204264, 204292, 204866, 204869, 204996, 204999, 205002,
+      205008, 205010, 205012, 205156, 205780, 205956, 206202, 206205, 206208,
+      206212, 206216, 206220, 206712, 206835, 207058, 207066, 207845, 226255,
+      226299, 226306, 226804."
 rows:
   - row_gid: "1219284654682073"
     name: "% Complete (student-level, this week)"
@@ -266,10 +286,144 @@ rows:
         den: count(distinct concat(student_number, '-', assessment_id))
         variants:
           - explains:
+              - fact_repeats_rows
+            cube_filters:
+              - member: source_assessment_id
+                operator: notEquals
+                values:
+                  - "186226"
+                  - "189859"
+                  - "189866"
+                  - "203401"
+                  - "203403"
+                  - "203406"
+                  - "203409"
+                  - "203413"
+                  - "203416"
+                  - "203417"
+                  - "203420"
+                  - "203424"
+                  - "203427"
+                  - "203435"
+                  - "203437"
+                  - "203439"
+                  - "203441"
+                  - "203449"
+                  - "203639"
+                  - "204224"
+                  - "204251"
+                  - "204264"
+                  - "204292"
+                  - "204866"
+                  - "204869"
+                  - "204996"
+                  - "204999"
+                  - "205002"
+                  - "205008"
+                  - "205010"
+                  - "205012"
+                  - "205156"
+                  - "205780"
+                  - "205956"
+                  - "206202"
+                  - "206205"
+                  - "206208"
+                  - "206212"
+                  - "206216"
+                  - "206220"
+                  - "206712"
+                  - "206835"
+                  - "207058"
+                  - "207066"
+                  - "207845"
+                  - "226255"
+                  - "226299"
+                  - "226306"
+                  - "226804"
+          - explains:
               - illuminate_dates_disagree
             where:
               cast(assessment_id as string) not in ('185525', '186256',
               '188349', '188353', '189131', '189344', '189353', '189354')
+            cube_filters:
+              - member: source_assessment_id
+                operator: notEquals
+                values:
+                  - "185525"
+                  - "186256"
+                  - "188349"
+                  - "188353"
+                  - "189131"
+                  - "189344"
+                  - "189353"
+                  - "189354"
+          - explains:
+              - illuminate_dates_disagree
+              - fact_repeats_rows
+            where:
+              cast(assessment_id as string) not in ('185525', '186256',
+              '188349', '188353', '189131', '189344', '189353', '189354')
+            cube_filters:
+              - member: source_assessment_id
+                operator: notEquals
+                values:
+                  - "185525"
+                  - "186226"
+                  - "186256"
+                  - "188349"
+                  - "188353"
+                  - "189131"
+                  - "189344"
+                  - "189353"
+                  - "189354"
+                  - "189859"
+                  - "189866"
+                  - "203401"
+                  - "203403"
+                  - "203406"
+                  - "203409"
+                  - "203413"
+                  - "203416"
+                  - "203417"
+                  - "203420"
+                  - "203424"
+                  - "203427"
+                  - "203435"
+                  - "203437"
+                  - "203439"
+                  - "203441"
+                  - "203449"
+                  - "203639"
+                  - "204224"
+                  - "204251"
+                  - "204264"
+                  - "204292"
+                  - "204866"
+                  - "204869"
+                  - "204996"
+                  - "204999"
+                  - "205002"
+                  - "205008"
+                  - "205010"
+                  - "205012"
+                  - "205156"
+                  - "205780"
+                  - "205956"
+                  - "206202"
+                  - "206205"
+                  - "206208"
+                  - "206212"
+                  - "206216"
+                  - "206220"
+                  - "206712"
+                  - "206835"
+                  - "207058"
+                  - "207066"
+                  - "207845"
+                  - "226255"
+                  - "226299"
+                  - "226306"
+                  - "226804"
     grains:
       - []
       - - region
@@ -346,6 +500,18 @@ rows:
               count(DISTINCT IF(NOT CAST(assessment_id AS STRING) IN ('185525',
               '186256', '188349', '188353', '189131', '189344', '189353',
               '189354'), CONCAT(student_number, '-', assessment_id), NULL))
+            cube_filters:
+              - member: source_assessment_id
+                operator: notEquals
+                values:
+                  - "185525"
+                  - "186256"
+                  - "188349"
+                  - "188353"
+                  - "189131"
+                  - "189344"
+                  - "189353"
+                  - "189354"
           - explains:
               - completion_always_100
               - untagged_assessments
@@ -360,6 +526,291 @@ rows:
               '186256', '188349', '188353', '189131', '189344', '189353',
               '189354'), IF(is_normed_scope, CONCAT(student_number, '-',
               assessment_id), NULL), NULL))
+            cube_filters:
+              - member: source_assessment_id
+                operator: notEquals
+                values:
+                  - "185525"
+                  - "186256"
+                  - "188349"
+                  - "188353"
+                  - "189131"
+                  - "189344"
+                  - "189353"
+                  - "189354"
+          - explains:
+              - completion_always_100
+              - fact_repeats_rows
+            num:
+              count(distinct if(response_type is not null,
+              concat(student_number, '-', assessment_id), null))
+            den: count(distinct concat(student_number, '-', assessment_id))
+            cube_filters:
+              - member: source_assessment_id
+                operator: notEquals
+                values:
+                  - "186226"
+                  - "189859"
+                  - "189866"
+                  - "203401"
+                  - "203403"
+                  - "203406"
+                  - "203409"
+                  - "203413"
+                  - "203416"
+                  - "203417"
+                  - "203420"
+                  - "203424"
+                  - "203427"
+                  - "203435"
+                  - "203437"
+                  - "203439"
+                  - "203441"
+                  - "203449"
+                  - "203639"
+                  - "204224"
+                  - "204251"
+                  - "204264"
+                  - "204292"
+                  - "204866"
+                  - "204869"
+                  - "204996"
+                  - "204999"
+                  - "205002"
+                  - "205008"
+                  - "205010"
+                  - "205012"
+                  - "205156"
+                  - "205780"
+                  - "205956"
+                  - "206202"
+                  - "206205"
+                  - "206208"
+                  - "206212"
+                  - "206216"
+                  - "206220"
+                  - "206712"
+                  - "206835"
+                  - "207058"
+                  - "207066"
+                  - "207845"
+                  - "226255"
+                  - "226299"
+                  - "226306"
+                  - "226804"
+          - explains:
+              - completion_always_100
+              - untagged_assessments
+              - fact_repeats_rows
+            num:
+              count(distinct if(is_normed_scope and response_type is not null,
+              concat(student_number, '-', assessment_id), null))
+            den:
+              count(distinct if(is_normed_scope, concat(student_number, '-',
+              assessment_id), null))
+            cube_filters:
+              - member: source_assessment_id
+                operator: notEquals
+                values:
+                  - "186226"
+                  - "189859"
+                  - "189866"
+                  - "203401"
+                  - "203403"
+                  - "203406"
+                  - "203409"
+                  - "203413"
+                  - "203416"
+                  - "203417"
+                  - "203420"
+                  - "203424"
+                  - "203427"
+                  - "203435"
+                  - "203437"
+                  - "203439"
+                  - "203441"
+                  - "203449"
+                  - "203639"
+                  - "204224"
+                  - "204251"
+                  - "204264"
+                  - "204292"
+                  - "204866"
+                  - "204869"
+                  - "204996"
+                  - "204999"
+                  - "205002"
+                  - "205008"
+                  - "205010"
+                  - "205012"
+                  - "205156"
+                  - "205780"
+                  - "205956"
+                  - "206202"
+                  - "206205"
+                  - "206208"
+                  - "206212"
+                  - "206216"
+                  - "206220"
+                  - "206712"
+                  - "206835"
+                  - "207058"
+                  - "207066"
+                  - "207845"
+                  - "226255"
+                  - "226299"
+                  - "226306"
+                  - "226804"
+          - explains:
+              - completion_always_100
+              - illuminate_dates_disagree
+              - fact_repeats_rows
+            num:
+              count(DISTINCT IF(NOT CAST(assessment_id AS STRING) IN ('185525',
+              '186256', '188349', '188353', '189131', '189344', '189353',
+              '189354'), IF(NOT response_type IS NULL, CONCAT(student_number,
+              '-', assessment_id), NULL), NULL))
+            den:
+              count(DISTINCT IF(NOT CAST(assessment_id AS STRING) IN ('185525',
+              '186256', '188349', '188353', '189131', '189344', '189353',
+              '189354'), CONCAT(student_number, '-', assessment_id), NULL))
+            cube_filters:
+              - member: source_assessment_id
+                operator: notEquals
+                values:
+                  - "185525"
+                  - "186226"
+                  - "186256"
+                  - "188349"
+                  - "188353"
+                  - "189131"
+                  - "189344"
+                  - "189353"
+                  - "189354"
+                  - "189859"
+                  - "189866"
+                  - "203401"
+                  - "203403"
+                  - "203406"
+                  - "203409"
+                  - "203413"
+                  - "203416"
+                  - "203417"
+                  - "203420"
+                  - "203424"
+                  - "203427"
+                  - "203435"
+                  - "203437"
+                  - "203439"
+                  - "203441"
+                  - "203449"
+                  - "203639"
+                  - "204224"
+                  - "204251"
+                  - "204264"
+                  - "204292"
+                  - "204866"
+                  - "204869"
+                  - "204996"
+                  - "204999"
+                  - "205002"
+                  - "205008"
+                  - "205010"
+                  - "205012"
+                  - "205156"
+                  - "205780"
+                  - "205956"
+                  - "206202"
+                  - "206205"
+                  - "206208"
+                  - "206212"
+                  - "206216"
+                  - "206220"
+                  - "206712"
+                  - "206835"
+                  - "207058"
+                  - "207066"
+                  - "207845"
+                  - "226255"
+                  - "226299"
+                  - "226306"
+                  - "226804"
+          - explains:
+              - completion_always_100
+              - untagged_assessments
+              - illuminate_dates_disagree
+              - fact_repeats_rows
+            num:
+              count(DISTINCT IF(NOT CAST(assessment_id AS STRING) IN ('185525',
+              '186256', '188349', '188353', '189131', '189344', '189353',
+              '189354'), IF(is_normed_scope AND NOT response_type IS NULL,
+              CONCAT(student_number, '-', assessment_id), NULL), NULL))
+            den:
+              count(DISTINCT IF(NOT CAST(assessment_id AS STRING) IN ('185525',
+              '186256', '188349', '188353', '189131', '189344', '189353',
+              '189354'), IF(is_normed_scope, CONCAT(student_number, '-',
+              assessment_id), NULL), NULL))
+            cube_filters:
+              - member: source_assessment_id
+                operator: notEquals
+                values:
+                  - "185525"
+                  - "186226"
+                  - "186256"
+                  - "188349"
+                  - "188353"
+                  - "189131"
+                  - "189344"
+                  - "189353"
+                  - "189354"
+                  - "189859"
+                  - "189866"
+                  - "203401"
+                  - "203403"
+                  - "203406"
+                  - "203409"
+                  - "203413"
+                  - "203416"
+                  - "203417"
+                  - "203420"
+                  - "203424"
+                  - "203427"
+                  - "203435"
+                  - "203437"
+                  - "203439"
+                  - "203441"
+                  - "203449"
+                  - "203639"
+                  - "204224"
+                  - "204251"
+                  - "204264"
+                  - "204292"
+                  - "204866"
+                  - "204869"
+                  - "204996"
+                  - "204999"
+                  - "205002"
+                  - "205008"
+                  - "205010"
+                  - "205012"
+                  - "205156"
+                  - "205780"
+                  - "205956"
+                  - "206202"
+                  - "206205"
+                  - "206208"
+                  - "206212"
+                  - "206216"
+                  - "206220"
+                  - "206712"
+                  - "206835"
+                  - "207058"
+                  - "207066"
+                  - "207845"
+                  - "226255"
+                  - "226299"
+                  - "226306"
+                  - "226804"
     grains:
       - []
       - - module_type
