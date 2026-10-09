@@ -91,6 +91,13 @@ are functionally intermediates. Uniqueness tests and `materialized: table`
 belong on the per-region source-system staging models, not on the kipptaf-level
 view. Don't add either when creating a new one.
 
+Exception: a union view whose column needs a check against a kipptaf model (e.g.
+the location crosswalk) is a table, because a test on a view runs only when its
+code changes and no package can `ref()` kipptaf. Each one says so in a `config:`
+comment (`stg_iready__personalized_instruction_summary`,
+`stg_finalsite__status_report`, `stg_deanslist__behavior`,
+`stg_amplify__mclass__sftp__benchmark_student_summary`). Leave those tables.
+
 Contract-enforcement here is per-model, NOT directory-wide: the `powerschool:`
 block in `dbt_project.yml` sets only `+schema:` (no `staging: +contract`), so
 powerschool `staging/` union views are contract-enforced only where a model sets
