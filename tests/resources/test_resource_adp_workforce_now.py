@@ -144,6 +144,7 @@ class _FakeResponse:
         self.status_code = status_code
         self._json_body = json_body
         self.text = text
+        self.content = text.encode()
         self._json_raises = json_raises
 
     def json(self) -> dict:
@@ -410,3 +411,25 @@ def test_get_records_refetches_truncated_page(monkeypatch: pytest.MonkeyPatch):
 
     assert records == [{"associateOID": "a"}]
     assert calls["n"] == 3
+
+
+def test_get_records_persistent_truncated_page_gives_up(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A page that never parses stops after 5 fetches, not 5 x 5."""
+    monkeypatch.setattr(AdpWorkforceNowResource._request.retry, "wait", wait_none())  # pyright: ignore[reportFunctionMemberAccess]
+    monkeypatch.setattr(AdpWorkforceNowResource._get_page.retry, "wait", wait_none())  # pyright: ignore[reportFunctionMemberAccess]
+
+    calls = {"n": 0}
+
+    def request_fn(method: str, url: str, **kwargs) -> _FakeResponse:
+        calls["n"] += 1
+        return _FakeResponse(200, {}, json_raises=True)
+
+    adp_wfn = _build_offline_resource(request_fn)
+
+    with pytest.raises(RetryError) as exc_info:
+        adp_wfn.get_records(endpoint="hr/v2/workers")
+
+    assert calls["n"] == 5
+    assert isinstance(exc_info.value.last_attempt.exception(), JSONDecodeError)

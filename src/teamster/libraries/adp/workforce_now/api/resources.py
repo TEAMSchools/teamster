@@ -150,7 +150,17 @@ class AdpWorkforceNowResource(ConfigurableResource):
         if response.status_code == 204:
             return None
 
-        return response.json()
+        try:
+            return response.json()
+        except JSONDecodeError:
+            # never log the body: worker records are PII
+            self._log.warning(
+                msg=(
+                    f"Unparseable page at $skip={params.get('$skip')} "
+                    f"({len(response.content)} bytes); refetching"
+                )
+            )
+            raise
 
     def get_records(self, endpoint: str, params: dict | None = None) -> list[dict]:
         page_size = 100
