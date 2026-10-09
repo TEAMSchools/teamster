@@ -7,12 +7,10 @@ select
     cast(i.incident_id as string) as incident_id,
 
     cast(loc.powerschool_school_id as string) as school_id,
-from {{ ref("int_deanslist__incidents") }} as i
+from {{ ref("int_students__behavioral_incidents") }} as i
 inner join
     {{ ref("stg_google_sheets__people__locations") }} as loc
-    on i.school_id = loc.deanslist_school_id
-    and not loc.is_pathways
-    and loc.location_name <> 'KIPP Whittier Elementary'
+    on i.location_key = loc.location_key
 -- year filter keys on the issue date, not the DeansList create date, so a
 -- June incident logged in July stays in June's school year
 inner join {{ ref("dim_dates") }} as dd on cast(i.issue_ts_date as date) = dd.date_key
