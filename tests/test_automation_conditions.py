@@ -2631,6 +2631,13 @@ def test_table_two_feed_race_triggers_follow_up():
     )
     assert result.get_num_requested(table) == 1
 
+    # exactly one follow-up
+    materialize(assets=all_assets, instance=instance, selection=[two_feed_table])
+    result = evaluate_automation_conditions(
+        defs=defs, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(table) == 0
+
 
 def test_table_not_rerun_after_dep_updated_in_same_run():
     """A dep updated by the same run as the table must not re-trigger it:
