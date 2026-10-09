@@ -1,5 +1,26 @@
 models:
   - name: int_powerschool__gradescaleitem_lookup
+    data_tests:
+      # Guards the whole-letter ladder that kipptaf
+      # rpt_tableau__student_course_grades builds for need_next_*. That ladder
+      # assumes A/B/C/D/F cutoffs are distinct within a scale. Two whole letters
+      # sharing a cutoff make lead() return the earlier row's own value,
+      # collapsing its band to max = min - 0.1 so it matches nothing and the
+      # range it should have covered silently reports the wrong next letter. Two
+      # IDENTICAL rows would instead fan the join out. Error, not warn: both
+      # failures are silent, and the consuming model's own key test is
+      # warn-level for the unrelated #3915 issue.
+      #
+      # Scoped to whole letters on purpose: plus-minus and special-code items
+      # legitimately share cutoffs, and no consumer range-matches against them.
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - gradescaleid
+              - min_cutoffpercentage
+          config:
+            where: letter_grade in ('A', 'B', 'C', 'D', 'F')
+            severity: error
     columns:
       - name: gradescaleid
         data_type: int64

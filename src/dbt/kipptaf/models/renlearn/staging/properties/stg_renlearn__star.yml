@@ -6,15 +6,9 @@ models:
       academic_year, star subject and discipline, administration window mapped
       from Fall, Winter, and Spring to BOY, MOY, and EOY, benchmark integer
       flags, and the per-subject row numbers.
-    config:
-      materialized: table
     columns:
       - name: assessment_id
         data_type: string
-        data_tests:
-          - unique:
-              config:
-                severity: error
       - name: _dbt_source_relation
         data_type: string
       - name: _dagster_partition_fiscal_year

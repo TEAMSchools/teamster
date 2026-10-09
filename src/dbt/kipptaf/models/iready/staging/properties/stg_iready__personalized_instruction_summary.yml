@@ -7,6 +7,10 @@ models:
       student_id adjusted so Miami values from academic years through 2025 that
       lack the Focus prefix are shifted onto the network student number.
     config:
+      # Not a view: a test on a view runs only when its code changes, and the
+      # school relationships test below must catch a new i-Ready school that is
+      # missing from the crosswalk sheet on every build. No package can hold it,
+      # because the crosswalk is a kipptaf model.
       materialized: table
     columns:
       - name: school

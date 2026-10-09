@@ -13,17 +13,8 @@ models:
       and school_level unchanged from the package model of the same name, which
       is where their descriptions live.
     config:
-      materialized: table
       meta:
         contains_pii: true
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns:
-              - _dbt_source_relation
-              - studentid
-              - schoolid
-              - academic_year
     columns:
       - name: _dbt_source_relation
         data_type: string

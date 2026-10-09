@@ -26,10 +26,7 @@ models:
           # extract) and the Cube roster views (dim_student_section_enrollments
           # reads this model live) current through the school day. The 0:00 and
           # 4:00 ticks precede the overnight batch exposures that read it --
-          # ddi_suite, literacy_dashboard, apm_dashboard. Keep the tick
-          # identical to int_powerschool__course_enrollments_union, its only
-          # upstream table, so ~any_deps_in_progress builds the pair in order.
-          # Refs #5082
+          # ddi_suite, literacy_dashboard, apm_dashboard. Refs #5082
           automation_condition:
             cron_schedule: 0 0,4,6-18 * * *
     data_tests:
