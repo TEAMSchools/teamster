@@ -2673,3 +2673,85 @@ def test_a_variant_needs_sql_or_where(tmp_path):
 
     with pytest.raises(cv.CheckError, match="each variant needs"):
         cv.load_checks(_write_variant(tmp_path, m))
+
+
+# ---------------------------------------------------------------- Cube-side variants
+class CubeWithout(FakeCube):
+    """Cube without an assessment gives the dashboard's school numbers."""
+
+    def __call__(self, q):
+        rows, pre = super().__call__(q)
+        dropped = any(
+            f.get("member", "").endswith("source_assessment_id") for f in q["filters"]
+        )
+        if dropped and len(q["dimensions"]) == 2:
+            v = "demo_view"
+            fix = {"B": "12", "C": "8"}
+            rows = [
+                dict(
+                    r,
+                    **{
+                        f"{v}.count_tardy_days": fix.get(
+                            r[f"{v}.locations_abbreviation"], r[f"{v}.count_tardy_days"]
+                        )
+                    },
+                )
+                for r in rows
+            ]
+        return rows, pre
+
+
+def _cube_side(d, **extra):
+    _fix_cube(d, **extra)
+    d["rows"][0]["metrics"][0]["variants"] = [
+        {
+            "explains": ["tardy_formula"],
+            "cube_filters": [
+                {
+                    "member": "source_assessment_id",
+                    "operator": "notEquals",
+                    "values": ["1"],
+                }
+            ],
+        }
+    ]
+
+
+def test_a_cube_side_variant_explains_cells_cube_has_and_the_extract_lacks(tmp_path):
+    checks = cv.load_checks(_write_variant(tmp_path, _cube_side))
+    cube = CubeWithout()
+    result = cv.run_dashboard(checks, cube, FakeBQ(), TODAY)
+    row = result["rows"]["1"]
+    assert row["verdict"] == "fix_cube"
+    assert row["mismatches"]["tardy_formula"]["explains_cells"] == 2
+    sent = [
+        q
+        for q in cube.queries
+        if any("source_assessment_id" in f.get("member", "") for f in q["filters"])
+    ]
+    assert sent, "the variant's Cube filters reach a Cube query"
+
+
+def test_a_cube_side_variant_keeps_the_dashboard_formula(tmp_path):
+    c = cv.load_checks(_write_variant(tmp_path, _cube_side))
+    v = c["rows"][0]["metrics"][0]["variants"][0]
+    assert v["sql"] == "sum(is_tardy)"
+
+
+def test_variant_cube_filters_are_filters(tmp_path):
+    def m(d):
+        _cube_side(d)
+        d["rows"][0]["metrics"][0]["variants"][0]["cube_filters"] = ["nope"]
+
+    with pytest.raises(cv.CheckError, match="cube_filters is a list of Cube filters"):
+        cv.load_checks(_write_variant(tmp_path, m))
+
+
+def test_a_cube_side_draft_shows_the_cube_filters(tmp_path):
+    checks = cv.load_checks(_write_variant(tmp_path, _cube_side))
+    result = cv.run_dashboard(checks, CubeWithout(), FakeBQ(), TODAY)
+    body = cv.issue_drafts(result, checks)["tardy_formula"]["body"]
+    assert (
+        "source_assessment_id" in body
+        and "Cube without the affected rows gives" in body
+    )

@@ -1140,10 +1140,27 @@ def load_checks(path) -> dict:
                     f"{where}: {', '.join(twice)} is named as both a mismatch and a "
                     "missing member"
                 )
+            keys = ("sql",) if m["kind"] == "count" else ("num", "den")
             for v in variants:
+                if isinstance(v, dict) and "cube_filters" in v:
+                    cf = v["cube_filters"]
+                    if not isinstance(cf, list) or not all(
+                        isinstance(f, dict)
+                        and (f.get("member") or "or" in f or "and" in f)
+                        for f in cf
+                    ):
+                        raise CheckError(
+                            f"{where}: metric {m.get('cube')}: cube_filters is a list of "
+                            "Cube filters"
+                        )
+                    if not v.get("where") and not any(v.get(k) for k in keys):
+                        # Cube without some rows, against the dashboard as written:
+                        # the extract side reuses the metric's own cells.
+                        for k in keys:
+                            v[k] = m[k]
+                        v["as_written"] = True
                 if isinstance(v, dict) and v.get("where"):
                     # The metric's own formula, minus the rows the condition drops.
-                    keys = ("sql",) if m["kind"] == "count" else ("num", "den")
                     for k in keys:
                         v.setdefault(k, _filtered(m[k], v["where"]))
                 if not isinstance(v, dict) or any(not v.get(k) for k in need):
@@ -1527,6 +1544,8 @@ def truth_sql(
         else:
             select += [f"{m['num']} as m{i}_num", f"{m['den']} as m{i}_den"]
         for j, v in enumerate(m.get("variants", [])):
+            if v.get("as_written"):
+                continue
             if m["kind"] == "count":
                 select.append(f"{v['sql']} as m{i}_v{j}")
             else:
@@ -1586,7 +1605,8 @@ class Cell:
     ok: bool
     # Fails as written, but matches a variant: the names that variant explains.
     explained_by: tuple[str, ...] = ()
-    variant: float | None = None  # that variant's value
+    variant: float | None = None  # that variant's dashboard-side value
+    cube_variant: float | None = None  # Cube without some rows, for a Cube-side variant
 
     @property
     def explained(self) -> bool:
@@ -1642,14 +1662,21 @@ def compare(kind, cube, truth) -> list[Cell]:
 
 
 def explain(cells, kind, variants) -> None:
-    """Mark failed cells that match a variant; the first that matches names the cause."""
+    """Mark failed cells that match a variant; the first that matches names the cause.
+
+    A variant is (names, dashboard-side cells) or (names, dashboard-side cells,
+    Cube-side cells): the second form compares Cube without some rows.
+    """
     for c in cells:
         if c.ok:
             continue
-        for names, alt in variants:
+        for names, alt, *rest in variants:
+            cube_alt = rest[0] if rest else None
             v = alt.get(c.key, (None, None))[0]
-            if _matches(kind, c.cube, v):
+            cube = c.cube if cube_alt is None else cube_alt.get(c.key)
+            if _matches(kind, cube, v):
                 c.explained_by, c.variant = tuple(names), v
+                c.cube_variant = None if cube_alt is None else cube
                 break
 
 
@@ -1719,7 +1746,12 @@ def summarize(cells, kind, without=None, sides=None) -> dict:
         "only": only,
         "worst": [_cell_out(c, kind) for c in bad[:5]],
         "examples": [
-            dict(_cell_out(c, kind), variant=c.variant, explains=list(c.explained_by))
+            dict(
+                _cell_out(c, kind),
+                variant=c.variant,
+                cube_variant=c.cube_variant,
+                explains=list(c.explained_by),
+            )
             for c in shown[:3]
         ],
     }
@@ -2325,11 +2357,37 @@ def run_dashboard(
                     truth_cells(trows, len(g), i, m["kind"]),
                 )
                 alts = {
-                    j: truth_cells(trows, len(g), i, m["kind"], f"_v{j}")
-                    for j in range(len(m["variants"]))
+                    j: truth_cells(
+                        trows,
+                        len(g),
+                        i,
+                        m["kind"],
+                        "" if v.get("as_written") else f"_v{j}",
+                    )
+                    for j, v in enumerate(m["variants"])
                 }
+                cube_alts = {}
+                for j, v in enumerate(m["variants"]):
+                    if v.get("cube_filters"):
+                        # Cube without some rows: one more Cube query for this grain.
+                        vrows, _ = cube_load(
+                            cube_query(
+                                view,
+                                [m["cube"]],
+                                list(g),
+                                dims,
+                                hard,
+                                window,
+                                [
+                                    *cube_filters_for(checks["cube_filters"], ds),
+                                    *v["cube_filters"],
+                                ],
+                            )
+                        )
+                        cube_alts[j] = cube_cells(vrows, view, grain, m["cube"])
                 variants = [
-                    (v["explains"], alts[j]) for j, v in enumerate(m["variants"])
+                    (v["explains"], alts[j], cube_alts.get(j))
+                    for j, v in enumerate(m["variants"])
                 ]
                 explain(cells, m["kind"], variants)
                 w = without_index(m)
@@ -3083,10 +3141,13 @@ def _example_text(c: dict, fix: str) -> str:
         "source": "with the source corrected it gives",
         "undecided": "the other formula gives",
     }[fix]
-    return (
+    text = (
         f"the dashboard shows {_fmt(c['truth'], k)}, {other} "
         f"{_fmt(c['variant'], k)}, and Cube gives {_fmt(c['cube'], k)}"
     )
+    if c.get("cube_variant") is not None:
+        text += f"; Cube without the affected rows gives {_fmt(c['cube_variant'], k)}"
+    return text
 
 
 _OTHER_SIDE = "If you think the other side is wrong, say so in a comment."
@@ -3217,6 +3278,15 @@ def issue_drafts(result, checks) -> dict[str, dict]:
             "",
             f"2. Compare both with Cube's {measure} over the same filters. Cube "
             f"matches `{alias}`.",
+            *(
+                [
+                    f"3. Query Cube's {measure} again with these extra filters: "
+                    f"`{json.dumps(v['cube_filters'])}`. Without those rows it "
+                    f"matches `{alias}`."
+                ]
+                if v.get("cube_filters")
+                else []
+            ),
             "",
             "## Where",
             "",
