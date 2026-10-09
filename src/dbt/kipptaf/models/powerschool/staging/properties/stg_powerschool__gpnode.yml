@@ -1,7 +1,7 @@
 models:
   - name: stg_powerschool__gpnode
     config:
-      materialized: table
+      materialized: view
     description: >-
       Union of each region's stg_powerschool__gpnode (the powerschool package
       model). Column docs live in the package. Newark and Camden only; Paterson

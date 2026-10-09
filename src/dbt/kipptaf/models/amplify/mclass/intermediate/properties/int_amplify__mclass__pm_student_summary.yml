@@ -9,7 +9,7 @@ models:
       internal PM method's score source; the aimline method reads
       int_amplify__mclass__pm_student_summary_aimline.
     config:
-      materialized: table
+      materialized: view
       meta:
         contains_pii: true
     data_tests:

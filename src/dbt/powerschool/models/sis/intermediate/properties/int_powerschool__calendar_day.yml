@@ -10,6 +10,13 @@ models:
           column_name: id
           config:
             severity: error
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - schoolid
+              - date_value
+          config:
+            severity: error
       # Source data-quality guard: an in-session day that no isyearrec = 1 term
       # covers means PowerSchool holds a calendar disagreeing with its own term
       # record. The fix belongs in PowerSchool term configuration, so this is

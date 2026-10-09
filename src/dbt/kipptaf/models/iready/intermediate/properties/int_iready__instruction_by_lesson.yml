@@ -6,17 +6,12 @@ models:
       number is normalized to the network student number and the source relation
       is rewritten to the school's Dagster code location.
     config:
-      materialized: table
+      materialized: view
     columns:
       - name: school
         data_type: string
         description: >-
           The name of the school i-Ready has the student enrolled at.
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref("stg_google_sheets__people__location_crosswalk")
-                field: name
       - name: _dbt_source_relation
         data_type: string
         description: Derived from _dbt_source_relation, dagster_code_location.

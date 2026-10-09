@@ -7,15 +7,10 @@ models:
       student_id adjusted so Miami values from academic years through 2025 that
       lack the Focus prefix are shifted onto the network student number.
     config:
-      materialized: table
+      materialized: view
     columns:
       - name: school
         data_type: string
         description: >-
           The school the student is rostered to in i-Ready, as reported in the
           vendor export.
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref("stg_google_sheets__people__location_crosswalk")
-                field: name

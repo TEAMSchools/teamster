@@ -1,5 +1,7 @@
 models:
   - name: stg_schoolmint_grow__generic_tags
+    config:
+      materialized: view
     columns:
       - name: tag_id
         data_type: string

@@ -6,7 +6,7 @@ models:
       Passes through every column of the district stg_pearson__njgpa models,
       which document them.
     config:
-      materialized: table
+      materialized: view
       meta:
         contains_pii: true
     columns:

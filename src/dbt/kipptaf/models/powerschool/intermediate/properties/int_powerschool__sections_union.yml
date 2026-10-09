@@ -7,13 +7,7 @@ models:
       so the SIS-neutral `int_students__course_sections` model can `ref()` it
       instead of inlining `dbt_utils.union_relations`.
     config:
-      materialized: table
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns:
-              - sections_dcid
-              - _dbt_source_project
+      materialized: view
     columns:
       - name: _dbt_source_project
         description: >-

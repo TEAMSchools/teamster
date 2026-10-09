@@ -1,5 +1,11 @@
 models:
   - name: stg_renlearn__star
+    data_tests:
+      - unique:
+          column_name: assessment_id
+          config:
+            where: deactivation_reason is null
+            severity: error
     columns:
       - name: _dagster_partition_fiscal_year
         data_type: int64

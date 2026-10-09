@@ -8,7 +8,7 @@ models:
       location through the location crosswalk on school_name, and puts Miami's
       pre-Focus student ids onto the network student number.
     config:
-      materialized: table
+      materialized: view
       meta:
         contains_pii: true
     data_tests:

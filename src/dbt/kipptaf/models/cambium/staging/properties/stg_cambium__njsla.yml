@@ -7,7 +7,7 @@ models:
       not-empty test. Each district's int_cambium__all_assessments maps its own
       package staging models to the shared NJ-assessment shape.
     config:
-      materialized: table
+      materialized: view
       meta:
         contains_pii: true
     columns:

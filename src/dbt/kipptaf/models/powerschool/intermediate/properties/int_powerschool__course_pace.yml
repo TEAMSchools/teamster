@@ -5,7 +5,7 @@ models:
       current-year GPA course per student with the pace to the student's target
       and the quickest-win ranking. Column semantics live on the package model.
     config:
-      materialized: table
+      materialized: view
       meta:
         contains_pii: true
     columns:

@@ -1,5 +1,10 @@
 models:
   - name: base_powerschool__course_enrollments
+    data_tests:
+      - unique:
+          column_name: cc_dcid
+          config:
+            severity: error
     columns:
       - name: cc_dcid
         data_type: int64

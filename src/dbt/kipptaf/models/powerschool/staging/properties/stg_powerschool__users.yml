@@ -3,7 +3,7 @@ models:
     config:
       contract:
         enforced: true
-      materialized: table
+      materialized: view
     columns:
       - name: dcid
         data_type: int64
