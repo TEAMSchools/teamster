@@ -1,14 +1,4 @@
-from typing import AbstractSet
-
 from dagster import AssetSelection, AutomationCondition
-from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.assets.graph.base_asset_graph import (
-    BaseAssetGraph,
-    BaseAssetNode,
-)
-from dagster._core.definitions.declarative_automation.operators.dep_operators import (
-    DepsAutomationCondition,
-)
 
 _MAX_VIEW_DEPTH = 10
 _VIEW_SELECTION = AssetSelection.tag("dagster/materialized", "view")
@@ -20,32 +10,6 @@ _EXTERNAL_SOURCE_SELECTION = AssetSelection.all(
 _SINCE_LAST_HANDLED = (
     AutomationCondition.newly_requested() | AutomationCondition.newly_updated()
 )
-
-
-def _patched_get_dep_keys(
-    self: DepsAutomationCondition,
-    key: AssetKey,
-    asset_graph: BaseAssetGraph[BaseAssetNode],
-) -> AbstractSet[AssetKey]:
-    """Patched _get_dep_keys that copies the set before mutating.
-
-    Fixes a Dagster bug where allow/ignore selections use in-place set
-    operations (&=, -=) on the mutable set returned by parent_entity_keys,
-    permanently corrupting the asset graph's dependency information.
-    """
-    dep_keys = set(asset_graph.get(key).parent_entity_keys)
-
-    if self.allow_selection is not None:
-        dep_keys &= self.allow_selection.resolve(asset_graph, allow_missing=True)
-
-    if self.ignore_selection is not None:
-        dep_keys -= self.ignore_selection.resolve(asset_graph, allow_missing=True)
-
-    return dep_keys
-
-
-# TODO: remove when dagster > 1.9.12 fixes _get_dep_keys
-DepsAutomationCondition._get_dep_keys = _patched_get_dep_keys
 
 
 def _build_dbt_condition(
@@ -80,7 +44,17 @@ def _build_dbt_condition(
     ``requested_reset_triggers`` stay armed until this asset is requested,
     not until it is updated. A materialization from a run that started
     before the trigger fired (a stale in-flight run, or a manual UI run)
-    therefore cannot consume it.
+    therefore cannot consume it. Stock eager() resets on newly_updated, so
+    an upstream update that lands during the asset's own run is cleared by
+    that run's completion and never re-runs.
+
+    Known limits of the requested reset:
+    - A trigger that fires on the tick right after the request is dropped:
+      that tick's newly_requested reset wins, because the trigger carries no
+      timing metadata. The requested run usually has not started yet, so it
+      reads the new data.
+    - A manual materialization does not clear a pending trigger, so one
+      extra run follows it.
     """
     triggers: AutomationCondition = AutomationCondition.newly_missing()
     for trigger in extra_triggers:
@@ -261,10 +235,15 @@ def dbt_table_automation_condition() -> AutomationCondition:
     intermediate views that aren't re-materialized.
 
     Triggers: newly_missing, any_deps_updated (direct + through views),
-    code_version_changed.
+    code_version_changed. The ancestor-updated trigger resets on request
+    only, so an upstream update that lands mid-run triggers one more run.
+    any_deps_updated ignores updates from runs that also targeted this
+    asset, so a single run that builds the chain does not re-fire it.
     """
     return _build_dbt_condition(
-        _build_any_ancestor_updated(view_selection=_VIEW_SELECTION)
+        requested_reset_triggers=_build_any_ancestor_updated(
+            view_selection=_VIEW_SELECTION
+        )
     )
 
 
@@ -287,13 +266,15 @@ def dbt_cron_automation_condition(
 
     Triggers: newly_missing, cron_tick_passed, code_version_changed (deploys
     still rebuild immediately). Retains the deps-missing/in-progress guards.
+    The cron trigger resets on request only, so a tick that passes during the
+    table's own run is not cleared by that run's completion.
 
     A None cron_timezone falls back to Dagster's cron_tick_passed default
     (UTC). The dbt translator passes its code location's LOCAL_TIMEZONE, so
     dbt models get local ticks without hardcoding a zone here.
     """
     return _build_dbt_condition(
-        AutomationCondition.cron_tick_passed(
+        requested_reset_triggers=AutomationCondition.cron_tick_passed(
             cron_schedule=cron_schedule,
             cron_timezone=cron_timezone or "UTC",
         )

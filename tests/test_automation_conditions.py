@@ -2523,3 +2523,154 @@ def test_cron_table_tick_latched_while_dep_missing():
         evaluation_time=datetime(2026, 1, 2, 0, 10, tzinfo=UTC),
     )
     assert result.get_num_requested(AssetKey("latch_cron_table")) == 1
+
+
+def test_table_dep_update_during_own_run_triggers_follow_up():
+    """A dep update that lands while the table's own run is in flight must
+    trigger one more run, not be cleared by that run's completion (#5822).
+
+    The stale run read the old dep. Its materialization and the dep update
+    land in the same tick window, so a newly_updated reset would win.
+    """
+
+    @asset(tags=_TABLE_TAG)
+    def midrun_dep():
+        return 1
+
+    @asset(
+        deps=[midrun_dep],
+        automation_condition=_get_table_condition(),
+        tags=_TABLE_TAG,
+    )
+    def midrun_table():
+        return 2
+
+    instance = DagsterInstance.ephemeral()
+    all_assets = [midrun_dep, midrun_table]
+    defs = Definitions(assets=all_assets)
+    table = AssetKey("midrun_table")
+
+    materialize(assets=all_assets, instance=instance)
+    result = evaluate_automation_conditions(defs=defs, instance=instance)
+
+    materialize(assets=all_assets, instance=instance, selection=[midrun_dep])
+    result = evaluate_automation_conditions(
+        defs=defs, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(table) == 1
+
+    # run is in flight; nothing new lands this tick
+    result = evaluate_automation_conditions(
+        defs=defs, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(table) == 0
+
+    # dep lands mid-run, then the stale run finishes, in one tick window
+    materialize(assets=all_assets, instance=instance, selection=[midrun_dep])
+    materialize(assets=all_assets, instance=instance, selection=[midrun_table])
+    result = evaluate_automation_conditions(
+        defs=defs, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(table) == 1
+
+    # exactly one follow-up
+    materialize(assets=all_assets, instance=instance, selection=[midrun_table])
+    result = evaluate_automation_conditions(
+        defs=defs, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(table) == 0
+
+
+def test_table_not_rerun_after_dep_updated_in_same_run():
+    """A dep updated by the same run as the table must not re-trigger it:
+    any_deps_updated drops updates from runs that targeted this asset.
+    """
+
+    @asset(tags=_TABLE_TAG)
+    def same_run_dep():
+        return 1
+
+    @asset(
+        deps=[same_run_dep],
+        automation_condition=_get_table_condition(),
+        tags=_TABLE_TAG,
+    )
+    def same_run_table():
+        return 2
+
+    instance = DagsterInstance.ephemeral()
+    all_assets = [same_run_dep, same_run_table]
+    defs = Definitions(assets=all_assets)
+    table = AssetKey("same_run_table")
+
+    materialize(assets=all_assets, instance=instance)
+    result = evaluate_automation_conditions(defs=defs, instance=instance)
+
+    # materialize() records an empty run asset_selection, which
+    # executed_with_root_target reads; a job run records it, as sensor runs do
+    defs.resolve_implicit_global_asset_job_def().execute_in_process(
+        instance=instance, asset_selection=[AssetKey("same_run_dep"), table]
+    )
+    for _ in range(2):
+        result = evaluate_automation_conditions(
+            defs=defs, instance=instance, cursor=result.cursor
+        )
+        assert result.get_num_requested(table) == 0
+
+
+def test_cron_table_tick_during_own_run_triggers_follow_up():
+    """A cron tick that passes while the table's own run is in flight must
+    not be cleared by that run's completion (#5822).
+    """
+
+    @asset(tags=_TABLE_TAG)
+    def midrun_cron_dep():
+        return 1
+
+    @asset(
+        deps=[midrun_cron_dep],
+        automation_condition=dbt_cron_automation_condition(
+            "0 0 * * *", cron_timezone="UTC"
+        ),
+        tags=_TABLE_TAG,
+    )
+    def midrun_cron_table():
+        return 2
+
+    instance = DagsterInstance.ephemeral()
+    all_assets = [midrun_cron_dep, midrun_cron_table]
+    defs = Definitions(assets=all_assets)
+    table = AssetKey("midrun_cron_table")
+
+    materialize(assets=all_assets, instance=instance)
+    result = evaluate_automation_conditions(
+        defs=defs,
+        instance=instance,
+        evaluation_time=datetime(2026, 1, 1, 23, 0, tzinfo=UTC),
+    )
+
+    result = evaluate_automation_conditions(
+        defs=defs,
+        instance=instance,
+        cursor=result.cursor,
+        evaluation_time=datetime(2026, 1, 2, 0, 1, tzinfo=UTC),
+    )
+    assert result.get_num_requested(table) == 1
+
+    result = evaluate_automation_conditions(
+        defs=defs,
+        instance=instance,
+        cursor=result.cursor,
+        evaluation_time=datetime(2026, 1, 2, 0, 2, tzinfo=UTC),
+    )
+    assert result.get_num_requested(table) == 0
+
+    # the run spans the next tick and finishes in the same tick window
+    materialize(assets=all_assets, instance=instance, selection=[midrun_cron_table])
+    result = evaluate_automation_conditions(
+        defs=defs,
+        instance=instance,
+        cursor=result.cursor,
+        evaluation_time=datetime(2026, 1, 3, 0, 1, tzinfo=UTC),
+    )
+    assert result.get_num_requested(table) == 1

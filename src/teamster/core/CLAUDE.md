@@ -80,6 +80,15 @@ via `_build_dbt_condition()`:
   `_build_any_ancestor_updated()` (recursive `any_deps_match` up to
   `_MAX_VIEW_DEPTH` levels, currently 10)
 
+The table and cron triggers, like the union_relations one, reset on
+`newly_requested` only. Stock `eager()` also resets on `newly_updated`, so an
+upstream update that lands during the asset's own run is cleared by that run's
+completion and the asset keeps stale data (#5822). Do not add `newly_updated`
+back to these resets. Same-run chains do not double-fire: `any_deps_updated`
+skips updates from runs whose `asset_selection` includes this asset. Unit tests
+must create such runs with `execute_in_process(asset_selection=...)`, because
+`materialize()` records an empty selection.
+
 **Unsynced badge behavior**: Dagster's "unsynced" indicator is driven by its
 data versioning system, not the automation condition. When an upstream table
 materializes, directly-dependent view assets are marked "unsynced" in the UI
