@@ -1796,3 +1796,18 @@ def test_dimension_sql_can_differ_by_extract(tmp_path):
     assert demo_school and all(
         "school_abbreviation as g1" in q and "week_ok" not in q for q in demo_school
     )
+
+
+def test_rows_sharing_a_measure_may_differ_in_captions(tmp_path):
+    def m(d):
+        d["rows"].append(
+            {
+                "row_gid": "3",
+                "name": "Tardy again",
+                "metrics": [dict(d["rows"][0]["metrics"][0], tableau="Other caption")],
+                "grains": [[]],
+            }
+        )
+
+    c = cv.load_checks(_write_variant(tmp_path, m))
+    assert c["rows"][2]["metrics"][0]["tableau"] == ["Other caption"]

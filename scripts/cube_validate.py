@@ -1082,11 +1082,24 @@ def load_checks(path) -> dict:
     for key in data["handled"]:
         if not _construct_key_ok(key):
             raise CheckError(f"{path}: handled names unknown construct '{key}'")
+    # One run query carries each metric once, so its SQL must agree across rows; the
+    # Tableau captions and the breakdown field are per row and may differ.
+    definition = (
+        "kind",
+        "sql",
+        "num",
+        "den",
+        "missing_members",
+        "sql_without",
+        "num_without",
+        "den_without",
+    )
     seen: dict[str, dict] = {}
     for row in data["rows"]:
         for m in row["metrics"]:
-            first = seen.setdefault(m["key"], m)
-            if first != m:
+            sql = {k: m.get(k) for k in definition}
+            first = seen.setdefault(m["key"], sql)
+            if first != sql:
                 raise CheckError(
                     f"{path}: metric {m['cube']} is defined twice with different "
                     "SQL; rows that share a Cube member must share its definition"
