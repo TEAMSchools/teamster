@@ -16,6 +16,11 @@ every line as a hypothesis. Do not cite this file as evidence; run the probe.
   while leaving `embed_password` false. Probe: on a scratch copy, try each call,
   then read the connection back through the REST API and trigger a refresh.
   Until then, say in the hand-over that credentials were not carried.
+- **A worksheet removed from every dashboard may reappear as a tab in Desktop.**
+  `GPA - Cusp roster` left its last dashboard in the GPA targets build (#5862)
+  and kept `hidden='true'` on its `<window>`; whether Desktop honours that on
+  open was not checked. Probe: ask the owner to open the `.twbx` and look for
+  the tab.
 - **`show_tabs=True` may change a user-visible setting.** Probe: read
   `wb.show_tabs` off the downloaded item and publish with the same value, then
   compare the two scratch copies.
@@ -54,8 +59,11 @@ every line as a hypothesis. Do not cite this file as evidence; run the probe.
 
 - **A dimension on Tooltip may change the mark grain the same way Detail did.**
   The source verified only that a `<lod>` on Detail doubled a percent-of-total
-  axis. Probe: move the identical field from `<lod>` to the Tooltip encoding on
-  the same sheet, publish to scratch, render, read the axis maximum.
+  axis. Tableau writes a dimension on the Tooltip shelf as an `attr:` instance,
+  an aggregate (Verified: the GPA targets build found no `none:` dimension on
+  any Tooltip shelf), which is a reason to expect the grain to hold, not proof.
+  Probe: move the identical field from `<lod>` to the Tooltip encoding on the
+  same sheet, publish to scratch, render, read the axis maximum.
 - **The reference line that rendered at `2.0` may have resolved correctly.** A
   raw GPA goal plotted on a 0 to 1 percent axis lands at 200%. Probe: point
   `value-column` at a constant `0.5` calculated field; if the line lands at 50%,
@@ -107,10 +115,6 @@ every line as a hypothesis. Do not cite this file as evidence; run the probe.
   the owner to make the change in Desktop on a scratch copy, save, and send the
   `.twb`; diff it against the base. This is the one oracle that outranks every
   checker here. The skill cannot run Desktop; the owner can.
-- **`check_geometry.py` may false-positive on floating objects**, which
-  legitimately overlap tiled siblings. Running both checkers against the
-  untouched base before any edit (loop step 1) is what separates a checker bug
-  from a workbook bug.
 - **Cross-workbook parameter collisions may merge rather than delete.** The
   observed symptom (references pointing at an id now owned by an unrelated
   parameter) fits a merge on name and datatype as well as a deletion. The

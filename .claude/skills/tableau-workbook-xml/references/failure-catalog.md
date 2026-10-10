@@ -25,15 +25,16 @@ anything over; the point is to catch these without a Desktop round trip, but
 only a Desktop open confirms the fix. Models and manifest table:
 [content-models.md](content-models.md).
 
-## Something renders blank or literal
+## Something renders blank, literal or in the wrong colours
 
-| Symptom                                                   | Cause                                                                 | Fix                                                             |
-| --------------------------------------------------------- | --------------------------------------------------------------------- | --------------------------------------------------------------- |
-| Worksheet title shows nothing at all                      | The dashboard zone carries `show-title='false'`                       | Flip to `'true'` in `<zones>`, not `<devicelayouts>`            |
-| A line in a mark label is blank, space still reserved     | Parameter token in `<customized-label>`; it does not resolve          | Use static text, or move the value to a worksheet title         |
-| An entire mark label vanishes: caption, value, everything | A calculated field was added to the Text shelf                        | Revert                                                          |
-| Tooltip prints raw `[federated…].[usr:Calculation_…:qk]`  | Encoding form: **unresolved**, see [dynamic-text.md](dynamic-text.md) | Copy a working tooltip's runs verbatim, swap only the instances |
-| A field name prints literally in a label template         | Missing `<` `>` placeholder delimiters around the token               | Add them, in the form the run type needs                        |
+| Symptom                                                        | Cause                                                                 | Fix                                                                                        |
+| -------------------------------------------------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Worksheet title shows nothing at all                           | The dashboard zone carries `show-title='false'`                       | Flip to `'true'` in `<zones>`, not `<devicelayouts>`                                       |
+| A line in a mark label is blank, space still reserved          | Parameter token in `<customized-label>`; it does not resolve          | Use static text, or move the value to a worksheet title                                    |
+| An entire mark label vanishes: caption, value, everything      | A parameter-routed calculated field was added to the Text shelf       | Revert                                                                                     |
+| Tooltip prints raw `[federated…].[usr:Calculation_…:qk]`       | Encoding form: **unresolved**, see [dynamic-text.md](dynamic-text.md) | Copy a working tooltip's runs verbatim, swap only the instances                            |
+| A field name prints literally in a label template              | Missing `<` `>` placeholder delimiters around the token               | Add them, in the form the run type needs                                                   |
+| Marks draw default colours (`#4e79a7`, `#f28e2b`), not the map | The palette field has no data-source-level `<column-instance>`        | Add one beside the raw columns ([formatting.md](formatting.md)); `check_twb.py` catches it |
 
 ## Layout is wrong
 
@@ -43,6 +44,8 @@ only a Desktop open confirms the fix. Models and manifest table:
 | A caption truncates with an ellipsis    | Over roughly `97 * width / 39676` characters           | Shorten it; the observed strips clipped, they did not wrap |
 | A legend shows some of its entries      | Strip too short for the swatch rows                    | Height, not width: 40px fits one row, 70px fits two        |
 | Row labels clip, then wrap mid-word     | Row-header width, not zone height                      | Shorten the label text                                     |
+| Table headers cut off with `..`         | Headers truncate, never wrap; `fit-width` narrows all  | Widen per field (about 6.7 px per character) or shorten    |
+| Square marks leave gaps or spill rows   | Square marks stay square; none fills a table cell      | A `Bar` on a fixed hidden axis; see layout-and-zones.md    |
 | Two zones overlap on screen             | A zone at the wrong nesting depth; valid XML, no error | `docs/tableau-xml/scripts/check_geometry.py --baseline`    |
 | A percent-of-total axis doubles to 200% | A `<lod>` on the Detail shelf changed the mark grain   | The field went on Tooltip instead (Inferred safe)          |
 | A dual axis renders side by side        | Fold flag missing from the **table-level** `<style>`   | See below                                                  |
@@ -124,11 +127,15 @@ The most expensive category, because everything reports success.
 | Assertion checks presence, not position                                             | Searching a whole block for a token, rather than asserting the run sequence             |
 | `populate_csv` on a dashboard returned 0 rows and read as a working permission gate | The control also returned 0; a dashboard view yields no crosstab. Verified, #5230       |
 | Length guard passes an edit that changed nothing                                    | A same-length replacement moves the byte total by 0; count the strings. Verified, #5230 |
+| Geometry checker passes an overlap inside a pop-out                                 | Hidden zones are skipped, and every zone in a pop-out is hidden; rerun with `--show`    |
+| Geometry checker fails the untouched base: `overlap at top-level: zone 4 and …`     | A floating zone overlaps the tiled root by design; pass `--baseline`                    |
+| Mutant runner reports a catch for a mutant it never wrote                           | Anchor matched 3, 7 or 11 times, so no file; the assertion failed on the missing file   |
 
-Every one of those was found by building a mutant and running the assertion
-against it. Make that a step, not an afterthought:
-`docs/tableau-xml/scripts/mutate.py` does the zone surgery; for anything outside
-a dashboard's zones, hand-write the broken variant.
+Most of those were found by building a mutant and running the assertion against
+it. Make that a step, not an afterthought: `docs/tableau-xml/scripts/mutate.py`
+does the zone surgery; for anything outside a dashboard's zones, hand-write the
+broken variant and count the catch by the rule in
+[build-workflow.md](build-workflow.md).
 
 ## The two reasoning failures worth naming
 
