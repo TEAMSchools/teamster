@@ -79,8 +79,8 @@ experiment that would settle it. Claude treats those as hypotheses.
 | `SKILL.md`                          | The procedure, a symptom-to-fix list, and the five scripts with their commands          |
 | `references/content-models.md`      | Element ordering rules Desktop enforces, and the feature manifest                       |
 | `references/dynamic-text.md`        | Which text surfaces resolve field and parameter placeholders; the open tooltip question |
-| `references/layout-and-zones.md`    | Dashboard geometry, `fixed-size`, why text clips, the card layout idiom                 |
-| `references/formatting.md`          | Number formats, the paragraph-break marker, line-ending traps, regex traps              |
+| `references/layout-and-zones.md`    | Dashboard geometry, pop-outs, `fixed-size`, why text clips, card and cell-fill idioms   |
+| `references/formatting.md`          | Number formats, palettes, the paragraph-break marker, line-ending traps, regex traps    |
 | `references/build-workflow.md`      | Code for download, publish gate, render, and cross-workbook merges                      |
 | `references/failure-catalog.md`     | Every failure observed, as symptom, cause, fix, with exact error strings                |
 | `references/unverified-warnings.md` | Review hypotheses with probes; nothing here is verified                                 |

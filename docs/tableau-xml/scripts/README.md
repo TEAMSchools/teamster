@@ -9,21 +9,28 @@ All were used against a real 1.9 MB production workbook. `check_twb.py` and
 
 ## `check_twb.py`
 
-Everything Tableau Desktop rejects that Tableau Server does not. Each check
-corresponds to a real refusal on a file Server had already accepted.
+Everything Tableau Desktop rejects that Tableau Server does not, plus one silent
+render failure. Each check corresponds to a real failure on a file Server had
+already accepted.
 
 ```bash
 uv run python check_twb.py <workbook.twb> [--ref <known-good.twb>]
 ```
 
-| Check                 | Catches                                                                |
-| --------------------- | ---------------------------------------------------------------------- |
-| `check_worksheets`    | Worksheet missing `<simple-id>`                                        |
-| `check_features`      | An element whose feature is not in `<document-format-change-manifest>` |
-| `check_views`         | A `<view>` with no `<aggregation>`                                     |
-| `check_pane_order`    | Pane children out of content-model order                               |
-| `check_manifest_drop` | Manifest entries present in `--ref` and lost, dotted names included    |
-| `check_unknown`       | Elements absent from the reference workbook                            |
+| Check                     | Catches                                                                                   |
+| ------------------------- | ----------------------------------------------------------------------------------------- |
+| `check_worksheets`        | Worksheet missing `<simple-id>`                                                           |
+| `check_features`          | An element whose feature is not in `<document-format-change-manifest>`                    |
+| `check_views`             | A `<view>` with no `<aggregation>`                                                        |
+| `check_pane_order`        | Pane children out of content-model order                                                  |
+| `check_palette_instances` | A data source palette field with no `<column-instance>` directly under its `<datasource>` |
+| `check_manifest_drop`     | Manifest entries present in `--ref` and lost, dotted names included                       |
+| `check_unknown`           | Elements absent from the reference workbook                                               |
+
+Without its `<column-instance>`, a palette is ignored and the marks draw
+Tableau's default colours, with no error from Server or Desktop.
+`[:Measure Names]` palettes are exempt, and a colour encoding that names two
+fields is checked field by field.
 
 `--ref` should be the untouched base you pulled. Without it the last two checks
 are skipped.
@@ -34,7 +41,7 @@ Dashboard zone geometry. Nothing else in the toolchain catches a zone at the
 wrong nesting depth — it is valid XML, and Server renders it as an overlap.
 
 ```bash
-uv run python check_geometry.py <workbook.twb> "<dashboard>" [--baseline <base.twb>]
+uv run python check_geometry.py <workbook.twb> "<dashboard>" [--baseline <base.twb>] [--show <zone-id>]
 ```
 
 Three invariants: visible siblings do not overlap, including at top level; a
@@ -42,8 +49,17 @@ flow container's parent-minus-children gap matches the same container in the
 baseline exactly; the top-level `layout-basic` zone spans the full canvas.
 
 **Always pass `--baseline`.** Without it the gap check falls back to an absolute
-0–3000 bound, which is far weaker. The script prints which mode it ran in so a
-weak pass cannot be mistaken for a strong one.
+0–3000 bound, which is far weaker, and every floating zone fails as an overlap
+with the tiled root. With it, an overlap the baseline also has prints as
+`also in baseline` and does not count. The script prints which mode it ran in so
+a weak pass cannot be mistaken for a strong one.
+
+**Hidden zones are skipped**, and Tableau marks every zone inside a show/hide
+pop-out as hidden. `--show <zone-id>` un-hides that zone and its subtree in both
+files before checking; name the pop-out's top-level container, the id in its
+button's `<toggle-action>`. One pop-out per run. Naming a zone inside a hidden
+ancestor exits with the ancestor's id. A pop-out the baseline lacks fails on its
+own overlap with the root; confirm that is the only failure line.
 
 Why differential rather than a tolerance: container gaps are per-container
 constants (0, 1, 586, 587, 888, 2636 in one dashboard) with no relation to child
