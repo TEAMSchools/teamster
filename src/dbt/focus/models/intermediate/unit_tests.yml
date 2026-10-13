@@ -834,3 +834,368 @@ unit_tests:
     expect:
       rows:
         - { assessment_id: 1, administered_at: 2026-09-08 }
+
+  - name: test_int_focus__apex_results_session_pick
+    model: int_focus__apex_results
+    given:
+      - input: ref('stg_focus__apex_sessions')
+        rows:
+          - {
+              id: 1,
+              assessment_id: 1,
+              assignment_id: 1,
+              student_id: 100,
+              syear: 2026,
+              completed: true,
+              discarded: false,
+              excused: false,
+              completed_at: 2026-09-10 16:00:00,
+              score_actual: 1,
+              score_max: 10,
+            }
+          - {
+              id: 2,
+              assessment_id: 1,
+              assignment_id: 1,
+              student_id: 100,
+              syear: 2026,
+              completed: true,
+              discarded: true,
+              excused: false,
+              completed_at: 2026-09-12 16:00:00,
+              score_actual: 9,
+              score_max: 10,
+            }
+          - {
+              id: 3,
+              assessment_id: 1,
+              assignment_id: 1,
+              student_id: 100,
+              syear: 2026,
+              completed: true,
+              discarded: false,
+              excused: false,
+              completed_at: 2026-09-11 16:00:00,
+              score_actual: 5,
+              score_max: 10,
+            }
+          - {
+              id: 4,
+              assessment_id: 1,
+              assignment_id: 2,
+              student_id: 100,
+              syear: 2026,
+              completed: true,
+              discarded: false,
+              excused: false,
+              completed_at: 2026-09-13 16:00:00,
+              score_actual: 8,
+              score_max: 10,
+            }
+          - {
+              id: 5,
+              assessment_id: 1,
+              assignment_id: 1,
+              student_id: 100,
+              syear: 2026,
+              completed: true,
+              discarded: false,
+              excused: true,
+              completed_at: 2026-09-14 16:00:00,
+              score_actual: 7,
+              score_max: 10,
+            }
+          - {
+              id: 6,
+              assessment_id: 1,
+              assignment_id: 1,
+              student_id: 100,
+              syear: 2026,
+              completed: false,
+              discarded: false,
+              excused: false,
+              completed_at: null,
+              score_actual: 3,
+              score_max: 10,
+            }
+          - {
+              id: 7,
+              assessment_id: 1,
+              assignment_id: 1,
+              student_id: 101,
+              syear: 2025,
+              completed: true,
+              discarded: false,
+              excused: false,
+              completed_at: 2025-09-11 16:00:00,
+              score_actual: 5,
+              score_max: 10,
+            }
+      - input: ref('stg_focus__apex_assigned_assessments')
+        rows:
+          - { id: 1, assessment_id: 1 }
+      - input: ref('int_focus__apex_assessments')
+        rows:
+          - { assessment_id: 1, band_set_id: null }
+      - input: ref('stg_focus__apex_session_responses')
+        rows: []
+      - input: ref('stg_focus__apex_question_standards')
+        rows: []
+      - input: ref('stg_focus__standards')
+        rows: []
+      - input: ref('stg_focus__standard_categories_1')
+        rows: []
+      - input: ref('stg_focus__apex_band_levels')
+        rows: []
+    expect:
+      rows:
+        - {
+            student_number: 100,
+            response_type: overall,
+            session_id: 3,
+            date_taken: 2026-09-11,
+            percent_correct: 50.0,
+          }
+
+  - name: test_int_focus__apex_results_overall_uses_session_score
+    model: int_focus__apex_results
+    given:
+      - input: ref('stg_focus__apex_sessions')
+        rows:
+          - {
+              id: 1,
+              assessment_id: 1,
+              assignment_id: 1,
+              student_id: 100,
+              syear: 2026,
+              completed: true,
+              discarded: false,
+              excused: false,
+              completed_at: 2026-09-10 16:00:00,
+              score_actual: 6,
+              score_max: 10,
+            }
+      - input: ref('stg_focus__apex_assigned_assessments')
+        rows:
+          - { id: 1, assessment_id: 1 }
+      - input: ref('int_focus__apex_assessments')
+        rows:
+          - { assessment_id: 1, band_set_id: null }
+      - input: ref('stg_focus__apex_session_responses')
+        rows:
+          - { session_id: 1, question_id: 1, score_actual: 4, score_max: 5 }
+          - { session_id: 1, question_id: 2, score_actual: 3, score_max: 5 }
+      - input: ref('stg_focus__apex_question_standards')
+        rows:
+          - { question_id: 1, standard_id: 1 }
+          - { question_id: 2, standard_id: 1 }
+      - input: ref('stg_focus__standards')
+        rows:
+          - { id: 1, short_name: MA.3.A.1, title: std one, category_1_id: 1 }
+      - input: ref('stg_focus__standard_categories_1')
+        rows:
+          - { id: 1, title: Mathematics (B.E.S.T.)(Focus) }
+      - input: ref('stg_focus__apex_band_levels')
+        rows: []
+    expect:
+      rows:
+        - {
+            response_type: overall,
+            response_type_id: 1,
+            points: 6,
+            points_possible: 10,
+            percent_correct: 60.0,
+          }
+        - {
+            response_type: standard,
+            response_type_id: 1,
+            points: 7,
+            points_possible: 10,
+            percent_correct: 70.0,
+          }
+
+  - name: test_int_focus__apex_results_standard_rollup
+    model: int_focus__apex_results
+    given:
+      - input: ref('stg_focus__apex_sessions')
+        rows:
+          - {
+              id: 1,
+              assessment_id: 1,
+              assignment_id: 1,
+              student_id: 100,
+              syear: 2026,
+              completed: true,
+              discarded: false,
+              excused: false,
+              completed_at: 2026-09-10 16:00:00,
+              score_actual: 2,
+              score_max: 6,
+            }
+      - input: ref('stg_focus__apex_assigned_assessments')
+        rows:
+          - { id: 1, assessment_id: 1 }
+      - input: ref('int_focus__apex_assessments')
+        rows:
+          - { assessment_id: 1, band_set_id: null }
+      - input: ref('stg_focus__apex_session_responses')
+        rows:
+          - { session_id: 1, question_id: 1, score_actual: 2, score_max: 2 }
+          - { session_id: 1, question_id: 2, score_actual: 0, score_max: 2 }
+          - { session_id: 1, question_id: 3, score_actual: null, score_max: 2 }
+      - input: ref('stg_focus__apex_question_standards')
+        rows:
+          - { question_id: 1, standard_id: 1 }
+          - { question_id: 2, standard_id: 1 }
+          - { question_id: 2, standard_id: 2 }
+          - { question_id: 3, standard_id: 2 }
+      - input: ref('stg_focus__standards')
+        rows:
+          - { id: 1, short_name: A, title: std a, category_1_id: 1 }
+          - { id: 2, short_name: B, title: std b, category_1_id: 1 }
+      - input: ref('stg_focus__standard_categories_1')
+        rows:
+          - { id: 1, title: Mathematics (B.E.S.T.)(Focus) }
+      - input: ref('stg_focus__apex_band_levels')
+        rows: []
+    expect:
+      rows:
+        - {
+            response_type: overall,
+            response_type_code: null,
+            points: 2,
+            points_possible: 6,
+            percent_correct: 33.3,
+          }
+        - {
+            response_type: standard,
+            response_type_code: A,
+            points: 2,
+            points_possible: 4,
+            percent_correct: 50.0,
+          }
+        - {
+            response_type: standard,
+            response_type_code: B,
+            points: 0,
+            points_possible: 2,
+            percent_correct: 0.0,
+          }
+
+  - name: test_int_focus__apex_results_bands
+    model: int_focus__apex_results
+    given:
+      - input: ref('stg_focus__apex_sessions')
+        rows:
+          - {
+              id: 1,
+              assessment_id: 1,
+              assignment_id: 1,
+              student_id: 100,
+              syear: 2026,
+              completed: true,
+              discarded: false,
+              excused: false,
+              completed_at: 2026-09-10 16:00:00,
+              score_actual: 6,
+              score_max: 10,
+            }
+          - {
+              id: 2,
+              assessment_id: 2,
+              assignment_id: 2,
+              student_id: 100,
+              syear: 2026,
+              completed: true,
+              discarded: false,
+              excused: false,
+              completed_at: 2026-09-10 16:00:00,
+              score_actual: 6,
+              score_max: 10,
+            }
+          - {
+              id: 3,
+              assessment_id: 3,
+              assignment_id: 3,
+              student_id: 100,
+              syear: 2026,
+              completed: true,
+              discarded: false,
+              excused: false,
+              completed_at: 2026-09-10 16:00:00,
+              score_actual: 6,
+              score_max: 10,
+            }
+      - input: ref('stg_focus__apex_assigned_assessments')
+        rows:
+          - { id: 1, assessment_id: 1 }
+          - { id: 2, assessment_id: 2 }
+          - { id: 3, assessment_id: 3 }
+      - input: ref('int_focus__apex_assessments')
+        rows:
+          - { assessment_id: 1, band_set_id: 9 }
+          - { assessment_id: 2, band_set_id: 8 }
+          - { assessment_id: 3, band_set_id: null }
+      - input: ref('stg_focus__apex_session_responses')
+        rows:
+          - { session_id: 1, question_id: 1, score_actual: 1, score_max: 2 }
+          - { session_id: 1, question_id: 2, score_actual: 79, score_max: 200 }
+      - input: ref('stg_focus__apex_question_standards')
+        rows:
+          - { question_id: 1, standard_id: 1 }
+          - { question_id: 2, standard_id: 2 }
+      - input: ref('stg_focus__standards')
+        rows:
+          - { id: 1, short_name: A, title: std a, category_1_id: 1 }
+          - { id: 2, short_name: B, title: std b, category_1_id: 1 }
+      - input: ref('stg_focus__standard_categories_1')
+        rows:
+          - { id: 1, title: Mathematics (B.E.S.T.)(Focus) }
+      - input: ref('stg_focus__apex_band_levels')
+        rows:
+          - { band_set_id: 9, label: Level 1, min_score: 0, max_score: 39 }
+          - { band_set_id: 9, label: Level 2, min_score: 40, max_score: 59 }
+          - { band_set_id: 9, label: Level 3, min_score: 60, max_score: 100 }
+          - { band_set_id: 8, label: Advanced, min_score: 0, max_score: 100 }
+    expect:
+      rows:
+        - {
+            assessment_id: 1,
+            response_type_code: null,
+            percent_correct: 60.0,
+            performance_band_label: Level 3,
+            performance_band_label_number: 3,
+            is_mastery: true,
+          }
+        - {
+            assessment_id: 1,
+            response_type_code: A,
+            percent_correct: 50.0,
+            performance_band_label: Level 2,
+            performance_band_label_number: 2,
+            is_mastery: false,
+          }
+        - {
+            assessment_id: 1,
+            response_type_code: B,
+            percent_correct: 39.5,
+            performance_band_label: Level 1,
+            performance_band_label_number: 1,
+            is_mastery: false,
+          }
+        - {
+            assessment_id: 2,
+            response_type_code: null,
+            percent_correct: 60.0,
+            performance_band_label: Advanced,
+            performance_band_label_number: 1,
+            is_mastery: null,
+          }
+        - {
+            assessment_id: 3,
+            response_type_code: null,
+            percent_correct: 60.0,
+            performance_band_label: null,
+            performance_band_label_number: null,
+            is_mastery: null,
+          }
