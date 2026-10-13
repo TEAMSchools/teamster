@@ -149,14 +149,6 @@ def read_workbook(twb_text: str) -> Workbook:
     return Workbook(dashboards, filters, params, actions, sheet_filters)
 
 
-def _is_number(s: str) -> bool:
-    try:
-        float(s)
-    except ValueError:
-        return False
-    return True
-
-
 def _saved_filters(w, columns, ds_caption) -> list[SheetFilter]:
     sheet, out = w.get("name") or "", []
     for f in w.iter("filter"):
