@@ -217,7 +217,7 @@ cells are not.
 ## Superpowers skill overrides
 
 - Branch creation always goes through _Before you start_ and _Branches_,
-  including inside `superpowers:brainstorming` ("Write design doc"),
+  including inside `superpowers:brainstorming` ("Where it goes"),
   `superpowers:writing-plans` ("Save plans to:"), and
   `superpowers:using-git-worktrees`. Pause the skill, run the flow, then write
   the spec or plan on the new branch. The flow's `git worktree add` satisfies
@@ -226,6 +226,8 @@ cells are not.
   (`.../blob/<branch>/docs/superpowers/specs/...`, never a commit SHA) on the
   issue. `superpowers:brainstorming` stops at commit, and Phase 2 step 5 of
   `docs/guides/superpowers.md` never loads into context.
+- `superpowers:brainstorming` "Size the Work": when unsure which size a request
+  is, including whether it is a quick, clear task, ask the user before acting.
 - "The project's suite" (TDD, `finishing-a-development-branch`,
   `using-git-worktrees` baseline) means `uv run pytest <touched tests>` plus
   `uv run dbt build --select <model>+` for modified models. Never bare
