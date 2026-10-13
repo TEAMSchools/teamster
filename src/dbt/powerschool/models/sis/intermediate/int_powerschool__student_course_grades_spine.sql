@@ -57,6 +57,36 @@ with
         where isyearrec = 1 and schoolid != 0
     ),
 
+    stored_grades as (
+        select
+            sg.studentid,
+            sg.yearid,
+            sg.academic_year,
+            sg.course_number,
+            sg.storecode,
+            sg.`percent`,
+            sg.grade,
+            sg.earnedcrhrs,
+            sg.potentialcrhrs,
+            sg.gpa_points,
+
+            row_number() over (
+                partition by sg.studentid, sg.yearid, sg.course_number, sg.storecode
+                order by
+                    coalesce(sg.excludefromgpa = 0, false) desc,
+                    coalesce(sg.sectionid = ce.sectionid, false) desc,
+                    sg.datestored desc nulls last,
+                    sg.dcid desc
+            ) as rn_stored_grade,
+        from {{ ref("stg_powerschool__storedgrades") }} as sg
+        left join
+            course_enrollments as ce
+            on sg.studentid = ce.studentid
+            and sg.yearid = ce.yearid
+            and sg.course_number = ce.course_number
+        where sg.storecode in ('Q1', 'Q2', 'Q3', 'Q4', 'Y1')
+    ),
+
     y1_final_grades as (
         select
             studentid,
@@ -70,8 +100,8 @@ with
             earnedcrhrs as y1_course_final_earned_credits,
             potentialcrhrs as y1_course_final_potential_credit_hours,
             gpa_points as y1_course_final_grade_points,
-        from {{ ref("stg_powerschool__storedgrades") }}
-        where storecode = 'Y1'
+        from stored_grades
+        where storecode = 'Y1' and rn_stored_grade = 1
     ),
 
     quarter_grades as (
@@ -163,10 +193,8 @@ with
 
             cast(null as int64) as courses_gradescaleid,
 
-        from {{ ref("stg_powerschool__storedgrades") }}
-        where
-            storecode in ('Q1', 'Q2', 'Q3', 'Q4', 'Y1')
-            and academic_year < {{ var("current_academic_year") }}
+        from stored_grades
+        where rn_stored_grade = 1 and academic_year < {{ var("current_academic_year") }}
     ),
 
     grade_scale_rungs as (
