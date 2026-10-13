@@ -2101,3 +2101,15 @@ def test_routes_agree_ignores_float_noise_at_a_rounding_boundary():
     assert cv.routes_agree(0.125, 0.12500000000000003, cv.Shown(0.13, 2))
     assert cv.routes_agree(12.5, 12.500000000000002, cv.Shown(13.0, 0))
     assert not cv.routes_agree(48.5, 47.0, cv.Shown(48.5, 2))
+
+
+def test_a_blank_cell_matches_a_cube_null_or_zero_in_compare_and_explain(tmp_path):
+    assert cv.matches_cell(None, "") and cv.matches_cell(0.0, " ")
+    assert not cv.matches_cell(0.5, "")
+    assert cv.matches_cell(0.3624, "36.24%")
+    c, sheet = _sheet(tmp_path)
+    export = cv.read_export(b"School Name,Avg Score\r\nAlpha,\r\n")
+    cells = cv.compare_export(
+        sheet, "s1", export, FakeCube({"Alpha": _row(0)}, _row(0)), [], [], c
+    )
+    assert [x.status for x in cells] == ["match"]

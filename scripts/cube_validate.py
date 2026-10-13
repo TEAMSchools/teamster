@@ -526,6 +526,16 @@ def matches_shown(cube: float | None, shown: Shown | None) -> bool:
     )
 
 
+def matches_cell(
+    value: float | None, text: str | None, round_to: int | None = None
+) -> bool:
+    """A Cube or extract value against a Tableau cell. A blank cell matches a null
+    or 0: Tableau leaves both empty."""
+    if not (text or "").strip():
+        return value in (None, 0.0)
+    return matches_shown(value, parse_shown(text, round_to))
+
+
 def matches_raw(a: float | None, b: float | None) -> bool:
     if a is None or b is None:
         return a is None and b is None
@@ -1049,7 +1059,7 @@ def _compare_grain(
             else:
                 v, alone = a.fact.get(k), a.alone.get(k)
                 split = not routes_agree(v, alone, shown)
-                ok = not split and matches_shown(v, shown)
+                ok = not split and matches_cell(v, text, meas.round)
                 reason = (
                     f"Cube's routes disagree: alone {_fmt(alone)}, with the student "
                     f"count {_fmt(v)}"
@@ -1356,9 +1366,7 @@ def _key(c: Cell, grain, sheet: SheetMap | None = None) -> tuple:
 
 
 def _reproduces(value, c: Cell, meas: Measure) -> bool:
-    if (c.shown or "").strip():
-        return matches_shown(value, parse_shown(c.shown, meas.round))
-    return value in (None, 0.0)
+    return matches_cell(value, c.shown, meas.round)
 
 
 def _has_state(st: dict) -> bool:
