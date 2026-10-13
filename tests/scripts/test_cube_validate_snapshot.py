@@ -44,6 +44,7 @@ def test_filter_cards_carry_field_caption_and_default():
         "student_name",
         "Calculation_1",
         "academic_year",
+        "Subject (group)",
     }
     assert cards["school"].caption == "School Name"  # explicit caption wins
     assert cards["region"].default_all is True
@@ -952,3 +953,65 @@ def test_export_records_each_captions_values_in_the_manifest(tmp_path, demo_hype
     snap._export_all(s, m, tmp_path, wb, checks, [snap.State("Overview")])
     saved = snap.read_manifest(tmp_path / "manifest.json")
     assert saved.all_values["Region"] == ["North", "South"]
+
+
+def test_read_workbook_lists_groups_with_their_bins():
+    g = snap.read_workbook(TWB).groups["Subject Group"]
+    assert g == {
+        "datasource": DS,
+        "field": "subject",
+        "bins": {"Literacy": ["English", "Writing"]},
+        "other": "Other",
+    }
+
+
+def test_every_bin_of_a_group_card_is_a_must_state_other_included():
+    must = _ids(_plan(), "must")
+    assert {
+        "overview--subject-group-literacy",
+        "overview--subject-group-other",
+        "overview--subject-group-all",  # its saved default is Literacy, not All
+    } <= must
+
+
+PAIR = {
+    "datasource": DS,
+    "field": "school",
+    "bins": {"AB": ["Alpha", "Beta", "Nowhere"]},  # Nowhere is not in the extract
+    "other": "Rest",
+}
+
+
+def test_group_lists_fill_the_other_bin_from_the_extract(tmp_path, demo_hyper):
+    m = _coverage_manifest(tmp_path, demo_hyper)
+    wb = snap.Workbook({}, [], [], [], {}, {"Pair": PAIR})
+    out = snap.group_lists(wb, m, tmp_path)
+    assert out["Pair"] == {
+        "datasource": DS,
+        "field": "school",
+        "bins": {"AB": ["Alpha", "Beta"], "Rest": ["Delta", "Gamma"]},
+    }
+
+
+def test_value_lists_give_a_group_its_bin_names(tmp_path, demo_hyper):
+    m = _coverage_manifest(tmp_path, demo_hyper)
+    m.groups = {"Pair": {**PAIR, "bins": {"AB": ["Alpha", "Beta"], "Rest": []}}}
+    assert snap.value_lists(m, tmp_path)["Pair"] == ["AB", "Rest"]
+
+
+def test_coverage_expands_a_group_bin_to_its_members(tmp_path, demo_hyper):
+    m = _coverage_manifest(tmp_path, demo_hyper)
+    m.fields["Pair"] = {"field": "Pair (copy)", "datasource": DS}
+    m.groups = {
+        "Pair": {
+            "datasource": DS,
+            "field": "school",
+            "bins": {"AB": ["Alpha", "Beta"], "Rest": ["Delta", "Gamma"]},
+        }
+    }
+    with snap.Coverage(m, tmp_path) as covers:
+        # Every North student is at Alpha or Beta.
+        assert covers(
+            snap.State("Overview", filters=(("Region", "North"), ("Pair", "AB")))
+        )
+        assert not covers(snap.State("Overview", filters=(("Pair", "AB"),)))

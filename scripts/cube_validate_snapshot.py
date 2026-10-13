@@ -93,6 +93,7 @@ class Workbook:
     params: list[Param]
     actions: list[Action]
     sheet_filters: dict[str, list[SheetFilter]] = field(default_factory=dict)
+    groups: dict[str, dict] = field(default_factory=dict)
 
 
 def caption_of(el, field: str) -> str:
@@ -119,12 +120,27 @@ def read_workbook(twb_text: str) -> Workbook:
     root = SafeET.fromstring(twb_text)
     columns: dict[tuple[str, str], object] = {}
     ds_caption: dict[str, str] = {}
+    groups: dict[str, dict] = {}
     for ds in root.iter("datasource"):
         name = ds.get("name") or ""
         if ds.get("caption"):
             ds_caption[name] = ds.get("caption") or name
         for c in ds.findall("column"):
-            columns[(name, (c.get("name") or "").strip("[]"))] = c
+            col_name = (c.get("name") or "").strip("[]")
+            columns[(name, col_name)] = c
+            calc = c.find("calculation")
+            if calc is not None and calc.get("class") == "categorical-bin":
+                groups[caption_of(c, col_name)] = {
+                    "datasource": ds.get("caption") or name,
+                    "field": (calc.get("column") or "").strip("[]"),
+                    "bins": {
+                        _unquote(b.get("value") or ""): [
+                            _unquote(v.text or "") for v in b.findall("value")
+                        ]
+                        for b in calc.findall("bin")
+                    },
+                    "other": _unquote(calc.get("default") or ""),
+                }
 
     dashboards: dict[str, list[str]] = {}
     filters: list[FilterCard] = []
@@ -146,7 +162,7 @@ def read_workbook(twb_text: str) -> Workbook:
         w.get("name") or "": _saved_filters(w, columns, ds_caption)
         for w in root.iter("worksheet")
     }
-    return Workbook(dashboards, filters, params, actions, sheet_filters)
+    return Workbook(dashboards, filters, params, actions, sheet_filters, groups)
 
 
 def _saved_filters(w, columns, ds_caption) -> list[SheetFilter]:
@@ -679,6 +695,13 @@ def plan_states(wb, profiles, trees, years) -> list[PlanItem]:
             if PERSON_FIELD.search(c.field) and c.field not in in_tree:
                 add("skipped", f"{c.caption}: person-level filter", filters=one(ALL))
                 continue
+            g = wb.groups.get(c.caption)
+            if g is not None:
+                if not c.default_all:
+                    add("must", "saved default is not All", filters=one(ALL))
+                for b in [*g["bins"], *([g["other"]] if g["other"] else [])]:
+                    add("must", "group bin", filters=one(b))
+                continue
             if c.calculated:
                 for v in c.values or [v for v, _ in prof if v is not None]:
                     add("must", "calculated-field filter", filters=one(v))
@@ -784,6 +807,8 @@ class Manifest:
     sheet_filters: dict[str, list] = field(default_factory=dict)
     # Every value each filter caption can take, so (All) is an explicit list.
     all_values: dict[str, list[str]] = field(default_factory=dict)
+    # Each group's members per bin, Other included: {caption: {datasource, field, bins}}.
+    groups: dict[str, dict] = field(default_factory=dict)
 
 
 def sheet_filter_map(wb: Workbook, dashboards: list[str]) -> dict[str, list[dict]]:
@@ -1205,6 +1230,8 @@ def _plan(a) -> int:
         [c for c in wb.filters if c.dashboard in keep],
         [p for p in wb.params if p.dashboard in keep],
         [x for x in wb.actions if x.dashboard in keep],
+        wb.sheet_filters,
+        wb.groups,
     )
     extracts = unpack_extracts(twbx, out_dir)
     profiles, scores = _profiles_for(wb, extracts, out_dir)
@@ -1303,6 +1330,47 @@ def _value_maps(manifest: Manifest, snapdir: Path) -> dict[str, list[str]]:
     return all_values
 
 
+def group_lists(wb: Workbook, m: Manifest, snapdir: Path) -> dict[str, dict]:
+    """The workbook's groups the extracts can expand, with the Other bin filled in:
+    every value of the column that no named bin lists."""
+    out: dict[str, dict] = {}
+    by_ds: dict[str, list[str]] = {}
+    for caption, g in wb.groups.items():
+        by_ds.setdefault(g["datasource"], []).append(caption)
+    for ds, captions in by_ds.items():
+        if ds not in m.extracts:
+            continue
+        with Hyper(Path(snapdir) / m.extracts[ds]["file"]) as h:
+            cols = set(h.columns())
+            captions = [c for c in captions if wb.groups[c]["field"] in cols]
+            prof = profile(h, sorted({wb.groups[c]["field"] for c in captions}))
+        for caption in captions:
+            g = wb.groups[caption]
+            named = {v for members in g["bins"].values() for v in members}
+            present = {v for v, _ in prof[g["field"]] if v is not None}
+            # A member the extract lacks filters nothing, and its missing Cube lookup
+            # would make the whole bin a missing member.
+            bins = {
+                b: [v for v in members if v in present]
+                for b, members in g["bins"].items()
+            }
+            if g["other"]:
+                bins[g["other"]] = [
+                    v for v, _ in prof[g["field"]] if v is not None and v not in named
+                ]
+            out[caption] = {"datasource": ds, "field": g["field"], "bins": bins}
+    return out
+
+
+def value_lists(m: Manifest, snapdir: Path) -> dict[str, list[str]]:
+    """Every value each filter caption can take: the extract's values, and for a
+    group its bin names, so vf can send (All)."""
+    out = _value_maps(m, snapdir)
+    for caption, g in m.groups.items():
+        out[caption] = list(g["bins"])
+    return out
+
+
 def _sql_text(v: str) -> str:
     return "'" + str(v).replace("'", "''") + "'"
 
@@ -1336,6 +1404,17 @@ class Coverage:
     def _count(self, ds: str, pairs) -> int:
         conds = []
         for caption, value in pairs:
+            g = self.m.groups.get(caption)
+            if g is not None:
+                if g["datasource"] != ds or g["field"] not in self.cols[ds]:
+                    continue
+                if value == ALL:
+                    continue
+                names = value if isinstance(value, list) else [value]
+                members = [v for n in names for v in g["bins"].get(n, [])]
+                listed = ", ".join(_sql_text(v) for v in members) or "null"
+                conds.append(f'cast("{g["field"]}" as text) in ({listed})')
+                continue
             f = self.m.fields.get(caption) or {}
             if f.get("datasource") != ds or f.get("field") not in self.cols[ds]:
                 continue
@@ -1430,7 +1509,8 @@ def _open(a) -> int:
             # Same live revision: earlier exports still hold; only the copy is new.
             resume.copy_luid, resume.closed = copy, False
             resume.sheet_filters = sheet_filter_map(wb, checks["dashboards"])
-            resume.all_values = resume.all_values or _value_maps(resume, snapdir)
+            resume.groups = resume.groups or group_lists(wb, resume, snapdir)
+            resume.all_values = resume.all_values or value_lists(resume, snapdir)
             write_manifest(snapdir / "manifest.json", resume)
             todo = pending(_states_for(checks, a.states), resume)
             print(f"resuming: {len(todo)} states to export")
@@ -1455,7 +1535,8 @@ def _open(a) -> int:
             for d in checks["dashboards"]
         }
         m.sheet_filters = sheet_filter_map(wb, checks["dashboards"])
-        m.all_values = _value_maps(m, snapdir)
+        m.groups = group_lists(wb, m, snapdir)
+        m.all_values = value_lists(m, snapdir)
         write_manifest(snapdir / "manifest.json", m)
         _export_all(session, m, snapdir, wb, checks, _states_for(checks, a.states))
     return 0
@@ -1470,7 +1551,7 @@ def _export_all(session, m, snapdir, wb, checks, states) -> None:
             "only a mapped sheet without table calculations shows a filter took effect"
         )
     if not m.all_values:  # a snapshot opened before value lists were recorded
-        m.all_values = _value_maps(m, snapdir)
+        m.all_values = value_lists(m, snapdir)
     all_values = m.all_values
     dims_for = {
         s: list((v.get("dims") or {})) for s, v in (checks.get("sheets") or {}).items()

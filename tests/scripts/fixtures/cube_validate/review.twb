@@ -138,6 +138,7 @@
           <zone h='5000' id='10' mode='checkdropdown' name='Overview - Table' param='[federated.demo1].[none:academic_year:ok]' type-v2='filter' w='10000' x='60000' y='90000' />
           <zone h='5000' id='11' mode='list' param='[Parameters].[Group By (copy)]' type-v2='paramctrl' w='10000' x='70000' y='90000' />
           <zone h='5000' id='12' mode='slider' param='[Parameters].[Goal]' type-v2='paramctrl' w='10000' x='80000' y='90000' />
+          <zone h='5000' id='13' mode='checkdropdown' name='Overview - Table' param='[federated.demo1].[Subject (group)]' type-v2='filter' w='10000' x='90000' y='90000' />
         </zone>
       </zones>
     </dashboard>
