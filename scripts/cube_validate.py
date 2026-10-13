@@ -821,6 +821,7 @@ class Cell:
     cube_alone: float | None = None  # Cube's value when the measure is asked alone
     rollups_alone: list[str] = field(default_factory=list)
     routes: bool = False  # Cube's two routes disagree at the shown precision
+    reproduces: bool | None = None  # the extract SQL gives Tableau's value
 
 
 def _int(v) -> int | None:
@@ -1116,6 +1117,7 @@ def read_cells(path: Path) -> list[Cell]:
 
 
 SMALL_CELL = 10
+TRUST = 0.95
 
 
 def state_status(cells: list[Cell]) -> dict[str, str]:
@@ -1370,8 +1372,34 @@ def _reproduces(value, c: Cell, meas: Measure) -> bool:
     return matches_cell(value, c.shown, meas.round)
 
 
-def _has_state(st: dict) -> bool:
-    return bool(st.get("filters") or st.get("params") or st.get("click"))
+def _slice(
+    entry,
+    sname,
+    checks,
+    fields,
+    defaults=None,
+    sheet_filters=None,
+    lists=None,
+    public_only=False,
+) -> tuple[list[str], list[dict]]:
+    """One sheet's slice in a state, on both sides: the state's filters, the
+    dashboard defaults the sheet keeps, and the sheet's saved filters."""
+    sheet = checks["sheets"][sname]
+    saved = (sheet_filters or {}).get(sname, [])
+    dflt = sheet_defaults((defaults or {}).get(entry["state"]["dashboard"]), saved)
+    saved_where, saved_cube, _ = sheet_conditions(saved, entry, checks)
+    where = state_where(entry, checks, fields, sheet, public_only, dflt, lists)
+    cube = (
+        state_filters(entry, checks, dflt, lists)[0]
+        + hard_filters(checks, sheet.datasource)
+        + saved_cube
+    )
+    return where + saved_where, cube
+
+
+def _extract_measure(sheet, meas, grain, where, run) -> dict:
+    rows = run(sheet.datasource, extract_sql(sheet, meas, list(grain), where))
+    return apply_calc(meas, extract_values(rows, len(grain)), 1.0)
 
 
 def _trust(
@@ -1383,10 +1411,10 @@ def _trust(
     defaults=None,
     sheet_filters=None,
     lists=None,
-) -> dict[tuple, bool]:
-    """A measure's SQL is trusted at a grain once it reproduces every comparable cell
-    of one state at that grain. Per grain, so a total Tableau computes differently
-    does not stop the rows from being judged."""
+) -> dict[tuple, float]:
+    """The share of each (sheet, measure, grain)'s comparable cells, over every
+    state, that the extract SQL reproduces. Sets each judged cell's `reproduces`;
+    explain still checks every mismatched cell on its own."""
     pools: dict[tuple, dict[str, list[Cell]]] = {}
     for c in cells:
         if c.status in ("match", "mismatch") and (c.shown or "").strip():
@@ -1394,25 +1422,21 @@ def _trust(
             pools.setdefault(key, {}).setdefault(c.state, []).append(c)
     out = {}
     for (sname, mname, grain), by_state in pools.items():
-        plain = sorted(s for s in by_state if not _has_state(states[s]["state"]))
-        state = plain[0] if plain else sorted(by_state)[0]
         sheet = checks["sheets"][sname]
         meas = sheet.measures[mname]
-        dflt = (defaults or {}).get(states[state]["state"]["dashboard"])
-        saved = (sheet_filters or {}).get(sname, [])
-        dflt = sheet_defaults(dflt, saved)
-        where = state_where(
-            states[state], checks, fields, sheet, defaults=dflt, lists=lists
-        )
-        where += sheet_conditions(saved, states[state], checks)[0]
-        rows = run_extract(
-            sheet.datasource, extract_sql(sheet, meas, list(grain), where)
-        )
-        ext = apply_calc(meas, extract_values(rows, len(grain)), 1.0)
-        out[(sname, mname, grain)] = all(
-            _reproduces(ext.get(_key(c, grain, sheet)), c, meas)
-            for c in by_state[state]
-        )
+        hits = []
+        for state, mine in sorted(by_state.items()):
+            where, _ = _slice(
+                states[state], sname, checks, fields, defaults, sheet_filters, lists
+            )
+            try:
+                ext = _extract_measure(sheet, meas, grain, where, run_extract)
+            except Exception:  # noqa: BLE001 - SQL the extract cannot run reproduces nothing
+                ext = {}
+            for c in mine:
+                c.reproduces = _reproduces(ext.get(_key(c, grain, sheet)), c, meas)
+                hits.append(c.reproduces)
+        out[(sname, mname, grain)] = sum(hits) / len(hits)
     return out
 
 
@@ -1489,6 +1513,7 @@ def explain_cells(
         # Every run starts fresh, so an explanation removed from the checks file goes.
         c.verdict, c.why, c.explained_by = None, "", []
         c.extract = c.variant = c.cube_variant = None
+        c.reproduces = None
         sheet = checks["sheets"].get(c.sheet)
         if c.status != "not_comparable" and (
             sheet is None or c.measure not in sheet.measures
@@ -1556,34 +1581,22 @@ def _explain_batch(
     """Judge one sheet, state, grain and measure's mismatched cells."""
     sheet = checks["sheets"][sname]
     meas = sheet.measures[mname]
-    if not trusted.get((sname, mname, grain)):
+    rate = trusted.get((sname, mname, grain), 0.0)
+    if rate < TRUST:
         for c in batch:
             c.verdict = "incomplete"
-            c.why = "extract SQL does not reproduce Tableau for this measure"
+            c.why = (
+                f"extract SQL reproduces {rate:.0%} of this measure's cells at this "
+                f"grain; {TRUST:.0%} needed"
+            )
         return
-    entry = states[state]
-    dflt = (defaults or {}).get(entry["state"]["dashboard"])
-    saved = (sheet_filters or {}).get(sname, [])
-    dflt = sheet_defaults(dflt, saved)
-    saved_where, saved_cube, _ = sheet_conditions(saved, entry, checks)
-    where = (
-        state_where(entry, checks, fields, sheet, defaults=dflt, lists=lists)
-        + saved_where
+    where, base = _slice(
+        states[state], sname, checks, fields, defaults, sheet_filters, lists
     )
-    base = (
-        state_filters(entry, checks, dflt, lists)[0]
-        + hard_filters(checks, sheet.datasource)
-        + saved_cube
-    )
-    sql = extract_sql(sheet, meas, list(grain), where)
-    ext = apply_calc(
-        meas, extract_values(run_extract(sheet.datasource, sql), len(grain)), 1.0
-    )
+    ext = _extract_measure(sheet, meas, grain, where, run_extract)
     live_v, cube_now, cube_at, table_at = None, None, None, None
     if live is not None:
-        live_v = apply_calc(
-            meas, extract_values(live.rows(sheet.datasource, sql), len(grain)), 1.0
-        )
+        live_v = _extract_measure(sheet, meas, grain, where, live.rows)
         # Same shape as compare's query, so Cube routes it the same way.
         q = cube_query(sheet, grain, [meas.cube, checks["student_count"]], base)
         crows, cube_at = live.cube_now(q)
@@ -1808,7 +1821,7 @@ def _coarsest(cells: list[Cell]) -> list[Cell]:
     )
 
 
-def coverage_markdown(states, cells) -> str:
+def coverage_markdown(states, cells, checks=None) -> str:
     by_status: dict[str, list[str]] = {}
     for sid, e in sorted(states.items()):
         by_status.setdefault(e.get("status", "ok"), []).append(sid)
@@ -1823,6 +1836,13 @@ def coverage_markdown(states, cells) -> str:
             "Cells not compared:",
             *(f"- {r}: {n}" for r, n in causes.most_common()),
         ]
+    bad = _coarsest([c for c in cells if c.reproduces is False])
+    if bad:
+        lines += ["", f"Cells the extract SQL does not reproduce: {len(bad)}"]
+        for c in bad[:50]:
+            where = _where_text(c, checks) if checks else "a cell"
+            small = "" if (c.n_students or 0) >= SMALL_CELL else " (small cell)"
+            lines.append(f"- {c.state}: {c.sheet} / {c.measure}, {where}{small}")
     routes = {
         (c.sheet, c.state, _grain(c)[0]): (
             ", ".join(c.rollups) or "raw",
@@ -1904,20 +1924,16 @@ def issue_drafts(
         sheet = checks["sheets"][first.sheet]
         meas = sheet.measures[first.measure]
         grain = list(_grain(first)[0])
-        entry = states[first.state]
-        dflt = (defaults or {}).get(entry["state"]["dashboard"])
-        saved = (sheet_filters or {}).get(first.sheet, [])
-        dflt = sheet_defaults(dflt, saved)
-        where = state_where(
-            entry,
+        where, _ = _slice(
+            states[first.state],
+            first.sheet,
             checks,
             fields,
-            sheet,
+            defaults,
+            sheet_filters,
+            lists,
             public_only=True,
-            defaults=dflt,
-            lists=lists,
         )
-        where += sheet_conditions(saved, entry, checks)[0]
         query = extract_sql(sheet, meas, grain, where)
         alt = [v for v in meas.variants if s in v["explains"]]
         labels = _issue_labels(m)
@@ -1988,7 +2004,7 @@ def write_outputs(
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     stem = f"{run_date}-{_slug(workbook)}"
-    (out / f"{stem}-coverage.md").write_text(coverage_markdown(states, cells))
+    (out / f"{stem}-coverage.md").write_text(coverage_markdown(states, cells, checks))
     digest = out / f"{stem}-digest.md"
     digest.write_text(digest_markdown(workbook, cells, checks))
     drafts = issue_drafts(

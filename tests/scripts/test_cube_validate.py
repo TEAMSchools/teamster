@@ -2166,3 +2166,58 @@ def test_a_calculated_filter_card_uses_its_own_sql(tmp_path):
     assert cv.state_where(entry, c, fields, c["sheets"]["Overview - Table"]) == [
         f"cast({tutored} as string) = 'Tutored'"
     ]
+
+
+def _many_states(n):
+    return {
+        f"s{i:02d}": {
+            "state": {"dashboard": "Overview", "filters": {"Region": f"R{i:02d}"}},
+            "status": "ok",
+            "sheets": {},
+        }
+        for i in range(n)
+    }
+
+
+def _rate_cells(states):
+    return [
+        cv.Cell(
+            "Overview - Table",
+            s,
+            {"School Name": "Alpha"},
+            "Avg Score",
+            "48.50",
+            48.5,
+            47.0 if s == "s00" else 48.5,
+            20,
+            "mismatch" if s == "s00" else "match",
+        )
+        for s in states
+    ]
+
+
+def test_trust_is_a_rate_over_every_state(tmp_path):
+    c = _checks(tmp_path)
+    states = _many_states(20)
+    cells = _rate_cells(states)
+
+    def run(ds, sql):
+        return [{"g0": "Alpha", "m": 10.0 if "'R19'" in sql else 48.5}]
+
+    cv.explain_cells(cells, c, states, FIELDS, run, lambda q: ([], []))
+    assert cells[0].verdict == "fail"  # 19 of 20 states reproduce: 95%, trusted
+    assert cells[19].reproduces is False and cells[1].reproduces is True
+    text = cv.coverage_markdown(states, cells, c)
+    assert "Cells the extract SQL does not reproduce: 1" in text and "s19" in text
+
+
+def test_a_measure_reproduced_below_the_rate_is_incomplete(tmp_path):
+    c = _checks(tmp_path)
+    states = _many_states(2)
+    cells = _rate_cells(states)
+
+    def run(ds, sql):
+        return [{"g0": "Alpha", "m": 10.0 if "'R01'" in sql else 48.5}]
+
+    cv.explain_cells(cells, c, states, FIELDS, run, lambda q: ([], []))
+    assert cells[0].verdict == "incomplete" and "50%" in cells[0].why
