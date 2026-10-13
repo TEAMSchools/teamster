@@ -1,6 +1,11 @@
 with
     source as (
-        select *, safe_cast(school_specific_id__c as int) as school_specific_id_int,
+        select
+            *,
+
+            safe_cast(school_specific_id__c as int) as school_specific_id_int,
+
+            if(kipp_region_name__c = 'KIPP Miami', 'kippmiami', null) as region_project,
         from {{ source("kippadb", "contact") }}
         where not isdeleted
     )
@@ -86,10 +91,6 @@ select
         + 1
     ) as graduation_year,
 
-    -- same prefix rule as focus_student_number, without its year gate
-    school_specific_id_int + if(
-        kipp_region_name__c = 'KIPP Miami' and school_specific_id_int < 8400000000,
-        8400000000,
-        0
-    ) as school_specific_id,
+    {{ focus_student_number("school_specific_id_int", none, "region_project") }}
+    as school_specific_id,
 from source

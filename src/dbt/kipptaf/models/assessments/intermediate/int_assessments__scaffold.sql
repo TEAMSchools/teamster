@@ -17,7 +17,7 @@ with
             region,
 
             coalesce(a.tagged_grade_level_id, agl.grade_level_id) as grade_level_id,
-            concat('kipp', lower(region)) as region_source_project,
+            concat('kipp', lower(region)) as _dbt_source_project,
         from {{ ref("int_assessments__assessments_members") }} as a
         cross join unnest(a.regions_assessed_array) as region
         left join
@@ -40,6 +40,31 @@ with
             and location_name != 'KIPP Whittier Elementary'
     ),
 
+    internal_assessment_students as (
+        select
+            a.*,
+
+            ssa.student_id as illuminate_student_id,
+
+            {{
+                focus_student_number(
+                    "s.local_student_id",
+                    "a.academic_year_clean",
+                    "a._dbt_source_project",
+                )
+            }} as student_number,
+        from assessment_region_scaffold as a
+        inner join
+            {{ ref("int_illuminate__student_session_aff") }} as ssa
+            on a.academic_year = ssa.academic_year
+            and a.grade_level_id = ssa.grade_level_id
+            and ssa.rn_student_session_desc = 1
+        inner join
+            {{ ref("stg_illuminate__public__students") }} as s
+            on ssa.student_id = s.student_id
+        where a.grade_level_id <= 9
+    ),
+
     internal_assessments as (
         select
             a.source,
@@ -55,8 +80,8 @@ with
             a.region,
             a.grade_level_id,
             a.canonical_assessment_id,
-
-            ssa.student_id as illuminate_student_id,
+            a._dbt_source_project,
+            a.illuminate_student_id,
 
             ce.student_number,
             ce.powerschool_school_id,
@@ -66,29 +91,14 @@ with
             ce.cc_dcid,
 
             ce._dbt_source_project as cc_source_project,
-        from assessment_region_scaffold as a
-        inner join
-            {{ ref("int_illuminate__student_session_aff") }} as ssa
-            on a.academic_year = ssa.academic_year
-            and a.grade_level_id = ssa.grade_level_id
-            and ssa.rn_student_session_desc = 1
-        inner join
-            {{ ref("stg_illuminate__public__students") }} as s
-            on ssa.student_id = s.student_id
+        from internal_assessment_students as a
         inner join
             {{ ref("int_assessments__course_enrollments") }} as ce
-            on {{
-                focus_student_number(
-                    "s.local_student_id",
-                    "a.academic_year_clean",
-                    "a.region_source_project",
-                )
-            }} = ce.student_number
+            on a.student_number = ce.student_number
             and a.region = ce.region
             and a.subject_area = ce.subject_area
             and a.administered_at between ce.cc_dateenrolled and ce.cc_dateleft
             and not ce.is_advanced_math_student
-        where a.grade_level_id <= 9
 
         union all
 
@@ -108,6 +118,7 @@ with
             ce.grade_level_id,
 
             a.canonical_assessment_id,
+            a._dbt_source_project,
 
             s.student_id as illuminate_student_id,
 
@@ -160,6 +171,7 @@ with
             region,
             grade_level_id,
             canonical_assessment_id,
+            _dbt_source_project,
             illuminate_student_id,
             student_number,
             powerschool_school_id,
@@ -272,7 +284,7 @@ select
     ia.cc_dateenrolled,
     ia.cc_dateleft,
 
-    concat('kipp', lower(ia.region)) as _dbt_source_project,
+    ia._dbt_source_project,
     ia.canonical_assessment_id,
 
     sa.student_assessment_id,
@@ -324,7 +336,7 @@ select
     cast(null as date) as cc_dateenrolled,
     cast(null as date) as cc_dateleft,
 
-    concat('kipp', lower(str.region)) as _dbt_source_project,
+    str.dagster_code_location as _dbt_source_project,
 
     a.canonical_assessment_id,
 
@@ -391,7 +403,7 @@ select
     cast(null as date) as cc_dateenrolled,
     cast(null as date) as cc_dateleft,
 
-    concat('kipp', lower(str.region)) as _dbt_source_project,
+    str.dagster_code_location as _dbt_source_project,
 
     a.canonical_assessment_id,
 
