@@ -460,12 +460,16 @@ def test_compare_flags_value_gaps_and_one_sided_slices(tmp_path):
     assert cells["Beta"].tableau is None
 
 
-def test_multi_value_marks_and_unmapped_columns_are_not_comparable(tmp_path):
+def test_a_star_column_is_an_attribute_and_unmapped_columns_are_not_comparable(
+    tmp_path,
+):
     c, sheet = _sheet(tmp_path)
     export = cv.read_export(b"School Name,Avg Score,Mystery\r\n*,48.50,1\r\n")
-    cells = cv.compare_export(sheet, "s1", export, FakeCube({}, _row(0)), [], [], c)
+    cells = cv.compare_export(sheet, "s1", export, FakeCube({}, _row(48.5)), [], [], c)
     reasons = sorted(x.reason for x in cells if x.status == "not_comparable")
-    assert reasons == ["multi-value mark", "unmapped column"]
+    assert reasons == ["unmapped column"]
+    # School Name is an attribute here, so the row is the sheet's total.
+    assert [x.status for x in cells if x.measure == "Avg Score"] == ["match"]
 
 
 def test_a_filter_with_no_member_blocks_the_state(tmp_path):
@@ -1603,3 +1607,25 @@ def test_a_sheets_saved_filter_replaces_the_dashboard_default_on_its_caption(tmp
             "values": ["English", "Writing"],
         }
     ]
+
+
+def test_a_dimension_showing_a_star_is_an_attribute_not_part_of_the_grain(tmp_path):
+    # Tableau prints "*" for an attribute (ATTR) whose mark covers several values:
+    # the mark's grain is the other dimensions, so Cube must answer at that grain.
+    d = json.loads(json.dumps(CHECKS))
+    d["sheets"]["Overview - Table"]["dims"]["Title"] = {
+        "cube": "demo.title",
+        "sql": "title",
+    }
+    c = cv.load_checks(_write(tmp_path, d))
+    sheet = c["sheets"]["Overview - Table"]
+    export = cv.read_export(
+        b"School Name,Title,Avg Score\r\nAlpha,*,48.50\r\nBeta,T1,50.00\r\n"
+    )
+    cube = FakeCube({"Alpha": _row(48.5), "Beta": _row(50)}, _row(0))
+    cells = cv.compare_export(sheet, "s1", export, cube, [], [], c)
+    assert [(x.key, x.status) for x in cells] == [
+        ({"School Name": "Alpha"}, "match"),
+        ({"School Name": "Beta"}, "match"),
+    ]
+    assert cube.queries[0]["dimensions"] == ["demo.school"]

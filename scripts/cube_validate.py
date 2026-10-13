@@ -783,17 +783,12 @@ def compare_export(
             cell({}, m, status="missing_member", reason=reason) for m in measures
         ]
 
+    # A dimension showing "*" is an attribute (ATTR) of a coarser mark, never part
+    # of the mark's grain: leave it out, and compare at the remaining dimensions.
+    attrs = [d for d in dims if any(r.get(d) == MULTI for r in export.rows)]
+    dims = [d for d in dims if d not in attrs]
     groups: dict[tuple[str, ...], list[dict]] = {}
     for r in export.rows:
-        if any(r.get(d) == MULTI for d in dims):
-            key = {d: r.get(d, "") for d in dims}
-            cells += [
-                cell(
-                    key, m, r.get(m), status="not_comparable", reason="multi-value mark"
-                )
-                for m in measures
-            ]
-            continue
         groups.setdefault(tuple(d for d in dims if r.get(d) == TOTAL), []).append(r)
     if not groups:
         groups[()] = []
