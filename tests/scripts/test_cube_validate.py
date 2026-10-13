@@ -2154,3 +2154,15 @@ def test_compare_warns_when_an_ignored_saved_filter_would_hide_rows(tmp_path):
     assert "not coalesce((score >= 0.75), false)" in sqls[0]
     # The FIXED-LOD filter has no extract column, so it is never counted.
     assert not any("Calculation_8" in s for s in sqls)
+
+
+def test_a_calculated_filter_card_uses_its_own_sql(tmp_path):
+    tutored = "case when tutoring_nj then 'Tutored' else 'Not Tutored' end"
+    c = _checks(tmp_path, filters={"NJ Tutoring": {"cube": None, "sql": tutored}})
+    fields = {
+        "NJ Tutoring": {"field": "Calculation_1545649496779657216", "datasource": DS}
+    }
+    entry = {"state": {"dashboard": "Overview", "filters": {"NJ Tutoring": "Tutored"}}}
+    assert cv.state_where(entry, c, fields, c["sheets"]["Overview - Table"]) == [
+        f"cast({tutored} as string) = 'Tutored'"
+    ]

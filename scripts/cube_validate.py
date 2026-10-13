@@ -1254,7 +1254,8 @@ def state_where(
     out = []
     for caption, value in _own_filters(entry, defaults, lists, _keyed_dims(checks)):
         f = (
-            lists.column(caption)
+            (checks["filters"].get(caption) or {}).get("sql")
+            or lists.column(caption)
             or (fields.get(caption) or {}).get("field")
             or dims_sql.get(caption)
         )
