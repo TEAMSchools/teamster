@@ -289,7 +289,9 @@ unit_tests:
       score and band from the Apex result (Level 3, mastery) and its section
       from the scaffold; the Illuminate row still takes its score from
       Illuminate responses and its band from the Illuminate band set
-      (Proficient, not mastery). Neither picks up the other's values.
+      (Proficient, not mastery). Neither picks up the other's values, and the
+      Apex score of 72 does not join Illuminate band set 5, so the 2 Illuminate
+      bands that both cover 72 cannot duplicate the Apex row.
     model: int_assessments__response_rollup
     given:
       - input: ref('int_assessments__scaffold')
@@ -391,6 +393,14 @@ unit_tests:
               maximum_value: 79.9,
               label: Proficient,
               label_number: 4,
+              is_mastery: false,
+            }
+          - {
+              performance_band_set_id: 5,
+              minimum_value: 60.0,
+              maximum_value: 72.0,
+              label: Approaching,
+              label_number: 3,
               is_mastery: false,
             }
       - input: ref('int_assessments__assessments_canonical')

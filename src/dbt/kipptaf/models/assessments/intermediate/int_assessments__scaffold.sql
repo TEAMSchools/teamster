@@ -201,19 +201,29 @@ with
             t.student_number,
             t.assessment_id,
 
-            count(*) as n_sections,
+            count(distinct ce.cc_dcid) as n_sections,
 
-            if(count(*) = 1, any_value(ce.cc_dcid), null) as cc_dcid,
+            if(count(distinct ce.cc_dcid) = 1, any_value(ce.cc_dcid), null) as cc_dcid,
             if(
-                count(*) = 1, any_value(ce._dbt_source_project), null
+                count(distinct ce.cc_dcid) = 1, any_value(ce._dbt_source_project), null
             ) as cc_source_project,
-            if(count(*) = 1, any_value(ce.discipline), null) as discipline,
             if(
-                count(*) = 1, any_value(ce.powerschool_school_id), null
+                count(distinct ce.cc_dcid) = 1, any_value(ce.discipline), null
+            ) as discipline,
+            if(
+                count(distinct ce.cc_dcid) = 1,
+                any_value(ce.powerschool_school_id),
+                null
             ) as powerschool_school_id,
-            if(count(*) = 1, any_value(ce.grade_level_id), null) as grade_level_id,
-            if(count(*) = 1, any_value(ce.cc_dateenrolled), null) as cc_dateenrolled,
-            if(count(*) = 1, any_value(ce.cc_dateleft), null) as cc_dateleft,
+            if(
+                count(distinct ce.cc_dcid) = 1, any_value(ce.grade_level_id), null
+            ) as grade_level_id,
+            if(
+                count(distinct ce.cc_dcid) = 1, any_value(ce.cc_dateenrolled), null
+            ) as cc_dateenrolled,
+            if(
+                count(distinct ce.cc_dcid) = 1, any_value(ce.cc_dateleft), null
+            ) as cc_dateleft,
         from apex_tested as t
         inner join
             {{ ref("int_assessments__course_enrollments") }} as ce
