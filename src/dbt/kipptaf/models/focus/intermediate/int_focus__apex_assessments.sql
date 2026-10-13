@@ -9,5 +9,6 @@ with
         }}
     )
 
+-- trunk-ignore(sqlfluff/AM04): passes through every upstream column
 select *, {{ extract_source_project("union_relations") }} as _dbt_source_project,
 from union_relations
