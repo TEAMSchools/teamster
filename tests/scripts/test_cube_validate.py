@@ -1564,3 +1564,42 @@ def test_whole_number_members_match_however_the_extract_prints_them(tmp_path):
     )
     assert where == ["cast(band as string) in ('1.0', '1', '2.0', '2')"]
     assert cube == [{"member": "demo.band", "operator": "equals", "values": ["1", "2"]}]
+
+
+def test_a_sheets_saved_filter_replaces_the_dashboard_default_on_its_caption(tmp_path):
+    # The default for a group is its bin name ("Literacy"); the sheet's saved filter
+    # already expands the bin to its subjects, so only that one may reach Cube.
+    c = _checks(tmp_path, filters=SAVED_MAP, ignore_sheet_filters=["Pct Done"])
+    snapdir = tmp_path / "snap"
+    (snapdir / "csv").mkdir(parents=True)
+    (snapdir / "csv" / "n.csv").write_bytes(b"School Name,Avg Score\r\nAlpha,48.50\r\n")
+    manifest = {
+        "workbook": "Demo",
+        "extracts": {},
+        "fields": {},
+        "defaults": {"Overview": {"Subject Group": ["Literacy"]}},
+        "sheet_filters": {"Overview - Table": SAVED},
+        "states": {
+            "n": {
+                "state": {"id": "n", "dashboard": "Overview"},
+                "status": "ok",
+                "click_filters": {},
+                "sheets": {"Overview - Table": {"file": "csv/n.csv", "rows": 1}},
+            }
+        },
+    }
+    (snapdir / "manifest.json").write_text(json.dumps(manifest))
+    cube = FakeCube({"Alpha": _row(48.5)}, _row(0))
+    cv.run_compare(c, snapdir, cube, lambda ds, sql: [])
+    subject = [
+        f
+        for f in cube.queries[0]["filters"]
+        if f.get("member") == "demo.academic_subject"
+    ]
+    assert subject == [
+        {
+            "member": "demo.academic_subject",
+            "operator": "equals",
+            "values": ["English", "Writing"],
+        }
+    ]

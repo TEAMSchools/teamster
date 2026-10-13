@@ -649,6 +649,16 @@ def sheet_conditions(entries, entry, checks) -> tuple[list[str], list[dict], lis
     return where, cube, missing
 
 
+def sheet_defaults(defaults: dict | None, saved) -> dict | None:
+    """The dashboard's saved defaults a sheet keeps: a sheet that saves its own
+    filter on a caption replaces the dashboard default (a group's default is its
+    bin name, while the sheet's saved filter lists the bin's members)."""
+    if not defaults:
+        return defaults
+    covered = {f["caption"] for f in saved or []}
+    return {c: v for c, v in defaults.items() if c not in covered}
+
+
 def hard_filters(checks: dict, datasource: str) -> list[dict]:
     return [
         {k: v for k, v in f.items() if k != "datasource"}
@@ -1179,8 +1189,9 @@ def _trust(
         sheet = checks["sheets"][sname]
         meas = sheet.measures[mname]
         dflt = (defaults or {}).get(states[state]["state"]["dashboard"])
-        where = state_where(states[state], checks, fields, sheet, defaults=dflt)
         saved = (sheet_filters or {}).get(sname, [])
+        dflt = sheet_defaults(dflt, saved)
+        where = state_where(states[state], checks, fields, sheet, defaults=dflt)
         where += sheet_conditions(saved, states[state], checks)[0]
         rows = run_extract(
             sheet.datasource, extract_sql(sheet, meas, list(grain), where)
@@ -1302,9 +1313,9 @@ def explain_cells(
             continue
         entry = states[state]
         dflt = (defaults or {}).get(entry["state"]["dashboard"])
-        saved_where, saved_cube, _ = sheet_conditions(
-            (sheet_filters or {}).get(sname, []), entry, checks
-        )
+        saved = (sheet_filters or {}).get(sname, [])
+        dflt = sheet_defaults(dflt, saved)
+        saved_where, saved_cube, _ = sheet_conditions(saved, entry, checks)
         where = state_where(entry, checks, fields, sheet, defaults=dflt) + saved_where
         base = (
             state_filters(entry, checks, dflt)[0]
@@ -1599,10 +1610,11 @@ def issue_drafts(
         grain = list(_grain(first)[0])
         entry = states[first.state]
         dflt = (defaults or {}).get(entry["state"]["dashboard"])
+        saved = (sheet_filters or {}).get(first.sheet, [])
+        dflt = sheet_defaults(dflt, saved)
         where = state_where(
             entry, checks, fields, sheet, public_only=True, defaults=dflt
         )
-        saved = (sheet_filters or {}).get(first.sheet, [])
         where += sheet_conditions(saved, entry, checks)[0]
         query = extract_sql(sheet, meas, grain, where)
         alt = [v for v in meas.variants if s in v["explains"]]
@@ -1753,6 +1765,7 @@ def run_compare(checks, snapdir, load, extracts, redo=False):
             try:
                 saved = (m.get("sheet_filters") or {}).get(sheet_name, [])
                 _, sheet_cube, sheet_missing = sheet_conditions(saved, e, checks)
+                filters, missing = state_filters(e, checks, sheet_defaults(dflt, saved))
                 cells += compare_export(
                     sheet,
                     sid,
