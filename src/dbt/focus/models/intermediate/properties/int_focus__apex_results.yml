@@ -20,6 +20,19 @@ models:
           config:
             severity: error
     columns:
+      - name: is_mastery
+        description: >-
+          True for Level 3 and above, false for Level 1, Level 2 and the
+          Low/Mid/High levels, null for any other label or no band set.
+        data_tests:
+          # flags a band label the model's is_mastery case does not list yet
+          - not_null:
+              config:
+                severity: warn
+                where: performance_band_label is not null
+        config:
+          meta:
+            contains_pii: true
       - name: student_number
         description: >-
           Focus student id, which equals the network student number for Miami
@@ -77,13 +90,6 @@ models:
       - name: performance_band_label_number
         description:
           Band level position, 1 to N by minimum score within the set.
-        config:
-          meta:
-            contains_pii: true
-      - name: is_mastery
-        description: >-
-          True for Level 3 and above, false for Level 1, Level 2 and the
-          Low/Mid/High levels, null for any other label or no band set.
         config:
           meta:
             contains_pii: true

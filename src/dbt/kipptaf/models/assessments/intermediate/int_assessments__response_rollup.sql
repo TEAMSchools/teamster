@@ -236,6 +236,7 @@ with
             administered_at,
             grade_level_id,
             performance_band_set_id,
+            performance_band_set_id as illuminate_performance_band_set_id,
 
             cast(null as int64) as cc_dcid,
             cast(null as string) as section_match_method,
@@ -281,6 +282,7 @@ with
             canonical_administered_at as administered_at,
             canonical_grade_level_id as grade_level_id,
             canonical_performance_band_set_id as performance_band_set_id,
+            canonical_performance_band_set_id as illuminate_performance_band_set_id,
 
             cast(null as int64) as cc_dcid,
             cast(null as string) as section_match_method,
@@ -336,6 +338,9 @@ with
             s.grade_level_id,
 
             r.performance_band_set_id,
+
+            -- Apex band sets are Focus ids, so they never look up Illuminate bands
+            cast(null as int64) as illuminate_performance_band_set_id,
 
             s.cc_dcid,
             s.section_match_method,
@@ -403,7 +408,7 @@ select
 from response_union as ru
 left join
     {{ ref("int_illuminate__performance_band_sets") }} as pbl
-    on ru.performance_band_set_id = pbl.performance_band_set_id
+    on ru.illuminate_performance_band_set_id = pbl.performance_band_set_id
     and ru.percent_correct between pbl.minimum_value and pbl.maximum_value
 left join
     {{ ref("stg_google_sheets__reporting__terms") }} as rta
