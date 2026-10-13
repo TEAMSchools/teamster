@@ -396,8 +396,7 @@ def test_must_includes_default_params_tree_top_crosscuts_years_and_clicks():
     assert "overview--default" in must
     assert "overview--group-by-teacher" in must
     assert {"overview--region-north", "overview--region-south"} <= must
-    assert {"overview--iep-status-no-iep", "overview--iep-status-has-iep"} <= must
-    assert "overview--iep-status-blank" in must
+    assert "overview--iep-status-no-iep" in must
     assert {"overview--academic-year-2026", "overview--academic-year-2025"} <= must
     assert "overview--academic-year-2024" not in must
     assert "overview--is-tested-yes" in must  # calculated filter, every value
@@ -437,9 +436,7 @@ def test_a_cross_cut_with_many_values_is_sampled_not_split():
     school = [i for i in items if i.state.id.startswith("overview--school-name-")]
     assert [i.tier for i in school] == ["optional", "optional"]
     assert "too many values" in school[0].why
-    assert {"overview--iep-status-no-iep", "overview--iep-status-has-iep"} <= _ids(
-        items, "must"
-    )
+    assert "overview--iep-status-no-iep" in _ids(items, "must")
 
 
 def test_export_order_puts_tree_roots_before_cross_cuts():
@@ -467,6 +464,16 @@ def test_export_order_puts_tree_roots_before_cross_cuts():
         "overview--iep-no-iep",
         "overview--region-north--school-name-a",
     ]
+
+
+def test_a_cross_cut_exports_its_largest_value_and_keeps_the_rest_optional():
+    items = _plan()
+    assert "overview--iep-status-no-iep" in _ids(items, "must")  # 72 students
+    assert "overview--iep-status-has-iep" in _ids(items, "optional")
+
+
+def test_blank_states_wait_for_the_live_check():
+    assert "overview--iep-status-blank" in _ids(_plan(), "optional")
 
 
 def test_best_parents_names_the_strongest_candidate_for_each_field():
@@ -919,7 +926,7 @@ def test_a_filter_set_to_its_saved_default_covers_the_parent(tmp_path, demo_hype
         assert covers(snap.State("Overview", filters=(("Region", "North"),)))
 
 
-def test_a_resumed_session_exports_only_what_is_missing_or_not_ok():
+def test_resume_reexports_missing_and_failed_states_only():
     m = _manifest()
     done, ignored, failed = (
         snap.State("Overview", filters=(("Region", v),))
@@ -931,7 +938,12 @@ def test_a_resumed_session_exports_only_what_is_missing_or_not_ok():
         failed.id: {"status": "export_failed"},
     }
     new = snap.State("Overview")
-    assert snap.pending([done, ignored, failed, new], m) == [ignored, failed, new]
+    assert snap.pending([done, ignored, failed, new], m) == [failed, new]
+    assert snap.pending([done, ignored, failed, new], m, retry_ignored=True) == [
+        ignored,
+        failed,
+        new,
+    ]
 
 
 # ---------------------------------------------------------------- saved sheet filters

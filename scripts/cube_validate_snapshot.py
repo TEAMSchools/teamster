@@ -731,7 +731,11 @@ def plan_states(wb, profiles, trees, years) -> list[PlanItem]:
                     add("must", "academic year", filters=one(y))
                 continue
             if any(v is None for v, _ in prof):
-                add("must", "blank value", filters=one(BLANK))
+                add(
+                    "optional",
+                    "blank value; must once the live check confirms vf Null filters",
+                    filters=one(BLANK),
+                )
             named = [v for v, _ in prof if v is not None]
             if c.field in roots:
                 for v in named:
@@ -745,8 +749,16 @@ def plan_states(wb, profiles, trees, years) -> list[PlanItem]:
                         filters=one(v),
                     )
             elif c.field in t.cross_cuts:
-                for v in named:
-                    add("must", "cross-cut", filters=one(v))
+                # The profile lists values largest first.
+                for i, v in enumerate(named):
+                    if i == 0:
+                        add("must", "cross-cut, largest value", filters=one(v))
+                    else:
+                        add(
+                            "optional",
+                            "cross-cut; compare proposes it when the largest value mismatches",
+                            filters=one(v),
+                        )
             elif c.field not in in_tree:
                 for v in _ends(prof):
                     add(
@@ -1501,10 +1513,16 @@ class Coverage:
         return self._count(ds, parent) == self._count(ds, [*parent, (caption, value)])
 
 
-def pending(states: list[State], manifest: Manifest) -> list[State]:
-    """States a resumed session still has to export: missing, failed or ignored."""
+def pending(
+    states: list[State], manifest: Manifest, retry_ignored: bool = False
+) -> list[State]:
+    """States a resumed session still has to export: missing or failed ones, and
+    ignored ones only on request (their caption is wrong until it is fixed)."""
+    redo = {"export_failed"} | ({"filter_ignored"} if retry_ignored else set())
     return [
-        st for st in states if (manifest.states.get(st.id) or {}).get("status") != "ok"
+        st
+        for st in states
+        if (e := manifest.states.get(st.id)) is None or e.get("status") in redo
     ]
 
 
@@ -1562,7 +1580,7 @@ def _open(a) -> int:
             resume.groups = resume.groups or group_lists(wb, resume, snapdir)
             resume.all_values = resume.all_values or value_lists(resume, snapdir)
             write_manifest(snapdir / "manifest.json", resume)
-            todo = pending(_states_for(checks, a.states), resume)
+            todo = pending(_states_for(checks, a.states), resume, a.retry_ignored)
             print(f"resuming: {len(todo)} states to export")
             _export_all(session, resume, snapdir, wb, checks, todo)
             return 0
@@ -1715,6 +1733,11 @@ def main(argv: list[str] | None = None) -> int:
                 "--resume",
                 action="store_true",
                 help="reuse the latest closed snapshot if the live workbook is unchanged",
+            )
+            s.add_argument(
+                "--retry-ignored",
+                action="store_true",
+                help="with --resume, export filter_ignored states again",
             )
     cl = sub.add_parser("close")
     cl.add_argument("checks")
