@@ -1,6 +1,6 @@
 with
     report_card_region as (
-        select iae.assessment_id, report_card_region, 'illuminate' as `source`,
+        select iae.source, iae.assessment_id, report_card_region,
         from {{ ref("stg_google_appsheet__illuminate_assessments_extension") }} as iae
         cross join unnest(split(iae.regions_report_card, ' , ')) as report_card_region
     ),

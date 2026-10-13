@@ -41,52 +41,57 @@ with
         left join
             {{ ref("stg_google_appsheet__illuminate_assessments_extension") }} as iae
             on a.assessment_id = iae.assessment_id
+            and iae.source = 'illuminate'
         left join agl_dedup as agl on a.assessment_id = agl.assessment_id
 
         union all
 
-        -- Apex is Miami-only, so it is internal and Florida without a tag;
-        -- module, scope, and grade stay null until it is tagged in AppSheet
+        -- Apex is Miami-only, so it is internal and Florida with or without a
+        -- tag; module, grade, and report-card regions come from its AppSheet tag
         select
-            assessment_id,
-            title,
+            aa.assessment_id,
+            aa.title,
 
-            academic_year + 1 as academic_year,
+            aa.academic_year + 1 as academic_year,
 
-            academic_year as academic_year_clean,
+            aa.academic_year as academic_year_clean,
 
             cast(null as string) as scope,
             cast(null as string) as creator_first_name,
             cast(null as string) as creator_last_name,
 
-            band_set_id as performance_band_set_id,
+            aa.band_set_id as performance_band_set_id,
 
             cast(null as string) as assessment_type,
             cast(null as string) as tags,
-            cast(null as string) as module_code,
-            cast(null as string) as module_type,
-            cast(null as int64) as module_sequence,
-            cast(null as int64) as tagged_grade_level_id,
 
-            'Miami' as regions_assessed,
+            iae.module_code,
+            iae.module_type,
+            iae.module_sequence,
+            iae.illuminate_grade_level_id as tagged_grade_level_id,
 
-            ['Miami'] as regions_assessed_array,
+            coalesce(iae.regions_assessed, 'Miami') as regions_assessed,
+            coalesce(iae.regions_assessed_array, ['Miami']) as regions_assessed_array,
 
-            cast(null as string) as regions_report_card,
-            cast(null as string) as regions_progress_report,
+            iae.regions_report_card,
+            iae.regions_progress_report,
 
             'apex' as `source`,
 
-            administered_at,
-            subject_area,
+            coalesce(iae.administered_at, aa.administered_at) as administered_at,
+            coalesce(iae.subject, aa.subject_area) as subject_area,
 
-            cast(null as int64) as grade_level_id,
+            iae.illuminate_grade_level_id as grade_level_id,
 
             true as is_internal_assessment,
             true as is_florida_assessment,
-        from {{ ref("int_focus__apex_assessments") }}
+        from {{ ref("int_focus__apex_assessments") }} as aa
+        left join
+            {{ ref("stg_google_appsheet__illuminate_assessments_extension") }} as iae
+            on aa.assessment_id = iae.assessment_id
+            and iae.source = 'apex'
         -- keep in step with int_assessments__scaffold (apex_tested)
-        where academic_year >= 2026
+        where aa.academic_year >= 2026
     ),
 
     canonical as (

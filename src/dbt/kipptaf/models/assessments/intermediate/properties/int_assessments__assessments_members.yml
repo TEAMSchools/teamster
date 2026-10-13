@@ -21,10 +21,10 @@ models:
       tagged with Miami alongside other regions stay on the New Jersey side.
       Canonical groups never span sources, because Illuminate and Apex ids share
       one integer space. Miami Apex assessments (2026-27 on) come from Focus;
-      each is internal, Florida, assessed in Miami, and its own canonical group,
-      because untagged Apex assessments share null module and scope and would
-      otherwise merge. Their module, scope, and grade stay null until they are
-      tagged in AppSheet.
+      each is internal, Florida, and its own canonical group, because untagged
+      Apex assessments share null module and scope and would otherwise merge.
+      AppSheet tags join on source and assessment_id, so an Apex tag fills its
+      module, grade, subject, date, and regions; Apex scope is always null.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -100,8 +100,8 @@ models:
       - name: regions_assessed
         data_type: string
         description: >-
-          Comma-separated region list from the AppSheet extension; Miami on Apex
-          assessments. Null for external assessments.
+          Comma-separated region list from the AppSheet extension; Miami on
+          untagged Apex assessments. Null for external assessments.
       - name: regions_report_card
         data_type: string
         description: AppSheet extension value. Null for external assessments.
@@ -172,7 +172,23 @@ unit_tests:
               administered_at: 2026-09-01,
             }
       - input: ref('stg_google_appsheet__illuminate_assessments_extension')
-        rows: []
+        format: sql
+        rows: |
+          select
+              cast(null as string) as `source`,
+              cast(null as int64) as assessment_id,
+              cast(null as string) as module_type,
+              cast(null as int64) as module_sequence,
+              cast(null as string) as module_code,
+              cast(null as int64) as illuminate_grade_level_id,
+              cast(null as string) as regions_assessed,
+              cast(null as array<string>) as regions_assessed_array,
+              cast(null as string) as regions_report_card,
+              cast(null as string) as regions_progress_report,
+              cast(null as date) as administered_at,
+              cast(null as string) as subject
+          from unnest([1])
+          where false
       - input: ref('stg_illuminate__dna_assessments__assessment_grade_levels')
         rows: []
       - input: ref('int_focus__apex_assessments')
@@ -220,4 +236,82 @@ unit_tests:
             regions_assessed: Miami,
             is_internal_assessment: true,
             canonical_assessment_id: 9002,
+          }
+  - name: test_apex_tags_join_on_source
+    description: >-
+      An AppSheet tag reaches only the assessment in its own source — the Apex
+      tag fills module, grade, and report-card regions on its Apex row, and an
+      Illuminate tag on a colliding id leaves the Apex row with that id
+      untagged.
+    model: int_assessments__assessments_members
+    given:
+      - input: ref('int_illuminate__assessments')
+        rows:
+          - {
+              assessment_id: 9001,
+              title: Illuminate Quiz,
+              academic_year: 2027,
+              academic_year_clean: 2026,
+              subject_area: Mathematics,
+              administered_at: 2026-09-01,
+            }
+      - input: ref('stg_google_appsheet__illuminate_assessments_extension')
+        format: sql
+        rows: |
+          select
+              'illuminate' as `source`,
+              9001 as assessment_id,
+              'QA' as module_type,
+              1 as module_sequence,
+              'QA1' as module_code,
+              4 as illuminate_grade_level_id,
+              'Newark' as regions_assessed,
+              ['Newark'] as regions_assessed_array,
+              cast(null as string) as regions_report_card,
+              cast(null as string) as regions_progress_report,
+              cast(null as date) as administered_at,
+              cast(null as string) as subject
+          union all
+          select
+              'apex', 9002, 'QA', 2, 'QA2', 6, 'Miami', ['Miami'], 'Miami', null,
+              null, null
+      - input: ref('stg_illuminate__dna_assessments__assessment_grade_levels')
+        rows: []
+      - input: ref('int_focus__apex_assessments')
+        format: sql
+        rows: |
+          select
+              9001 as assessment_id,
+              'Apex Math A' as title,
+              2026 as academic_year,
+              7 as band_set_id,
+              'Mathematics' as subject_area,
+              date('2026-09-28') as administered_at
+          union all
+          select 9002, 'Apex Math B', 2026, 7, 'Mathematics', date('2026-10-05')
+    expect:
+      rows:
+        - {
+            source: illuminate,
+            assessment_id: 9001,
+            module_code: QA1,
+            grade_level_id: 4,
+            regions_assessed: Newark,
+            regions_report_card: null,
+          }
+        - {
+            source: apex,
+            assessment_id: 9001,
+            module_code: null,
+            grade_level_id: null,
+            regions_assessed: Miami,
+            regions_report_card: null,
+          }
+        - {
+            source: apex,
+            assessment_id: 9002,
+            module_code: QA2,
+            grade_level_id: 6,
+            regions_assessed: Miami,
+            regions_report_card: Miami,
           }

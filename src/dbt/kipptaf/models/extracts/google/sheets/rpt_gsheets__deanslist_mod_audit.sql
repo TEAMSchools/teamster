@@ -1,19 +1,20 @@
 with
     progress_report_region as (
-        select iae.assessment_id, progress_report_region, 'illuminate' as `source`,
+        select iae.source, iae.assessment_id, progress_report_region,
         from {{ ref("stg_google_appsheet__illuminate_assessments_extension") }} as iae
         cross join
             unnest(split(iae.regions_progress_report, ' , ')) as progress_report_region
     ),
 
     report_card_region as (
-        select iae.assessment_id, report_card_region, 'illuminate' as `source`,
+        select iae.source, iae.assessment_id, report_card_region,
         from {{ ref("stg_google_appsheet__illuminate_assessments_extension") }} as iae
         cross join unnest(split(iae.regions_report_card, ' , ')) as report_card_region
     ),
 
     mod_assessment as (
         select
+            ar.source,
             ar.student_number,
             ar.academic_year,
             ar.assessment_id,
@@ -62,6 +63,7 @@ with
 
     mod_standards as (
         select
+            ar.source,
             ar.student_number,
             ar.academic_year,
             ar.assessment_id,
@@ -103,6 +105,7 @@ with
 
     mod_standards_domains as (
         select
+            ar.source,
             ar.student_number,
             ar.academic_year,
             ar.assessment_id,
@@ -148,6 +151,7 @@ with
         union all
 
         select
+            ar.source,
             ar.student_number,
             ar.academic_year,
             ar.assessment_id,
@@ -235,10 +239,14 @@ select
     ar.performance_band_label,
     ar.is_internal_assessment,
 
-    concat(
-        'https://kippteamschools.illuminateed.com/live/?assessment_id=',
-        cast(ar.assessment_id as string),
-        '&prebuilt_report_id=1&page=Assessment_StudentController'
+    if(
+        ar.source = 'illuminate',
+        concat(
+            'https://kippteamschools.illuminateed.com/live/?assessment_id=',
+            cast(ar.assessment_id as string),
+            '&prebuilt_report_id=1&page=Assessment_StudentController'
+        ),
+        null
     ) as illuminate_student_responses,
 
     ar.academic_year = {{ var("current_academic_year") }} as is_current_academic_year,
