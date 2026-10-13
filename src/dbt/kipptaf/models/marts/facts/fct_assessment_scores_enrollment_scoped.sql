@@ -343,17 +343,15 @@ select
     }} as assessment_score_key,
 
     {{
-        dbt_utils.generate_surrogate_key(
-            [
-                "ia.source",
-                "ia.module_code",
-                "ia.administered_date",
-                "ia.academic_year",
-                "ia._dbt_source_project",
-                "null",
-                "ia.source_assessment_id",
-                "null",
-            ]
+        assessment_administration_key(
+            "ia.source",
+            "ia.module_code",
+            "ia.administered_date",
+            "ia.academic_year",
+            "ia._dbt_source_project",
+            "null",
+            "ia.source_assessment_id",
+            "null",
         )
     }} as assessment_administration_key,
 

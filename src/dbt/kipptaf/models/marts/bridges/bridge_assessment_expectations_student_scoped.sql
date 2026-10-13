@@ -50,17 +50,15 @@ select
     {{ student_key("student_number") }} as student_key,
 
     {{
-        dbt_utils.generate_surrogate_key(
-            [
-                "source",
-                "module_code",
-                "cast(canonical_administered_at as date)",
-                "academic_year",
-                "_dbt_source_project",
-                "null",
-                "canonical_assessment_id",
-                "null",
-            ]
+        assessment_administration_key(
+            "source",
+            "module_code",
+            "cast(canonical_administered_at as date)",
+            "academic_year",
+            "_dbt_source_project",
+            "null",
+            "canonical_assessment_id",
+            "null",
         )
     }} as assessment_administration_key,
 
