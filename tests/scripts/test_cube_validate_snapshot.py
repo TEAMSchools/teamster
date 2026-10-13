@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import datetime as dt
 import importlib.util
 import sys
@@ -514,42 +515,64 @@ def test_session_refuses_a_production_project():
         snap.Session(SimpleNamespace(), "some-production-project")
 
 
-def test_sweep_deletes_only_old_review_copies(monkeypatch):
-    old = SimpleNamespace(
-        id="a",
-        name="ZZ-REVIEW 2026-10-07 0800 DDI Suite",
-        created_at=dt.datetime(2026, 10, 7, 8, tzinfo=dt.UTC),
-        project_id=snap.TEMP_CB,
-    )
-    fresh = SimpleNamespace(
-        id="b",
-        name="ZZ-REVIEW 2026-10-09 1100 DDI Suite",
-        created_at=dt.datetime(2026, 10, 9, 11, tzinfo=dt.UTC),
-        project_id=snap.TEMP_CB,
-    )
-    mine = SimpleNamespace(
-        id="c",
-        name="My Draft",
-        created_at=dt.datetime(2026, 1, 1, tzinfo=dt.UTC),
-        project_id=snap.TEMP_CB,
-    )
-    # Review copies other work made (the tableau-workbook-xml skill uses the same
-    # prefix), and this tool's copies of other workbooks, are never swept.
-    other_work = SimpleNamespace(
-        id="d",
-        name="ZZ-REVIEW 2026-09-09 Survey Dashboard dept gate",
-        created_at=dt.datetime(2026, 9, 9, tzinfo=dt.UTC),
-        project_id=snap.TEMP_CB,
-    )
-    other_book = SimpleNamespace(
-        id="e",
-        name="ZZ-REVIEW 2026-10-07 0800 Attendance Dashboard",
-        created_at=dt.datetime(2026, 10, 7, 8, tzinfo=dt.UTC),
-        project_id=snap.TEMP_CB,
-    )
-    s, wbs = _session(monkeypatch, [old, fresh, mine, other_work, other_book])
-    assert s.sweep("DDI Suite") == ["ZZ-REVIEW 2026-10-07 0800 DDI Suite"]
-    assert wbs.deleted == ["a"]
+def _copies():
+    def wb(id_, name):
+        return SimpleNamespace(
+            id=id_,
+            name=name,
+            project_id=snap.TEMP_CB,
+            created_at=None,
+            webpage_url=f"https://tableau.example/#/workbooks/{id_}",
+        )
+
+    return [
+        wb("a", "ZZ-REVIEW 2026-10-07 0800 DDI Suite"),
+        wb("b", "ZZ-REVIEW 2026-10-09 1100 DDI Suite"),
+        wb("c", "My Draft"),
+        # Other work uses the prefix too, and this tool copies other workbooks.
+        wb("d", "ZZ-REVIEW 2026-09-09 Survey Dashboard dept gate"),
+        wb("e", "ZZ-REVIEW 2026-10-07 0800 Attendance Dashboard"),
+    ]
+
+
+def test_the_tool_never_deletes_anything_on_tableau():
+    assert ".delete(" not in _SCRIPT.read_text()
+
+
+def test_review_copies_lists_only_this_tools_copies_of_the_workbook(monkeypatch):
+    s, _ = _session(monkeypatch, _copies())
+    assert [w.id for w in s.review_copies("DDI Suite")] == ["a", "b"]
+
+
+def test_open_refuses_while_a_review_copy_of_the_workbook_remains(monkeypatch):
+    s, _ = _session(monkeypatch, _copies())
+    with pytest.raises(snap.SessionError, match="ZZ-REVIEW 2026-10-07 0800 DDI Suite"):
+        snap.open_guard(s, "DDI Suite")
+    clear, _ = _session(monkeypatch, [])
+    snap.open_guard(clear, "DDI Suite")
+
+
+def test_close_waits_until_the_analyst_deletes_the_copy(monkeypatch, tmp_path):
+    snap.write_manifest(tmp_path / "manifest.json", _manifest())  # copy-1
+    left = [
+        SimpleNamespace(
+            id="copy-1",
+            name="ZZ-REVIEW 2026-10-09 1200 Demo",
+            project_id=snap.TEMP_CB,
+            webpage_url="https://tableau.example/#/1",
+        )
+    ]
+    auth = SimpleNamespace(sign_in=lambda a: contextlib.nullcontext())
+    monkeypatch.setattr(snap, "_server", lambda: (SimpleNamespace(auth=auth), "pat"))
+    monkeypatch.setattr(snap, "_workbooks_in", lambda server, project: list(left))
+    monkeypatch.setattr(snap, "latest_snapshot", lambda workbook: tmp_path)
+    checks = tmp_path / "checks.yml"
+    checks.write_text(f"workbook: Demo\nreview_project_luid: {snap.TEMP_CB}\n")
+    assert snap.main(["close", str(checks)]) == 1
+    assert snap.read_manifest(tmp_path / "manifest.json").closed is False
+    left.clear()
+    assert snap.main(["close", str(checks)]) == 0
+    assert snap.read_manifest(tmp_path / "manifest.json").closed is True
 
 
 def test_publish_requires_the_prefix_and_creates_new(monkeypatch, tmp_path):
@@ -564,25 +587,6 @@ def test_publish_requires_the_prefix_and_creates_new(monkeypatch, tmp_path):
     assert (
         project == snap.TEMP_CB and hidden == ["Scratch Sheet"] and mode == "CreateNew"
     )
-
-
-def test_close_confirms_the_copy_is_gone(monkeypatch):
-    copy = SimpleNamespace(
-        id="copy-1", name="ZZ-REVIEW x", created_at=None, project_id=snap.TEMP_CB
-    )
-    s, wbs = _session(monkeypatch, [copy])
-    s.close("copy-1")
-    assert wbs.deleted == ["copy-1"]
-
-
-def test_close_raises_with_the_luid_when_the_copy_survives(monkeypatch):
-    copy = SimpleNamespace(
-        id="copy-1", name="ZZ-REVIEW x", created_at=None, project_id=snap.TEMP_CB
-    )
-    s, wbs = _session(monkeypatch, [copy])
-    wbs.delete = lambda luid: None  # the server ignores the delete
-    with pytest.raises(snap.SessionError, match="copy-1"):
-        s.close("copy-1")
 
 
 def test_check_refresh_stops_when_the_live_workbook_moved(monkeypatch):

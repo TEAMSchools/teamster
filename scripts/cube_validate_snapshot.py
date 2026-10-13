@@ -3,7 +3,7 @@
     uv run --with tableauhyperapi scripts/cube_validate_snapshot.py plan <checks.yml> [--twbx <file>]
     uv run --with tableauhyperapi scripts/cube_validate_snapshot.py open <checks.yml>
     uv run --with tableauhyperapi scripts/cube_validate_snapshot.py export <checks.yml> --states <file>
-    uv run --with tableauhyperapi scripts/cube_validate_snapshot.py close <checks.yml>
+    uv run --with tableauhyperapi scripts/cube_validate_snapshot.py close <checks.yml>   (read-only: closes once the copy is deleted by hand)
 
 `open`, `export` and `close` need the Tableau PAT, which only the pytest secrets
 fixture provides, so they run inside a throwaway tests/test_zz_*.py.
@@ -885,7 +885,6 @@ TEMP_CB = "ddc817c2-6bc7-4bca-8be9-e385f95b9ebc"
 #: Projects a review copy may land in. Production is never added here.
 NON_PRODUCTION_PROJECTS = {TEMP_CB: "TEMP-CB"}
 REVIEW_PREFIX = "ZZ-REVIEW "
-STALE_COPY = dt.timedelta(hours=24)
 REPO = Path(__file__).resolve().parents[1]
 XML_SCRIPTS = REPO / "docs" / "tableau-xml" / "scripts"
 
@@ -985,19 +984,18 @@ class Session:
         self.auth, self.sleep = auth, sleep
         self._views: dict = {}
 
-    def sweep(self, workbook: str) -> list[str]:
-        """Delete this tool's copies of this workbook older than STALE_COPY: leftovers
-        of failed sessions. Other ZZ-REVIEW copies (other work uses the prefix too)
-        are never touched; the name must be exactly what publish gives this tool's."""
+    def review_copies(self, workbook: str) -> list:
+        """This tool's review copies of the workbook still in the review project.
+        Matched by the exact name publish gives them; other ZZ-REVIEW copies are
+        other work's."""
         mine = re.compile(
             rf"^{re.escape(REVIEW_PREFIX)}\d{{4}}-\d{{2}}-\d{{2}} \d{{4}} {re.escape(workbook)}$"
         )
-        cutoff, gone = self.now() - STALE_COPY, []
-        for w in _workbooks_in(self.server, self.project):
-            if mine.match(w.name or "") and w.created_at and w.created_at < cutoff:
-                self.server.workbooks.delete(w.id)
-                gone.append(w.name)
-        return gone
+        return [
+            w
+            for w in _workbooks_in(self.server, self.project)
+            if mine.match(w.name or "")
+        ]
 
     def publish(self, twbx: Path, name: str, hidden: list[str]) -> str:
         import tableauserverclient as tsc
@@ -1050,13 +1048,17 @@ class Session:
                 "close this session and open a new one"
             )
 
-    def close(self, copy_luid: str) -> None:
-        self.server.workbooks.delete(copy_luid)
-        if any(w.id == copy_luid for w in _workbooks_in(self.server, self.project)):
-            raise SessionError(
-                f"review copy {copy_luid} is still on the server; delete it in "
-                f"Tableau (project TEMP-CB). The next open sweeps it after 24 hours."
-            )
+
+def open_guard(session: Session, workbook: str) -> None:
+    """Refuse to publish while an earlier review copy is still in the project. The
+    tool deletes nothing on Tableau; the analyst deletes each copy by hand."""
+    left = session.review_copies(workbook)
+    if left:
+        listed = "\n".join(f"  {w.name}: {w.webpage_url}" for w in left)
+        raise SessionError(
+            "delete these review copies in Tableau first (project TEMP-CB), "
+            f"then run close and open again:\n{listed}"
+        )
 
 
 def _run(args: list[str]) -> None:
@@ -1475,7 +1477,7 @@ def _open(a) -> int:
         snapdir = new_snapshot_dir(checks["workbook"], at)
     with server.auth.sign_in(auth):
         session = Session(server, checks["review_project_luid"], auth=auth)
-        print("swept:", session.sweep(checks["workbook"]) or "nothing")
+        open_guard(session, checks["workbook"])
         live_updated = server.workbooks.get_by_id(checks["workbook_luid"]).updated_at
         live_at = live_updated.isoformat() if live_updated else ""
         if resume is not None and resume.live_updated_at != live_at:
@@ -1587,6 +1589,7 @@ def _export(a) -> int:
 
 
 def _close(a) -> int:
+    """Read-only: the session closes once the analyst has deleted the copy."""
     checks = _load_checks(a.checks)
     snapdir = latest_snapshot(checks["workbook"])
     m = read_manifest(snapdir / "manifest.json")
@@ -1594,12 +1597,21 @@ def _close(a) -> int:
         raise SessionError("this snapshot has no review copy; open a new session")
     server, auth = _server()
     with server.auth.sign_in(auth):
-        Session(server, checks["review_project_luid"]).close(m.copy_luid)
+        session = Session(server, checks["review_project_luid"])
+        left = [
+            w for w in session.review_copies(checks["workbook"]) if w.id == m.copy_luid
+        ]
+    if left:
+        print(
+            "delete the review copy in Tableau, then run close again:\n"
+            f"  {left[0].name}: {left[0].webpage_url}"
+        )
+        return 1
     m.closed = True
     write_manifest(snapdir / "manifest.json", m)
     for p in (snapdir / "live.twbx", snapdir / "review.twbx"):
         p.unlink(missing_ok=True)
-    print(f"closed: review copy {m.copy_luid} deleted and confirmed gone")
+    print(f"closed: review copy {m.copy_luid} is gone")
     return 0
 
 
