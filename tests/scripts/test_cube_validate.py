@@ -1629,3 +1629,40 @@ def test_a_dimension_showing_a_star_is_an_attribute_not_part_of_the_grain(tmp_pa
         ({"School Name": "Beta"}, "match"),
     ]
     assert cube.queries[0]["dimensions"] == ["demo.school"]
+
+
+def test_a_cube_error_marks_its_cells_incomplete_and_explain_goes_on(tmp_path):
+    c = _checks(tmp_path)
+    states = {"s": {"state": {"dashboard": "Overview"}, "status": "ok", "sheets": {}}}
+    cells = [
+        cv.Cell(
+            "Overview - Table",
+            "s",
+            {"School Name": "Alpha"},
+            "Avg Score",
+            "48.50",
+            48.5,
+            49.0,
+            40,
+            "mismatch",
+        ),
+        cv.Cell(
+            "Overview - Table", "s", {}, "Avg Score", "48.50", 48.5, 48.5, 40, "match"
+        ),
+    ]
+
+    def boom(q):
+        raise cv.CubeError("No pre-aggregation partitions were built yet")
+
+    live = cv.Live(
+        rows=lambda ds, sql: [{"g0": "Alpha", "m": 48.5}],
+        modified=lambda ds: None,
+        cube_now=boom,
+    )
+
+    def run(ds, sql):
+        return [{"g0": "Alpha", "m": 48.5}] if "group by" in sql else [{"m": 48.5}]
+
+    cv.explain_cells(cells, c, states, {}, run, lambda q: ([], []), live)
+    assert cells[0].verdict == "incomplete" and cells[0].why.startswith("Cube error")
+    assert cells[1].verdict == "pass"

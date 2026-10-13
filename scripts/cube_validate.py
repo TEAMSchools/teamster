@@ -1299,88 +1299,133 @@ def explain_cells(
         mapped, checks, states, fields, run_extract, defaults, sheet_filters
     )
     for (sname, state, grain, mname), batch in batches.items():
-        sheet = checks["sheets"][sname]
-        meas = sheet.measures[mname]
-        if not trusted.get((sname, mname, grain)):
-            for c in batch:
-                c.verdict = "incomplete"
-                c.why = "extract SQL does not reproduce Tableau for this measure"
-            continue
-        entry = states[state]
-        dflt = (defaults or {}).get(entry["state"]["dashboard"])
-        saved = (sheet_filters or {}).get(sname, [])
-        dflt = sheet_defaults(dflt, saved)
-        saved_where, saved_cube, _ = sheet_conditions(saved, entry, checks)
-        where = state_where(entry, checks, fields, sheet, defaults=dflt) + saved_where
-        base = (
-            state_filters(entry, checks, dflt)[0]
-            + hard_filters(checks, sheet.datasource)
-            + saved_cube
-        )
-        sql = extract_sql(sheet, meas, list(grain), where)
-        ext = apply_calc(
-            meas, extract_values(run_extract(sheet.datasource, sql), len(grain)), 1.0
-        )
-        live_v, cube_now, cube_at, table_at = None, None, None, None
-        if live is not None:
-            live_v = apply_calc(
-                meas, extract_values(live.rows(sheet.datasource, sql), len(grain)), 1.0
+        try:
+            _explain_batch(
+                sname,
+                state,
+                grain,
+                mname,
+                batch,
+                checks,
+                states,
+                fields,
+                run_extract,
+                load,
+                live,
+                defaults,
+                sheet_filters,
+                trusted,
+                sides,
             )
-            q = {
-                "measures": [meas.cube],
-                "dimensions": [sheet.dims[d].cube for d in grain],
-                "filters": base,
-                "limit": CUBE_LIMIT,
-            }
-            crows, cube_at = live.cube_now(q)
-            cube_now = _cube_values(crows, sheet, meas, grain)
-            table_at = live.modified(sheet.datasource)
-        variants = [
-            _variant(v, sheet, meas, grain, where, base, run_extract, load)
-            for v in meas.variants
-        ]
+        except CubeError as err:
+            # One query Cube cannot answer (an unbuilt rollup, a row limit) leaves
+            # only its own cells undecided.
+            for c in batch:
+                c.verdict, c.why = "incomplete", f"Cube error: {err}"[:300]
+
+
+def _explain_batch(
+    sname,
+    state,
+    grain,
+    mname,
+    batch,
+    checks,
+    states,
+    fields,
+    run_extract,
+    load,
+    live,
+    defaults,
+    sheet_filters,
+    trusted,
+    sides,
+) -> None:
+    """Judge one sheet, state, grain and measure's mismatched cells."""
+    sheet = checks["sheets"][sname]
+    meas = sheet.measures[mname]
+    if not trusted.get((sname, mname, grain)):
         for c in batch:
-            k = _key(c, grain, sheet)
-            c.extract = ext.get(k)
-            if not _reproduces(c.extract, c, meas):
+            c.verdict = "incomplete"
+            c.why = "extract SQL does not reproduce Tableau for this measure"
+        return
+    entry = states[state]
+    dflt = (defaults or {}).get(entry["state"]["dashboard"])
+    saved = (sheet_filters or {}).get(sname, [])
+    dflt = sheet_defaults(dflt, saved)
+    saved_where, saved_cube, _ = sheet_conditions(saved, entry, checks)
+    where = state_where(entry, checks, fields, sheet, defaults=dflt) + saved_where
+    base = (
+        state_filters(entry, checks, dflt)[0]
+        + hard_filters(checks, sheet.datasource)
+        + saved_cube
+    )
+    sql = extract_sql(sheet, meas, list(grain), where)
+    ext = apply_calc(
+        meas, extract_values(run_extract(sheet.datasource, sql), len(grain)), 1.0
+    )
+    live_v, cube_now, cube_at, table_at = None, None, None, None
+    if live is not None:
+        live_v = apply_calc(
+            meas, extract_values(live.rows(sheet.datasource, sql), len(grain)), 1.0
+        )
+        q = {
+            "measures": [meas.cube],
+            "dimensions": [sheet.dims[d].cube for d in grain],
+            "filters": base,
+            "limit": CUBE_LIMIT,
+        }
+        crows, cube_at = live.cube_now(q)
+        cube_now = _cube_values(crows, sheet, meas, grain)
+        table_at = live.modified(sheet.datasource)
+    variants = [
+        _variant(v, sheet, meas, grain, where, base, run_extract, load)
+        for v in meas.variants
+    ]
+    for c in batch:
+        k = _key(c, grain, sheet)
+        c.extract = ext.get(k)
+        if not _reproduces(c.extract, c, meas):
+            c.verdict, c.why = (
+                "incomplete",
+                "extract SQL does not reproduce this cell",
+            )
+            continue
+        if cube_now is not None:
+            # Judge Cube as it is now: compare may have run before its refresh.
+            c.cube = cube_now.get(k)
+            if _reproduces(c.cube, c, meas):
                 c.verdict, c.why = (
-                    "incomplete",
-                    "extract SQL does not reproduce this cell",
+                    "pass",
+                    "Cube matches Tableau after its latest refresh",
                 )
                 continue
-            if cube_now is not None:
-                # Judge Cube as it is now: compare may have run before its refresh.
-                c.cube = cube_now.get(k)
-                if _reproduces(c.cube, c, meas):
-                    c.verdict, c.why = (
-                        "pass",
-                        "Cube matches Tableau after its latest refresh",
-                    )
-                    continue
-            if live_v is not None and matches_raw(live_v.get(k), c.cube):
-                c.verdict = "pass"
-                c.why = "timing: the extract is older than Cube; Cube matches the live table"
-                continue
-            for names, dash, cube in variants:
-                d_v = c.extract if dash is None else dash.get(k)
-                c_v = c.cube if cube is None else cube.get(k)
-                if matches_raw(c_v, d_v):
-                    c.explained_by, c.variant = list(names), d_v
-                    c.cube_variant = None if cube is None else c_v
-                    break
-            c.verdict = cell_verdict(c, sides, meas)
-            if c.verdict == "fail" and cube_at and table_at:
-                if cube_at < table_at:
-                    c.verdict = "incomplete"
-                    c.why = (
-                        f"Cube's data (refreshed {cube_at:%Y-%m-%d %H:%M}) is older than the live "
-                        f"table (built {table_at:%Y-%m-%d %H:%M}); re-run explain after Cube refreshes"
-                    )
-                else:
-                    c.why = (
-                        f"Cube refreshed {cube_at:%Y-%m-%d %H:%M}; the live table was built "
-                        f"{table_at:%Y-%m-%d %H:%M}"
-                    )
+        if live_v is not None and matches_raw(live_v.get(k), c.cube):
+            c.verdict = "pass"
+            c.why = (
+                "timing: the extract is older than Cube; Cube matches the live table"
+            )
+            continue
+        for names, dash, cube in variants:
+            d_v = c.extract if dash is None else dash.get(k)
+            c_v = c.cube if cube is None else cube.get(k)
+            if matches_raw(c_v, d_v):
+                c.explained_by, c.variant = list(names), d_v
+                c.cube_variant = None if cube is None else c_v
+                break
+        c.verdict = cell_verdict(c, sides, meas)
+        if c.verdict == "fail" and cube_at and table_at:
+            if cube_at < table_at:
+                c.verdict = "incomplete"
+                c.why = (
+                    f"Cube's data (refreshed {cube_at:%Y-%m-%d %H:%M}) is older than the live "
+                    f"table (built {table_at:%Y-%m-%d %H:%M}); re-run explain after Cube refreshes"
+                )
+            else:
+                c.why = (
+                    f"Cube refreshed {cube_at:%Y-%m-%d %H:%M}; the live table was built "
+                    f"{table_at:%Y-%m-%d %H:%M}"
+                )
 
 
 ORDER = (
