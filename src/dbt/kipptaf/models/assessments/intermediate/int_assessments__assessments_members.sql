@@ -42,6 +42,50 @@ with
             {{ ref("stg_google_appsheet__illuminate_assessments_extension") }} as iae
             on a.assessment_id = iae.assessment_id
         left join agl_dedup as agl on a.assessment_id = agl.assessment_id
+
+        union all
+
+        -- Apex is Miami-only, so it is internal and Florida without a tag;
+        -- module, scope, and grade stay null until it is tagged in AppSheet
+        select
+            assessment_id,
+            title,
+
+            academic_year + 1 as academic_year,
+
+            academic_year as academic_year_clean,
+
+            cast(null as string) as scope,
+            cast(null as string) as creator_first_name,
+            cast(null as string) as creator_last_name,
+
+            band_set_id as performance_band_set_id,
+
+            cast(null as string) as assessment_type,
+            cast(null as string) as tags,
+            cast(null as string) as module_code,
+            cast(null as string) as module_type,
+            cast(null as int64) as module_sequence,
+            cast(null as int64) as tagged_grade_level_id,
+
+            'Miami' as regions_assessed,
+
+            ['Miami'] as regions_assessed_array,
+
+            cast(null as string) as regions_report_card,
+            cast(null as string) as regions_progress_report,
+
+            'apex' as `source`,
+
+            administered_at,
+            subject_area,
+
+            cast(null as int64) as grade_level_id,
+
+            true as is_internal_assessment,
+            true as is_florida_assessment,
+        from {{ ref("int_focus__apex_assessments") }}
+        where academic_year >= 2026
     ),
 
     canonical as (
@@ -70,8 +114,10 @@ with
             grade_level_id,
             is_internal_assessment,
 
+            -- untagged Apex assessments share null tags, so grouping them would
+            -- merge unrelated assessments; each is its own canonical group
             if(
-                is_internal_assessment,
+                is_internal_assessment and source = 'illuminate',
                 first_value(assessment_id) over canonical_w,
                 assessment_id
             ) as canonical_assessment_id,

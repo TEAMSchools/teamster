@@ -1,11 +1,11 @@
 models:
   - name: int_assessments__scaffold
     description: >-
-      One row per (Illuminate student, assessment). Used as the join scaffold
-      for response and score data and as the source for
-      assessment-administration bridges. Unions three branches. The internal
-      branch (`is_internal_assessment` true, `is_replacement` false) is the
-      "expected to take" grain — each internal assessment fanned out to its
+      One row per (student, source, assessment). Used as the join scaffold for
+      response and score data and as the source for assessment-administration
+      bridges. Unions four branches. The internal branch
+      (`is_internal_assessment` true, `is_replacement` false) is the "expected
+      to take" grain — each internal assessment fanned out to its
       `regions_assessed_array` regions and matched to course enrollments in that
       region and subject whose enrollment window contains `administered_at`.
       Grades K-8 (assessment `grade_level_id` 9 and below) also require the
@@ -23,6 +23,12 @@ models:
       external branch (`is_internal_assessment` false) adds actual sittings of
       every non-internal assessment. The replacement and external branches carry
       no course-enrollment columns and take school from the Illuminate session.
+      The Apex branch (`source` apex) adds 1 row per student tested on a Miami
+      Apex assessment, keyed by the session scored. It takes its section from
+      the student's Miami course enrollment in the assessment's subject that is
+      open on the test date, only when exactly 1 matches; otherwise the section
+      columns are null and school and grade come from the student's enrollment
+      on that date. `section_match_method` records which case applied.
     config:
       materialized: table
       meta:
@@ -57,22 +63,36 @@ models:
           config:
             severity: warn
     columns:
+      - name: section_match_method
+        data_type: string
+        description: >-
+          How an Apex row's section was resolved — single (exactly 1 open
+          section in the subject on the test date, used), multiple (more than 1,
+          none used), or none (no open section). Null on Illuminate rows.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [single, multiple, none]
+          - not_null:
+              config:
+                where: source = 'apex'
       - name: source
         description: >-
           System the assessment comes from (`illuminate` or `apex`). Part of the
           key, because the two systems' assessment ids can collide.
       - name: illuminate_student_id
         data_type: int64
-        description: Illuminate student id.
+        description: Illuminate student id; null on Apex rows.
       - name: student_number
         data_type: int64
         description: >-
           Student number. Illuminate `local_student_id` on the K-8 internal,
           replacement, and external branches; the course enrollment's student
-          number on the grades 9-12 internal branch.
+          number on the grades 9-12 internal branch; the Focus student id, which
+          equals the student number, on the Apex branch.
       - name: assessment_id
         data_type: int64
-        description: Illuminate assessment id (member grain).
+        description: Assessment id within `source` (member grain).
       - name: title
         data_type: string
         description: >-
@@ -224,3 +244,200 @@ models:
           administered date, or grade level join
           int_assessments__assessments_canonical via this key (internal rows
           only).
+
+unit_tests:
+  - name: test_apex_section_match_methods
+    description: >-
+      Three students tested on 1 untagged Apex Math assessment. One has exactly
+      1 Miami Math section open on the test date and takes its section; one has
+      2 and gets no section but keeps the school and grade from enrollment; one
+      has none open (a closed section and a Text Study section do not count). A
+      standard-level result row adds no scaffold row.
+    model: int_assessments__scaffold
+    given:
+      - input: ref('int_assessments__assessments_members')
+        format: sql
+        rows: |
+          select
+              'apex' as source,
+              9001 as assessment_id,
+              'Apex Math Check' as title,
+              2027 as academic_year,
+              2026 as academic_year_clean,
+              date('2026-09-28') as administered_at,
+              'Mathematics' as subject_area,
+              7 as performance_band_set_id,
+              cast(null as string) as scope,
+              cast(null as string) as module_type,
+              cast(null as string) as module_code,
+              9001 as canonical_assessment_id,
+              cast(null as int64) as tagged_grade_level_id,
+              cast(null as int64) as grade_level_id,
+              ['Miami'] as regions_assessed_array,
+              true as is_internal_assessment
+      - input: ref('int_focus__apex_results')
+        format: sql
+        rows: |
+          select
+              101 as student_number,
+              9001 as assessment_id,
+              1 as session_id,
+              date('2026-10-01') as date_taken,
+              'overall' as response_type
+          union all
+          select 101, 9001, 1, date('2026-10-01'), 'standard'
+          union all
+          select 102, 9001, 2, date('2026-10-01'), 'overall'
+          union all
+          select 103, 9001, 3, date('2026-10-01'), 'overall'
+      - input: ref('int_assessments__course_enrollments')
+        rows:
+          - {
+              student_number: 101,
+              _dbt_source_project: kippmiami,
+              region: Miami,
+              subject_area: Mathematics,
+              discipline: Math,
+              cc_dcid: 5001,
+              powerschool_school_id: 30200803,
+              grade_level_id: 7,
+              cc_dateenrolled: 2026-08-10,
+              cc_dateleft: 2027-06-01,
+            }
+          - {
+              student_number: 101,
+              _dbt_source_project: kippmiami,
+              region: Miami,
+              subject_area: Text Study,
+              discipline: ELA,
+              cc_dcid: 5010,
+              powerschool_school_id: 30200803,
+              grade_level_id: 7,
+              cc_dateenrolled: 2026-08-10,
+              cc_dateleft: 2027-06-01,
+            }
+          - {
+              student_number: 102,
+              _dbt_source_project: kippmiami,
+              region: Miami,
+              subject_area: Mathematics,
+              discipline: Math,
+              cc_dcid: 5002,
+              powerschool_school_id: 30200804,
+              grade_level_id: 7,
+              cc_dateenrolled: 2026-08-10,
+              cc_dateleft: 2027-06-01,
+            }
+          - {
+              student_number: 102,
+              _dbt_source_project: kippmiami,
+              region: Miami,
+              subject_area: Mathematics,
+              discipline: Math,
+              cc_dcid: 5003,
+              powerschool_school_id: 30200804,
+              grade_level_id: 7,
+              cc_dateenrolled: 2026-09-01,
+              cc_dateleft: 2027-06-01,
+            }
+          - {
+              student_number: 103,
+              _dbt_source_project: kippmiami,
+              region: Miami,
+              subject_area: Mathematics,
+              discipline: Math,
+              cc_dcid: 5004,
+              powerschool_school_id: 30200804,
+              grade_level_id: 8,
+              cc_dateenrolled: 2026-08-10,
+              cc_dateleft: 2026-09-15,
+            }
+      - input: ref('int_extracts__student_enrollments')
+        rows:
+          - {
+              student_number: 101,
+              _dbt_source_project: kippmiami,
+              schoolid: 30200803,
+              grade_level: 6,
+              entrydate: 2026-08-10,
+              exitdate: 2027-06-05,
+            }
+          - {
+              student_number: 102,
+              _dbt_source_project: kippmiami,
+              schoolid: 30200804,
+              grade_level: 6,
+              entrydate: 2026-08-10,
+              exitdate: 2027-06-05,
+            }
+          - {
+              student_number: 103,
+              _dbt_source_project: kippmiami,
+              schoolid: 30200804,
+              grade_level: 7,
+              entrydate: 2026-08-10,
+              exitdate: 2027-06-05,
+            }
+      - input: ref('stg_illuminate__dna_assessments__assessment_grade_levels')
+        rows: []
+      - input: ref('stg_google_sheets__people__locations')
+        rows: []
+      - input: ref('int_illuminate__student_session_aff')
+        rows: []
+      - input: ref('stg_illuminate__public__students')
+        rows: []
+      - input: ref('stg_illuminate__dna_assessments__students_assessments')
+        rows: []
+    expect:
+      rows:
+        - {
+            student_number: 101,
+            source: apex,
+            assessment_id: 9001,
+            academic_year: 2026,
+            region: Miami,
+            _dbt_source_project: kippmiami,
+            powerschool_school_id: 30200803,
+            grade_level_id: 7,
+            cc_dcid: 5001,
+            cc_source_project: kippmiami,
+            discipline: Math,
+            student_assessment_id: 1,
+            section_match_method: single,
+            is_internal_assessment: true,
+            is_replacement: false,
+          }
+        - {
+            student_number: 102,
+            source: apex,
+            assessment_id: 9001,
+            academic_year: 2026,
+            region: Miami,
+            _dbt_source_project: kippmiami,
+            powerschool_school_id: 30200804,
+            grade_level_id: 7,
+            cc_dcid: null,
+            cc_source_project: null,
+            discipline: null,
+            student_assessment_id: 2,
+            section_match_method: multiple,
+            is_internal_assessment: true,
+            is_replacement: false,
+          }
+        - {
+            student_number: 103,
+            source: apex,
+            assessment_id: 9001,
+            academic_year: 2026,
+            region: Miami,
+            _dbt_source_project: kippmiami,
+            powerschool_school_id: 30200804,
+            grade_level_id: 8,
+            cc_dcid: null,
+            cc_source_project: null,
+            discipline: null,
+            student_assessment_id: 3,
+            section_match_method: none,
+            is_internal_assessment: true,
+            is_replacement: false,
+          }

@@ -22,7 +22,7 @@ with
         left join
             {{ ref("stg_illuminate__dna_assessments__assessment_grade_levels") }} as agl
             on a.assessment_id = agl.assessment_id
-        where a.is_internal_assessment
+        where a.is_internal_assessment and a.source = 'illuminate'
     ),
 
     -- One row per (powerschool_school_id, region). Sources from
@@ -164,6 +164,78 @@ with
             cc_source_project,
         from internal_assessments_ranked
         where rn = 1
+    ),
+
+    apex_tested as (
+        select
+            r.student_number,
+            r.session_id,
+            r.date_taken,
+
+            a.source,
+            a.assessment_id,
+            a.title,
+            a.subject_area,
+            a.academic_year_clean,
+            a.administered_at,
+            a.performance_band_set_id,
+            a.scope,
+            a.module_type,
+            a.module_code,
+            a.canonical_assessment_id,
+        from {{ ref("int_focus__apex_results") }} as r
+        inner join
+            {{ ref("int_assessments__assessments_members") }} as a
+            on r.assessment_id = a.assessment_id
+        where r.response_type = 'overall' and a.source = 'apex'
+    ),
+
+    -- section fields are kept only when exactly 1 section matches
+    apex_sections as (
+        select
+            t.student_number,
+            t.assessment_id,
+
+            count(*) as n_sections,
+
+            if(count(*) = 1, any_value(ce.cc_dcid), null) as cc_dcid,
+            if(
+                count(*) = 1, any_value(ce._dbt_source_project), null
+            ) as cc_source_project,
+            if(count(*) = 1, any_value(ce.discipline), null) as discipline,
+            if(
+                count(*) = 1, any_value(ce.powerschool_school_id), null
+            ) as powerschool_school_id,
+            if(count(*) = 1, any_value(ce.grade_level_id), null) as grade_level_id,
+            if(count(*) = 1, any_value(ce.cc_dateenrolled), null) as cc_dateenrolled,
+            if(count(*) = 1, any_value(ce.cc_dateleft), null) as cc_dateleft,
+        from apex_tested as t
+        inner join
+            {{ ref("int_assessments__course_enrollments") }} as ce
+            on t.student_number = ce.student_number
+            and t.subject_area = ce.subject_area
+            and t.date_taken >= ce.cc_dateenrolled
+            and t.date_taken < ce.cc_dateleft
+        where ce._dbt_source_project = 'kippmiami' and ce.cc_dcid is not null
+        group by t.student_number, t.assessment_id
+    ),
+
+    -- school and grade fallback when no single section matches
+    apex_enrollments as (
+        select
+            t.student_number,
+            t.assessment_id,
+
+            se.schoolid,
+
+            se.grade_level + 1 as grade_level_id,
+        from apex_tested as t
+        inner join
+            {{ ref("int_extracts__student_enrollments") }} as se
+            on t.student_number = se.student_number
+            and t.date_taken >= se.entrydate
+            and t.date_taken < se.exitdate
+        where se._dbt_source_project = 'kippmiami'
     )
 
 select
@@ -196,6 +268,8 @@ select
 
     true as is_internal_assessment,
     false as is_replacement,
+
+    cast(null as string) as section_match_method,
 from internal_assessments_deduped as ia
 left join
     {{ ref("stg_illuminate__dna_assessments__students_assessments") }} as sa
@@ -243,6 +317,8 @@ select
 
     true as is_internal_assessment,
     true as is_replacement,
+
+    cast(null as string) as section_match_method,
 from {{ ref("int_assessments__assessments_members") }} as a
 inner join
     {{ ref("stg_illuminate__dna_assessments__students_assessments") }} as sa
@@ -258,6 +334,7 @@ inner join
 left join school_to_region as str on ssa.site_id = str.powerschool_school_id
 where
     a.is_internal_assessment
+    and a.source = 'illuminate'
     and a.subject_area in ('Text Study', 'Mathematics', 'Social Studies', 'Science')
     -- grade_level_id 9 = grade 8 (grade level = grade_level_id - 1)
     and a.grade_level_id <= 9
@@ -303,6 +380,8 @@ select
 
     false as is_internal_assessment,
     false as is_replacement,
+
+    cast(null as string) as section_match_method,
 from {{ ref("int_assessments__assessments_members") }} as a
 inner join
     {{ ref("stg_illuminate__dna_assessments__students_assessments") }} as sa
@@ -316,3 +395,59 @@ inner join
     and ssa.rn_student_session_desc = 1
 left join school_to_region as str on ssa.site_id = str.powerschool_school_id
 where not a.is_internal_assessment
+
+union all
+
+select
+    cast(null as int64) as illuminate_student_id,
+
+    t.student_number,
+    t.source,
+    t.assessment_id,
+    t.title,
+    t.subject_area,
+    t.academic_year_clean as academic_year,
+    t.administered_at,
+    t.performance_band_set_id,
+
+    coalesce(sc.powerschool_school_id, ae.schoolid) as powerschool_school_id,
+
+    'Miami' as region,
+
+    coalesce(sc.grade_level_id, ae.grade_level_id) as grade_level_id,
+
+    t.scope,
+    t.module_type,
+    t.module_code,
+
+    sc.discipline,
+    sc.cc_dcid,
+    sc.cc_source_project,
+    sc.cc_dateenrolled,
+    sc.cc_dateleft,
+
+    'kippmiami' as _dbt_source_project,
+
+    t.canonical_assessment_id,
+    t.session_id as student_assessment_id,
+    t.date_taken,
+
+    true as is_internal_assessment,
+    false as is_replacement,
+
+    case
+        when sc.n_sections is null
+        then 'none'
+        when sc.n_sections = 1
+        then 'single'
+        else 'multiple'
+    end as section_match_method,
+from apex_tested as t
+left join
+    apex_sections as sc
+    on t.student_number = sc.student_number
+    and t.assessment_id = sc.assessment_id
+left join
+    apex_enrollments as ae
+    on t.student_number = ae.student_number
+    and t.assessment_id = ae.assessment_id
