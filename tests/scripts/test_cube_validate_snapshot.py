@@ -907,3 +907,36 @@ def test_a_saved_range_with_no_bounds_filters_nothing():
         "included-values='in-range' /></view></table></worksheet>"
     )
     assert snap._saved_filters(w, {}, {}) == []
+
+
+def test_only_mapped_sheets_without_table_calcs_judge_a_filter():
+    parent = {"Mapped": b"a\r\n1\r\n", "Running": b"r\r\n5\r\n"}
+    # A running sum changes between identical calls; the mapped sheet did not change.
+    current = {"Mapped": b"a\r\n1\r\n", "Running": b"r\r\n6\r\n"}
+    assert snap.filter_ignored(parent, current, False, judged={"Mapped"}) is True
+    # Nothing to judge: the export cannot say the filter was ignored.
+    assert snap.filter_ignored(parent, current, False, judged=set()) is False
+
+
+def test_judged_sheets_are_mapped_and_free_of_table_calcs():
+    checks = {
+        "sheets": {
+            "A": {"measures": {"M": {"cube": "x", "sql": "y"}}},
+            "B": {
+                "measures": {
+                    "P": {"cube": "x", "sql": "y", "table_calc": "running_sum"}
+                }
+            },
+            "C": {"datasource": "d"},  # a stub the map step has not filled in
+        }
+    }
+    assert snap.judged_sheets(checks) == {"A"}
+
+
+def test_filtered_states_need_a_judged_sheet_on_their_dashboard():
+    wb = snap.read_workbook(TWB)
+    default = snap.State("Overview")
+    north = snap.State("Overview", filters=(("region", "North"),))
+    assert snap.unjudged([default, north], wb, set()) == ["Overview"]
+    assert snap.unjudged([default, north], wb, {"Overview - Table"}) == []
+    assert snap.unjudged([default], wb, set()) == []

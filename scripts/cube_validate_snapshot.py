@@ -809,14 +809,43 @@ def csv_rows(data: bytes) -> int:
 
 
 def filter_ignored(
-    parent: dict[str, bytes], current: dict[str, bytes], covers_all: bool
+    parent: dict[str, bytes],
+    current: dict[str, bytes],
+    covers_all: bool,
+    judged: set[str] | None = None,  # None judges every exported sheet
 ) -> bool:
     """A filter whose state exports exactly what its parent did, though it should not."""
-    if covers_all or not current:
+    if covers_all:
         return False
-    if all(csv_rows(v) == 0 for v in current.values()):
+    mine = {s: b for s, b in current.items() if judged is None or s in judged}
+    if not mine or all(csv_rows(b) == 0 for b in mine.values()):
         return False
-    return all(current.get(s) == parent.get(s) for s in current)
+    return all(mine[s] == parent.get(s) for s in mine)
+
+
+def judged_sheets(checks: dict) -> set[str]:
+    """Sheets whose exports can show that a filter took effect: mapped (they carry
+    measures) and free of table calculations, whose values change between
+    identical calls."""
+    return {
+        name
+        for name, s in (checks.get("sheets") or {}).items()
+        if (s or {}).get("measures")
+        and not any((m or {}).get("table_calc") for m in s["measures"].values())
+    }
+
+
+def unjudged(states, wb: Workbook, judged: set[str]) -> list[str]:
+    """Dashboards with filtered states but no sheet that can judge them."""
+    return sorted(
+        {
+            st.dashboard
+            for st in states
+            if (st.filters or st.params)
+            and not st.click
+            and not set(wb.dashboards.get(st.dashboard, [])) & judged
+        }
+    )
 
 
 def parent_of(state: State) -> State:
@@ -1088,7 +1117,7 @@ def _read_state(snapdir: Path, entry: dict | None) -> dict[str, bytes]:
 
 
 def export_state(
-    session, manifest, snapdir, wb, state, all_values, covers, dims_for
+    session, manifest, snapdir, wb, state, all_values, covers, dims_for, judged=None
 ) -> dict:
     """Export one state's sheets. covers(state) says whether the state's last filter
     keeps every student its parent has, so an unchanged export is expected."""
@@ -1128,7 +1157,7 @@ def export_state(
     if (state.filters or state.params) and not state.click:
         parent = manifest.states.get(parent_of(state).id)
         covered = bool(state.filters) and not state.params and covers(state)
-        if filter_ignored(_read_state(snapdir, parent), data, covered):
+        if filter_ignored(_read_state(snapdir, parent), data, covered, judged):
             entry["status"] = "filter_ignored"
     return entry
 
@@ -1429,6 +1458,13 @@ def _open(a) -> int:
 
 
 def _export_all(session, m, snapdir, wb, checks, states) -> None:
+    judged = judged_sheets(checks)
+    bad = unjudged(states, wb, judged)
+    if bad:
+        raise SessionError(
+            f"map a sheet on {', '.join(bad)} before exporting filtered states: "
+            "only a mapped sheet without table calculations shows a filter took effect"
+        )
     all_values = _value_maps(m, snapdir)
     dims_for = {
         s: list((v.get("dims") or {})) for s, v in (checks.get("sheets") or {}).items()
@@ -1438,7 +1474,7 @@ def _export_all(session, m, snapdir, wb, checks, states) -> None:
         for state in sorted(states, key=lambda s: (len(s.filters), s.id)):
             session.check_refresh(m.workbook_luid, m.live_updated_at)
             m.states[state.id] = export_state(
-                session, m, snapdir, wb, state, all_values, covers, dims_for
+                session, m, snapdir, wb, state, all_values, covers, dims_for, judged
             )
             write_manifest(snapdir / "manifest.json", m)
             print(f"  {state.id}: {m.states[state.id]['status']}")
