@@ -2,20 +2,29 @@ models:
   - name: stg_powerschool__cc
     description:
       This table maintains the student schedules. It contains information such
-      as Section ID, Student ID, Term ID and Teacher ID. Carries a frozen
-      historical corpus of PowerSchool double-writes — duplicate rows for the
-      same student, section, and dateleft combination. A warn-level uniqueness
-      test on those three columns surfaces them.
+      as Section ID, Student ID, Term ID and Teacher ID. PowerSchool sometimes
+      writes the same enrollment twice. Two warning tests list those duplicates
+      for cleanup in PowerSchool — one on student, section, and date left, one
+      on student, section, and date enrolled.
+      base_powerschool__course_enrollments removes them before anything
+      downstream reads cc.
     data_tests:
-      # TODO(#3915): severity: warn intentional — 24 historical PS double-write
-      # groups (frozen corpus, AY <= 2023). Restore to error when Ops cleanup
-      # in #3915 completes.
+      # Permanent warnings: the Ops cleanup worklist for PowerSchool
+      # double-writes. The dedupe lives in base_powerschool__course_enrollments.
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
               - studentid
               - sectionid
               - dateleft
+          config:
+            severity: warn
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - studentid
+              - sectionid
+              - dateenrolled
           config:
             severity: warn
     columns:

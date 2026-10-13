@@ -269,15 +269,11 @@ stays here is what to do and what not to do.
 - **`int_powerschool__student_enrollment_union`** — retain graduate placeholder
   rows; derived enrollment models and `dim_student_enrollments` stay
   alumni-inclusive. Include `academic_year` in surrogate key inputs.
-- **`stg_powerschool__cc` double-writes** — filter `is_dropped_section` first
-  when date-range joining `base_powerschool__course_enrollments`. Do NOT add
-  defensive dedupes (`qualify row_number() = 1` or `dbt_utils.deduplicate()`)
-  for the residual fan-out. Downgrade the affected mart PK uniqueness test to
-  `severity: warn` with a `TODO(#3915)` so it returns to error when source
-  cleanup completes. `base_powerschool__student_enrollments` date-range joins
-  currently need no tiebreaker. Tracked in
-  [#3900](https://github.com/TEAMSchools/teamster/issues/3900); Ops cleanup in
-  [#3915](https://github.com/TEAMSchools/teamster/issues/3915).
+- **`stg_powerschool__cc` double-writes** — the package
+  `base_powerschool__course_enrollments` already dedupes them, so consumers need
+  no dedupe of their own. A duplicate in a downstream key means a new fan-out:
+  fix that join, and keep the consumer's uniqueness test at error. The
+  `stg_powerschool__cc` warnings stay permanently as the Ops worklist.
 - **`int_people__location_crosswalk`** — consumers joining on an aliased name
   (e.g. `fct_staff_observations` on `gro.school_name`) must use this model.
   Canonical-grain consumers, meaning one row per logical school, use
