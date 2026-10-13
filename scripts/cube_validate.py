@@ -301,6 +301,9 @@ class Dim:
     sql: str
     # Identifies a person: outputs show "a student", or this label, in place of values.
     person: bool | str = False
+    # A regex whose first group is the join key inside the displayed text (Tableau
+    # shows a section as "Teacher - Course - 501"; the key is 501).
+    key: str | None = None
 
 
 @dataclass
@@ -379,7 +382,9 @@ def load_checks(path) -> dict:
     sheets = {}
     for name, s in raw["sheets"].items():
         dims = {
-            c: Dim(d.get("cube"), d.get("sql") or "", d.get("person", False))
+            c: Dim(
+                d.get("cube"), d.get("sql") or "", d.get("person", False), d.get("key")
+            )
             for c, d in (s.get("dims") or {}).items()
         }
         measures = {
@@ -820,7 +825,7 @@ def compare_export(
         fixed = {d: TOTAL for d in totals}
         seen = set()
         for r in rows:
-            k = tuple(norm_dim(r.get(d)) for d in grain)
+            k = tuple(tableau_key(sheet, d, r.get(d)) for d in grain)
             seen.add(k)
             cr = by_key.get(k)
             key = {**{d: r.get(d, "") for d in grain}, **fixed}
@@ -1127,8 +1132,19 @@ def _grain(c: Cell) -> tuple[tuple[str, ...], tuple[str, ...]]:
     )
 
 
-def _key(c: Cell, grain) -> tuple:
-    return tuple(norm_dim(c.key[d]) for d in grain)
+def tableau_key(sheet: SheetMap, caption: str, value) -> str:
+    """The join key in a value Tableau shows: the dimension's key pattern, if any."""
+    dim = sheet.dims.get(caption)
+    if dim is not None and dim.key and isinstance(value, str):
+        if m := re.search(dim.key, value):
+            value = m.group(1) if m.groups() else m.group(0)
+    return norm_dim(value)
+
+
+def _key(c: Cell, grain, sheet: SheetMap | None = None) -> tuple:
+    if sheet is None:
+        return tuple(norm_dim(c.key[d]) for d in grain)
+    return tuple(tableau_key(sheet, d, c.key[d]) for d in grain)
 
 
 def _reproduces(value, c: Cell, meas: Measure) -> bool:
@@ -1167,7 +1183,8 @@ def _trust(
         )
         ext = apply_calc(meas, extract_values(rows, len(grain)), 1.0)
         out[(sname, mname, grain)] = all(
-            _reproduces(ext.get(_key(c, grain)), c, meas) for c in by_state[state]
+            _reproduces(ext.get(_key(c, grain, sheet)), c, meas)
+            for c in by_state[state]
         )
     return out
 
@@ -1313,7 +1330,7 @@ def explain_cells(
             for v in meas.variants
         ]
         for c in batch:
-            k = _key(c, grain)
+            k = _key(c, grain, sheet)
             c.extract = ext.get(k)
             if not _reproduces(c.extract, c, meas):
                 c.verdict, c.why = (

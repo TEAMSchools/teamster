@@ -1524,3 +1524,33 @@ def test_a_measure_names_export_is_pivoted_to_one_column_per_measure():
         {"Module Type": "QA", "Avg. Percent Correct": "36.24", "Mastery": "0.5"},
         {"Module Type": "CRQ", "Mastery": "0.25"},
     ]
+
+
+def test_a_dimension_key_pattern_pulls_the_join_key_out_of_displayed_text(tmp_path):
+    d = json.loads(json.dumps(CHECKS))
+    d["sheets"]["Overview - Table"]["dims"]["Section Number"] = {
+        "cube": "demo.identifier",
+        "sql": "section_number",
+        "key": r"(\d+)$",
+    }
+    c = cv.load_checks(_write(tmp_path, d))
+    sheet = c["sheets"]["Overview - Table"]
+    export = cv.read_export(
+        b'Section Number,Avg Score\r\n"Teacher, A - English 100 - 501",48.50\r\n'
+    )
+
+    def cube(q):
+        return [
+            {
+                "demo.identifier": "501",
+                "demo.avg_score": "48.5",
+                "demo.count_students": "20",
+            }
+        ], []
+
+    cells = cv.compare_export(sheet, "s1", export, cube, [], [], c)
+    assert [x.status for x in cells] == ["match"]
+    assert (
+        cv.tableau_key(sheet, "Section Number", "Teacher, A - English 100 - 501")
+        == "501"
+    )
