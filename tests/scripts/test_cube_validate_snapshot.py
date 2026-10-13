@@ -100,6 +100,56 @@ def test_review_copy_exposes_dashboard_sheets_only():
     assert "<window class='worksheet' name='Scratch Sheet' />" in out
 
 
+def test_review_copy_exposes_only_the_listed_sheets():
+    out = snap.review_copy(TWB, ["Overview"], sheets={"Overview - Detail"})
+    assert "<window class='worksheet' name='Overview - Detail' />" in out
+    assert "<window class='worksheet' hidden='true' name='Overview - Table' />" in out
+
+
+def test_a_state_exports_only_listed_sheets(tmp_path):
+    (tmp_path / "csv").mkdir()
+    wb = snap.read_workbook(TWB)
+    s = FakeSession(lambda sheet, f: b"Region,N\r\nAll,9\r\n")
+    entry = snap.export_state(
+        s,
+        _manifest(),
+        tmp_path,
+        wb,
+        snap.State("Overview"),
+        {},
+        NEVER,
+        {},
+        listed={"Overview - Detail"},
+    )
+    assert list(entry["sheets"]) == ["Overview - Detail"]
+
+
+def test_a_click_exports_its_source_even_when_unlisted(tmp_path):
+    (tmp_path / "csv").mkdir()
+    wb = snap.read_workbook(TWB)
+    s = FakeSession(lambda sheet, f: b"Title,Score\r\nT1,80\r\nT2,20\r\n")
+    state = snap.State("Overview", click=("Table to Detail", "largest"))
+    entry = snap.export_state(
+        s,
+        _manifest(),
+        tmp_path,
+        wb,
+        state,
+        {},
+        NEVER,
+        {"Overview - Table": ["Title"]},
+        listed={"Overview - Detail"},
+    )
+    assert s.calls[0][0] == "Overview - Table"  # the click's source
+    assert list(entry["sheets"]) == ["Overview - Detail"]
+
+
+def test_open_needs_the_sheets_to_export_listed():
+    with pytest.raises(snap.SessionError, match="sheets:"):
+        snap.listed_sheets({})
+    assert snap.listed_sheets({"sheets": {"A": {"datasource": "d"}}}) == {"A"}
+
+
 def test_review_copy_sets_on_empty_all_and_strips_click_filters():
     out = snap.review_copy(TWB, ["Overview"])
     assert "<param name='on-empty' value='all' />" in out

@@ -366,16 +366,34 @@ def _strip_click_filters(text: str, sheet: str) -> str:
     return text[:start] + block + text[end:]
 
 
-def review_copy(twb_text: str, dashboards: list[str]) -> str:
-    """The workbook with each named dashboard's sheets exposed and clicks reproducible."""
+def listed_sheets(checks: dict) -> set[str]:
+    """The sheets a session exports and exposes: those under `sheets:` (a stub
+    entry is enough before mapping). Others, the student-level ones above all,
+    stay hidden on the review copy and are never exported."""
+    listed = set(checks.get("sheets") or {})
+    if not listed:
+        raise SessionError(
+            "list the sheets to export under sheets: in the checks file; "
+            "plan.yml lists each dashboard's sheets"
+        )
+    return listed
+
+
+def review_copy(
+    twb_text: str, dashboards: list[str], sheets: set[str] | None = None
+) -> str:
+    """The workbook with each named dashboard's sheets (only `sheets`, when given)
+    exposed and clicks reproducible."""
     wb = read_workbook(twb_text)
     missing = [d for d in dashboards if d not in wb.dashboards]
     if missing:
         raise ReviewCopyError(f"no dashboard named {', '.join(missing)}")
-    sheets = [s for d in dashboards for s in wb.dashboards[d]]
+    exposed = [
+        s for d in dashboards for s in wb.dashboards[d] if sheets is None or s in sheets
+    ]
     before = _hidden(twb_text)
 
-    out = _expose(twb_text, sheets)
+    out = _expose(twb_text, exposed)
     n_none = out.count("<param name='on-empty' value='none' />")
     out = out.replace(
         "<param name='on-empty' value='none' />",
@@ -394,10 +412,10 @@ def review_copy(twb_text: str, dashboards: list[str]) -> str:
         out = _strip_click_filters(out, s)
 
     after = _hidden(out)
-    still = [s for s in sheets if after.get(s)]
+    still = [s for s in exposed if after.get(s)]
     if still:
         raise ReviewCopyError(f"still hidden: {', '.join(still)}")
-    changed = [s for s in before if s not in sheets and before[s] != after.get(s)]
+    changed = [s for s in before if s not in exposed and before[s] != after.get(s)]
     if changed:
         raise ReviewCopyError(f"other windows changed: {', '.join(changed)}")
     if n_none and "<param name='on-empty' value='all' />" not in out:
@@ -1073,14 +1091,25 @@ def _run(args: list[str]) -> None:
 
 
 def build_review_twbx(
-    live_twbx: Path, out_dir: Path, dashboards: list[str]
+    live_twbx: Path,
+    out_dir: Path,
+    dashboards: list[str],
+    listed: set[str] | None = None,
 ) -> tuple[Path, list[str]]:
     """Edit the live workbook into a review copy and pass the tableau-workbook-xml gates."""
     with zipfile.ZipFile(live_twbx) as z:
         twb_name = next(n for n in z.namelist() if n.endswith(".twb"))
         base = z.read(twb_name).decode("utf-8")
     (out_dir / "base.twb").write_text(base, encoding="utf-8", newline="")
-    review = review_copy(base, dashboards)
+    wb0 = read_workbook(base)
+    sheets = None
+    if listed is not None:
+        sheets = set(listed) | {
+            a.source_sheet
+            for a in wb0.actions
+            if a.kind == "filter" and a.dashboard in dashboards
+        }
+    review = review_copy(base, dashboards, sheets)
     (out_dir / "review.twb").write_text(review, encoding="utf-8", newline="")
     _run(
         [
@@ -1100,7 +1129,9 @@ def build_review_twbx(
         ]
     )
     wb = read_workbook(review)
-    keep = set(dashboards) | {s for d in dashboards for s in wb.dashboards[d]}
+    keep = set(dashboards) | {
+        s for d in dashboards for s in wb.dashboards[d] if sheets is None or s in sheets
+    }
     return out, views_to_hide(review, keep)
 
 
@@ -1146,13 +1177,26 @@ def _read_state(snapdir: Path, entry: dict | None) -> dict[str, bytes]:
 
 
 def export_state(
-    session, manifest, snapdir, wb, state, all_values, covers, dims_for, judged=None
+    session,
+    manifest,
+    snapdir,
+    wb,
+    state,
+    all_values,
+    covers,
+    dims_for,
+    judged=None,
+    listed: set[str] | None = None,
 ) -> dict:
     """Export one state's sheets. covers(state) says whether the state's last filter
     keeps every student its parent has, so an unchanged export is expected."""
     filters = [(k, vf_value(v, all_values.get(k, []))) for k, v in state.filters]
     params = list(state.params)
-    sheets = list(wb.dashboards[state.dashboard])
+
+    def wanted(s: str) -> bool:
+        return listed is None or s in listed
+
+    sheets = [s for s in wb.dashboards[state.dashboard] if wanted(s)]
     click_filters: dict[str, str] = {}
     entry = {
         "state": state.as_dict(),
@@ -1169,7 +1213,9 @@ def export_state(
             )
             filters += [(k, vf_value(v, [])) for k, v in click_filters.items()]
             sheets = [
-                s for s in wb.dashboards[action.target] if s not in action.exclude
+                s
+                for s in wb.dashboards[action.target]
+                if s not in action.exclude and wanted(s)
             ]
         data = {s: session.export_view(s, filters, params) for s in sheets}
     except Exception as e:  # noqa: BLE001 - recorded per state, the run goes on
@@ -1250,6 +1296,7 @@ def _plan(a) -> int:
     )[:2]
     items = plan_states(wb, profiles, trees, tuple(years))
     doc = {
+        "sheets": {d: list(s) for d, s in wb.dashboards.items()},
         "trees": {ds: t.trees for ds, t in trees.items()},
         "cross_cuts": {ds: t.cross_cuts for ds, t in trees.items()},
         "borderline": {ds: [list(b) for b in t.borderline] for ds, t in trees.items()},
@@ -1463,6 +1510,7 @@ def pending(states: list[State], manifest: Manifest) -> list[State]:
 
 def _open(a) -> int:
     checks = _load_checks(a.checks)
+    listed = listed_sheets(checks)
     server, auth = _server()
     at = dt.datetime.now(dt.UTC)
     resume = None
@@ -1495,7 +1543,7 @@ def _open(a) -> int:
         extracts = {
             ds: {**m, "file": f"extract/{m['file']}"} for ds, m in extracts.items()
         }
-        twbx, hidden = build_review_twbx(live, snapdir, checks["dashboards"])
+        twbx, hidden = build_review_twbx(live, snapdir, checks["dashboards"], listed)
         wb = read_workbook(
             (snapdir / "review.twb").read_text(encoding="utf-8", newline="")
         )
@@ -1545,6 +1593,7 @@ def _open(a) -> int:
 
 
 def _export_all(session, m, snapdir, wb, checks, states) -> None:
+    listed = listed_sheets(checks)
     judged = judged_sheets(checks)
     bad = unjudged(states, wb, judged)
     if bad:
@@ -1563,7 +1612,16 @@ def _export_all(session, m, snapdir, wb, checks, states) -> None:
         for state in sorted(states, key=lambda s: (len(s.filters), s.id)):
             session.check_refresh(m.workbook_luid, m.live_updated_at)
             m.states[state.id] = export_state(
-                session, m, snapdir, wb, state, all_values, covers, dims_for, judged
+                session,
+                m,
+                snapdir,
+                wb,
+                state,
+                all_values,
+                covers,
+                dims_for,
+                judged,
+                listed=listed,
             )
             write_manifest(snapdir / "manifest.json", m)
             print(f"  {state.id}: {m.states[state.id]['status']}")
