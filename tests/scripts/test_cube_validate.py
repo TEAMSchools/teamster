@@ -2276,6 +2276,43 @@ def test_extract_sql_that_fails_in_a_batch_after_trust_leaves_it_incomplete(tmp_
     assert cells[0].verdict == "incomplete" and cells[0].why.startswith("RuntimeError")
 
 
+def _fail_with_counts(tmp_path, live_n, cube_n):
+    c = _checks(tmp_path)
+    cell = cv.Cell(
+        "Overview - Table", "s", {}, "Avg Score", "48.50", 48.5, 49.0, 40, "mismatch"
+    )
+    states = {"s": {"state": {"dashboard": "Overview"}, "status": "ok", "sheets": {}}}
+
+    def rows(ds, sql):
+        return [{"n": live_n}] if "as n" in sql and "as m" not in sql else [{"m": 48.0}]
+
+    live = cv.Live(
+        rows=rows,
+        modified=lambda ds: dt.datetime(2026, 10, 9, 10, tzinfo=dt.UTC),
+        cube_now=lambda q: (
+            [{"demo.avg_score": "49.0", "demo.count_students": str(cube_n)}],
+            dt.datetime(2026, 10, 9, 11, tzinfo=dt.UTC),
+        ),
+    )
+    cv.explain_cells(
+        [cell], c, states, {}, lambda ds, sql: [{"m": 48.5}], lambda q: ([], []), live
+    )
+    return cell
+
+
+def test_a_fail_with_different_student_counts_is_a_row_gap(tmp_path):
+    cell = _fail_with_counts(tmp_path, live_n=41, cube_n=40)
+    assert (cell.verdict, cell.gap) == ("fail", "row gap")
+    assert (cell.live, cell.live_students, cell.cube_students) == (48.0, 41, 40)
+    assert cell.why.startswith("row gap: Cube 49, live table 48")
+    assert "students: Cube 40, live table 41" in cell.why
+
+
+def test_a_fail_with_equal_student_counts_is_a_formula_gap(tmp_path):
+    cell = _fail_with_counts(tmp_path, live_n=40, cube_n=40)
+    assert cell.gap == "formula gap" and cell.why.startswith("formula gap")
+
+
 def test_a_measure_reproduced_below_the_rate_is_incomplete(tmp_path):
     c = _checks(tmp_path)
     states = _many_states(2)

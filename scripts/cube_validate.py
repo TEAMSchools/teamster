@@ -822,6 +822,10 @@ class Cell:
     rollups_alone: list[str] = field(default_factory=list)
     routes: bool = False  # Cube's two routes disagree at the shown precision
     reproduces: bool | None = None  # the extract SQL gives Tableau's value
+    live: float | None = None  # the same SQL on the live rpt_ table
+    live_students: int | None = None
+    cube_students: int | None = None
+    gap: str = ""  # "row gap" (student counts differ) or "formula gap"
 
 
 def _int(v) -> int | None:
@@ -1314,6 +1318,25 @@ def extract_values(rows, n_grain) -> dict:
     return out
 
 
+def counts_sql(sheet, grain, where, student) -> str:
+    sel = [f"{sheet.dims[d].sql} as g{i}" for i, d in enumerate(grain)]
+    sel.append(f"count(distinct {student}) as n")
+    # trunk-ignore(bandit/B608): SQL over the dashboard's own extract or rpt_ table; names come from the checks file
+    sql = f"select {', '.join(sel)} from `{EXTRACT_TABLE}`"
+    if where:
+        sql += " where " + " and ".join(f"({w})" for w in where)
+    if grain:
+        sql += " group by " + ", ".join(str(i + 1) for i in range(len(grain)))
+    return sql
+
+
+def extract_counts(rows, n_grain) -> dict[tuple, int | None]:
+    return {
+        tuple(norm_dim(r[f"g{i}"]) for i in range(n_grain)): _int(r.get("n"))
+        for r in rows
+    }
+
+
 def cell_verdict(c, sides, meas) -> str:
     names = set(c.explained_by)
     if not names:
@@ -1515,6 +1538,8 @@ def explain_cells(
         c.verdict, c.why, c.explained_by = None, "", []
         c.extract = c.variant = c.cube_variant = None
         c.reproduces = None
+        c.live = c.live_students = c.cube_students = None
+        c.gap = ""
         sheet = checks["sheets"].get(c.sheet)
         if c.status != "not_comparable" and (
             sheet is None or c.measure not in sheet.measures
@@ -1599,12 +1624,22 @@ def _explain_batch(
     )
     ext = _extract_measure(sheet, meas, grain, where, run_extract)
     live_v, cube_now, cube_at, table_at = None, None, None, None
+    live_n, cube_n = {}, {}
     if live is not None:
         live_v = _extract_measure(sheet, meas, grain, where, live.rows)
         # Same shape as compare's query, so Cube routes it the same way.
         q = cube_query(sheet, grain, [meas.cube, checks["student_count"]], base)
         crows, cube_at = live.cube_now(q)
         cube_now = _cube_values(crows, sheet, meas, grain)
+        student_col = checks.get("student_column", "student_number")
+        live_n = extract_counts(
+            live.rows(sheet.datasource, counts_sql(sheet, grain, where, student_col)),
+            len(grain),
+        )
+        cube_n = {
+            k: _int(r.get(checks["student_count"]))
+            for k, r in _by_key(crows, sheet, grain).items()
+        }
         table_at = live.modified(sheet.datasource)
     variants = [
         _variant(
@@ -1652,18 +1687,27 @@ def _explain_batch(
                 c.cube_variant = None if cube is None else c_v
                 break
         c.verdict = cell_verdict(c, sides, meas)
-        if c.verdict == "fail" and cube_at and table_at:
-            if cube_at < table_at:
-                c.verdict = "incomplete"
-                c.why = (
-                    f"Cube's data (refreshed {cube_at:%Y-%m-%d %H:%M}) is older than the live "
-                    f"table (built {table_at:%Y-%m-%d %H:%M}); re-run explain after Cube refreshes"
-                )
-            else:
-                c.why = (
-                    f"Cube refreshed {cube_at:%Y-%m-%d %H:%M}; the live table was built "
-                    f"{table_at:%Y-%m-%d %H:%M}"
-                )
+        if c.verdict != "fail" or live is None:
+            continue
+        c.live = None if live_v is None else live_v.get(k)
+        c.live_students, c.cube_students = live_n.get(k), cube_n.get(k)
+        if cube_at and table_at and cube_at < table_at:
+            c.verdict = "incomplete"
+            c.why = (
+                f"Cube's data (refreshed {cube_at:%Y-%m-%d %H:%M}) is older than the live "
+                f"table (built {table_at:%Y-%m-%d %H:%M}); re-run explain after Cube refreshes"
+            )
+            continue
+        c.gap = "row gap" if c.live_students != c.cube_students else "formula gap"
+        c.why = (
+            f"{c.gap}: Cube {_fmt(c.cube)}, live table {_fmt(c.live)}; students: "
+            f"Cube {c.cube_students}, live table {c.live_students}"
+        )
+        if cube_at and table_at:
+            c.why += (
+                f" (Cube refreshed {cube_at:%Y-%m-%d %H:%M}, the live table built "
+                f"{table_at:%Y-%m-%d %H:%M})"
+            )
 
 
 ORDER = (
