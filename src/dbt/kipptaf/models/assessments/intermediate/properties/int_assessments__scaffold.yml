@@ -26,11 +26,11 @@ models:
       The Apex branch (`source` apex) adds 1 row per student tested on a Miami
       Apex assessment, keyed by the session scored. It takes its section from
       the student's Miami course enrollment in the assessment's subject that is
-      open on the test date, only when exactly 1 matches; otherwise the section
-      columns are null and school and grade come from the student's enrollment
-      on that date. `section_match_method` records which case applied. Apex rows
-      exist only for students who tested, so completion measured on this model
-      reads 100% for Apex by construction.
+      open on the test date, only when exactly 1 distinct section (cc_dcid)
+      matches; otherwise the section columns are null and school and grade come
+      from the student's enrollment on that date. `section_match_method` records
+      which case applied. Apex rows exist only for students who tested, so
+      completion measured on this model reads 100% for Apex by construction.
     config:
       materialized: table
       meta:
@@ -68,9 +68,11 @@ models:
       - name: section_match_method
         data_type: string
         description: >-
-          How an Apex row's section was resolved — single (exactly 1 open
-          section in the subject on the test date, used), multiple (more than 1,
-          none used), or none (no open section). Null on Illuminate rows.
+          How an Apex row's section was resolved — single (exactly 1 distinct
+          open section, by cc_dcid, in the subject on the test date, used; when
+          that section has overlapping enrollment rows, its dates run from the
+          earliest start to the latest end), multiple (more than 1, none used),
+          or none (no open section). Null on Illuminate rows.
         data_tests:
           - accepted_values:
               arguments:
@@ -254,9 +256,9 @@ unit_tests:
       Miami Math section open on the test date and takes its section; one has 2
       and gets no section but keeps the school and grade from enrollment; one
       has none open (a closed section and a Text Study section do not count);
-      one has 1 section listed twice in course enrollments, which still counts
-      as 1. A standard-level result row and a result from before school year
-      2026 add no scaffold row.
+      one has 1 section on 2 overlapping course-enrollment rows, which counts as
+      1 section spanning the earlier start and the later end. A standard-level
+      result row and a result from before school year 2026 add no scaffold row.
     model: int_assessments__scaffold
     given:
       - input: ref('int_assessments__assessments_members')
@@ -368,6 +370,7 @@ unit_tests:
               region: Miami,
               subject_area: Mathematics,
               discipline: Math,
+              subject_or_course_key: Mathematics,
               cc_dcid: 5005,
               powerschool_school_id: 30200805,
               grade_level_id: 7,
@@ -380,11 +383,12 @@ unit_tests:
               region: Miami,
               subject_area: Mathematics,
               discipline: Math,
+              subject_or_course_key: M1001,
               cc_dcid: 5005,
               powerschool_school_id: 30200805,
               grade_level_id: 7,
-              cc_dateenrolled: 2026-08-10,
-              cc_dateleft: 2027-06-01,
+              cc_dateenrolled: 2026-09-01,
+              cc_dateleft: 2027-06-03,
             }
       - input: ref('int_extracts__student_enrollments')
         rows:
@@ -444,6 +448,8 @@ unit_tests:
             cc_dcid: 5001,
             cc_source_project: kippmiami,
             discipline: Math,
+            cc_dateenrolled: 2026-08-10,
+            cc_dateleft: 2027-06-01,
             student_assessment_id: 1,
             section_match_method: single,
             is_internal_assessment: true,
@@ -461,6 +467,8 @@ unit_tests:
             cc_dcid: null,
             cc_source_project: null,
             discipline: null,
+            cc_dateenrolled: null,
+            cc_dateleft: null,
             student_assessment_id: 2,
             section_match_method: multiple,
             is_internal_assessment: true,
@@ -478,6 +486,8 @@ unit_tests:
             cc_dcid: null,
             cc_source_project: null,
             discipline: null,
+            cc_dateenrolled: null,
+            cc_dateleft: null,
             student_assessment_id: 3,
             section_match_method: none,
             is_internal_assessment: true,
@@ -495,6 +505,8 @@ unit_tests:
             cc_dcid: 5005,
             cc_source_project: kippmiami,
             discipline: Math,
+            cc_dateenrolled: 2026-08-10,
+            cc_dateleft: 2027-06-03,
             student_assessment_id: 5,
             section_match_method: single,
             is_internal_assessment: true,
