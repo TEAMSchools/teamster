@@ -96,11 +96,51 @@ Illuminate assessment ids, so `assessment_id` alone is never a key once Apex
 rows exist.
 
 Every join and grain test on `assessment_id` in the assessment models and their
-consumers adds `source`. The marts fact
-`fct_assessment_scores_enrollment_scoped` hard-codes the literal `'illuminate'`
-into its administration key hash; that becomes the row's `source`. Illuminate
-rows must hash to the same value they do today, so NJ surrogate keys do not
-move.
+consumers adds `source`.
+
+The marts already have a source discriminator, `assessment_type` on
+`dim_assessments` and `dim_assessment_administrations` (`illuminate`, `iready`,
+`star`, …). Apex rows take `assessment_type = 'apex'` there, and the marts get
+no separate `source` column. In `fct_assessment_scores_enrollment_scoped`, Apex
+rows keep `score_source = 'internal'`, and the literal `'illuminate'` hashed
+into the administration key becomes the row's source. Illuminate rows must hash
+to the same value they do today, so NJ surrogate keys do not move.
+`rpt_appsheet__assessments` already has an unrelated `assessment_type` column
+from Illuminate, which is why the intermediates and AppSheet use `source`.
+
+### Conformed names
+
+User decision: the shared assessment intermediates carry no application-specific
+column names on the path Apex rows travel. This project renames them; it is not
+deferred.
+
+| Today                                                     | Conformed                                                                                                                  |
+| --------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `illuminate_student_id` in the rollup and scaffold grains | `source` plus `student_number` (Illuminate's id may stay as a nullable passthrough where an Illuminate-only join needs it) |
+| `powerschool_student_number`                              | `student_number`                                                                                                           |
+| `illuminate_subject_area`                                 | `subject_area`                                                                                                             |
+| `illuminate_grade_level_id`                               | `grade_level_id`                                                                                                           |
+| `illuminate_academic_year`                                | `academic_year` (or dropped where it duplicates one)                                                                       |
+
+Scope: `int_assessments__response_rollup`, `int_assessments__scaffold`,
+`int_assessments__assessments_members`,
+`int_assessments__assessments_canonical`, `int_assessments__course_enrollments`,
+and `int_assessments__resolved_section_enrollments`, plus every reference in
+their consumers (including the marts' `illuminate_subject` joins and
+`rpt_appsheet__assessments.illuminate_grade_level_id`). Run the rename sweep
+over `*.{sql,yml,md}`.
+
+Out of scope for renaming: `int_illuminate__*` and `stg_illuminate__*` (they are
+Illuminate's own models), the AppSheet table name
+`illuminate_assessments_extension`, models off the Apex path
+(`int_assessments__academic_goals`, `__benchmark_scores`, `__state_scores`,
+`dim_assessment_goals`) unless a join to a renamed column forces it, and
+`rn_student_year_illuminate_subject_desc` on the PowerSchool course-enrollment
+models. Where an out-of-scope model joins a renamed column, alias at the join.
+
+Renames change column names in contract-enforced marts only if a mart exposes
+one; none does today, so Cube and Tableau column names are unaffected. Tableau
+workbooks read `rpt_` column names, which must not change.
 
 ### Years
 
@@ -113,9 +153,7 @@ for years Illuminate covers.
 
 Focus `student_id` equals `student_number` for every Apex student (1,493 of
 1,493 matched against Miami 2026-27 enrollments). Apex rows fill
-`powerschool_student_number` with it. `illuminate_student_id` is null for Apex
-rows; any grain or join that uses it needs a source-aware substitute (for
-example `powerschool_student_number` for Apex).
+`student_number` with it (see _Conformed names_).
 
 ### Canonical grouping
 
