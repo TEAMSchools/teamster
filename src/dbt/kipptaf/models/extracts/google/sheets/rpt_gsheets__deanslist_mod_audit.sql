@@ -1,13 +1,13 @@
 with
     progress_report_region as (
-        select iae.assessment_id, progress_report_region,
+        select iae.assessment_id, progress_report_region, 'illuminate' as `source`,
         from {{ ref("stg_google_appsheet__illuminate_assessments_extension") }} as iae
         cross join
             unnest(split(iae.regions_progress_report, ' , ')) as progress_report_region
     ),
 
     report_card_region as (
-        select iae.assessment_id, report_card_region,
+        select iae.assessment_id, report_card_region, 'illuminate' as `source`,
         from {{ ref("stg_google_appsheet__illuminate_assessments_extension") }} as iae
         cross join unnest(split(iae.regions_report_card, ' , ')) as report_card_region
     ),
@@ -46,7 +46,8 @@ with
             and co.grade_level < 5
         left join
             report_card_region as rcr
-            on ar.assessment_id = rcr.assessment_id
+            on ar.source = rcr.source
+            and ar.assessment_id = rcr.assessment_id
             and co.region = rcr.report_card_region
         where
             ar.response_type = 'overall'
@@ -134,7 +135,8 @@ with
             and co.grade_level < 5
         inner join
             progress_report_region as prr
-            on ar.assessment_id = prr.assessment_id
+            on ar.source = prr.source
+            and ar.assessment_id = prr.assessment_id
             and co.region = prr.progress_report_region
         where
             ar.response_type = 'overall'
@@ -181,7 +183,8 @@ with
             and co.grade_level < 5
         inner join
             report_card_region as rcr
-            on ar.assessment_id = rcr.assessment_id
+            on ar.source = rcr.source
+            and ar.assessment_id = rcr.assessment_id
             and co.region = rcr.report_card_region
         where
             ar.response_type = 'standard'

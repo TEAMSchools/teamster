@@ -27,6 +27,8 @@ with
             iae.regions_report_card,
             iae.regions_progress_report,
 
+            'illuminate' as `source`,
+
             coalesce(iae.administered_at, a.administered_at) as administered_at,
             coalesce(iae.subject, a.subject_area) as subject_area,
             coalesce(
@@ -44,6 +46,7 @@ with
 
     canonical as (
         select
+            source,
             assessment_id,
             title,
             academic_year,
@@ -76,6 +79,7 @@ with
         window
             canonical_w as (
                 partition by
+                    source,
                     is_internal_assessment,
                     is_florida_assessment,
                     academic_year,
@@ -88,6 +92,7 @@ with
     )
 
 select
+    source,
     assessment_id,
     title,
     academic_year,

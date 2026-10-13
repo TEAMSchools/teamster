@@ -39,12 +39,18 @@ models:
               - student_number
               - _dbt_source_project
               - source_type
+              - source
               - canonical_assessment_id
               - academic_year
               - administration_period
               - subject_area
               - anchor_date
     columns:
+      - name: source
+        description: >-
+          System the assessment comes from for internal scores (`illuminate` or
+          `apex`); null for state and benchmark scores. Part of the key, because
+          the two systems' assessment ids can collide.
       - name: source_type
         data_type: string
         description: >-
@@ -144,6 +150,7 @@ unit_tests:
         rows:
           - {
               student_number: 1,
+              source: illuminate,
               canonical_assessment_id: 100,
               _dbt_source_project: kippnewark,
               subject_area: Mathematics,
@@ -152,6 +159,7 @@ unit_tests:
             }
           - {
               student_number: 1,
+              source: illuminate,
               canonical_assessment_id: 100,
               _dbt_source_project: kippnewark,
               subject_area: Mathematics,
@@ -160,6 +168,7 @@ unit_tests:
             }
           - {
               student_number: 1,
+              source: illuminate,
               canonical_assessment_id: 100,
               _dbt_source_project: kippnewark,
               subject_area: Mathematics,
@@ -168,6 +177,7 @@ unit_tests:
             }
           - {
               student_number: 1,
+              source: illuminate,
               canonical_assessment_id: 100,
               _dbt_source_project: kippnewark,
               subject_area: Mathematics,
@@ -176,7 +186,11 @@ unit_tests:
             }
       - input: ref('int_assessments__assessments_canonical')
         rows:
-          - { canonical_assessment_id: 100, administered_date: 2024-03-04 }
+          - {
+              source: illuminate,
+              canonical_assessment_id: 100,
+              administered_date: 2024-03-04,
+            }
       - input: ref('int_assessments__state_scores')
         rows: []
       - input: ref('int_assessments__benchmark_scores')
@@ -185,6 +199,7 @@ unit_tests:
       rows:
         - {
             student_number: 1,
+            source: illuminate,
             canonical_assessment_id: 100,
             _dbt_source_project: kippnewark,
             subject_area: Mathematics,

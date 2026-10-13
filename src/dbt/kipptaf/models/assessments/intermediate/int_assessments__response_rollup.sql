@@ -3,6 +3,7 @@ with
         select
             s.illuminate_student_id,
             s.student_number,
+            s.source,
             s.assessment_id,
             s.title,
             s.scope,
@@ -52,7 +53,8 @@ with
             and asr.response_type_id = pb.response_type_id
         left join
             {{ ref("int_assessments__assessments_canonical") }} as c
-            on s.canonical_assessment_id = c.canonical_assessment_id
+            on s.source = c.source
+            and s.canonical_assessment_id = c.canonical_assessment_id
     ),
 
     -- Illuminate `date_taken` is unreliable for a small share of rows, in BOTH
@@ -119,7 +121,8 @@ with
         from sanitized_responses
         window
             w as (
-                partition by student_number, canonical_assessment_id, is_replacement
+                partition by
+                    student_number, source, canonical_assessment_id, is_replacement
                 -- powerschool_school_id is the final tiebreaker so that
                 -- partitions where every row has null date_taken and null
                 -- student_assessment_id (students rostered to canonical members
@@ -137,6 +140,7 @@ with
         select
             illuminate_student_id,
             student_number,
+            source,
             canonical_assessment_id as assessment_id,
             canonical_title as title,
             canonical_administered_at as administered_at,
@@ -179,6 +183,7 @@ with
         group by
             illuminate_student_id,
             student_number,
+            source,
             canonical_assessment_id,
             canonical_title,
             canonical_administered_at,
@@ -203,6 +208,7 @@ with
         select
             illuminate_student_id,
             student_number,
+            source,
             academic_year,
             scope,
             subject_area,
@@ -238,6 +244,7 @@ with
         select
             illuminate_student_id,
             student_number,
+            source,
             academic_year,
             scope,
             subject_area,
@@ -279,6 +286,7 @@ with
 select
     ru.illuminate_student_id,
     ru.student_number,
+    ru.source,
     ru.academic_year,
     ru.scope,
     ru.subject_area,

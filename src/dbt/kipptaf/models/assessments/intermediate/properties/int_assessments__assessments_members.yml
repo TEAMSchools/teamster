@@ -1,11 +1,11 @@
 models:
   - name: int_assessments__assessments_members
     description: >-
-      Assessment-definition layer, one row per Illuminate `assessment_id`. LEFT
-      JOINs Illuminate `assessments` to the AppSheet `Illuminate Assessments
-      Extension` overrides and to an `agl_dedup` CTE (lowest `grade_level_id`
-      per assessment). Exposes `canonical_assessment_id` — for internal
-      assessments, `first_value(assessment_id) over (partition by
+      Assessment-definition layer, one row per `source` and `assessment_id`.
+      LEFT JOINs Illuminate `assessments` to the AppSheet `Illuminate
+      Assessments Extension` overrides and to an `agl_dedup` CTE (lowest
+      `grade_level_id` per assessment). Exposes `canonical_assessment_id` — for
+      internal assessments, `first_value(assessment_id) over (partition by
       is_internal_assessment, is_florida_assessment, academic_year, scope,
       subject_area, module_code, grade_level_id order by assessment_id)`; for
       external assessments, the row's own `assessment_id`. Consumers needing
@@ -19,13 +19,27 @@ models:
       keeps those copies out of New Jersey canonical groups, so New Jersey
       students never inherit a Florida title or administered date. Assessments
       tagged with Miami alongside other regions stay on the New Jersey side.
+      Canonical groups never span sources, because Illuminate and Apex ids share
+      one integer space.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - source
+              - assessment_id
     columns:
       - name: assessment_id
         data_tests:
-          - unique
           - not_null
         data_type: int64
-        description: Primary key. Illuminate assessment id.
+        description: >-
+          Assessment id in its source system. Unique only together with
+          `source`.
+      - name: source
+        data_type: string
+        description: >-
+          System the assessment comes from (`illuminate` or `apex`). Part of the
+          key.
       - name: title
         data_type: string
         description: Assessment title, from `int_illuminate__assessments`.

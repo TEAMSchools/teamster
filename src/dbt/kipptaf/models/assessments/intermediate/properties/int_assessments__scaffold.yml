@@ -41,6 +41,7 @@ models:
           arguments:
             combination_of_columns:
               - student_number
+              - source
               - assessment_id
       # Source data-quality guard: Illuminate occasionally emits a corrupt
       # date_taken (epoch / year-2000 sentinels). Section resolution anchors on
@@ -56,6 +57,10 @@ models:
           config:
             severity: warn
     columns:
+      - name: source
+        description: >-
+          System the assessment comes from (`illuminate` or `apex`). Part of the
+          key, because the two systems' assessment ids can collide.
       - name: illuminate_student_id
         data_type: int64
         description: Illuminate student id.

@@ -1,6 +1,7 @@
 with
     assessment_region_scaffold as (
         select
+            a.source,
             a.assessment_id,
             a.title,
             a.academic_year,
@@ -40,6 +41,7 @@ with
 
     internal_assessments as (
         select
+            a.source,
             a.assessment_id,
             a.title,
             a.administered_at,
@@ -85,6 +87,7 @@ with
         union all
 
         select
+            a.source,
             a.assessment_id,
             a.title,
             a.administered_at,
@@ -130,7 +133,7 @@ with
             *,
 
             row_number() over (
-                partition by assessment_id, illuminate_student_id
+                partition by source, assessment_id, illuminate_student_id
                 order by cc_dateleft desc, cc_dateenrolled desc
             ) as rn,
         from internal_assessments
@@ -138,6 +141,7 @@ with
 
     internal_assessments_deduped as (
         select
+            source,
             assessment_id,
             title,
             administered_at,
@@ -165,6 +169,7 @@ with
 select
     ia.illuminate_student_id,
     ia.student_number,
+    ia.source,
     ia.assessment_id,
     ia.title,
     ia.subject_area,
@@ -204,6 +209,7 @@ select
 
     s.local_student_id as student_number,
 
+    a.source,
     a.assessment_id,
     a.title,
     a.subject_area,
@@ -263,6 +269,7 @@ select
 
     s.local_student_id as student_number,
 
+    a.source,
     a.assessment_id,
     a.title,
     a.subject_area,

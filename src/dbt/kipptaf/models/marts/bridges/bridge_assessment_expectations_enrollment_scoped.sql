@@ -8,6 +8,7 @@ with
         select
             sc.cc_dcid,
             sc.cc_source_project,
+            sc.source,
             sc.assessment_id,
             sc.administered_at,
             sc._dbt_source_project,
@@ -20,10 +21,12 @@ with
         from {{ ref("int_assessments__scaffold") }} as sc
         inner join
             {{ ref("int_assessments__assessments_members") }} as a
-            on sc.assessment_id = a.assessment_id
+            on sc.source = a.source
+            and sc.assessment_id = a.assessment_id
         inner join
             {{ ref("int_assessments__assessments_canonical") }} as c
-            on a.canonical_assessment_id = c.canonical_assessment_id
+            on a.source = c.source
+            and a.canonical_assessment_id = c.canonical_assessment_id
         -- ES Writing and other NULL-cc_dcid rows are excluded here because
         -- cc_dcid + _dbt_source_project form the student_section_enrollment_key
         -- and NULL cc_dcid would collide on the placeholder hash. Those rows
@@ -38,7 +41,13 @@ with
 select
     {{
         dbt_utils.generate_surrogate_key(
-            ["cc_dcid", "cc_source_project", "assessment_id", "administered_at"]
+            [
+                "cc_dcid",
+                "cc_source_project",
+                "source",
+                "assessment_id",
+                "administered_at",
+            ]
         )
     }} as assessment_expectation_key,
 
@@ -48,7 +57,7 @@ select
     {{
         dbt_utils.generate_surrogate_key(
             [
-                "'illuminate'",
+                "source",
                 "module_code",
                 "cast(canonical_administered_at as date)",
                 "academic_year",

@@ -6,6 +6,7 @@ with
     internal_assessments as (
         select
             rr.student_number,
+            rr.source,
             rr.assessment_id,
             rr.response_type_id,
             rr.response_type_code,
@@ -45,10 +46,12 @@ with
         from {{ ref("int_assessments__response_rollup") }} as rr
         inner join
             {{ ref("int_assessments__assessments_members") }} as a
-            on rr.assessment_id = a.assessment_id
+            on rr.source = a.source
+            and rr.assessment_id = a.assessment_id
         inner join
             {{ ref("int_assessments__assessments_canonical") }} as c
-            on a.canonical_assessment_id = c.canonical_assessment_id
+            on a.source = c.source
+            and a.canonical_assessment_id = c.canonical_assessment_id
         where rr.is_internal_assessment
     ),
 
@@ -329,6 +332,7 @@ select
         dbt_utils.generate_surrogate_key(
             [
                 "ia.student_number",
+                "ia.source",
                 "ia.assessment_id",
                 "ia.assessment_ids_json",
                 "ia.response_type",
@@ -341,7 +345,7 @@ select
     {{
         dbt_utils.generate_surrogate_key(
             [
-                "'illuminate'",
+                "ia.source",
                 "ia.module_code",
                 "ia.administered_date",
                 "ia.academic_year",
@@ -399,6 +403,7 @@ from internal_assessments as ia
 inner join
     {{ ref("int_assessments__resolved_section_enrollments") }} as sr
     on ia.student_number = sr.student_number
+    and ia.source = sr.source
     and ia.assessment_id = sr.canonical_assessment_id
     and ia._dbt_source_project = sr._dbt_source_project
     and sr.source_type = 'internal'

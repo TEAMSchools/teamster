@@ -2,6 +2,7 @@ with
     candidates_subject as (
         select
             s.student_number,
+            s.source,
             s.canonical_assessment_id,
             s.academic_year,
             s.administration_period,
@@ -61,6 +62,7 @@ with
     candidates_discipline as (
         select
             s.student_number,
+            s.source,
             s.canonical_assessment_id,
             s.academic_year,
             s.administration_period,
@@ -94,6 +96,7 @@ with
     candidates_homeroom as (
         select
             s.student_number,
+            s.source,
             s.canonical_assessment_id,
             s.academic_year,
             s.administration_period,
@@ -155,6 +158,7 @@ with
     resolved as (
         select
             student_number,
+            source,
             canonical_assessment_id,
             academic_year,
             administration_period,
@@ -173,6 +177,7 @@ with
 
 select
     student_number,
+    source,
     canonical_assessment_id,
     academic_year,
     administration_period,

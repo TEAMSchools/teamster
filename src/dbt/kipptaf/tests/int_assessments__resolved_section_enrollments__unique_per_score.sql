@@ -7,10 +7,11 @@
 -- distinct counts.
 select
     format(
-        '%T|%T|%T|%T|%T|%T|%T',
+        '%T|%T|%T|%T|%T|%T|%T|%T',
         student_number,
         _dbt_source_project,
         source_type,
+        source,
         canonical_assessment_id,
         academic_year,
         administration_period,
