@@ -899,3 +899,12 @@ def test_the_manifest_records_each_dashboard_sheets_saved_filters(tmp_path):
     m.sheet_filters = saved
     snap.write_manifest(tmp_path / "manifest.json", m)
     assert snap.read_manifest(tmp_path / "manifest.json").sheet_filters == saved
+
+
+def test_a_saved_range_with_no_bounds_filters_nothing():
+    w = snap.SafeET.fromstring(
+        "<worksheet name='S'><table><view>"
+        "<filter class='quantitative' column='[federated.demo1].[none:Calculation_8:qk]' "
+        "included-values='in-range' /></view></table></worksheet>"
+    )
+    assert snap._saved_filters(w, {}, {}) == []

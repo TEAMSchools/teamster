@@ -1554,3 +1554,13 @@ def test_a_dimension_key_pattern_pulls_the_join_key_out_of_displayed_text(tmp_pa
         cv.tableau_key(sheet, "Section Number", "Teacher, A - English 100 - 501")
         == "501"
     )
+
+
+def test_whole_number_members_match_however_the_extract_prints_them(tmp_path):
+    # Tableau saves band numbers as "1.0"; the extract prints them as "1".
+    c = _checks(tmp_path, filters={"Band": {"cube": "demo.band"}})
+    where, cube, _ = cv.sheet_conditions(
+        [_sf("Band", "band", "in", ["1.0", "2.0"])], {"state": {"dashboard": "D"}}, c
+    )
+    assert where == ["cast(band as string) in ('1.0', '1', '2.0', '2')"]
+    assert cube == [{"member": "demo.band", "operator": "equals", "values": ["1", "2"]}]

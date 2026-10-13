@@ -177,6 +177,8 @@ def _saved_filters(w, columns, ds_caption) -> list[SheetFilter]:
         }
         if f.get("class") == "quantitative":
             lo, hi = f.find("min"), f.find("max")
+            if lo is None and hi is None:
+                continue  # a range with no bounds filters nothing
             out.append(
                 SheetFilter(
                     **common,

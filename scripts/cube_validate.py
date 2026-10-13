@@ -588,9 +588,13 @@ def sheet_conditions(entries, entry, checks) -> tuple[list[str], list[dict], lis
             continue
         col, numeric = f["field"], bool(f.get("numeric"))
         vals = [v for v in f.get("values") or [] if v != NULL_MEMBER]
+        # Tableau saves whole numbers as "1.0"; the extract may print "1".
+        texts = [x for v in vals for x in dict.fromkeys([v, norm_key(v)])]
         has_null = NULL_MEMBER in (f.get("values") or [])
         lhs = col if numeric else f"cast({col} as string)"
-        listed = ", ".join(v if numeric else _sql_lit(v) for v in vals)
+        listed = ", ".join(
+            v if numeric else _sql_lit(v) for v in (vals if numeric else texts)
+        )
         if not f.get("calculated"):
             if f["op"] == "range":
                 if f.get("low") is not None:
@@ -618,7 +622,7 @@ def sheet_conditions(entries, entry, checks) -> tuple[list[str], list[dict], lis
         if member is None or None in mapped:
             missing.append(cap)
             continue
-        mapped = list(dict.fromkeys(str(v) for v in mapped))
+        mapped = list(dict.fromkeys(norm_key(v) for v in mapped))
         if f["op"] == "range":
             if f.get("low") is not None:
                 cube.append(
