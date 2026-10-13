@@ -782,6 +782,8 @@ class Manifest:
     defaults: dict[str, dict] = field(default_factory=dict)
     # Each sheet's own saved filters: {sheet: [SheetFilter as a dict]}.
     sheet_filters: dict[str, list] = field(default_factory=dict)
+    # Every value each filter caption can take, so (All) is an explicit list.
+    all_values: dict[str, list[str]] = field(default_factory=dict)
 
 
 def sheet_filter_map(wb: Workbook, dashboards: list[str]) -> dict[str, list[dict]]:
@@ -1428,6 +1430,7 @@ def _open(a) -> int:
             # Same live revision: earlier exports still hold; only the copy is new.
             resume.copy_luid, resume.closed = copy, False
             resume.sheet_filters = sheet_filter_map(wb, checks["dashboards"])
+            resume.all_values = resume.all_values or _value_maps(resume, snapdir)
             write_manifest(snapdir / "manifest.json", resume)
             todo = pending(_states_for(checks, a.states), resume)
             print(f"resuming: {len(todo)} states to export")
@@ -1452,6 +1455,7 @@ def _open(a) -> int:
             for d in checks["dashboards"]
         }
         m.sheet_filters = sheet_filter_map(wb, checks["dashboards"])
+        m.all_values = _value_maps(m, snapdir)
         write_manifest(snapdir / "manifest.json", m)
         _export_all(session, m, snapdir, wb, checks, _states_for(checks, a.states))
     return 0
@@ -1465,7 +1469,9 @@ def _export_all(session, m, snapdir, wb, checks, states) -> None:
             f"map a sheet on {', '.join(bad)} before exporting filtered states: "
             "only a mapped sheet without table calculations shows a filter took effect"
         )
-    all_values = _value_maps(m, snapdir)
+    if not m.all_values:  # a snapshot opened before value lists were recorded
+        m.all_values = _value_maps(m, snapdir)
+    all_values = m.all_values
     dims_for = {
         s: list((v.get("dims") or {})) for s, v in (checks.get("sheets") or {}).items()
     }

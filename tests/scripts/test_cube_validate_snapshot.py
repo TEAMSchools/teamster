@@ -940,3 +940,15 @@ def test_filtered_states_need_a_judged_sheet_on_their_dashboard():
     assert snap.unjudged([default, north], wb, set()) == ["Overview"]
     assert snap.unjudged([default, north], wb, {"Overview - Table"}) == []
     assert snap.unjudged([default], wb, set()) == []
+
+
+def test_export_records_each_captions_values_in_the_manifest(tmp_path, demo_hyper):
+    m = _coverage_manifest(tmp_path, demo_hyper)
+    (tmp_path / "csv").mkdir()
+    s = FakeSession(lambda sheet, f: b"Region,N\r\nAll,9\r\n")
+    s.check_refresh = lambda luid, at: None
+    wb = snap.read_workbook(TWB)
+    checks = {"sheets": {"Overview - Table": {"measures": {"N": {"sql": "x"}}}}}
+    snap._export_all(s, m, tmp_path, wb, checks, [snap.State("Overview")])
+    saved = snap.read_manifest(tmp_path / "manifest.json")
+    assert saved.all_values["Region"] == ["North", "South"]

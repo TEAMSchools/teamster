@@ -339,7 +339,7 @@ def test_state_filters_translate_captions_all_and_blank(tmp_path):
     entry = {
         "state": {
             "dashboard": "Overview",
-            "filters": {"Region": "North", "School Name": cv.ALL},
+            "filters": {"Region": "North"},
         },
         "click_filters": {"School Name": "Alpha"},
     }
@@ -1235,7 +1235,10 @@ def test_saved_defaults_filter_cube_and_the_extract_unless_the_state_overrides(
         "cast(region as string) in ('North')"
     ]
     every = {"state": {"dashboard": "Overview", "filters": {"Region": cv.ALL}}}
-    assert cv.state_filters(every, c, defaults)[0] == []
+    lists = cv.Lists({"Region": ["North", "South"]})
+    assert cv.state_filters(every, c, defaults, lists)[0] == [
+        {"member": "demo.region", "operator": "equals", "values": ["North", "South"]}
+    ]
 
 
 def test_trust_is_judged_per_grain(tmp_path):
@@ -1703,3 +1706,66 @@ def test_a_dimension_values_lookup_turns_tableau_aliases_into_stored_values(tmp_
     sheet = c["sheets"]["Overview - Table"]
     assert cv.tableau_key(sheet, "Grade Level", "K") == "0"
     assert cv.tableau_key(sheet, "Grade Level", "5") == "5"
+
+
+def test_all_means_every_value_the_snapshot_recorded(tmp_path):
+    c = _checks(tmp_path)
+    lists = cv.Lists({"Region": ["North", "South"]})
+    entry = {"state": {"dashboard": "Overview", "filters": {"Region": cv.ALL}}}
+    assert cv.state_filters(entry, c, lists=lists)[0] == [
+        {"member": "demo.region", "operator": "equals", "values": ["North", "South"]}
+    ]
+    fields = {"Region": {"field": "region", "datasource": DS}}
+    sheet = c["sheets"]["Overview - Table"]
+    assert cv.state_where(entry, c, fields, sheet, lists=lists) == [
+        "cast(region as string) in ('North', 'South')"
+    ]
+
+
+def test_all_without_a_value_list_cannot_be_told_to_cube(tmp_path):
+    c = _checks(tmp_path)
+    entry = {"state": {"dashboard": "Overview", "filters": {"Region": cv.ALL}}}
+    assert cv.state_filters(entry, c) == ([], ["Region"])
+
+
+def test_all_through_a_lookup_with_a_gap_is_a_missing_member(tmp_path):
+    c = _checks(
+        tmp_path,
+        filters={
+            "Schoolid": {"cube": "demo.abbreviation", "values": {"73258": "BOLD"}}
+        },
+    )
+    entry = {"state": {"dashboard": "Overview", "filters": {"Schoolid": cv.ALL}}}
+    lists = cv.Lists({"Schoolid": ["73258", "5173"]})
+    assert cv.state_filters(entry, c, lists=lists) == ([], ["Schoolid"])
+
+
+def test_explain_reads_all_as_the_value_list(tmp_path):
+    c = _checks(tmp_path)
+    states = {
+        "s": {
+            "state": {"dashboard": "Overview", "filters": {"Region": cv.ALL}},
+            "status": "ok",
+            "sheets": {},
+        }
+    }
+    cell = cv.Cell(
+        "Overview - Table", "s", {}, "Avg Score", "48.50", 48.5, 49.0, 40, "mismatch"
+    )
+    sqls = []
+
+    def run(ds, sql):
+        sqls.append(sql)
+        return [{"m": 48.5}]
+
+    fields = {"Region": {"field": "region", "datasource": DS}}
+    cv.explain_cells(
+        [cell],
+        c,
+        states,
+        fields,
+        run,
+        lambda q: ([], []),
+        lists=cv.Lists({"Region": ["North", "South"]}),
+    )
+    assert sqls and all("in ('North', 'South')" in s for s in sqls)

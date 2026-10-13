@@ -500,6 +500,26 @@ TOTAL = "All"  # a total row in a Tableau export
 MULTI = "*"  # a mark that covers several values
 
 
+@dataclass
+class Lists:
+    """What (All) and a group bin stand for, as the snapshot recorded them."""
+
+    all_values: dict[str, list[str]] = field(default_factory=dict)
+    groups: dict[str, dict] = field(default_factory=dict)
+
+    @classmethod
+    def of(cls, manifest: dict) -> Lists:
+        return cls(manifest.get("all_values") or {}, manifest.get("groups") or {})
+
+    def expand(self, caption: str, value):
+        """A filter value as the stored values it stands for. None: an (All) the
+        snapshot has no list for, which Cube cannot be told."""
+        if value == ALL:
+            found = self.all_values.get(caption)
+            return None if found is None else list(found)
+        return value
+
+
 def _caption_members(checks: dict) -> dict[str, str]:
     out = {
         c: d.cube
@@ -524,9 +544,13 @@ def _person_captions(checks: dict) -> dict[str, str]:
     return out
 
 
-def _own_filters(entry: dict, defaults: dict | None) -> list[tuple[str, object]]:
+def _own_filters(
+    entry: dict, defaults: dict | None, lists: Lists | None = None
+) -> list[tuple[str, object]]:
     """A state's filters as Tableau applies them: saved defaults it keeps, its own
-    filters, and its click (with Tableau's formatting removed)."""
+    filters, and its click (with Tableau's formatting removed), each expanded to
+    the stored values it stands for."""
+    lists = lists or Lists()
     st = entry["state"]
     own = dict(st.get("filters") or {})
     clicks = {c: norm_dim(v) for c, v in (entry.get("click_filters") or {}).items()}
@@ -535,27 +559,30 @@ def _own_filters(entry: dict, defaults: dict | None) -> list[tuple[str, object]]
         for c, v in (defaults or {}).items()
         if c not in own and c not in clicks
     ]
-    return [*kept, *own.items(), *clicks.items()]
+    return [(c, lists.expand(c, v)) for c, v in [*kept, *own.items(), *clicks.items()]]
 
 
 def state_filters(
-    entry: dict, checks: dict, defaults: dict | None = None
+    entry: dict, checks: dict, defaults: dict | None = None, lists: Lists | None = None
 ) -> tuple[list[dict], list[str]]:
     st = entry["state"]
     members = _caption_members(checks)
     out, missing = [], []
-    for caption, value in _own_filters(entry, defaults):
+    for caption, value in _own_filters(entry, defaults, lists):
         member = members.get(caption)
+        if value is None:
+            missing.append(caption)
+            continue
         # A lookup from the extract's value to Cube's (school id to abbreviation).
         lookup = (checks["filters"].get(caption) or {}).get("values")
-        if lookup is not None and value not in (ALL, BLANK):
+        if lookup is not None and value != BLANK:
             wanted = value if isinstance(value, list) else [value]
             found = [lookup.get(str(v)) for v in wanted]
             if None in found:
                 missing.append(caption)
                 continue
             value = found if isinstance(value, list) else found[0]
-        if member is None:
+        if member is None or value == []:
             missing.append(caption)
         elif isinstance(value, list):
             out.append(
@@ -567,7 +594,7 @@ def state_filters(
             )
         elif value == BLANK:
             out.append({"member": member, "operator": "notSet"})
-        elif value != ALL:
+        else:
             out.append({"member": member, "operator": "equals", "values": [str(value)]})
     for caption, value in (st.get("params") or {}).items():
         out += checks["param_filters"].get(caption, {}).get(value, [])
@@ -1061,7 +1088,7 @@ def next_states(states, status, trees, cross_cuts, fields, children) -> list[dic
 
 
 def state_where(
-    entry, checks, fields, sheet, public_only=False, defaults=None
+    entry, checks, fields, sheet, public_only=False, defaults=None, lists=None
 ) -> list[str]:
     """Extract SQL conditions for a state. public_only: for a draft that leaves the
     terminal, so private filters are dropped and person values masked."""
@@ -1069,9 +1096,9 @@ def state_where(
     dims_sql = {c: d.sql for c, d in sheet.dims.items()}
     person = _person_captions(checks) if public_only else {}
     out = []
-    for caption, value in _own_filters(entry, defaults):
+    for caption, value in _own_filters(entry, defaults, lists):
         f = (fields.get(caption) or {}).get("field") or dims_sql.get(caption)
-        if not f:
+        if not f or value is None:
             continue
         if isinstance(value, list):
             vals = [person.get(caption, v) for v in value]
@@ -1175,7 +1202,14 @@ def _has_state(st: dict) -> bool:
 
 
 def _trust(
-    cells, checks, states, fields, run_extract, defaults=None, sheet_filters=None
+    cells,
+    checks,
+    states,
+    fields,
+    run_extract,
+    defaults=None,
+    sheet_filters=None,
+    lists=None,
 ) -> dict[tuple, bool]:
     """A measure's SQL is trusted at a grain once it reproduces every comparable cell
     of one state at that grain. Per grain, so a total Tableau computes differently
@@ -1194,7 +1228,9 @@ def _trust(
         dflt = (defaults or {}).get(states[state]["state"]["dashboard"])
         saved = (sheet_filters or {}).get(sname, [])
         dflt = sheet_defaults(dflt, saved)
-        where = state_where(states[state], checks, fields, sheet, defaults=dflt)
+        where = state_where(
+            states[state], checks, fields, sheet, defaults=dflt, lists=lists
+        )
         where += sheet_conditions(saved, states[state], checks)[0]
         rows = run_extract(
             sheet.datasource, extract_sql(sheet, meas, list(grain), where)
@@ -1283,6 +1319,7 @@ def explain_cells(
     live=None,
     defaults=None,
     sheet_filters=None,
+    lists=None,
 ) -> None:
     sides = fix_sides(checks)
     batches: dict[tuple, list[Cell]] = {}
@@ -1304,7 +1341,7 @@ def explain_cells(
             batches.setdefault(key, []).append(c)
     mapped = [c for c in cells if not c.why]
     trusted = _trust(
-        mapped, checks, states, fields, run_extract, defaults, sheet_filters
+        mapped, checks, states, fields, run_extract, defaults, sheet_filters, lists
     )
     for (sname, state, grain, mname), batch in batches.items():
         try:
@@ -1324,6 +1361,7 @@ def explain_cells(
                 sheet_filters,
                 trusted,
                 sides,
+                lists=lists,
             )
         except CubeError as err:
             # One query Cube cannot answer (an unbuilt rollup, a row limit) leaves
@@ -1348,6 +1386,7 @@ def _explain_batch(
     sheet_filters,
     trusted,
     sides,
+    lists=None,
 ) -> None:
     """Judge one sheet, state, grain and measure's mismatched cells."""
     sheet = checks["sheets"][sname]
@@ -1362,9 +1401,12 @@ def _explain_batch(
     saved = (sheet_filters or {}).get(sname, [])
     dflt = sheet_defaults(dflt, saved)
     saved_where, saved_cube, _ = sheet_conditions(saved, entry, checks)
-    where = state_where(entry, checks, fields, sheet, defaults=dflt) + saved_where
+    where = (
+        state_where(entry, checks, fields, sheet, defaults=dflt, lists=lists)
+        + saved_where
+    )
     base = (
-        state_filters(entry, checks, dflt)[0]
+        state_filters(entry, checks, dflt, lists)[0]
         + hard_filters(checks, sheet.datasource)
         + saved_cube
     )
@@ -1656,7 +1698,14 @@ def digest_markdown(workbook, cells, checks) -> str:
 
 
 def issue_drafts(
-    workbook, cells, checks, states, fields, defaults=None, sheet_filters=None
+    workbook,
+    cells,
+    checks,
+    states,
+    fields,
+    defaults=None,
+    sheet_filters=None,
+    lists=None,
 ) -> dict[str, str]:
     out = {}
     for s, m in checks["mismatches"].items():
@@ -1672,7 +1721,13 @@ def issue_drafts(
         saved = (sheet_filters or {}).get(first.sheet, [])
         dflt = sheet_defaults(dflt, saved)
         where = state_where(
-            entry, checks, fields, sheet, public_only=True, defaults=dflt
+            entry,
+            checks,
+            fields,
+            sheet,
+            public_only=True,
+            defaults=dflt,
+            lists=lists,
         )
         where += sheet_conditions(saved, entry, checks)[0]
         query = extract_sql(sheet, meas, grain, where)
@@ -1740,6 +1795,7 @@ def write_outputs(
     fields,
     defaults=None,
     sheet_filters=None,
+    lists=None,
 ) -> Path:
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
@@ -1748,7 +1804,7 @@ def write_outputs(
     digest = out / f"{stem}-digest.md"
     digest.write_text(digest_markdown(workbook, cells, checks))
     drafts = issue_drafts(
-        workbook, cells, checks, states, fields, defaults, sheet_filters
+        workbook, cells, checks, states, fields, defaults, sheet_filters, lists
     )
     if drafts:
         (out / f"{stem}-issues").mkdir(exist_ok=True)
@@ -1794,6 +1850,7 @@ def run_compare(checks, snapdir, load, extracts, redo=False):
     mapping changed), and propose the next descent level."""
     snapdir = Path(snapdir)
     m = json.loads((snapdir / "manifest.json").read_text())
+    lists = Lists.of(m)
     before = [] if redo else read_cells(snapdir / "cells.jsonl")
     done = {c.state for c in before}
     cells: list[Cell] = []
@@ -1801,7 +1858,7 @@ def run_compare(checks, snapdir, load, extracts, redo=False):
         if e.get("status") != "ok" or sid in done:
             continue
         dflt = (m.get("defaults") or {}).get(e["state"]["dashboard"])
-        filters, missing = state_filters(e, checks, dflt)
+        filters, missing = state_filters(e, checks, dflt, lists)
         for sheet_name, meta in e["sheets"].items():
             sheet = checks["sheets"].get(sheet_name)
             if sheet is None:
@@ -1824,7 +1881,9 @@ def run_compare(checks, snapdir, load, extracts, redo=False):
             try:
                 saved = (m.get("sheet_filters") or {}).get(sheet_name, [])
                 _, sheet_cube, sheet_missing = sheet_conditions(saved, e, checks)
-                filters, missing = state_filters(e, checks, sheet_defaults(dflt, saved))
+                filters, missing = state_filters(
+                    e, checks, sheet_defaults(dflt, saved), lists
+                )
                 cells += compare_export(
                     sheet,
                     sid,
@@ -1940,6 +1999,7 @@ def _explain(a) -> int:
             _live(client),
             m.get("defaults"),
             m.get("sheet_filters"),
+            lists=Lists.of(m),
         )
     finally:
         extracts.close()
@@ -1964,6 +2024,7 @@ def _drafts(a) -> int:
         m["fields"],
         m.get("defaults"),
         m.get("sheet_filters"),
+        lists=Lists.of(m),
     )
     print(f"digest: {digest}")
     return 0
