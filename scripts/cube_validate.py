@@ -1209,9 +1209,9 @@ def _cube_values(rows, sheet, meas, grain) -> dict:
     return apply_calc(meas, raw, meas.scale)
 
 
-def _cube_at(load, sheet, meas, grain, filters) -> dict:
+def _cube_at(load, sheet, meas, grain, filters, student=None) -> dict:
     q = {
-        "measures": [meas.cube],
+        "measures": sorted({meas.cube, student} - {None}),
         "dimensions": [sheet.dims[d].cube for d in grain],
         "filters": filters,
         "limit": CUBE_LIMIT,
@@ -1220,7 +1220,7 @@ def _cube_at(load, sheet, meas, grain, filters) -> dict:
     return _cube_values(rows, sheet, meas, grain)
 
 
-def _variant(v, sheet, meas, grain, where, base, run_extract, load):
+def _variant(v, sheet, meas, grain, where, base, run_extract, load, student=None):
     dash = None
     if v.get("where"):
         alt = Measure(
@@ -1248,7 +1248,7 @@ def _variant(v, sheet, meas, grain, where, base, run_extract, load):
         )
         dash = apply_calc(alt, extract_values(rows, len(grain)), 1.0)
     cube = (
-        _cube_at(load, sheet, meas, grain, base + v["cube_filters"])
+        _cube_at(load, sheet, meas, grain, base + v["cube_filters"], student)
         if v.get("cube_filters")
         else None
     )
@@ -1370,7 +1370,8 @@ def _explain_batch(
             meas, extract_values(live.rows(sheet.datasource, sql), len(grain)), 1.0
         )
         q = {
-            "measures": [meas.cube],
+            # Same shape as compare's query, so Cube routes it the same way.
+            "measures": sorted({meas.cube, checks["student_count"]}),
             "dimensions": [sheet.dims[d].cube for d in grain],
             "filters": base,
             "limit": CUBE_LIMIT,
@@ -1379,7 +1380,17 @@ def _explain_batch(
         cube_now = _cube_values(crows, sheet, meas, grain)
         table_at = live.modified(sheet.datasource)
     variants = [
-        _variant(v, sheet, meas, grain, where, base, run_extract, load)
+        _variant(
+            v,
+            sheet,
+            meas,
+            grain,
+            where,
+            base,
+            run_extract,
+            load,
+            checks["student_count"],
+        )
         for v in meas.variants
     ]
     for c in batch:

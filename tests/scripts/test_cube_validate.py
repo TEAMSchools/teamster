@@ -1666,3 +1666,26 @@ def test_a_cube_error_marks_its_cells_incomplete_and_explain_goes_on(tmp_path):
     cv.explain_cells(cells, c, states, {}, run, lambda q: ([], []), live)
     assert cells[0].verdict == "incomplete" and cells[0].why.startswith("Cube error")
     assert cells[1].verdict == "pass"
+
+
+def test_explain_asks_cube_the_same_shape_of_query_as_compare(tmp_path):
+    # compare always includes the student count; a query without it can route to
+    # a rollup Cube has not built.
+    c = _checks(tmp_path)
+    states = {"s": {"state": {"dashboard": "Overview"}, "status": "ok", "sheets": {}}}
+    cell = cv.Cell(
+        "Overview - Table", "s", {}, "Avg Score", "48.50", 48.5, 49.0, 40, "mismatch"
+    )
+    asked = []
+
+    def cube_now(q):
+        asked.append(q)
+        return [{"demo.avg_score": "49.0"}], None
+
+    live = cv.Live(
+        rows=lambda ds, sql: [{"m": 49.0}], modified=lambda ds: None, cube_now=cube_now
+    )
+    cv.explain_cells(
+        [cell], c, states, {}, lambda ds, sql: [{"m": 48.5}], lambda q: ([], []), live
+    )
+    assert asked and "demo.count_students" in asked[0]["measures"]
