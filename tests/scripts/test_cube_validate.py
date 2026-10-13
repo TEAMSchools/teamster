@@ -2211,6 +2211,71 @@ def test_trust_is_a_rate_over_every_state(tmp_path):
     assert "Cells the extract SQL does not reproduce: 1" in text and "s19" in text
 
 
+def test_any_error_in_a_batch_leaves_only_that_batch_incomplete(tmp_path):
+    c = _checks(tmp_path)
+    states = {"s": {"state": {"dashboard": "Overview"}, "status": "ok", "sheets": {}}}
+    cells = [
+        cv.Cell(
+            "Overview - Table",
+            "s",
+            {"School Name": "Alpha"},
+            "Avg Score",
+            "48.50",
+            48.5,
+            49.0,
+            40,
+            "mismatch",
+        ),
+        cv.Cell(
+            "Overview - Table", "s", {}, "Avg Score", "48.50", 48.5, 48.5, 40, "match"
+        ),
+    ]
+
+    def no_table(ds, sql):
+        raise cv.CheckError("datasource 'x' is not captioned 'rpt_x (dataset)'")
+
+    live = cv.Live(
+        rows=no_table,
+        modified=lambda ds: None,
+        cube_now=lambda q: ([{"demo.avg_score": "49.0"}], None),
+    )
+
+    def run(ds, sql):
+        return [{"g0": "Alpha", "m": 48.5}] if "group by" in sql else [{"m": 48.5}]
+
+    written = []
+    cv.explain_cells(
+        cells,
+        c,
+        states,
+        {},
+        run,
+        lambda q: ([], []),
+        live,
+        on_batch=lambda: written.append(1),
+    )
+    assert cells[0].verdict == "incomplete" and cells[0].why.startswith("CheckError")
+    assert cells[1].verdict == "pass" and written == [1]
+
+
+def test_extract_sql_that_fails_in_a_batch_after_trust_leaves_it_incomplete(tmp_path):
+    c = _checks(tmp_path)
+    states = _many_states(20)
+    cells = _rate_cells(states)
+    calls = {"R00": 0}
+
+    def run(ds, sql):
+        if "'R00'" in sql:
+            calls["R00"] += 1
+            if calls["R00"] > 1:
+                raise RuntimeError("extract went away")
+        return [{"g0": "Alpha", "m": 48.5}]
+
+    cv.explain_cells(cells, c, states, FIELDS, run, lambda q: ([], []))
+    assert calls["R00"] == 2
+    assert cells[0].verdict == "incomplete" and cells[0].why.startswith("RuntimeError")
+
+
 def test_a_measure_reproduced_below_the_rate_is_incomplete(tmp_path):
     c = _checks(tmp_path)
     states = _many_states(2)

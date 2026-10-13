@@ -1506,6 +1506,7 @@ def explain_cells(
     defaults=None,
     sheet_filters=None,
     lists=None,
+    on_batch: Callable[[], None] | None = None,
 ) -> None:
     sides = fix_sides(checks)
     batches: dict[tuple, list[Cell]] = {}
@@ -1553,11 +1554,14 @@ def explain_cells(
                 sides,
                 lists=lists,
             )
-        except CubeError as err:
-            # One query Cube cannot answer (an unbuilt rollup, a row limit) leaves
-            # only its own cells undecided.
+        except Exception as err:  # noqa: BLE001 - one batch's failure blames nobody
+            # A query Cube or the warehouse cannot answer, or SQL the extract cannot
+            # run, leaves only its own cells undecided.
+            label = "Cube error" if isinstance(err, CubeError) else type(err).__name__
             for c in batch:
-                c.verdict, c.why = "incomplete", f"Cube error: {err}"[:300]
+                c.verdict, c.why = "incomplete", f"{label}: {err}"[:300]
+        if on_batch is not None:
+            on_batch()
 
 
 def _explain_batch(
@@ -2249,6 +2253,7 @@ def _explain(a) -> int:
             m.get("defaults"),
             m.get("sheet_filters"),
             lists=Lists.of(m),
+            on_batch=lambda: write_cells(snapdir / "cells.jsonl", cells),
         )
     finally:
         extracts.close()
