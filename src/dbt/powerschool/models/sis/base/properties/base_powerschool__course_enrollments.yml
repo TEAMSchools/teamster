@@ -5,10 +5,28 @@ models:
       and student. PowerSchool sometimes writes the same enrollment twice. This
       model keeps one row per student, signed section, and date left, and one
       per student, signed section, and date enrolled. It prefers a row that is
-      not a dropped section. Among rows with the same date left it then keeps
-      the earliest date enrolled, so the enrollment keeps its full span. Any
-      remaining tie goes to the highest cc dcid. The warning tests on
-      stg_powerschool__cc list the duplicates for cleanup in PowerSchool.
+      not a dropped section. Then it keeps the full span of the enrollment — the
+      earliest date enrolled among rows with the same date left, and the latest
+      date left among rows with the same date enrolled. Any remaining tie goes
+      to the highest cc dcid. The warning tests on stg_powerschool__cc list the
+      duplicates for cleanup in PowerSchool.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - cc_studentid
+              - cc_sectionid
+              - cc_dateleft
+          config:
+            severity: error
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - cc_studentid
+              - cc_sectionid
+              - cc_dateenrolled
+          config:
+            severity: error
     columns:
       - name: cc_dcid
         data_type: int64

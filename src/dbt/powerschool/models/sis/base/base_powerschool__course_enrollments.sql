@@ -56,7 +56,7 @@ with
             dbt_utils.deduplicate(
                 relation="dedupe_dateleft",
                 partition_by="cc_studentid, cc_sectionid, cc_dateenrolled",
-                order_by="is_dropped_section asc, cc_dcid desc",
+                order_by="is_dropped_section asc, cc_dateleft desc, cc_dcid desc",
             )
         }}
     )

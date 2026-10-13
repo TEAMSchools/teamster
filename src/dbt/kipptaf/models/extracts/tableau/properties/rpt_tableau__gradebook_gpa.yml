@@ -9,8 +9,8 @@ models:
       `int_powerschool__gpa_term` is PowerSchool-only. Miami's course, section,
       and gradebook-category columns are also null for the same reason, so a
       Miami row carries roster and term attributes only.
-    # TODO(#3900): residual warn-level violations trace to the known
-    # base_powerschool__course_enrollments double-write duplicates.
+    # TODO(#5870): the grain test warns on duplicates of unknown cause; return
+    # it to error once they are fixed.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
