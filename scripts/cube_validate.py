@@ -119,6 +119,18 @@ def fix_sides(checks) -> dict[str, frozenset]:
     return {side: frozenset(v) for side, v in by.items()}
 
 
+ROUTES = "cube-routes-disagree"
+ROUTES_MISMATCH = {
+    "title": "fix(cube): a rollup and the fact table answer the same query differently",
+    "what": (
+        "Cube gives one number when the measure is asked alone, as people ask "
+        "(often served by a rollup), and another when the student count is asked "
+        "with it (read from the fact table)."
+    ),
+    "fix": "cube",
+}
+
+
 class CubeError(RuntimeError):
     """Cube returned an error, or a result that cannot be compared."""
 
@@ -375,6 +387,8 @@ def load_checks(path) -> dict:
         if key not in raw:
             raise CheckError(f"{path}: missing '{key}'")
     mismatches = raw.get("mismatches") or {}
+    # Built in: the checks file may add issue:, labels: or related: to it.
+    mismatches[ROUTES] = {**ROUTES_MISMATCH, **(mismatches.get(ROUTES) or {})}
     for name, m in mismatches.items():
         for k in ("title", "what", "fix"):
             if k not in m:
@@ -794,6 +808,9 @@ class Cell:
     variant: float | None = None
     cube_variant: float | None = None
     why: str = ""  # explain's reason for the verdict
+    cube_alone: float | None = None  # Cube's value when the measure is asked alone
+    rollups_alone: list[str] = field(default_factory=list)
+    routes: bool = False  # Cube's two routes disagree at the shown precision
 
 
 def _int(v) -> int | None:
@@ -817,34 +834,63 @@ def apply_calc(meas: Measure, raw: dict, scale: float) -> dict:
     return {k: (None if v is None else v * scale) for k, v in raw.items()}
 
 
+@dataclass
+class Answer:
+    """Cube's raw values for one measure at one grain, by both routes."""
+
+    fact: dict[tuple, float | None]  # asked with the student count
+    alone: dict[tuple, float | None]  # the measure alone, as people ask
+    students: dict[tuple, int | None]
+    rollups: list[str]
+    rollups_alone: list[str]
+
+
+def cube_query(sheet, grain, measures, filters) -> dict:
+    return {
+        "measures": sorted({m for m in measures if m}),
+        "dimensions": [sheet.dims[d].cube for d in grain],
+        "filters": filters,
+        "limit": CUBE_LIMIT,
+    }
+
+
+def _by_key(rows, sheet, grain) -> dict[tuple, dict]:
+    return {tuple(norm_dim(r.get(sheet.dims[d].cube)) for d in grain): r for r in rows}
+
+
+def _ask_cube(sheet, grain, measures, load, filters, student) -> dict[str, Answer]:
+    """Each measure's raw values at the grain by both of Cube's routes: with the
+    student count (read from the fact) and alone (often served by a rollup)."""
+    if not measures:
+        return {}
+    members = [sheet.measures[m].cube for m in measures]
+    rows, rollups = load(cube_query(sheet, grain, [*members, student], filters))
+    alone_rows, rollups_alone = load(cube_query(sheet, grain, members, filters))
+    fact, alone = _by_key(rows, sheet, grain), _by_key(alone_rows, sheet, grain)
+    return {
+        m: Answer(
+            {k: _num(r.get(sheet.measures[m].cube)) for k, r in fact.items()},
+            {k: _num(r.get(sheet.measures[m].cube)) for k, r in alone.items()},
+            {k: _int(r.get(student)) for k, r in fact.items()},
+            list(rollups),
+            list(rollups_alone),
+        )
+        for m in measures
+    }
+
+
+def routes_agree(fact, alone, shown: Shown | None) -> bool:
+    """Whether Cube's two routes give the same number at the precision Tableau shows."""
+    if fact is None or alone is None:
+        return (fact or 0.0) == (alone or 0.0)
+    if shown is None or shown.decimals is None:
+        return matches_raw(fact, alone)
+    return round(fact, shown.decimals) == round(alone, shown.decimals)
+
+
 def compare_export(
     sheet, state_id, export, load, filters, missing, checks
 ) -> list[Cell]:
-    def cell(
-        key,
-        m,
-        shown=None,
-        tableau=None,
-        cube=None,
-        n=None,
-        status="mismatch",
-        reason="",
-        rollups=(),
-    ):
-        return Cell(
-            sheet.name,
-            state_id,
-            key,
-            m,
-            shown,
-            tableau,
-            cube,
-            n,
-            status,
-            reason,
-            list(rollups),
-        )
-
     cols = export.columns
     # No header at all: compare at every mapped dimension Cube has, so its rows still show.
     dims = (
@@ -856,7 +902,18 @@ def compare_export(
         [c for c in cols if c in sheet.measures] if cols else list(sheet.measures)
     )
     cells = [
-        cell({}, c, status="not_comparable", reason="unmapped column")
+        Cell(
+            sheet.name,
+            state_id,
+            {},
+            c,
+            None,
+            None,
+            None,
+            None,
+            "not_comparable",
+            "unmapped column",
+        )
         for c in cols
         if c not in sheet.dims and c not in sheet.measures
     ]
@@ -864,7 +921,19 @@ def compare_export(
         # Cube cannot express a filter the dashboard applies: a missing member.
         reason = f"filter {', '.join(missing)} has no Cube member"
         return cells + [
-            cell({}, m, status="missing_member", reason=reason) for m in measures
+            Cell(
+                sheet.name,
+                state_id,
+                {},
+                m,
+                None,
+                None,
+                None,
+                None,
+                "missing_member",
+                reason,
+            )
+            for m in measures
         ]
 
     # A dimension showing "*" is an attribute (ATTR) of a coarser mark, never part
@@ -876,128 +945,151 @@ def compare_export(
         groups.setdefault(tuple(d for d in dims if r.get(d) == TOTAL), []).append(r)
     if not groups:
         groups[()] = []
-
-    student = checks["student_count"]
+    every = filters + hard_filters(checks, sheet.datasource)
     for totals, rows in groups.items():
         grain = [d for d in dims if d not in totals]
-        blocked = [d for d in grain if sheet.dims[d].cube is None]
-        no_member = [m for m in measures if sheet.measures[m].cube is None]
-        if blocked:
-            reason = f"dimension {', '.join(blocked)} has no Cube member"
-            for r in rows:
-                key = {d: r.get(d, "") for d in dims}
-                cells += [
-                    cell(key, m, r.get(m), status="missing_member", reason=reason)
-                    for m in measures
-                ]
-            continue
-        members = sorted(
-            {sheet.measures[m].cube for m in measures if sheet.measures[m].cube}
-            | {student}
+        cells += _compare_grain(
+            sheet,
+            state_id,
+            grain,
+            totals,
+            rows,
+            dims,
+            measures,
+            load,
+            every,
+            checks["student_count"],
         )
-        q = {
-            "measures": members,
-            "dimensions": [sheet.dims[d].cube for d in grain],
-            "filters": filters + hard_filters(checks, sheet.datasource),
-            "limit": CUBE_LIMIT,
-        }
-        cube_rows, rollups = load(q)
-        by_key = {
-            tuple(norm_dim(cr.get(sheet.dims[d].cube)) for d in grain): cr
-            for cr in cube_rows
-        }
-        values = {
-            m: apply_calc(
-                sheet.measures[m],
-                {k: _num(cr.get(sheet.measures[m].cube)) for k, cr in by_key.items()},
-                sheet.measures[m].scale,
+    return cells
+
+
+def _compare_grain(
+    sheet, state_id, grain, totals, rows, dims, measures, load, filters, student
+) -> list[Cell]:
+    """One grain's cells: each Tableau row against Cube, then Cube's extra slices."""
+
+    def cell(
+        key, m, status, reason="", shown=None, tableau=None, cube=None, n=None, **kw
+    ):
+        return Cell(
+            sheet.name, state_id, key, m, shown, tableau, cube, n, status, reason, **kw
+        )
+
+    blocked = [d for d in grain if sheet.dims[d].cube is None]
+    if blocked:
+        reason = f"dimension {', '.join(blocked)} has no Cube member"
+        return [
+            cell(
+                {d: r.get(d, "") for d in dims},
+                m,
+                "missing_member",
+                reason,
+                shown=r.get(m),
             )
+            for r in rows
             for m in measures
-            if m not in no_member
-        }
-        fixed = {d: TOTAL for d in totals}
-        seen = set()
-        for r in rows:
-            k = tuple(tableau_key(sheet, d, r.get(d)) for d in grain)
-            seen.add(k)
-            cr = by_key.get(k)
-            key = {**{d: r.get(d, "") for d in grain}, **fixed}
-            n = _int(cr.get(student)) if cr else None
-            for m in measures:
-                meas, text = sheet.measures[m], r.get(m)
-                shown = parse_shown(text, meas.round)
-                if m in no_member:
-                    cells.append(
-                        cell(
-                            key,
-                            m,
-                            text,
-                            status="missing_member",
-                            reason="measure has no Cube member",
-                        )
-                    )
-                elif shown is None and (text or "").strip():
-                    cells.append(
-                        cell(
-                            key,
-                            m,
-                            text,
-                            status="not_comparable",
-                            reason="value does not parse",
-                        )
-                    )
-                elif cr is None:
-                    cells.append(
-                        cell(
-                            key,
-                            m,
-                            text,
-                            shown and shown.value,
-                            None,
-                            None,
-                            "mismatch",
-                            "Tableau shows this slice; Cube does not",
-                            rollups,
-                        )
-                    )
-                else:
-                    v = values[m].get(k)
-                    ok = matches_shown(v, shown)
-                    cells.append(
-                        cell(
-                            key,
-                            m,
-                            text,
-                            shown and shown.value,
-                            v,
-                            n,
-                            "match" if ok else "mismatch",
-                            "",
-                            rollups,
-                        )
-                    )
-        for k, cr in by_key.items():
-            if k in seen:
-                continue
-            vals = {m: values[m].get(k) for m in values}
-            if all(v in (None, 0) for v in vals.values()):
-                continue
-            key = {**dict(zip(grain, k, strict=True)), **fixed}
-            for m, v in vals.items():
-                cells.append(
+        ]
+    asked = [m for m in measures if sheet.measures[m].cube]
+    raw = _ask_cube(sheet, grain, asked, load, filters, student)
+    answers = {
+        m: Answer(
+            apply_calc(sheet.measures[m], a.fact, sheet.measures[m].scale),
+            apply_calc(sheet.measures[m], a.alone, sheet.measures[m].scale),
+            a.students,
+            a.rollups,
+            a.rollups_alone,
+        )
+        for m, a in raw.items()
+    }
+    fixed = {d: TOTAL for d in totals}
+    out, seen = [], set()
+    for r in rows:
+        k = tuple(tableau_key(sheet, d, r.get(d)) for d in grain)
+        key = {**{d: r.get(d, "") for d in grain}, **fixed}
+        for m in measures:
+            meas, text = sheet.measures[m], r.get(m)
+            shown = parse_shown(text, meas.round)
+            a = answers.get(m)
+            if a is None:
+                out.append(
                     cell(
                         key,
                         m,
-                        None,
-                        None,
-                        v,
-                        _int(cr.get(student)),
-                        "mismatch",
-                        "Cube has this slice; Tableau does not",
-                        rollups,
+                        "missing_member",
+                        "measure has no Cube member",
+                        shown=text,
                     )
                 )
-    return cells
+            elif shown is None and (text or "").strip():
+                out.append(
+                    cell(
+                        key,
+                        m,
+                        "not_comparable",
+                        "value does not parse",
+                        shown=text,
+                    )
+                )
+            elif k not in a.fact:
+                out.append(
+                    cell(
+                        key,
+                        m,
+                        "mismatch",
+                        "Tableau shows this slice; Cube does not",
+                        shown=text,
+                        tableau=shown and shown.value,
+                        rollups=a.rollups,
+                        rollups_alone=a.rollups_alone,
+                    )
+                )
+            else:
+                seen.add(k)
+                v, alone = a.fact.get(k), a.alone.get(k)
+                split = not routes_agree(v, alone, shown)
+                ok = not split and matches_shown(v, shown)
+                reason = (
+                    f"Cube's routes disagree: alone {_fmt(alone)}, with the student "
+                    f"count {_fmt(v)}"
+                    if split
+                    else ""
+                )
+                out.append(
+                    cell(
+                        key,
+                        m,
+                        "match" if ok else "mismatch",
+                        reason,
+                        shown=text,
+                        tableau=shown and shown.value,
+                        cube=v,
+                        n=a.students.get(k),
+                        rollups=a.rollups,
+                        rollups_alone=a.rollups_alone,
+                        cube_alone=alone,
+                        routes=split,
+                    )
+                )
+    for k in sorted({k for a in answers.values() for k in a.fact} - seen):
+        vals = {m: a.fact.get(k) for m, a in answers.items()}
+        if all(v in (None, 0) for v in vals.values()):
+            continue
+        key = {**dict(zip(grain, k, strict=True)), **fixed}
+        for m, v in vals.items():
+            a = answers[m]
+            out.append(
+                cell(
+                    key,
+                    m,
+                    "mismatch",
+                    "Cube has this slice; Tableau does not",
+                    cube=v,
+                    n=a.students.get(k),
+                    rollups=a.rollups,
+                    rollups_alone=a.rollups_alone,
+                )
+            )
+    return out
 
 
 def write_cells(path: Path, cells: list[Cell]) -> None:
@@ -1314,23 +1406,12 @@ def _trust(
 
 
 def _cube_values(rows, sheet, meas, grain) -> dict:
-    raw = {
-        tuple(norm_dim(r.get(sheet.dims[d].cube)) for d in grain): _num(
-            r.get(meas.cube)
-        )
-        for r in rows
-    }
+    raw = {k: _num(r.get(meas.cube)) for k, r in _by_key(rows, sheet, grain).items()}
     return apply_calc(meas, raw, meas.scale)
 
 
 def _cube_at(load, sheet, meas, grain, filters, student=None) -> dict:
-    q = {
-        "measures": sorted({meas.cube, student} - {None}),
-        "dimensions": [sheet.dims[d].cube for d in grain],
-        "filters": filters,
-        "limit": CUBE_LIMIT,
-    }
-    rows, _ = load(q)
+    rows, _ = load(cube_query(sheet, grain, [meas.cube, student], filters))
     return _cube_values(rows, sheet, meas, grain)
 
 
@@ -1406,6 +1487,9 @@ def explain_cells(
             c.verdict = "pass"
         elif c.status == "missing_member":
             c.verdict = "missing_member"
+        elif c.status == "mismatch" and c.routes:
+            c.explained_by = [ROUTES]
+            c.verdict = cell_verdict(c, sides, sheet.measures[c.measure])
         elif c.status == "mismatch":
             key = (c.sheet, c.state, _grain(c)[0], c.measure)
             batches.setdefault(key, []).append(c)
@@ -1489,13 +1573,8 @@ def _explain_batch(
         live_v = apply_calc(
             meas, extract_values(live.rows(sheet.datasource, sql), len(grain)), 1.0
         )
-        q = {
-            # Same shape as compare's query, so Cube routes it the same way.
-            "measures": sorted({meas.cube, checks["student_count"]}),
-            "dimensions": [sheet.dims[d].cube for d in grain],
-            "filters": base,
-            "limit": CUBE_LIMIT,
-        }
+        # Same shape as compare's query, so Cube routes it the same way.
+        q = cube_query(sheet, grain, [meas.cube, checks["student_count"]], base)
         crows, cube_at = live.cube_now(q)
         cube_now = _cube_values(crows, sheet, meas, grain)
         table_at = live.modified(sheet.datasource)
@@ -1732,6 +1811,23 @@ def coverage_markdown(states, cells) -> str:
             "",
             "Cells not compared:",
             *(f"- {r}: {n}" for r, n in causes.most_common()),
+        ]
+    routes = {
+        (c.sheet, c.state, _grain(c)[0]): (
+            ", ".join(c.rollups) or "raw",
+            ", ".join(c.rollups_alone) or "raw",
+        )
+        for c in cells
+        if c.status in ("match", "mismatch")
+    }
+    if routes:
+        lines += [
+            "",
+            "Cube routes, by query (with the student count / alone):",
+            *(
+                f"- {w} / {a}: {n}"
+                for (w, a), n in Counter(routes.values()).most_common()
+            ),
         ]
     return "\n".join(lines) + "\n"
 

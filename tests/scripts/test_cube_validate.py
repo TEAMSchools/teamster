@@ -454,7 +454,7 @@ def test_compare_matches_rows_and_totals(tmp_path):
         ({"School Name": "Beta"}, "match"),
         ({"School Name": "All"}, "match"),
     ]
-    assert len(cube.queries) == 2 and cube.queries[1]["dimensions"] == []
+    assert len(cube.queries) == 4 and cube.queries[2]["dimensions"] == []
     assert cells[0].n_students == 20 and cells[0].rollups == ["rollup_a"]
 
 
@@ -1995,3 +1995,94 @@ def test_a_key_pattern_needs_one_capture_group(tmp_path, key):
     }
     with pytest.raises(cv.CheckError, match="Section Number.*capture group"):
         cv.load_checks(_write(tmp_path, d))
+
+
+def _two_routes(fact, alone):
+    def load(q):
+        is_alone = "demo.count_students" not in q["measures"]
+        if not q["dimensions"]:
+            return [], []
+        row = {
+            "demo.school": "Alpha",
+            "demo.avg_score": str(alone if is_alone else fact),
+            "demo.count_students": "20",
+            "demo.pct_complete": "0.8",
+        }
+        return [row], (["rollup"] if is_alone else [])
+
+    return load
+
+
+def test_cubes_two_routes_are_both_asked_and_a_split_is_a_mismatch(tmp_path):
+    c, sheet = _sheet(tmp_path)
+    export = cv.read_export(b"School Name,Avg Score\r\nAlpha,48.50\r\n")
+    cells = cv.compare_export(sheet, "s1", export, _two_routes(48.5, 47.0), [], [], c)
+    (alpha,) = cells
+    assert (alpha.status, alpha.routes) == ("mismatch", True)
+    assert (alpha.cube, alpha.cube_alone, alpha.rollups_alone) == (
+        48.5,
+        47.0,
+        ["rollup"],
+    )
+    assert "alone 47" in alpha.reason
+
+
+def test_routes_that_agree_at_the_shown_precision_are_fine(tmp_path):
+    c, sheet = _sheet(tmp_path)
+    export = cv.read_export(b"School Name,Avg Score\r\nAlpha,48.50\r\n")
+    cells = cv.compare_export(sheet, "s1", export, _two_routes(48.5, 48.501), [], [], c)
+    assert [(x.status, x.routes) for x in cells] == [("match", False)]
+
+
+def test_explain_blames_cube_for_a_route_split(tmp_path):
+    c = _checks(tmp_path)
+    states = {"s": {"state": {"dashboard": "Overview"}, "status": "ok", "sheets": {}}}
+    cell = cv.Cell(
+        "Overview - Table",
+        "s",
+        {},
+        "Avg Score",
+        "48.50",
+        48.5,
+        48.5,
+        40,
+        "mismatch",
+        cube_alone=47.0,
+        routes=True,
+    )
+    cv.explain_cells(
+        [cell], c, states, {}, lambda ds, sql: [{"m": 48.5}], lambda q: ([], [])
+    )
+    assert (cell.verdict, cell.explained_by) == ("fix_cube", [cv.ROUTES])
+
+
+def test_the_route_mismatch_is_built_in_and_takes_an_issue(tmp_path):
+    c = _checks(tmp_path, mismatches={cv.ROUTES: {"issue": 5883}})
+    m = c["mismatches"][cv.ROUTES]
+    assert (m["fix"], m["issue"]) == ("cube", 5883) and m["title"].startswith(
+        "fix(cube)"
+    )
+
+
+def test_coverage_counts_queries_by_cube_route():
+    states = {s: {"state": {"dashboard": "D"}, "status": "ok"} for s in ("a", "b")}
+
+    def cell(state, school):
+        return cv.Cell(
+            "S",
+            state,
+            {"School": school},
+            "M",
+            "1",
+            1,
+            1,
+            20,
+            "match",
+            rollups=[],
+            rollups_alone=["r1"],
+        )
+
+    text = cv.coverage_markdown(
+        states, [cell("a", "x"), cell("a", "y"), cell("b", "x")]
+    )
+    assert "- raw / r1: 2" in text
