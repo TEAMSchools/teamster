@@ -17,6 +17,7 @@ with
             region,
 
             coalesce(a.tagged_grade_level_id, agl.grade_level_id) as grade_level_id,
+            concat('kipp', lower(region)) as region_source_project,
         from {{ ref("int_assessments__assessments_members") }} as a
         cross join unnest(a.regions_assessed_array) as region
         left join
@@ -31,7 +32,7 @@ with
     -- The (is_campus / is_pathways / Whittier) filter mirrors the canonical
     -- mart-scope filter pattern tracked in #3751 / #3754.
     school_to_region as (
-        select powerschool_school_id, city as region,
+        select powerschool_school_id, dagster_code_location, city as region,
         from {{ ref("stg_google_sheets__people__locations") }}
         where
             not is_campus
@@ -57,8 +58,7 @@ with
 
             ssa.student_id as illuminate_student_id,
 
-            s.local_student_id as student_number,
-
+            ce.student_number,
             ce.powerschool_school_id,
             ce.cc_dateenrolled,
             ce.cc_dateleft,
@@ -77,7 +77,13 @@ with
             on ssa.student_id = s.student_id
         inner join
             {{ ref("int_assessments__course_enrollments") }} as ce
-            on s.local_student_id = ce.student_number
+            on {{
+                focus_student_number(
+                    "s.local_student_id",
+                    "a.academic_year_clean",
+                    "a.region_source_project",
+                )
+            }} = ce.student_number
             and a.region = ce.region
             and a.subject_area = ce.subject_area
             and a.administered_at between ce.cc_dateenrolled and ce.cc_dateleft
@@ -287,7 +293,11 @@ union all
 select
     sa.student_id as illuminate_student_id,
 
-    s.local_student_id as student_number,
+    {{
+        focus_student_number(
+            "s.local_student_id", "a.academic_year_clean", "str.dagster_code_location"
+        )
+    }} as student_number,
 
     a.source,
     a.assessment_id,
@@ -350,7 +360,11 @@ union all
 select
     sa.student_id as illuminate_student_id,
 
-    s.local_student_id as student_number,
+    {{
+        focus_student_number(
+            "s.local_student_id", "a.academic_year_clean", "str.dagster_code_location"
+        )
+    }} as student_number,
 
     a.source,
     a.assessment_id,

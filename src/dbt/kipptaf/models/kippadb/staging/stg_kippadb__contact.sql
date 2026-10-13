@@ -1,3 +1,10 @@
+with
+    source as (
+        select *, safe_cast(school_specific_id__c as int) as school_specific_id_int,
+        from {{ source("kippadb", "contact") }}
+        where not isdeleted
+    )
+
 select
     id,
     ownerid as owner_id,
@@ -56,7 +63,6 @@ select
     middle_skilling_trade_military_interest__c as cte_military_interest,
 
     safe_cast(kipp_hs_class__c as int) as kipp_hs_class,
-    safe_cast(school_specific_id__c as int) as school_specific_id,
 
     mailingstreet
     || ' '
@@ -80,5 +86,11 @@ select
         + 1
     ) as graduation_year,
 
-from {{ source("kippadb", "contact") }}
-where not isdeleted
+    /* Miami contacts hold a mix of the bare pre-Focus number and the 8400-prefixed
+       Focus id, which is the Miami student number (see focus_student_number). */
+    school_specific_id_int + if(
+        kipp_region_name__c = 'KIPP Miami' and school_specific_id_int < 8400000000,
+        8400000000,
+        0
+    ) as school_specific_id,
+from source
