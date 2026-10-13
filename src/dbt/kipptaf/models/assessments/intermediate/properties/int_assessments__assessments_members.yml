@@ -274,7 +274,7 @@ unit_tests:
           union all
           select
               'apex', 9002, 'QA', 2, 'QA2', 6, 'Miami', ['Miami'], 'Miami', null,
-              null, null
+              date('2026-10-10'), 'Algebra I'
       - input: ref('stg_illuminate__dna_assessments__assessment_grade_levels')
         rows: []
       - input: ref('int_focus__apex_assessments')
@@ -298,6 +298,8 @@ unit_tests:
             grade_level_id: 4,
             regions_assessed: Newark,
             regions_report_card: null,
+            subject_area: Mathematics,
+            administered_at: 2026-09-01,
           }
         - {
             source: apex,
@@ -306,6 +308,8 @@ unit_tests:
             grade_level_id: null,
             regions_assessed: Miami,
             regions_report_card: null,
+            subject_area: Mathematics,
+            administered_at: 2026-09-28,
           }
         - {
             source: apex,
@@ -314,4 +318,6 @@ unit_tests:
             grade_level_id: 6,
             regions_assessed: Miami,
             regions_report_card: Miami,
+            subject_area: Algebra I,
+            administered_at: 2026-10-10,
           }

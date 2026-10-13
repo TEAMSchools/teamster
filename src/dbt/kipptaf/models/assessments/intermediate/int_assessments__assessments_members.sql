@@ -46,8 +46,7 @@ with
 
         union all
 
-        -- Apex is Miami-only, so it is internal and Florida with or without a
-        -- tag; module, grade, and report-card regions come from its AppSheet tag
+        -- Apex is Miami-only, so it is internal and Florida with or without a tag
         select
             aa.assessment_id,
             aa.title,

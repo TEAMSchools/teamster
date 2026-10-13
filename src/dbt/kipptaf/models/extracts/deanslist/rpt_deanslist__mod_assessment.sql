@@ -30,7 +30,9 @@ with
             and ar.assessment_id = rcr.assessment_id
             and co.region = rcr.report_card_region
         where
-            ar.response_type = 'overall'
+            -- performance_band_set_id is looked up in Illuminate's band sets
+            ar.source = 'illuminate'
+            and ar.response_type = 'overall'
             and ar.subject_area not in ('Text Study', 'Mathematics')
             and ar.academic_year = {{ var("current_academic_year") }}
             and ar.term_administered is not null

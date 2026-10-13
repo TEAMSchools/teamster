@@ -35,6 +35,7 @@ with
             co.academic_year_display,
 
             cast(null as string) as standard_domain,
+            cast(ar.assessment_id as string) as assessment_id_string,
 
             'mod_assessment' as source_model,
             cast(null as string) as report_type,
@@ -84,6 +85,7 @@ with
             co.academic_year_display,
 
             cast(null as string) as standard_domain,
+            cast(ar.assessment_id as string) as assessment_id_string,
 
             'mod_standards' as source_model,
             cast(null as string) as report_type,
@@ -126,6 +128,7 @@ with
             co.academic_year_display,
 
             cast(null as string) as standard_domain,
+            cast(ar.assessment_id as string) as assessment_id_string,
 
             'mod_standards_domains' as source_model,
             'Progress Report' as report_type,
@@ -172,6 +175,7 @@ with
             co.academic_year_display,
 
             sd.standard_domain,
+            cast(ar.assessment_id as string) as assessment_id_string,
 
             'mod_standards_domains' as source_model,
             'Report Card' as report_type,
@@ -243,7 +247,7 @@ select
         ar.source = 'illuminate',
         concat(
             'https://kippteamschools.illuminateed.com/live/?assessment_id=',
-            cast(ar.assessment_id as string),
+            ar.assessment_id_string,
             '&prebuilt_report_id=1&page=Assessment_StudentController'
         ),
         null
