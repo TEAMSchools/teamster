@@ -86,8 +86,7 @@ select
         + 1
     ) as graduation_year,
 
-    /* Miami contacts hold a mix of the bare pre-Focus number and the 8400-prefixed
-       Focus id, which is the Miami student number (see focus_student_number). */
+    -- same prefix rule as focus_student_number, without its year gate
     school_specific_id_int + if(
         kipp_region_name__c = 'KIPP Miami' and school_specific_id_int < 8400000000,
         8400000000,
