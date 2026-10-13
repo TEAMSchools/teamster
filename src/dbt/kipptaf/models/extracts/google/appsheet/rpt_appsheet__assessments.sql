@@ -1,4 +1,5 @@
 select
+    `source`,
     assessment_id,
     title,
     academic_year,
@@ -21,6 +22,4 @@ select
     is_internal_assessment,
 
     tagged_grade_level_id - 1 as grade_level,
--- TODO(#5830): list Apex rows once the AppSheet table keys on source
 from {{ ref("int_assessments__assessments_members") }}
-where source = 'illuminate'
